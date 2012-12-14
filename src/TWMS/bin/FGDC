@@ -1,0 +1,4 @@
+# This script should fetch the official title or abstract from somwhere
+# Argument 3 is returned if that fails
+#
+echo $3

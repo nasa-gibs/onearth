@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+
+srcdir=$1
+
+for i in $srcdir/*mrf
+do
+  FIRST_PATTERN=TRUE
+  while IFS= read a
+  do
+# Pick the format
+    [[ ( $a == *Compression* ) && ( $a == *PNG* ) ]] && FORMAT="image%2Fpng"
+    [[ ( $a == *Compression* ) && ( $a == *JPEG* ) ]] && FORMAT="image%2Fjpeg"
+
+    # Note that the smallest zoom (1 tile containing 180x360 image) not advertised in WMTS
+    [[ ( $a == *Levels* ) && ( $a == *1* ) ]] && TILEMATRIXSET="EPSG4326_64km"
+    [[ ( $a == *Levels* ) && ( $a == *2* ) ]] && TILEMATRIXSET="EPSG4326_32km"
+    [[ ( $a == *Levels* ) && ( $a == *3* ) ]] && TILEMATRIXSET="EPSG4326_16km"
+    [[ ( $a == *Levels* ) && ( $a == *4* ) ]] && TILEMATRIXSET="EPSG4326_8km"
+    [[ ( $a == *Levels* ) && ( $a == *5* ) ]] && TILEMATRIXSET="EPSG4326_4km"
+    [[ ( $a == *Levels* ) && ( $a == *6* ) ]] && TILEMATRIXSET="EPSG4326_2km"
+    [[ ( $a == *Levels* ) && ( $a == *7* ) ]] && TILEMATRIXSET="EPSG4326_1km"
+    [[ ( $a == *Levels* ) && ( $a == *8* ) ]] && TILEMATRIXSET="EPSG4326_500m"
+    [[ ( $a == *Levels* ) && ( $a == *9* ) ]] && TILEMATRIXSET="EPSG4326_250m"
+    # sedac_bounds has 10 levels but we only use 9
+    [[ ( $a == *Levels* ) && ( $a == *10* ) ]] && TILEMATRIXSET="EPSG4326_250m"
+
+    if [[ $a == *Pattern* ]]
+    then
+# Erase the TWMS patterns, while substituting the WMTS one for the first line
+      if [[ $FIRST_PATTERN == TRUE ]]
+      then
+# Pick the layer name
+	LAYER=${a##*layers=}
+	LAYER=${LAYER%%&*}
+# Build the pattern
+        echo "      <Pattern><![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${LAYER}&STYLE=&TILEMATRIXSET=${TILEMATRIXSET}&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=${FORMAT}]]></Pattern>"
+        FIRST_PATTERN=FALSE
+      fi
+
+# Or just copy the line out
+    else
+      echo "$a"
+    fi
+  done <$i >${i##*/}
+done

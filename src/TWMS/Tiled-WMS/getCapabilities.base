@@ -1,0 +1,89 @@
+# This file is processed to become the getCapabilities
+# Comment lines such as this and empty lines are removed
+
+# Special commands start with ????BEEF:
+# EXECBEEF: Execute in processing shell
+# DEAFBEEF: Create XML tag from command output
+# DEADBEEF: Direct file insert
+
+# Set up some environment variables
+# Read the template
+EXECBEEF: export LT=`cat Layer_template`
+# Use the same process on the content of a variable.  Variable substitution does take place
+# The right value is evaluated now, so it is safe to store in the same variable
+EXECBEEF: export IFS= LT="echo \"$LT\" | $0 "
+# Figure out the depth
+
+EXECBEEF: export DEPTH=${0%/*}
+
+<?xml version='1.0' encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE WMT_MS_Capabilities SYSTEM "http://wms.jpl.nasa.gov/WMS_MS_Capabilities.dtd" [ <!ELEMENT VendorSpecificCapabilities EMPTY> ]>
+<WMT_MS_Capabilities version="1.1.1">
+<Service>
+  <Name>OGC:WMS</Name>
+  <Title>PO.DAAC</Title>
+  <Abstract>PO.DAAC</Abstract>
+  <KeywordList>
+    <Keyword>PO.DAAC</Keyword> <Keyword>NASA</Keyword> <Keyword>WMS</Keyword> <Keyword>Earth</Keyword> <Keyword>Ocean</Keyword>
+  </KeywordList>
+  <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov" />
+  <ContactInformation>
+    <ContactPersonPrimary>
+      <ContactPerson>Jeffrey R. Hall</ContactPerson>
+      <ContactOrganization>NASA Jet Propulsion Laboratory</ContactOrganization>
+    </ContactPersonPrimary>
+    <ContactElectronicMailAddress>podaac@podaac.nasa.gov</ContactElectronicMailAddress>
+  </ContactInformation>
+  <Fees>none</Fees>
+  <AccessConstraints>none</AccessConstraints>
+</Service>
+<Capability>
+  <Request>
+    <GetCapabilities>
+      <Format>application/vnd.ogc.wms_xml</Format>
+      <DCPType>
+	<HTTP>
+	  <Get>
+	    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov/twms-geo/wms.fcgi?" />
+	  </Get>
+	</HTTP>
+      </DCPType>
+    </GetCapabilities>
+    <GetMap>
+	<Format>image/jpeg</Format>
+	<Format>image/png</Format>
+      <DCPType> <HTTP> <Get>
+	<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov/twms-geo/wms.fcgi?" />
+      </Get> </HTTP> </DCPType>
+    </GetMap>
+    <GetTileService>
+      <Format>text/xml</Format>
+      <DCPType><HTTP><Get>
+	<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov/twms-geo/wms.fcgi?" />
+      </Get></HTTP></DCPType>
+    </GetTileService>
+  </Request>
+  <Exception>
+    <Format>application/vnd.ogc.se_xml</Format>
+  </Exception>
+  <VendorSpecificCapabilities/>
+  <UserDefinedSymbolization SupportSLD="0" UserLayer="0" UserStyle="1" RemoteWFS="0" />
+
+  <Layer queryable="0">
+    <Title>PO.DAAC</Title>
+    <SRS>EPSG:4326</SRS>
+    <CRS>EPSG:4326</CRS>
+
+EXECBEEF: Layer=aquarius_l3_sss_smi_daily___sss___1440_x_720___daynight eval $LT
+EXECBEEF: Layer=ascat_l2_coastal___wind_speed___2880_x_1440___day eval $LT
+EXECBEEF: Layer=ascat_l2_coastal___wind_speed___2880_x_1440___night eval $LT
+EXECBEEF: Layer=jpl_l2p_modis_a___chlorophyll_a___46080_x_23040___day eval $LT
+EXECBEEF: Layer=jpl_l2p_modis_a___jpl_l2p_modis_t___sst___46080_x_23040___night eval $LT
+EXECBEEF: Layer=jpl_ourocean_l4___sst___36000_x_18000___daynight eval $LT
+EXECBEEF: Layer=oscar_l4_oc_third_deg___oceancurrent_speed___1088_x_544___daynight eval $LT
+EXECBEEF: Layer=remss_windsat_l2p_gridded___sst___1440_x_720___night eval $LT
+
+  </Layer>
+
+</Capability>
+</WMT_MS_Capabilities>
