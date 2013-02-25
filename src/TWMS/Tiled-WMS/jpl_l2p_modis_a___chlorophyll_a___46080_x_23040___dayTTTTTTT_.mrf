@@ -270,7 +270,7 @@
   </Rsets>
   <TWMS>
     <Levels>8</Levels>
-    <EmptyInfo size="0" offset="0" />
+    <EmptyInfo size="1096" offset="0" />
     <Pattern><![CDATA[request=GetMap&layers=jpl_l2p_modis_a___chlorophyll_a___46080_x_23040___day&srs=EPSG:4326&format=image/png&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
     <Pattern><![CDATA[request=GetMap&layers=jpl_l2p_modis_a___chlorophyll_a___46080_x_23040___day&srs=EPSG:4326&format=image/png&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
     <Pattern><![CDATA[LAYERS=jpl_l2p_modis_a___chlorophyll_a___46080_x_23040___day&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A4326&BBOX=[-,\.0-9+Ee]*&WIDTH=512&HEIGHT=512]]></Pattern>
