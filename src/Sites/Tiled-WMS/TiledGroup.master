@@ -1,0 +1,11 @@
+<TiledGroup>
+	<Name>$Name</Name>
+	<Title>$Title</Title>
+	<Abstract>$Name</Abstract>
+	<Projection>$Projection</Projection>
+	<Pad>0</Pad>
+	<Bands>$Bands</Bands>
+	<LatLonBoundingBox minx=\"-180\" miny=\"-90\" maxx=\"180\" maxy=\"90\" />
+	<Key>\${time}</Key>
+EXECBEEF: ${TT} -p $LN
+</TiledGroup>

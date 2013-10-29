@@ -1,0 +1,15 @@
+<PAMDataset>
+  <Metadata domain="IMAGE_STRUCTURE">
+    <MDI key="COMPRESS">JPEG</MDI>
+    <MDI key="INTERLEAVE">PIXEL</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <ColorInterp>Red</ColorInterp>
+  </PAMRasterBand>
+  <PAMRasterBand band="2">
+    <ColorInterp>Green</ColorInterp>
+  </PAMRasterBand>
+  <PAMRasterBand band="3">
+    <ColorInterp>Blue</ColorInterp>
+  </PAMRasterBand>
+</PAMDataset>

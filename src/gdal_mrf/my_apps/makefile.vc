@@ -1,0 +1,32 @@
+
+GDAL_ROOT	=	..
+
+XTRAOBJ =	$(SETARGV)
+
+LIBS	=	$(GDAL_ROOT)\gdal_i.lib
+
+XTRAFLAGS =	-I..\frmts -I..\alg -I..\ogr -I..\ogr\ogrsf_frmts
+
+!INCLUDE ..\nmake.opt
+
+MRF_PROGRAMS = mrf_insert.exe
+
+default:	$(MRF_PROGRAMS)
+
+all:	default 
+
+mrf_insert.exe:	mrf_insert.cpp mrf_insert.h $(GDALLIB)
+	$(CC) $(CFLAGS) $(XTRAFLAGS) mrf_insert.cpp $(LIBS) \
+		/link $(LINKER_FLAGS)
+	if exist $@.manifest mt -manifest $@.manifest -outputresource:$@;1
+	
+clean:
+	-del *.obj
+	-del *.exe
+	-del *.pdb
+	-del *.ilk
+	-del *.lib
+	-del *.manifest
+
+install:	default
+	copy *.exe $(BINDIR)

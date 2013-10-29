@@ -1,0 +1,11 @@
+--- swig/python/GNUmakefile	2012-10-08 20:58:28.000000000 -0400
++++ swig/python/GNUmakefile.patch	2013-09-06 12:53:24.935996026 -0400
+@@ -68,7 +68,7 @@ egg:
+ install:
+ 
+ ifeq ($(PY_HAVE_SETUPTOOLS),1)
+-	$(PYTHON) setup.py install 
++	$(PYTHON) setup.py install --root=$(DESTDIR) --prefix=$(PREFIX)
+ else
+ 	$(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
+ endif

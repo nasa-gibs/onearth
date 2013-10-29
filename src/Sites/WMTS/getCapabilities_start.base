@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Capabilities xmlns="http://www.opengis.net/wmts/1.0"
+          xmlns:ows="http://www.opengis.net/ows/1.1"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:gml="http://www.opengis.net/gml"
+          xsi:schemaLocation="http://www.opengis.net/wmts/1.0
+                    ../wmtsGetCapabilities_response.xsd"
+          version="1.0.0">
+   <ows:ServiceIdentification>
+      <ows:Title>NASA JPL PO.DAAC - Physical Oceanography Distributed Active Archive Center</ows:Title>
+      <ows:Abstract>
+         Near real time imagery from multiple NASA instruments
+      </ows:Abstract>
+      <ows:Keywords>
+         <ows:Keyword>World</ows:Keyword>
+         <ows:Keyword>Global</ows:Keyword>
+      </ows:Keywords>
+      <ows:ServiceType>OGC WMTS</ows:ServiceType>
+      <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+      <ows:Fees>none</ows:Fees>
+      <ows:AccessConstraints>none</ows:AccessConstraints>
+   </ows:ServiceIdentification>
+   <ows:ServiceProvider>
+      <ows:ProviderName>National Aeronautics and Space Administration</ows:ProviderName>
+      <ows:ProviderSite xlink:href="http://podaac.jpl.nasa.gov/"/>
+      <ows:ServiceContact>
+         <ows:IndividualName>Jeffrey R. Hall</ows:IndividualName>
+         <ows:PositionName>PO.DAAC</ows:PositionName>
+         <ows:ContactInfo>
+            <ows:Address>
+               <ows:DeliveryPoint>NASA Jet Propulsion Laboratory</ows:DeliveryPoint>
+               <ows:City>Pasadena</ows:City>
+               <ows:AdministrativeArea>California
+                  </ows:AdministrativeArea>
+               <ows:PostalCode>91109</ows:PostalCode>
+               <ows:Country>United States of America</ows:Country>
+               <ows:ElectronicMailAddress>podaac@podaac.jpl.nasa.gov
+                  </ows:ElectronicMailAddress>
+            </ows:Address>
+         </ows:ContactInfo>
+      </ows:ServiceContact>
+   </ows:ServiceProvider>
+   <ows:OperationsMetadata>
+      <ows:Operation name="GetCapabilities">
+         <ows:DCP>
+            <ows:HTTP>
+               <ows:Get xlink:href="http://orca:8080.jpl.nasa.gov/wmts-geo/wmts.cgi?">
+                  <ows:Constraint name="GetEncoding">
+                     <ows:AllowedValues>
+                        <ows:Value>KVP</ows:Value>
+                     </ows:AllowedValues>
+                  </ows:Constraint>
+               </ows:Get>
+            </ows:HTTP>
+         </ows:DCP>
+      </ows:Operation>
+      <ows:Operation name="GetTile">
+         <ows:DCP>
+            <ows:HTTP>
+               <ows:Get xlink:href="http://orca:8080.jpl.nasa.gov/wmts-geo/wmts.cgi?">
+                  <ows:Constraint name="GetEncoding">
+                     <ows:AllowedValues>
+                        <ows:Value>KVP</ows:Value>
+                     </ows:AllowedValues>
+                  </ows:Constraint>
+               </ows:Get>
+            </ows:HTTP>
+         </ows:DCP>
+      </ows:Operation>
+   </ows:OperationsMetadata>
+   <Contents>
