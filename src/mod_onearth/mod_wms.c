@@ -966,7 +966,7 @@ char *order_args(char *args) {
 
 		// need to ignore occurrence of tilematrix in tilematrixset - replace only one char for optimal performance
 		char *pos1 = strcasestr(args, "tilematrixset");
-		pos1 = "x";
+		*pos1 = "x";
 		getParam(args,"tilematrix",tilematrix);
 
 		sprintf(args,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time);
