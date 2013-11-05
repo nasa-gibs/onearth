@@ -26,7 +26,7 @@
 #
 #  pyline.py 
 #   -c pyline_configuration_file.xml 
-#   -s http://lanina.jpl.nasa.gov:8100/sigevent/events/create
+#   -s http://onearth.jpl.nasa.gov:8100/sigevent/events/create
 #
 # Example XML configuration file:
 #
@@ -46,10 +46,11 @@
 #  <target_x>65536</target_x>
 # </pyline_configuration>
 #
-# Physical Oceanography Distributed Active Archive Center (PO.DAAC)
+# Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
 # NASA Jet Propulsion Laboratory
-# 2012
+# 2013
 # Jeffrey.R.Hall@jpl.nasa.gov
+# Joe.T.Roberts@jpl.nasa.gov
 
 
 #COMMENTS IN ALL CAPS INDICATES UNFINISHED OR NEEDS MORE CONSIDERATOIN.
@@ -82,7 +83,7 @@ def sigevent(type, mssg, sigevent_url):
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://lanina.jpl.nasa.gov:8100/sigevent/events/create'
+                        'http://onearth.jpl.nasa.gov:8100/sigevent/events/create'
     """
     # Constrain mssg to 256 characters (including '...').
     if len(mssg) > 256:
@@ -300,8 +301,8 @@ parser.add_option('-c', '--configuration_filename',
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
-                  'http://lanina.jpl.nasa.gov:8100/sigevent/events/create',
-                  help='Default:  http://lanina.jpl.nasa.gov:8100/sigevent/events/create')
+                  'http://onearth.jpl.nasa.gov:8100/sigevent/events/create',
+                  help='Default:  http://onearth.jpl.nasa.gov:8100/sigevent/events/create')
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -626,14 +627,14 @@ if len(modtiles) > 0:
     cache_idx_linkname=str().join([cache_dir, parameter_name, doy, '_.idx'])
     cache_idx_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.idx'])
 
-    # The image compnent of MRF is .pjg or .ppg, depending on compression type.
+    # The image component of MRF is .pjg or .ppg, depending on compression type.
     if mrf_compression_type == 'PNG':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.ppg'])
         # Linknames.
         cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.ppg'])
         cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.ppg'])
-    if mrf_compression_type == 'PPNG':
+    elif mrf_compression_type == 'PPNG':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.ppg'])
         # Linknames.
@@ -732,7 +733,7 @@ if len(modtiles) > 0:
         if mrf_compression_type == 'PNG':
             # Unpaletted PNG.
             compress=str('COMPRESS=PNG')
-        if mrf_compression_type == 'PPNG':
+        elif mrf_compression_type == 'PPNG':
             # Paletted PNG.
             compress=str('COMPRESS=PPNG')
         elif mrf_compression_type == 'JPG':
