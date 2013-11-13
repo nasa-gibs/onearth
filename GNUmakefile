@@ -130,9 +130,9 @@ mod_onearth-install:
 	install -m 755 src/cgi/wmts.cgi \
 		-t $(DESTDIR)/$(PREFIX)/share/mod_onearth/cgi
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/blank_images
-	cp src/blank_images/* \
-		$(DESTDIR)/$(PREFIX)/share/mod_onearth/blank_images
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
+	cp src/pyline/empty_tiles/* \
+		$(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
@@ -168,7 +168,7 @@ mod_onearth-artifact: mod_onearth-clean
 	rm -rf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,mod_onearth-$(MOD_ONEARTH_VERSION)/," \
-		src/mod_onearth src/Sites src/blank_images src/cgi \
+		src/mod_onearth src/Sites src/pyline/empty_tiles src/cgi \
 		src/demo GNUmakefile
 
 #-----------------------------------------------------------------------------
