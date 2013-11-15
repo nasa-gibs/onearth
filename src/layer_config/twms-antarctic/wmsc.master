@@ -1,0 +1,21 @@
+# These variables should be set
+# Layer SRS Bands File max_ppd
+#
+LINEBEEF:
+<Layer>
+  <Name>$Layer</Name>
+  <Image>$FPATH/${File:-$Layer.tif}</Image>
+  <Binary>Something Unusable</Binary>
+  <Projection>$Projection</Projection>
+  <ProjectionCode>$SRS</ProjectionCode>
+  <BoundingBox minx=\"-180\" miny=\"-90\" maxx=\"180\" maxy=\"90\"/>
+  <Bands>$Bands</Bands>
+  <DataType>Int8</DataType>
+#  <DataValues min=\"1\" max=\"255\" NoData=\"0\"/>
+  <LongitudeWraparound>true</LongitudeWraparound>
+  <Styles> <UserStyle>
+    <Name>default</Name> <MaxRes>$max_ppd</MaxRes> <Title>Default Style</Title>
+    <IsDefault>1</IsDefault> <FeatureTypeStyle><Rule></Rule></FeatureTypeStyle>
+EXECBEEF: [[ -z \"$GFI_FNAME\" ]] || echo \"$GFIS$GFI_FNAME$GFIE\"
+  </UserStyle> </Styles>
+</Layer>

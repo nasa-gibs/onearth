@@ -1,0 +1,22 @@
+    <Layer queryable=\"${GFI:-0}\">
+      <Name>$Layer</Name>
+DEAFBEEF:Title: $DEPTH/FGDC $Layer title \"${DEF_TITLE:-$Layer Title}\"
+DEAFBEEF:Abstract: $DEPTH/FGDC $Layer abstract \"${DEF_ABSTRACT:-$Layer Abstract}\"
+#      <MetadataURL type=\"FGDC\"> <Format>text/xml</Format>
+#        <OnlineResource xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:type=\"simple\"
+#          xlink:href=\"http://www.lmmp.nasa.gov/LMMP/rest/dbxml/fgdc?label=$Layer\" />
+#      </MetadataURL>
+#      <MetadataURL type=\"FGDC\"> <Format>text/html</Format>
+#        <OnlineResource xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:type=\"simple\"
+#          xlink:href=\"http://www.lmmp.nasa.gov/LMMP/rest/dbxml/fgdc?label=$Layer&amp;frmt=html\" />
+#      </MetadataURL>
+      <LatLonBoundingBox minx=\"-180\" miny=\"-90\" maxx=\"180\" maxy=\"90\"/>
+      <Style>
+        <Name>default</Name> <Title>(default) Default style</Title>
+#        <LegendURL width=\"50\" height=\"150\"> <Format>image/png</Format>
+#          <OnlineResource xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:type=\"simple\"
+#            xlink:href=\"http://www.lmmp.nasa.gov/LMMP/rest/dbxml/fgdc/legend/stream?label=$Layer\"/>
+#        </LegendURL>
+      </Style>
+      <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
+      </Layer>

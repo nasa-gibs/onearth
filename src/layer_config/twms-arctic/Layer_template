@@ -1,0 +1,25 @@
+    <Layer queryable=\"${GFI:-0}\">
+      <Name>$Layer</Name>
+# Someday need to put real title and abstract here, but for now, let's fix the indentation:
+#DEAFBEEF:Title: $DEPTH/FGDC $Layer title \"${DEF_TITLE:-$Layer Title}\"
+#DEAFBEEF:Abstract: $DEPTH/FGDC $Layer abstract \"${DEF_ABSTRACT:-$Layer Abstract}\"
+      <Title>$Layer title</Title>
+      <Abstract>$Layer abstract</Abstract>
+#      <MetadataURL type=\"FGDC\"> <Format>text/xml</Format>
+#        <OnlineResource xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:type=\"simple\"
+#          xlink:href=\"http://www.lmmp.nasa.gov/LMMP/rest/dbxml/fgdc?label=$Layer\" />
+#      </MetadataURL>
+#      <MetadataURL type=\"FGDC\"> <Format>text/html</Format>
+#        <OnlineResource xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:type=\"simple\"
+#          xlink:href=\"http://www.lmmp.nasa.gov/LMMP/rest/dbxml/fgdc?label=$Layer&amp;frmt=html\" />
+#      </MetadataURL>
+      <BoundingBox minx=\"-4194304\" miny=\"-4194304\" maxx=\"4194304\" maxy=\"4194304\" />
+      <Style>
+        <Name>default</Name> <Title>(default) Default style</Title>
+#        <LegendURL width=\"50\" height=\"150\"> <Format>image/png</Format>
+#          <OnlineResource xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:type=\"simple\"
+#            xlink:href=\"http://www.lmmp.nasa.gov/LMMP/rest/dbxml/fgdc/legend/stream?label=$Layer\"/>
+#        </LegendURL>
+      </Style>
+      <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
+    </Layer>

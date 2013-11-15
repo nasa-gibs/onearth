@@ -1,0 +1,150 @@
+      <TileMatrixSet>
+         <ows:Identifier>EPSG3031_1km</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>29257142.85714286</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>14628571.42857143</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>4</MatrixWidth>
+            <MatrixHeight>4</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>7314285.714285715</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>8</MatrixWidth>
+            <MatrixHeight>8</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>3657142.857142857</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>16</MatrixWidth>
+            <MatrixHeight>16</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG3031_500m</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>29257142.85714286</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>14628571.42857143</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>4</MatrixWidth>
+            <MatrixHeight>4</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>7314285.714285715</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>8</MatrixWidth>
+            <MatrixHeight>8</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>3657142.857142857</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>16</MatrixWidth>
+            <MatrixHeight>16</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>4</ows:Identifier>
+            <ScaleDenominator>1828571.428571429</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>32</MatrixWidth>
+            <MatrixHeight>32</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG3031_250m</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>29257142.85714286</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>14628571.42857143</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>4</MatrixWidth>
+            <MatrixHeight>4</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>7314285.714285715</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>8</MatrixWidth>
+            <MatrixHeight>8</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>3657142.857142857</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>16</MatrixWidth>
+            <MatrixHeight>16</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>4</ows:Identifier>
+            <ScaleDenominator>1828571.428571429</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>32</MatrixWidth>
+            <MatrixHeight>32</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>5</ows:Identifier>
+            <ScaleDenominator>914285.7142857143</ScaleDenominator>
+            <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>64</MatrixWidth>
+            <MatrixHeight>64</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+   </Contents>
+   <ServiceMetadataURL xlink:href="http://map1.vis.earthdata.nasa.gov/wmts-antarctic/1.0.0/WMTSCapabilities.xml"/>
+</Capabilities>

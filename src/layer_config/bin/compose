@@ -1,0 +1,41 @@
+#!/bin/bash
+# Do these three for potential commands that get executed
+
+# Change to IFS to preserve the starting white spaces
+while IFS= read -r a
+do
+  c="${a:0:9}"
+  line="${a:9}"
+  if test -z "$c"
+  then
+#Empty lines, do nothing
+    a=$a
+  elif test "${a:0:1}" == "#"
+  then
+#Comment line, do nothing
+    a=$a
+  elif test "$c" == "DEADBEEF:" 
+  then
+#File substitution
+    cat $line
+  elif test "$c" == "LINEBEEF:"
+  then
+#insert a line
+    echo
+  elif test "$c" == "DEAFBEEF:" 
+  then
+#XML Token with command substitution
+    item=${line%%: *}
+    ic=`expr ${#item} + 2`
+    content=`eval ${line:$ic}`
+    echo \<$item\>"$content"\</$item\>
+  elif test "$c" == "EXECBEEF:"
+  then
+#Straight Execute in current shell
+    eval $line
+  else
+#Simple line, copy it out
+    echo "$a"
+  fi 
+done
+exit 0

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="LayerConfiguration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Identifier"/>
+        <xs:element ref="Title"/>
+        <xs:element ref="FileNamePrefix"/>
+        <xs:element ref="HeaderFileName"/>
+        <xs:element ref="DataFileLocation"/>
+        <xs:element ref="IndexFileLocation"/>
+        <xs:element ref="Compression"/>
+        <xs:element ref="Levels"/>
+        <xs:element ref="EmptyTileSize"/>
+        <xs:element ref="Projection"/>
+        <xs:element maxOccurs="unbounded" ref="Pattern"/>
+        <xs:element ref="WMTSEndPoint"/>
+        <xs:element ref="TWMSEndPoint"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Identifier" type="xs:NCName"/>
+  <xs:element name="Title" type="xs:string"/>
+  <xs:element name="FileNamePrefix" type="xs:NCName"/>
+  <xs:element name="HeaderFileName" type="xs:NCName"/>
+  <xs:element name="DataFileLocation" type="xs:string"/>
+  <xs:element name="IndexFileLocation" type="xs:string"/>
+  <xs:element name="Compression" type="xs:NCName"/>
+  <xs:element name="Levels" type="xs:integer"/>
+  <xs:element name="EmptyTileSize">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attribute name="offset" use="required" type="xs:integer"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Projection" type="xs:string" nillable="true"/>
+  <xs:element name="Pattern" type="xs:string"/>
+  <xs:element name="WMTSEndPoint" type="xs:NCName"/>
+  <xs:element name="TWMSEndPoint" type="xs:NCName"/>
+</xs:schema>
