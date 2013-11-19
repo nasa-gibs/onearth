@@ -718,7 +718,7 @@ static void PrintLink(request_rec *r, wms_wmsbbox *bbox, WMSlevel *level, char *
 
   hname(r,0);
 
-  ap_log_error(APLOG_MARK,APLOG_DEBUG,0,r->server, "Start URL should be %s",hname(r,1));
+//  ap_log_error(APLOG_MARK,APLOG_DEBUG,0,r->server, "Start URL should be %s",hname(r,1));
 
   if (withinbbox(level,w,midlat,midlon,n))
     ap_rprintf(r,NetworkLink,rand(),n,midlat,midlon,w,
@@ -936,11 +936,11 @@ void getParam(char *args, char *Name, char *Value) {
 char *order_args(char *args) {
 
 	// common args
-	char service[10] = "";
-	char request[10] = "";
-	char version[50] = "";
-	char format[20] = "";
-	char time[15] = "";
+	char service[10];
+	char request[10];
+	char version[50];
+	char format[50];
+	char time[15];
 
 	getParam(args,"service",service);
 	getParam(args,"request",request);
@@ -951,12 +951,12 @@ char *order_args(char *args) {
 	// check if TWMS or WMTS
 	if ((strcasecmp (service, "WMTS") == 0) && (strcasecmp (request, "GetTile") == 0))  {
 		// WMTS specific args
-		char layer[100] = "";
-		char style[10] = "";
-		char tilematrixset[20] = "";
-		char tilematrix[5] = "";
-		char tilerow[5] = "";
-		char tilecol[5] = "";
+		char layer[200];
+		char style[10];
+		char tilematrixset[20];
+		char tilematrix[5];
+		char tilerow[5];
+		char tilecol[5];
 
 		getParam(args,"layer",layer);
 		getParam(args,"style",style);
@@ -966,23 +966,28 @@ char *order_args(char *args) {
 
 		// need to ignore occurrence of tilematrix in tilematrixset - replace only one char for optimal performance
 		char *pos1 = strcasestr(args, "tilematrixset");
-		*pos1 = "x";
+		*pos1 = 1;
 		getParam(args,"tilematrix",tilematrix);
+
+		// GIBS-273 handle style=default, treat as empty. We don't need this if done in the layer regex pattern.
+		if (strcasecmp (style, "default") == 0) {
+			style[0] = '\0';
+		}
 
 		sprintf(args,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time);
 
 	} else if (strcasecmp (request, "GetMap") == 0) { //assume WMS/TWMS
 		//WMS specific args
-		char layers[100] = "";
-		char srs[20] = "";
-		char styles[20] = "";
-		char width[5] = "";
-		char height[5] = "";
-		char bbox[20] = "";
-		char transparent[10] = "";
-		char bgcolor[10] = "";
-		char exceptions[10] = "";
-		char elevation[10] = "";
+		char layers[200];
+		char srs[20];
+		char styles[20];
+		char width[5];
+		char height[5];
+		char bbox[20];
+		char transparent[10];
+		char bgcolor[10];
+		char exceptions[10];
+		char elevation[10];
 
 		getParam(args,"layers",layers);
 		getParam(args,"srs",srs);
@@ -1038,10 +1043,10 @@ static int mrf_handler(request_rec *r)
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "In WMS handler");
 
   // DEBUG
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
   r->args=order_args(r->args);
   // DEBUG
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
 
   // Count is the number of caches
   while (count--) {

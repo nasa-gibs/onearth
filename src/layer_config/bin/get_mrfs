@@ -34,7 +34,7 @@ do
 	LAYER=${a##*layers=}
 	LAYER=${LAYER%%&*}
 # Build the pattern
-        echo "      <Pattern><![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${LAYER}&STYLE=&TILEMATRIXSET=${TILEMATRIXSET}&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=${FORMAT}]]></Pattern>"
+        echo "      <Pattern><![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${LAYER}&STYLE=(default)?&TILEMATRIXSET=${TILEMATRIXSET}&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=${FORMAT}]]></Pattern>"
         FIRST_PATTERN=FALSE
       fi
 
