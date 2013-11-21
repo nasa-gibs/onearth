@@ -178,25 +178,30 @@ static void *r_file_pread(request_rec *r, char *fname,
     apr_time_exp_t tm;
     char old_char=*(fnloc+7);
     targ+=5; // Skip the time= part
-    tm.tm_year=apr_atoi64(targ)-1900; // Convert to tm standard
-    targ+=5; // Skip the YYYY- part
-    tm.tm_mon=apr_atoi64(targ);
-    targ+=3; // Skip the MM- part
-    tm.tm_mday=apr_atoi64(targ);
-    if ((tm.tm_year)&&(tm.tm_mon)&&(tm.tm_mday)) { // We do have a time stamp
-      static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
-      int leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
-      tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
-      sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
-      *(fnloc+7)=old_char; // so we have to put this character back
-
-      // Name change for Year
-      if ((yearloc=ap_strstr(fn,year))) {
-    	  old_char=*(yearloc+4);
-    	  sprintf(yearloc,"%04d",tm.tm_year+1900); // replace YYYY with actual year
-    	  *(yearloc+4)=old_char;
-      }
+    if (strlen(targ)==10 || strlen(targ)==0) { // Make sure time is in correct length
+		tm.tm_year=apr_atoi64(targ)-1900; // Convert to tm standard
+		targ+=5; // Skip the YYYY- part
+		tm.tm_mon=apr_atoi64(targ);
+		targ+=3; // Skip the MM- part
+		tm.tm_mday=apr_atoi64(targ);
+    } else {
+    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+    	return 0;
     }
+	if ((tm.tm_year)&&(tm.tm_mon)&&(tm.tm_mday)) { // We do have a time stamp
+	  static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
+	  int leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
+	  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
+	  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
+	  *(fnloc+7)=old_char; // so we have to put this character back
+
+	  // Name change for Year
+	  if ((yearloc=ap_strstr(fn,year))) {
+		  old_char=*(yearloc+4);
+		  sprintf(yearloc,"%04d",tm.tm_year+1900); // replace YYYY with actual year
+		  *(yearloc+4)=old_char;
+	  }
+	}
   }
 
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"filename: %s",fn);
