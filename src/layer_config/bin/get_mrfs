@@ -9,8 +9,8 @@ do
   while IFS= read a
   do
 # Pick the format
-    [[ ( $a == *Compression* ) && ( $a == *PNG* ) ]] && FORMAT="image%2Fpng"
-    [[ ( $a == *Compression* ) && ( $a == *JPEG* ) ]] && FORMAT="image%2Fjpeg"
+    [[ ( $a == *Compression* ) && ( $a == *PNG* ) ]] && FORMAT="image(%2F|/)png"
+    [[ ( $a == *Compression* ) && ( $a == *JPEG* ) ]] && FORMAT="image(%2F|/)jpeg"
 
     # Note that the smallest zoom (1 tile containing 180x360 image) not advertised in WMTS
     [[ ( $a == *Levels* ) && ( $a == *1* ) ]] && TILEMATRIXSET="EPSG4326_64km"

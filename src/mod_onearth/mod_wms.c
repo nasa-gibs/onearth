@@ -953,6 +953,13 @@ char *order_args(char *args) {
 	getParam(args,"format",format);
 	getParam(args,"time",time);
 
+	// fix format slash
+	if (strcasecmp (format, "image%2Fpng") == 0) {
+		strcpy(format,"image/png");
+	} else if (strcasecmp (format, "image%2Fjpeg") == 0) {
+		strcpy(format,"image/jpeg");
+	}
+
 	// check if TWMS or WMTS
 	if ((strcasecmp (service, "WMTS") == 0) && (strcasecmp (request, "GetTile") == 0))  {
 		// WMTS specific args
