@@ -316,5 +316,5 @@
          </TileMatrix>
       </TileMatrixSet>
    </Contents>
-   <ServiceMetadataURL xlink:href="http://map1.vis.earthdata.nasa.gov/wmts-geo/1.0.0/WMTSCapabilities.xml"/>
+   <ServiceMetadataURL xlink:href="http://localhost/wmts-geo/1.0.0/WMTSCapabilities.xml"/>
 </Capabilities>

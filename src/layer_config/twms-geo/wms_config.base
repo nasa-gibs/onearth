@@ -12,7 +12,7 @@ EXECBEEF: export GFIS="<GetFeatureInfo><Elevation_Values><GDAL_FileName>"
 EXECBEEF: export GFIE="</GDAL_FileName></Elevation_Values></GetFeatureInfo>"
 
 <WMS_Config version="1">
-  <BackendServerUrl>"http://skywalker.jpl.nasa.gov/twms-geo/wms.fcgi</BackendServerUrl>
+  <BackendServerUrl>"http://localhost/twms-geo/wms.fcgi</BackendServerUrl>
   <GetTileServiceFilePath>getTileService.xml</GetTileServiceFilePath>
   <GetCapabilitiesFilePath>getCapabilities.xml</GetCapabilitiesFilePath>
 

@@ -26,7 +26,7 @@
 #
 #  pyline.py 
 #   -c pyline_configuration_file.xml 
-#   -s http://onearth.jpl.nasa.gov:8100/sigevent/events/create
+#   -s http://localhost:8100/sigevent/events/create
 #
 # Example XML configuration file:
 #
@@ -83,7 +83,7 @@ def sigevent(type, mssg, sigevent_url):
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://onearth.jpl.nasa.gov:8100/sigevent/events/create'
+                        'http://localhost:8100/sigevent/events/create'
     """
     # Constrain mssg to 256 characters (including '...').
     if len(mssg) > 256:
@@ -301,8 +301,8 @@ parser.add_option('-c', '--configuration_filename',
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
-                  'http://onearth.jpl.nasa.gov:8100/sigevent/events/create',
-                  help='Default:  http://onearth.jpl.nasa.gov:8100/sigevent/events/create')
+                  'http://localhost:8100/sigevent/events/create',
+                  help='Default:  http://localhost:8100/sigevent/events/create')
 
 # Read command line args.
 (options, args) = parser.parse_args()

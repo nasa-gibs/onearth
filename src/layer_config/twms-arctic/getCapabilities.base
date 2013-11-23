@@ -26,13 +26,13 @@ EXECBEEF: export DEPTH=${0%/*}
   <KeywordList>
     <Keyword>LANCE</Keyword> <Keyword>NASA</Keyword> <Keyword>Earth</Keyword>
   </KeywordList>
-  <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov" />
+  <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost" />
   <ContactInformation>
     <ContactPersonPrimary>
-      <ContactPerson>Joe T. Roberts</ContactPerson>
-      <ContactOrganization>NASA Jet Propulsion Laboratory</ContactOrganization>
+      <ContactPerson></ContactPerson>
+      <ContactOrganization></ContactOrganization>
     </ContactPersonPrimary>
-    <ContactElectronicMailAddress>support@earthdata.nasa.gov</ContactElectronicMailAddress>
+    <ContactElectronicMailAddress></ContactElectronicMailAddress>
   </ContactInformation>
   <Fees>none</Fees>
   <AccessConstraints>none</AccessConstraints>
@@ -44,7 +44,7 @@ EXECBEEF: export DEPTH=${0%/*}
       <DCPType>
 	<HTTP>
 	  <Get>
-	    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov/twms-arctic/twms.cgi?" />
+	    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/twms-arctic/twms.cgi?" />
 	  </Get>
 	</HTTP>
       </DCPType>
@@ -53,13 +53,13 @@ EXECBEEF: export DEPTH=${0%/*}
 	<Format>image/jpeg</Format>
 	<Format>image/png</Format>
       <DCPType> <HTTP> <Get>
-	<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov/twms-arctic/twms.cgi?" />
+	<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/twms-arctic/twms.cgi?" />
       </Get> </HTTP> </DCPType>
     </GetMap>
     <GetTileService>
       <Format>text/xml</Format>
       <DCPType><HTTP><Get>
-	<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://map1.vis.earthdata.nasa.gov/twms-arctic/twms.cgi?" />
+	<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/twms-arctic/twms.cgi?" />
       </Get></HTTP></DCPType>
     </GetTileService>
   </Request>

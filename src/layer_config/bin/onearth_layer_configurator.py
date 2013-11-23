@@ -77,7 +77,7 @@ def sigevent(type, mssg, sigevent_url):
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://skywalker.jpl.nasa.gov:8100/sigevent/events/create'
+                        'http://localhost:8100/sigevent/events/create'
     """
     # Constrain mssg to 256 characters (including '...').
     if len(mssg) > 256:
