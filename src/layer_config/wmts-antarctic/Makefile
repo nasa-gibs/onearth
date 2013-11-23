@@ -1,6 +1,6 @@
 DEPTH=../bin
 
-srcdir=../twms-antartic
+srcdir=../twms-antarctic
 
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool
