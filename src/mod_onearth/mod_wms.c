@@ -801,7 +801,7 @@ static int kml_handler (request_rec *r)
   *format_p=0; // Terminate the request there
  
   // Try a png request first
-  image_arg=apr_pstrcat(r->pool,r->args,"image/png",the_rest,0);
+  image_arg=apr_pstrcat(r->pool,r->args,"image%2Fpng",the_rest,0);
 
   while (count--) {
     int i;
@@ -815,7 +815,7 @@ static int kml_handler (request_rec *r)
 
   if (-1==count) { // No match for the png, maybe a jpeg?
     count=cfg->caches->count;
-    image_arg=apr_pstrcat(r->pool,r->args,"image/jpeg",the_rest,0);
+    image_arg=apr_pstrcat(r->pool,r->args,"image%2Fjpeg",the_rest,0);
     while (count--) {
       int i;
       cache=GETCACHE(cfg->caches,count);
@@ -954,10 +954,10 @@ char *order_args(char *args) {
 	getParam(args,"time",time);
 
 	// fix format slash
-	if (strcasecmp (format, "image%2Fpng") == 0) {
-		strcpy(format,"image/png");
-	} else if (strcasecmp (format, "image%2Fjpeg") == 0) {
-		strcpy(format,"image/jpeg");
+	if (strcasecmp (format, "image/png") == 0) {
+		strcpy(format,"image%2Fpng");
+	} else if (strcasecmp (format, "image/jpeg") == 0) {
+		strcpy(format,"image%2Fjpeg");
 	}
 
 	// check if TWMS or WMTS
