@@ -535,6 +535,32 @@ if input_files == '':
 else:
     input_files = input_files.strip()
     alltiles = input_files.split(',')
+
+if len(alltiles) == 0: # No tiles, check for possible tiffs
+    alltiles=glob.glob(str().join([input_dir, '*.tif*']))
+
+if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
+    tiff_compress = "JPEG"
+else: # Default to png
+    tiff_compress = "PNG"
+    
+for i, tile in enumerate(alltiles):
+    if '.tif' in tile:
+        print "Converting TIFF file " + tile + " to " + tiff_compress
+        
+        # Create the gdal_translate command.
+        gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress,
+                                     tile, tile.split('.')[0]+'.'+str(tiff_compress).lower()]
+        # Log the gdal_translate command.
+        log_the_command(gdal_translate_command_list)
+
+        # Execute gdal_translate.
+        subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+        
+        # Replace with new tiles
+        alltiles[i] = tile.split('.')[0]+'.'+str(tiff_compress).lower()
+        
 print alltiles
 alltiles.sort()
 
