@@ -43,6 +43,8 @@
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image/png&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
  <Pattern><![CDATA[LAYERS=MODIS_Aqua_Cloud_Top_Temp_Night&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A4326&BBOX=[-,\.0-9+Ee]*&WIDTH=512&HEIGHT=512]]></Pattern>
  <Pattern><![CDATA[service=WMS&request=GetMap&version=1.1.1&srs=EPSG:4326&layers=MODIS_Aqua_Cloud_Top_Temp_Night&styles=default&transparent=TRUE&format=image/png&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+ <StartDate>2013-11-04</StartDate>
+ <EndDate>2013-11-04</EndDate>
  <WMTSEndPoint>wmts-geo</WMTSEndPoint>
  <TWMSEndPoint>twms-geo</TWMSEndPoint>
 </LayerConfiguration>
@@ -68,7 +70,7 @@ import glob
 import logging
 from optparse import OptionParser
 
-versionNumber = '0.2'
+versionNumber = '0.2d'
 
 def sigevent(type, mssg, sigevent_url):
     """
@@ -333,6 +335,13 @@ for conf in conf_files:
             emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
         except:
             emptyTileOffset = 0
+        try:
+            startDate = get_dom_tag_value(dom, 'StartDate')
+            endDate = get_dom_tag_value(dom, 'EndDate')
+        except IndexError:
+            startDate = None
+            endDate = None
+            
         # Patterns
         patterns = []
         patternTags = dom.getElementsByTagName('Pattern')
@@ -359,6 +368,10 @@ for conf in conf_files:
     log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
     if projection:
         log_info_mssg('config: Projection: ' + str(projection))
+    if startDate:
+        log_info_mssg('config: StartDate: ' + str(startDate))
+    if endDate:
+        log_info_mssg('config: EndDate: ' + str(endDate))
     log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
     log_info_mssg('config: Patterns: ' + str(patterns))
@@ -401,6 +414,16 @@ for conf in conf_files:
     twms.appendChild(levelsElement)
     twms.appendChild(emptyInfoElement)
     
+    if startDate:
+        startDateElement = mrf_dom.createElement('StartDate')
+        startDateElement.appendChild(mrf_dom.createTextNode(startDate))
+        twms.appendChild(twms.appendChild(startDateElement))
+
+    if endDate:
+        endDateElement = mrf_dom.createElement('EndDate')
+        endDateElement.appendChild(mrf_dom.createTextNode(endDate))
+        twms.appendChild(twms.appendChild(endDateElement))
+    
     patternElements = []
     for pattern in patterns:
         patternElements.append(mrf_dom.createElement('Pattern'))
@@ -422,8 +445,9 @@ for conf in conf_files:
     new_mrf_file.seek(0)
     lines = new_mrf_file.readlines()
     lines[0] = '<MRF_META>\n'
-    lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n').replace('</Levels>','</Levels>\n').replace('<Pattern>','\n\t<Pattern>'). \
-        replace('</TWMS>','\n</TWMS>\n').replace('</MRF_META>','\n</MRF_META>\n') #get_mrfs is picky about line breaks
+    lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n\t').replace('</Levels>','</Levels>\n\t').replace('<Pattern>','\n\t<Pattern>'). \
+        replace('<StartDate>','\n\t<StartDate>').replace('<EndDate>','\n\t<EndDate>').replace('</TWMS>','\n</TWMS>\n'). \
+        replace('</MRF_META>','\n</MRF_META>\n') #get_mrfs is picky about line breaks
     
     new_mrf_file.seek(0)
     new_mrf_file.truncate()

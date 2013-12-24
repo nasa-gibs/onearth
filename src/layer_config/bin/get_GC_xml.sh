@@ -37,6 +37,11 @@ do
 # Pick the layer name
 	LAYER=${a##*LAYER=}
 	LAYER=${LAYER%%&*}
+# Get start and end dates
+        startdate=""
+        enddate=""
+        startdate=`grep -oP '(?<=<StartDate>).*?(?=</StartDate>)' $srcdir/$i`
+        enddate=`grep -oP '(?<=<EndDate>).*?(?=</EndDate>)' $srcdir/$i`
 # Build the pattern
         if [ $LAYER != population -a $LAYER != sedac_bound ]; then
 
@@ -55,6 +60,15 @@ do
                             # Need LegendURL
           echo "         </Style>"
           echo "         <Format>$FORMAT</Format>"
+	      if [ "$startdate" != "" ]; then
+	          echo "         <Dimension>" 
+	          echo "           <ows:Identifier>time</ows:Identifier>"
+	          echo "           <UOM>ISO8601</UOM>"
+	          echo "           <Default>$enddate</Default>"
+	          echo "           <Current>false</Current>"
+	          echo "           <Value>$startdate/$enddate/P1D</Value>"
+	          echo "         </Dimension>" 
+	      fi
           # Need InfoFormat
           echo "         <TileMatrixSetLink>"
           echo "            <TileMatrixSet>$TILEMATRIXSET</TileMatrixSet>"
