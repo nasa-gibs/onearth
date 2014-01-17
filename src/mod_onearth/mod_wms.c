@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2013, California Institute of Technology.
+* Copyright (c) 2002-2014, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -83,6 +83,17 @@ typedef struct {
   char *cachedir;   // The cache directory name
   meta_cache *meta; // Run-time information for each cache
 } wms_cfg;
+
+// WMTS error handling
+struct wmts_error{
+  int status;
+  char *exceptionCode;
+  char *locator;
+  char *exceptionText;
+};
+typedef struct wmts_error wmts_error;
+struct wmts_error wmts_errors[5];
+int errors = 0;
 
 // Module constants
 static char kmltype[]="application/vnd.google-earth.kml+xml";
@@ -258,6 +269,65 @@ static char postamble[]="</ServiceException></ServiceExceptionReport>" ;
     ap_rputs(preamble, r);
     ap_rputs(message  ,r);
     ap_rputs(postamble,r);
+    return OK; // Request handled
+}
+
+static int wmts_add_error(request_rec *r, int status, char *exceptionCode, char *locator, char *exceptionText)
+{
+
+	wmts_error error;
+	error.status = status;
+	error.exceptionCode = exceptionCode;
+	error.locator = locator;
+	error.exceptionText = exceptionText;
+
+	wmts_errors[errors] = error;
+	errors++;
+
+    return OK; // Request handled
+}
+
+static int wmts_return_all_errors(request_rec *r)
+{
+
+	static char preamble[]=
+			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+			"<ExceptionReport xmlns=\"http://www.opengis.net/ows/1.1\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd\" version=\"1.1.0\" xml:lang=\"en\">";
+	static char postamble[]="\n</ExceptionReport>" ;
+
+	ap_set_content_type(r,"text/xml");
+	ap_rputs(preamble, r);
+
+	int i;
+	for(i = 0; i < errors; i++)
+//	for(i = 0; wmts_errors[i].exceptionCode != ((void *) 0); i++)
+	{
+		wmts_error error = wmts_errors[i];
+
+		static char preexception[]="<Exception exceptionCode=\"";
+		static char prelocator[]="\" locator=\"";
+		static char postlocator[]="\">";
+		static char pretext[]="\n<ExceptionText>";
+		static char posttext[]="</ExceptionText>";
+		static char postexception[]="</Exception>";
+
+		ap_rputs(preexception, r);
+		ap_rputs(error.exceptionCode, r);
+		ap_rputs(prelocator, r);
+		ap_rputs(error.locator, r);
+		ap_rputs(postlocator, r);
+		ap_rputs(pretext, r);
+		ap_rputs(error.exceptionText, r);
+		ap_rputs(posttext, r);
+		ap_rputs(postexception, r);
+
+		r->status = error.status;
+		error.exceptionCode = 0;
+	}
+
+	ap_rputs(postamble, r);
+	errors = 0;
+
     return OK; // Request handled
 }
 
@@ -938,7 +1008,9 @@ void getParam(char *args, char *Name, char *Value) {
 }
 
 // function to order request arguments in the expected pattern
-char *order_args(char *args) {
+char *order_args(request_rec *r) {
+
+	char *args = r->args;
 
 	// common args
 	char service[10];
@@ -1014,7 +1086,13 @@ char *order_args(char *args) {
 
 		sprintf(args,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,request,layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
 
-	} else {}
+	} else if (strcasecmp (request, "GetCapabilities") == 0) { // getCapabilities
+		sprintf(args,"request=GetCapabilities");
+	} else if (strcasecmp (request, "GetTileService") == 0) { // getTileService
+		sprintf(args,"request=GetTileService");
+	} else { // invalid REQUEST value
+		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
+	}
 
 	return args;
 }
@@ -1056,7 +1134,7 @@ static int mrf_handler(request_rec *r)
 
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
-  r->args=order_args(r->args);
+  r->args=order_args(r);
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
 
@@ -1071,9 +1149,18 @@ static int mrf_handler(request_rec *r)
 
   // No match?
   if (-1==count) {
-    if (r->connection->local_addr->port==80)
-	ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
-      "Unhandled %s%s?%s",r->hostname,r->uri,r->args);
+    if (r->connection->local_addr->port==80) {
+    	if (strcasecmp (r->args, "request=GetCapabilities") == 0) {
+        	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
+    	} else {
+    		if (errors==0) {
+    			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
+        			"Unhandled %s%s?%s %d",r->hostname,r->uri,r->args,r->status);
+    			wmts_add_error(r,400,"MissingParameterValue","%s", "Missing %s parameter");
+    		}
+    		return wmts_return_all_errors(r);
+    	}
+    }
 	else
 	ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
       "Unhandled %s:%d%s?%s",r->hostname,r->connection->local_addr->port,r->uri,r->args);
@@ -1150,18 +1237,28 @@ static int mrf_handler(request_rec *r)
     if (!(level=wmts_get_matching_level(r, cache))) {
 		ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,
 			"WMTS Unmatched level %s",r->args);
-		return DECLINED; // No level match
+//		return DECLINED; // No level match
+		wmts_add_error(r,400,"InvalidParameterValue","TILEROW", "Unmatched TILEROW");
+		wmts_add_error(r,400,"InvalidParameterValue","TILECOL", "Unmatched TILECOL");
     }
 
     if (level<(WMSlevel *) 2) {
 	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,
 	  "Can't find TILEMATRIX %s",r->args);
-	return DECLINED;
+//	return DECLINED;
+		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", "Unknown TILEMATRIX");
+    }
+
+//    if (wmts_errors[0].exceptionCode != ((void *) 0)) {
+//    	return wmts_return_all_errors(r);
+//    }
+    if (errors > 0) {
+    	return wmts_return_all_errors(r);
     }
 
     offset=wmts_get_index_offset(r,level);
     if (0>offset) 
-      return DECLINED; 
+    	return DECLINED;
   }
 
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,

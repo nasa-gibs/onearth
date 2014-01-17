@@ -106,7 +106,7 @@ static int twms_handler(request_rec *r)
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"TWMS file can't be read");
     return HTTP_CONFLICT;
   }
-  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"TWMS Sending GTS file");
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"TWMS Sending GTS file");
   apr_file_info_get(&info,APR_FINFO_SIZE,fh);
 
   ap_set_content_type(r,"text/xml");
