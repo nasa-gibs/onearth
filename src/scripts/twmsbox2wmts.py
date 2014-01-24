@@ -74,7 +74,7 @@ def twmsbox2wmts(request_bbox):
 
 
 versionNumber = '0.2'
-usageText = 'twmsbox2wmts.py --request_bbox [bbox]'
+usageText = 'twmsbox2wmts.py --bbox [bbox]'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
