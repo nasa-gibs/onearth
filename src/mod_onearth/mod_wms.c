@@ -94,6 +94,8 @@ struct wmts_error{
 typedef struct wmts_error wmts_error;
 struct wmts_error wmts_errors[5];
 int errors = 0;
+static int wmts_add_error(request_rec *r, int status, char *exceptionCode, char *locator, char *exceptionText);
+static int wmts_return_all_errors(request_rec *r);
 
 // Module constants
 static char kmltype[]="application/vnd.google-earth.kml+xml";
@@ -197,6 +199,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		tm.tm_mday=apr_atoi64(targ);
     } else {
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format");
     	return 0;
     }
 	if ((tm.tm_year)&&(tm.tm_mon)&&(tm.tm_mday)) { // We do have a time stamp
@@ -634,6 +637,9 @@ static apr_off_t wmts_get_index_offset(request_rec *r, WMSlevel *level)
     	level->xcount-1, level->ycount-1, r->args);
     return -1;
  }
+// int level_int = level->index_add + sizeof(index_s) * (y*level->xcount+x);
+// ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d, max values are %d and %d, x: %d, y: %d, index_add: %d",
+//		 level_int, level->xcount-1, level->ycount-1, x, y, level->index_add);
  return level->index_add + sizeof(index_s) * (y*level->xcount+x);
  
 }
@@ -671,6 +677,14 @@ static apr_off_t get_index_offset(WMSlevel *level, wms_wmsbbox *bb,
        (iy<0) || (iy>=level->ycount) )
     return -1;
 
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
+//    "ix %d ,x %d ,iy %d,y %d, Level x %d y %d, page count x %d y %d\n",
+//    ix,x,iy,y,
+//    level->levelx,level->levely,level->xcount,level->ycount );
+
+//  int level_int = level->index_add+sizeof(index_s)*(iy*level->xcount+ix);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d",
+// 		 level_int);
   return 
     level->index_add+sizeof(index_s)*(iy*level->xcount+ix);
 }
@@ -1002,6 +1016,8 @@ void getParam(char *args, char *Name, char *Value) {
 			*Value++ = '\0';
 			return;
 		}
+	} else {
+		Value[0]='\0';
 	}
 
 	return;
@@ -1049,9 +1065,11 @@ char *order_args(request_rec *r) {
 		getParam(args,"tilecol",tilecol);
 
 		// need to ignore occurrence of tilematrix in tilematrixset - replace only one char for optimal performance
-		char *pos1 = strcasestr(args, "tilematrixset");
-		*pos1 = 1;
-		getParam(args,"tilematrix",tilematrix);
+		if (tilematrixset[0]!='\0') {
+			char *pos1 = strcasestr(args, "tilematrixset");
+			*pos1 = 1;
+			getParam(args,"tilematrix",tilematrix);
+		}
 
 		// GIBS-273 handle style=default, treat as empty. We don't need this if done in the layer regex pattern.
 		if (strcasecmp (style, "default") == 0) {
@@ -1090,11 +1108,113 @@ char *order_args(request_rec *r) {
 		sprintf(args,"request=GetCapabilities");
 	} else if (strcasecmp (request, "GetTileService") == 0) { // getTileService
 		sprintf(args,"request=GetTileService");
+	} else if (service[0]=='\0') { // missing WMTS service
+		wmts_add_error(r,400,"MissingParameterValue","SERVICE", "Missing SERVICE parameter");
+	} else if (strcasecmp (service, "WMTS") != 0) { // unrecognized service
+		wmts_add_error(r,400,"InvalidParameterValue","SERVICE", "Unrecognized service");
 	} else { // invalid REQUEST value
 		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
 	}
 
 	return args;
+}
+
+static void specify_error(request_rec *r)
+{
+	wms_cfg  *cfg;
+	WMSCache *cache;
+
+	// Get the configuration
+	cfg=(wms_cfg *)
+	ap_get_module_config(r->per_dir_config,&wms_module);
+
+	// url params
+	char *args = r->args;
+	int max_chars;
+	max_chars = strlen(r->args) + 1;
+
+	char *layer = (char *)malloc(sizeof(char) *max_chars);
+	char *layer_reg = (char *)malloc(sizeof(char) *max_chars);
+	char *layer_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *version = (char *)malloc(sizeof(char) *max_chars);
+	char *version_reg = (char *)malloc(sizeof(char) *max_chars);
+	char *version_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *tilematrixset = (char *)malloc(sizeof(char) *max_chars);
+	char *tilematrixset_reg = (char *)malloc(sizeof(char) *max_chars);
+	char *tilematrixset_mes = (char *)malloc(sizeof(char) *max_chars);
+
+
+	getParam(args,"layer",layer);
+	getParam(args,"version",version);
+	getParam(args,"tilematrixset",tilematrixset);
+
+	int count;
+	count=cfg->caches->count;
+
+	int layer_match = 0;
+	int version_match = 0;
+	int tilematrixset_match = 0;
+
+	while (count--) {
+		int i;
+		cache=GETCACHE(cfg->caches,count);
+		i=cache->num_patterns;
+
+		getParam(cache->pattern,"layer",layer_reg);
+		getParam(cache->pattern,"version",version_reg);
+		getParam(cache->pattern,"tilematrixset",tilematrixset_reg);
+
+		if (strcasecmp (layer, layer_reg) == 0) {
+			layer_match++;
+		} else {
+//			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
+//			"Parameter: %s %s",layer, layer_reg);
+		}
+		if (strcasecmp (version, version_reg) == 0) {
+			version_match++;
+		}
+		if (strcasecmp (tilematrixset, tilematrixset_reg) == 0) {
+			tilematrixset_match++;
+		}
+		// we should only need to loop for layer
+
+	}
+
+	// LAYER
+	if (layer[0]=='\0') {
+		wmts_add_error(r,400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
+	}
+	else if (layer_match==0) {
+		sprintf(layer_mes,"LAYER %s does not exist",layer);
+		wmts_add_error(r,400,"InvalidParameterValue","LAYER", layer_mes);
+	}
+	// VERSION
+	if (version[0]=='\0') {
+		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
+	}
+	else if (version_match==0) {
+		sprintf(version_mes,"VERSION %s does not exist",version);
+		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
+	}
+	// TILEMATRIXSET
+	if (tilematrixset[0]=='\0') {
+		wmts_add_error(r,400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
+	}
+	else if (tilematrixset_match==0) {
+		sprintf(tilematrixset_mes,"TILEMATRIXSET %s does not exist",tilematrixset);
+		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIXSET", tilematrixset_mes);
+	}
+
+	// check for correct time format
+	static char* timearg="time=";
+	char *targ=0;
+	if ((targ=ap_strcasestr(r->args,timearg))) {
+		targ+=5; // Skip the time= part
+		if (!(strlen(targ)==10 || strlen(targ)==0)) {
+			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format");
+		}
+	}
 }
 
 static int mrf_handler(request_rec *r)
@@ -1154,9 +1274,9 @@ static int mrf_handler(request_rec *r)
         	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
     	} else {
     		if (errors==0) {
+    			specify_error(r);
     			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
-        			"Unhandled %s%s?%s %d",r->hostname,r->uri,r->args,r->status);
-    			wmts_add_error(r,400,"MissingParameterValue","%s", "Missing %s parameter");
+        			"Unhandled %s%s?%s",r->hostname,r->uri,r->args);
     		}
     		return wmts_return_all_errors(r);
     	}
@@ -1249,9 +1369,6 @@ static int mrf_handler(request_rec *r)
 		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", "Unknown TILEMATRIX");
     }
 
-//    if (wmts_errors[0].exceptionCode != ((void *) 0)) {
-//    	return wmts_return_all_errors(r);
-//    }
     if (errors > 0) {
     	return wmts_return_all_errors(r);
     }
@@ -1273,7 +1390,11 @@ static int mrf_handler(request_rec *r)
                  "Can't get index record from %s\nBased on %s",
 		 tstamp_fname(r,level->ifname),r->args);
     perror("Index read error: ");
-    return DECLINED;
+    if (errors > 0) {
+    	return wmts_return_all_errors(r);
+    } else {
+    	return DECLINED;
+    }
   }
 
 //
