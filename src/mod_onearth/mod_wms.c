@@ -307,7 +307,7 @@ static int wmts_return_all_errors(request_rec *r)
 	{
 		wmts_error error = wmts_errors[i];
 
-		static char preexception[]="<Exception exceptionCode=\"";
+		static char preexception[]="\n<Exception exceptionCode=\"";
 		static char prelocator[]="\" locator=\"";
 		static char postlocator[]="\">";
 		static char pretext[]="\n<ExceptionText>";
@@ -1069,6 +1069,15 @@ char *order_args(request_rec *r) {
 			char *pos1 = strcasestr(args, "tilematrixset");
 			*pos1 = 1;
 			getParam(args,"tilematrix",tilematrix);
+			if (tilematrix[0]=='\0') { // return error if not exist
+				wmts_add_error(r,400,"MissingParameterValue","TILEMATRIX", "Missing TILEMATRIX parameter");
+			}
+			if (tilerow[0]=='\0') { // return error if not exist
+				wmts_add_error(r,400,"MissingParameterValue","TILEROW", "Missing TILEROW parameter");
+			}
+			if (tilecol[0]=='\0') { // return error if not exist
+				wmts_add_error(r,400,"MissingParameterValue","TILECOL", "Missing TILECOL parameter");
+			}
 		}
 
 		// GIBS-273 handle style=default, treat as empty. We don't need this if done in the layer regex pattern.
@@ -1133,26 +1142,50 @@ static void specify_error(request_rec *r)
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
 
+	// don't worry about performance with error cases
 	char *layer = (char *)malloc(sizeof(char) *max_chars);
 	char *layer_reg = (char *)malloc(sizeof(char) *max_chars);
 	char *layer_mes = (char *)malloc(sizeof(char) *max_chars);
 	char *version = (char *)malloc(sizeof(char) *max_chars);
 	char *version_reg = (char *)malloc(sizeof(char) *max_chars);
 	char *version_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *style = (char *)malloc(sizeof(char) *max_chars);
+	char *style_reg = (char *)malloc(sizeof(char) *max_chars);
+	char *style_mes = (char *)malloc(sizeof(char) *max_chars);
 	char *tilematrixset = (char *)malloc(sizeof(char) *max_chars);
 	char *tilematrixset_reg = (char *)malloc(sizeof(char) *max_chars);
 	char *tilematrixset_mes = (char *)malloc(sizeof(char) *max_chars);
-
+	char *tilematrix = (char *)malloc(sizeof(char) *max_chars);
+	char *tilematrix_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *tilerow = (char *)malloc(sizeof(char) *max_chars);
+	char *tilerow_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *tilecol = (char *)malloc(sizeof(char) *max_chars);
+	char *tilecol_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *format = (char *)malloc(sizeof(char) *max_chars);
+	char *format_reg = (char *)malloc(sizeof(char) *max_chars);
+	char *format_mes = (char *)malloc(sizeof(char) *max_chars);
 
 	getParam(args,"layer",layer);
 	getParam(args,"version",version);
+	getParam(args,"style",style);
+	getParam(args,"format",format);
+	getParam(args,"tilerow",tilerow);
+	getParam(args,"tilecol",tilecol);
 	getParam(args,"tilematrixset",tilematrixset);
+	if (tilematrixset[0]!='\0') {
+		// ignore first occurrence of tilematrix in tilematrixset
+		char *pos1 = strcasestr(args, "tilematrixset");
+		*pos1 = 1;
+		getParam(args,"tilematrix",tilematrix);
+	}
 
 	int count;
 	count=cfg->caches->count;
 
 	int layer_match = 0;
 	int version_match = 0;
+	int style_match = 0;
+	int format_match = 0;
 	int tilematrixset_match = 0;
 
 	while (count--) {
@@ -1162,21 +1195,28 @@ static void specify_error(request_rec *r)
 
 		getParam(cache->pattern,"layer",layer_reg);
 		getParam(cache->pattern,"version",version_reg);
+		getParam(cache->pattern,"style",style_reg);
+		getParam(cache->pattern,"format",format_reg);
 		getParam(cache->pattern,"tilematrixset",tilematrixset_reg);
 
 		if (strcasecmp (layer, layer_reg) == 0) {
 			layer_match++;
-		} else {
-//			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
-//			"Parameter: %s %s",layer, layer_reg);
+
+			if (strcasecmp (version, version_reg) == 0) {
+				version_match++;
+			}
+			if (strcasecmp (style, style_reg) == 0) {
+				style_match++;
+			}
+			if (strcasecmp (format, format_reg) == 0) {
+				format_match++;
+			}
+			if (strcasecmp (tilematrixset, tilematrixset_reg) == 0) {
+				tilematrixset_match++;
+			}
+			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
+			"Parameter: %s Reg: %s",format, format_reg);
 		}
-		if (strcasecmp (version, version_reg) == 0) {
-			version_match++;
-		}
-		if (strcasecmp (tilematrixset, tilematrixset_reg) == 0) {
-			tilematrixset_match++;
-		}
-		// we should only need to loop for layer
 
 	}
 
@@ -1192,18 +1232,61 @@ static void specify_error(request_rec *r)
 	if (version[0]=='\0') {
 		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
 	}
-	else if (version_match==0) {
-		sprintf(version_mes,"VERSION %s does not exist",version);
+	else if (version_match==0 && layer_match>0) {
+		sprintf(version_mes,"VERSION=%s is invalid for LAYER=%s",version, layer);
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
+	}
+	// STYLE
+	if (style_match==0 && style[0]!='\0' && layer_match>0) {
+		sprintf(style_mes,"STYLE=%s is invalid for LAYER=%s",style, layer);
+		wmts_add_error(r,400,"InvalidParameterValue","STYLE", style_mes);
+	}
+	// FORMAT
+	if (format[0]=='\0') {
+		wmts_add_error(r,400,"MissingParameterValue","FORMAT", "Missing FORMAT parameter");
+	}
+	else if (format_match==0 && layer_match>0) {
+		sprintf(format_mes,"FORMAT=%s is invalid for LAYER=%s",format, layer);
+		wmts_add_error(r,400,"InvalidParameterValue","FORMAT", format_mes);
 	}
 	// TILEMATRIXSET
 	if (tilematrixset[0]=='\0') {
 		wmts_add_error(r,400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
 	}
-	else if (tilematrixset_match==0) {
-		sprintf(tilematrixset_mes,"TILEMATRIXSET %s does not exist",tilematrixset);
+	else if (tilematrixset_match==0 && layer_match>0) {
+		sprintf(tilematrixset_mes,"TILEMATRIXSET=%s is invalid for LAYER=%s",tilematrixset, layer);
 		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIXSET", tilematrixset_mes);
 	}
+	// TILEMATRIX
+   while (*tilematrix)
+   {
+	  if (!isdigit(*tilematrix)) {
+		  sprintf(tilematrix_mes,"TILEMATRIX is not a valid integer");
+		  wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", tilematrix_mes);
+		  break;
+	  } else
+		  ++tilematrix;
+   }
+	// TILEROW
+   while (*tilerow)
+   {
+	  if (!isdigit(*tilerow)) {
+		  sprintf(tilerow_mes,"TILEROW is not a valid integer");
+		  wmts_add_error(r,400,"InvalidParameterValue","TILEROW", tilerow_mes);
+		  break;
+	  } else
+		  ++tilerow;
+   }
+	// TILECOL
+   while (*tilecol)
+   {
+	  if (!isdigit(*tilecol)) {
+		  sprintf(tilecol_mes,"TILECOL is not a valid integer");
+		  wmts_add_error(r,400,"InvalidParameterValue","TILECOL", tilecol_mes);
+		  break;
+	  } else
+		  ++tilecol;
+   }
 
 	// check for correct time format
 	static char* timearg="time=";
@@ -1215,6 +1298,9 @@ static void specify_error(request_rec *r)
 			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format");
 		}
 	}
+
+	// free memory
+
 }
 
 static int mrf_handler(request_rec *r)
@@ -1358,15 +1444,14 @@ static int mrf_handler(request_rec *r)
 		ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,
 			"WMTS Unmatched level %s",r->args);
 //		return DECLINED; // No level match
-		wmts_add_error(r,400,"InvalidParameterValue","TILEROW", "Unmatched TILEROW");
-		wmts_add_error(r,400,"InvalidParameterValue","TILECOL", "Unmatched TILECOL");
+//		wmts_add_error(r,400,"InvalidParameterValue","TILEROW", "Unmatched TILEROW");
+//		wmts_add_error(r,400,"InvalidParameterValue","TILECOL", "Unmatched TILECOL");
     }
 
     if (level<(WMSlevel *) 2) {
 	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,
 	  "Can't find TILEMATRIX %s",r->args);
-//	return DECLINED;
-		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", "Unknown TILEMATRIX");
+		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", "Invalid TILEMATRIX");
     }
 
     if (errors > 0) {
