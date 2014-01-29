@@ -142,19 +142,28 @@ char *tstamp_fname(request_rec *r,char *fname)
     char *fnloc=ap_strstr(fn,tstamp);
     // Get a new place
     char old_char=*(fnloc+7);
+    char *yearloc=0;
 
     targ+=5; // Skip the time= part
     year=apr_atoi64(targ);
     targ+=5; // Skip the YYYY- part
     month=apr_atoi64(targ);
-    targ+=2; // Due to UV bug
+    targ+=3; // Due to UV bug
     if ('-'==*targ) targ++;
     day=apr_atoi64(targ);
+
     if ((year)&&(month)&&(day)) { // We do have a time stamp
       static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
       int leap=(year%4)?0:((year%400)?((year%100)?1:0):1);
-      sprintf(fnloc,"%04d%03d",year,day+moffset[month]+((month>2)?leap:0));
+      sprintf(fnloc,"%04d%03d",year,day+moffset[month-1]+((month>2)?leap:0));
       *(fnloc+7)=old_char; // We have to put this character back
+
+	  // Name change for Year
+	  if ((yearloc=ap_strstr(fn,"YYYY"))) {
+		  old_char=*(yearloc+4);
+		  sprintf(yearloc,"%04d",year); // replace YYYY with actual year
+		  *(yearloc+4)=old_char;
+	  }
     }
     return fn;
   } 
@@ -1470,17 +1479,49 @@ static int mrf_handler(request_rec *r)
               apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0),
               sizeof(index_s),offset);
 
-  if (!this_record) {
-    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-                 "Can't get index record from %s\nBased on %s",
-		 tstamp_fname(r,level->ifname),r->args);
-    perror("Index read error: ");
-    if (errors > 0) {
-    	return wmts_return_all_errors(r);
-    } else {
-    	return DECLINED;
-    }
-  }
+	if (!this_record) {
+		char *fname = tstamp_fname(r,apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0));
+		ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
+					 "Can't get index record from %s Based on %s",
+			 fname,r->args);
+		perror("Index read error: ");
+
+		// safe to assume invalid date?
+		char *timepart = strcasestr(fname, "_.");
+
+		if (timepart) {
+			timepart = timepart-3;
+			int day = atoi(timepart);
+			day--; // check yesterday (one day slack for current date)
+			if (day==0)
+				day = 365; // forget about leap years
+			char strday[4];
+			sprintf(strday, "%d", day);
+			if (day < 100) {
+				timepart[0]=*"0";
+				timepart[1] = strday[0];
+				timepart[2] = strday[1];
+			} else {
+				timepart[0] = strday[0];
+				timepart[1] = strday[1];
+				timepart[2] = strday[2];
+			}
+			// DEBUG
+			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Previous date filename: %s", fname);
+
+			// read file using previous date
+			this_record=r_file_pread(r,fname,sizeof(index_s),offset);
+			if (!this_record && day!=-1) // also checks for valid TIME format
+				wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
+		} else {
+			wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
+		}
+		if (errors > 0) {
+			return wmts_return_all_errors(r);
+		} else {
+			return DECLINED;
+		}
+	}
 
 //
 // This is the only endian dependent part
