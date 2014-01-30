@@ -1036,13 +1036,16 @@ void getParam(char *args, char *Name, char *Value) {
 char *order_args(request_rec *r) {
 
 	char *args = r->args;
+	int max_chars;
+	//use size of request args to prevent memory errors
+	max_chars = strlen(r->args) + 1;
 
 	// common args
-	char service[10];
-	char request[10];
-	char version[50];
-	char format[50];
-	char time[15];
+	char *service = apr_pcalloc(r->pool,max_chars);
+	char *request = apr_pcalloc(r->pool,max_chars);
+	char *version = apr_pcalloc(r->pool,max_chars);
+	char *format = apr_pcalloc(r->pool,max_chars);
+	char *time = apr_pcalloc(r->pool,max_chars);
 
 	getParam(args,"service",service);
 	getParam(args,"request",request);
@@ -1060,12 +1063,12 @@ char *order_args(request_rec *r) {
 	// check if TWMS or WMTS
 	if ((strcasecmp (service, "WMTS") == 0) && (strcasecmp (request, "GetTile") == 0))  {
 		// WMTS specific args
-		char layer[200];
-		char style[10];
-		char tilematrixset[20];
-		char tilematrix[5];
-		char tilerow[5];
-		char tilecol[5];
+		char *layer = apr_pcalloc(r->pool,max_chars);
+		char *style = apr_pcalloc(r->pool,max_chars);
+		char *tilematrixset = apr_pcalloc(r->pool,max_chars);
+		char *tilematrix = apr_pcalloc(r->pool,max_chars);
+		char *tilerow = apr_pcalloc(r->pool,max_chars);
+		char *tilecol = apr_pcalloc(r->pool,max_chars);
 
 		getParam(args,"layer",layer);
 		getParam(args,"style",style);
@@ -1098,16 +1101,16 @@ char *order_args(request_rec *r) {
 
 	} else if (strcasecmp (request, "GetMap") == 0) { //assume WMS/TWMS
 		//WMS specific args
-		char layers[200];
-		char srs[20];
-		char styles[20];
-		char width[5];
-		char height[5];
-		char bbox[20];
-		char transparent[10];
-		char bgcolor[10];
-		char exceptions[10];
-		char elevation[10];
+		char *layers = apr_pcalloc(r->pool,max_chars);
+		char *srs = apr_pcalloc(r->pool,max_chars);
+		char *styles = apr_pcalloc(r->pool,max_chars);
+		char *width = apr_pcalloc(r->pool,max_chars);
+		char *height = apr_pcalloc(r->pool,max_chars);
+		char *bbox = apr_pcalloc(r->pool,max_chars);
+		char *transparent = apr_pcalloc(r->pool,max_chars);
+		char *bgcolor = apr_pcalloc(r->pool,max_chars);
+		char *exceptions = apr_pcalloc(r->pool,max_chars);
+		char *elevation = apr_pcalloc(r->pool,max_chars);
 
 		getParam(args,"layers",layers);
 		getParam(args,"srs",srs);
@@ -1152,27 +1155,27 @@ static void specify_error(request_rec *r)
 	max_chars = strlen(r->args) + 1;
 
 	// don't worry about performance with error cases
-	char *layer = (char *)malloc(sizeof(char) *max_chars);
-	char *layer_reg = (char *)malloc(sizeof(char) *max_chars);
-	char *layer_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *version = (char *)malloc(sizeof(char) *max_chars);
-	char *version_reg = (char *)malloc(sizeof(char) *max_chars);
-	char *version_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *style = (char *)malloc(sizeof(char) *max_chars);
-	char *style_reg = (char *)malloc(sizeof(char) *max_chars);
-	char *style_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *tilematrixset = (char *)malloc(sizeof(char) *max_chars);
-	char *tilematrixset_reg = (char *)malloc(sizeof(char) *max_chars);
-	char *tilematrixset_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *tilematrix = (char *)malloc(sizeof(char) *max_chars);
-	char *tilematrix_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *tilerow = (char *)malloc(sizeof(char) *max_chars);
-	char *tilerow_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *tilecol = (char *)malloc(sizeof(char) *max_chars);
-	char *tilecol_mes = (char *)malloc(sizeof(char) *max_chars);
-	char *format = (char *)malloc(sizeof(char) *max_chars);
-	char *format_reg = (char *)malloc(sizeof(char) *max_chars);
-	char *format_mes = (char *)malloc(sizeof(char) *max_chars);
+	char *layer = apr_pcalloc(r->pool,max_chars);
+	char *layer_reg = apr_pcalloc(r->pool,max_chars);
+	char *layer_mes = apr_pcalloc(r->pool,max_chars);
+	char *version = apr_pcalloc(r->pool,max_chars);
+	char *version_reg = apr_pcalloc(r->pool,max_chars);
+	char *version_mes = apr_pcalloc(r->pool,max_chars);
+	char *style = apr_pcalloc(r->pool,max_chars);
+	char *style_reg = apr_pcalloc(r->pool,max_chars);
+	char *style_mes = apr_pcalloc(r->pool,max_chars);
+	char *tilematrixset = apr_pcalloc(r->pool,max_chars);
+	char *tilematrixset_reg = apr_pcalloc(r->pool,max_chars);
+	char *tilematrixset_mes = apr_pcalloc(r->pool,max_chars);
+	char *tilematrix = apr_pcalloc(r->pool,max_chars);
+	char *tilematrix_mes = apr_pcalloc(r->pool,max_chars);
+	char *tilerow = apr_pcalloc(r->pool,max_chars);
+	char *tilerow_mes = apr_pcalloc(r->pool,max_chars);
+	char *tilecol = apr_pcalloc(r->pool,max_chars);
+	char *tilecol_mes = apr_pcalloc(r->pool,max_chars);
+	char *format = apr_pcalloc(r->pool,max_chars);
+	char *format_reg = apr_pcalloc(r->pool,max_chars);
+	char *format_mes = apr_pcalloc(r->pool,max_chars);
 
 	getParam(args,"layer",layer);
 	getParam(args,"version",version);
@@ -1223,8 +1226,8 @@ static void specify_error(request_rec *r)
 			if (strcasecmp (tilematrixset, tilematrixset_reg) == 0) {
 				tilematrixset_match++;
 			}
-			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
-			"Parameter: %s Reg: %s",format, format_reg);
+//			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
+//			"Parameter: %s Reg: %s",format, format_reg);
 		}
 
 	}
@@ -1495,7 +1498,7 @@ static int mrf_handler(request_rec *r)
 			day--; // check yesterday (one day slack for current date)
 			if (day==0)
 				day = 365; // forget about leap years
-			char strday[4];
+			char *strday = apr_pcalloc(r->pool,4);
 			sprintf(strday, "%d", day);
 			if (day < 100) {
 				timepart[0]=*"0";
@@ -1507,7 +1510,7 @@ static int mrf_handler(request_rec *r)
 				timepart[2] = strday[2];
 			}
 			// DEBUG
-			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Previous date filename: %s", fname);
+//			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Previous date filename: %s", fname);
 
 			// read file using previous date
 			this_record=r_file_pread(r,fname,sizeof(index_s),offset);
