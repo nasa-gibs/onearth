@@ -1,3 +1,5 @@
+**This software was originally developed at the Jet Propulsion Laboratory as Tiled WMS (https://github.com/nasajpl/tiledwms).  OnEarth is now the latest actively developed version.**
+
 ## OnEarth
 ### NASA Global Imagery Browse Services (GIBS)
 
