@@ -152,7 +152,7 @@ char *tstamp_fname(request_rec *r,char *fname)
     if ('-'==*targ) targ++;
     day=apr_atoi64(targ);
 
-    if ((year)&&(month)&&(day)) { // We do have a time stamp
+    if ((year>0)&&(month>0)&&(day>0)) { // We do have a time stamp
       static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
       int leap=(year%4)?0:((year%400)?((year%100)?1:0):1);
       sprintf(fnloc,"%04d%03d",year,day+moffset[month-1]+((month>2)?leap:0));
@@ -208,7 +208,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		tm.tm_mday=apr_atoi64(targ);
     } else {
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
-		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format");
+		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format (must be YYYY-MM-DD)");
     	return 0;
     }
 	if ((tm.tm_year)&&(tm.tm_mon)&&(tm.tm_mday)) { // We do have a time stamp
@@ -1226,8 +1226,6 @@ static void specify_error(request_rec *r)
 			if (strcasecmp (tilematrixset, tilematrixset_reg) == 0) {
 				tilematrixset_match++;
 			}
-//			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
-//			"Parameter: %s Reg: %s",format, format_reg);
 		}
 
 	}
@@ -1306,12 +1304,10 @@ static void specify_error(request_rec *r)
 	if ((targ=ap_strcasestr(r->args,timearg))) {
 		targ+=5; // Skip the time= part
 		if (!(strlen(targ)==10 || strlen(targ)==0)) {
-			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
-			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format");
+			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid TIME format: %s",targ);
+			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format (must be YYYY-MM-DD)");
 		}
 	}
-
-	// free memory
 
 }
 
