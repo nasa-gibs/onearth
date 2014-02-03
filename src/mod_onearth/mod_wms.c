@@ -1243,7 +1243,7 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
 	}
 	else if (version_match==0 && layer_match>0) {
-		sprintf(version_mes,"VERSION=%s is invalid for LAYER=%s",version, layer);
+		sprintf(version_mes,"LAYER=%s does not exist for VERSION=%s",layer, version);
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
 	}
 	// STYLE
