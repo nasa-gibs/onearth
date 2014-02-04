@@ -1194,8 +1194,9 @@ static void specify_error(request_rec *r)
 	int count;
 	count=cfg->caches->count;
 
-	int layer_match = 0;
 	int version_match = 0;
+	int layer_match = 0;
+	int layer_version_match = 0;
 	int style_match = 0;
 	int format_match = 0;
 	int tilematrixset_match = 0;
@@ -1215,7 +1216,7 @@ static void specify_error(request_rec *r)
 			layer_match++;
 
 			if (strcasecmp (version, version_reg) == 0) {
-				version_match++;
+				layer_version_match++;
 			}
 			if (strcasecmp (style, style_reg) == 0) {
 				style_match++;
@@ -1228,8 +1229,20 @@ static void specify_error(request_rec *r)
 			}
 		}
 
+		if (strcasecmp (version, version_reg) == 0) {
+			version_match++;
+		}
+
 	}
 
+	// VERSION
+	if (version[0]=='\0') {
+		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
+	}
+	else if (version_match==0) {
+		sprintf(version_mes,"VERSION=%s is invalid", version);
+		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
+	}
 	// LAYER
 	if (layer[0]=='\0') {
 		wmts_add_error(r,400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
@@ -1238,11 +1251,7 @@ static void specify_error(request_rec *r)
 		sprintf(layer_mes,"LAYER %s does not exist",layer);
 		wmts_add_error(r,400,"InvalidParameterValue","LAYER", layer_mes);
 	}
-	// VERSION
-	if (version[0]=='\0') {
-		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
-	}
-	else if (version_match==0 && layer_match>0) {
+	else if (version[0]!='\0' && layer_version_match==0 && layer_match>0 && version_match>0) {
 		sprintf(version_mes,"LAYER=%s does not exist for VERSION=%s",layer, version);
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
 	}
