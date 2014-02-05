@@ -1097,7 +1097,7 @@ char *order_args(request_rec *r) {
 			style[0] = '\0';
 		}
 
-		sprintf(args,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time);
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time,NULL);
 
 	} else if (strcasecmp (request, "GetMap") == 0) { //assume WMS/TWMS
 		//WMS specific args
@@ -1123,12 +1123,12 @@ char *order_args(request_rec *r) {
 		getParam(args,"exceptions",exceptions);
 		getParam(args,"elevation",elevation);
 
-		sprintf(args,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,request,layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
+		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,request,layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time,NULL);
 
 	} else if (strcasecmp (request, "GetCapabilities") == 0) { // getCapabilities
-		sprintf(args,"request=GetCapabilities");
+		args = apr_psprintf(r->pool, "request=GetCapabilities");
 	} else if (strcasecmp (request, "GetTileService") == 0) { // getTileService
-		sprintf(args,"request=GetTileService");
+		args = apr_psprintf(r->pool, "request=GetTileService");
 	} else if (service[0]=='\0') { // missing WMTS service
 		wmts_add_error(r,400,"MissingParameterValue","SERVICE", "Missing SERVICE parameter");
 	} else if (strcasecmp (service, "WMTS") != 0) { // unrecognized service
