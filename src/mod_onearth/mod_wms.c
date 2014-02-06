@@ -312,7 +312,6 @@ static int wmts_return_all_errors(request_rec *r)
 
 	int i;
 	for(i = 0; i < errors; i++)
-//	for(i = 0; wmts_errors[i].exceptionCode != ((void *) 0); i++)
 	{
 		wmts_error error = wmts_errors[i];
 
@@ -1010,7 +1009,7 @@ static int kml_handler (request_rec *r)
 }
 
 void getParam(char *args, char *Name, char *Value) {
-	char *pos1 = strcasestr(args, Name);
+	char *pos1 = ap_strcasestr(args, Name);
 
 	if (pos1) {
 		pos1 += strlen(Name);
@@ -1054,14 +1053,14 @@ char *order_args(request_rec *r) {
 	getParam(args,"time",time);
 
 	// fix format slash
-	if (strcasecmp (format, "image/png") == 0) {
+	if (ap_strcasecmp_match(format, "image/png") == 0) {
 		strcpy(format,"image%2Fpng");
-	} else if (strcasecmp (format, "image/jpeg") == 0) {
+	} else if (ap_strcasecmp_match(format, "image/jpeg") == 0) {
 		strcpy(format,"image%2Fjpeg");
 	}
 
 	// check if TWMS or WMTS
-	if ((strcasecmp (service, "WMTS") == 0) && (strcasecmp (request, "GetTile") == 0))  {
+	if ((ap_strcasecmp_match(service, "WMTS") == 0) && (ap_strcasecmp_match(request, "GetTile") == 0))  {
 		// WMTS specific args
 		char *layer = apr_pcalloc(r->pool,max_chars);
 		char *style = apr_pcalloc(r->pool,max_chars);
@@ -1078,7 +1077,7 @@ char *order_args(request_rec *r) {
 
 		// need to ignore occurrence of tilematrix in tilematrixset - replace only one char for optimal performance
 		if (tilematrixset[0]!='\0') {
-			char *pos1 = strcasestr(args, "tilematrixset");
+			char *pos1 = ap_strcasestr(args, "tilematrixset");
 			*pos1 = 1;
 			getParam(args,"tilematrix",tilematrix);
 			if (tilematrix[0]=='\0') { // return error if not exist
@@ -1093,13 +1092,13 @@ char *order_args(request_rec *r) {
 		}
 
 		// GIBS-273 handle style=default, treat as empty. We don't need this if done in the layer regex pattern.
-		if (strcasecmp (style, "default") == 0) {
+		if (ap_strcasecmp_match(style, "default") == 0) {
 			style[0] = '\0';
 		}
 
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time,NULL);
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time);
 
-	} else if (strcasecmp (request, "GetMap") == 0) { //assume WMS/TWMS
+	} else if (ap_strcasecmp_match(request, "GetMap") == 0) { //assume WMS/TWMS
 		//WMS specific args
 		char *layers = apr_pcalloc(r->pool,max_chars);
 		char *srs = apr_pcalloc(r->pool,max_chars);
@@ -1123,15 +1122,15 @@ char *order_args(request_rec *r) {
 		getParam(args,"exceptions",exceptions);
 		getParam(args,"elevation",elevation);
 
-		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,request,layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time,NULL);
+		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,request,layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
 
-	} else if (strcasecmp (request, "GetCapabilities") == 0) { // getCapabilities
+	} else if (ap_strcasecmp_match(request, "GetCapabilities") == 0) { // getCapabilities
 		args = apr_psprintf(r->pool, "request=GetCapabilities");
-	} else if (strcasecmp (request, "GetTileService") == 0) { // getTileService
+	} else if (ap_strcasecmp_match(request, "GetTileService") == 0) { // getTileService
 		args = apr_psprintf(r->pool, "request=GetTileService");
 	} else if (service[0]=='\0') { // missing WMTS service
 		wmts_add_error(r,400,"MissingParameterValue","SERVICE", "Missing SERVICE parameter");
-	} else if (strcasecmp (service, "WMTS") != 0) { // unrecognized service
+	} else if (ap_strcasecmp_match(service, "WMTS") != 0) { // unrecognized service
 		wmts_add_error(r,400,"InvalidParameterValue","SERVICE", "Unrecognized service");
 	} else { // invalid REQUEST value
 		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
@@ -1186,7 +1185,7 @@ static void specify_error(request_rec *r)
 	getParam(args,"tilematrixset",tilematrixset);
 	if (tilematrixset[0]!='\0') {
 		// ignore first occurrence of tilematrix in tilematrixset
-		char *pos1 = strcasestr(args, "tilematrixset");
+		char *pos1 = ap_strcasestr(args, "tilematrixset");
 		*pos1 = 1;
 		getParam(args,"tilematrix",tilematrix);
 	}
@@ -1212,24 +1211,24 @@ static void specify_error(request_rec *r)
 		getParam(cache->pattern,"format",format_reg);
 		getParam(cache->pattern,"tilematrixset",tilematrixset_reg);
 
-		if (strcasecmp (layer, layer_reg) == 0) {
+		if (ap_strcasecmp_match(layer, layer_reg) == 0) {
 			layer_match++;
 
-			if (strcasecmp (version, version_reg) == 0) {
+			if (ap_strcasecmp_match(version, version_reg) == 0) {
 				layer_version_match++;
 			}
-			if (strcasecmp (style, style_reg) == 0) {
+			if (ap_strcasecmp_match(style, style_reg) == 0) {
 				style_match++;
 			}
-			if (strcasecmp (format, format_reg) == 0) {
+			if (ap_strcasecmp_match(format, format_reg) == 0) {
 				format_match++;
 			}
-			if (strcasecmp (tilematrixset, tilematrixset_reg) == 0) {
+			if (ap_strcasecmp_match(tilematrixset, tilematrixset_reg) == 0) {
 				tilematrixset_match++;
 			}
 		}
 
-		if (strcasecmp (version, version_reg) == 0) {
+		if (ap_strcasecmp_match(version, version_reg) == 0) {
 			version_match++;
 		}
 
@@ -1373,7 +1372,7 @@ static int mrf_handler(request_rec *r)
   // No match?
   if (-1==count) {
     if (r->connection->local_addr->port==80) {
-    	if (strcasecmp (r->args, "request=GetCapabilities") == 0) {
+    	if (ap_strcasecmp_match(r->args, "request=GetCapabilities") == 0) {
         	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
     	} else {
     		if (errors==0) {
@@ -1417,7 +1416,7 @@ static int mrf_handler(request_rec *r)
       if ((WMSlevel *)1==level) { // Malformed bbox
 	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server, "Sending error, bad bbox");
 	return wms_return_error(r,
-	  "WMS parameter bbox format incorect");
+	  "WMS parameter bbox format incorrect");
       }
 
       if ((WMSlevel *)2==level) { // Too far from bin level
@@ -1495,7 +1494,7 @@ static int mrf_handler(request_rec *r)
 		perror("Index read error: ");
 
 		// safe to assume invalid date?
-		char *timepart = strcasestr(fname, "_.");
+		char *timepart = ap_strcasestr(fname, "_.");
 
 		if (timepart) {
 			timepart = timepart-3;
