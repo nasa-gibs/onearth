@@ -211,7 +211,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format (must be YYYY-MM-DD)");
     	return 0;
     }
-	if ((tm.tm_year)&&(tm.tm_mon)&&(tm.tm_mday)) { // We do have a time stamp
+	if ((tm.tm_year>0)&&(tm.tm_mon>0)&&(tm.tm_mday>0)) { // We do have a time stamp
 	  static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
 	  int leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
 	  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
@@ -1174,11 +1174,8 @@ static void specify_error(request_rec *r)
 	char *tilematrixset_reg = apr_pcalloc(r->pool,max_chars);
 	char *tilematrixset_mes = apr_pcalloc(r->pool,max_chars);
 	char *tilematrix = apr_pcalloc(r->pool,max_chars);
-	char *tilematrix_mes = apr_pcalloc(r->pool,max_chars);
 	char *tilerow = apr_pcalloc(r->pool,max_chars);
-	char *tilerow_mes = apr_pcalloc(r->pool,max_chars);
 	char *tilecol = apr_pcalloc(r->pool,max_chars);
-	char *tilecol_mes = apr_pcalloc(r->pool,max_chars);
 	char *format = apr_pcalloc(r->pool,max_chars);
 	char *format_reg = apr_pcalloc(r->pool,max_chars);
 	char *format_mes = apr_pcalloc(r->pool,max_chars);
@@ -1246,7 +1243,7 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
 	}
 	else if (version_match==0) {
-		sprintf(version_mes,"VERSION=%s is invalid", version);
+		version_mes = apr_psprintf(r->pool, "VERSION=%s is invalid", version);
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
 	}
 	// LAYER
@@ -1254,16 +1251,16 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
 	}
 	else if (layer_match==0) {
-		sprintf(layer_mes,"LAYER %s does not exist",layer);
+		layer_mes = apr_psprintf(r->pool, "LAYER %s does not exist",layer);
 		wmts_add_error(r,400,"InvalidParameterValue","LAYER", layer_mes);
 	}
 	else if (version[0]!='\0' && layer_version_match==0 && layer_match>0 && version_match>0) {
-		sprintf(version_mes,"LAYER=%s does not exist for VERSION=%s",layer, version);
+		version_mes = apr_psprintf(r->pool, "LAYER=%s does not exist for VERSION=%s",layer, version);
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
 	}
 	// STYLE
 	if (style_match==0 && style[0]!='\0' && layer_match>0) {
-		sprintf(style_mes,"STYLE=%s is invalid for LAYER=%s",style, layer);
+		style_mes = apr_psprintf(r->pool, "STYLE=%s is invalid for LAYER=%s",style, layer);
 		wmts_add_error(r,400,"InvalidParameterValue","STYLE", style_mes);
 	}
 	// FORMAT
@@ -1271,7 +1268,7 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","FORMAT", "Missing FORMAT parameter");
 	}
 	else if (format_match==0 && layer_match>0) {
-		sprintf(format_mes,"FORMAT=%s is invalid for LAYER=%s",format, layer);
+		format_mes = apr_psprintf(r->pool, "FORMAT=%s is invalid for LAYER=%s",format, layer);
 		wmts_add_error(r,400,"InvalidParameterValue","FORMAT", format_mes);
 	}
 	// TILEMATRIXSET
@@ -1279,15 +1276,14 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
 	}
 	else if (tilematrixset_match==0 && layer_match>0) {
-		sprintf(tilematrixset_mes,"TILEMATRIXSET=%s is invalid for LAYER=%s",tilematrixset, layer);
+		tilematrixset_mes = apr_psprintf(r->pool, "TILEMATRIXSET=%s is invalid for LAYER=%s",tilematrixset, layer);
 		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIXSET", tilematrixset_mes);
 	}
 	// TILEMATRIX
    while (*tilematrix)
    {
 	  if (!isdigit(*tilematrix)) {
-		  sprintf(tilematrix_mes,"TILEMATRIX is not a valid integer");
-		  wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", tilematrix_mes);
+		  wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", "TILEMATRIX is not a valid integer");
 		  break;
 	  } else
 		  ++tilematrix;
@@ -1296,8 +1292,7 @@ static void specify_error(request_rec *r)
    while (*tilerow)
    {
 	  if (!isdigit(*tilerow)) {
-		  sprintf(tilerow_mes,"TILEROW is not a valid integer");
-		  wmts_add_error(r,400,"InvalidParameterValue","TILEROW", tilerow_mes);
+		  wmts_add_error(r,400,"InvalidParameterValue","TILEROW", "TILEROW is not a valid integer");
 		  break;
 	  } else
 		  ++tilerow;
@@ -1306,8 +1301,7 @@ static void specify_error(request_rec *r)
    while (*tilecol)
    {
 	  if (!isdigit(*tilecol)) {
-		  sprintf(tilecol_mes,"TILECOL is not a valid integer");
-		  wmts_add_error(r,400,"InvalidParameterValue","TILECOL", tilecol_mes);
+		  wmts_add_error(r,400,"InvalidParameterValue","TILECOL", "TILECOL is not a valid integer");
 		  break;
 	  } else
 		  ++tilecol;
@@ -1498,7 +1492,7 @@ static int mrf_handler(request_rec *r)
 		ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
 					 "Can't get index record from %s Based on %s",
 			 fname,r->args);
-		perror("Index read error: ");
+//		perror("Index read error: ");
 
 		// safe to assume invalid date?
 		char *timepart = ap_strcasestr(fname, "_.");
@@ -1510,7 +1504,7 @@ static int mrf_handler(request_rec *r)
 			if (day==0)
 				day = 365; // forget about leap years
 			char *strday = apr_pcalloc(r->pool,4);
-			sprintf(strday, "%d", day);
+			strday = apr_psprintf(r->pool, "%d", day);
 			if (day < 100) {
 				timepart[0]=*"0";
 				timepart[1] = strday[0];
