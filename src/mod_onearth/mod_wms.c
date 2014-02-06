@@ -1096,7 +1096,7 @@ char *order_args(request_rec *r) {
 			style[0] = '\0';
 		}
 
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s",service,request,version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time);
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s","WMTS","GetTile",version,layer,style,tilematrixset,tilematrix,tilerow,tilecol,format,time);
 
 	} else if (ap_strcasecmp_match(request, "GetMap") == 0) { //assume WMS/TWMS
 		//WMS specific args
@@ -1122,7 +1122,7 @@ char *order_args(request_rec *r) {
 		getParam(args,"exceptions",exceptions);
 		getParam(args,"elevation",elevation);
 
-		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,request,layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
+		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,"GetMap",layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
 
 	} else if (ap_strcasecmp_match(request, "GetCapabilities") == 0) { // getCapabilities
 		args = apr_psprintf(r->pool, "request=GetCapabilities");
@@ -1152,6 +1152,13 @@ static void specify_error(request_rec *r)
 	char *args = r->args;
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
+
+	// make sure it's WMTS
+	char *service = apr_pcalloc(r->pool,max_chars);
+	getParam(args,"service",service);
+	if (ap_strcasecmp_match(service, "WMTS") != 0) {
+		return;
+	}
 
 	// don't worry about performance with error cases
 	char *layer = apr_pcalloc(r->pool,max_chars);
@@ -1211,24 +1218,24 @@ static void specify_error(request_rec *r)
 		getParam(cache->pattern,"format",format_reg);
 		getParam(cache->pattern,"tilematrixset",tilematrixset_reg);
 
-		if (ap_strcasecmp_match(layer, layer_reg) == 0) {
+		if (ap_strcmp_match(layer, layer_reg) == 0) {
 			layer_match++;
 
-			if (ap_strcasecmp_match(version, version_reg) == 0) {
+			if (ap_strcmp_match(version, version_reg) == 0) {
 				layer_version_match++;
 			}
-			if (ap_strcasecmp_match(style, style_reg) == 0) {
+			if (ap_strcmp_match(style, style_reg) == 0) {
 				style_match++;
 			}
-			if (ap_strcasecmp_match(format, format_reg) == 0) {
+			if (ap_strcmp_match(format, format_reg) == 0) {
 				format_match++;
 			}
-			if (ap_strcasecmp_match(tilematrixset, tilematrixset_reg) == 0) {
+			if (ap_strcmp_match(tilematrixset, tilematrixset_reg) == 0) {
 				tilematrixset_match++;
 			}
 		}
 
-		if (ap_strcasecmp_match(version, version_reg) == 0) {
+		if (ap_strcmp_match(version, version_reg) == 0) {
 			version_match++;
 		}
 
@@ -1375,12 +1382,12 @@ static int mrf_handler(request_rec *r)
     	if (ap_strcasecmp_match(r->args, "request=GetCapabilities") == 0) {
         	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
     	} else {
-    		if (errors==0) {
-    			specify_error(r);
+			specify_error(r);
+    		if (errors > 0) {
     			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
         			"Unhandled %s%s?%s",r->hostname,r->uri,r->args);
+            	return wmts_return_all_errors(r);
     		}
-    		return wmts_return_all_errors(r);
     	}
     }
 	else
