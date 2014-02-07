@@ -1128,6 +1128,8 @@ char *order_args(request_rec *r) {
 		args = apr_psprintf(r->pool, "request=GetCapabilities");
 	} else if (ap_strcasecmp_match(request, "GetTileService") == 0) { // getTileService
 		args = apr_psprintf(r->pool, "request=GetTileService");
+	} else if ( ap_strcasestr(r->args,"layers") != 0) { // is KML
+//    	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting KML");
 	} else if (service[0]=='\0') { // missing WMTS service
 		wmts_add_error(r,400,"MissingParameterValue","SERVICE", "Missing SERVICE parameter");
 	} else if (ap_strcasecmp_match(service, "WMTS") != 0) { // unrecognized service
@@ -1520,7 +1522,8 @@ static int mrf_handler(request_rec *r)
 			// read file using previous date
 			this_record=r_file_pread(r,fname,sizeof(index_s),offset);
 			if (!this_record && day!=-1) // also checks for valid TIME format
-				wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
+				if (ap_strstr(r->args,WMTS_marker)) // don't return error for TWMS/KML
+					wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
 		} else {
 			wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
 		}
