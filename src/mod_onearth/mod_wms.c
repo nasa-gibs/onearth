@@ -643,6 +643,14 @@ static apr_off_t wmts_get_index_offset(request_rec *r, WMSlevel *level)
  if (x<0 || x>=level->xcount || y<0 || y>=level->ycount ) {
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Col or Row overflow, max values are %d and %d, %s ",
     	level->xcount-1, level->ycount-1, r->args);
+    if (x<0 || x>=level->xcount) {
+    	char *tilecol_mes = apr_psprintf(r->pool, "TILECOL is out of range, maximum value is %d",level->xcount-1);
+    	wmts_add_error(r,400,"TileOutOfRange","TILECOL", tilecol_mes);
+    }
+    if (y<0 || y>=level->ycount) {
+    	char *tilerow_mes = apr_psprintf(r->pool, "TILEROW is out of range, maximum value is %d",level->ycount-1);
+    	wmts_add_error(r,400,"TileOutOfRange","TILEROW", tilerow_mes);
+    }
     return -1;
  }
 // int level_int = level->index_add + sizeof(index_s) * (y*level->xcount+x);
@@ -1479,7 +1487,7 @@ static int mrf_handler(request_rec *r)
 
     offset=wmts_get_index_offset(r,level);
     if (0>offset) 
-    	return DECLINED;
+    	return wmts_return_all_errors(r);
   }
 
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
