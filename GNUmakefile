@@ -168,7 +168,7 @@ mod_onearth-artifact: mod_onearth-clean
 	rm -rf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,mod_onearth-$(MOD_ONEARTH_VERSION)/," \
-		src/mod_onearth src/Sites src/pyline/empty_tiles src/cgi \
+		src/mod_onearth src/layer_config src/pyline/empty_tiles src/cgi \
 		src/demo GNUmakefile
 
 #-----------------------------------------------------------------------------
