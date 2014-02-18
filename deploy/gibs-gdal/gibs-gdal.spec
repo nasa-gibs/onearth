@@ -1,7 +1,7 @@
 %global gdal_version 1.10.1
-%global gdal_release 2%{?dist}
-%global mrf_version 1.1.1
-%global mrf_release 2%{?dist}
+%global gdal_release 3%{?dist}
+%global mrf_version 0.2.4
+%global mrf_release 1%{?dist}
 
 Name:		gibs-gdal
 Version:	%{gdal_version}
@@ -140,6 +140,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Feb 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.10.1-3
+- Changed MRF version to 0.2.4 to be consistent with project release
+
 * Thu Sep 4 2013 Mike McGann <mike.mcgann@nasa.gov> - 1.10.1-2
 - Rebuild with PostgreSQL 9.2 and Expat support
 - Added correct Obsoletes/Provides for devel package
