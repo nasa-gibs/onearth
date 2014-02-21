@@ -18,4 +18,5 @@
  <EndDate>2013-11-04</EndDate>
  <WMTSEndPoint>wmts-geo</WMTSEndPoint>
  <TWMSEndPoint>twms-geo</TWMSEndPoint>
+ <SLD>http://map1.vis.earthdata.nasa.gov/sld/sample.sld</SLD>
 </LayerConfiguration>
