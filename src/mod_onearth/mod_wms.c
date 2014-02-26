@@ -1317,17 +1317,6 @@ static void specify_error(request_rec *r)
 		  ++tilecol;
    }
 
-	// check for correct time format
-	static char* timearg="time=";
-	char *targ=0;
-	if ((targ=ap_strcasestr(r->args,timearg))) {
-		targ+=5; // Skip the time= part
-		if (!(strlen(targ)==10 || strlen(targ)==0)) {
-			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid TIME format: %s",targ);
-			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format (must be YYYY-MM-DD)");
-		}
-	}
-
 }
 
 static int mrf_handler(request_rec *r)
@@ -1370,6 +1359,11 @@ static int mrf_handler(request_rec *r)
   r->args=order_args(r);
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
+
+  // short-circuit if there is already a problem
+  if (errors > 0) {
+	  return wmts_return_all_errors(r);
+  }
 
   // Count is the number of caches
   while (count--) {
