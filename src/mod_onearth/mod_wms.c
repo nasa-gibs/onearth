@@ -224,8 +224,8 @@ static void *r_file_pread(request_rec *r, char *fname,
 		  sprintf(yearloc,"%04d",tm.tm_year+1900); // replace YYYY with actual year
 		  *(yearloc+4)=old_char;
 	  }
-	} else {
-    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+	} else if (tm.tm_year>0) { // Needs to know if there is at least a time value somehow
+    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format");
 		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format (must be YYYY-MM-DD)");
     	return 0;
     }
