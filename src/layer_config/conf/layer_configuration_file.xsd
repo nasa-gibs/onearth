@@ -18,6 +18,7 @@
         <xs:element ref="EndDate" minOccurs="0"/>
         <xs:element ref="WMTSEndPoint"/>
         <xs:element ref="TWMSEndPoint"/>
+        <xs:element ref="SLD" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -44,4 +45,5 @@
   <xs:element name="EndDate" type="xs:date" nillable="true"/>
   <xs:element name="WMTSEndPoint" type="xs:NCName"/>
   <xs:element name="TWMSEndPoint" type="xs:NCName"/>
+  <xs:element name="SLD" type="xs:string" nillable="true"/>
 </xs:schema>

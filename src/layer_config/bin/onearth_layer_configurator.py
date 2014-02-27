@@ -47,6 +47,7 @@
  <EndDate>2013-11-04</EndDate>
  <WMTSEndPoint>wmts-geo</WMTSEndPoint>
  <TWMSEndPoint>twms-geo</TWMSEndPoint>
+ <SLD>http://map1.vis.earthdata.nasa.gov/sld/sample.sld</SLD>
 </LayerConfiguration>
 '''
 #
@@ -341,6 +342,10 @@ for conf in conf_files:
         except IndexError:
             startDate = None
             endDate = None
+        try:
+            sld = get_dom_tag_value(dom, 'SLD')
+        except IndexError:
+            sld = None
             
         # Patterns
         patterns = []
@@ -374,6 +379,8 @@ for conf in conf_files:
         log_info_mssg('config: EndDate: ' + str(endDate))
     log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
+    if sld:
+        log_info_mssg('config: SLD: ' + str(sld))
     log_info_mssg('config: Patterns: ' + str(patterns))
     
     # Modify MRF Archetype
@@ -423,6 +430,11 @@ for conf in conf_files:
         endDateElement = mrf_dom.createElement('EndDate')
         endDateElement.appendChild(mrf_dom.createTextNode(endDate))
         twms.appendChild(twms.appendChild(endDateElement))
+
+    if sld:
+        metadataElement = mrf_dom.createElement('Metadata')
+        metadataElement.appendChild(mrf_dom.createTextNode(sld))
+        twms.appendChild(twms.appendChild(metadataElement))
     
     patternElements = []
     for pattern in patterns:
@@ -446,7 +458,7 @@ for conf in conf_files:
     lines = new_mrf_file.readlines()
     lines[0] = '<MRF_META>\n'
     lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n\t').replace('</Levels>','</Levels>\n\t').replace('<Pattern>','\n\t<Pattern>'). \
-        replace('<StartDate>','\n\t<StartDate>').replace('<EndDate>','\n\t<EndDate>').replace('</TWMS>','\n</TWMS>\n'). \
+        replace('<StartDate>','\n\t<StartDate>').replace('<EndDate>','\n\t<EndDate>').replace('<Metadata>','\n\t<Metadata>').replace('</TWMS>','\n</TWMS>\n'). \
         replace('</MRF_META>','\n</MRF_META>\n') #get_mrfs is picky about line breaks
     
     new_mrf_file.seek(0)

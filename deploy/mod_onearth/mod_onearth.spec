@@ -1,5 +1,5 @@
 Name:		mod_onearth
-Version:	0.2.4
+Version:	0.2.5
 Release:	0.1%{?dist}
 Summary:	Apache module for OnEarth
 
@@ -87,6 +87,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Feb 26 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.2.5-1
+- Changed the version to 0.2.5
+
 * Tue Feb 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.2.4-1
 - Changed the version to 0.2.4 to be consistent with project release
 
