@@ -21,18 +21,18 @@ img_info::img_info(GDALDatasetH hDS) {
     res.y=adfGT[5];
 }
 
+
 static bool outside_bounds(const Bounds &inside,const Bounds &outside) {
     return (
-        (inside.lx<outside.lx) ||
-        (inside.ux>outside.ux) ||
-        (inside.ly<outside.ly) ||
-        (inside.uy>outside.uy)
+        (inside.lx < outside.lx && !CPLIsEqual(inside.lx, outside.lx) ) ||
+        (inside.ux > outside.ux && !CPLIsEqual(inside.ux, outside.ux) ) ||
+        (inside.ly < outside.ly && !CPLIsEqual(inside.ly, outside.ly) ) ||
+        (inside.uy > outside.uy && !CPLIsEqual(inside.uy, outside.uy) )
         );
 }
 
 // Insert the target in the base level
 bool state::patch() {
-
     if (TargetName.empty())
         return false;
 
@@ -95,7 +95,7 @@ bool state::patch() {
         if (verbose>0)
             cerr << "Out " << out_img.bbox << endl << "In " << in_img.bbox << endl;
 
-        if (outside_bounds(in_img.bbox,out_img.bbox)) {
+        if (outside_bounds(in_img.bbox, out_img.bbox)) {
             CPLError(CE_Failure,CPLE_AppDefined,"Input patch outside of target");
             throw 2;
         }
@@ -112,9 +112,10 @@ bool state::patch() {
         int line_size=tsz_x*pixel_size; // A line has this many bytes
         int buffer_size=line_size*tsz_y; // A block size in bytes
 
-        // This should be almost equal really, disable it until then
-        if (0)
-        if ((in_img.res.x != out_img.res.x) || (in_img.res.y != out_img.res.y)){
+        // tolerance of 1/1000 of the resolution
+        if ( fabs(in_img.res.x - out_img.res.x) * 1000 > out_img.res.x ||
+             fabs(in_img.res.y - out_img.res.y) * 1000 > out_img.res.y )
+        {
             CPLError(CE_Failure,CPLE_AppDefined,"Source and target resolutions don't match");
             throw 2;
         }
@@ -127,17 +128,16 @@ bool state::patch() {
         pix_bbox.uy=int((in_img.bbox.uy-out_img.bbox.uy)/in_img.res.y+0.5);
         pix_bbox.ly=int((in_img.bbox.ly-out_img.bbox.uy)/in_img.res.y+0.5);
         
-        if (verbose>0)
-            cerr << "Pixel location " << pix_bbox << endl;
-        if (verbose>0)
-            cerr << "Factor " << factor.x << "," << factor.y << endl;
+        if (verbose != 0)
+            cerr << "Pixel location " << pix_bbox << endl 
+                 << "Factor " << factor.x << "," << factor.y << endl;
         
         blocks_bbox.lx=int(pix_bbox.lx/tsz_x+0.5);
         blocks_bbox.ly=int(pix_bbox.ly/tsz_y+0.5);
         blocks_bbox.ux=int(pix_bbox.ux/tsz_x+0.5);
         blocks_bbox.uy=int(pix_bbox.uy/tsz_y+0.5);
 
-        if (verbose>0)
+        if (verbose != 0)
             cerr << "Blocks location " << blocks_bbox << endl;
 
         // Build a vector of output bands
@@ -290,8 +290,8 @@ int main(int nArgc, char **papszArgv) {
     
     try {
 
-        // Each input file, one by one, in the sequence they were passed as arguments
-        for (int i=0; i < fnames.size() ; i++ ) {
+        // Each input file in sequence, as they were passed as arguments
+        for (int i=0; i < fnames.size() ; i++) {
             State.setSource(fnames[i]);
 
             // false return means error was detected and printed, just exit
