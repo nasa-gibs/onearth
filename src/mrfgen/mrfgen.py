@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2013, California Institute of Technology.
+# Copyright (c) 2002-2014, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,14 +24,14 @@
 #
 # Example:
 #
-#  pyline.py 
-#   -c pyline_configuration_file.xml 
+#  mrfgen.py 
+#   -c mrfgen_configuration_file.xml 
 #   -s http://localhost:8100/sigevent/events/create
 #
 # Example XML configuration file:
 #
 # <?xml version="1.0" encoding="UTF-8"?>
-# <pyline_configuration>
+# <mrfgen_configuration>
 #  <date_of_data>20120825</date_of_data>
 #  <parameter_name>remss_windsat_l2p_gridded___sst___1440_x_720___night</parameter_name>
 #  <input_dir>~/sst/remss_windsat_l2p_gridded/img/20120825/night/</input_dir>
@@ -44,11 +44,11 @@
 #  <mrf_blocksize>256</mrf_blocksize>
 #  <mrf_compression_type>JPG</mrf_compression_type>
 #  <target_x>65536</target_x>
-# </pyline_configuration>
+# </mrfgen_configuration>
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
 # NASA Jet Propulsion Laboratory
-# 2013
+# 2014
 # Jeffrey.R.Hall@jpl.nasa.gov
 # Joe.T.Roberts@jpl.nasa.gov
 
@@ -296,8 +296,8 @@ def lookupEmptyTile(empty_tile):
 parser=OptionParser()
 parser.add_option('-c', '--configuration_filename',
                   action='store', type='string', dest='configuration_filename',
-                  default='./pyline_configuration_file.xml',
-                  help='Full path of configuration filename.  Default:  ./pyline_configuration_file.xml')
+                  default='./mrfgen_configuration_file.xml',
+                  help='Full path of configuration filename.  Default:  ./mrfgen_configuration_file.xml')
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -386,7 +386,7 @@ current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
 
 # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
 # Files get date_of_date added, links do not.
-basename=str().join([parameter_name, '_', date_of_data, '___', 'pyline_', 
+basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', 
                      current_cycle_time])
 
 # Verify logfile_dir first so that the log can be started.
@@ -432,12 +432,12 @@ log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
 log_info_mssg(str().join(['config resampling:              ', resampling]))
-log_info_mssg(str().join(['pyline current_cycle_time:      ', current_cycle_time]))
-log_info_mssg(str().join(['pyline basename:                ', basename]))
+log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
+log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
 # Verify that date is 8 characters.
 if len(date_of_data) != 8:
-    mssg='Format for <date_of_data> (in pyline XML config file) is:  yyyymmdd'
+    mssg='Format for <date_of_data> (in mrfgen XML config file) is:  yyyymmdd'
     log_sig_exit('ERROR', mssg, sigevent_url)
 
 # Check if empty tile filename was specified.
@@ -478,7 +478,7 @@ log_info_mssg(str().join(['Empty tile size is:             ',
 # Read previous cycle time string value from disk file.  
 # Time format in txt file is "yyyymmdd.hhmmss" and will be treated as a double 
 # precision value for comparing time stamps.
-ptime_filename=str().join([input_dir, 'pyline_previous_cycle_time.txt'])
+ptime_filename=str().join([input_dir, 'mrfgen_previous_cycle_time.txt'])
 ptime_preexisting=glob.glob(ptime_filename)
 # Default setting of zero will result in all tiles being procesed.
 pretime='0.0'
@@ -508,8 +508,8 @@ if pretime == '0.0':
                               ' All tiles will be processed.']))
 else:
     # Send to log.
-    log_info_mssg(str().join(['pyline previous_cycle_time:     ', pretime]))
-    log_info_mssg(str().join(['pyline previous cycle from:     ',
+    log_info_mssg(str().join(['mrfgen previous_cycle_time:     ', pretime]))
+    log_info_mssg(str().join(['mrfgen previous cycle from:     ',
                               ptime_filename]))
 
 ##IS LOCK FILE NECESSARY?
