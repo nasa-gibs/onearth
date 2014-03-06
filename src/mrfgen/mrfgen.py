@@ -20,7 +20,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #
-# Pipeline for converting georeferenced tiles to MRF for Tile-WMS.
+# Pipeline for converting georeferenced tiles to MRF for Tiled-WMS.
 #
 # Example:
 #
@@ -44,6 +44,7 @@
 #  <mrf_blocksize>256</mrf_blocksize>
 #  <mrf_compression_type>JPG</mrf_compression_type>
 #  <target_x>65536</target_x>
+#  <sld></sld>
 # </mrfgen_configuration>
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
@@ -366,6 +367,11 @@ else:
         resampling        =get_dom_tag_value(dom, 'resampling')
     except IndexError:
         resampling = 'nearest'    
+    # SLD
+    try:
+        sld               =get_dom_tag_value(dom, 'sld')
+    except IndexError:
+        sld = ''    
     # Close file.
     config_file.close()
 
@@ -432,6 +438,7 @@ log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
 log_info_mssg(str().join(['config resampling:              ', resampling]))
+log_info_mssg(str().join(['config sld:                     ', sld]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
@@ -769,6 +776,20 @@ if len(modtiles) > 0:
         else:
             mssg='Unrecognized compression type for MRF.'
             log_sig_exit('ERROR', mssg, sigevent_url)
+            
+        # Insert SLD color map into VRT if provided
+        if sld != '':
+            new_vrt_filename = vrt_filename.replace('.vrt','_fromSLD.vrt')
+            # add transparency check
+            sld2vrt_command_list=[os.path.dirname(os.path.abspath(__file__))+'/../sld2vrt.py','-s',sld,'-o',new_vrt_filename,
+                                  '-m',vrt_filename,'-t']
+            log_the_command(sld2vrt_command_list)
+            sld2vrt_stderr_filename=str().join([working_dir, basename,'_sld2vrt_stderr.txt'])
+            sld2vrt_stderr_file=open(sld2vrt_stderr_filename, 'w')
+            subprocess.call(sld2vrt_command_list, stderr=sld2vrt_stderr_file)
+            sld2vrt_stderr_file.close()
+    
+            vrt_filename = new_vrt_filename
 
         # Set the blocksize for gdal_translate (-co NAME=VALUE).
         blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
