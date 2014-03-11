@@ -63,7 +63,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   lutname[0] = '\0';
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<LUT file> -fill=<LUT value> -of=<output palette PNG file> input RGBA PNG file>\n");
+    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<LUT file or ColorMap SLD> -fill=<LUT value> -of=<output palette PNG file> <input RGBA PNG file>\n");
     exit(-1);
   }
 
@@ -226,20 +226,68 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
       redarr[j] = greenarr[j] = bluearr[j] = j;
   } else {
     if ( (lut = fopen(lutname, "r")) != NULL ) {
-        for (j=0; j<256; j++)
-          if ( fscanf(lut, "%d %d %d", &red, &green, &blue) != 3 ) {
-              fprintf(stderr, "Cannot read color index %d in LUT file\n", j);
-              exit(-1);
-          } else {
-              dest_pal->red = red;
-              dest_pal->green = green;
-              dest_pal->blue = blue;
-              dest_pal++;
-              redarr[j] = red;
-              greenarr[j] = green;
-              bluearr[j] = blue;
-          }
-        fclose(lut);
+    	if (strlen(lutname) > 4 && !strcmp(lutname + strlen(lutname) - 4, ".sld")) {
+    		fprintf(stderr, "Opening SLD file %s\n", lutname);
+
+    		if (lut) {
+    			int size = 1024, pos;
+    			int c;
+    			int j = 0;
+    			char *buffer = (char *)malloc(size);
+    			const char *color_key = "color=";
+    			do { // read all lines in file
+        			char hex[7];
+					pos = 0;
+					do { // read one line
+					c = fgetc(lut);
+					if(c != EOF) buffer[pos++] = (char)c;
+						if(pos >= size - 1) { // increase buffer length - leave room for 0
+							size *=2;
+							buffer = (char*)realloc(buffer, size);
+						}
+					} while(c != EOF && c != '\n');
+					buffer[pos] = 0;
+					// TODO: support new ColorMap template
+					char *color = strstr(buffer,color_key);
+					if (color != NULL) {
+						int color_length = strlen(color);
+						int color_pos = pos - color_length;
+						memcpy(hex, &buffer[color_pos+8], 6);
+						hex[6] = '\0';
+						int hexvalue = (int)strtol(hex, NULL, 16);
+						red = ((hexvalue >> 16) & 0xFF);
+						green = ((hexvalue >> 8) & 0xFF);
+						blue = ((hexvalue) & 0xFF);
+						dest_pal->red = red;
+						dest_pal->green = green;
+						dest_pal->blue = blue;
+						dest_pal++;
+						redarr[j] = red;
+						greenarr[j] = green;
+						bluearr[j] = blue;
+						j++;
+					}
+    			} while(c != EOF);;
+    		    fclose(lut);
+    		    free(buffer);
+    		}
+
+    	} else {
+			for (j=0; j<256; j++)
+			  if ( fscanf(lut, "%d %d %d", &red, &green, &blue) != 3 ) {
+				  fprintf(stderr, "Cannot read color index %d in LUT file\n", j);
+				  exit(-1);
+			  } else {
+				  dest_pal->red = red;
+				  dest_pal->green = green;
+				  dest_pal->blue = blue;
+				  dest_pal++;
+				  redarr[j] = red;
+				  greenarr[j] = green;
+				  bluearr[j] = blue;
+			  }
+			fclose(lut);
+    	}
     } else {
         fprintf(stderr, "Cannot open LUT file %s.\n", lutname);
         exit(-1);
@@ -419,4 +467,3 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   return 0;
 
 }
-
