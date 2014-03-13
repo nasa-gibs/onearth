@@ -382,6 +382,9 @@ cache_dir  =add_trailing_slash(cache_dir)
 working_dir=add_trailing_slash(working_dir)
 logfile_dir=add_trailing_slash(logfile_dir)
 
+# Save script_dir
+script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
+
 # Ensure that mrf_compression_type is uppercase.
 mrf_compression_type=string.upper(mrf_compression_type)
 
@@ -551,6 +554,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 else: # Default to png
     tiff_compress = "PNG"
     
+# Convert TIFF files
 for i, tile in enumerate(alltiles):
     if '.tif' in tile:
         print "Converting TIFF file " + tile + " to " + tiff_compress
@@ -567,6 +571,49 @@ for i, tile in enumerate(alltiles):
         
         # Replace with new tiles
         alltiles[i] = tile.split('.')[0]+'.'+str(tiff_compress).lower()
+
+# Convert RGBA PNGs to indexed paletted PNGs if requested
+if mrf_compression_type == 'PPNG':
+    for i, tile in enumerate(alltiles):
+        # check input PNGs if RGBA, then convert
+        if '.png' in tile.lower(): # lowercase?
+            
+            # Run the gdal_info on PNG tile.
+            gdalinfo_command_list=['gdalinfo', tile]
+            log_the_command(gdalinfo_command_list)
+            gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            
+            # TODO: removal of temp files
+            # Read gdal_info output
+            if "ColorInterp=Palette" not in gdalinfo.stdout.read():
+                print "Converting RGBA PNG to indexed paletted PNG"
+                
+                output_tile = working_dir + os.path.basename(tile).split('.')[0]+'_indexed.png'
+                print output_tile, "created"
+                
+                # Create the RGBApng2Palpng command.
+                RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + sld,
+                                             '-fill='+vrtnodata, '-of='+output_tile, tile]
+                # Log the RGBApng2Palpng command.
+                log_the_command(RGBApng2Palpng_command_list)
+         
+                # Execute RGBApng2Palpng.
+                try:
+                    subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except (OSError):
+                    print "RGBApng2Palpng executable could not be found"
+                 
+                # Replace with new tiles
+                alltiles[i] = output_tile
+                
+                # Make a copy of world file
+                try:
+                    shutil.copy(tile.split('.')[0]+'.pgw', output_tile.split('.')[0]+'.pgw')
+                except (OSError):
+                    print "World file does not exist for tile: " + tile
+            else:
+                print "Paletted PNG verified"
+                
         
 print alltiles
 alltiles.sort()
@@ -781,7 +828,7 @@ if len(modtiles) > 0:
         if sld != '':
             new_vrt_filename = vrt_filename.replace('.vrt','_fromSLD.vrt')
             # add transparency check
-            sld2vrt_command_list=[os.path.dirname(os.path.abspath(__file__))+'/../sld2vrt.py','-s',sld,'-o',new_vrt_filename,
+            sld2vrt_command_list=[script_dir+'sld2vrt.py','-s',sld,'-o',new_vrt_filename,
                                   '-m',vrt_filename,'-t']
             log_the_command(sld2vrt_command_list)
             sld2vrt_stderr_filename=str().join([working_dir, basename,'_sld2vrt_stderr.txt'])
