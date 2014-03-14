@@ -1,13 +1,14 @@
 <mrfgen_configuration>
  <date_of_data>20140228</date_of_data>
  <parameter_name>MORCR143LLDY</parameter_name>
- <input_dir>/workspace/mrfgen/input_dir</input_dir> 
- <output_dir>/workspace/mrfgen/output_dir</output_dir>
- <cache_dir>/workspace/mrfgen/cache_dir</cache_dir>
- <working_dir>/workspace/mrfgen/working_dir</working_dir>
+ <input_dir>/home/gibsdev/workspace/mrfgen/input_dir</input_dir> 
+ <output_dir>/home/gibsdev/workspace/mrfgen/output_dir</output_dir>
+ <cache_dir>/home/gibsdev/workspace/mrfgen/cache_dir</cache_dir>
+ <working_dir>/home/gibsdev/workspace/mrfgen/working_dir</working_dir>
  <empty_tile>black</empty_tile>
  <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
  <resampling>average</resampling>
+ <colormap></colormap>
 </mrfgen_configuration>

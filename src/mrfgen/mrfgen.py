@@ -44,7 +44,7 @@
 #  <mrf_blocksize>256</mrf_blocksize>
 #  <mrf_compression_type>JPG</mrf_compression_type>
 #  <target_x>65536</target_x>
-#  <sld></sld>
+#  <colormap></colormap>
 # </mrfgen_configuration>
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
@@ -367,11 +367,11 @@ else:
         resampling        =get_dom_tag_value(dom, 'resampling')
     except IndexError:
         resampling = 'nearest'    
-    # SLD
+    # colormap
     try:
-        sld               =get_dom_tag_value(dom, 'sld')
+        colormap               =get_dom_tag_value(dom, 'colormap')
     except IndexError:
-        sld = ''    
+        colormap = ''    
     # Close file.
     config_file.close()
 
@@ -441,7 +441,7 @@ log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
 log_info_mssg(str().join(['config resampling:              ', resampling]))
-log_info_mssg(str().join(['config sld:                     ', sld]))
+log_info_mssg(str().join(['config colormap:                     ', colormap]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
@@ -555,28 +555,48 @@ else: # Default to png
     tiff_compress = "PNG"
     
 # Convert TIFF files
-for i, tile in enumerate(alltiles):
-    if '.tif' in tile:
-        print "Converting TIFF file " + tile + " to " + tiff_compress
+# for i, tile in enumerate(alltiles):
+#     if '.tif' in tile:
+#         print "Converting TIFF file " + tile + " to " + tiff_compress
+#           
+#         # Create the gdal_translate command.
+#         gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
+#                                      tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
+#         # Log the gdal_translate command.
+#         log_the_command(gdal_translate_command_list)
+#   
+#         # Execute gdal_translate.
+#         subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+#                         stderr=subprocess.PIPE)
+#           
+#         # Replace with new tiles
+#         alltiles[i] = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
         
-        # Create the gdal_translate command.
-        gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress,
-                                     tile, tile.split('.')[0]+'.'+str(tiff_compress).lower()]
-        # Log the gdal_translate command.
-        log_the_command(gdal_translate_command_list)
-
-        # Execute gdal_translate.
-        subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
-        
-        # Replace with new tiles
-        alltiles[i] = tile.split('.')[0]+'.'+str(tiff_compress).lower()
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
-if mrf_compression_type == 'PPNG':
+if mrf_compression_type == 'PPNG' and colormap != '':
     for i, tile in enumerate(alltiles):
-        # check input PNGs if RGBA, then convert
-        if '.png' in tile.lower(): # lowercase?
+        # Check to see if tif files need to be converted
+        if '.tif' in tile.lower():
+            # Convert TIFF files
+            print "Converting TIFF file " + tile + " to " + tiff_compress
+               
+            # Create the gdal_translate command.
+            gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
+                                         tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
+            # Log the gdal_translate command.
+            log_the_command(gdal_translate_command_list)
+       
+            # Execute gdal_translate.
+            subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+               
+            # Replace with new tiles
+            tile = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
+            temp_tile = tile
+            
+        # Check input PNGs if RGBA, then convert        
+        if '.png' in tile.lower():
             
             # Run the gdal_info on PNG tile.
             gdalinfo_command_list=['gdalinfo', tile]
@@ -589,10 +609,9 @@ if mrf_compression_type == 'PPNG':
                 print "Converting RGBA PNG to indexed paletted PNG"
                 
                 output_tile = working_dir + os.path.basename(tile).split('.')[0]+'_indexed.png'
-                print output_tile, "created"
                 
                 # Create the RGBApng2Palpng command.
-                RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + sld,
+                RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + colormap,
                                              '-fill='+vrtnodata, '-of='+output_tile, tile]
                 # Log the RGBApng2Palpng command.
                 log_the_command(RGBApng2Palpng_command_list)
@@ -602,18 +621,26 @@ if mrf_compression_type == 'PPNG':
                     subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 except (OSError):
                     print "RGBApng2Palpng executable could not be found"
+                
+                print output_tile, "created"
                  
                 # Replace with new tiles
                 alltiles[i] = output_tile
                 
                 # Make a copy of world file
-                try:
+                if os.path.isfile(tile.split('.')[0]+'.pgw'):
                     shutil.copy(tile.split('.')[0]+'.pgw', output_tile.split('.')[0]+'.pgw')
-                except (OSError):
+                elif os.path.isfile(tile.split('.')[0]+'.wld'):
+                    shutil.copy(tile.split('.')[0]+'.wld', output_tile.split('.')[0]+'.pgw')
+                else:
                     print "World file does not exist for tile: " + tile
             else:
                 print "Paletted PNG verified"
                 
+        # remove tif temp tiles
+        remove_file(temp_tile)
+        remove_file(temp_tile+'.aux.xml')
+        remove_file(temp_tile.split('.')[0]+'.wld')     
         
 print alltiles
 alltiles.sort()
@@ -824,19 +851,22 @@ if len(modtiles) > 0:
             mssg='Unrecognized compression type for MRF.'
             log_sig_exit('ERROR', mssg, sigevent_url)
             
-        # Insert SLD color map into VRT if provided
-        if sld != '':
-            new_vrt_filename = vrt_filename.replace('.vrt','_fromSLD.vrt')
+        # Insert color map into VRT if provided
+        if colormap != '':
+            new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
             # add transparency check
-            sld2vrt_command_list=[script_dir+'sld2vrt.py','-s',sld,'-o',new_vrt_filename,
+            sld2vrt_command_list=[script_dir+'sld2vrt.py','-s',colormap,'-o',new_vrt_filename,
                                   '-m',vrt_filename,'-t']
             log_the_command(sld2vrt_command_list)
             sld2vrt_stderr_filename=str().join([working_dir, basename,'_sld2vrt_stderr.txt'])
             sld2vrt_stderr_file=open(sld2vrt_stderr_filename, 'w')
             subprocess.call(sld2vrt_command_list, stderr=sld2vrt_stderr_file)
             sld2vrt_stderr_file.close()
-    
-            vrt_filename = new_vrt_filename
+
+            if os.path.isfile(new_vrt_filename):
+                remove_file(vrt_filename)
+                remove_file(sld2vrt_stderr_filename)
+                vrt_filename = new_vrt_filename
 
         # Set the blocksize for gdal_translate (-co NAME=VALUE).
         blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
@@ -1022,6 +1052,14 @@ if len(modtiles) > 0:
                          '  Check stderr file: ',gdalbuildvrt_stderr_filename])
         log_sig_warn(mssg, sigevent_url)
 
+# Remove temp tiles
+for tilename in (alltiles):
+    if working_dir in tilename:
+        remove_file(tilename)
+        if tiff_compress != None:
+            remove_file(tilename+'.aux.xml')
+        if '_indexed.' in tilename:
+            remove_file(tilename.split('.')[0]+'.pgw')
 
 # Send to log.
 log_info_mssg_with_timestamp(str().join(['MRF created:  ', 

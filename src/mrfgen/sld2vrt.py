@@ -278,23 +278,30 @@ for namedLayer in namedLayers:
             output_file.writelines('        '+str(colorEntry)+'\n')
         output_file.close();
     else: # merge SLD into VRT
-        # copy merge VRT to output
         merge_file = open(merge_vrt, 'r')
-        output_file = open(output_vrt, 'w')
-        for line in merge_file: # stop at ColorTable
-            if "<ColorTable>" in line:
+        # check if VRT is uses palette
+        if "<ColorInterp>Palette</ColorInterp>" not in merge_file.read():
+            merge_file.close()
+            raise Exception(merge_vrt + " is NOT paletted VRT.")
+        else:
+            # copy merge VRT to output
+            merge_file.seek(0)
+            output_file = open(output_vrt, 'w')
+            for line in merge_file: # stop at ColorTable
+                if "<ColorTable>" in line:
+                    output_file.writelines(line);
+                    break
+                else:
+                    output_file.writelines(line);
+            for colorEntry in colorEntries[layer]:
+                output_file.writelines('        '+str(colorEntry)+'\n')
+            for line in merge_file: # go to end of ColorTable
+                if "</ColorTable>" in line:
+                    output_file.writelines(line);
+                    output_file.writelines("    <NoDataValue>0</NoDataValue>\n") #necessary?
+                    break
+            for line in merge_file:
                 output_file.writelines(line);
-                break
-            else:
-                output_file.writelines(line);
-        for colorEntry in colorEntries[layer]:
-            output_file.writelines('        '+str(colorEntry)+'\n')
-        for line in merge_file: # go to end of ColorTable
-            if "</ColorTable>" in line:
-                output_file.writelines(line);
-                output_file.writelines("    <NoDataValue>0</NoDataValue>\n") #necessary?
-                break
-        for line in merge_file:
-            output_file.writelines(line);
-        merge_file.close()
-        output_file.close()
+            merge_file.close()
+            output_file.close()
+            print output_vrt, "created successfully."
