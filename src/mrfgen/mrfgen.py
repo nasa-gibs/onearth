@@ -284,8 +284,8 @@ def lookupEmptyTile(empty_tile):
     empty_config_file=open(script_dir+"/empty_tiles/empty_config", 'r')
     tiles = {}
     for line in empty_config_file:
-       (key, val) = line.split()
-       tiles[key] = val
+        (key, val) = line.split()
+        tiles[key] = val
        
     return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
 
@@ -576,6 +576,8 @@ else: # Default to png
 # Convert RGBA PNGs to indexed paletted PNGs if requested
 if mrf_compression_type == 'PPNG' and colormap != '':
     for i, tile in enumerate(alltiles):
+        temp_tile = None
+        
         # Check to see if tif files need to be converted
         if '.tif' in tile.lower():
             # Convert TIFF files
@@ -603,7 +605,6 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             
-            # TODO: removal of temp files
             # Read gdal_info output
             if "ColorInterp=Palette" not in gdalinfo.stdout.read():
                 print "Converting RGBA PNG to indexed paletted PNG"
@@ -617,11 +618,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 log_the_command(RGBApng2Palpng_command_list)
          
                 # Execute RGBApng2Palpng.
-                try:
-                    subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                except (OSError):
-                    print "RGBApng2Palpng executable could not be found"
-                
+                subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print output_tile, "created"
                  
                 # Replace with new tiles
@@ -638,9 +635,10 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 print "Paletted PNG verified"
                 
         # remove tif temp tiles
-        remove_file(temp_tile)
-        remove_file(temp_tile+'.aux.xml')
-        remove_file(temp_tile.split('.')[0]+'.wld')     
+        if temp_tile != None:
+            remove_file(temp_tile)
+            remove_file(temp_tile+'.aux.xml')
+            remove_file(temp_tile.split('.')[0]+'.wld')     
         
 print alltiles
 alltiles.sort()
@@ -786,8 +784,8 @@ if len(modtiles) > 0:
                                '-vrtnodata', vrtnodata,
                                '-input_file_list', all_tiles_filename,
                                vrt_filename]
-                               # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
-                               #'-tr', target_x, target_y, '-resolution', 'user'
+    # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
+    #'-tr', target_x, target_y, '-resolution', 'user'
     # Log the gdalbuildvrt command.
     log_the_command(gdalbuildvrt_command_list)
     # Capture stderr to record skipped .png files that are not valid PNG+World.
@@ -855,17 +853,17 @@ if len(modtiles) > 0:
         if colormap != '':
             new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
             # add transparency check
-            sld2vrt_command_list=[script_dir+'sld2vrt.py','-s',colormap,'-o',new_vrt_filename,
+            colormap2vrt_command_list=[script_dir+'colormap2vrt.py','-s',colormap,'-o',new_vrt_filename,
                                   '-m',vrt_filename,'-t']
-            log_the_command(sld2vrt_command_list)
-            sld2vrt_stderr_filename=str().join([working_dir, basename,'_sld2vrt_stderr.txt'])
-            sld2vrt_stderr_file=open(sld2vrt_stderr_filename, 'w')
-            subprocess.call(sld2vrt_command_list, stderr=sld2vrt_stderr_file)
-            sld2vrt_stderr_file.close()
+            log_the_command(colormap2vrt_command_list)
+            colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
+            colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w')
+            subprocess.call(colormap2vrt_command_list, stderr=colormap2vrt_stderr_file)
+            colormap2vrt_stderr_file.close()
 
             if os.path.isfile(new_vrt_filename):
                 remove_file(vrt_filename)
-                remove_file(sld2vrt_stderr_filename)
+                remove_file(colormap2vrt_stderr_filename)
                 vrt_filename = new_vrt_filename
 
         # Set the blocksize for gdal_translate (-co NAME=VALUE).
