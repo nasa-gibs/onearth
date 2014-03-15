@@ -852,9 +852,9 @@ if len(modtiles) > 0:
         # Insert color map into VRT if provided
         if colormap != '':
             new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
-            # add transparency check
-            colormap2vrt_command_list=[script_dir+'colormap2vrt.py','-s',colormap,'-o',new_vrt_filename,
-                                  '-m',vrt_filename,'-t']
+            # add transparency check?
+            colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,
+                                  '--merge',vrt_filename,'--transparent']
             log_the_command(colormap2vrt_command_list)
             colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
             colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w')

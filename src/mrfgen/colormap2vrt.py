@@ -24,8 +24,8 @@
 #
 # Example:
 #
-#  sld2vrt.py 
-#   -s template.sld
+#  colormap2vrt.py 
+#   -c colormap.xml
 #   -o output.vrt
 #   -m merge.vrt
 #
@@ -177,18 +177,18 @@ def log_the_command(command_list):
     
 #-------------------------------------------------------------------------------   
 
-print 'sld2vrt v' + versionNumber
+print 'colormap2vrt v' + versionNumber
 
-usageText = 'sld2vrt.py --sld [sld_file.sld] --output [output.vrt] --merge [merge.vrt] --transparent --sigevent_url [url]'
+usageText = 'colormap2vrt.py --colormap [colormap.xml] --output [output.vrt] --merge [merge.vrt] --transparent --sigevent_url [url]'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
-parser.add_option('-s', '--sld',
-                  action='store', type='string', dest='sld_filename',
-                  help='Full path of SLD filename.')
+parser.add_option('-c', '--colormap',
+                  action='store', type='string', dest='colormap_filename',
+                  help='Full path of colormap filename.')
 parser.add_option('-m', '--merge',
                   action='store', type='string', dest='merge_vrt',
-                  help='Full path of VRT in which to merge SLD')
+                  help='Full path of VRT in which to merge colormap')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output_vrt',
                   help='Full path of the final output VRT')
@@ -202,11 +202,11 @@ parser.add_option('-u', '--sigevent_url',
 
 # Read command line args.
 (options, args) = parser.parse_args()
-# SLD filename.
-if not options.sld_filename:
-    parser.error('SLD filename not provided. --sld must be specified.')
+# colormap filename.
+if not options.colormap_filename:
+    parser.error('ColorMap filename not provided. --colormap must be specified.')
 else:
-    sld_filename = options.sld_filename
+    colormap_filename = options.colormap_filename
 # output VRT.
 if not options.output_vrt:
     parser.error('Output filename not provided. --output must be specified.')
@@ -222,86 +222,93 @@ else:
 # Sigevent URL.
 sigevent_url = options.sigevent_url
 
-print 'SLD:', sld_filename
+print 'colormap:', colormap_filename
 print 'output VRT:', output_vrt
 print 'merge VRT:', merge_vrt
 
-colorEntries = {}
-
 try:
-    # Open SLD file.
-    sld_file=open(sld_filename, 'r')
-    dom = xml.dom.minidom.parse(sld_file)
-    print "Opening file", sld_filename
-    sld_file.close()
+    # Open colormap file.
+    colormap_file=open(colormap_filename, 'r')
+    dom = xml.dom.minidom.parse(colormap_file)
+    print "Opening file", colormap_filename
+    colormap_file.close()
 except IOError: # try http URL
-    print "Accessing URL", sld_filename
-    dom = xml.dom.minidom.parse(urllib.urlopen(sld_filename))
+    print "Accessing URL", colormap_filename
+    dom = xml.dom.minidom.parse(urllib.urlopen(colormap_filename))
 
-namedLayers = dom.getElementsByTagName('NamedLayer')
-for namedLayer in namedLayers:
-    layer = namedLayer.getElementsByTagName('Name')[0].firstChild.nodeValue.strip()
-    print "Using layer:", layer
+# ColorMap parameters
+colorMaps = dom.getElementsByTagName('ColorMap')
+colortable = [] # Apply SLDs with multiple color maps to one color table
 
-    # ColorMap parameters
-#    colorMaps = namedLayer.getElementsByTagName('ColorMap')
-    colorMaps = namedLayer.getElementsByTagName('RasterSymbolizer')
-    colortable = [] # Apple SLDs with multiple color maps to one color table
-    # add 0 entry for transparency
-    colorEntry = ColorEntry(0, 0, 0, 0, alpha)
-    colortable.append(colorEntry)
-    idx = 1
-    for colorMap in colorMaps: 
-        # ColorMapEntry
-        if colorMap.getElementsByTagName('Opacity').length > 0:
-            opacity = float(colorMap.getElementsByTagName('Opacity')[0].firstChild.nodeValue.strip()) * 255
-        colorMapEntries = colorMap.getElementsByTagName('ColorMapEntry')
-        for colorMapEntry in colorMapEntries:
+# add 0 entry for transparency
+colorEntry = ColorEntry(0, 0, 0, 0, alpha)
+colortable.append(colorEntry)
+idx = 1
+
+for colorMap in colorMaps: 
+    # ColorMapEntry
+    if colorMap.parentNode.getElementsByTagName('Opacity').length > 0:
+        opacity = float(colorMap.parentNode.getElementsByTagName('Opacity')[0].firstChild.nodeValue.strip()) * 255
+    else:
+        opacity = None
+    colorMapEntries = colorMap.getElementsByTagName('ColorMapEntry')
+    for colorMapEntry in colorMapEntries:
+        try:
+            if colorMapEntry.attributes["transparent"].value == "true":
+                opacity = 0
+            else:
+                opacity = 255
+        except KeyError: # check for "opacity" attribute in SLD
             try:
-                #print colorMapEntry.attributes["color"].value, colorMapEntry.attributes["quantity"].value, colorMapEntry.attributes["label"].value, colorMapEntry.attributes["opacity"].value
                 opacity = float(colorMapEntry.attributes["opacity"].value) * 255
             except KeyError:
                 if opacity==None:
                     opacity = alpha
+        try:
+            rgb = colorMapEntry.attributes["rgb"].value.split(",")
+        except KeyError:  # check for "color" attribute in SLD
             rgb = hex_to_rgb(colorMapEntry.attributes["color"].value)
-            colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], opacity)
-            colortable.append(colorEntry)
-            idx+=1
-    colorEntries[layer] = colortable
-            
-    #print colorEntries[layer]
-    
-    # output color table as template if no merge VRT is provided
-    if merge_vrt == None:
+
+        colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], opacity)
+        colortable.append(colorEntry)
+        idx+=1
+    while idx < 256: # pad out with zero values to get 256 colors for MRFs
+        colorEntry = ColorEntry(idx, 0, 0, 0, 0)
+        colortable.append(colorEntry)
+        idx+=1
+
+# output color table as template if no merge VRT is provided
+if merge_vrt == None:
+    output_file = open(output_vrt, 'w')
+    for colorEntry in colortable:
+        output_file.writelines('        '+str(colorEntry)+'\n')
+    output_file.close();
+else: # merge SLD into VRT
+    merge_file = open(merge_vrt, 'r')
+    # check if VRT is uses palette
+    if "<ColorInterp>Palette</ColorInterp>" not in merge_file.read():
+        merge_file.close()
+        raise Exception(merge_vrt + " is NOT paletted VRT.")
+    else:
+        # copy merge VRT to output
+        merge_file.seek(0)
         output_file = open(output_vrt, 'w')
-        for colorEntry in colorEntries[layer]:
-            output_file.writelines('        '+str(colorEntry)+'\n')
-        output_file.close();
-    else: # merge SLD into VRT
-        merge_file = open(merge_vrt, 'r')
-        # check if VRT is uses palette
-        if "<ColorInterp>Palette</ColorInterp>" not in merge_file.read():
-            merge_file.close()
-            raise Exception(merge_vrt + " is NOT paletted VRT.")
-        else:
-            # copy merge VRT to output
-            merge_file.seek(0)
-            output_file = open(output_vrt, 'w')
-            for line in merge_file: # stop at ColorTable
-                if "<ColorTable>" in line:
-                    output_file.writelines(line);
-                    break
-                else:
-                    output_file.writelines(line);
-            for colorEntry in colorEntries[layer]:
-                output_file.writelines('        '+str(colorEntry)+'\n')
-            for line in merge_file: # go to end of ColorTable
-                if "</ColorTable>" in line:
-                    output_file.writelines(line);
-                    output_file.writelines("    <NoDataValue>0</NoDataValue>\n") #necessary?
-                    break
-            for line in merge_file:
+        for line in merge_file: # stop at ColorTable
+            if "<ColorTable>" in line:
                 output_file.writelines(line);
-            merge_file.close()
-            output_file.close()
-            print output_vrt, "created successfully."
+                break
+            else:
+                output_file.writelines(line);
+        for colorEntry in colortable:
+            output_file.writelines('        '+str(colorEntry)+'\n')
+        for line in merge_file: # go to end of ColorTable
+            if "</ColorTable>" in line:
+                output_file.writelines(line);
+                output_file.writelines("    <NoDataValue>0</NoDataValue>\n") #necessary?
+                break
+        for line in merge_file:
+            output_file.writelines(line);
+        merge_file.close()
+        output_file.close()
+
+print output_vrt, "created successfully."
