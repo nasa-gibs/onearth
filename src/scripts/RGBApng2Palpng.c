@@ -63,7 +63,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   lutname[0] = '\0';
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<LUT file or ColorMap SLD> -fill=<LUT value> -of=<output palette PNG file> <input RGBA PNG file>\n");
+    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<LUT file or ColorMap file> -fill=<LUT value> -of=<output palette PNG file> <input RGBA PNG file>\n");
     exit(-1);
   }
 
@@ -226,8 +226,8 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
       redarr[j] = greenarr[j] = bluearr[j] = j;
   } else {
     if ( (lut = fopen(lutname, "r")) != NULL ) {
-    	if (strlen(lutname) > 4 && !strcmp(lutname + strlen(lutname) - 4, ".sld")) {
-    		fprintf(stderr, "Opening SLD file %s\n", lutname);
+    	if (strlen(lutname) > 4 && ((!strcmp(lutname + strlen(lutname) - 4, ".sld")) || (!strcmp(lutname + strlen(lutname) - 4, ".xml")))) {
+    		fprintf(stderr, "Opening colormap file %s\n", lutname);
 
     		if (lut) {
     			int size = 1024, pos;
@@ -235,8 +235,8 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
     			int j = 0;
     			char *buffer = (char *)malloc(size);
     			const char *color_key = "color=";
+    			const char *rgb_key = "rgb=";
     			do { // read all lines in file
-        			char hex[7];
 					pos = 0;
 					do { // read one line
 					c = fgetc(lut);
@@ -247,9 +247,12 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 						}
 					} while(c != EOF && c != '\n');
 					buffer[pos] = 0;
-					// TODO: support new ColorMap template
+
 					char *color = strstr(buffer,color_key);
+					char *rgb = strstr(buffer,rgb_key);
+					// SLD hex values
 					if (color != NULL) {
+	        			char hex[7];
 						int color_length = strlen(color);
 						int color_pos = pos - color_length;
 						memcpy(hex, &buffer[color_pos+8], 6);
@@ -265,6 +268,32 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 						redarr[j] = red;
 						greenarr[j] = green;
 						bluearr[j] = blue;
+						//fprintf(stderr, "RGB: %d %d %d \n", redarr[j], greenarr[j] , bluearr[j]);
+						j++;
+					// GIBS colormap RGB values
+					} else if (rgb != NULL) {
+	        			char rgb_string[12];
+						int rgb_length = strlen(rgb);
+						int rgb_pos = pos - rgb_length;
+						memcpy(rgb_string, &buffer[rgb_pos+5], 11);
+						rgb_string[12] = '\0';
+						// break rgb string into int values
+						int rgb_array[3];
+						int i = 0;
+						char *rgb_values = strtok(rgb_string, ",");
+						while (rgb_values != NULL) {
+							rgb_array[i++] = atoi(rgb_values);
+							rgb_values = strtok(NULL, ",");
+						}
+						red = rgb_array[0]; green = rgb_array[1]; blue = rgb_array[2];
+						dest_pal->red = red;
+						dest_pal->green = green;
+						dest_pal->blue = blue;
+						dest_pal++;
+						redarr[j] = red;
+						greenarr[j] = green;
+						bluearr[j] = blue;
+						//fprintf(stderr, "RGB: %d %d %d \n", redarr[j], greenarr[j] , bluearr[j]);
 						j++;
 					}
     			} while(c != EOF);;
