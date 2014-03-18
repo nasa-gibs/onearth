@@ -1503,43 +1503,43 @@ static int mrf_handler(request_rec *r)
 					 "Can't get index record from %s Based on %s",
 			 fname,r->args);
 //		perror("Index read error: ");
+		return DECLINED;
 
-		// safe to assume invalid date?
-		char *timepart = ap_strcasestr(fname, "_.");
-
-		if (timepart) {
-			timepart = timepart-3;
-			int day = atoi(timepart);
-			day--; // check yesterday (one day slack for current date)
-			if (day==0)
-				day = 365; // forget about leap years
-			char *strday = apr_pcalloc(r->pool,4);
-			strday = apr_psprintf(r->pool, "%d", day);
-			if (day < 100) {
-				timepart[0]=*"0";
-				timepart[1] = strday[0];
-				timepart[2] = strday[1];
-			} else {
-				timepart[0] = strday[0];
-				timepart[1] = strday[1];
-				timepart[2] = strday[2];
-			}
-			// DEBUG
-//			ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Previous date filename: %s", fname);
-
-			// read file using previous date
-			this_record=r_file_pread(r,fname,sizeof(index_s),offset);
-			if (!this_record && day!=-1) // also checks for valid TIME format
-				if (ap_strstr(r->args,WMTS_marker)) // don't return error for TWMS/KML
-					wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
-		} else {
-			wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
-		}
-		if (errors > 0) {
-			return wmts_return_all_errors(r);
-		} else {
-			return DECLINED;
-		}
+//		// code to return error when time is out of range (includes blank tile for +1 day slack)
+//		// safe to assume invalid date?
+//		char *timepart = ap_strcasestr(fname, "_.");
+//
+//		if (timepart) {
+//			timepart = timepart-3;
+//			int day = atoi(timepart);
+//			day--; // check yesterday (one day slack for current date)
+//			if (day==0)
+//				day = 365; // forget about leap years
+//			char *strday = apr_pcalloc(r->pool,4);
+//			strday = apr_psprintf(r->pool, "%d", day);
+//			if (day < 100) {
+//				timepart[0]=*"0";
+//				timepart[1] = strday[0];
+//				timepart[2] = strday[1];
+//			} else {
+//				timepart[0] = strday[0];
+//				timepart[1] = strday[1];
+//				timepart[2] = strday[2];
+//			}
+//
+//			// read file using previous date
+//			this_record=r_file_pread(r,fname,sizeof(index_s),offset);
+//			if (!this_record && day!=-1) // also checks for valid TIME format
+//				if (ap_strstr(r->args,WMTS_marker)) // don't return error for TWMS/KML
+//					wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
+//		} else {
+//			wmts_add_error(r,400,"InvalidParameterValue","TIME", "TIME is out of range for layer");
+//		}
+//		if (errors > 0) {
+//			return wmts_return_all_errors(r);
+//		} else {
+//			return DECLINED;
+//		}
 	}
 
 //
