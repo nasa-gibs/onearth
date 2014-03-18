@@ -1,6 +1,6 @@
 Name:		mod_onearth
 Version:	0.2.5
-Release:	0.1%{?dist}
+Release:	0.3%{?dist}
 Summary:	Apache module for OnEarth
 
 License:	ASL 2.0+
