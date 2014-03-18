@@ -193,7 +193,7 @@ parser.add_option('-o', '--output',
                   action='store', type='string', dest='output_vrt',
                   help='Full path of the final output VRT')
 parser.add_option("-t", "--transparent", action="store_true", dest="transparent", 
-                  default=False, help="Use transparent alpha value")
+                  default=False, help="Add transparent alpha value")
 parser.add_option('-u', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -241,9 +241,12 @@ colorMaps = dom.getElementsByTagName('ColorMap')
 colortable = [] # Apply SLDs with multiple color maps to one color table
 
 # add 0 entry for transparency
-colorEntry = ColorEntry(0, 0, 0, 0, alpha)
-colortable.append(colorEntry)
-idx = 1
+if options.transparent == True:
+    colorEntry = ColorEntry(0, 0, 0, 0, alpha)
+    colortable.append(colorEntry)
+    idx = 1
+else:
+    idx = 0
 
 for colorMap in colorMaps: 
     # ColorMapEntry
