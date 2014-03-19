@@ -193,7 +193,7 @@ parser.add_option('-o', '--output',
                   action='store', type='string', dest='output_vrt',
                   help='Full path of the final output VRT')
 parser.add_option("-t", "--transparent", action="store_true", dest="transparent", 
-                  default=False, help="Add transparent alpha value")
+                  default=False, help="Use transparent alpha value as default")
 parser.add_option('-u', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -240,39 +240,32 @@ except IOError: # try http URL
 colorMaps = dom.getElementsByTagName('ColorMap')
 colortable = [] # Apply SLDs with multiple color maps to one color table
 
-# add 0 entry for transparency
-if options.transparent == True:
-    colorEntry = ColorEntry(0, 0, 0, 0, alpha)
-    colortable.append(colorEntry)
-    idx = 1
-else:
-    idx = 0
+idx = 0
 
 for colorMap in colorMaps: 
     # ColorMapEntry
     if colorMap.parentNode.getElementsByTagName('Opacity').length > 0:
-        opacity = float(colorMap.parentNode.getElementsByTagName('Opacity')[0].firstChild.nodeValue.strip()) * 255
-    else:
-        opacity = None
+        alpha = float(colorMap.parentNode.getElementsByTagName('Opacity')[0].firstChild.nodeValue.strip()) * 255
+        
     colorMapEntries = colorMap.getElementsByTagName('ColorMapEntry')
     for colorMapEntry in colorMapEntries:
+        entry_alpha = alpha
         try:
             if colorMapEntry.attributes["transparent"].value == "true":
-                opacity = 0
+                entry_alpha = 0
             else:
-                opacity = 255
+                entry_alpha = 255
         except KeyError: # check for "opacity" attribute in SLD
             try:
-                opacity = float(colorMapEntry.attributes["opacity"].value) * 255
+                entry_alpha = float(colorMapEntry.attributes["opacity"].value) * 255
             except KeyError:
-                if opacity==None:
-                    opacity = alpha
+                entry_alpha = alpha
         try:
             rgb = colorMapEntry.attributes["rgb"].value.split(",")
         except KeyError:  # check for "color" attribute in SLD
             rgb = hex_to_rgb(colorMapEntry.attributes["color"].value)
 
-        colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], opacity)
+        colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], entry_alpha)
         colortable.append(colorEntry)
         idx+=1
     while idx < 256: # pad out with zero values to get 256 colors for MRFs

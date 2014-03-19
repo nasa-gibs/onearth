@@ -536,6 +536,9 @@ else:
 # Change directory to working_dir.
 os.chdir(working_dir)
 
+# transparency flag for custom color maps; default to False
+add_transparency = False
+
 # Get list of all tile filenames.
 if input_files == '':
     if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
@@ -619,10 +622,13 @@ if mrf_compression_type == 'PPNG' and colormap != '':
          
                 # Execute RGBApng2Palpng.
                 subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print output_tile, "created"
-                 
-                # Replace with new tiles
-                alltiles[i] = output_tile
+                
+                if os.path.isfile(output_tile):
+                    print output_tile, "created"
+                    # Replace with new tiles
+                    alltiles[i] = output_tile
+                else:
+                    raise Exception("Failed to create " + output_tile) #exception or warning?
                 
                 # Make a copy of world file
                 if os.path.isfile(tile.split('.')[0]+'.pgw'):
@@ -631,6 +637,9 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     shutil.copy(tile.split('.')[0]+'.wld', output_tile.split('.')[0]+'.pgw')
                 else:
                     print "World file does not exist for tile: " + tile
+                    
+                # add transparency flag for custom color map
+                add_transparency = True
             else:
                 print "Paletted PNG verified"
                 
@@ -852,9 +861,10 @@ if len(modtiles) > 0:
         # Insert color map into VRT if provided
         if colormap != '':
             new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
-            # add transparency check?
-            colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,
-                                  '--merge',vrt_filename,'--transparent']
+            if add_transparency == True:
+                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--transparent']
+            else:
+                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
             log_the_command(colormap2vrt_command_list)
             colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
             colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w')
