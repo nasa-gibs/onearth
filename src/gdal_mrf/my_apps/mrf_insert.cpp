@@ -113,8 +113,8 @@ bool state::patch() {
         int buffer_size=line_size*tsz_y; // A block size in bytes
 
         // tolerance of 1/1000 of the resolution
-        if ( fabs(in_img.res.x - out_img.res.x) * 1000 > out_img.res.x ||
-             fabs(in_img.res.y - out_img.res.y) * 1000 > out_img.res.y )
+        if ( (fabs(in_img.res.x - out_img.res.x) * 1000 > fabs(out_img.res.x)) ||
+             (fabs(in_img.res.y - out_img.res.y) * 1000 > fabs(out_img.res.y)) )
         {
             CPLError(CE_Failure,CPLE_AppDefined,"Source and target resolutions don't match");
             throw 2;
