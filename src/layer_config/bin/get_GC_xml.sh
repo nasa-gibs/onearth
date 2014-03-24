@@ -57,7 +57,7 @@ do
           echo "         </ows:WGS84BoundingBox>"
           echo "         <ows:Identifier>$LAYER</ows:Identifier>"
           if [ "$METADATA" != "" ]; then
-        	 echo "         <ows:Metadata xlink:href=\"$METADATA\" xlink:title=\"Styled Layer Descriptor (SLD): Data - RGB Mapping\"/>"
+        	 echo "         <ows:Metadata xlink:href=\"$METADATA\" xlink:title=\"GIBS Color Map: Data - RGB Mapping\"/>"
        	  fi
           echo "         <Style isDefault=\"true\">"
           echo "            <ows:Title>default</ows:Title>"

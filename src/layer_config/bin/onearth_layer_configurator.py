@@ -47,7 +47,7 @@
  <EndDate>2013-11-04</EndDate>
  <WMTSEndPoint>wmts-geo</WMTSEndPoint>
  <TWMSEndPoint>twms-geo</TWMSEndPoint>
- <SLD>http://map1.vis.earthdata.nasa.gov/sld/sample.sld</SLD>
+ <ColorMap>http://map1.vis.earthdata.nasa.gov/colormap/sample.xml</ColorMap>
 </LayerConfiguration>
 '''
 #
@@ -343,9 +343,9 @@ for conf in conf_files:
             startDate = None
             endDate = None
         try:
-            sld = get_dom_tag_value(dom, 'SLD')
+            colormap = get_dom_tag_value(dom, 'ColorMap')
         except IndexError:
-            sld = None
+            colormap = None
             
         # Patterns
         patterns = []
@@ -379,8 +379,8 @@ for conf in conf_files:
         log_info_mssg('config: EndDate: ' + str(endDate))
     log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
-    if sld:
-        log_info_mssg('config: SLD: ' + str(sld))
+    if colormap:
+        log_info_mssg('config: ColorMap: ' + str(colormap))
     log_info_mssg('config: Patterns: ' + str(patterns))
     
     # Modify MRF Archetype
@@ -431,9 +431,9 @@ for conf in conf_files:
         endDateElement.appendChild(mrf_dom.createTextNode(endDate))
         twms.appendChild(twms.appendChild(endDateElement))
 
-    if sld:
+    if colormap:
         metadataElement = mrf_dom.createElement('Metadata')
-        metadataElement.appendChild(mrf_dom.createTextNode(sld))
+        metadataElement.appendChild(mrf_dom.createTextNode(colormap))
         twms.appendChild(twms.appendChild(metadataElement))
     
     patternElements = []
