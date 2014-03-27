@@ -79,7 +79,7 @@ import imghdr
 
 def sigevent(type, mssg, sigevent_url):
     """
-    Send a message to SOTO operations.
+    Send a message to sigevent service.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
@@ -104,10 +104,10 @@ def sigevent(type, mssg, sigevent_url):
     data['type']=type
     data['description']=mssg
     data['computer']=socket.gethostname()
-    data['source']='SOTO'
+    data['source']='ONEARTH'
     data['format']='TEXT'
     data['category']='UNCATEGORIZED'
-    data['provider']='PO.DAAC'
+    data['provider']='GIBS'
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -146,7 +146,10 @@ def log_sig_warn(mssg, sigevent_url):
     logging.warning(time.asctime())
     logging.warning(mssg)
     # Send to sigevent.
-    sent=sigevent('WARN', mssg, sigevent_url)
+    try:
+        sent=sigevent('WARN', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
 
 def log_sig_exit(type, mssg, sigevent_url):
     """
@@ -168,7 +171,10 @@ def log_sig_exit(type, mssg, sigevent_url):
         logging.error(time.asctime())
         logging.error(mssg)
     # Send to sigevent.
-    sent=sigevent(type, mssg, sigevent_url)
+    try:
+        sent=sigevent(type, mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
     # Exit.
     sys.exit(mssg)
 
@@ -649,7 +655,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')     
         
-print alltiles
+#print alltiles
 alltiles.sort()
 
 # Initialize list of tile modification times.
@@ -778,6 +784,44 @@ if len(modtiles) > 0:
     remove_file(idx_filename)
     remove_file(out_filename)
     remove_file(vrt_filename)
+    
+    # Check if this is an MRF insert update, if not then regenerate a new MRF
+    mrf_list = []
+    for tile in list(alltiles):
+        if '.mrf' in tile.lower():
+            mrf_list.append(tile)
+            alltiles.remove(tile)
+    if len(mrf_list) == 0:
+        mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
+    # Should only be one MRF, so use that one
+    if len(mrf_list) > 0:
+        mrf = mrf_list[0]
+        print "Inserting new tiles to", mrf
+        
+        mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'average']
+        for tile in alltiles:
+            mrf_insert_command_list.append(tile)
+        mrf_insert_command_list.append(mrf)
+        log_the_command(mrf_insert_command_list)
+        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print mrf_insert.stderr.read()
+        # Continue or break if there is an error?
+
+        # Copy MRF to output
+        shutil.copy(mrf, mrf_filename)
+        shutil.copy(mrf.replace('.mrf','.idx'), idx_filename)
+        shutil.copy(mrf.replace('.mrf',out_filename[-4:]), out_filename)
+        
+        # Clean up
+        remove_file(mod_tiles_filename)
+        remove_file(all_tiles_filename)
+        remove_file(ptime_filename)
+        
+        # Send to log.
+        log_info_mssg_with_timestamp(str().join(['MRF created:  ',out_filename]))
+
+        # Exit here since we don't need to build an MRF from scratch
+        exit()
 
     # Create the gdalbuildvrt command.
     #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
