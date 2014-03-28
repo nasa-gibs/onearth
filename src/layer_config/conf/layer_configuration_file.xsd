@@ -12,13 +12,14 @@
         <xs:element ref="Compression"/>
         <xs:element ref="Levels"/>
         <xs:element ref="EmptyTileSize"/>
-        <xs:element ref="Projection" minOccurs="0"/>
+        <xs:element ref="Projection"/>
         <xs:element maxOccurs="unbounded" ref="Pattern"/>
+        <xs:element maxOccurs="unbounded" ref="GetCapabilitiesLocation"/>
+        <xs:element ref="GetTileServiceLocation"/>
+        <xs:element maxOccurs="unbounded" ref="CacheConfigLocation"/>
+        <xs:element ref="ColorMap"/>
         <xs:element ref="StartDate" minOccurs="0"/>
         <xs:element ref="EndDate" minOccurs="0"/>
-        <xs:element ref="WMTSEndPoint"/>
-        <xs:element ref="TWMSEndPoint"/>
-        <xs:element ref="ColorMap" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -39,11 +40,24 @@
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
-  <xs:element name="Projection" type="xs:string" nillable="true"/>
+  <xs:element name="Projection">
+    <xs:complexType mixed="true">
+      <xs:attribute name="epsg" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="Pattern" type="xs:string"/>
+  <xs:element name="GetCapabilitiesLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="service" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetTileServiceLocation" type="xs:string"/>
+  <xs:element name="CacheConfigLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="service" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ColorMap" type="xs:anyURI"/>
   <xs:element name="StartDate" type="xs:date" nillable="true"/>
   <xs:element name="EndDate" type="xs:date" nillable="true"/>
-  <xs:element name="WMTSEndPoint" type="xs:NCName"/>
-  <xs:element name="TWMSEndPoint" type="xs:NCName"/>
-  <xs:element name="ColorMap" type="xs:string" nillable="true"/>
 </xs:schema>

@@ -1,4 +1,4 @@
-DEPTH=../bin
+DEPTH=../../bin
 
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool

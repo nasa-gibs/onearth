@@ -1,6 +1,6 @@
-DEPTH=../bin
+DEPTH=../../bin
 
-srcdir=../twms-geo
+srcdir=../../twms/EPSG3031
 
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool

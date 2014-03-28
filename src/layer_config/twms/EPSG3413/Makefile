@@ -1,9 +1,9 @@
-DEPTH=../bin
+DEPTH=../../bin
 
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool
 
-TGT_PATH=/home/gibsdev/sites/twms-geo/.lib
+TGT_PATH=/home/gibsdev/sites/twms-arctic/.lib
 
 TYPES:=
 

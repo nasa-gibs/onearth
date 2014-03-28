@@ -53,7 +53,7 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2013
+# 2014
 # Joe.T.Roberts@jpl.nasa.gov
 
 import os
@@ -71,11 +71,11 @@ import glob
 import logging
 from optparse import OptionParser
 
-versionNumber = '0.2d'
+versionNumber = '0.3'
 
 def sigevent(type, mssg, sigevent_url):
     """
-    Send a message to SOTO operations.
+    Send a message to sigevent service.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
@@ -248,7 +248,7 @@ parser.add_option("-n", "--no_restart",
                   default=False, help="Do not restart the Apache server on completion.")
 parser.add_option('-o', '--onearth',
                   action='store', type='string', dest='onearth',
-                  help='Full path of the Apache document root for OnEarth.  Default: $ONEARTH')
+                  help='Full path of the Apache document root for OnEarth if getCapabilities and cache config locations not specified.  Default: $ONEARTH')
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -271,14 +271,16 @@ if options.onearth:
 if os.environ.has_key('ONEARTH'):
     onearth = os.environ['ONEARTH']
 else:
-    print 'ONEARTH environment variable not set.\nONEARTH should point to your Apache document root for OnEarth.\n'
-    if not options.onearth:
-        parser.error('--onearth must be specified if the $ONEARTH environment variable is not set.')
+    onearth = None
+#     print 'ONEARTH environment variable not set.\nONEARTH should point to your Apache document root for OnEarth.\n'
+#     if not options.onearth:
+#         parser.error('--onearth must be specified if the $ONEARTH environment variable is not set.')
 
 if not options.mrf and not options.headers:   # if filename is not given
     parser.error('MRF file or directory not given. --mrf or --headers must be specified.')
 
-print 'Using ' + onearth + ' as $ONEARTH.'    
+if onearth:
+    print 'Using ' + onearth + ' as $ONEARTH.'    
 print 'Using ' + lcdir + ' as $LCDIR.'
 
 # Read XML configuration files.
@@ -323,15 +325,16 @@ for conf in conf_files:
         compression = get_dom_tag_value(dom, 'Compression')
         levels = get_dom_tag_value(dom, 'Levels')
         emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
-        wmtsEndPoint = get_dom_tag_value(dom, 'WMTSEndPoint')
-        twmsEndPoint = get_dom_tag_value(dom, 'TWMSEndPoint')
-        wmts_endpoints.append(wmtsEndPoint)
-        twms_endpoints.append(twmsEndPoint)
+
         # Optional parameters
         try:
             projection = get_dom_tag_value(dom, 'Projection')
         except IndexError:
             projection = None 
+        try:
+            epsg = dom.getElementsByTagName('Projection')[0].attributes['epsg'].value
+        except:
+            epsg = None
         try:
             emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
         except:
@@ -352,6 +355,44 @@ for conf in conf_files:
         patternTags = dom.getElementsByTagName('Pattern')
         for pattern in patternTags:
             patterns.append(pattern.firstChild.data.strip())
+            
+        # Services
+        try:
+            getTileService = get_dom_tag_value(dom, 'GetTileServiceLocation')
+        except IndexError:
+            getTileService = None
+        
+        getCapabilitiesElements = dom.getElementsByTagName('GetCapabilitiesLocation')
+        wmts_getCapabilities = None
+        twms_getCapabilities = None
+        for getCapabilities in getCapabilitiesElements:
+            if str(getCapabilities.attributes['service'].value).lower() == "wmts":
+                wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+            elif str(getCapabilities.attributes['service'].value).lower() == "twms":
+                twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+                
+        cacheConfigElements = dom.getElementsByTagName('CacheConfigLocation')
+        wmts_cacheConfig = None
+        twms_cacheConfig = None
+        for cacheConfig in cacheConfigElements:
+            if str(cacheConfig.attributes['service'].value).lower() == "wmts":
+                wmts_cacheConfig = cacheConfig.firstChild.nodeValue.strip()
+            elif str(cacheConfig.attributes['service'].value).lower() == "twms":
+                twms_cacheConfig = cacheConfig.firstChild.nodeValue.strip()
+        
+        # Set end points
+        try:
+            wmtsEndPoint = get_dom_tag_value(dom, 'WMTSEndPoint')
+        except IndexError:
+            wmtsEndPoint = 'wmts/EPSG' + epsg
+        try:
+            twmsEndPoint = get_dom_tag_value(dom, 'TWMSEndPoint')
+        except IndexError:
+            twmsEndPoint = 'twms/EPSG' + epsg
+        
+        wmts_endpoints.append(wmtsEndPoint)
+        twms_endpoints.append(twmsEndPoint)
+        
         # Close file.
         config_file.close()
         
@@ -377,8 +418,20 @@ for conf in conf_files:
         log_info_mssg('config: StartDate: ' + str(startDate))
     if endDate:
         log_info_mssg('config: EndDate: ' + str(endDate))
-    log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
-    log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
+    if getTileService:
+        log_info_mssg('config: GetTileServiceLocation: ' + str(getTileService))
+    if wmts_getCapabilities:
+        log_info_mssg('config: WMTS GetCapabilitiesLocation: ' + str(wmts_getCapabilities))
+    if twms_getCapabilities:
+        log_info_mssg('config: TWMS GetCapabilitiesLocation: ' + str(twms_getCapabilities))
+    if wmts_cacheConfig:
+        log_info_mssg('config: WMTS CacheConfigLocation: ' + str(wmts_cacheConfig))
+    if twms_cacheConfig:
+        log_info_mssg('config: TWMS CacheConfigLocation: ' + str(twms_cacheConfig))
+    if wmtsEndPoint:
+        log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
+    if twmsEndPoint:
+        log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
     if colormap:
         log_info_mssg('config: ColorMap: ' + str(colormap))
     log_info_mssg('config: Patterns: ' + str(patterns))
@@ -610,13 +663,24 @@ for twms_endpoint in set(twms_endpoints):
     run_command(cmd)
     cmd = 'make -C '+lcdir+'/'+twms_endpoint+'/ all'
     run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/cache.config '+onearth+'/'+twms_endpoint+'/'
+    if twms_cacheConfig:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/cache.config ' + twms_cacheConfig
+    elif onearth:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/cache.config '+onearth+'/'+twms_endpoint+'/'
     run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/getCapabilities.xml '+onearth+'/'+twms_endpoint+'/.lib/'
+    if twms_getCapabilities:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/getCapabilities.xml ' + twms_getCapabilities
+    elif onearth:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/getCapabilities.xml '+onearth+'/'+twms_endpoint+'/.lib/'
     run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/getTileService.xml '+onearth+'/'+twms_endpoint+'/.lib/'
+    if getTileService:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/getTileService.xml ' + getTileService
+    elif onearth:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/getTileService.xml '+onearth+'/'+twms_endpoint+'/.lib/'
     run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/wms_config.xml '+onearth+'/'+twms_endpoint+'/.lib/'
+    if onearth:
+        cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint+'/wms_config.xml '+onearth+'/'+twms_endpoint+'/.lib/'
+        run_command(cmd)
 
 for wmts_endpoint in set(wmts_endpoints):
     #wmts
@@ -625,7 +689,10 @@ for wmts_endpoint in set(wmts_endpoints):
     run_command(cmd)
     cmd = 'make -C '+lcdir+'/'+wmts_endpoint+'/ all'
     run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/cache_wmts.config '+onearth+'/'+wmts_endpoint+'/'
+    if wmts_cacheConfig:
+        cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/cache_wmts.config ' + wmts_cacheConfig
+    elif onearth:
+        cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/cache_wmts.config '+onearth+'/'+wmts_endpoint+'/'
     run_command(cmd)
     cmd = lcdir+'/bin/get_GC_xml.sh '+lcdir+'/'+wmts_endpoint+'/'
     run_command(cmd)
@@ -633,10 +700,16 @@ for wmts_endpoint in set(wmts_endpoints):
     run_command(cmd)
     cmd = 'cat '+lcdir+'/'+wmts_endpoint+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint+'/*.xml '+lcdir+'/'+wmts_endpoint+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml'
     run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint+'/'
-    run_command(cmd)
-    cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint+'/1.0.0/WMTSCapabilities.xml'
-    run_command(cmd)
+    if wmts_getCapabilities:
+        cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml ' + wmts_getCapabilities
+        run_command(cmd)
+        cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml '+ wmts_getCapabilities +'/1.0.0/WMTSCapabilities.xml'
+        run_command(cmd)
+    elif onearth:
+        cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint+'/'
+        run_command(cmd)
+        cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint+'/1.0.0/WMTSCapabilities.xml'
+        run_command(cmd)
 
 print '\n*** Layers have been configured successfully ***'
 print '\nThe Apache server must be restarted'
