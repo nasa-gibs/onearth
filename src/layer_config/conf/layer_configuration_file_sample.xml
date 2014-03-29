@@ -2,21 +2,17 @@
 <LayerConfiguration>
  <Identifier>MODIS_Aqua_Cloud_Top_Temp_Night</Identifier>
  <Title>MODIS AQUA Nighttime Cloud Top Temperature</Title>
- <FileNamePrefix>MYR6CTTLLNI</FileNamePrefix>
- <HeaderFileName>MYR6CTTLLNITTTTTTT_.mrf</HeaderFileName>
- <DataFileLocation>MYR6CTTLLNI/YYYY/MYR6CTTLLNITTTTTTT_.ppg</DataFileLocation>
- <IndexFileLocation>MYR6CTTLLNI/YYYY/MYR6CTTLLNITTTTTTT_.idx</IndexFileLocation>
+ <FileNamePrefix static="false" year="true">MYR6CTTLLNI</FileNamePrefix>
  <Compression>PNG</Compression>
  <Levels>6</Levels>
  <EmptyTileSize offset="0">1397</EmptyTileSize>
  <Projection epsg="4326"><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4326"]]]]></Projection> 
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
- <GetCapabilitiesLocation service="wmts">/home/gibsdev/sites/wmts-geo</GetCapabilitiesLocation>
- <GetCapabilitiesLocation service="twms">/home/gibsdev/sites/twms-geo</GetCapabilitiesLocation>
- <GetTileServiceLocation>/home/gibsdev/sites/twms-geo</GetTileServiceLocation>
- <CacheConfigLocation service="wmts">/home/gibsdev/sites/wmts-geo</CacheConfigLocation>
- <CacheConfigLocation service="twms">/home/gibsdev/sites/twms-geo</CacheConfigLocation>
- <ColorMap>http://map1.vis.earthdata.nasa.gov/colormap/sample.xml</ColorMap>
+ <GetCapabilitiesLocation service="wmts">/home/gibsdev/sites/wmts-geo/</GetCapabilitiesLocation>
+ <GetCapabilitiesLocation service="twms">/home/gibsdev/sites/twms-geo/</GetCapabilitiesLocation>
+ <GetTileServiceLocation>/home/gibsdev/sites/twms-geo/</GetTileServiceLocation>
+ <CacheLocation>/home/gibsdev/data/EPSG4326/</CacheLocation>
+ <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
  <StartDate>2013-11-04</StartDate>
- <EndDate>2013-11-04</EndDate>
+ <EndDate>2014-03-28</EndDate>
 </LayerConfiguration>

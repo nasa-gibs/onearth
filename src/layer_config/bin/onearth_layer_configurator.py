@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2013, California Institute of Technology.
+# Copyright (c) 2002-2014, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -31,23 +31,19 @@
 <LayerConfiguration>
  <Identifier>MODIS_Aqua_Cloud_Top_Temp_Night</Identifier>
  <Title>MODIS AQUA Nighttime Cloud Top Temperature</Title>
- <FileNamePrefix>MYR6CTTLLNI</FileNamePrefix>
- <HeaderFileName>MYR6CTTLLNITTTTTTT_.mrf</HeaderFileName>
- <DataFileLocation>MYR6CTTLLNI/YYYY/MYR6CTTLLNITTTTTTT_.ppg</DataFileLocation>
- <IndexFileLocation>MYR6CTTLLNI/YYYY/MYR6CTTLLNITTTTTTT_.idx</IndexFileLocation>
+ <FileNamePrefix static="false" year="true">MYR6CTTLLNI</FileNamePrefix>
  <Compression>PNG</Compression>
  <Levels>6</Levels>
  <EmptyTileSize offset="0">1397</EmptyTileSize>
- <Projection><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4326"]]]]></Projection> 
- <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image/png&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
- <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image/png&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
- <Pattern><![CDATA[LAYERS=MODIS_Aqua_Cloud_Top_Temp_Night&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A4326&BBOX=[-,\.0-9+Ee]*&WIDTH=512&HEIGHT=512]]></Pattern>
- <Pattern><![CDATA[service=WMS&request=GetMap&version=1.1.1&srs=EPSG:4326&layers=MODIS_Aqua_Cloud_Top_Temp_Night&styles=default&transparent=TRUE&format=image/png&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+ <Projection epsg="4326"><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4326"]]]]></Projection> 
+ <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+ <GetCapabilitiesLocation service="wmts">/home/gibsdev/sites/wmts-geo/</GetCapabilitiesLocation>
+ <GetCapabilitiesLocation service="twms">/home/gibsdev/sites/twms-geo/</GetCapabilitiesLocation>
+ <GetTileServiceLocation>/home/gibsdev/sites/twms-geo/</GetTileServiceLocation>
+ <CacheLocation>/home/gibsdev/data/EPSG4326/</CacheLocation>
+ <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
  <StartDate>2013-11-04</StartDate>
- <EndDate>2013-11-04</EndDate>
- <WMTSEndPoint>wmts-geo</WMTSEndPoint>
- <TWMSEndPoint>twms-geo</TWMSEndPoint>
- <ColorMap>http://map1.vis.earthdata.nasa.gov/colormap/sample.xml</ColorMap>
+ <EndDate>2014-03-28</EndDate>
 </LayerConfiguration>
 '''
 #
@@ -228,6 +224,18 @@ def run_command(cmd):
     for error in process.stderr:
         raise Exception(error.strip())
     
+def add_trailing_slash(directory_path):
+    """
+    Add trailing slash if one is not already present.
+    Argument:
+        directory_path -- path to which trailing slash should be confirmed.
+    """
+    # Add trailing slash.
+    if directory_path[-1] != '/':
+        directory_path=str().join([directory_path, '/'])
+    # Return directory_path with trailing slash.
+    return directory_path
+    
  #-------------------------------------------------------------------------------   
 
 print 'OnEarth Layer Configurator v' + versionNumber
@@ -238,7 +246,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --conf_dir [$LCDIR/conf/] --headers [$LCDIR/headers/] --mrf [MRF archetype] --onearth [OnEarth DocRoot] --sigevent_url [url]'
+usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --conf_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --sigevent_url [url]'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -249,13 +257,6 @@ parser.add_option('-d', '--conf_dir',
                   action='store', type='string', dest='configuration_directory',
                   default=lcdir+'/conf/',
                   help='Full path of directory containing configuration files.  Default: $LCDIR/conf/')
-parser.add_option('-e', '--headers',
-                  action='store', type='string', dest='headers',
-                  default=lcdir+'/headers/',
-                  help='Full path of directory containing MRF headers.  Default: $LCDIR/headers/')
-parser.add_option('-m', '--mrf',
-                  action='store', type='string', dest='mrf',
-                  help='Full path of archetype MRF file.')
 parser.add_option("-n", "--no_restart",
                   action="store_true", dest="no_restart", 
                   default=False, help="Do not restart the Apache server on completion.")
@@ -274,8 +275,7 @@ parser.add_option('-s', '--sigevent_url',
 configuration_filename = options.configuration_filename
 # Configuration directory.
 configuration_directory = options.configuration_directory
-# Archetype headers
-headers = options.headers
+
 # Sigevent URL.
 sigevent_url = options.sigevent_url
 
@@ -285,13 +285,6 @@ else:
     onearth = None
 if os.environ.has_key('ONEARTH'):
     onearth = os.environ['ONEARTH']
-#else:
-#     print 'ONEARTH environment variable not set.\nONEARTH should point to your Apache document root for OnEarth.\n'
-#     if not options.onearth:
-#         parser.error('--onearth must be specified if the $ONEARTH environment variable is not set.')
-
-if not options.mrf and not options.headers:   # if filename is not given
-    parser.error('MRF file or directory not given. --mrf or --headers must be specified.')
 
 if onearth:
     print 'Using ' + onearth + ' as $ONEARTH.'    
@@ -329,21 +322,43 @@ for conf in conf_files:
         sys.exit(mssg)
     else:
         dom = xml.dom.minidom.parse(config_file)
+        
         #Required parameters
         identifier = get_dom_tag_value(dom, 'Identifier')
         title = get_dom_tag_value(dom, 'Title')
-        fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
-        headerFileName = get_dom_tag_value(dom, 'HeaderFileName')
-        dataFileLocation = get_dom_tag_value(dom, 'DataFileLocation')
-        indexFileLocation = get_dom_tag_value(dom, 'IndexFileLocation')
         compression = get_dom_tag_value(dom, 'Compression')
         levels = get_dom_tag_value(dom, 'Levels')
         emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
+        fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
+        try:
+            static = dom.getElementsByTagName('FileNamePrefix')[0].attributes['static'].value.lower() in ['true']
+        except:
+            static = False
+        try:
+            year = dom.getElementsByTagName('FileNamePrefix')[0].attributes['year'].value.lower() in ['true']
+        except:
+            year = False
 
         # Optional parameters
         try:
-            projection = get_dom_tag_value(dom, 'Projection')
+            cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
         except IndexError:
+            cacheConfig = None 
+        try:
+            headerFileName = get_dom_tag_value(dom, 'HeaderFileName')
+        except IndexError:
+            headerFileName = None
+        try:
+            dataFileLocation = get_dom_tag_value(dom, 'DataFileLocation')
+        except IndexError:
+            dataFileLocation = None
+        try:
+            indexFileLocation = get_dom_tag_value(dom, 'IndexFileLocation')
+        except IndexError:
+            indexFileLocation = None
+        try:
+            projection = get_dom_tag_value(dom, 'Projection')
+        except:
             projection = None 
         try:
             epsg = dom.getElementsByTagName('Projection')[0].attributes['epsg'].value
@@ -384,15 +399,6 @@ for conf in conf_files:
                 wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
             elif str(getCapabilities.attributes['service'].value).lower() == "twms":
                 twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
-                
-        cacheConfigElements = dom.getElementsByTagName('CacheConfigLocation')
-        wmts_cacheConfig = None
-        twms_cacheConfig = None
-        for cacheConfig in cacheConfigElements:
-            if str(cacheConfig.attributes['service'].value).lower() == "wmts":
-                wmts_cacheConfig = cacheConfig.firstChild.nodeValue.strip()
-            elif str(cacheConfig.attributes['service'].value).lower() == "twms":
-                twms_cacheConfig = cacheConfig.firstChild.nodeValue.strip()
         
         # Set end points
         try:
@@ -404,28 +410,25 @@ for conf in conf_files:
         except IndexError:
             twmsEndPoint = 'twms/EPSG' + epsg
         
-        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, wmts_cacheConfig, wmts_getCapabilities)
-        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, twms_cacheConfig, twms_getCapabilities, getTileService)
+        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities)
+        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService)
         
         # Close file.
         config_file.close()
-        
-    if options.mrf:
-        mrf = options.mrf
-    else:
-        mrf = headers + headerFileName
-    
-    log_info_mssg('MRF: ' + mrf)    
+     
     log_info_mssg('config: Identifier: ' + identifier)
     log_info_mssg('config: Title: ' + title)
-    log_info_mssg('config: FileNamePrefix: ' + fileNamePrefix)
-    log_info_mssg('config: HeaderFileName: ' + headerFileName)
-    log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
-    log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
+    log_info_mssg('config: FileNamePrefix static=' + str(static) + ' year=' + str(year) + ': ' + fileNamePrefix)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: Levels: ' + levels)
     log_info_mssg('config: EmptyTileSize: ' + str(emptyTileSize))
     log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
+    if headerFileName:
+        log_info_mssg('config: HeaderFileName: ' + headerFileName)
+    if dataFileLocation:
+        log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
+    if indexFileLocation:
+        log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection))
     if startDate:
@@ -438,10 +441,8 @@ for conf in conf_files:
         log_info_mssg('config: WMTS GetCapabilitiesLocation: ' + str(wmts_getCapabilities))
     if twms_getCapabilities:
         log_info_mssg('config: TWMS GetCapabilitiesLocation: ' + str(twms_getCapabilities))
-    if wmts_cacheConfig:
-        log_info_mssg('config: WMTS CacheConfigLocation: ' + str(wmts_cacheConfig))
-    if twms_cacheConfig:
-        log_info_mssg('config: TWMS CacheConfigLocation: ' + str(twms_cacheConfig))
+    if cacheConfig:
+        log_info_mssg('config: CacheLocation: ' + str(cacheConfig))
     if wmtsEndPoint:
         log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     if twmsEndPoint:
@@ -449,6 +450,31 @@ for conf in conf_files:
     if colormap:
         log_info_mssg('config: ColorMap: ' + str(colormap))
     log_info_mssg('config: Patterns: ' + str(patterns))
+    
+    # get MRF archetype
+    if headerFileName:
+        mrf = headerFileName
+    else:
+        mrfLocation = add_trailing_slash(cacheConfig)
+        if year == True:
+            mrfLocation =  mrfLocation + fileNamePrefix +'/YYYY/'
+        if static == True:
+            mrf = mrfLocation + fileNamePrefix + '.mrf'
+            headerFileName = fileNamePrefix + '.mrf'
+        else:
+            mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
+            headerFileName = fileNamePrefix + 'TTTTTTT_.mrf'
+    
+    if indexFileLocation == None:
+        indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
+        
+    if dataFileLocation == None:
+        if compression.lower in ['jpg', 'jpeg']:
+            dataFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.pjg')
+        else:
+            dataFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.ppg')
+        
+    log_info_mssg('MRF: ' + mrf)
     
     # Modify MRF Archetype
     try:
