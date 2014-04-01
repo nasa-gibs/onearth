@@ -173,7 +173,10 @@ def log_sig_exit(type, mssg, sigevent_url):
         logging.error(time.asctime())
         logging.error(mssg)
     # Send to sigevent.
-    sent=sigevent(type, mssg, sigevent_url)
+    try:
+        sent=sigevent(type, mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
     # Exit.
     sys.exit(mssg)
 
@@ -395,21 +398,30 @@ for conf in conf_files:
         wmts_getCapabilities = None
         twms_getCapabilities = None
         for getCapabilities in getCapabilitiesElements:
-            if str(getCapabilities.attributes['service'].value).lower() == "wmts":
-                wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
-            elif str(getCapabilities.attributes['service'].value).lower() == "twms":
-                twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+            try:
+                if str(getCapabilities.attributes['service'].value).lower() == "wmts":
+                    wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+                elif str(getCapabilities.attributes['service'].value).lower() == "twms":
+                    twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+            except KeyError:
+                log_sig_exit('ERROR', 'service is not defined in <GetCapabilitiesLocation>', sigevent_url)
         
         # Set end points
         try:
             wmtsEndPoint = get_dom_tag_value(dom, 'WMTSEndPoint')
         except IndexError:
-            wmtsEndPoint = 'wmts/EPSG' + epsg
+            if epsg != None:
+                wmtsEndPoint = 'wmts/EPSG' + epsg
+            else:
+                log_sig_exit('ERROR', 'epsg is not defined in <Projection>', sigevent_url)
         try:
             twmsEndPoint = get_dom_tag_value(dom, 'TWMSEndPoint')
         except IndexError:
-            twmsEndPoint = 'twms/EPSG' + epsg
-        
+            if epsg != None:
+                twmsEndPoint = 'twms/EPSG' + epsg
+            else:
+                log_sig_exit('ERROR', 'epsg is not defined in <Projection>', sigevent_url)
+                
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService)
         
@@ -469,7 +481,7 @@ for conf in conf_files:
         indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
         
     if dataFileLocation == None:
-        if compression.lower in ['jpg', 'jpeg']:
+        if compression.lower() in ['jpg', 'jpeg']:
             dataFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.pjg')
         else:
             dataFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.ppg')
