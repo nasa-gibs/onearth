@@ -40,11 +40,11 @@ do
 # Get start and end dates
         startdate=""
         enddate=""
-        startdate=`grep -oP '(?<=<StartDate>).*?(?=</StartDate>)' $srcdir/$i`
-        enddate=`grep -oP '(?<=<EndDate>).*?(?=</EndDate>)' $srcdir/$i`
+        startdate=`grep -oP '(?<=<StartDate>).*?(?=</StartDate>)' $i`
+        enddate=`grep -oP '(?<=<EndDate>).*?(?=</EndDate>)' $i`
 # Get metadata
 		METADATA=""
-		METADATA=`grep -oP '(?<=<Metadata>).*?(?=</Metadata>)' $srcdir/$i`
+		METADATA=`grep -oP '(?<=<Metadata>).*?(?=</Metadata>)' $i`
 # Build the pattern
         if [ $LAYER != population -a $LAYER != sedac_bound ]; then
 
@@ -57,7 +57,7 @@ do
           echo "         </ows:WGS84BoundingBox>"
           echo "         <ows:Identifier>$LAYER</ows:Identifier>"
           if [ "$METADATA" != "" ]; then
-        	 echo "         <ows:Metadata xlink:href=\"$METADATA\" xlink:title=\"Styled Layer Descriptor (SLD): Data - RGB Mapping\"/>"
+        	 echo "         <ows:Metadata xlink:href=\"$METADATA\" xlink:title=\"GIBS Color Map: Data - RGB Mapping\"/>"
        	  fi
           echo "         <Style isDefault=\"true\">"
           echo "            <ows:Title>default</ows:Title>"

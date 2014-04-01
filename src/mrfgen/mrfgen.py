@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2013, California Institute of Technology.
+# Copyright (c) 2002-2014, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,18 +20,18 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #
-# Pipeline for converting georeferenced tiles to MRF for Tile-WMS.
+# Pipeline for converting georeferenced tiles to MRF for Tiled-WMS.
 #
 # Example:
 #
-#  pyline.py 
-#   -c pyline_configuration_file.xml 
+#  mrfgen.py 
+#   -c mrfgen_configuration_file.xml 
 #   -s http://localhost:8100/sigevent/events/create
 #
 # Example XML configuration file:
 #
 # <?xml version="1.0" encoding="UTF-8"?>
-# <pyline_configuration>
+# <mrfgen_configuration>
 #  <date_of_data>20120825</date_of_data>
 #  <parameter_name>remss_windsat_l2p_gridded___sst___1440_x_720___night</parameter_name>
 #  <input_dir>~/sst/remss_windsat_l2p_gridded/img/20120825/night/</input_dir>
@@ -44,11 +44,12 @@
 #  <mrf_blocksize>256</mrf_blocksize>
 #  <mrf_compression_type>JPG</mrf_compression_type>
 #  <target_x>65536</target_x>
-# </pyline_configuration>
+#  <colormap></colormap>
+# </mrfgen_configuration>
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
 # NASA Jet Propulsion Laboratory
-# 2013
+# 2014
 # Jeffrey.R.Hall@jpl.nasa.gov
 # Joe.T.Roberts@jpl.nasa.gov
 
@@ -78,7 +79,7 @@ import imghdr
 
 def sigevent(type, mssg, sigevent_url):
     """
-    Send a message to SOTO operations.
+    Send a message to sigevent service.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
@@ -103,10 +104,10 @@ def sigevent(type, mssg, sigevent_url):
     data['type']=type
     data['description']=mssg
     data['computer']=socket.gethostname()
-    data['source']='SOTO'
+    data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='UNCATEGORIZED'
-    data['provider']='PO.DAAC'
+    data['category']='MRFGEN'
+    data['provider']='GIBS'
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -145,7 +146,10 @@ def log_sig_warn(mssg, sigevent_url):
     logging.warning(time.asctime())
     logging.warning(mssg)
     # Send to sigevent.
-    sent=sigevent('WARN', mssg, sigevent_url)
+    try:
+        sent=sigevent('WARN', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
 
 def log_sig_exit(type, mssg, sigevent_url):
     """
@@ -167,7 +171,10 @@ def log_sig_exit(type, mssg, sigevent_url):
         logging.error(time.asctime())
         logging.error(mssg)
     # Send to sigevent.
-    sent=sigevent(type, mssg, sigevent_url)
+    try:
+        sent=sigevent(type, mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
     # Exit.
     sys.exit(mssg)
 
@@ -283,8 +290,8 @@ def lookupEmptyTile(empty_tile):
     empty_config_file=open(script_dir+"/empty_tiles/empty_config", 'r')
     tiles = {}
     for line in empty_config_file:
-       (key, val) = line.split()
-       tiles[key] = val
+        (key, val) = line.split()
+        tiles[key] = val
        
     return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
 
@@ -296,8 +303,8 @@ def lookupEmptyTile(empty_tile):
 parser=OptionParser()
 parser.add_option('-c', '--configuration_filename',
                   action='store', type='string', dest='configuration_filename',
-                  default='./pyline_configuration_file.xml',
-                  help='Full path of configuration filename.  Default:  ./pyline_configuration_file.xml')
+                  default='./mrfgen_configuration_file.xml',
+                  help='Full path of configuration filename.  Default:  ./mrfgen_configuration_file.xml')
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -366,6 +373,11 @@ else:
         resampling        =get_dom_tag_value(dom, 'resampling')
     except IndexError:
         resampling = 'nearest'    
+    # colormap
+    try:
+        colormap               =get_dom_tag_value(dom, 'colormap')
+    except IndexError:
+        colormap = ''    
     # Close file.
     config_file.close()
 
@@ -375,6 +387,9 @@ output_dir =add_trailing_slash(output_dir)
 cache_dir  =add_trailing_slash(cache_dir)
 working_dir=add_trailing_slash(working_dir)
 logfile_dir=add_trailing_slash(logfile_dir)
+
+# Save script_dir
+script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
 
 # Ensure that mrf_compression_type is uppercase.
 mrf_compression_type=string.upper(mrf_compression_type)
@@ -386,7 +401,7 @@ current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
 
 # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
 # Files get date_of_date added, links do not.
-basename=str().join([parameter_name, '_', date_of_data, '___', 'pyline_', 
+basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', 
                      current_cycle_time])
 
 # Verify logfile_dir first so that the log can be started.
@@ -432,12 +447,13 @@ log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
 log_info_mssg(str().join(['config resampling:              ', resampling]))
-log_info_mssg(str().join(['pyline current_cycle_time:      ', current_cycle_time]))
-log_info_mssg(str().join(['pyline basename:                ', basename]))
+log_info_mssg(str().join(['config colormap:                     ', colormap]))
+log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
+log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
 # Verify that date is 8 characters.
 if len(date_of_data) != 8:
-    mssg='Format for <date_of_data> (in pyline XML config file) is:  yyyymmdd'
+    mssg='Format for <date_of_data> (in mrfgen XML config file) is:  yyyymmdd'
     log_sig_exit('ERROR', mssg, sigevent_url)
 
 # Check if empty tile filename was specified.
@@ -478,7 +494,7 @@ log_info_mssg(str().join(['Empty tile size is:             ',
 # Read previous cycle time string value from disk file.  
 # Time format in txt file is "yyyymmdd.hhmmss" and will be treated as a double 
 # precision value for comparing time stamps.
-ptime_filename=str().join([input_dir, 'pyline_previous_cycle_time.txt'])
+ptime_filename=str().join([input_dir, 'mrfgen_previous_cycle_time.txt'])
 ptime_preexisting=glob.glob(ptime_filename)
 # Default setting of zero will result in all tiles being procesed.
 pretime='0.0'
@@ -508,8 +524,8 @@ if pretime == '0.0':
                               ' All tiles will be processed.']))
 else:
     # Send to log.
-    log_info_mssg(str().join(['pyline previous_cycle_time:     ', pretime]))
-    log_info_mssg(str().join(['pyline previous cycle from:     ',
+    log_info_mssg(str().join(['mrfgen previous_cycle_time:     ', pretime]))
+    log_info_mssg(str().join(['mrfgen previous cycle from:     ',
                               ptime_filename]))
 
 ##IS LOCK FILE NECESSARY?
@@ -525,6 +541,9 @@ else:
 
 # Change directory to working_dir.
 os.chdir(working_dir)
+
+# transparency flag for custom color maps; default to False
+add_transparency = False
 
 # Get list of all tile filenames.
 if input_files == '':
@@ -544,24 +563,99 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 else: # Default to png
     tiff_compress = "PNG"
     
-for i, tile in enumerate(alltiles):
-    if '.tif' in tile:
-        print "Converting TIFF file " + tile + " to " + tiff_compress
+# Convert TIFF files
+# for i, tile in enumerate(alltiles):
+#     if '.tif' in tile:
+#         print "Converting TIFF file " + tile + " to " + tiff_compress
+#           
+#         # Create the gdal_translate command.
+#         gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
+#                                      tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
+#         # Log the gdal_translate command.
+#         log_the_command(gdal_translate_command_list)
+#   
+#         # Execute gdal_translate.
+#         subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+#                         stderr=subprocess.PIPE)
+#           
+#         # Replace with new tiles
+#         alltiles[i] = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
         
-        # Create the gdal_translate command.
-        gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress,
-                                     tile, tile.split('.')[0]+'.'+str(tiff_compress).lower()]
-        # Log the gdal_translate command.
-        log_the_command(gdal_translate_command_list)
 
-        # Execute gdal_translate.
-        subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
+# Convert RGBA PNGs to indexed paletted PNGs if requested
+if mrf_compression_type == 'PPNG' and colormap != '':
+    for i, tile in enumerate(alltiles):
+        temp_tile = None
         
-        # Replace with new tiles
-        alltiles[i] = tile.split('.')[0]+'.'+str(tiff_compress).lower()
+        # Check to see if tif files need to be converted
+        if '.tif' in tile.lower():
+            # Convert TIFF files
+            print "Converting TIFF file " + tile + " to " + tiff_compress
+               
+            # Create the gdal_translate command.
+            gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
+                                         tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
+            # Log the gdal_translate command.
+            log_the_command(gdal_translate_command_list)
+       
+            # Execute gdal_translate.
+            subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+               
+            # Replace with new tiles
+            tile = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
+            temp_tile = tile
+            
+        # Check input PNGs if RGBA, then convert        
+        if '.png' in tile.lower():
+            
+            # Run the gdal_info on PNG tile.
+            gdalinfo_command_list=['gdalinfo', tile]
+            log_the_command(gdalinfo_command_list)
+            gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            
+            # Read gdal_info output
+            if "ColorInterp=Palette" not in gdalinfo.stdout.read():
+                print "Converting RGBA PNG to indexed paletted PNG"
+                
+                output_tile = working_dir + os.path.basename(tile).split('.')[0]+'_indexed.png'
+                
+                # Create the RGBApng2Palpng command.
+                RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + colormap,
+                                             '-fill='+vrtnodata, '-of='+output_tile, tile]
+                # Log the RGBApng2Palpng command.
+                log_the_command(RGBApng2Palpng_command_list)
+         
+                # Execute RGBApng2Palpng.
+                subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
+                if os.path.isfile(output_tile):
+                    print output_tile, "created"
+                    # Replace with new tiles
+                    alltiles[i] = output_tile
+                else:
+                    raise Exception("Failed to create " + output_tile) #exception or warning?
+                
+                # Make a copy of world file
+                if os.path.isfile(tile.split('.')[0]+'.pgw'):
+                    shutil.copy(tile.split('.')[0]+'.pgw', output_tile.split('.')[0]+'.pgw')
+                elif os.path.isfile(tile.split('.')[0]+'.wld'):
+                    shutil.copy(tile.split('.')[0]+'.wld', output_tile.split('.')[0]+'.pgw')
+                else:
+                    print "World file does not exist for tile: " + tile
+                    
+                # add transparency flag for custom color map
+                add_transparency = True
+            else:
+                print "Paletted PNG verified"
+                
+        # remove tif temp tiles
+        if temp_tile != None:
+            remove_file(temp_tile)
+            remove_file(temp_tile+'.aux.xml')
+            remove_file(temp_tile.split('.')[0]+'.wld')     
         
-print alltiles
+#print alltiles
 alltiles.sort()
 
 # Initialize list of tile modification times.
@@ -690,6 +784,44 @@ if len(modtiles) > 0:
     remove_file(idx_filename)
     remove_file(out_filename)
     remove_file(vrt_filename)
+    
+    # Check if this is an MRF insert update, if not then regenerate a new MRF
+    mrf_list = []
+    for tile in list(alltiles):
+        if '.mrf' in tile.lower():
+            mrf_list.append(tile)
+            alltiles.remove(tile)
+    if len(mrf_list) == 0:
+        mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
+    # Should only be one MRF, so use that one
+    if len(mrf_list) > 0:
+        mrf = mrf_list[0]
+        print "Inserting new tiles to", mrf
+        
+        mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'average']
+        for tile in alltiles:
+            mrf_insert_command_list.append(tile)
+        mrf_insert_command_list.append(mrf)
+        log_the_command(mrf_insert_command_list)
+        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print mrf_insert.stderr.read()
+        # Continue or break if there is an error?
+
+        # Copy MRF to output
+        shutil.copy(mrf, mrf_filename)
+        shutil.copy(mrf.replace('.mrf','.idx'), idx_filename)
+        shutil.copy(mrf.replace('.mrf',out_filename[-4:]), out_filename)
+        
+        # Clean up
+        remove_file(mod_tiles_filename)
+        remove_file(all_tiles_filename)
+        remove_file(ptime_filename)
+        
+        # Send to log.
+        log_info_mssg_with_timestamp(str().join(['MRF created:  ',out_filename]))
+
+        # Exit here since we don't need to build an MRF from scratch
+        exit()
 
     # Create the gdalbuildvrt command.
     #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
@@ -705,8 +837,8 @@ if len(modtiles) > 0:
                                '-vrtnodata', vrtnodata,
                                '-input_file_list', all_tiles_filename,
                                vrt_filename]
-                               # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
-                               #'-tr', target_x, target_y, '-resolution', 'user'
+    # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
+    #'-tr', target_x, target_y, '-resolution', 'user'
     # Log the gdalbuildvrt command.
     log_the_command(gdalbuildvrt_command_list)
     # Capture stderr to record skipped .png files that are not valid PNG+World.
@@ -769,6 +901,24 @@ if len(modtiles) > 0:
         else:
             mssg='Unrecognized compression type for MRF.'
             log_sig_exit('ERROR', mssg, sigevent_url)
+            
+        # Insert color map into VRT if provided
+        if colormap != '':
+            new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
+            if add_transparency == True:
+                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--transparent']
+            else:
+                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
+            log_the_command(colormap2vrt_command_list)
+            colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
+            colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w')
+            subprocess.call(colormap2vrt_command_list, stderr=colormap2vrt_stderr_file)
+            colormap2vrt_stderr_file.close()
+
+            if os.path.isfile(new_vrt_filename):
+                remove_file(vrt_filename)
+                remove_file(colormap2vrt_stderr_filename)
+                vrt_filename = new_vrt_filename
 
         # Set the blocksize for gdal_translate (-co NAME=VALUE).
         blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
@@ -954,6 +1104,14 @@ if len(modtiles) > 0:
                          '  Check stderr file: ',gdalbuildvrt_stderr_filename])
         log_sig_warn(mssg, sigevent_url)
 
+# Remove temp tiles
+for tilename in (alltiles):
+    if working_dir in tilename:
+        remove_file(tilename)
+        if tiff_compress != None:
+            remove_file(tilename+'.aux.xml')
+        if '_indexed.' in tilename:
+            remove_file(tilename.split('.')[0]+'.pgw')
 
 # Send to log.
 log_info_mssg_with_timestamp(str().join(['MRF created:  ', 

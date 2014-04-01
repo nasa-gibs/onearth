@@ -288,17 +288,21 @@ void GDALRegister_mrf(void)
 GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *pDS, const ILImage &image, int b, int level)
 
 {
+    GDALMRFRasterBand *bnd;
     switch(pDS->current.comp) 
     {
     case IL_PPNG: // Uses the PNG code, just has a palette in each PNG
-    case IL_PNG: return new PNG_Band(pDS,image,b,level);
-    case IL_JPEG: return new JPEG_Band(pDS,image,b,level);
-    case IL_NONE: return new Raw_Band(pDS,image,b,level);
-    case IL_ZLIB: return new ZLIB_Band(pDS,image,b,level);
-    case IL_TIF: return new TIF_Band(pDS,image,b,level);
+    case IL_PNG: bnd = new PNG_Band(pDS,image,b,level); break;
+    case IL_JPEG: bnd = new JPEG_Band(pDS,image,b,level); break;
+    case IL_NONE: bnd = new Raw_Band(pDS,image,b,level); break;
+    case IL_ZLIB: bnd = new ZLIB_Band(pDS,image,b,level); break;
+    case IL_TIF: bnd = new TIF_Band(pDS,image,b,level); break;
     default:
         return NULL;
     }
+    // Copy the RW mode from the dataset
+    bnd->SetAccess(pDS->eAccess);
+    return bnd;
 }
 
 /**

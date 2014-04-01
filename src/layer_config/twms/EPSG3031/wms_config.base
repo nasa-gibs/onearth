@@ -41,16 +41,10 @@ EXECBEEF: export GFIE="</GDAL_FileName></Elevation_Values></GetFeatureInfo>"
 
 #GLOBAL DEFAULTS
 #FPATH is the prefix for where the gdal readable files are located
-EXECBEEF: export Projection="GEOGCS[&quot;WGS 84&quot;,DATUM[&quot;WGS_1984&quot;,SPHEROID[&quot;WGS 84&quot;,6378137,298.257223563,AUTHORITY[&quot;EPSG&quot;,&quot;7030&quot;]],AUTHORITY[&quot;EPSG&quot;,&quot;6326&quot;]],PRIMEM[&quot;Greenwich&quot;,0],UNIT[&quot;degree&quot;,0.0174532925199433],AUTHORITY[&quot;EPSG&quot;,&quot;4326&quot;]]" SRS=EPSG:4326 Bands=3 FPATH=/data1-ops/SOTE/TWMS
+EXECBEEF: export Projection="GEOGCS[&quot;WGS 84&quot;,DATUM[&quot;WGS_1984&quot;,SPHEROID[&quot;WGS 84&quot;,6378137,298.257223563,AUTHORITY[&quot;EPSG&quot;,&quot;7030&quot;]],AUTHORITY[&quot;EPSG&quot;,&quot;6326&quot;]],PRIMEM[&quot;Greenwich&quot;,0],UNIT[&quot;degree&quot;,0.0174532925199433],AUTHORITY[&quot;EPSG&quot;,&quot;4326&quot;]]" SRS=EPSG:4326 Bands=3 FPATH=/data/
 
 #
 #If File is not set, it uses $Layer.tif
-
-EXECBEEF: N="MLS" Name="$N tileset" Title="$N" LN=MLSTTTTTTT_.mrf eval $TILED_GROUP
-EXECBEEF: N="AIRS Dust Score" Name="$N tileset" Title="$N" LN=AIRS_Dust_ScoreTTTTTTT_.mrf eval $TILED_GROUP
-EXECBEEF: N="MODIS AQUA Nighttime Cloud Top Temperature" Name="$N tileset" Title="$N" LN=MYR6CTTLLNITTTTTTT_.mrf eval $TILED_GROUP
-EXECBEEF: N="OMI SO2 Planetary Boundary Layer" Name="$N tileset" Title="$N" LN=OMI_SO2_PBLTTTTTTT_.mrf eval $TILED_GROUP
-EXECBEEF: N="Aquarius Sea Surface Salinity" Name="$N tileset" Title="$N" LN=aquarius_l3_sss_smi_daily___sss___1440_x_720___daynightTTTTTTT_.mrf eval $TILED_GROUP
 
   </LayerList>
 
