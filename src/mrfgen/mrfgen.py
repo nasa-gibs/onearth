@@ -106,7 +106,7 @@ def sigevent(type, mssg, sigevent_url):
     data['computer']=socket.gethostname()
     data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='UNCATEGORIZED'
+    data['category']='MRFGEN'
     data['provider']='GIBS'
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
