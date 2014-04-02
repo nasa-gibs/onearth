@@ -60,6 +60,10 @@ build/gdal/swig/python/GNUmakefile: deploy/gibs-gdal/python-install.patch
 # 	Use external libtool
 	sed -i 's|@LIBTOOL@|/usr/bin/libtool|g' build/gdal/GDALmake.opt.in
 
+#	Patch gcore/overview.cpp	
+	( cd build/gdal/gcore ; \
+		patch < ../../../deploy/gibs-gdal/overview.patch )
+
 gdal-compile:
 	( cd build/gdal ; ./configure \
 		--prefix=$(PREFIX) \
