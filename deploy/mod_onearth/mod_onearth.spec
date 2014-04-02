@@ -1,6 +1,6 @@
 Name:		mod_onearth
-Version:	0.2.5
-Release:	0.3%{?dist}
+Version:	0.3.0
+Release:	1%{?dist}
 Summary:	Apache module for OnEarth
 
 License:	ASL 2.0+
@@ -87,6 +87,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Apr 1 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.3.0-1
+- Changed the version to 0.3.0
+
 * Wed Feb 26 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.2.5-1
 - Changed the version to 0.2.5
 

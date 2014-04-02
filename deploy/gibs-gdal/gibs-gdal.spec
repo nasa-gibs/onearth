@@ -1,6 +1,6 @@
 %global gdal_version 1.10.1
-%global gdal_release 3%{?dist}
-%global mrf_version 0.2.5
+%global gdal_release 4%{?dist}
+%global mrf_version 0.3.0
 %global mrf_release 1%{?dist}
 
 Name:		gibs-gdal
@@ -140,6 +140,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Apr 1 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.10.1-4
+- Changed MRF version to 0.3.0
+
 * Tue Feb 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.10.1-3
 - Changed MRF version to 0.2.4 to be consistent with project release
 
