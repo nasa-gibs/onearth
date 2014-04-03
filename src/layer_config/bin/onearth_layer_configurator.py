@@ -273,7 +273,7 @@ parser.add_option('-s', '--sigevent_url',
                   help='Default:  http://localhost:8100/sigevent/events/create')
 parser.add_option('-t', '--time',
                   action='store', type='string', dest='time',
-                  help='ISO 8601 time for single configuration file (conf_file must be specified).')
+                  help='ISO 8601 time(s) for single configuration file (conf_file must be specified).')
 parser.add_option("-x", "--no_xml",
                   action="store_true", dest="no_xml", 
                   default=False, help="Do not generate getCapabilities and getTileService XML.")
@@ -289,10 +289,12 @@ configuration_filename = options.configuration_filename
 configuration_directory = options.configuration_directory
 # No XML configurations (getCapabilities, getTileService)
 no_xml = options.no_xml
-# No cache configuration
+# No cache configuration.
 no_cache = options.no_cache
-# Do not restart Apache
+# Do not restart Apache.
 no_restart = options.no_restart
+# Time for conf file.
+configuration_time = options.time
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
@@ -316,6 +318,13 @@ if no_cache:
 if no_xml and no_cache:
     print "no_xml and no_cache specified, nothing to do...exiting"
     exit()
+    
+if configuration_time:
+    if configuration_filename == None:
+        print "A configuration file must be specified with --time"
+        exit()
+    else:
+        print "Using time='" + configuration_time + "' for " + configuration_filename
 
 # Read XML configuration files.
 
@@ -408,10 +417,13 @@ for conf in conf_files:
             patterns.append(pattern.firstChild.data.strip())
             
         # Time
-        times = []
-        timeTags = dom.getElementsByTagName('Time')
-        for time in timeTags:
-            times.append(time.firstChild.data.strip())
+        if configuration_time:
+            times = configuration_time.split(',')
+        else:  
+            times = []  
+            timeTags = dom.getElementsByTagName('Time')
+            for time in timeTags:
+                times.append(time.firstChild.data.strip())
             
         # Services
         try:
