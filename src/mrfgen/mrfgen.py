@@ -376,7 +376,7 @@ else:
     # colormap
     try:
         colormap               =get_dom_tag_value(dom, 'colormap')
-    except IndexError:
+    except:
         colormap = ''    
     # Close file.
     config_file.close()
