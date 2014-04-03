@@ -38,10 +38,13 @@ do
 	LAYER=${a##*LAYER=}
 	LAYER=${LAYER%%&*}
 # Get start and end dates
-        startdate=""
-        enddate=""
-        startdate=`grep -oP '(?<=<StartDate>).*?(?=</StartDate>)' $i`
-        enddate=`grep -oP '(?<=<EndDate>).*?(?=</EndDate>)' $i`
+        time=""
+        defaultdate=""
+        times=`grep -oP '(?<=<Time>).*?(?=</Time>)' $i`
+    	for t in $times
+		do
+        	defaultdate=`echo $t | cut -d '/' -f 2`
+    	done
 # Get metadata
 		METADATA=""
 		METADATA=`grep -oP '(?<=<Metadata>).*?(?=</Metadata>)' $i`
@@ -65,14 +68,17 @@ do
                             # Need LegendURL
           echo "         </Style>"
           echo "         <Format>$FORMAT</Format>"
-	      if [ "$startdate" != "" ]; then
-	          echo "         <Dimension>" 
-	          echo "           <ows:Identifier>time</ows:Identifier>"
-	          echo "           <UOM>ISO8601</UOM>"
-	          echo "           <Default>$enddate</Default>"
-	          echo "           <Current>false</Current>"
-	          echo "           <Value>$startdate/$enddate/P1D</Value>"
-	          echo "         </Dimension>" 
+	      if [ "$times" != "" ]; then
+			echo "         <Dimension>" 
+		    echo "           <ows:Identifier>time</ows:Identifier>"
+		    echo "           <UOM>ISO8601</UOM>"
+		    echo "           <Default>$defaultdate</Default>"
+		    echo "           <Current>false</Current>"
+	    	for t in $times
+			do
+		          echo "           <Value>$t</Value>"
+			done
+			echo "         </Dimension>" 
 	      fi
           # Need InfoFormat
           echo "         <TileMatrixSetLink>"

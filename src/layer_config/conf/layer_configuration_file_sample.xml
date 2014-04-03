@@ -16,6 +16,6 @@
  <GetTileServiceLocation>/home/gibsdev/sites/twms-geo/.lib/</GetTileServiceLocation>
  <CacheLocation>/home/gibsdev/data/EPSG4326/</CacheLocation>
  <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
- <StartDate>2013-11-04</StartDate>
- <EndDate>2014-03-28</EndDate>
+ <Time>2013-11-04/2014-03-28/P1D</Time>
+ <Time>2014-04-01/DETECT/P1D</Time>
 </LayerConfiguration>

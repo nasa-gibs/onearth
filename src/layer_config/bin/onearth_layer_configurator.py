@@ -249,7 +249,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --conf_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --sigevent_url [url]'
+usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --conf_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --sigevent_url [url] --time [ISO 8601] --no_xml --no_cache'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -271,6 +271,15 @@ parser.add_option('-s', '--sigevent_url',
                   default=
                   'http://localhost:8100/sigevent/events/create',
                   help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option('-t', '--time',
+                  action='store', type='string', dest='time',
+                  help='ISO 8601 time for single configuration file (conf_file must be specified).')
+parser.add_option("-x", "--no_xml",
+                  action="store_true", dest="no_xml", 
+                  default=False, help="Do not generate getCapabilities and getTileService XML.")
+parser.add_option("-z", "--no_cache",
+                  action="store_true", dest="no_cache", 
+                  default=False, help="Do not generate cache configuration files.")
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -371,12 +380,7 @@ for conf in conf_files:
             emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
         except:
             emptyTileOffset = 0
-        try:
-            startDate = get_dom_tag_value(dom, 'StartDate')
-            endDate = get_dom_tag_value(dom, 'EndDate')
-        except IndexError:
-            startDate = None
-            endDate = None
+
         try:
             colormap = get_dom_tag_value(dom, 'ColorMap')
         except IndexError:
@@ -387,6 +391,12 @@ for conf in conf_files:
         patternTags = dom.getElementsByTagName('Pattern')
         for pattern in patternTags:
             patterns.append(pattern.firstChild.data.strip())
+            
+        # Time
+        times = []
+        timeTags = dom.getElementsByTagName('Time')
+        for time in timeTags:
+            times.append(time.firstChild.data.strip())
             
         # Services
         try:
@@ -443,10 +453,6 @@ for conf in conf_files:
         log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection))
-    if startDate:
-        log_info_mssg('config: StartDate: ' + str(startDate))
-    if endDate:
-        log_info_mssg('config: EndDate: ' + str(endDate))
     if getTileService:
         log_info_mssg('config: GetTileServiceLocation: ' + str(getTileService))
     if wmts_getCapabilities:
@@ -462,6 +468,8 @@ for conf in conf_files:
     if colormap:
         log_info_mssg('config: ColorMap: ' + str(colormap))
     log_info_mssg('config: Patterns: ' + str(patterns))
+    if len(times) > 0:
+        log_info_mssg('config: Time: ' + str(times))
     
     # get MRF archetype
     if headerFileName:
@@ -525,16 +533,6 @@ for conf in conf_files:
     emptyInfoElement.setAttribute('offset', str(emptyTileOffset))
     twms.appendChild(levelsElement)
     twms.appendChild(emptyInfoElement)
-    
-    if startDate:
-        startDateElement = mrf_dom.createElement('StartDate')
-        startDateElement.appendChild(mrf_dom.createTextNode(startDate))
-        twms.appendChild(twms.appendChild(startDateElement))
-
-    if endDate:
-        endDateElement = mrf_dom.createElement('EndDate')
-        endDateElement.appendChild(mrf_dom.createTextNode(endDate))
-        twms.appendChild(twms.appendChild(endDateElement))
 
     if colormap:
         metadataElement = mrf_dom.createElement('Metadata')
@@ -549,6 +547,14 @@ for conf in conf_files:
     for patternElement in patternElements:
         twms.appendChild(patternElement)
     
+    timeElements = []
+    for time in times:
+        timeElements.append(mrf_dom.createElement('Time'))
+        timeElements[-1].appendChild(mrf_dom.createTextNode(time))
+    
+    for timeElement in timeElements:
+        twms.appendChild(timeElement)
+            
     mrf_meta.appendChild(twms)
         
     if projection:
@@ -565,8 +571,9 @@ for conf in conf_files:
     lines = new_mrf_file.readlines()
     lines[0] = '<MRF_META>\n'
     lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n\t').replace('</Levels>','</Levels>\n\t').replace('<Pattern>','\n\t<Pattern>'). \
-        replace('<StartDate>','\n\t<StartDate>').replace('<EndDate>','\n\t<EndDate>').replace('<Metadata>','\n\t<Metadata>').replace('</TWMS>','\n</TWMS>\n'). \
-        replace('</MRF_META>','\n</MRF_META>\n') #get_mrfs is picky about line breaks
+        replace('<Time>','\n\t<Time>').replace('<Metadata>','\n\t<Metadata>').replace('</TWMS>','\n</TWMS>\n'). \
+        replace('</MRF_META>','\n</MRF_META>\n') 
+    #get_mrfs is picky about line breaks
     
     new_mrf_file.seek(0)
     new_mrf_file.truncate()
