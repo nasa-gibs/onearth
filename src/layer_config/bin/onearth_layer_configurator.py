@@ -61,6 +61,7 @@ import urllib
 import urllib2
 import xml.dom.minidom
 import logging
+from datetime import datetime
 from optparse import OptionParser
 
 versionNumber = '0.3'
@@ -238,8 +239,78 @@ def add_trailing_slash(directory_path):
         directory_path=str().join([directory_path, '/'])
     # Return directory_path with trailing slash.
     return directory_path
+
+def detect_time(time, cacheLocation, fileNamePrefix, year):
+    """
+    Checks time element to see if start or end time must be detected on the file system.
+    Arguments:
+        time -- the time element (DETECT) keyword is utilized
+        cacheLocation -- the location of the cache data
+        fileNamePrefix -- the prefix of the MRF files
+        year -- whether or not the layer uses a year-based directory structure
+    """
+    print "\nAssessing time", time
+    detect = "DETECT"
+    intervals = time.split('/')
+    period = 'P1D'
+    if intervals[0][0] == 'P': #starts with period, so no start date
+        start = detect
+    else:
+        start = ''
+    for interval in list(intervals):
+        if interval[0] == 'P':
+            period = interval
+            intervals.remove(interval)
+    if len(intervals) == 2:
+        start = intervals[0]
+        end = intervals[1]
+    else:
+        if start == detect:
+            end = intervals[0]
+        else:
+            start = intervals[0]
+            end = detect
     
- #-------------------------------------------------------------------------------   
+    if start==detect or end==detect:
+        if year == True: # get newest and oldest years
+            years = []
+            for subdirname in os.walk(cacheLocation+fileNamePrefix).next()[1]:
+                if subdirname != 'YYYY':
+                    years.append(subdirname)
+            years = sorted(years)
+            newest_year = years[-1]
+            oldest_year = years[0]
+            print "Year directories available: " + ",".join(years)
+                        
+    if start==detect:
+        for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+oldest_year):
+            dates = []
+            for filename in filenames:
+                filetime = filename[-12:-5]
+                filedate = datetime.strptime(filetime,"%Y%j")
+                dates.append(filedate)
+            startdate = min(dates)
+            start = datetime.strftime(startdate,"%Y-%m-%d")
+    
+    if end==detect:
+        for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+newest_year):
+            # Print subdirectories in case there are any
+            for subdirname in dirnames:
+                print os.path.join(dirname, subdirname)
+
+            dates = []
+            for filename in filenames:
+                filetime = filename[-12:-5]
+                filedate = datetime.strptime(filetime,"%Y%j")
+                dates.append(filedate)
+            enddate = max(dates)
+            end = datetime.strftime(enddate,"%Y-%m-%d")
+    
+    print "Time: start="+start+" end="+end+" period="+period
+    time = start+'/'+end+'/'+period
+    return time
+    
+#-------------------------------------------------------------------------------   
 
 print 'OnEarth Layer Configurator v' + versionNumber
 
@@ -574,14 +645,17 @@ for conf in conf_files:
     for patternElement in patternElements:
         twms.appendChild(patternElement)
     
-    timeElements = []
-    for time in times:
-        timeElements.append(mrf_dom.createElement('Time'))
-        timeElements[-1].appendChild(mrf_dom.createTextNode(time))
-    
-    for timeElement in timeElements:
-        twms.appendChild(timeElement)
-            
+    # Time elements
+    if static == False:
+        timeElements = []
+        for time in times:
+            time = detect_time(time, cacheConfig, fileNamePrefix, year)
+            timeElements.append(mrf_dom.createElement('Time'))
+            timeElements[-1].appendChild(mrf_dom.createTextNode(time))
+        
+        for timeElement in timeElements:
+            twms.appendChild(timeElement)
+                
     mrf_meta.appendChild(twms)
         
     if projection:
