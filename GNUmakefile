@@ -135,7 +135,7 @@ mod_onearth-install:
 		-t $(DESTDIR)/$(PREFIX)/share/mod_onearth/cgi
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
-	cp src/pyline/empty_tiles/* \
+	cp src/mrfgen/empty_tiles/* \
 		$(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
@@ -172,7 +172,7 @@ mod_onearth-artifact: mod_onearth-clean
 	rm -rf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,mod_onearth-$(MOD_ONEARTH_VERSION)/," \
-		src/mod_onearth src/layer_config src/pyline/empty_tiles src/cgi \
+		src/mod_onearth src/layer_config src/mrfgen/empty_tiles src/cgi \
 		src/demo GNUmakefile
 
 #-----------------------------------------------------------------------------
