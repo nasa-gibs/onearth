@@ -126,6 +126,14 @@ mod_onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/mod_onearth/twms_tool \
 		$(DESTDIR)/$(PREFIX)/bin/twms_tool
+	install -m 755 src/layer_config/bin/compose \
+		-D $(DESTDIR)/$(PREFIX)/bin
+	install -m 755 src/layer_config/bin/get_GC_xml.sh \
+		-D $(DESTDIR)/$(PREFIX)/bin/get_GC_xml
+	install -m 755 src/layer_config/bin/get_mrfs \
+		-D $(DESTDIR)/$(PREFIX)/bin
+	install -m 755 src/layer_config/bin/onearth_layer_configurator.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/onearth_layer_configurator
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/cgi
@@ -137,6 +145,14 @@ mod_onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
 	cp src/mrfgen/empty_tiles/* \
 		$(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
+
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+	cp -r src/layer_config/conf \
+		$(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+	cp -r src/layer_config/twms \
+		$(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+	cp -r src/layer_config/wmts \
+		$(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
