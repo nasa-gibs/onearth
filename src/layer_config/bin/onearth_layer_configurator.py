@@ -42,8 +42,7 @@
  <GetTileServiceLocation>/home/gibsdev/sites/twms-geo/</GetTileServiceLocation>
  <CacheLocation>/home/gibsdev/data/EPSG4326/</CacheLocation>
  <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
- <StartDate>2013-11-04</StartDate>
- <EndDate>2014-03-28</EndDate>
+ <Time>2013-11-04/DETECT/P1D</Time>
 </LayerConfiguration>
 '''
 #
@@ -55,13 +54,12 @@
 import os
 import subprocess
 import sys
-import time
 import socket
 import urllib
 import urllib2
 import xml.dom.minidom
 import logging
-from datetime import datetime
+from datetime import datetime, time, timedelta
 from optparse import OptionParser
 
 versionNumber = '0.3'
@@ -249,66 +247,106 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
         fileNamePrefix -- the prefix of the MRF files
         year -- whether or not the layer uses a year-based directory structure
     """
+    times = []
     print "\nAssessing time", time
     detect = "DETECT"
-    intervals = time.split('/')
-    period = 'P1D'
-    if intervals[0][0] == 'P': #starts with period, so no start date
-        start = detect
-    else:
-        start = ''
-    for interval in list(intervals):
-        if interval[0] == 'P':
-            period = interval
-            intervals.remove(interval)
-    if len(intervals) == 2:
-        start = intervals[0]
-        end = intervals[1]
-    else:
-        if start == detect:
-            end = intervals[0]
-        else:
-            start = intervals[0]
-            end = detect
+    period = 'P1D' # default to period of 1 day
     
-    if start==detect or end==detect:
-        if year == True: # get newest and oldest years
-            years = []
-            for subdirname in os.walk(cacheLocation+fileNamePrefix).next()[1]:
-                if subdirname != 'YYYY':
-                    years.append(subdirname)
-            years = sorted(years)
-            newest_year = years[-1]
-            oldest_year = years[0]
-            print "Year directories available: " + ",".join(years)
-                        
-    if start==detect:
-        for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+oldest_year):
-            dates = []
-            for filename in filenames:
-                filetime = filename[-12:-5]
-                filedate = datetime.strptime(filetime,"%Y%j")
-                dates.append(filedate)
-            startdate = min(dates)
-            start = datetime.strftime(startdate,"%Y-%m-%d")
-    
-    if end==detect:
-        for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+newest_year):
-            # Print subdirectories in case there are any
+    if time == detect or time == '':
+    #detect everything including breaks in date (assumes period of 1 day)
+        dates = []
+        for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix, followlinks=True):
+            # Print subdirectories
             for subdirname in dirnames:
-                print os.path.join(dirname, subdirname)
+                print "Searching:", os.path.join(dirname, subdirname)
 
-            dates = []
             for filename in filenames:
                 filetime = filename[-12:-5]
-                filedate = datetime.strptime(filetime,"%Y%j")
-                dates.append(filedate)
-            enddate = max(dates)
-            end = datetime.strftime(enddate,"%Y-%m-%d")
+                try:
+                    filedate = datetime.strptime(filetime,"%Y%j")
+                    dates.append(filedate)
+                except ValueError:
+                    print "Skipping", filename
+        dates = sorted(list(set(dates)))
+        # Search for date ranges
+        startdate = min(dates)
+        enddate = startdate # set end date to start date for lone dates
+        for i, d in enumerate(dates):
+            # print d
+            next_day = d + timedelta(days=1)
+            try:
+                if dates[i+1] == next_day:
+                    enddate = next_day # set end date to next existing day
+                else: # end of range
+                    start = datetime.strftime(startdate,"%Y-%m-%d")
+                    end = datetime.strftime(enddate,"%Y-%m-%d")
+                    times.append(start+'/'+end+'/'+period)
+                    startdate = dates[i+1] # start new range loop
+                    enddate = startdate
+            except IndexError:
+                # breaks when loop completes
+                start = datetime.strftime(startdate,"%Y-%m-%d")
+                end = datetime.strftime(enddate,"%Y-%m-%d")
+                times.append(start+'/'+end+'/'+period)
+                print "Time ranges: " + ", ".join(times)
+                return times
     
-    print "Time: start="+start+" end="+end+" period="+period
-    time = start+'/'+end+'/'+period
-    return time
+    else:
+        intervals = time.split('/')
+        if intervals[0][0] == 'P': #starts with period, so no start date
+            start = detect
+        else:
+            start = ''
+        for interval in list(intervals):
+            if interval[0] == 'P':
+                period = interval
+                intervals.remove(interval)
+        if len(intervals) == 2:
+            start = intervals[0]
+            end = intervals[1]
+        else:
+            if start == detect:
+                end = intervals[0]
+            else:
+                start = intervals[0]
+                end = detect
+        
+        if start==detect or end==detect:
+            if year == True: # get newest and oldest years
+                years = []
+                for subdirname in os.walk(cacheLocation+fileNamePrefix, followlinks=True).next()[1]:
+                    if subdirname != 'YYYY':
+                        years.append(subdirname)
+                years = sorted(years)
+                newest_year = years[-1]
+                oldest_year = years[0]
+                print "Year directories available: " + ",".join(years)
+                            
+        if start==detect:
+            for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+oldest_year, followlinks=True):
+                dates = []
+                for filename in filenames:
+                    filetime = filename[-12:-5]
+                    filedate = datetime.strptime(filetime,"%Y%j")
+                    dates.append(filedate)
+                startdate = min(dates)
+                start = datetime.strftime(startdate,"%Y-%m-%d")
+        
+        if end==detect:
+            for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+newest_year, followlinks=True):
+                dates = []
+                for filename in filenames:
+                    filetime = filename[-12:-5]
+                    filedate = datetime.strptime(filetime,"%Y%j")
+                    dates.append(filedate)            
+                enddate = max(dates)
+                end = datetime.strftime(enddate,"%Y-%m-%d")   
+        
+        print "Time: start="+start+" end="+end+" period="+period
+        time = start+'/'+end+'/'+period
+        times.append(time)
+        
+    return times
     
 #-------------------------------------------------------------------------------   
 
@@ -494,7 +532,10 @@ for conf in conf_files:
             times = []  
             timeTags = dom.getElementsByTagName('Time')
             for time in timeTags:
-                times.append(time.firstChild.data.strip())
+                try:
+                    times.append(time.firstChild.data.strip())
+                except AttributeError:
+                    times.append('')
             
         # Services
         try:
@@ -649,9 +690,10 @@ for conf in conf_files:
     if static == False:
         timeElements = []
         for time in times:
-            time = detect_time(time, cacheConfig, fileNamePrefix, year)
-            timeElements.append(mrf_dom.createElement('Time'))
-            timeElements[-1].appendChild(mrf_dom.createTextNode(time))
+            detected_times = detect_time(time, cacheConfig, fileNamePrefix, year)
+            for detected_time in detected_times:
+                timeElements.append(mrf_dom.createElement('Time'))
+                timeElements[-1].appendChild(mrf_dom.createTextNode(detected_time))
         
         for timeElement in timeElements:
             twms.appendChild(timeElement)
