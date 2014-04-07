@@ -249,6 +249,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
     """
     times = []
     print "\nAssessing time", time
+    time = time.upper()
     detect = "DETECT"
     period = 'P1D' # default to period of 1 day
     
