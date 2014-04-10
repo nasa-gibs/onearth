@@ -89,7 +89,7 @@ def sigevent(type, mssg, sigevent_url):
     # Constrain mssg to 256 characters (including '...').
     if len(mssg) > 256:
         mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent', type, mssg])
+    print str().join(['sigevent ', type, ' - ', mssg])
     # Remove any trailing slash from URL.
     if sigevent_url[-1] == '/':
         sigevent_url=sigevent_url[0:len(sigevent_url)-1]
@@ -161,6 +161,11 @@ def log_sig_exit(type, mssg, sigevent_url):
     """
     # Add "Exiting" to mssg.
     mssg=str().join([mssg, '  Exiting.'])
+    # Send to sigevent.
+    try:
+        sent=sigevent(type, mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
     # Send to log.
     if type == 'INFO':
         log_info_mssg_with_timestamp(mssg)
@@ -170,13 +175,8 @@ def log_sig_exit(type, mssg, sigevent_url):
     elif type == 'ERROR':
         logging.error(time.asctime())
         logging.error(mssg)
-    # Send to sigevent.
-    try:
-        sent=sigevent(type, mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
     # Exit.
-    sys.exit(mssg)
+    sys.exit()
 
 def log_the_command(command_list):
     """
@@ -292,8 +292,12 @@ def lookupEmptyTile(empty_tile):
     for line in empty_config_file:
         (key, val) = line.split()
         tiles[key] = val
-       
-    return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
+    
+    try:   
+        return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
+    except KeyError:
+        mssg = '"' + empty_tile + '" is not a valid empty tile.'
+        log_sig_exit('ERROR', mssg, sigevent_url)
 
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
@@ -911,9 +915,13 @@ if len(modtiles) > 0:
                 colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
             log_the_command(colormap2vrt_command_list)
             colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
-            colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w')
+            colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
             subprocess.call(colormap2vrt_command_list, stderr=colormap2vrt_stderr_file)
-            colormap2vrt_stderr_file.close()
+            colormap2vrt_stderr_file.seek(0)
+            colormap2vrt_stderr = colormap2vrt_stderr_file.read()
+            print colormap2vrt_stderr
+            if "Error" in colormap2vrt_stderr:
+                log_sig_exit('ERROR', "Error executing colormap2vrt.py with colormap:" + colormap, sigevent_url)
 
             if os.path.isfile(new_vrt_filename):
                 remove_file(vrt_filename)
@@ -1114,8 +1122,8 @@ for tilename in (alltiles):
             remove_file(tilename.split('.')[0]+'.pgw')
 
 # Send to log.
-log_info_mssg_with_timestamp(str().join(['MRF created:  ', 
-                                         out_filename]))
+mssg=str().join(['MRF created:  ', out_filename])
+log_sig_exit('INFO', mssg, sigevent_url)
 
 #-------------------------------------------------------------------------------
 # Activate the data by linking it into the Tiled-WMS cache directory.
