@@ -160,7 +160,7 @@ def log_sig_exit(type, mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting.'])
+    mssg=str().join([mssg, '  Exiting mrfgen.'])
     # Send to sigevent.
     try:
         sent=sigevent(type, mssg, sigevent_url)
@@ -910,9 +910,9 @@ if len(modtiles) > 0:
         if colormap != '':
             new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
             if add_transparency == True:
-                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--transparent']
+                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url, '--transparent']
             else:
-                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
+                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url]
             log_the_command(colormap2vrt_command_list)
             colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
             colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
