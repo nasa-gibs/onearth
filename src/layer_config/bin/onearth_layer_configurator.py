@@ -60,6 +60,7 @@ import urllib2
 import xml.dom.minidom
 import logging
 from datetime import datetime, time, timedelta
+from time import asctime
 from optparse import OptionParser
 
 versionNumber = '0.3'
@@ -93,7 +94,7 @@ def sigevent(type, mssg, sigevent_url):
     # Constrain mssg to 256 characters (including '...').
     if len(mssg) > 256:
         mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent', type, mssg])
+    print str().join(['sigevent ', type, ' - ', mssg])
     # Remove any trailing slash from URL.
     if sigevent_url[-1] == '/':
         sigevent_url=sigevent_url[0:len(sigevent_url)-1]
@@ -108,10 +109,10 @@ def sigevent(type, mssg, sigevent_url):
     data['type']=type
     data['description']=mssg
     data['computer']=socket.gethostname()
-    data['source']='OnEarth'
+    data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='UNCATEGORIZED'
-    data['provider']='Global Imagery Browse Services'
+    data['category']='ONEARTH'
+    data['provider']='GIBS'
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -135,8 +136,8 @@ def log_info_mssg_with_timestamp(mssg):
         mssg -- 'message for operations'
     """
     # Send to log.
-    print time.asctime()
-    logging.info(time.asctime())
+    print asctime()
+    logging.info(asctime())
     log_info_mssg(mssg)
 
 def log_sig_warn(mssg, sigevent_url):
@@ -147,10 +148,13 @@ def log_sig_warn(mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Send to log.
-    logging.warning(time.asctime())
+    logging.warning(asctime())
     logging.warning(mssg)
     # Send to sigevent.
-    sent=sigevent('WARN', mssg, sigevent_url)
+    try:
+        sent=sigevent('WARN', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
 
 def log_sig_exit(type, mssg, sigevent_url):
     """
@@ -161,23 +165,23 @@ def log_sig_exit(type, mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting.'])
-    # Send to log.
-    if type == 'INFO':
-        log_info_mssg_with_timestamp(mssg)
-    elif type == 'WARN':
-        logging.warning(time.asctime())
-        logging.warning(mssg)
-    elif type == 'ERROR':
-        logging.error(time.asctime())
-        logging.error(mssg)
+    mssg=str().join([mssg, '  Exiting onearth_layer_configurator.'])
     # Send to sigevent.
     try:
         sent=sigevent(type, mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
+    # Send to log.
+    if type == 'INFO':
+        log_info_mssg_with_timestamp(mssg)
+    elif type == 'WARN':
+        logging.warning(asctime())
+        logging.warning(mssg)
+    elif type == 'ERROR':
+        logging.error(asctime())
+        logging.error(mssg)
     # Exit.
-    sys.exit(mssg)
+    sys.exit()
 
 def log_the_command(command_list):
     """
@@ -224,6 +228,7 @@ def run_command(cmd):
     for output in process.stdout:
         print output.strip()
     for error in process.stderr:
+        sigevent('ERROR', error.strip(), sigevent_url)
         raise Exception(error.strip())
     
 def add_trailing_slash(directory_path):
@@ -453,7 +458,9 @@ else:
 print 'Configuration file(s):'
 print conf_files
 if conf_files==[]:
-    sys.exit('No configuration files found.')
+    mssg = 'No configuration files found.'
+    sigevent('ERROR', mssg, sigevent_url)
+    sys.exit(mssg)
     
 for conf in conf_files:
     
@@ -470,12 +477,37 @@ for conf in conf_files:
         dom = xml.dom.minidom.parse(config_file)
         
         #Required parameters
-        identifier = get_dom_tag_value(dom, 'Identifier')
-        title = get_dom_tag_value(dom, 'Title')
-        compression = get_dom_tag_value(dom, 'Compression')
-        levels = get_dom_tag_value(dom, 'Levels')
-        emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
-        fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
+        try:
+            identifier = get_dom_tag_value(dom, 'Identifier')
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <Identifier> element is missing in ' + conf, sigevent_url)
+        try:
+            title = get_dom_tag_value(dom, 'Title')
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <Title> element is missing in ' + conf, sigevent_url)
+        try:
+            compression = get_dom_tag_value(dom, 'Compression')
+            compression = compression.upper()
+            if compression == "JPG":
+                compression = "JPEG"
+            if compression == "PPNG":
+                compression = "PNG"
+            if compression not in ["JPEG", "PNG"]:
+                log_sig_exit('ERROR', '<Compression> must be either JPEG or PNG in ' + conf, sigevent_url)
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <Compression> element is missing in ' + conf, sigevent_url)
+        try:
+            levels = get_dom_tag_value(dom, 'Levels')
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <Levels> element is missing in ' + conf, sigevent_url)
+        try:
+            emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <EmptyTileSize> element is missing in ' + conf, sigevent_url)
+        try:
+            fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <FileNamePrefix> element is missing in ' + conf, sigevent_url)
         try:
             static = dom.getElementsByTagName('FileNamePrefix')[0].attributes['static'].value.lower() in ['true']
         except:
@@ -932,4 +964,7 @@ if no_restart==False:
     cmd = 'sudo apachectl start'
     run_command(cmd)
     print '\nThe Apache server was restarted successfully'
+    
+message = "The OnEarth Layer Configurator completed successully. " + ("Cache created.", "No cache.")[no_cache] + " " + ("XML created","No XML")[no_xml] + "."
+log_sig_exit('INFO', message, sigevent_url)
     
