@@ -808,8 +808,14 @@ if len(modtiles) > 0:
         mrf_insert_command_list.append(mrf)
         log_the_command(mrf_insert_command_list)
         mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print mrf_insert.stderr.read()
+        insert_message = mrf_insert.stderr.readlines()
         # Continue or break if there is an error?
+        for message in insert_message:
+            # Break on error
+            if 'ERROR' in message:
+                log_sig_exit('ERROR', message, sigevent_url)
+            else:
+                print message.strip()
 
         # Copy MRF to output
         shutil.copy(mrf, mrf_filename)
@@ -820,12 +826,10 @@ if len(modtiles) > 0:
         remove_file(mod_tiles_filename)
         remove_file(all_tiles_filename)
         remove_file(ptime_filename)
-        
-        # Send to log.
-        log_info_mssg_with_timestamp(str().join(['MRF created:  ',out_filename]))
 
         # Exit here since we don't need to build an MRF from scratch
-        exit()
+        mssg=str().join(['MRF created:  ', out_filename])
+        log_sig_exit('INFO', mssg, sigevent_url)
 
     # Create the gdalbuildvrt command.
     #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
