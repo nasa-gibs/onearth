@@ -50,10 +50,7 @@
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
-  <xs:element name="Projection">
-    <xs:complexType mixed="true">
-      <xs:attribute name="epsg" use="required" type="xs:integer"/>
-    </xs:complexType>
+  <xs:element name="Projection" type="xs:string">
   </xs:element>
   <xs:element name="Pattern" type="xs:string"/>
   <xs:element name="GetCapabilitiesLocation">

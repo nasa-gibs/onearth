@@ -35,7 +35,7 @@
  <Compression>PNG</Compression>
  <Levels>6</Levels>
  <EmptyTileSize offset="0">1397</EmptyTileSize>
- <Projection epsg="4326"><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433],AUTHORITY["EPSG","4326"]]]]></Projection> 
+ <Projection>EPSG:4326</Projection> 
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
  <GetCapabilitiesLocation service="wmts">/home/gibsdev/sites/wmts-geo/</GetCapabilitiesLocation>
  <GetCapabilitiesLocation service="twms">/home/gibsdev/sites/twms-geo/</GetCapabilitiesLocation>
@@ -81,6 +81,14 @@ class TWMSEndPoint:
         self.cacheConfig = cacheConfig
         self.getCapabilities = getCapabilities
         self.getTileService = getTileService
+        
+class Projection:
+    """Projection information for layer"""
+    
+    def __init__(self, projection_id, projection_dir, projection_data):
+        self.id = projection_id
+        self.dir = projection_dir
+        self.data = projection_data
 
 def sigevent(type, mssg, sigevent_url):
     """
@@ -243,6 +251,30 @@ def add_trailing_slash(directory_path):
     # Return directory_path with trailing slash.
     return directory_path
 
+def get_projection(projectionId, projectionConfig):
+    try:
+        # Open file.
+        projection_config=open(projectionConfig, 'r')
+        print ('\nUsing projection config: ' + projectionConfig + '\n')
+    except IOError:
+        mssg=str().join(['Cannot read projection configuration file:  ', projectionConfig])
+        sigevent('ERROR', mssg, sigevent_url)
+        sys.exit(mssg)
+        
+    dom = xml.dom.minidom.parse(projection_config)
+    projection = None
+    propjectionTags = dom.getElementsByTagName('Projection')
+    for projectionElement in propjectionTags:
+        if projectionElement.attributes['id'].value == projectionId:
+            projection = Projection(projectionId, projectionElement.attributes['dir'].value, projectionElement.firstChild.data.strip())
+    
+    if projection == None:
+        mssg = "Projection " + projectionId + " could not be found in projection configuration file."
+        sigevent('ERROR', mssg, sigevent_url)
+        sys.exit(mssg)
+    
+    return projection
+
 def detect_time(time, cacheLocation, fileNamePrefix, year):
     """
     Checks time element to see if start or end time must be detected on the file system.
@@ -364,23 +396,27 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --conf_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --sigevent_url [url] --time [ISO 8601] --no_xml --no_cache'
+usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --no_xml --no_cache'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-c', '--conf_file',
                   action='store', type='string', dest='configuration_filename',
-                  help='Full path of configuration filename.')
-parser.add_option('-d', '--conf_dir',
+                  help='Full path of layer configuration filename.')
+parser.add_option('-d', '--layer_dir',
                   action='store', type='string', dest='configuration_directory',
-                  default=lcdir+'/conf/',
-                  help='Full path of directory containing configuration files.  Default: $LCDIR/conf/')
+                  default=lcdir+'/layers/',
+                  help='Full path of directory containing configuration files.  Default: $LCDIR/layers/')
 parser.add_option("-n", "--no_restart",
                   action="store_true", dest="no_restart", 
                   default=False, help="Do not restart the Apache server on completion.")
 parser.add_option('-o', '--onearth',
                   action='store', type='string', dest='onearth',
                   help='Full path of the Apache document root for OnEarth if getCapabilities and cache config locations not specified.  Default: $ONEARTH')
+parser.add_option('-p', '--projection_config',
+                  action='store', type='string', dest='projection_configuration',
+                  default=lcdir+'/conf/projection.xml',
+                  help='Full path of projection configuration file.  Default: $LCDIR/conf/projection.xml')
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -410,6 +446,8 @@ no_cache = options.no_cache
 no_restart = options.no_restart
 # Time for conf file.
 configuration_time = options.time
+# Projection configuration
+projection_configuration = options.projection_configuration
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
@@ -535,13 +573,9 @@ for conf in conf_files:
         except IndexError:
             indexFileLocation = None
         try:
-            projection = get_dom_tag_value(dom, 'Projection')
+            projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration)
         except:
             projection = None 
-        try:
-            epsg = dom.getElementsByTagName('Projection')[0].attributes['epsg'].value
-        except:
-            epsg = None
         try:
             emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
         except:
@@ -592,17 +626,17 @@ for conf in conf_files:
         try:
             wmtsEndPoint = get_dom_tag_value(dom, 'WMTSEndPoint')
         except IndexError:
-            if epsg != None:
-                wmtsEndPoint = 'wmts/EPSG' + epsg
+            if projection != None:
+                wmtsEndPoint = 'wmts/' + projection.dir
             else:
-                log_sig_exit('ERROR', 'epsg is not defined in <Projection>', sigevent_url)
+                log_sig_exit('ERROR', 'Projection directory is not defined', sigevent_url)
         try:
             twmsEndPoint = get_dom_tag_value(dom, 'TWMSEndPoint')
         except IndexError:
-            if epsg != None:
-                twmsEndPoint = 'twms/EPSG' + epsg
+            if projection != None:
+                twmsEndPoint = 'twms/' + projection.dir
             else:
-                log_sig_exit('ERROR', 'epsg is not defined in <Projection>', sigevent_url)
+                log_sig_exit('ERROR', 'Projection directory is not defined', sigevent_url)
                 
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService)
@@ -624,7 +658,7 @@ for conf in conf_files:
     if indexFileLocation:
         log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
     if projection:
-        log_info_mssg('config: Projection: ' + str(projection))
+        log_info_mssg('config: Projection: ' + str(projection.id))
     if getTileService:
         log_info_mssg('config: GetTileServiceLocation: ' + str(getTileService))
     if wmts_getCapabilities:
@@ -735,7 +769,7 @@ for conf in conf_files:
         
     if projection:
         projectionElement = mrf_dom.createElement('Projection')
-        projectionElement.appendChild(mrf_dom.createCDATASection(projection))
+        projectionElement.appendChild(mrf_dom.createCDATASection(projection.data))
         mrf_meta.appendChild(projectionElement)
     
     if not os.path.exists(lcdir+'/'+twmsEndPoint):
