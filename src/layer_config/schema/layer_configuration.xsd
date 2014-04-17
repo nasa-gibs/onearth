@@ -17,6 +17,7 @@
         <xs:element maxOccurs="unbounded" ref="GetCapabilitiesLocation"/>
         <xs:element ref="GetTileServiceLocation"/>
         <xs:element ref="CacheLocation"/>
+        <xs:element ref="ArchiveLocation" minOccurs="0"/>
         <xs:element ref="ColorMap" minOccurs="0"/>
         <xs:element ref="Time" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="WMTSEndPoint" minOccurs="0"/>
@@ -26,14 +27,11 @@
   </xs:element>
   <xs:element name="Identifier" type="xs:NCName"/>
   <xs:element name="Title" type="xs:string"/>
-  <xs:element name="FileNamePrefix">
-    <xs:complexType>
-      <xs:simpleContent>
-        <xs:extension base="xs:NCName">
-          <xs:attribute name="static" use="required" type="xs:boolean"/>
-          <xs:attribute name="year" use="required" type="xs:boolean"/>
-        </xs:extension>
-      </xs:simpleContent>
+  <xs:element name="FileNamePrefix" type="xs:string"/>
+  <xs:element name="ArchiveLocation" nillable="true">
+    <xs:complexType mixed="true">
+      <xs:attribute name="static" use="required" type="xs:boolean"/>
+      <xs:attribute name="year" use="required" type="xs:boolean"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="HeaderFileName" type="xs:NCName" nillable="true"/>

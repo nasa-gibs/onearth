@@ -289,6 +289,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
     time = time.upper()
     detect = "DETECT"
     period = 'P1D' # default to period of 1 day
+    cacheLocation = add_trailing_slash(cacheConfig)
     
     if time == detect or time == '':
     #detect everything including breaks in date (assumes period of 1 day)
@@ -547,19 +548,23 @@ for conf in conf_files:
         except IndexError:
             log_sig_exit('ERROR', 'Required <FileNamePrefix> element is missing in ' + conf, sigevent_url)
         try:
-            static = dom.getElementsByTagName('FileNamePrefix')[0].attributes['static'].value.lower() in ['true']
-        except:
-            static = False
-        try:
-            year = dom.getElementsByTagName('FileNamePrefix')[0].attributes['year'].value.lower() in ['true']
-        except:
-            year = False
+            cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
+        except IndexError:
+            log_sig_exit('ERROR', 'Required <CacheLocation> element is missing in ' + conf, sigevent_url)
 
         # Optional parameters
         try:
-            cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
+            archiveLocation = get_dom_tag_value(dom, 'ArchiveLocation')
         except IndexError:
-            cacheConfig = None 
+            archiveLocation = None
+        try:
+            static = dom.getElementsByTagName('ArchiveLocation')[0].attributes['static'].value.lower() in ['true']
+        except:
+            static = True
+        try:
+            year = dom.getElementsByTagName('ArchiveLocation')[0].attributes['year'].value.lower() in ['true']
+        except:
+            year = False
         try:
             headerFileName = get_dom_tag_value(dom, 'HeaderFileName')
         except IndexError:
@@ -646,13 +651,15 @@ for conf in conf_files:
      
     log_info_mssg('config: Identifier: ' + identifier)
     log_info_mssg('config: Title: ' + title)
-    log_info_mssg('config: FileNamePrefix static=' + str(static) + ' year=' + str(year) + ': ' + fileNamePrefix)
+    log_info_mssg('config: FileNamePrefix: ' + fileNamePrefix)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: Levels: ' + levels)
     log_info_mssg('config: EmptyTileSize: ' + str(emptyTileSize))
     log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
     if headerFileName:
         log_info_mssg('config: HeaderFileName: ' + headerFileName)
+    if archiveLocation:
+        log_info_mssg('config: ArchiveLocation static=' + str(static) + ' year=' + str(year) + ': ' + archiveLocation)
     if dataFileLocation:
         log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
     if indexFileLocation:
@@ -677,13 +684,26 @@ for conf in conf_files:
     if len(times) > 0:
         log_info_mssg('config: Time: ' + str(times))
     
+    cacheConfig = add_trailing_slash(cacheConfig)
+    
     # get MRF archetype
     if headerFileName:
         mrf = headerFileName
     else:
-        mrfLocation = add_trailing_slash(cacheConfig)
+        if archiveLocation != None:
+            archiveLocation = add_trailing_slash(archiveLocation)
+            # check if absolute path or else use relative to cache location
+            if archiveLocation[0] == '/':
+                mrfLocation = archiveLocation
+            else:
+                mrfLocation = cacheConfig + archiveLocation
+        else: # use archive location relative to cache if not defined
+            mrfLocation = add_trailing_slash(cacheConfig)
         if year == True:
-            mrfLocation =  mrfLocation + fileNamePrefix +'/YYYY/'
+            if archiveLocation != None:
+                mrfLocation =  mrfLocation +'YYYY/'
+            else:
+                mrfLocation =  mrfLocation + fileNamePrefix +'/YYYY/'
         if static == True:
             mrf = mrfLocation + fileNamePrefix + '.mrf'
             headerFileName = fileNamePrefix + '.mrf'
@@ -692,13 +712,24 @@ for conf in conf_files:
             headerFileName = fileNamePrefix + 'TTTTTTT_.mrf'
     
     if indexFileLocation == None:
-        indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
+        if archiveLocation != None and archiveLocation[0] == '/':
+            # use absolute path of archive
+            indexFileLocation = mrf.replace('.mrf','.idx')
+        else:
+            # use relative path to cache
+            indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
         
     if dataFileLocation == None:
-        if compression.lower() in ['jpg', 'jpeg']:
-            dataFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.pjg')
+        if archiveLocation != None and archiveLocation[0] == '/':
+            # use absolute path of archive
+            dataFileLocation = mrf
         else:
-            dataFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.ppg')
+            # use relative path to cache
+            dataFileLocation = mrf.replace(cacheConfig,'')
+        if compression.lower() in ['jpg', 'jpeg']:
+            dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
+        else:
+            dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
         
     log_info_mssg('MRF: ' + mrf)
     
