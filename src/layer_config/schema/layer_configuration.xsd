@@ -14,9 +14,7 @@
         <xs:element ref="EmptyTileSize"/>
         <xs:element ref="Projection"/>
         <xs:element maxOccurs="unbounded" ref="Pattern"/>
-        <xs:element maxOccurs="unbounded" ref="GetCapabilitiesLocation"/>
-        <xs:element ref="GetTileServiceLocation"/>
-        <xs:element ref="CacheLocation"/>
+        <xs:element ref="EnvironmentConfig"/>
         <xs:element ref="ArchiveLocation" minOccurs="0"/>
         <xs:element ref="ColorMap" minOccurs="0"/>
         <xs:element ref="Time" minOccurs="0" maxOccurs="unbounded"/>
@@ -48,16 +46,9 @@
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
-  <xs:element name="Projection" type="xs:string">
-  </xs:element>
+  <xs:element name="Projection" type="xs:string"> </xs:element>
   <xs:element name="Pattern" type="xs:string"/>
-  <xs:element name="GetCapabilitiesLocation">
-    <xs:complexType mixed="true">
-      <xs:attribute name="service" use="required" type="xs:NCName"/>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="GetTileServiceLocation" type="xs:string"/>
-  <xs:element name="CacheLocation" type="xs:string"/>
+  <xs:element name="EnvironmentConfig" type="xs:string"/>
   <xs:element name="ColorMap" type="xs:anyURI"/>
   <xs:element name="Time" type="xs:string" nillable="true"/>
   <xs:element name="WMTSEndPoint" type="xs:NCName" nillable="true"/>

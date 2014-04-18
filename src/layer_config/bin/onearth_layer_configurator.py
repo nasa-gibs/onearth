@@ -81,6 +81,15 @@ class TWMSEndPoint:
         self.cacheConfig = cacheConfig
         self.getCapabilities = getCapabilities
         self.getTileService = getTileService
+
+class Environment:
+    """Environment information for layer(s)"""
+    
+    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService):
+        self.cache = cache
+        self.getCapabilities_wmts = getCapabilities_wmts
+        self.getCapabilities_twms = getCapabilities_twms
+        self.getTileService = getTileService
         
 class Projection:
     """Projection information for layer"""
@@ -251,7 +260,57 @@ def add_trailing_slash(directory_path):
     # Return directory_path with trailing slash.
     return directory_path
 
+def get_environment(environmentConfig):
+    """
+    Gets environment metadata from a environment configuration file.
+    Arguments:
+        environmentConfig -- the location of the projection configuration file
+    """
+    try:
+        # Open file.
+        environment_config=open(environmentConfig, 'r')
+        print ('\nUsing environment config: ' + environmentConfig + '\n')
+    except IOError:
+        mssg=str().join(['Cannot read environment configuration file:  ', environmentConfig])
+        sigevent('ERROR', mssg, sigevent_url)
+        sys.exit(mssg)
+        
+    dom = xml.dom.minidom.parse(environment_config)
+    try:
+        cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
+    except IndexError:
+        log_sig_exit('ERROR', 'Required <CacheLocation> element is missing in ' + conf, sigevent_url)
+        
+    # Services
+    try:
+        getTileService = get_dom_tag_value(dom, 'GetTileServiceLocation')
+    except IndexError:
+        getTileService = None
+    
+    getCapabilitiesElements = dom.getElementsByTagName('GetCapabilitiesLocation')
+    wmts_getCapabilities = None
+    twms_getCapabilities = None
+    for getCapabilities in getCapabilitiesElements:
+        try:
+            if str(getCapabilities.attributes['service'].value).lower() == "wmts":
+                wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+            elif str(getCapabilities.attributes['service'].value).lower() == "twms":
+                twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+        except KeyError:
+            log_sig_exit('ERROR', 'service is not defined in <GetCapabilitiesLocation>', sigevent_url)
+            
+    return Environment(add_trailing_slash(cacheConfig), 
+                       add_trailing_slash(wmts_getCapabilities), 
+                       add_trailing_slash(twms_getCapabilities), 
+                       add_trailing_slash(getTileService))
+    
 def get_projection(projectionId, projectionConfig):
+    """
+    Gets projection metadata from a projection configuration file based on the projection ID.
+    Arguments:
+        projectionId -- the name of the projection and key used
+        projectionConfig -- the location of the projection configuration file
+    """
     try:
         # Open file.
         projection_config=open(projectionConfig, 'r')
@@ -289,7 +348,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
     time = time.upper()
     detect = "DETECT"
     period = 'P1D' # default to period of 1 day
-    cacheLocation = add_trailing_slash(cacheConfig)
+    cacheLocation = add_trailing_slash(cacheLocation)
     
     if time == detect or time == '':
     #detect everything including breaks in date (assumes period of 1 day)
@@ -548,9 +607,15 @@ for conf in conf_files:
         except IndexError:
             log_sig_exit('ERROR', 'Required <FileNamePrefix> element is missing in ' + conf, sigevent_url)
         try:
-            cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
+            environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
+            environment = get_environment(environmentConfig)
         except IndexError:
-            log_sig_exit('ERROR', 'Required <CacheLocation> element is missing in ' + conf, sigevent_url)
+            log_sig_exit('ERROR', 'Required <EnvironmentConfig> element is missing in ' + conf, sigevent_url)
+            
+        cacheConfig = environment.cache
+        wmts_getCapabilities = environment.getCapabilities_wmts
+        twms_getCapabilities = environment.getCapabilities_twms
+        getTileService = environment.getTileService
 
         # Optional parameters
         try:
@@ -608,24 +673,6 @@ for conf in conf_files:
                     times.append(time.firstChild.data.strip())
                 except AttributeError:
                     times.append('')
-            
-        # Services
-        try:
-            getTileService = get_dom_tag_value(dom, 'GetTileServiceLocation')
-        except IndexError:
-            getTileService = None
-        
-        getCapabilitiesElements = dom.getElementsByTagName('GetCapabilitiesLocation')
-        wmts_getCapabilities = None
-        twms_getCapabilities = None
-        for getCapabilities in getCapabilitiesElements:
-            try:
-                if str(getCapabilities.attributes['service'].value).lower() == "wmts":
-                    wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
-                elif str(getCapabilities.attributes['service'].value).lower() == "twms":
-                    twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
-            except KeyError:
-                log_sig_exit('ERROR', 'service is not defined in <GetCapabilitiesLocation>', sigevent_url)
         
         # Set end points
         try:
@@ -683,8 +730,6 @@ for conf in conf_files:
     log_info_mssg('config: Patterns: ' + str(patterns))
     if len(times) > 0:
         log_info_mssg('config: Time: ' + str(times))
-    
-    cacheConfig = add_trailing_slash(cacheConfig)
     
     # get MRF archetype
     if headerFileName:
