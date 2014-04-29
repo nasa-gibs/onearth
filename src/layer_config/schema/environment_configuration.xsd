@@ -6,6 +6,7 @@
         <xs:element maxOccurs="unbounded" ref="GetCapabilitiesLocation"/>
         <xs:element ref="GetTileServiceLocation"/>
         <xs:element ref="CacheLocation"/>
+        <xs:element maxOccurs="unbounded" ref="ServiceURL"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -16,4 +17,13 @@
   </xs:element>
   <xs:element name="GetTileServiceLocation" type="xs:string"/>
   <xs:element name="CacheLocation" type="xs:string"/>
+  <xs:element name="ServiceURL">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:anyURI">
+          <xs:attribute name="service" use="required" type="xs:NCName"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

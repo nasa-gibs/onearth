@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EnvironmentConfiguration>
+    <GetCapabilitiesLocation service="wmts">/sites/wmts-arctic/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/sites/twms-arctic/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/sites/twms-arctic/.lib/</GetTileServiceLocation>
+    <CacheLocation>/data/EPSG3413/</CacheLocation>
+    <ServiceURL service="wmts">http://localhost/wmts-arctic/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/twms-arctic/</ServiceURL>
+</EnvironmentConfiguration>

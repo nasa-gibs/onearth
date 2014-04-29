@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EnvironmentConfiguration>
-    <GetCapabilitiesLocation service="wmts">/home/gibsdev/sites/wmts-geo/</GetCapabilitiesLocation>
-    <GetCapabilitiesLocation service="twms">/home/gibsdev/sites/twms-geo/.lib/</GetCapabilitiesLocation>
-    <GetTileServiceLocation>/home/gibsdev/sites/twms-geo/.lib/</GetTileServiceLocation>
-    <CacheLocation>/home/gibsdev/data/EPSG4326/</CacheLocation>
+    <GetCapabilitiesLocation service="wmts">/sites/wmts-geo/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/sites/twms-geo/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/sites/twms-geo/.lib/</GetTileServiceLocation>
+    <CacheLocation>/data/EPSG4326/</CacheLocation>
+    <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
 </EnvironmentConfiguration>

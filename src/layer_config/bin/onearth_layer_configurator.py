@@ -85,11 +85,13 @@ class TWMSEndPoint:
 class Environment:
     """Environment information for layer(s)"""
     
-    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService):
+    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl):
         self.cache = cache
         self.getCapabilities_wmts = getCapabilities_wmts
         self.getCapabilities_twms = getCapabilities_twms
         self.getTileService = getTileService
+        self.wmtsServiceUrl = wmtsServiceUrl
+        self.twmsServiceUrl = twmsServiceUrl
         
 class Projection:
     """Projection information for layer"""
@@ -299,10 +301,24 @@ def get_environment(environmentConfig):
         except KeyError:
             log_sig_exit('ERROR', 'service is not defined in <GetCapabilitiesLocation>', sigevent_url)
             
+    serviceUrlElements = dom.getElementsByTagName('ServiceURL')
+    wmtsServiceUrl = None
+    twmsServiceUrl = None
+    for serviceUrl in serviceUrlElements:
+        try:
+            if str(serviceUrl.attributes['service'].value).lower() == "wmts":
+                wmtsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
+            elif str(serviceUrl.attributes['service'].value).lower() == "twms":
+                twmsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
+        except KeyError:
+            log_sig_exit('ERROR', 'service is not defined in <ServiceURL>', sigevent_url)        
+    
     return Environment(add_trailing_slash(cacheConfig), 
                        add_trailing_slash(wmts_getCapabilities), 
                        add_trailing_slash(twms_getCapabilities), 
-                       add_trailing_slash(getTileService))
+                       add_trailing_slash(getTileService),
+                       add_trailing_slash(wmtsServiceUrl), 
+                       add_trailing_slash(twmsServiceUrl))
     
 def get_projection(projectionId, projectionConfig):
     """
@@ -616,6 +632,8 @@ for conf in conf_files:
         wmts_getCapabilities = environment.getCapabilities_wmts
         twms_getCapabilities = environment.getCapabilities_twms
         getTileService = environment.getTileService
+        wmtsServiceUrl = environment.wmtsServiceUrl
+        twmsServiceUrl = environment.twmsServiceUrl
 
         # Optional parameters
         try:
@@ -894,10 +912,64 @@ for conf in conf_files:
                 lines[idx-1] = '' # remove empty line
                 lines[idx] = lines[idx].replace('  </Layer>',execbeef+'\n\n  </Layer>')
                 print 'Injecting to getCapabilities ' + execbeef
+            if 'OnlineResource' in lines[idx]:
+                spaces = lines[idx].index('<')
+                onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
+                onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
         getCapabilities_base.seek(0)
         getCapabilities_base.truncate()
         getCapabilities_base.writelines(lines)
         getCapabilities_base.close()
+    
+    #getCapabilities WMTS modify Service URL
+    try:
+        # Open start base.
+        getCapabilities_startbase=open(lcdir+'/'+wmtsEndPoint+'/getCapabilities_start.base', 'r+')
+    except IOError:
+        mssg=str().join(['Cannot read getCapabilities_start.base file:  ', 
+                         lcdir+'/'+wmtsEndPoint+'/getCapabilities_start.base'])
+        sent=sigevent('ERROR', mssg, sigevent_url)
+        sys.exit(mssg)
+    else:
+        lines = getCapabilities_startbase.readlines()
+        for idx in range(0, len(lines)):
+            if '<ows:Get' in lines[idx]:
+                spaces = lines[idx].index('<')
+                getUrlLine = lines[idx].replace('ows:Get','Get xmlns:xlink="http://www.w3.org/1999/xlink"').replace('>','/>')
+                getUrl = xml.dom.minidom.parseString(getUrlLine).getElementsByTagName('Get')[0]
+                if '1.0.0/WMTSCapabilities.xml' in lines[idx]:
+                    getUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
+                elif 'wmts.cgi?' in lines[idx]:
+                    getUrl.attributes['xlink:href'] = wmtsServiceUrl + 'wmts.cgi?'
+                else:
+                    getUrl.attributes['xlink:href'] = wmtsServiceUrl
+                lines[idx] = (' '*spaces) + getUrl.toprettyxml(indent=" ").replace('Get','ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','').replace('/>','>')
+        getCapabilities_startbase.seek(0)
+        getCapabilities_startbase.truncate()
+        getCapabilities_startbase.writelines(lines)
+        getCapabilities_startbase.close()
+    try:
+        # Open end base.
+        getCapabilities_endbase=open(lcdir+'/'+wmtsEndPoint+'/getCapabilities_end.base', 'r+')
+    except IOError:
+        mssg=str().join(['Cannot read getCapabilities_end.base file:  ', 
+                         lcdir+'/'+wmtsEndPoint+'/getCapabilities_end.base'])
+        sent=sigevent('ERROR', mssg, sigevent_url)
+        sys.exit(mssg)
+    else:
+        lines = getCapabilities_endbase.readlines()
+        for idx in range(0, len(lines)):
+            if 'ServiceMetadataURL' in lines[idx]:
+                spaces = lines[idx].index('<')
+                serviceMetadataUrlLine = lines[idx].replace('ServiceMetadataURL','ServiceMetadataURL xmlns:xlink="http://www.w3.org/1999/xlink"')
+                serviceMetadataUrl = xml.dom.minidom.parseString(serviceMetadataUrlLine).getElementsByTagName('ServiceMetadataURL')[0]
+                serviceMetadataUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
+                lines[idx] = (' '*spaces) + serviceMetadataUrl.toprettyxml(indent=" ").replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','')
+        getCapabilities_endbase.seek(0)
+        getCapabilities_endbase.truncate()
+        getCapabilities_endbase.writelines(lines)
+        getCapabilities_endbase.close()    
 
     #getTileService
     try:
@@ -920,6 +992,11 @@ for conf in conf_files:
                 lines[idx-1] = '' # remove empty line
                 lines[idx] = lines[idx].replace('</TiledPatterns>',execbeef+'\n\n</TiledPatterns>')
                 print 'Injecting to getTileService ' + execbeef
+            if 'OnlineResource' in lines[idx]:
+                spaces = lines[idx].index('<')
+                onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
+                onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
         getTileService_base.seek(0)
         getTileService_base.truncate()
         getTileService_base.writelines(lines)
@@ -969,8 +1046,11 @@ for conf in conf_files:
                 # don't add the layer if it's already there
                 print fileNamePrefix + ' already exists in twms Makefile'
                 break
-            if 'MRFS:=' in lines[idx]:
-                lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+            if 'MRFS:=$' in lines[idx]:
+                if static == True:
+                    lines[idx+1] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
+                else:
+                    lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
                 print 'Adding to twms Makefile: ' + fileNamePrefix
         twms_make.seek(0)
         twms_make.truncate()
@@ -993,8 +1073,11 @@ for conf in conf_files:
                 # don't add the layer if it's already there
                 print fileNamePrefix + ' already exists in wmts Makefile'
                 break
-            if 'MRFS:=' in lines[idx]:
-                lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+            if 'MRFS:=$' in lines[idx]:
+                if static == True:
+                    lines[idx+1] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
+                else:
+                    lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
                 print 'Adding to wmts Makefile: ' + fileNamePrefix
         wmts_make.seek(0)
         wmts_make.truncate()
@@ -1047,7 +1130,7 @@ for key, wmts_endpoint in wmts_endpoints.iteritems():
     if no_xml == False:
         cmd = lcdir+'/bin/get_GC_xml.sh '+lcdir+'/'+wmts_endpoint.path+'/'
         run_command(cmd)
-        cmd = 'mv -v *_.xml '+lcdir+'/'+wmts_endpoint.path+'/'
+        cmd = 'mv -v *.xml '+lcdir+'/'+wmts_endpoint.path+'/'
         run_command(cmd)
         cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
         run_command(cmd)
