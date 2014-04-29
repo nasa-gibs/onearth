@@ -494,9 +494,15 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 		cfg->meta[count].empties[lev_num-1].data;
 	  } else { 
 	    // Try to read the record
-	    cfg->meta[count].empties[lev_num].data=
-	        p_file_pread(cfg->p,apr_pstrcat(cfg->p,cfg->cachedir,levelt->dfname,0),
-	            levelt->empty_record.size,levelt->empty_record.offset);
+		  char *dfname;
+		  if (levelt->dfname[0] == '/') { // decide absolute or relative path from cachedir
+			  dfname = apr_pstrcat(cfg->p,levelt->dfname,0);
+		  } else {
+			  dfname = apr_pstrcat(cfg->p,cfg->cachedir,levelt->dfname,0);
+		  }
+		  cfg->meta[count].empties[lev_num].data=
+				  p_file_pread(cfg->p,dfname,
+						  levelt->empty_record.size,levelt->empty_record.offset);
 	  }
 
 	  // If an error happened, report and mark it as unavailable to prevent crashes
@@ -1491,14 +1497,20 @@ static int mrf_handler(request_rec *r)
 //   ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
 //              "record read prepared %s %d", cfg->cachedir, offset);
 
+  char *ifname;
+  if (level->ifname[0] == '/') { // decide absolute or relative path from cachedir
+  	  ifname = apr_pstrcat(r->pool,level->ifname,0);
+  } else {
+  	  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
+  }
   this_record=r_file_pread(r,
-              apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0),
+              ifname,
               sizeof(index_s),offset);
 
 	if (!this_record) {
 		if (errors > 0)
 			return wmts_return_all_errors(r);
-		char *fname = tstamp_fname(r,apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0));
+		char *fname = tstamp_fname(r,ifname);
 		ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
 					 "Can't get index record from %s Based on %s",
 			 fname,r->args);
@@ -1569,9 +1581,15 @@ static int mrf_handler(request_rec *r)
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
   //   "Try to read tile from %ld, size %ld\n",this_record->offset,this_record->size);
 
+  char *dfname;
+  if (level->dfname[0] == '/') { // decide absolute or relative path from cachedir
+	  dfname = apr_pstrcat(r->pool,level->dfname,0);
+  } else {
+	  dfname = apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0);
+  }
   if (this_record->size) {
-    this_data=r_file_pread(r,
-            apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0),
+	  this_data=r_file_pread(r,
+            dfname,
             this_record->size,this_record->offset);
   } else {
     int lc=level-GETLEVELS(cache);
@@ -1587,7 +1605,7 @@ static int mrf_handler(request_rec *r)
 	  "INITIALIZING EMPTY FOR: %s",r->args);
         this_data=
 	cfg->meta[count].empties[lc].data=p_file_pread(cfg->p,
-		apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0),
+		dfname,
 		this_record->size, this_record->offset);
       }
       if (!this_data) { // No empty tile provided, let it pass
