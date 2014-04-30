@@ -26,12 +26,13 @@
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
 # 2014
-# Joe.T.Roberts@jpl.nasa.gov
 
 import string
 from optparse import OptionParser
 
-units = 108710.44022780626 # meters/degree, not sure why this number is used
+units = 111319.490793274 # meters/degree
+tilesize = 512 # pixels
+pixelsize = 0.00028 # meters
 
 def wmts2twmsbox(top_left_bbox, col, row):
     """
@@ -64,7 +65,7 @@ def wmts2twmsbox(top_left_bbox, col, row):
     request_maxy = top_left_maxy - (row*y_size)
     
     # calculate scale denominator for reference
-    scale_denominator = ((x_size*2)/0.28)*units
+    scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
     print "Scale Denominator:", str(round(scale_denominator,10))
     
     return "Request BBOX: " + str(request_minx)+","+str(request_miny)+","+str(request_maxx)+","+str(request_maxy)
@@ -82,7 +83,7 @@ def wmts2twmsbox_scale(scale_denominator, col, row):
     print "TILECOL="+str(col)
     print "TILEROW="+str(row)
     
-    size = (scale_denominator/units)*0.28/2
+    size = ((tilesize*2)*scale_denominator/units)*(pixelsize/2)
     
     # set top_left values
     top_left_minx = -180
@@ -102,7 +103,7 @@ def wmts2twmsbox_scale(scale_denominator, col, row):
     return "Request BBOX: " + str(round(request_minx,10))+","+str(round(request_miny,10))+","+str(round(request_maxx,10))+","+str(round(request_maxy,10))
 
 
-versionNumber = '0.2'
+versionNumber = '0.3'
 usageText = 'wmts2twmsbox.py --col [TILECOL] --row [TILEROW] --scale_denominator [value] OR --top_left_bbox [bbox]'
 
 # Define command line options and args.

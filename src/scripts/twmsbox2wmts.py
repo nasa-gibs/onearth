@@ -26,12 +26,13 @@
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
 # 2014
-# Joe.T.Roberts@jpl.nasa.gov
 
 import string
 from optparse import OptionParser
 
-units = 108710.44022780626 # meters/degree, not sure why this number is used
+units = 111319.490793274 # meters/degree
+tilesize = 512 # pixels
+pixelsize = 0.00028 # meters
 
 def twmsbox2wmts(request_bbox):
     """
@@ -67,13 +68,13 @@ def twmsbox2wmts(request_bbox):
     row = ((request_miny-top_left_miny)/y_size)
     
     # calculate scale denominator for reference
-    scale_denominator = ((x_size*2)/0.28)*units
+    scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
     print "Scale Denominator:", str(round(scale_denominator,10))
     
     return "TILECOL=" + str(abs(int(col))) + "\n" + "TILEROW="+str(abs(int(row)))
 
 
-versionNumber = '0.2'
+versionNumber = '0.3'
 usageText = 'twmsbox2wmts.py --bbox [bbox]'
 
 # Define command line options and args.
