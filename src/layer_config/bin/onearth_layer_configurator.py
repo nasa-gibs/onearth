@@ -31,25 +31,26 @@
 <LayerConfiguration>
  <Identifier>MODIS_Aqua_Cloud_Top_Temp_Night</Identifier>
  <Title>MODIS AQUA Nighttime Cloud Top Temperature</Title>
- <FileNamePrefix static="false" year="true">MYR6CTTLLNI</FileNamePrefix>
+ <FileNamePrefix>MYR6CTTLLNI</FileNamePrefix>
  <Compression>PNG</Compression>
  <Levels>6</Levels>
  <EmptyTileSize offset="0">1397</EmptyTileSize>
  <Projection>EPSG:4326</Projection> 
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
- <GetCapabilitiesLocation service="wmts">/home/gibsdev/sites/wmts-geo/</GetCapabilitiesLocation>
- <GetCapabilitiesLocation service="twms">/home/gibsdev/sites/twms-geo/</GetCapabilitiesLocation>
- <GetTileServiceLocation>/home/gibsdev/sites/twms-geo/</GetTileServiceLocation>
- <CacheLocation>/home/gibsdev/data/EPSG4326/</CacheLocation>
+ <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+ <Pattern><![CDATA[LAYERS=MODIS_Aqua_Cloud_Top_Temp_Night&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A4326&BBOX=[-,\.0-9+Ee]*&WIDTH=512&HEIGHT=512]]></Pattern>
+ <Pattern><![CDATA[service=WMS&request=GetMap&version=1.1.1&srs=EPSG:4326&layers=MODIS_Aqua_Cloud_Top_Temp_Night&styles=default&transparent=TRUE&format=image%2Fpng&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+ <EnvironmentConfig>/layer_config/conf/environment_geographic.xml</EnvironmentConfig>
+ <ArchiveLocation static="false" year="true">/data/EPSG4326/MYR6CTTLLNI</ArchiveLocation>
  <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
- <Time>2013-11-04/DETECT/P1D</Time>
+ <Time>DETECT/2014-03-28/P1D</Time>
+ <Time>2014-04-01/DETECT/P1D</Time>
 </LayerConfiguration>
 '''
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
 # 2014
-# Joe.T.Roberts@jpl.nasa.gov
 
 import os
 import subprocess
@@ -1046,11 +1047,11 @@ for conf in conf_files:
                 # don't add the layer if it's already there
                 print fileNamePrefix + ' already exists in twms Makefile'
                 break
-            if 'MRFS:=$' in lines[idx]:
-                if static == True:
-                    lines[idx+1] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
-                else:
-                    lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+            if 'MRFS:=$' in lines[idx] and static == False:
+                lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+                print 'Adding to twms Makefile: ' + fileNamePrefix
+            if 'TARGETS:=' in lines[idx] and static == True:
+                lines[idx-2] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
                 print 'Adding to twms Makefile: ' + fileNamePrefix
         twms_make.seek(0)
         twms_make.truncate()
@@ -1073,11 +1074,11 @@ for conf in conf_files:
                 # don't add the layer if it's already there
                 print fileNamePrefix + ' already exists in wmts Makefile'
                 break
-            if 'MRFS:=$' in lines[idx]:
-                if static == True:
-                    lines[idx+1] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
-                else:
-                    lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+            if 'MRFS:=$' in lines[idx] and static == False:
+                lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+                print 'Adding to wmts Makefile: ' + fileNamePrefix
+            if 'TARGETS:=' in lines[idx] and static == True:
+                lines[idx-2] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
                 print 'Adding to wmts Makefile: ' + fileNamePrefix
         wmts_make.seek(0)
         wmts_make.truncate()
