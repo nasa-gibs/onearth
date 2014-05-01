@@ -24,10 +24,10 @@ img_info::img_info(GDALDatasetH hDS) {
 
 static bool outside_bounds(const Bounds &inside,const Bounds &outside) {
     return (
-        (inside.lx < outside.lx && !CPLIsEqual(inside.lx, outside.lx) ) ||
+        ((inside.lx+0.01) < outside.lx && !CPLIsEqual(inside.lx, outside.lx) ) ||
         (inside.ux > outside.ux && !CPLIsEqual(inside.ux, outside.ux) ) ||
         (inside.ly < outside.ly && !CPLIsEqual(inside.ly, outside.ly) ) ||
-        (inside.uy > outside.uy && !CPLIsEqual(inside.uy, outside.uy) )
+        ((inside.uy-0.01) > outside.uy && !CPLIsEqual(inside.uy, outside.uy) )
         );
 }
 

@@ -1,6 +1,6 @@
 DEPTH=../../bin
 
-srcdir=../../twms/EPSG3031
+srcdir=../../twms/EPSG3857
 
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool

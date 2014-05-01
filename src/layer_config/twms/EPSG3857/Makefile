@@ -3,7 +3,7 @@ DEPTH=../../bin
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool
 
-TGT_PATH=/twms-geo/.lib
+TGT_PATH=/twms-webmerc/.lib
 
 TYPES:=
 

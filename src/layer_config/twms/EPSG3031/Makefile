@@ -3,12 +3,15 @@ DEPTH=../../bin
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool
 
-TGT_PATH=/home/gibsdev/sites/twms-antarctic/.lib
+TGT_PATH=/sites/twms-antarctic/.lib
 
 TYPES:=
 
 # These are the time variant layers
 MRFS:=$(foreach type,$(TYPES),$(type)TTTTTTT_.mrf)
+
+# Static layers go here
+
 
 TARGETS:=getTileService.xml cache.config getCapabilities.xml wms_config.xml
 

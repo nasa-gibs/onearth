@@ -5,10 +5,10 @@ EXECBEEF: export IFS= TILED_GROUP="echo \"$TILED_GROUP\" | $0"
 <WMS_Tile_Service version="0.1.0">
 <Service>
 # A name for the server, ends in WMS:Tile
-<Name>LANCE:WMS:Tile</Name>
+<Name>GIBS:WMS:Tile</Name>
 # User readable, just in case
 <Title>WMS Tile Service</Title>
-<Abstract>Tiled WMS service for LANCE, tiled in a global grid</Abstract>
+<Abstract>Tiled WMS service, tiled in a global grid</Abstract>
 <KeywordList>
     <Keyword>WMS</Keyword>
     <Keyword>Tile</Keyword>
@@ -18,7 +18,7 @@ EXECBEEF: export IFS= TILED_GROUP="echo \"$TILED_GROUP\" | $0"
     <Keyword>Earth</Keyword>
 </KeywordList>
 #Info about tiled WMS, multiples are allowed
-<OnLineResource xmlns:xlink="http://www.w3.orf/1999/xlink" xlink:type="simple" xlink:href="http://earthdata.nasa.gov"/>
+<OnlineResource xmlns:xlink="http://www.w3.orf/1999/xlink" xlink:type="simple" xlink:href="http://earthdata.nasa.gov"/>
 #Server info
 <ContactInformation>
   <ContactPersonPrimary>

@@ -11,6 +11,9 @@ TYPES:=
 # These are the time variant layers
 MRFS:=$(foreach type,$(TYPES),$(type)TTTTTTT_.mrf)
 
+# Static layers go here
+
+
 TARGETS:=mrfs cache_wmts.config
 
 default: mrfs cache_wmts.config

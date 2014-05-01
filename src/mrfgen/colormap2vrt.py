@@ -69,6 +69,7 @@ def hex_to_rgb(value):
 
 def sigevent(type, mssg, sigevent_url):
     """
+    Send a message to sigevent service.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- 'message for operations'
@@ -78,7 +79,7 @@ def sigevent(type, mssg, sigevent_url):
     # Constrain mssg to 256 characters (including '...').
     if len(mssg) > 256:
         mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent', type, mssg])
+    print str().join(['sigevent ', type, ' - ', mssg])
     # Remove any trailing slash from URL.
     if sigevent_url[-1] == '/':
         sigevent_url=sigevent_url[0:len(sigevent_url)-1]
@@ -93,10 +94,10 @@ def sigevent(type, mssg, sigevent_url):
     data['type']=type
     data['description']=mssg
     data['computer']=socket.gethostname()
-    data['source']='OnEarth'
+    data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='UNCATEGORIZED'
-    data['provider']='Global Imagery Browse Services'
+    data['category']='MRFGEN'
+    data['provider']='GIBS'
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -135,7 +136,10 @@ def log_sig_warn(mssg, sigevent_url):
     logging.warning(time.asctime())
     logging.warning(mssg)
     # Send to sigevent.
-    sent=sigevent('WARN', mssg, sigevent_url)
+    try:
+        sent=sigevent('WARN', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
 
 def log_sig_exit(type, mssg, sigevent_url):
     """
@@ -146,7 +150,12 @@ def log_sig_exit(type, mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting.'])
+    mssg=str().join([mssg, '  Exiting colormap2vrt.'])
+    # Send to sigevent.
+    try:
+        sent=sigevent(type, mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
     # Send to log.
     if type == 'INFO':
         log_info_mssg_with_timestamp(mssg)
@@ -156,10 +165,8 @@ def log_sig_exit(type, mssg, sigevent_url):
     elif type == 'ERROR':
         logging.error(time.asctime())
         logging.error(mssg)
-    # Send to sigevent.
-    sent=sigevent(type, mssg, sigevent_url)
     # Exit.
-    sys.exit(mssg)
+    sys.exit()
 
 def log_the_command(command_list):
     """
@@ -284,7 +291,8 @@ else: # merge SLD into VRT
     # check if VRT is uses palette
     if "<ColorInterp>Palette</ColorInterp>" not in merge_file.read():
         merge_file.close()
-        raise Exception(merge_vrt + " is NOT paletted VRT.")
+        message = merge_vrt + " is NOT paletted VRT."
+        log_sig_exit('ERROR', message, sigevent_url)
     else:
         # copy merge VRT to output
         merge_file.seek(0)
@@ -307,4 +315,5 @@ else: # merge SLD into VRT
         merge_file.close()
         output_file.close()
 
-print output_vrt, "created successfully."
+message = output_vrt + " created successfully."
+log_sig_exit('INFO', message, sigevent_url)
