@@ -72,19 +72,15 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_bindir}/*
 %{_libdir}/httpd/modules/*
+%defattr(-,gibs,gibs,-)
 %dir %{_datadir}/mod_onearth
 %{_datadir}/mod_onearth/cgi
 %{_datadir}/mod_onearth/empty_tiles
 %{_datadir}/mod_onearth/layer_config
 
 %files demo
-%defattr(-,root,root,-)
+%defattr(-,gibs,gibs,-)
 %{_datadir}/mod_onearth/demo
-%config %{_sysconfdir}/httpd/conf.d/on_earth-demo.conf
-
-%files dit
-%defattr(-,gibsdev,gibsdev,-)
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/on_earth-dit.conf
 
 
 %changelog
