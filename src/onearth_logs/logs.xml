@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LogConfiguration>
+    
+    <!-- Apache Custom Log Format (http://httpd.apache.org/docs/2.2/mod/mod_log_config.html) -->
+    <!-- Ex. "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" -->
+    <ApacheLogFormat>"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""</ApacheLogFormat>
+    
+    <!-- Available Apache fields: requestor, timestamp, uri, bytes, statuscode, useragent -->
+    <!-- Available OnEarth fields: service, request, version, layer, time, tilematrixset, tilematrix, tilerow, tilecol, format, layers, srs, styles, width, height, bbox, transparent, bgcolor, exceptions, elevation -->
+    <!-- Ex. %(requestor)s|&amp;|%(timestamp)s|&amp;|%(uri)s|&amp;|%(bytes)s|&amp;|%(statuscode)s|&amp;|%(useragent)s|&amp;|%(service)s|&amp;|%(layer)s|&amp;|%(time)s|&amp;|%(tilematrixset)s|&amp;|%(tilematrix)s|&amp;|%(tilerow)s|&amp;|%(tilecol)s|&amp;|%(format)s -->
+    <OutputLog>%(requestor)s|&amp;|%(timestamp)s|&amp;|%(uri)s|&amp;|%(bytes)s|&amp;|%(statuscode)s|&amp;|%(useragent)s|&amp;|%(service)s|&amp;|%(layer)s|&amp;|%(time)s|&amp;|%(tilematrixset)s|&amp;|%(tilematrix)s|&amp;|%(tilerow)s|&amp;|%(tilecol)s|&amp;|%(format)s</OutputLog>
+    
+</LogConfiguration>
