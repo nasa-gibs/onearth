@@ -58,6 +58,90 @@ import xml.dom.minidom
 toolName = "onearth_logs.py"
 versionNumber = "v0.3"
 
+pixelsize = 0.00028 # meters
+
+
+class TileMatrixSetMap:
+    """Mappings for Tiled-WMS bounding box levels to WMTS TileMatrixSets"""
+    
+    def __init__(self, projection_id, bboxes, minx, maxy, tilematrixsetmap):
+        """
+        Arguments:
+            projection_id -- EPSG code identifier
+            bboxes -- dictionary of bounding box patterns by layer
+            minx -- the top-left corner x value
+            maxy -- the top-left corner y value
+            tilematrixsetmap -- map of levels to their TileMatrixSet names
+        """
+        self.projection_id = projection_id
+        self.bboxes = bboxes
+        self.minx = float(minx)
+        self.maxy = float(maxy)
+        self.tilematrixsetmap = tilematrixsetmap
+
+def read_getTileService(gettileservice_file):
+    """
+    Reads the TileMatrixSet map configuration file and returns a dictionary with mappings between WMTS TileMatrixSets and Tiled-WMS TilePatterns.
+    Arguments:
+        tilematrixsetmap_file -- the location of the tilematrixsetmap configuration file
+    """
+    
+    try:
+        # Open file.
+        gettileservice=open(gettileservice_file, 'r')
+        print ('Using getTileService: ' + gettileservice_file)
+    except IOError:
+        mssg=str().join(['Cannot read getTileService file:  ', gettileservice_file])
+        sys.exit(mssg)
+        
+    bboxes = {}
+    dom = xml.dom.minidom.parse(gettileservice)
+    tilePatternElements = dom.getElementsByTagName('TilePattern')
+    for tilePatternElement in tilePatternElements:
+        tilepattern = tilePatternElement.firstChild.wholeText
+        layer = tilepattern.split("layers=")[1].split("&")[0].strip()
+        bbox_string = tilepattern.split("bbox=")[1].split(" ")[0].strip()
+        bbox = [float(x) for x in bbox_string.split(',')]
+        try:
+            bboxes[layer].append(bbox)
+        except KeyError:
+            bboxes[layer] = []
+            bboxes[layer].append(bbox)
+        
+    return bboxes
+
+def read_tilematrixsetmap(tilematrixsetmap_file):
+    """
+    Reads the TileMatrixSet map configuration file and returns a dictionary with mappings between WMTS TileMatrixSets and Tiled-WMS TilePatterns.
+    Arguments:
+        tilematrixsetmap_file -- the location of the tilematrixsetmap configuration file
+    """
+    
+    try:
+        # Open file.
+        config=open(tilematrixsetmap_file, 'r')
+        print ('Using tilematrixsetmap: ' + tilematrixsetmap_file)
+    except IOError:
+        mssg=str().join(['Cannot read tilematrixsetmap file:  ', tilematrixsetmap_file])
+        sys.exit(mssg)
+        
+    tilematrixset_data = {}
+    dom = xml.dom.minidom.parse(config)
+    projectionElements = dom.getElementsByTagName('Projection')
+    for projectionElement in projectionElements:
+        projection_id = projectionElement.attributes['id'].value 
+        getTileService = projectionElement.attributes['getTileService'].value
+        topleftcorner = projectionElement.attributes['topLeftCorner'].value
+        tilematrixsetmap = {}
+        tileMatrixSetElements = projectionElement.getElementsByTagName("TileMatrixSet")
+        for tileMatrixSetElement in tileMatrixSetElements:
+            tilematrixsetmap[tileMatrixSetElement.attributes['level'].value] = tileMatrixSetElement.firstChild.nodeValue.strip()
+
+        bboxes = read_getTileService(getTileService)
+        tilematrixset_data[projection_id] = TileMatrixSetMap(projection_id, bboxes, topleftcorner.split(' ')[0], topleftcorner.split(' ')[1], tilematrixsetmap)
+    
+    return tilematrixset_data
+
 def read_config(config_file):
     """
     Reads the log configuration file and returns the Apache log and custom output log formats.
@@ -101,11 +185,11 @@ def parse_request(request_string):
                 'layers','srs','styles','width','height','bbox','transparent','bgcolor','exceptions','elevation']: #Tiled-WMS specific
         if key not in request_dict:
             request_dict[key] = ['']
-    
+            
     return request_dict
 
 
-def translate_log(log_in, log_re, log_output):
+def translate_log(log_in, log_re, log_output, tilematrixset_data, wmts_translate_off):
     """
     Translates log message in Apache log format to a custom format 
     Arguments:
@@ -120,7 +204,11 @@ def translate_log(log_in, log_re, log_output):
         log_dict = message.groupdict()
         request = parse_request(str(log_dict['uri']))
         for key, value in request.iteritems():
-            log_dict[key] = value[0]            
+            log_dict[key] = value[0]
+        
+        if (wmts_translate_off == False) and (log_dict['bbox'] != ''):
+            log_dict = translate_wmts(log_dict, tilematrixset_data)
+                        
         try:
             log_out = log_output % log_dict
         except KeyError,e:
@@ -128,6 +216,75 @@ def translate_log(log_in, log_re, log_output):
             sys.exit()
         
     return log_out
+
+
+def translate_wmts(request_dict, tilematrixset_data):
+    """
+    Translates Tiled-WMS request to WMTS
+    Arguments:
+        request_dict -- Dictionary of request parameters and values
+    """
+    
+#     print str(request_dict)
+    
+    projection = str(request_dict['srs'])
+    request_bbox = str(request_dict['bbox']).split(",")
+    tilesize = float(str(request_dict['width']))
+    
+    if projection == "EPSG:4326":
+        units = 111319.490793274 # meters/degree
+    else: # default to EPSG:4326
+        units = 111319.490793274 # meters/degree
+    
+    # parse request_bbox to individual values
+    request_minx = float(request_bbox[0])
+    request_miny = float(request_bbox[1])
+    request_maxx = float(request_bbox[2])
+    request_maxy = float(request_bbox[3])
+    
+    x_size = request_maxx - request_minx
+    y_size = request_maxy - request_miny
+    
+    # set top_left values
+    top_left_minx = tilematrixset_data[projection].minx
+    top_left_maxy = tilematrixset_data[projection].maxy
+    
+    # calculate additional top_left values for reference
+    top_left_maxx = top_left_minx + x_size
+    top_left_miny = top_left_maxy - y_size
+    
+    topleftbbox = str(top_left_minx)+","+str(top_left_miny)+","+str(top_left_maxx)+","+str(top_left_maxy)
+#     print "Top Left BBOX:", topleftbbox
+#     print "Request BBOX:",str(request_minx)+","+str(request_miny)+","+str(request_maxx)+","+str(request_maxy)
+    
+    # calculate col and row
+    col = ((request_minx-top_left_minx)/x_size)
+    row = ((request_miny-top_left_miny)/y_size)
+    
+    # calculate scale denominator for reference
+    scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
+#     print "Scale Denominator:", str(round(scale_denominator,10))
+
+    try:
+        tilematrixsetlevels = len(tilematrixset_data[projection].bboxes[request_dict['layers']])
+    except:
+        return request_dict # return if layer does not exist in getTileService
+    tilematrixset = tilematrixset_data[projection].tilematrixsetmap[str(tilematrixsetlevels)]
+    tilematrix = ''
+    
+    topleftbbox = [float(x) for x in topleftbbox.split(',')]
+    for i, bbox in enumerate(tilematrixset_data[projection].bboxes[request_dict['layers']]):
+        if topleftbbox == bbox:
+            tilematrix = (tilematrixsetlevels-1)-i
+            
+    request_dict['scaledenominator'] = scale_denominator
+    request_dict['tilematrixset'] = tilematrixset
+    request_dict['tilematrix'] = tilematrix
+    request_dict['tilecol'] = str(abs(int(col)))
+    request_dict['tilerow'] = str(abs(int(row)))
+    
+    return request_dict
+
 
 def lower_keys(x):
     """
@@ -140,6 +297,7 @@ def lower_keys(x):
     if isinstance(x, dict):
         return dict((k.lower(), lower_keys(v)) for k, v in x.iteritems())
     return x
+
 
 def get_dom_tag_value(dom, tag_name):
     """
@@ -156,7 +314,7 @@ def get_dom_tag_value(dom, tag_name):
 
 print toolName + ' ' + versionNumber
 
-usageText = toolName + " --input [file] --output [file] --config [logs.xml] --date [YYYY-MM-DD] --quiet --rotate_daily --tail"
+usageText = toolName + " --input [file] --output [file] --config [logs.xml] --tilematrixsetmap [tilematrixsetmap.xml] --date [YYYY-MM-DD] --quiet --rotate_daily --tail --wmts_translate_off"
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -166,6 +324,9 @@ parser.add_option('-c', '--config',
 parser.add_option('-i', '--input',
                   action='store', type='string', dest='input',
                   help='The full path of the input log file')
+parser.add_option('-m', '--tilematrixsetmap',
+                  action='store', type='string', dest='tilematrixsetmap', default='tilematrixsetmap.xml',
+                  help='Full path of configuration file containing TileMatrixSet mappings.  Default: tilematrixsetmap.xml')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output log file')
@@ -173,6 +334,8 @@ parser.add_option("-q", "--quiet", action="store_true", dest="quiet",
                   default=False, help="Suppress log output to terminal")
 parser.add_option("-t", "--tail", action="store_true", dest="tail", 
                   default=False, help="Tail the log file")
+parser.add_option("-w", "--wmts_translate_off", action="store_true", dest="wmts_translate_off", 
+                  default=False, help="Do not translate Tiled-WMS tile requests to WMTS")
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -197,6 +360,11 @@ except IOError,e:
     print str(e)
     exit()
 print "opening " + input_log
+
+if options.wmts_translate_off == False:
+    tilematrixset_data = read_tilematrixsetmap(options.tilematrixsetmap)
+else:
+    tilematrixset_data = None
 
 log_format, log_output = read_config(options.config)
 
@@ -227,7 +395,7 @@ if tail:
         if p.poll(1):
             output_file.write(logfile.stdout.readline())
             if quiet == False:
-                print translate_log(logfile.stdout.readline().strip(), log_re, log_output)
+                print translate_log(logfile.stdout.readline().strip(), log_re, log_output, tilematrixset_data, options.wmts_translate_off)
         time.sleep(.001)
         
 else:
@@ -240,7 +408,7 @@ else:
         exit()
         
     for line in input_file:
-        log_out = translate_log(line, log_re, log_output)
+        log_out = translate_log(line, log_re, log_output, tilematrixset_data, options.wmts_translate_off)
         if quiet == False:
             print log_out
         output_file.write(log_out+"\n")

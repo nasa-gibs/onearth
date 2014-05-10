@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TileMatrixSetMap>
+    <Projection id="EPSG:3413" topLeftCorner="-4194304 4194304" getTileService="/sites/twms-arctic/.lib/getTileService.xml">
+        <TileMatrixSet level="4">EPSG3413_1km</TileMatrixSet>
+        <TileMatrixSet level="5">EPSG3413_500m</TileMatrixSet>
+        <TileMatrixSet level="6">EPSG3413_250m</TileMatrixSet>
+    </Projection>
+    <Projection id="EPSG:4326" topLeftCorner="-180 90" getTileService="/sites/twms-geo/.lib/getTileService.xml">
+        <TileMatrixSet level="1">EPSG4326_64km</TileMatrixSet>
+        <TileMatrixSet level="2">EPSG4326_32km</TileMatrixSet>
+        <TileMatrixSet level="3">EPSG4326_16km</TileMatrixSet>
+        <TileMatrixSet level="4">EPSG4326_8km</TileMatrixSet>
+        <TileMatrixSet level="5">EPSG4326_4km</TileMatrixSet>
+        <TileMatrixSet level="6">EPSG4326_2km</TileMatrixSet>
+        <TileMatrixSet level="7">EPSG4326_1km</TileMatrixSet>
+        <TileMatrixSet level="8">EPSG4326_500m</TileMatrixSet>
+        <TileMatrixSet level="9">EPSG4326_250m</TileMatrixSet>
+    </Projection>
+</TileMatrixSetMap>
