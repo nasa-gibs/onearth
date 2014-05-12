@@ -39,6 +39,7 @@
 #  <cache_dir>~/TEST/test_cache_dir</cache_dir>
 #  <working_dir>~/TEST/test_working_dir</working_dir>
 #  <logfile_dir>~/TEST/test_logfile_dir</logfile_dir>
+#  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
 #  <mrf_empty_tile_filename>~/TEST/transparent.png</mrf_empty_tile_filename>
 #  <vrtnodata>0</vrtnodata>
 #  <mrf_blocksize>256</mrf_blocksize>
@@ -298,6 +299,27 @@ def lookupEmptyTile(empty_tile):
     except KeyError:
         mssg = '"' + empty_tile + '" is not a valid empty tile.'
         log_sig_exit('ERROR', mssg, sigevent_url)
+        
+def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data):
+    """
+    Convert MRF filenames to specified naming convention (mrf_name).
+    Argument:
+        mrf_data -- the created MRF data file
+        mrf_name -- the MRF naming convention to use
+        parameter_name -- MRF parameter name
+        date_of_data -- the date of the MRF data, example: 20120730
+    """
+    mrf_date = datetime.datetime.strptime(date_of_data,"%Y%m%d")
+    mrf = mrf_name.replace('{$parameter_name}', parameter_name)
+    time_params = []
+    for i, char in enumerate(mrf):
+        if char == '%':
+            time_params.append(char+mrf[i+1])
+    for time_param in time_params:
+        mrf = mrf.replace(time_param,datetime.datetime.strftime(mrf_date,time_param))
+    index = mrf.replace('.mrf', '.idx')
+    data = mrf.replace('.mrf', os.path.basename(mrf_data)[-4:])
+    return (mrf, index, data)
 
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
@@ -309,6 +331,8 @@ parser.add_option('-c', '--configuration_filename',
                   action='store', type='string', dest='configuration_filename',
                   default='./mrfgen_configuration_file.xml',
                   help='Full path of configuration filename.  Default:  ./mrfgen_configuration_file.xml')
+parser.add_option("-d", "--data_only", action="store_true", dest="data_only", 
+                  default=False, help="Only output the data and index MRF files")
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -321,6 +345,8 @@ parser.add_option('-s', '--sigevent_url',
 configuration_filename=options.configuration_filename
 # Sigevent URL.
 sigevent_url=options.sigevent_url
+# Data only.
+data_only = options.data_only
 
 # Read XML configuration file.
 try:
@@ -355,6 +381,10 @@ else:
         logfile_dir            =get_dom_tag_value(dom, 'logfile_dir')
     except IndexError: #use output_dir if not specified
         logfile_dir            =get_dom_tag_value(dom, 'output_dir')
+    try:
+        mrf_name=get_dom_tag_value(dom, 'mrf_name')
+    except IndexError:
+        mrf_name=''
     # MRF specific parameters.
     try:
         mrf_empty_tile_filename=get_dom_tag_value(dom, 'mrf_empty_tile_filename')
@@ -443,6 +473,7 @@ log_info_mssg(str().join(['config output_dir:              ', output_dir]))
 log_info_mssg(str().join(['config cache_dir:               ', cache_dir]))
 log_info_mssg(str().join(['config working_dir:             ', working_dir]))
 log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
+log_info_mssg(str().join(['config mrf_name:                ', mrf_name]))
 log_info_mssg(str().join(['config mrf_empty_tile_filename: ', 
                           mrf_empty_tile_filename]))
 log_info_mssg(str().join(['config vrtnodata:               ', vrtnodata]))
@@ -991,7 +1022,8 @@ if len(modtiles) > 0:
         gdal_translate_stderr_file.close()
        
         # Copy vrt to output
-        shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
+        if data_only == False:
+            shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
        
         # Clean up.
         remove_file(vrt_filename)
@@ -1115,6 +1147,25 @@ if len(modtiles) > 0:
                          '  Possible that input files not found.',
                          '  Check stderr file: ',gdalbuildvrt_stderr_filename])
         log_sig_warn(mssg, sigevent_url)
+        
+    # Rename MRFs
+    if mrf_name != '':
+        output_mrf, output_idx, output_data = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data)
+        log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
+        shutil.move(mrf_filename, output_dir+output_mrf)
+        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+        shutil.move(idx_filename, output_dir+output_idx)
+        log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
+        shutil.move(out_filename, output_dir+output_data)
+        mrf_filename = output_dir+output_mrf
+        out_filename = output_dir+output_data
+        
+    # Leave only data and index MRF files
+    if data_only == True:
+        remove_file(mrf_filename)
+        remove_file(log_filename)
+        remove_file(output_dir+"/"+basename+".mrf.aux.xml")
+        remove_file(output_dir+"/"+basename+".configuration_file.xml")
 
 # Remove temp tiles
 for tilename in (alltiles):
