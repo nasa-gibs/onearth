@@ -332,7 +332,7 @@ parser.add_option('-c', '--configuration_filename',
                   default='./mrfgen_configuration_file.xml',
                   help='Full path of configuration filename.  Default:  ./mrfgen_configuration_file.xml')
 parser.add_option("-d", "--data_only", action="store_true", dest="data_only", 
-                  default=False, help="Only output the data and index MRF files")
+                  default=False, help="Only output the MRF data, index, and header files")
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -1160,9 +1160,8 @@ if len(modtiles) > 0:
         mrf_filename = output_dir+output_mrf
         out_filename = output_dir+output_data
         
-    # Leave only data and index MRF files
+    # Leave only MRF data, index, and header files
     if data_only == True:
-        remove_file(mrf_filename)
         remove_file(log_filename)
         remove_file(output_dir+"/"+basename+".mrf.aux.xml")
         remove_file(output_dir+"/"+basename+".configuration_file.xml")
