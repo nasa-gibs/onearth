@@ -288,6 +288,8 @@ def lookupEmptyTile(empty_tile):
     Lookup predefined empty tiles form config file
     """
     script_dir = os.path.dirname(__file__)
+    if script_dir == '/usr/bin':
+        script_dir = '/usr/share/onearth' # use default directory if in bin
     empty_config_file=open(script_dir+"/empty_tiles/empty_config", 'r')
     tiles = {}
     for line in empty_config_file:

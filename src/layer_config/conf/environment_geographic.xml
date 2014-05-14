@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EnvironmentConfiguration>
-    <GetCapabilitiesLocation service="wmts">/sites/wmts-geo/</GetCapabilitiesLocation>
-    <GetCapabilitiesLocation service="twms">/sites/twms-geo/.lib/</GetCapabilitiesLocation>
-    <GetTileServiceLocation>/sites/twms-geo/.lib/</GetTileServiceLocation>
-    <CacheLocation>/data/EPSG4326/</CacheLocation>
+    <GetCapabilitiesLocation service="wmts">/usr/share/onearth/demo/wmts-geo/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/twms-geo/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/usr/share/onearth/demo/twms-geo/.lib/</GetTileServiceLocation>
+    <CacheLocation>/usr/share/onearth/demo/data/EPSG4326/</CacheLocation>
     <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
     <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
 </EnvironmentConfiguration>

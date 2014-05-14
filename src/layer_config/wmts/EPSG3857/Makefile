@@ -1,4 +1,4 @@
-DEPTH=../../bin
+DEPTH=/usr/bin
 
 srcdir=../../twms/EPSG3857
 

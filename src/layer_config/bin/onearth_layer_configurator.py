@@ -1129,8 +1129,12 @@ for key, wmts_endpoint in wmts_endpoints.iteritems():
             cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config '+onearth+'/'+wmts_endpoint.path+'/'
         run_command(cmd)
     if no_xml == False:
-        cmd = lcdir+'/bin/get_GC_xml.sh '+lcdir+'/'+wmts_endpoint.path+'/'
-        run_command(cmd)
+        try:
+            cmd = 'get_GC_xml '+lcdir+'/'+wmts_endpoint.path+'/'
+            run_command(cmd)
+        except:
+            cmd = lcdir+'/bin/get_GC_xml.sh '+lcdir+'/'+wmts_endpoint.path+'/'
+            run_command(cmd)            
         cmd = 'mv -v *.xml '+lcdir+'/'+wmts_endpoint.path+'/'
         run_command(cmd)
         cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'

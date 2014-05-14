@@ -3,7 +3,7 @@ GDAL_ARTIFACT=gdal-$(GDAL_VERSION).tar.gz
 GDAL_HOME=http://download.osgeo.org/gdal
 GDAL_URL=$(GDAL_HOME)/$(GDAL_VERSION)/$(GDAL_ARTIFACT)
 
-MOD_ONEARTH_VERSION=0.3.1
+MOD_ONEARTH_VERSION=0.3.2
 
 POSTGRES_VERSION=9.2
 
@@ -132,30 +132,50 @@ mod_onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/get_GC_xml
 	install -m 755 src/layer_config/bin/get_mrfs \
 		-D $(DESTDIR)/$(PREFIX)/bin
+	install -m 755 src/layer_config/bin/FGDC \
+		-D $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/layer_config/bin/onearth_layer_configurator.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/onearth_layer_configurator
+	install -m 755 src/onearth_logs/onearth_logs.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/onearth_logs
+	install -m 755 src/mrfgen/mrfgen.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/mrfgen
+	install -m 755 src/mrfgen/colormap2vrt.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/colormap2vrt.py
+	install -m 755 src/mrfgen/RGBApng2Palpng  \
+		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/cgi
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/cgi
 	install -m 755 src/cgi/twms.cgi \
-		-t $(DESTDIR)/$(PREFIX)/share/mod_onearth/cgi
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/cgi
 	install -m 755 src/cgi/wmts.cgi \
-		-t $(DESTDIR)/$(PREFIX)/share/mod_onearth/cgi
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/cgi
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 	cp src/mrfgen/empty_tiles/* \
-		$(DESTDIR)/$(PREFIX)/share/mod_onearth/empty_tiles
+		$(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+	install -m 777 -d $(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/conf \
-		$(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/twms \
-		$(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/wmts \
-		$(DESTDIR)/$(PREFIX)/share/mod_onearth/layer_config
+		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+	cp -r src/layer_config/layers \
+		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+	cp -r src/layer_config/schema \
+		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+		
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
+	cp -r src/onearth_logs/logs.* \
+		$(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
+	cp -r src/onearth_logs/tilematrixsetmap.* \
+		$(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
-	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/mod_onearth/demo
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
+	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
 
 
 #-----------------------------------------------------------------------------
@@ -188,8 +208,8 @@ mod_onearth-artifact: mod_onearth-clean
 	rm -rf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,mod_onearth-$(MOD_ONEARTH_VERSION)/," \
-		src/mod_onearth src/layer_config src/mrfgen/empty_tiles src/cgi \
-		src/demo GNUmakefile
+		src/mod_onearth src/layer_config src/mrfgen src/cgi \
+		src/demo src/onearth_logs GNUmakefile
 
 #-----------------------------------------------------------------------------
 # RPM

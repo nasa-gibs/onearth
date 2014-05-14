@@ -1,5 +1,5 @@
 Name:		mod_onearth
-Version:	0.3.1
+Version:	0.3.2
 Release:	1%{?dist}
 Summary:	Apache module for OnEarth
 
@@ -49,19 +49,21 @@ make mod_onearth PREFIX=%{_prefix}
 %install
 rm -rf %{buildroot}
 make mod_onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
-install -m 755 -d %{buildroot}/%{_datadir}/mod_onearth/demo/wmts
-ln -s %{_datadir}/mod_onearth/cgi/wmts.cgi \
-   %{buildroot}/%{_datadir}/mod_onearth/demo/wmts
-ln -s %{_datadir}/mod_onearth/empty_tiles/black.jpg \
-   %{buildroot}/%{_datadir}/mod_onearth/demo/wmts
-ln -s %{_datadir}/mod_onearth/empty_tiles/RGBA_512.png \
-   %{buildroot}/%{_datadir}/mod_onearth/demo/wmts
-ln -s %{_datadir}/mod_onearth/empty_tiles/TransparentIDX.png \
-   %{buildroot}/%{_datadir}/mod_onearth/demo/wmts
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+ln -s %{_datadir}/onearth/cgi/wmts.cgi \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+ln -s %{_datadir}/onearth/empty_tiles/black.jpg \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+ln -s %{_datadir}/onearth/empty_tiles/RGBA_512.png \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+ln -s %{_datadir}/onearth/empty_tiles/TransparentIDX.png \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
-mv %{buildroot}/%{_datadir}/mod_onearth/demo/on_earth-demo.conf \
+mv %{buildroot}/%{_datadir}/onearth/demo/on_earth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
-touch %{buildroot}/%{_sysconfdir}/httpd/conf.d/on_earth-dit.conf
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
 
 
 %clean
@@ -73,17 +75,22 @@ rm -rf %{buildroot}
 %{_bindir}/*
 %{_libdir}/httpd/modules/*
 %defattr(-,gibs,gibs,-)
-%dir %{_datadir}/mod_onearth
-%{_datadir}/mod_onearth/cgi
-%{_datadir}/mod_onearth/empty_tiles
-%{_datadir}/mod_onearth/layer_config
+%dir %{_datadir}/onearth
+%{_datadir}/onearth/cgi
+%{_datadir}/onearth/empty_tiles
+%{_datadir}/onearth/layer_config
+%{_datadir}/onearth/onearth_logs
 
 %files demo
 %defattr(-,gibs,gibs,-)
-%{_datadir}/mod_onearth/demo
+%{_datadir}/onearth/demo
+%config %{_sysconfdir}/httpd/conf.d/on_earth-demo.conf
 
 
 %changelog
+* Wed May 14 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.3.2-1
+- Renamed mod_onearth directory to onearth and added TWMS directories
+
 * Wed Apr 30 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.3.1-1
 - Changed the version to 0.3.1
 
