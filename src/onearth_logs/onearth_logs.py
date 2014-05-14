@@ -317,13 +317,16 @@ def get_dom_tag_value(dom, tag_name):
 
 print toolName + ' ' + versionNumber
 
-usageText = toolName + " --input [file] --output [file] --config [logs.xml] --tilematrixsetmap [tilematrixsetmap.xml] --date [YYYY-MM-DD] --quiet --rotate_daily --tail --wmts_translate_off"
+usageText = toolName + " --input [file] --output [file] --config [logs.xml] --tilematrixsetmap [tilematrixsetmap.xml] --date [YYYY-MM-DD] --quiet --tail --wmts_translate_off"
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-c', '--config',
                   action='store', type='string', dest='config', default='logs.xml',
                   help='Full path of log configuration file.  Default: logs.xml')
+parser.add_option('-d', '--date',
+                  action='store', type='string', dest='logdate', default=None,
+                  help='Filter log for specified date [YYYY-MM-DD]')
 parser.add_option('-i', '--input',
                   action='store', type='string', dest='input',
                   help='The full path of the input log file')
@@ -356,6 +359,17 @@ if options.output:
 else:
     print "output log file must be specified...exiting"
     exit()
+if options.logdate != None:
+    if tail:
+        print "date cannot be specified with tail option...exiting"
+        exit()
+    try:
+        logdate = time.strptime(options.logdate,"%Y-%m-%d")
+        apachedate = time.strftime('%d/%b/%Y', logdate)
+        print "Filtering for date", apachedate
+    except ValueError,e:
+        print str(e)
+        exit()
 
 try:    
     output_file = open(output_log,'w')
@@ -411,9 +425,16 @@ else:
         exit()
         
     for line in input_file:
-        log_out = translate_log(line, log_re, log_output, tilematrixset_data, options.wmts_translate_off)
-        if quiet == False:
-            print log_out
-        output_file.write(log_out+"\n")
+        if options.logdate == None:
+            log_out = translate_log(line, log_re, log_output, tilematrixset_data, options.wmts_translate_off)
+            if quiet == False:
+                print log_out
+            output_file.write(log_out+"\n")
+        else:
+            if apachedate in line:
+                log_out = translate_log(line, log_re, log_output, tilematrixset_data, options.wmts_translate_off)
+                if quiet == False:
+                    print log_out
+                output_file.write(log_out+"\n")            
         
 exit()
