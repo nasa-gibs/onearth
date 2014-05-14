@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TileMatrixSetMap>
-    <Projection id="EPSG:3413" topLeftCorner="-4194304 4194304" getTileService="/sites/twms-arctic/.lib/getTileService.xml">
+    <Projection id="EPSG:3031" topLeftCorner="-4194304 4194304" getTileService="http://map1.vis.earthdata.nasa.gov/twms-antarctic/twms.cgi?request=GetTileService">
+        <TileMatrixSet level="4">EPSG3031_1km</TileMatrixSet>
+        <TileMatrixSet level="5">EPSG3031_500m</TileMatrixSet>
+        <TileMatrixSet level="6">EPSG3031_250m</TileMatrixSet>
+    </Projection>
+    <Projection id="EPSG:3413" topLeftCorner="-4194304 4194304" getTileService="http://map1.vis.earthdata.nasa.gov/twms-arctic/twms.cgi?request=GetTileService">
         <TileMatrixSet level="4">EPSG3413_1km</TileMatrixSet>
         <TileMatrixSet level="5">EPSG3413_500m</TileMatrixSet>
         <TileMatrixSet level="6">EPSG3413_250m</TileMatrixSet>
     </Projection>
-    <Projection id="EPSG:4326" topLeftCorner="-180 90" getTileService="/sites/twms-geo/.lib/getTileService.xml">
+    <Projection id="EPSG:4326" topLeftCorner="-180 90" getTileService="http://map1.vis.earthdata.nasa.gov/twms-geo/twms.cgi?request=GetTileService">
         <TileMatrixSet level="1">EPSG4326_64km</TileMatrixSet>
         <TileMatrixSet level="2">EPSG4326_32km</TileMatrixSet>
         <TileMatrixSet level="3">EPSG4326_16km</TileMatrixSet>

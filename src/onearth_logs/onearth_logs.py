@@ -53,6 +53,7 @@ import subprocess
 import select
 import re
 import urlparse
+import urllib
 import xml.dom.minidom
 
 toolName = "onearth_logs.py"
@@ -89,13 +90,13 @@ def read_getTileService(gettileservice_file):
     try:
         # Open file.
         gettileservice=open(gettileservice_file, 'r')
-        print ('Using getTileService: ' + gettileservice_file)
-    except IOError:
-        mssg=str().join(['Cannot read getTileService file:  ', gettileservice_file])
-        sys.exit(mssg)
+        dom = xml.dom.minidom.parse(gettileservice)
+        gettileservice.close()
+    except IOError: # try http URL
+        dom = xml.dom.minidom.parse(urllib.urlopen(gettileservice_file))
+    print ('Using getTileService: ' + gettileservice_file)
         
     bboxes = {}
-    dom = xml.dom.minidom.parse(gettileservice)
     tilePatternElements = dom.getElementsByTagName('TilePattern')
     for tilePatternElement in tilePatternElements:
         tilepattern = tilePatternElement.firstChild.wholeText
@@ -207,8 +208,10 @@ def translate_log(log_in, log_re, log_output, tilematrixset_data, wmts_translate
             log_dict[key] = value[0]
         
         if (wmts_translate_off == False) and (log_dict['bbox'] != ''):
-            log_dict = translate_wmts(log_dict, tilematrixset_data)
-                        
+            try:
+                log_dict = translate_wmts(log_dict, tilematrixset_data)
+            except:
+                log_dict = log_dict     
         try:
             log_out = log_output % log_dict
         except KeyError,e:
