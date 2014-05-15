@@ -156,7 +156,7 @@ mod_onearth-install:
 	cp src/mrfgen/empty_tiles/* \
 		$(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 
-	install -m 777 -d $(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/conf \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/twms \
