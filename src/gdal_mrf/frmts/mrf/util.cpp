@@ -1,5 +1,3 @@
-
-
 /*
 * Copyright (c) 2002-2012, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -23,7 +21,6 @@
 */
 
 
-
 /**
  *  $Id$
  *
@@ -34,8 +31,16 @@
 
 #include "marfa.h"
 
-static const char *ILC_N[]={ "PNG", "PPNG", "JPEG", "NONE", "DEFLATE", "TIF", "Unknown" };
-static const char *ILC_E[]={ ".ppg", ".ppg", ".pjg", ".til", ".pzp", ".ptf", "" };
+static const char *ILC_N[]={ "PNG", "PPNG", "JPEG", "NONE", "DEFLATE", "TIF", 
+#if defined(LERC)
+	"LERC", 
+#endif
+	"Unknown" };
+static const char *ILC_E[]={ ".ppg", ".ppg", ".pjg", ".til", ".pzp", ".ptf", 
+#if defined(LERC)
+	".lrc" ,
+#endif
+	"" };
 static const char *ILO_N[]={ "PIXEL", "BAND", "LINE", "Unknown" };
 
 char const **ILComp_Name=ILC_N;
@@ -187,7 +192,7 @@ CPLString getFname(const CPLString &in, const char *def)
 {
     CPLString ret(in);
 
-    if ((strlen(def)==4)&&(strlen(in)>4)) {
+    if ((strlen(def)==4) && (strlen(in)>4)) {
         ret.replace(ret.size()-4,4,def);
         return ret;
     }
@@ -234,7 +239,7 @@ GIntBig IdxOffset(const ILSize &pos,const ILImage &img)
 
 // Is compress type endianess dependent?
 bool is_Endianess_Dependent(GDALDataType dt, ILCompression comp) {
-    if (IL_ZLIB==comp||IL_NONE==comp)
+    if (IL_ZLIB == comp || IL_NONE == comp)
         if (GDALGetDataTypeSize( dt )>8) return true;
     return false;
 }
@@ -255,26 +260,36 @@ void GDALRegister_mrf(void)
         driver->SetMetadataItem(GDAL_DMD_LONGNAME, "Meta Raster Format");
         driver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "frmt_marfa.html");
 
-        // These will need to be revisited.  Are they required?
-        driver->SetMetadataItem(GDAL_DMD_CREATIONDATATYPES,"Byte UInt16 Int16 Int32 UInt32 Float32 Float64");
+        // These will need to be revisited, do we support complex data types too?
+        driver->SetMetadataItem(GDAL_DMD_CREATIONDATATYPES,
+				"Byte UInt16 Int16 Int32 UInt32 Float32 Float64");
+
         driver->SetMetadataItem(GDAL_DMD_CREATIONOPTIONLIST,
             "<CreationOptionList>\n"
             "   <Option name='COMPRESS' type='string-select' default='PNG' description='PPNG = Palette PNG; DEFLATE = zlib '>\n"
             "       <Value>JPEG</Value>"
             "       <Value>PNG</Value>"
             "       <Value>PPNG</Value>"
+	    "	    <Value>TIF</Value>"
             "       <Value>DEFLATE</Value>"
             "       <Value>NONE</Value>"
+#if defined(LERC)
+			"		<Value>LERC</Value>"
+#endif
             "   </Option>\n"
             "   <Option name='INTERLEAVE' type='string-select' default='PIXEL'>\n"
             "       <Value>PIXEL</Value>"
             "       <Value>BAND</Value>"
             "   </Option>\n"
             "   <Option name='QUALITY' type='int' description='best=99, bad=0, default=85'/>\n"
+	    "	<Option name='OPTIONS' type='string' description='Freeform dataset parameters'/>\n"
             "   <Option name='BLOCKSIZE' type='int' description='Block size, both x and y, default 512'/>\n"
             "   <Option name='BLOCKXSIZE' type='int' description='Page x size, default=512'/>\n"
             "   <Option name='BLOCKYSIZE' type='int' description='Page y size, default=512'/>\n"
             "   <Option name='NETBYTEORDER' type='boolean' description='Force endian for certain compress options, default is host order'/>\n"
+	    "	<Option name='CACHEDSOURCE' type='string' description='The source raster, if this is a cache'/>\n"
+	    "	<Option name='UNIFORM_OVERLAY_SCALE' type='int' description='Uniform overlays in MRF, only 2 is valid, mostly when caching'/>\n"
+	    "	<Option name='NOCOPY' type='boolean' description='When caching, leave output empty, default=no'/>\n"
             "</CreationOptionList>\n");
 
         driver->pfnOpen = GDALMRFDataset::Open;
@@ -292,11 +307,14 @@ GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *pDS, const ILImage &image, i
     switch(pDS->current.comp) 
     {
     case IL_PPNG: // Uses the PNG code, just has a palette in each PNG
-    case IL_PNG: bnd = new PNG_Band(pDS,image,b,level); break;
+    case IL_PNG:  bnd = new PNG_Band(pDS,image,b,level); break;
     case IL_JPEG: bnd = new JPEG_Band(pDS,image,b,level); break;
     case IL_NONE: bnd = new Raw_Band(pDS,image,b,level); break;
     case IL_ZLIB: bnd = new ZLIB_Band(pDS,image,b,level); break;
-    case IL_TIF: bnd = new TIF_Band(pDS,image,b,level); break;
+    case IL_TIF:  bnd = new TIF_Band(pDS,image,b,level); break;
+#if defined(LERC)
+	case IL_LERC: bnd = new LERC_Band(pDS,image,b,level); break;
+#endif
     default:
         return NULL;
     }
@@ -365,7 +383,14 @@ void XMLSetAttributeVal(CPLXMLNode *parent,const char* pszName,
     const double val, const char *frmt)
 {
     CPLCreateXMLNode(parent,CXT_Attribute,pszName);
-    CPLSetXMLValue(parent,pszName,CPLString().FormatC(val,frmt));
+    CPLString sVal;
+    sVal.FormatC(val,frmt);
+
+//  Unfortunately the %a doesn't work in VisualStudio scanf or strtod
+//    if (strtod(sVal.c_str(),0) != val)
+//	sVal.Printf("%a",val);
+
+    CPLSetXMLValue(parent,pszName,sVal);
 }
 
 CPLXMLNode *XMLSetAttributeVal(CPLXMLNode *parent,
@@ -407,17 +432,20 @@ GDALColorEntry HSVSwap(const GDALColorEntry& cein) {
  * @return true if size is OK or if extend succedded
  */
 
-int CheckFileSize(VSILFILE *ifp, GIntBig sz, GDALAccess eAccess) {
-    GIntBig idxf_sz;
-    VSIFSeekL(ifp,0,SEEK_END);
-    idxf_sz=VSIFTellL(ifp);
-    // Write an empty tile index at the end if the file seems to small
-    if (( idxf_sz<sz ) && ( eAccess==GA_Update)) {
-        ILIdx tidx={0,0};
-        VSIFSeekL(ifp,sz-sizeof(ILIdx),SEEK_SET);
-        VSIFWriteL(&tidx,sizeof(tidx),1,ifp);
-        VSIFSeekL(ifp,0,SEEK_END);
-        idxf_sz=VSIFTellL(ifp);
-    }
-    return (idxf_sz>=sz);
+int CheckFileSize(const char *fname, GIntBig sz, GDALAccess eAccess) {
+    // Don't check anything when reading files
+    if (eAccess != GA_Update)
+        return true;
+
+    VSIStatBufL statb;
+    if (VSIStatL(fname, &statb))
+	return false;
+    if (statb.st_size >= sz)
+	return true;
+
+    // There is no ftruncate in VSI, only truncate()
+    VSILFILE *ifp = VSIFOpenL(fname, "r+b");
+    int ret=VSIFTruncateL(ifp, sz);
+    VSIFCloseL(ifp);
+    return !ret;
 };

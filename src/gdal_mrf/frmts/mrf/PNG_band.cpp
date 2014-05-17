@@ -103,7 +103,7 @@ CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src)
     png_bytep *png_rowp;
 
     // pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING,0,pngEH,pngWH);
-    if (!(pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING,NULL,NULL,NULL))) {
+    if (!(pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL))) {
         CPLError(CE_Failure,CPLE_AppDefined,"MRF: Error creating PNG decompress");
         return CE_Failure;
     }
@@ -147,7 +147,8 @@ CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src)
     if (byte_count!=1) { // Swap from net order if data is short
         for (int i=0;i<height;i++) {
             unsigned short int*p=(unsigned short int *)png_rowp[i];
-            for (int j=0;j<rowbytes/2;j++,p++) *p=net16(*p);
+            for (int j=0; j<rowbytes/2; j++,p++)
+				*p=net16(*p);
         }
     }
 
@@ -213,11 +214,26 @@ CPLErr PNG_Band::CompressPNG(buf_mgr &dst, buf_mgr &src)
              }
     }
 
-    png_set_IHDR(pngp,infop,img.pagesize.x,img.pagesize.y, 
-        GDALGetDataTypeSize(img.dt),png_ctype,
-        PNG_INTERLACE_NONE,PNG_COMPRESSION_TYPE_BASE,PNG_FILTER_TYPE_BASE);
+    png_set_IHDR(pngp, infop, img.pagesize.x, img.pagesize.y, 
+        GDALGetDataTypeSize(img.dt), png_ctype,
+        PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-    // Should let the quality control the compression level
+	// Optional, force certain filters only.  Makes it somewhat faster but worse compression
+	// png_set_filter(pngp, PNG_FILTER_TYPE_BASE, PNG_FILTER_SUB);
+	
+#if defined(PNG_LIBPNG_VER) && (PNG_LIBPNG_VER > 10200)
+	png_uint_32 mask, flags;
+
+	flags = png_get_asm_flags(pngp);
+	mask = png_get_asm_flagmask(PNG_SELECT_READ | PNG_SELECT_WRITE);
+	png_set_asm_flags(pngp, flags | mask); // use flags &~mask to disable all
+
+	// Test that the MMX is compiled into PNG
+//	fprintf(stderr,"MMX support is %d\n", png_mmx_support());
+
+#endif
+
+	// Should let the quality control the compression level
 
     // Write the palete and the transparencies if they exist
     if (PNGColors!=NULL)
@@ -280,12 +296,11 @@ CPLErr PNG_Band::Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img)
  */
 
 PNG_Band::PNG_Band(GDALMRFDataset *pDS, const ILImage &image, int b, int level) : 
-GDALMRFRasterBand(pDS,image,b,level) {
-    PNGColors=NULL;
-    PNGAlpha=NULL;
+	GDALMRFRasterBand(pDS,image,b,level),PNGColors(NULL),PNGAlpha(NULL)
 
+{
     if (image.comp==IL_PPNG)
-    {
+    {  // Convert the GDAL LUT to PNG style
         GDALColorTable *poCT=GetColorTable();
         TransSize=PalSize=poCT->GetColorEntryCount();
 
@@ -304,16 +319,17 @@ GDALMRFRasterBand(pDS,image,b,level) {
 	    pasPNGColors[iColor].red = (png_byte) sEntry.c1;
 	    pasPNGColors[iColor].green = (png_byte) sEntry.c2;
 	    pasPNGColors[iColor].blue = (png_byte) sEntry.c3;
-	    if (NoTranspYet && sEntry.c4==255) TransSize--;
+	    if (NoTranspYet && sEntry.c4==255)
+		TransSize--;
 	    else {
 		NoTranspYet=false;
 		pabyAlpha[iColor]=(unsigned char) sEntry.c4;
             }
         }
     }
-};
+}
 
 PNG_Band::~PNG_Band() {
-    if (PNGColors) CPLFree(PNGColors);
-    if (PNGAlpha) CPLFree(PNGAlpha);
-};
+    CPLFree(PNGColors);
+    CPLFree(PNGAlpha);
+}
