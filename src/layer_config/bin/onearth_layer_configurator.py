@@ -1096,23 +1096,23 @@ for key, twms_endpoint in twms_endpoints.iteritems():
     run_command(cmd)
     if no_cache == False:
         if twms_endpoint.cacheConfig:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/cache.config ' + twms_endpoint.cacheConfig
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config ' + twms_endpoint.cacheConfig
         elif onearth:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/cache.config '+onearth+'/'+twms_endpoint.path+'/'
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config '+onearth+'/'+twms_endpoint.path+'/'
         run_command(cmd)
     if no_xml == False:
         if twms_endpoint.getCapabilities:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml ' + twms_endpoint.getCapabilities
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml ' + twms_endpoint.getCapabilities
         elif onearth:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
         run_command(cmd)
         if twms_endpoint.getTileService:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml ' + twms_endpoint.getTileService
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml ' + twms_endpoint.getTileService
         elif onearth:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
         run_command(cmd)
         if onearth:
-            cmd = 'cp -p -v '+lcdir+'/'+twms_endpoint.path+'/wms_config.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/wms_config.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
             run_command(cmd)
 
 for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -1124,9 +1124,9 @@ for key, wmts_endpoint in wmts_endpoints.iteritems():
     run_command(cmd)
     if no_cache == False:
         if wmts_endpoint.cacheConfig:
-            cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config ' + wmts_endpoint.cacheConfig
+            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config ' + wmts_endpoint.cacheConfig
         elif onearth:
-            cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config '+onearth+'/'+wmts_endpoint.path+'/'
+            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config '+onearth+'/'+wmts_endpoint.path+'/'
         run_command(cmd)
     if no_xml == False:
         try:
@@ -1140,14 +1140,14 @@ for key, wmts_endpoint in wmts_endpoints.iteritems():
         cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
         run_command(cmd)
         if wmts_endpoint.getCapabilities:
-            cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml ' + wmts_endpoint.getCapabilities
+            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml ' + wmts_endpoint.getCapabilities
             run_command(cmd)
-            cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
+            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
             run_command(cmd)
         elif onearth:
-            cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/'
+            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/'
             run_command(cmd)
-            cmd = 'cp -p -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/1.0.0/WMTSCapabilities.xml'
+            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/1.0.0/WMTSCapabilities.xml'
             run_command(cmd)
 
 print '\n*** Layers have been configured successfully ***'
