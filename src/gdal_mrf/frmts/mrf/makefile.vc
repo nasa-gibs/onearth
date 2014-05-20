@@ -1,5 +1,4 @@
 GDAL_ROOT	=	..\..
-
 !INCLUDE $(GDAL_ROOT)\nmake.opt
 
 OBJ	=	Tif_band.obj ZLIB_band.obj Raw_band.obj PNG_band.obj JPEG_band.obj mrf_band.obj util.obj marfa_dataset.obj
@@ -8,13 +7,7 @@ OBJ	=	Tif_band.obj ZLIB_band.obj Raw_band.obj PNG_band.obj JPEG_band.obj mrf_ban
 !IF EXIST(LERC_Band.cpp)
 LERC	=	TRUE
 EXTRAFLAGS	=	/DLERC
-!ENDIF
-
-!IFDEF LERC
 OBJ	=	$(OBJ) BitMask.obj BitStuffer.obj RLE.obj CntZImage.obj LERC_Band.obj
-$(OBJ):	marfa.h BitMask.h BitStuffer.h CntZImage.h Defines.h Image.h RLE.h TImage.hpp
-!ELSE
-$(OBJ): marfa.h
 !ENDIF
 
 PLUGIN_DLL =	gdal_mrf.dll
@@ -27,6 +20,12 @@ EXTRAFLAGS = 	-I../zlib -I../png/libpng $(EXTRAFLAGS)
 
 default:	$(OBJ)
 	xcopy /D  /Y *.obj ..\o
+
+!IFDEF LERC
+$(OBJ):	marfa.h BitMask.h BitStuffer.h CntZImage.h Defines.h Image.h RLE.h TImage.hpp
+!ELSE
+$(OBJ): marfa.h
+!ENDIF
 
 clean:
 	-del *.obj

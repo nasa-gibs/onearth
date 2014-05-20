@@ -410,10 +410,10 @@ CPLXMLNode *XMLSetAttributeVal(CPLXMLNode *parent,
 
 GDALColorEntry GetXMLColorEntry(CPLXMLNode *p) {
     GDALColorEntry ce;
-    ce.c1= static_cast<int>(getXMLNum(p,"c1",0));
-    ce.c2= static_cast<int>(getXMLNum(p,"c2",0));
-    ce.c3= static_cast<int>(getXMLNum(p,"c3",0));
-    ce.c4= static_cast<int>(getXMLNum(p,"c4",255));
+    ce.c1= static_cast<short>(getXMLNum(p,"c1",0));
+    ce.c2= static_cast<short>(getXMLNum(p,"c2",0));
+    ce.c3= static_cast<short>(getXMLNum(p,"c3",0));
+    ce.c4= static_cast<short>(getXMLNum(p,"c4",255));
     return ce;
 }
 
@@ -445,7 +445,16 @@ int CheckFileSize(const char *fname, GIntBig sz, GDALAccess eAccess) {
 
     // There is no ftruncate in VSI, only truncate()
     VSILFILE *ifp = VSIFOpenL(fname, "r+b");
-    int ret=VSIFTruncateL(ifp, sz);
+
+// There is no VSIFTruncateL in gdal 1.8 and lower
+#if GDAL_VERSION_MAJOR == 1 && GDAL_VERSION_MINOR <= 8
+
+    ILIdx tidx = {0,0};
+    VSIFSeekL(ifp, sz - sizeof(ILIdx), SEEK_SET);
+    int ret = ( sizeof(tidx) == VSIFWriteL(&tidx, sizeof(tidx),1,ifp) );
+#else
+    int ret = VSIFTruncateL(ifp, sz);
+#endif
     VSIFCloseL(ifp);
     return !ret;
 };

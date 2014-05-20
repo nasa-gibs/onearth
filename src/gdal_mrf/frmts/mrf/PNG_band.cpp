@@ -98,17 +98,17 @@ void write_png( png_structp pngp, png_bytep data, png_size_t length) {
 // CPLErr GDALMRFRasterBand::DecompressPNG(buf_mgr &dst, buf_mgr &src) 
 CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src) 
 {
-    png_structp pngp;
-    png_infop infop;
     png_bytep *png_rowp;
 
     // pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING,0,pngEH,pngWH);
-    if (!(pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL))) {
+    png_structp pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if ( 0 == pngp) {
         CPLError(CE_Failure,CPLE_AppDefined,"MRF: Error creating PNG decompress");
         return CE_Failure;
     }
 
-    if (!(infop=png_create_info_struct(pngp))) {
+    png_infop infop=png_create_info_struct(pngp);
+    if ( 0 == infop ) {
         if (pngp) png_destroy_read_struct(&pngp,&infop,0);
         CPLError(CE_Failure,CPLE_AppDefined,"MRF: Error creating PNG info");
         return CE_Failure;

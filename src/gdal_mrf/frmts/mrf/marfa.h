@@ -247,8 +247,12 @@ public:
 
     virtual CPLErr GetGeoTransform(double *gt);
     virtual CPLErr SetGeoTransform(double *gt);
-    virtual CPLErr IBuildOverviews( const char*, int, int*, int, int*, 
-        GDALProgressFunc, void* );
+
+    virtual CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
+	int nBufXSize, int nBufYSize, 
+	GDALDataType eDT, 
+	int nBandCount, int *panBandList,
+	char **papszOptions );
 
     virtual char **GetFileList();
 
@@ -261,9 +265,9 @@ public:
     unsigned int GetPBufferSize() {return pbsize;};
 
     const CPLString GetFname() {return fname;};
-    // Patches a region of all the overviews, argument counts are in blocks
-    virtual CPLErr PatchOverviews(int BlockX,int BlockY,int Width,int Height, 
-        int srcLevel=0, int toTheTop=false);
+    // Patches a region of all the next overview, argument counts are in blocks
+    virtual CPLErr PatchOverview(int BlockX,int BlockY,int Width,int Height, 
+        int srcLevel=0, int recursive=false);
 
 protected:
     CPLErr LevelInit(const int l);
@@ -273,6 +277,13 @@ protected:
     CPLErr CleanOverviews(void);
     // Add uniform scaled overlays, returns the size of the index file
     GIntBig AddOverlays(int scale);
+
+    virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
+	void *, int, int, GDALDataType,
+	int, int *, int, int, int );
+
+    virtual CPLErr IBuildOverviews( const char*, int, int*, int, int*, 
+	GDALProgressFunc, void* );
 
     VSILFILE *IdxFP();
     VSILFILE *DataFP();
@@ -417,7 +428,7 @@ protected:
     // Overview Support
     // Inherited from GDALRasterBand
     // These are called only in the base level RasterBand
-    virtual int GetOverviewCount() {return overviews.size();}
+    virtual int GetOverviewCount() {return static_cast<int>(overviews.size());}
     virtual GDALRasterBand *GetOverview(int n) {
         if (n<(int)overviews.size()) return overviews[n];
         return 0;
