@@ -3,7 +3,7 @@ DEPTH=/usr/bin
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool
 
-TGT_PATH=/twms-webmerc/.lib
+TGT_PATH=
 
 TYPES:=
 

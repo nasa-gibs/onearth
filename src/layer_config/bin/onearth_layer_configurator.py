@@ -60,6 +60,7 @@ import urllib
 import urllib2
 import xml.dom.minidom
 import logging
+import distutils.spawn
 from datetime import datetime, time, timedelta
 from time import asctime
 from optparse import OptionParser
@@ -314,6 +315,11 @@ def get_environment(environmentConfig):
         except KeyError:
             log_sig_exit('ERROR', 'service is not defined in <ServiceURL>', sigevent_url)        
     
+    if not os.path.exists(twms_getCapabilities):
+        os.makedirs(twms_getCapabilities)
+    if not os.path.exists(wmts_getCapabilities):
+        os.makedirs(wmts_getCapabilities)
+        
     return Environment(add_trailing_slash(cacheConfig), 
                        add_trailing_slash(wmts_getCapabilities), 
                        add_trailing_slash(twms_getCapabilities), 
@@ -469,7 +475,7 @@ print 'OnEarth Layer Configurator v' + versionNumber
 
 if os.environ.has_key('LCDIR') == False:
     print 'LCDIR environment variable not set.\nLCDIR should point to your OnEarth layer_config directory.\n'
-    lcdir = os.path.dirname(__file__) + '/..'
+    lcdir = os.path.abspath(os.path.dirname(__file__) + '/..')
 else:
     lcdir = os.environ['LCDIR']
 
@@ -1031,6 +1037,14 @@ for conf in conf_files:
         
 # configure Makefiles
     
+    # set location of tools
+    if os.path.isfile(os.path.abspath(lcdir)+'/bin/twms_tool'):
+        depth = os.path.abspath(lcdir)+'/bin'
+    elif distutils.spawn.find_executable('twms_tool') != None:
+        depth = distutils.spawn.find_executable('twms_tool').split('/twms_tool')[0]
+    else:
+        depth = '/usr/bin' # default
+    
     #twms
     try:
         # Open file.
@@ -1043,6 +1057,11 @@ for conf in conf_files:
     else:
         lines = twms_make.readlines()
         for idx in range(0, len(lines)):
+            # replace lines in Makefiles
+            if 'DEPTH=' in lines[idx]:
+                lines[idx] = 'DEPTH=' + depth + '\n'
+            if 'TGT_PATH=' in lines[idx]:
+                lines[idx] = 'TGT_PATH=' + twms_endpoints[twmsEndPoint].getTileService + '\n'
             if fileNamePrefix in lines[idx]:
                 # don't add the layer if it's already there
                 print fileNamePrefix + ' already exists in twms Makefile'
@@ -1070,6 +1089,11 @@ for conf in conf_files:
     else:
         lines = wmts_make.readlines()
         for idx in range(0, len(lines)):
+            # replace lines in Makefiles
+            if 'DEPTH=' in lines[idx]:
+                lines[idx] = 'DEPTH=' + depth + '\n'
+            if 'srcdir=' in lines[idx]:
+                lines[idx] = 'srcdir=' + os.path.abspath(lcdir+'/'+twmsEndPoint) + '\n'
             if fileNamePrefix in lines[idx]:
                 # don't add the layer if it's already there
                 print fileNamePrefix + ' already exists in wmts Makefile'
@@ -1142,11 +1166,15 @@ for key, wmts_endpoint in wmts_endpoints.iteritems():
         if wmts_endpoint.getCapabilities:
             cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml ' + wmts_endpoint.getCapabilities
             run_command(cmd)
+            if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
+                os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
             cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
             run_command(cmd)
         elif onearth:
             cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/'
             run_command(cmd)
+            if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
+                os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
             cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/1.0.0/WMTSCapabilities.xml'
             run_command(cmd)
 
