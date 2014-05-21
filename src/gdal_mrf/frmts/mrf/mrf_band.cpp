@@ -101,8 +101,8 @@ GDALMRFRasterBand::GDALMRFRasterBand(GDALMRFDataset *parent_dataset,
     nRasterYSize = img.size.y;
     nBlockXSize = img.pagesize.x;
     nBlockYSize = img.pagesize.y;
-    nBlocksPerColumn = img.pcount.x;
-    nBlocksPerRow = img.pcount.y;
+    nBlocksPerRow = img.pcount.x;
+    nBlocksPerColumn = img.pcount.y;
     dfp = ifp = NULL;
     img.NoDataValue = GetNoDataValue( &img.hasNoData);
 }
