@@ -20,7 +20,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #
-# onearth_layer_configurator.py
+# oe_configure_layer.py
 # The OnEarth Layer Configurator.
 #
 #
@@ -188,7 +188,7 @@ def log_sig_exit(type, mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting onearth_layer_configurator.'])
+    mssg=str().join([mssg, '  Exiting oe_configure_layer.'])
     # Send to sigevent.
     try:
         sent=sigevent(type, mssg, sigevent_url)
@@ -487,7 +487,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'onearth_layer_config.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --no_xml --no_cache'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --no_xml --no_cache'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -1070,10 +1070,10 @@ for conf in conf_files:
 # configure Makefiles
     
     # set location of tools
-    if os.path.isfile(os.path.abspath(lcdir)+'/bin/twms_tool'):
+    if os.path.isfile(os.path.abspath(lcdir)+'/bin/oe_create_cache_config'):
         depth = os.path.abspath(lcdir)+'/bin'
-    elif distutils.spawn.find_executable('twms_tool') != None:
-        depth = distutils.spawn.find_executable('twms_tool').split('/twms_tool')[0]
+    elif distutils.spawn.find_executable('oe_create_cache_config') != None:
+        depth = distutils.spawn.find_executable('oe_create_cache_config').split('/oe_create_cache_config')[0]
     else:
         depth = '/usr/bin' # default
     

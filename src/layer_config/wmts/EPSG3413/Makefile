@@ -2,8 +2,8 @@ DEPTH=/usr/bin
 
 srcdir=
 
-COMPOSE=$(DEPTH)/compose
-TT=$(DEPTH)/twms_tool
+COMPOSE=$(DEPTH)/oe_create_twms_xml
+TT=$(DEPTH)/oe_create_cache_config
 
 TYPES:=
 

@@ -124,12 +124,12 @@ mod_onearth-install:
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_wms.so
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/mod_onearth/twms_tool \
-		$(DESTDIR)/$(PREFIX)/bin/twms_tool
-	install -m 755 src/layer_config/bin/compose \
-		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/onearth_layer_configurator.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/onearth_layer_configurator
+	install -m 755 src/mod_onearth/oe_create_cache_config \
+		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
+	install -m 755 src/layer_config/bin/oe_create_twms_xml \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_create_twms_xml
+	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
 	install -m 755 src/onearth_logs/onearth_logs.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/onearth_logs
 	install -m 755 src/mrfgen/mrfgen.py  \
