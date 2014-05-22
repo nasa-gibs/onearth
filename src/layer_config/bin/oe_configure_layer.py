@@ -60,6 +60,7 @@ import urllib
 import urllib2
 import xml.dom.minidom
 import logging
+import shutil
 import distutils.spawn
 from datetime import datetime, time, timedelta
 from time import asctime
@@ -1206,15 +1207,15 @@ if no_twms == False:
         run_command(cmd)
         if no_cache == False:
             if twms_endpoint.cacheConfig:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config ' + twms_endpoint.cacheConfig
-            run_command(cmd)
+                shutil.copy(lcdir+'/'+twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig)
+                print '\nCopying: ' + lcdir+'/'+twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig
         if no_xml == False:
             if twms_endpoint.getCapabilities:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml ' + twms_endpoint.getCapabilities
-            run_command(cmd)
+                shutil.copy(lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities)
+                print '\nCopying: ' + lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities
             if twms_endpoint.getTileService:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml ' + twms_endpoint.getTileService
-            run_command(cmd)
+                shutil.copy(lcdir+'/'+twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService)
+                print '\nCopying: ' + lcdir+'/'+twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService
 
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -1226,18 +1227,18 @@ if no_wmts == False:
         run_command(cmd)
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
-                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config ' + wmts_endpoint.cacheConfig
-            run_command(cmd)
+                shutil.copy(lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig)
+                print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig
         if no_xml == False:
             cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
             run_command(cmd)
             if wmts_endpoint.getCapabilities:
-                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml ' + wmts_endpoint.getCapabilities
-                run_command(cmd)
+                shutil.copy(lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml', wmts_endpoint.getCapabilities)
+                print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml' + ' -> ' + wmts_endpoint.getCapabilities
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
                     os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
-                run_command(cmd)
+                shutil.copy(lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml', wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
+                print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml' + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
