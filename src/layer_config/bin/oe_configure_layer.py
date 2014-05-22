@@ -487,7 +487,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -501,9 +501,6 @@ parser.add_option('-d', '--layer_dir',
 parser.add_option("-n", "--no_twms",
                   action="store_true", dest="no_twms", 
                   default=False, help="Do not use configurations for Tiled-WMS")
-parser.add_option('-o', '--onearth',
-                  action='store', type='string', dest='onearth',
-                  help='Full path of the Apache document root for OnEarth if getCapabilities and cache config locations not specified.  Default: $ONEARTH')
 parser.add_option('-p', '--projection_config',
                   action='store', type='string', dest='projection_configuration',
                   default=lcdir+'/conf/projection.xml',
@@ -552,16 +549,7 @@ projection_configuration = options.projection_configuration
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
-
-if options.onearth:
-    onearth = options.onearth
-else:
-    onearth = None
-if os.environ.has_key('ONEARTH'):
-    onearth = os.environ['ONEARTH']
-
-if onearth:
-    print 'Using ' + onearth + ' as $ONEARTH.'    
+  
 print 'Using ' + lcdir + ' as $LCDIR.'
 
 if no_xml:
@@ -1219,23 +1207,14 @@ if no_twms == False:
         if no_cache == False:
             if twms_endpoint.cacheConfig:
                 cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config ' + twms_endpoint.cacheConfig
-            elif onearth:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config '+onearth+'/'+twms_endpoint.path+'/'
             run_command(cmd)
         if no_xml == False:
             if twms_endpoint.getCapabilities:
                 cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml ' + twms_endpoint.getCapabilities
-            elif onearth:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
             run_command(cmd)
             if twms_endpoint.getTileService:
                 cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml ' + twms_endpoint.getTileService
-            elif onearth:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
             run_command(cmd)
-            if onearth:
-                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/wms_config.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
-                run_command(cmd)
 
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -1248,8 +1227,6 @@ if no_wmts == False:
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
                 cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config ' + wmts_endpoint.cacheConfig
-            elif onearth:
-                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config '+onearth+'/'+wmts_endpoint.path+'/'
             run_command(cmd)
         if no_xml == False:
             cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
@@ -1260,13 +1237,6 @@ if no_wmts == False:
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
                     os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
                 cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
-                run_command(cmd)
-            elif onearth:
-                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/'
-                run_command(cmd)
-                if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
-                    os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/1.0.0/WMTSCapabilities.xml'
                 run_command(cmd)
 
 print '\n*** Layers have been configured successfully ***'
