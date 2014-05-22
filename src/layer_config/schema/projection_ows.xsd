@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ows="http://www.opengis.net/ows/1.1">
+  <xs:import schemaLocation="projection_configuration.xsd"/>
+  <xs:import namespace="http://www.w3.org/1999/xlink" schemaLocation="xlink.xsd"/>
+  <xs:element name="WGS84BoundingBox">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ows:LowerCorner"/>
+        <xs:element ref="ows:UpperCorner"/>
+      </xs:sequence>
+      <xs:attribute name="crs" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="BoundingBox">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ows:LowerCorner"/>
+        <xs:element ref="ows:UpperCorner"/>
+      </xs:sequence>
+      <xs:attribute name="crs" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Metadata">
+    <xs:complexType>
+      <xs:attribute ref="xlink:href" use="required"/>
+      <xs:attribute ref="xlink:title" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:group name="TileMatrixSet">
+    <xs:sequence>
+      <xs:element name="TileMatrixSet" form="unqualified">
+        <xs:complexType mixed="true">
+          <xs:attribute name="level" type="xs:integer"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
+  <xs:element name="Title" type="xs:string"/>
+  <xs:element name="LowerCorner" type="xs:string"/>
+  <xs:element name="UpperCorner" type="xs:string"/>
+  <xs:element name="Identifier" type="xs:string"/>
+</xs:schema>

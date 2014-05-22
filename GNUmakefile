@@ -128,8 +128,6 @@ mod_onearth-install:
 		$(DESTDIR)/$(PREFIX)/bin/twms_tool
 	install -m 755 src/layer_config/bin/compose \
 		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/get_GC_xml.sh \
-		-D $(DESTDIR)/$(PREFIX)/bin/get_GC_xml
 	install -m 755 src/layer_config/bin/get_mrfs \
 		-D $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/layer_config/bin/FGDC \

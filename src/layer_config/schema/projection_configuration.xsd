@@ -1,16 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ows="http://www.opengis.net/ows/1.1">
+  <xs:import namespace="http://www.opengis.net/ows/1.1" schemaLocation="projection_ows.xsd"/>
+  <xs:import namespace="http://www.w3.org/1999/xlink" schemaLocation="xlink.xsd"/>
   <xs:element name="ProjectionConfiguration">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" ref="Projection"/>
+        <xs:element maxOccurs="unbounded" name="Projection">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="WKT" type="xs:string"/>
+              <xs:element name="TileMatrixSetMap">
+                <xs:complexType>
+                  <xs:group maxOccurs="unbounded" ref="ows:TileMatrixSet"/>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Layer">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element ref="ows:Title"/>
+                    <xs:element ref="ows:WGS84BoundingBox"/>
+                    <xs:element minOccurs="0" ref="ows:BoundingBox"/>
+                    <xs:element ref="ows:Identifier"/>
+                    <xs:element ref="ows:Metadata"/>
+                    <xs:element name="Style">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element ref="ows:Title"/>
+                          <xs:element ref="ows:Identifier"/>
+                        </xs:sequence>
+                        <xs:attribute name="isDefault" use="required" type="xs:boolean"/>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="Format" type="xs:string"/>
+                    <xs:element name="Dimension">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element ref="ows:Identifier"/>
+                          <xs:element name="UOM" type="xs:NCName"/>
+                          <xs:element name="Default" type="xs:string"/>
+                          <xs:element name="Current" type="xs:boolean"/>
+                          <xs:element name="Value" type="xs:string"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="TileMatrixSetLink">
+                      <xs:complexType>
+                        <xs:group ref="ows:TileMatrixSet"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="dir" use="required" type="xs:NCName"/>
+            <xs:attribute name="id" use="required" type="xs:NMTOKEN"/>
+          </xs:complexType>
+        </xs:element>
       </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="Projection">
-    <xs:complexType mixed="true">
-      <xs:attribute name="dir" use="required" type="xs:NCName"/>
-      <xs:attribute name="id" use="required" type="xs:NMTOKEN"/>
     </xs:complexType>
   </xs:element>
 </xs:schema>
