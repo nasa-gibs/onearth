@@ -487,7 +487,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -498,6 +498,9 @@ parser.add_option('-d', '--layer_dir',
                   action='store', type='string', dest='configuration_directory',
                   default=lcdir+'/layers/',
                   help='Full path of directory containing configuration files.  Default: $LCDIR/layers/')
+parser.add_option("-n", "--no_twms",
+                  action="store_true", dest="no_twms", 
+                  default=False, help="Do not use configurations for Tiled-WMS")
 parser.add_option('-o', '--onearth',
                   action='store', type='string', dest='onearth',
                   help='Full path of the Apache document root for OnEarth if getCapabilities and cache config locations not specified.  Default: $ONEARTH')
@@ -516,12 +519,15 @@ parser.add_option('-s', '--sigevent_url',
 parser.add_option('-t', '--time',
                   action='store', type='string', dest='time',
                   help='ISO 8601 time(s) for single configuration file (conf_file must be specified).')
+parser.add_option("-w", "--no_wmts",
+                  action="store_true", dest="no_wmts", 
+                  default=False, help="Do not use configurations for WMTS")
 parser.add_option("-x", "--no_xml",
                   action="store_true", dest="no_xml", 
                   default=False, help="Do not generate getCapabilities and getTileService XML.")
 parser.add_option("-z", "--no_cache",
                   action="store_true", dest="no_cache", 
-                  default=False, help="Do not generate cache configuration files.")
+                  default=False, help="Do not copy cache configuration files to cache location.")
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -533,6 +539,10 @@ configuration_directory = options.configuration_directory
 no_xml = options.no_xml
 # No cache configuration.
 no_cache = options.no_cache
+# No Tiled-WMS configuration.
+no_twms = options.no_twms
+# No WMTS configuration.
+no_wmts = options.no_wmts
 # Do restart Apache.
 restart = options.restart
 # Time for conf file.
@@ -1198,72 +1208,66 @@ for conf in conf_files:
         
 # run scripts
 
-for key, twms_endpoint in twms_endpoints.iteritems():
-    #twms
-    print "\nRunning commands for endpoint: " + twms_endpoint.path
-    cmd = 'make -C '+lcdir+'/'+twms_endpoint.path+'/ clean'
-    run_command(cmd)
-    cmd = 'make -C '+lcdir+'/'+twms_endpoint.path+'/ all'
-    run_command(cmd)
-    if no_cache == False:
-        if twms_endpoint.cacheConfig:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config ' + twms_endpoint.cacheConfig
-        elif onearth:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config '+onearth+'/'+twms_endpoint.path+'/'
+if no_twms == False:
+    for key, twms_endpoint in twms_endpoints.iteritems():
+        #twms
+        print "\nRunning commands for endpoint: " + twms_endpoint.path
+        cmd = 'make -C '+lcdir+'/'+twms_endpoint.path+'/ clean'
         run_command(cmd)
-    if no_xml == False:
-        if twms_endpoint.getCapabilities:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml ' + twms_endpoint.getCapabilities
-        elif onearth:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+        cmd = 'make -C '+lcdir+'/'+twms_endpoint.path+'/ all'
         run_command(cmd)
-        if twms_endpoint.getTileService:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml ' + twms_endpoint.getTileService
-        elif onearth:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
-        run_command(cmd)
-        if onearth:
-            cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/wms_config.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+        if no_cache == False:
+            if twms_endpoint.cacheConfig:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config ' + twms_endpoint.cacheConfig
+            elif onearth:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/cache.config '+onearth+'/'+twms_endpoint.path+'/'
             run_command(cmd)
+        if no_xml == False:
+            if twms_endpoint.getCapabilities:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml ' + twms_endpoint.getCapabilities
+            elif onearth:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+            run_command(cmd)
+            if twms_endpoint.getTileService:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml ' + twms_endpoint.getTileService
+            elif onearth:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/getTileService.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+            run_command(cmd)
+            if onearth:
+                cmd = 'cp -v '+lcdir+'/'+twms_endpoint.path+'/wms_config.xml '+onearth+'/'+twms_endpoint.path+'/.lib/'
+                run_command(cmd)
 
-for key, wmts_endpoint in wmts_endpoints.iteritems():
-    #wmts
-    print "\nRunning commands for endpoint: " + wmts_endpoint.path
-    cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ clean'
-    run_command(cmd)
-    cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ all'
-    run_command(cmd)
-    if no_cache == False:
-        if wmts_endpoint.cacheConfig:
-            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config ' + wmts_endpoint.cacheConfig
-        elif onearth:
-            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config '+onearth+'/'+wmts_endpoint.path+'/'
+if no_wmts == False:
+    for key, wmts_endpoint in wmts_endpoints.iteritems():
+        #wmts
+        print "\nRunning commands for endpoint: " + wmts_endpoint.path
+        cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ clean'
         run_command(cmd)
-    if no_xml == False:
-#         try:
-#             cmd = 'get_GC_xml '+lcdir+'/'+wmts_endpoint.path+'/'
-#             run_command(cmd)
-#         except:
-#             cmd = lcdir+'/bin/get_GC_xml.sh '+lcdir+'/'+wmts_endpoint.path+'/'
-#             run_command(cmd)            
-#         cmd = 'mv -v *.xml '+lcdir+'/'+wmts_endpoint.path+'/'
-#         run_command(cmd)
-        cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
+        cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ all'
         run_command(cmd)
-        if wmts_endpoint.getCapabilities:
-            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml ' + wmts_endpoint.getCapabilities
+        if no_cache == False:
+            if wmts_endpoint.cacheConfig:
+                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config ' + wmts_endpoint.cacheConfig
+            elif onearth:
+                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config '+onearth+'/'+wmts_endpoint.path+'/'
             run_command(cmd)
-            if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
-                os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
+        if no_xml == False:
+            cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
             run_command(cmd)
-        elif onearth:
-            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/'
-            run_command(cmd)
-            if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
-                os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-            cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/1.0.0/WMTSCapabilities.xml'
-            run_command(cmd)
+            if wmts_endpoint.getCapabilities:
+                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml ' + wmts_endpoint.getCapabilities
+                run_command(cmd)
+                if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
+                    os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
+                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+ wmts_endpoint.getCapabilities +'/1.0.0/WMTSCapabilities.xml'
+                run_command(cmd)
+            elif onearth:
+                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/'
+                run_command(cmd)
+                if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
+                    os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
+                cmd = 'cp -v '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml '+onearth+'/'+wmts_endpoint.path+'/1.0.0/WMTSCapabilities.xml'
+                run_command(cmd)
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
