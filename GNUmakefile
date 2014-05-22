@@ -128,10 +128,6 @@ mod_onearth-install:
 		$(DESTDIR)/$(PREFIX)/bin/twms_tool
 	install -m 755 src/layer_config/bin/compose \
 		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/get_mrfs \
-		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/FGDC \
-		-D $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/layer_config/bin/onearth_layer_configurator.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/onearth_layer_configurator
 	install -m 755 src/onearth_logs/onearth_logs.py  \

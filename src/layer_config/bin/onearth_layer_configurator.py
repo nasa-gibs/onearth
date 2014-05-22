@@ -806,8 +806,10 @@ for conf in conf_files:
             dataFileLocation = mrf.replace(cacheConfig,'')
         if compression.lower() in ['jpg', 'jpeg']:
             dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
+            mrf_format = 'image/jpeg'
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
+            mrf_format = 'image/png'
         
     log_info_mssg('MRF: ' + mrf)
     
@@ -883,25 +885,47 @@ for conf in conf_files:
     
     if not os.path.exists(lcdir+'/'+twmsEndPoint):
         os.makedirs(lcdir+'/'+twmsEndPoint)
-    new_mrf_file = open(lcdir+'/'+twmsEndPoint+'/'+headerFileName,'w+')
-    mrf_dom.writexml(new_mrf_file)
+    if not os.path.exists(lcdir+'/'+wmtsEndPoint):
+        os.makedirs(lcdir+'/'+wmtsEndPoint)
+        
+    twms_mrf_filename = lcdir+'/'+twmsEndPoint+'/'+headerFileName
+    twms_mrf_file = open(twms_mrf_filename,'w+')
+    mrf_dom.writexml(twms_mrf_file)
     
-    new_mrf_file.seek(0)
-    lines = new_mrf_file.readlines()
+    wmts_mrf_filename = lcdir+'/'+wmtsEndPoint+'/'+headerFileName
+    wmts_mrf_file = open(wmts_mrf_filename,'w+')
+    
+    twms_mrf_file.seek(0)
+    lines = twms_mrf_file.readlines()
     lines[0] = '<MRF_META>\n'
     lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n\t').replace('</Levels>','</Levels>\n\t').replace('<Pattern>','\n\t<Pattern>'). \
         replace('<Time>','\n\t<Time>').replace('<Metadata>','\n\t<Metadata>').replace('</TWMS>','\n</TWMS>\n'). \
         replace('</MRF_META>','\n</MRF_META>\n') 
     #get_mrfs is picky about line breaks
     
-    new_mrf_file.seek(0)
-    new_mrf_file.truncate()
-    new_mrf_file.writelines(lines)
+    twms_mrf_file.seek(0)
+    twms_mrf_file.truncate()
+    twms_mrf_file.writelines(lines)
     
-    new_mrf_file.close()
+    # change patterns for WMTS
+    pattern_replaced = False
+    wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, projection.tilematrixsets[levels], mrf_format.replace("/","%2F"))
+    for line in lines:
+        if '<Pattern>' in line:
+            if pattern_replaced == False:
+                patternline = line.split('Pattern')
+                line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]
+                pattern_replaced = True
+            else:
+                line = ''
+        wmts_mrf_file.write(line)
+    
+    twms_mrf_file.close()
+    wmts_mrf_file.close()
     mrf_file.close()
     
-    print '\n'+lcdir+'/'+twmsEndPoint+'/'+headerFileName + ' configured successfully\n'
+    print '\n'+ twms_mrf_filename + ' configured successfully\n'
+    print '\n'+ wmts_mrf_filename + ' configured successfully\n'
 
 
 # Modify service files
@@ -1149,10 +1173,6 @@ for conf in conf_files:
                 else:
                     line = line.replace("$ColorMap",str(colormap))
             if '$Format' in line:
-                if compression.lower() in ['jpg', 'jpeg']:
-                    mrf_format = 'image/jpeg'
-                else:
-                    mrf_format = 'image/png'
                 line = line.replace("$Format",mrf_format)
             if '$TileMatrixSet' in line:
                 line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])

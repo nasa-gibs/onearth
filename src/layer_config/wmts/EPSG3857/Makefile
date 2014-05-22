@@ -4,7 +4,6 @@ srcdir=
 
 COMPOSE=$(DEPTH)/compose
 TT=$(DEPTH)/twms_tool
-TWMS_MRFS=$(DEPTH)/get_mrfs
 
 TYPES:=
 
@@ -14,9 +13,9 @@ MRFS:=$(foreach type,$(TYPES),$(type)TTTTTTT_.mrf)
 # Static layers go here
 
 
-TARGETS:=mrfs cache_wmts.config
+TARGETS:=cache_wmts.config
 
-default: mrfs cache_wmts.config
+default: cache_wmts.config
 
 all: $(TARGETS)
 
@@ -26,11 +25,8 @@ all: $(TARGETS)
 # cache_wmts.config
 #
 
-mrfs	:
-	$(TWMS_MRFS) $(srcdir)
-
 cache_wmts.config: $(MRFS)
 	$(TT) -cb $(MRFS) $@
 
 clean:
-	rm -f $(TARGETS) $(MRFS) wms_config.xml getCapabilities.xml 
+	rm -f $(TARGETS) wms_config.xml getCapabilities.xml 
