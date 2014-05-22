@@ -487,7 +487,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --no_xml --no_cache'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --onearth [OnEarth DocRoot] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -498,9 +498,6 @@ parser.add_option('-d', '--layer_dir',
                   action='store', type='string', dest='configuration_directory',
                   default=lcdir+'/layers/',
                   help='Full path of directory containing configuration files.  Default: $LCDIR/layers/')
-parser.add_option("-n", "--no_restart",
-                  action="store_true", dest="no_restart", 
-                  default=False, help="Do not restart the Apache server on completion.")
 parser.add_option('-o', '--onearth',
                   action='store', type='string', dest='onearth',
                   help='Full path of the Apache document root for OnEarth if getCapabilities and cache config locations not specified.  Default: $ONEARTH')
@@ -508,6 +505,9 @@ parser.add_option('-p', '--projection_config',
                   action='store', type='string', dest='projection_configuration',
                   default=lcdir+'/conf/projection.xml',
                   help='Full path of projection configuration file.  Default: $LCDIR/conf/projection.xml')
+parser.add_option("-r", "--restart_apache",
+                  action="store_true", dest="restart", 
+                  default=False, help="Restart the Apache server on completion (requires sudo).")
 parser.add_option('-s', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -533,8 +533,8 @@ configuration_directory = options.configuration_directory
 no_xml = options.no_xml
 # No cache configuration.
 no_cache = options.no_cache
-# Do not restart Apache.
-no_restart = options.no_restart
+# Do restart Apache.
+restart = options.restart
 # Time for conf file.
 configuration_time = options.time
 # Projection configuration
@@ -558,7 +558,7 @@ if no_xml:
     print "no_xml specified, getCapabilities and getTileService files will not be generated"
 if no_cache:
     print "no_cache specified, cache configuration files will not be generated"
-    no_restart = True
+    restart = False
 if no_xml and no_cache:
     print "no_xml and no_cache specified, nothing to do...exiting"
     exit()
@@ -1267,9 +1267,9 @@ for key, wmts_endpoint in wmts_endpoints.iteritems():
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
-    print '\nThe Apache server must be restarted to reload the cache configurations'
+    print '\nThe Apache server must be restarted to reload the cache configurations\n'
 
-if no_restart==False:
+if restart==True:
     cmd = 'sudo apachectl stop'
     run_command(cmd)
     cmd = 'sleep 3'
