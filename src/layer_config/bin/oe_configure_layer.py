@@ -399,7 +399,12 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
                     print "Skipping", filename
         dates = sorted(list(set(dates)))
         # Search for date ranges
-        startdate = min(dates)
+        if len(dates) == 0:
+            message = "No files with dates found for '" + fileNamePrefix + "' in '" + cacheLocation + "' - please check if data exists."
+            log_sig_warn(message, sigevent_url)
+            startdate = datetime.now() # default to now
+        else:
+            startdate = min(dates)
         enddate = startdate # set end date to start date for lone dates
         for i, d in enumerate(dates):
             # print d
@@ -764,29 +769,32 @@ for conf in conf_files:
         log_info_mssg('config: Time: ' + str(times))
     
     # get MRF archetype
-    if headerFileName:
-        mrf = headerFileName
-    else:
-        if archiveLocation != None:
-            archiveLocation = add_trailing_slash(archiveLocation)
-            # check if absolute path or else use relative to cache location
-            if archiveLocation[0] == '/':
-                mrfLocation = archiveLocation
-            else:
-                mrfLocation = cacheConfig + archiveLocation
-        else: # use archive location relative to cache if not defined
-            mrfLocation = add_trailing_slash(cacheConfig)
-        if year == True:
-            if archiveLocation != None:
-                mrfLocation =  mrfLocation +'YYYY/'
-            else:
-                mrfLocation =  mrfLocation + fileNamePrefix +'/YYYY/'
-        if static == True:
-            mrf = mrfLocation + fileNamePrefix + '.mrf'
-            headerFileName = fileNamePrefix + '.mrf'
+
+    if archiveLocation != None:
+        archiveLocation = add_trailing_slash(archiveLocation)
+        # check if absolute path or else use relative to cache location
+        if archiveLocation[0] == '/':
+            mrfLocation = archiveLocation
         else:
-            mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
-            headerFileName = fileNamePrefix + 'TTTTTTT_.mrf'
+            mrfLocation = cacheConfig + archiveLocation
+    else: # use archive location relative to cache if not defined
+        mrfLocation = add_trailing_slash(cacheConfig)
+    if year == True:
+        if archiveLocation != None:
+            mrfLocation =  mrfLocation +'YYYY/'
+        else:
+            mrfLocation =  mrfLocation + fileNamePrefix +'/YYYY/'
+    
+    if static == True:
+        mrf = mrfLocation + fileNamePrefix + '.mrf'
+        mrf_base = fileNamePrefix + '.mrf'
+        if headerFileName == None:
+            headerFileName = mrf
+    else:
+        mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
+        mrf_base = fileNamePrefix + 'TTTTTTT_.mrf'
+        if headerFileName == None:
+            headerFileName = mrf
     
     if indexFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
@@ -815,10 +823,10 @@ for conf in conf_files:
     # Modify MRF Archetype
     try:
         # Open file.
-        mrf_file=open(mrf, 'r')
+        mrf_file=open(headerFileName, 'r')
     except IOError:
         mssg=str().join(['Cannot read MRF header file:  ', 
-                         mrf])
+                         headerFileName])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
@@ -887,11 +895,11 @@ for conf in conf_files:
     if not os.path.exists(lcdir+'/'+wmtsEndPoint):
         os.makedirs(lcdir+'/'+wmtsEndPoint)
         
-    twms_mrf_filename = lcdir+'/'+twmsEndPoint+'/'+headerFileName
+    twms_mrf_filename = lcdir+'/'+twmsEndPoint+'/'+mrf_base
     twms_mrf_file = open(twms_mrf_filename,'w+')
     mrf_dom.writexml(twms_mrf_file)
     
-    wmts_mrf_filename = lcdir+'/'+wmtsEndPoint+'/'+headerFileName
+    wmts_mrf_filename = lcdir+'/'+wmtsEndPoint+'/'+mrf_base
     wmts_mrf_file = open(wmts_mrf_filename,'w+')
     
     twms_mrf_file.seek(0)
@@ -1019,12 +1027,12 @@ for conf in conf_files:
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
-        execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+headerFileName+' eval $TILED_GROUP'
+        execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
         lines = getTileService_base.readlines()
         for idx in range(0, len(lines)):
             if execbeef in lines[idx]:
                 # don't add another execbeef if it's already there
-                print headerFileName + ' already exists in getTileService'
+                print mrf_base + ' already exists in getTileService'
                 break
             if '</TiledPatterns>' in lines[idx]:
                 lines[idx-1] = '' # remove empty line
@@ -1050,12 +1058,12 @@ for conf in conf_files:
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
-        execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+headerFileName+' eval $TILED_GROUP'
+        execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
         lines = wms_config_base.readlines()
         for idx in range(0, len(lines)):
             if execbeef in lines[idx]:
                 # don't add another execbeef if it's already there
-                print headerFileName + ' already exists in wms_config'
+                print mrf_base + ' already exists in wms_config'
                 break
             if '  </LayerList>' in lines[idx]: #careful with spaces here
                 lines[idx-1] = '' # remove empty line
@@ -1175,12 +1183,12 @@ for conf in conf_files:
                 line = line.replace("$Format",mrf_format)
             if '$TileMatrixSet' in line:
                 line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
-            if static == True:
+            if static == True or len(timeElements)==0:
                 if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
-#                 if ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange'] in line:
                     line = ''
             else:
                 if '$DefaultDate' in line:
+                    defaultDate = ''
                     for timeElement in timeElements:
                         defaultDate = timeElement.firstChild.data.strip().split('/')[1]
                     line = line.replace("$DefaultDate",defaultDate)
