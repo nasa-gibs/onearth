@@ -603,6 +603,14 @@ if configuration_time:
         exit()
     else:
         print "Using time='" + configuration_time + "' for " + configuration_filename
+        
+# set location of tools
+if os.path.isfile(os.path.abspath(lcdir)+'/bin/oe_create_cache_config'):
+    depth = os.path.abspath(lcdir)+'/bin'
+elif distutils.spawn.find_executable('oe_create_cache_config') != None:
+    depth = distutils.spawn.find_executable('oe_create_cache_config').split('/oe_create_cache_config')[0]
+else:
+    depth = '/usr/bin' # default
 
 # Read XML configuration files.
 
@@ -1097,14 +1105,6 @@ for conf in conf_files:
         
 # configure Makefiles
     
-    # set location of tools
-    if os.path.isfile(os.path.abspath(lcdir)+'/bin/oe_create_cache_config'):
-        depth = os.path.abspath(lcdir)+'/bin'
-    elif distutils.spawn.find_executable('oe_create_cache_config') != None:
-        depth = distutils.spawn.find_executable('oe_create_cache_config').split('/oe_create_cache_config')[0]
-    else:
-        depth = '/usr/bin' # default
-    
     #twms
     try:
         # Open file.
@@ -1136,38 +1136,6 @@ for conf in conf_files:
         twms_make.truncate()
         twms_make.writelines(lines)
         twms_make.close()
-
-    #wmts
-    try:
-        # Open file.
-        wmts_make=open(lcdir+'/'+wmtsEndPoint+'/Makefile', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read wmts Makefile file:  ', 
-                         lcdir+'/'+wmtsEndPoint+'/Makefile'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        lines = wmts_make.readlines()
-        for idx in range(0, len(lines)):
-            # replace lines in Makefiles
-            if 'DEPTH=' in lines[idx]:
-                lines[idx] = 'DEPTH=' + depth + '\n'
-            if 'srcdir=' in lines[idx]:
-                lines[idx] = 'srcdir=' + os.path.abspath(lcdir+'/'+twmsEndPoint) + '\n'
-            if fileNamePrefix in lines[idx]:
-                # don't add the layer if it's already there
-                print fileNamePrefix + ' already exists in wmts Makefile'
-                break
-            if 'MRFS:=$' in lines[idx] and static == False:
-                lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
-                print 'Adding to wmts Makefile: ' + fileNamePrefix
-            if 'TARGETS:=' in lines[idx] and static == True:
-                lines[idx-2] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
-                print 'Adding to wmts Makefile: ' + fileNamePrefix
-        wmts_make.seek(0)
-        wmts_make.truncate()
-        wmts_make.writelines(lines)
-        wmts_make.close()
         
 # create WMTS layer metadata for GetCapabilities
 
@@ -1280,7 +1248,12 @@ if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
         #wmts
         print "\nRunning commands for endpoint: " + wmts_endpoint.path
-        cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ all'
+        mrfs = ""
+        # get list of MRF files
+        for mrf_file in os.listdir(lcdir+'/'+wmts_endpoint.path):
+            if mrf_file.endswith(".mrf"):
+                mrfs = mrfs + lcdir+'/'+wmts_endpoint.path+'/'+mrf_file + ' '
+        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config'
         run_command(cmd)
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
