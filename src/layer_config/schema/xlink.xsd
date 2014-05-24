@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.w3.org/1999/xlink" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ows="http://www.opengis.net/ows/1.1">
-  <xs:import schemaLocation="projection_configuration.xsd"/>
-  <xs:import namespace="http://www.opengis.net/ows/1.1" schemaLocation="projection_ows.xsd"/>
-  <xs:attribute name="href"/>
-  <xs:attribute name="title"/>
-</xs:schema>

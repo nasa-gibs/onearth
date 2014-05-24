@@ -61,6 +61,7 @@ import urllib2
 import xml.dom.minidom
 import logging
 import shutil
+import re
 import distutils.spawn
 from datetime import datetime, time, timedelta
 from time import asctime
@@ -99,12 +100,13 @@ class Environment:
 class Projection:
     """Projection information for layer"""
     
-    def __init__(self, projection_id, projection_dir, projection_wkt, projection_layer_template, projection_tilematrixsets):
+    def __init__(self, projection_id, projection_dir, projection_wkt, projection_bbox, projection_tilematrixsets, projection_tilematrixset_xml):
         self.id = projection_id
         self.dir = projection_dir
         self.wkt = projection_wkt
-        self.layer_template = projection_layer_template
+        self.bbox_xml = projection_bbox
         self.tilematrixsets = projection_tilematrixsets
+        self.tilematrixset_xml = projection_tilematrixset_xml
 
 def sigevent(type, mssg, sigevent_url):
     """
@@ -340,7 +342,7 @@ def get_projection(projectionId, projectionConfig):
     try:
         # Open file.
         projection_config=open(projectionConfig, 'r')
-        print ('\nUsing projection config: ' + projectionConfig + '\n')
+        print ('Using projection config: ' + projectionConfig + '\n')
     except IOError:
         mssg=str().join(['Cannot read projection configuration file:  ', projectionConfig])
         sigevent('ERROR', mssg, sigevent_url)
@@ -352,12 +354,40 @@ def get_projection(projectionId, projectionConfig):
     for projectionElement in projectionTags:
         if projectionElement.attributes['id'].value == projectionId:
             wkt = projectionElement.getElementsByTagName('WKT')[0].firstChild.data.strip()
-            layer_template = projectionElement.getElementsByTagName('Layer')[0].toxml()
+            try:
+                wgsbbox = projectionElement.getElementsByTagName('WGS84BoundingBox')[0].toxml().replace("WGS84BoundingBox", "ows:WGS84BoundingBox")
+            except:
+                wgsbbox = ""
+            try:
+                bbox = "\n         " + projectionElement.getElementsByTagName('BoundingBox')[0].toxml().replace("BoundingBox", "ows:BoundingBox")
+            except:
+                bbox = ""
+            bbox = str(wgsbbox + bbox).replace("LowerCorner","ows:LowerCorner").replace("UpperCorner","ows:UpperCorner")
             tilematrixsets = {}
-            tileMatrixSetElements = projectionElement.getElementsByTagName('TileMatrixSetMap')[0].getElementsByTagName('TileMatrixSet')
-            for tilematrixset in tileMatrixSetElements:
-                tilematrixsets[tilematrixset.attributes['level'].value] = tilematrixset.firstChild.nodeValue.strip()
-            projection = Projection(projectionId, projectionElement.attributes['dir'].value, wkt, layer_template, tilematrixsets)
+            tilematrixsetconfig_name = projectionElement.getElementsByTagName('TileMatrixSetConfig')[0].firstChild.data.strip()
+            try:
+                # Open file.
+                tilematrixsetconfig=open(tilematrixsetconfig_name, 'r')
+                print ('Using TileMatrixSet config: ' + tilematrixsetconfig_name + '\n')
+            except IOError:
+                mssg=str().join(['Cannot read TileMatrixSet configuration file:  ', tilematrixsetconfig_name])
+                sigevent('ERROR', mssg, sigevent_url)
+                sys.exit(mssg)
+            tms_dom = xml.dom.minidom.parse(tilematrixsetconfig)
+            tms_projections = tms_dom.getElementsByTagName('Projection')
+            tms_xml = ""
+            for tms_projection in tms_projections:
+                try:
+                    if tms_projection.attributes['id'].value == projectionId:
+                        tms_xml = '\n'.join(tms_projection.toxml().split('\n')[1:-1]) # remove <Projection> lines
+                        tms_xml = re.sub(r'<TileMatrixSet level="\d+">', '<TileMatrixSet>', tms_xml) # remove added level metadata
+                        tileMatrixSetElements = tms_projection.getElementsByTagName('TileMatrixSet')
+                        for tilematrixset in tileMatrixSetElements:
+                            tilematrixsets[tilematrixset.attributes['level'].value] = tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip()
+                except KeyError, e:
+                    log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixsetconfig_name, sigevent_url)
+                
+            projection = Projection(projectionId, projectionElement.attributes['dir'].value, wkt, bbox, tilematrixsets, tms_xml)
     
     if projection == None:
         mssg = "Projection " + projectionId + " could not be found in projection configuration file."
@@ -714,18 +744,18 @@ for conf in conf_files:
         # Set end points
         try:
             wmtsEndPoint = get_dom_tag_value(dom, 'WMTSEndPoint')
-        except IndexError:
+        except IndexError, e:
             if projection != None:
                 wmtsEndPoint = 'wmts/' + projection.dir
             else:
-                log_sig_exit('ERROR', 'Projection directory is not defined', sigevent_url)
+                log_sig_exit('ERROR', str(e), sigevent_url)
         try:
             twmsEndPoint = get_dom_tag_value(dom, 'TWMSEndPoint')
-        except IndexError:
+        except IndexError, e:
             if projection != None:
                 twmsEndPoint = 'twms/' + projection.dir
             else:
-                log_sig_exit('ERROR', 'Projection directory is not defined', sigevent_url)
+                log_sig_exit('ERROR', str(e), sigevent_url)
                 
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService)
@@ -916,7 +946,10 @@ for conf in conf_files:
     
     # change patterns for WMTS
     pattern_replaced = False
-    wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, projection.tilematrixsets[levels], mrf_format.replace("/","%2F"))
+    try:
+        wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, projection.tilematrixsets[levels], mrf_format.replace("/","%2F"))
+    except KeyError:
+        log_sig_exit('ERROR', 'TileMatrixSet level ' + levels + ' not found for projection: ' + projection.id, sigevent_url)
     for line in lines:
         if '<Pattern>' in line:
             if pattern_replaced == False:
@@ -970,15 +1003,18 @@ for conf in conf_files:
     
     #getCapabilities WMTS modify Service URL
     try:
-        # Open start base.
-        getCapabilities_startbase=open(lcdir+'/'+wmtsEndPoint+'/getCapabilities_start.base', 'r+')
+        # Copy (if not exists) and open base GetCapabilities.
+        getCapabilities_file = lcdir+'/'+wmtsEndPoint+'/getCapabilities.xml'
+        if os.path.isfile(getCapabilities_file) == False:
+            shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
+        getCapabilities_base=open(getCapabilities_file, 'r+')
     except IOError:
-        mssg=str().join(['Cannot read getCapabilities_start.base file:  ', 
-                         lcdir+'/'+wmtsEndPoint+'/getCapabilities_start.base'])
+        mssg=str().join(['Cannot read getcapabilities_base_wmts.xml file:  ', 
+                         lcdir+'/conf/getcapabilities_base_wmts.xml'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
-        lines = getCapabilities_startbase.readlines()
+        lines = getCapabilities_base.readlines()
         for idx in range(0, len(lines)):
             if '<ows:Get' in lines[idx]:
                 spaces = lines[idx].index('<')
@@ -991,31 +1027,16 @@ for conf in conf_files:
                 else:
                     getUrl.attributes['xlink:href'] = wmtsServiceUrl
                 lines[idx] = (' '*spaces) + getUrl.toprettyxml(indent=" ").replace('Get','ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','').replace('/>','>')
-        getCapabilities_startbase.seek(0)
-        getCapabilities_startbase.truncate()
-        getCapabilities_startbase.writelines(lines)
-        getCapabilities_startbase.close()
-    try:
-        # Open end base.
-        getCapabilities_endbase=open(lcdir+'/'+wmtsEndPoint+'/getCapabilities_end.base', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read getCapabilities_end.base file:  ', 
-                         lcdir+'/'+wmtsEndPoint+'/getCapabilities_end.base'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        lines = getCapabilities_endbase.readlines()
-        for idx in range(0, len(lines)):
             if 'ServiceMetadataURL' in lines[idx]:
                 spaces = lines[idx].index('<')
                 serviceMetadataUrlLine = lines[idx].replace('ServiceMetadataURL','ServiceMetadataURL xmlns:xlink="http://www.w3.org/1999/xlink"')
                 serviceMetadataUrl = xml.dom.minidom.parseString(serviceMetadataUrlLine).getElementsByTagName('ServiceMetadataURL')[0]
                 serviceMetadataUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
                 lines[idx] = (' '*spaces) + serviceMetadataUrl.toprettyxml(indent=" ").replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','')
-        getCapabilities_endbase.seek(0)
-        getCapabilities_endbase.truncate()
-        getCapabilities_endbase.writelines(lines)
-        getCapabilities_endbase.close()    
+        getCapabilities_base.seek(0)
+        getCapabilities_base.truncate()
+        getCapabilities_base.writelines(lines)
+        getCapabilities_base.close()   
 
     #getTileService
     try:
@@ -1150,58 +1171,88 @@ for conf in conf_files:
         
 # create WMTS layer metadata for GetCapabilities
 
-    wmts_layer_output_name = lcdir+'/'+wmtsEndPoint+'/'+os.path.basename(mrf).replace('.mrf','.xml')
-    wmts_layer_output = open(wmts_layer_output_name, 'w')
-    print "\nCreating layer metadata file for GetCapabilities:", wmts_layer_output_name
     try:
-        # Open files.
-#         wmts_layer_template = open(lcdir+'/conf/wmts_layer.template', 'r')
-        wmts_layer_template = projection.layer_template
+        # Open GetCapabilities.
+        getCapabilities_base=open(lcdir+'/'+wmtsEndPoint+'/getCapabilities.xml', 'r+')
     except IOError:
-        mssg=str().join(['Cannot read wmts layer template file:  ', 
-                         lcdir+'/conf/wmts_layer.template'])
+        mssg=str().join(['Cannot read getCapabilities.xml file:  ', 
+                         lcdir+'/'+wmtsEndPoint+'/getCapabilities.xml'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
-    else:
-        lines = wmts_layer_template.splitlines(True)
-        for line in lines:
-            # replace lines in template
-            if '<Layer>' in line:
-                line = '         '+line
-            if '</Layer>' in line:
-                line = ' '+line+'\n'                
-            if '$Title' in line:
-                line = line.replace("$Title",title)
-            if '$Identifier' in line:
-                line = line.replace("$Identifier",identifier)
-            if '$ColorMap' in line:
-                if colormap == None:
-                    line = ''
-                else:
-                    line = line.replace("$ColorMap",str(colormap))
-            if '$Format' in line:
-                line = line.replace("$Format",mrf_format)
-            if '$TileMatrixSet' in line:
-                line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
-            if static == True or len(timeElements)==0:
-                if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
-                    line = ''
+
+    wmts_layer_template = """<Layer>
+            <ows:Title>$Title</ows:Title>
+            $BoundingBox
+            <ows:Identifier>$Identifier</ows:Identifier>
+            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+            <Style isDefault="true">
+                <ows:Title>default</ows:Title>
+                <ows:Identifier>default</ows:Identifier>
+            </Style>
+            <Format>$Format</Format>
+            <Dimension>
+                <ows:Identifier>time</ows:Identifier>
+                <UOM>ISO8601</UOM>
+                <Default>$DefaultDate</Default>
+                <Current>false</Current>
+                <Value>$DateRange</Value>
+            </Dimension>
+            <TileMatrixSetLink>
+                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
+            </TileMatrixSetLink>
+        </Layer>"""
+
+    layer_output = ""
+    lines = wmts_layer_template.splitlines(True)
+    for line in lines:
+        # replace lines in template
+        if '<Layer>' in line:
+            line = '         '+line
+        if '</Layer>' in line:
+            line = ' '+line+'\n'                
+        if '$Title' in line:
+            line = line.replace("$Title",title)
+        if '$BoundingBox' in line:
+            line = line.replace("$BoundingBox",projection.bbox_xml)
+        if '$Identifier' in line:
+            line = line.replace("$Identifier",identifier)
+        if '$ColorMap' in line:
+            if colormap == None:
+                line = ''
             else:
-                if '$DefaultDate' in line:
-                    defaultDate = ''
-                    for timeElement in timeElements:
-                        defaultDate = timeElement.firstChild.data.strip().split('/')[1]
-                    line = line.replace("$DefaultDate",defaultDate)
-                if '$DateRange' in line:
-                    line = line.replace("$DateRange",timeElements[0].firstChild.data.strip())
-                    iterTime = iter(timeElements)
-                    next(iterTime)
-                    for timeElement in iterTime:
-                        line = line + "             " + timeElement.toxml().replace('Time','Value')+"\n"
-            # remove extra white space from lines
-            line = line[3:]
-            wmts_layer_output.write(line)
-        wmts_layer_output.close()
+                line = line.replace("$ColorMap",str(colormap))
+        if '$Format' in line:
+            line = line.replace("$Format",mrf_format)
+        if '$TileMatrixSet' in line:
+            line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
+        if static == True or len(timeElements)==0:
+            if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
+                line = ''
+        else:
+            if '$DefaultDate' in line:
+                defaultDate = ''
+                for timeElement in timeElements:
+                    defaultDate = timeElement.firstChild.data.strip().split('/')[1]
+                line = line.replace("$DefaultDate",defaultDate)
+            if '$DateRange' in line:
+                line = line.replace("$DateRange",timeElements[0].firstChild.data.strip())
+                iterTime = iter(timeElements)
+                next(iterTime)
+                for timeElement in iterTime:
+                    line = line + "             " + timeElement.toxml().replace('Time','Value')+"\n"
+        # remove extra white space from lines
+        line = line[3:]
+        layer_output = layer_output + line
+    gc_lines = getCapabilities_base.readlines()
+    for idx in range(0, len(gc_lines)):
+        if "<Contents>" in gc_lines[idx]:
+            gc_lines[idx] = gc_lines[idx] + layer_output
+        if "</Contents>" in gc_lines[idx] and "TileMatrixSet" not in gc_lines[idx-1]:
+            gc_lines[idx] = projection.tilematrixset_xml + '\n' + gc_lines[idx]
+    getCapabilities_base.seek(0)
+    getCapabilities_base.truncate()
+    getCapabilities_base.writelines(gc_lines)        
+    getCapabilities_base.close()
         
 # run scripts
 
@@ -1229,8 +1280,6 @@ if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
         #wmts
         print "\nRunning commands for endpoint: " + wmts_endpoint.path
-        cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ clean'
-        run_command(cmd)
         cmd = 'make -C '+lcdir+'/'+wmts_endpoint.path+'/ all'
         run_command(cmd)
         if no_cache == False:
@@ -1238,15 +1287,16 @@ if no_wmts == False:
                 shutil.copy(lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig)
                 print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig
         if no_xml == False:
-            cmd = 'cat '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_start.base '+lcdir+'/'+wmts_endpoint.path+'/*.xml '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities_end.base > '+lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
-            run_command(cmd)
             if wmts_endpoint.getCapabilities:
-                shutil.copy(lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml', wmts_endpoint.getCapabilities)
-                print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml' + ' -> ' + wmts_endpoint.getCapabilities
+                getCapabilities_file = lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
+                shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities)
+                print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
                     os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-                shutil.copy(lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml', wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
-                print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml' + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
+                shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
+                print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
+                os.remove(getCapabilities_file)
+                print '\nRemoving: ' + getCapabilities_file
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:

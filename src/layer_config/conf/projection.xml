@@ -1,151 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ProjectionConfiguration xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
+<ProjectionConfiguration>
     <Projection id="EPSG:3031" dir="EPSG3031">
         <WKT><![CDATA[PROJCS["WGS 84 / Antarctic Polar Stereographic",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",-71],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","3031"]]]]></WKT>
-        <TileMatrixSetMap>
-            <TileMatrixSet level="4">EPSG3031_1km</TileMatrixSet>
-            <TileMatrixSet level="5">EPSG3031_500m</TileMatrixSet>
-            <TileMatrixSet level="6">EPSG3031_250m</TileMatrixSet>
-        </TileMatrixSetMap>
-        <Layer>
-            <ows:Title>$Title</ows:Title>
-            <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:1.3:CRS84">
-                <ows:LowerCorner>-180 -90</ows:LowerCorner>
-                <ows:UpperCorner>180 -38.941373</ows:UpperCorner>
-            </ows:WGS84BoundingBox>
-            <ows:BoundingBox crs="urn:ogc:def:crs:EPSG::3031">
-                <ows:LowerCorner>-4194304 -4194304</ows:LowerCorner>
-                <ows:UpperCorner>4194304 4194304</ows:UpperCorner>
-            </ows:BoundingBox>
-            <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-            <Style isDefault="true">
-                <ows:Title>default</ows:Title>
-                <ows:Identifier>default</ows:Identifier>
-            </Style>
-            <Format>$Format</Format>
-            <Dimension>
-                <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
-                <Default>$DefaultDate</Default>
-                <Current>false</Current>
-                <Value>$DateRange</Value>
-            </Dimension>
-            <TileMatrixSetLink>
-                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
-            </TileMatrixSetLink>
-        </Layer> 
+        <TileMatrixSetConfig>/home/gibsdev/workspace/layer_config/conf/tilematrixsets.xml</TileMatrixSetConfig>
+        <WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <LowerCorner>-180 -90</LowerCorner>
+            <UpperCorner>180 -38.941373</UpperCorner>
+        </WGS84BoundingBox>
+        <BoundingBox crs="urn:ogc:def:crs:EPSG::3031">
+            <LowerCorner>-4194304 -4194304</LowerCorner>
+            <UpperCorner>4194304 4194304</UpperCorner>
+        </BoundingBox>
     </Projection>
     <Projection id="EPSG:3413" dir="EPSG3413">
         <WKT><![CDATA[PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]]]></WKT>
-        <TileMatrixSetMap>
-            <TileMatrixSet level="4">EPSG3413_1km</TileMatrixSet>
-            <TileMatrixSet level="5">EPSG3413_500m</TileMatrixSet>
-            <TileMatrixSet level="6">EPSG3413_250m</TileMatrixSet>
-        </TileMatrixSetMap>
-        <Layer>
-            <ows:Title>$Title</ows:Title>
-            <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:1.3:CRS84">
-                <ows:LowerCorner>-180 38.807151</ows:LowerCorner>
-                <ows:UpperCorner>180 90</ows:UpperCorner>
-            </ows:WGS84BoundingBox>
-            <ows:BoundingBox crs="urn:ogc:def:crs:EPSG::3413">
-                <ows:LowerCorner>-4194304 -4194304</ows:LowerCorner>
-                <ows:UpperCorner>4194304 4194304</ows:UpperCorner>
-            </ows:BoundingBox>
-            <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-            <Style isDefault="true">
-                <ows:Title>default</ows:Title>
-                <ows:Identifier>default</ows:Identifier>
-            </Style>
-            <Format>$Format</Format>
-            <Dimension>
-                <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
-                <Default>$DefaultDate</Default>
-                <Current>false</Current>
-                <Value>$DateRange</Value>
-            </Dimension>
-            <TileMatrixSetLink>
-                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
-            </TileMatrixSetLink>
-        </Layer>  
+        <TileMatrixSetConfig>/home/gibsdev/workspace/layer_config/conf/tilematrixsets.xml</TileMatrixSetConfig>
+        <WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <LowerCorner>-180 38.807151</LowerCorner>
+            <UpperCorner>180 90</UpperCorner>
+        </WGS84BoundingBox>
+        <BoundingBox crs="urn:ogc:def:crs:EPSG::3413">
+            <LowerCorner>-4194304 -4194304</LowerCorner>
+            <UpperCorner>4194304 4194304</UpperCorner>
+        </BoundingBox>
     </Projection>
     <Projection id="EPSG:3857" dir="EPSG3857">
         <WKT><![CDATA[PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]]]></WKT>
-        <TileMatrixSetMap>
-            <TileMatrixSet level="3">GoogleMapsCompatible_Level3</TileMatrixSet>
-            <TileMatrixSet level="6">GoogleMapsCompatible_Level6</TileMatrixSet>
-            <TileMatrixSet level="7">GoogleMapsCompatible_Level7</TileMatrixSet>
-            <TileMatrixSet level="8">GoogleMapsCompatible_Level8</TileMatrixSet>
-            <TileMatrixSet level="9">GoogleMapsCompatible_Level9</TileMatrixSet>
-        </TileMatrixSetMap>
-        <Layer>
-            <ows:Title>$Title</ows:Title>
-            <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:1.3:CRS84">
-                <ows:LowerCorner>-180 -85</ows:LowerCorner>
-                <ows:UpperCorner>180 85</ows:UpperCorner>
-            </ows:WGS84BoundingBox>
-            <ows:BoundingBox crs="urn:ogc:def:crs:EPSG::3857">
-                <ows:LowerCorner>-20037508.34278925 -20037508.34278925</ows:LowerCorner>
-                <ows:UpperCorner>20037508.34278925 20037508.34278925</ows:UpperCorner>
-            </ows:BoundingBox>
-            <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-            <Style isDefault="true">
-                <ows:Title>default</ows:Title>
-                <ows:Identifier>default</ows:Identifier>
-            </Style>
-            <Format>$Format</Format>
-            <Dimension>
-                <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
-                <Default>$DefaultDate</Default>
-                <Current>false</Current>
-                <Value>$DateRange</Value>
-            </Dimension>
-            <TileMatrixSetLink>
-                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
-            </TileMatrixSetLink>
-        </Layer>
+        <TileMatrixSetConfig>/home/gibsdev/workspace/layer_config/conf/tilematrixsets.xml</TileMatrixSetConfig>
+        <WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <LowerCorner>-180 -85</LowerCorner>
+            <UpperCorner>180 85</UpperCorner>
+        </WGS84BoundingBox>
+        <BoundingBox crs="urn:ogc:def:crs:EPSG::3857">
+            <LowerCorner>-20037508.34278925 -20037508.34278925</LowerCorner>
+            <UpperCorner>20037508.34278925 20037508.34278925</UpperCorner>
+        </BoundingBox>
     </Projection>
     <Projection id="EPSG:4326" dir="EPSG4326">
         <WKT><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]]]></WKT>
-        <TileMatrixSetMap>
-            <TileMatrixSet level="1">EPSG4326_64km</TileMatrixSet>
-            <TileMatrixSet level="2">EPSG4326_32km</TileMatrixSet>
-            <TileMatrixSet level="3">EPSG4326_16km</TileMatrixSet>
-            <TileMatrixSet level="4">EPSG4326_8km</TileMatrixSet>
-            <TileMatrixSet level="5">EPSG4326_4km</TileMatrixSet>
-            <TileMatrixSet level="6">EPSG4326_2km</TileMatrixSet>
-            <TileMatrixSet level="7">EPSG4326_1km</TileMatrixSet>
-            <TileMatrixSet level="8">EPSG4326_500m</TileMatrixSet>
-            <TileMatrixSet level="9">EPSG4326_250m</TileMatrixSet>
-        </TileMatrixSetMap>
-        <Layer>
-            <ows:Title>$Title</ows:Title>
-            <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:1.3:CRS84">
-                <ows:LowerCorner>-180 -90</ows:LowerCorner>
-                <ows:UpperCorner>180 90</ows:UpperCorner>
-            </ows:WGS84BoundingBox>
-            <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-            <Style isDefault="true">
-                <ows:Title>default</ows:Title>
-                <ows:Identifier>default</ows:Identifier>
-            </Style>
-            <Format>$Format</Format>
-            <Dimension>
-                <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
-                <Default>$DefaultDate</Default>
-                <Current>false</Current>
-                <Value>$DateRange</Value>
-            </Dimension>
-            <TileMatrixSetLink>
-                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
-            </TileMatrixSetLink>
-        </Layer>
+        <TileMatrixSetConfig>/home/gibsdev/workspace/layer_config/conf/tilematrixsets.xml</TileMatrixSetConfig>
+        <WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <LowerCorner>-180 -90</LowerCorner>
+            <UpperCorner>180 90</UpperCorner>
+        </WGS84BoundingBox>
     </Projection>
 </ProjectionConfiguration>
