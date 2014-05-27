@@ -89,20 +89,21 @@ class TWMSEndPoint:
 class Environment:
     """Environment information for layer(s)"""
     
-    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl):
+    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir):
         self.cache = cache
         self.getCapabilities_wmts = getCapabilities_wmts
         self.getCapabilities_twms = getCapabilities_twms
         self.getTileService = getTileService
         self.wmtsServiceUrl = wmtsServiceUrl
         self.twmsServiceUrl = twmsServiceUrl
+        self.wmts_dir = projection_wmts_dir
+        self.twms_dir = projection_twms_dir
         
 class Projection:
     """Projection information for layer"""
     
-    def __init__(self, projection_id, projection_dir, projection_wkt, projection_bbox, projection_tilematrixsets, projection_tilematrixset_xml):
+    def __init__(self, projection_id, projection_wkt, projection_bbox, projection_tilematrixsets, projection_tilematrixset_xml):
         self.id = projection_id
-        self.dir = projection_dir
         self.wkt = projection_wkt
         self.bbox_xml = projection_bbox
         self.tilematrixsets = projection_tilematrixsets
@@ -319,20 +320,37 @@ def get_environment(environmentConfig):
                 twmsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
         except KeyError:
             log_sig_exit('ERROR', 'service is not defined in <ServiceURL>', sigevent_url)        
+ 
+    stagingLocationElements = dom.getElementsByTagName('StagingLocation')
+    wmtsStagingLocation = None
+    twmsStagingLocation = None
+    for stagingLocation in stagingLocationElements:
+        try:
+            if str(stagingLocation.attributes['service'].value).lower() == "wmts":
+                wmtsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
+            elif str(stagingLocation.attributes['service'].value).lower() == "twms":
+                twmsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
+        except KeyError:
+            log_sig_exit('ERROR', 'service is not defined in <StagingLocation>', sigevent_url)  
     
-    if not os.path.exists(twms_getCapabilities):
-        os.makedirs(twms_getCapabilities)
-    if not os.path.exists(wmts_getCapabilities):
-        os.makedirs(wmts_getCapabilities)
+    if twmsStagingLocation != None:
+        add_trailing_slash(twmsStagingLocation)
+        if not os.path.exists(twmsStagingLocation):
+            os.makedirs(twmsStagingLocation)
+    if wmtsStagingLocation != None:
+        add_trailing_slash(wmtsStagingLocation)
+        if not os.path.exists(wmtsStagingLocation):
+            os.makedirs(wmtsStagingLocation)
         
     return Environment(add_trailing_slash(cacheConfig), 
                        add_trailing_slash(wmts_getCapabilities), 
                        add_trailing_slash(twms_getCapabilities), 
                        add_trailing_slash(getTileService),
                        add_trailing_slash(wmtsServiceUrl), 
-                       add_trailing_slash(twmsServiceUrl))
+                       add_trailing_slash(twmsServiceUrl),
+                       wmtsStagingLocation, twmsStagingLocation)
     
-def get_projection(projectionId, projectionConfig):
+def get_projection(projectionId, projectionConfig, lcdir):
     """
     Gets projection metadata from a projection configuration file based on the projection ID.
     Arguments:
@@ -365,6 +383,8 @@ def get_projection(projectionId, projectionConfig):
             bbox = str(wgsbbox + bbox).replace("LowerCorner","ows:LowerCorner").replace("UpperCorner","ows:UpperCorner")
             tilematrixsets = {}
             tilematrixsetconfig_name = projectionElement.getElementsByTagName('TileMatrixSetConfig')[0].firstChild.data.strip()
+            if tilematrixsetconfig_name[0] != '/': # use conf directory if not full path
+                tilematrixsetconfig_name = lcdir + "/conf/" + tilematrixsetconfig_name
             try:
                 # Open file.
                 tilematrixsetconfig=open(tilematrixsetconfig_name, 'r')
@@ -387,7 +407,7 @@ def get_projection(projectionId, projectionConfig):
                 except KeyError, e:
                     log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixsetconfig_name, sigevent_url)
                 
-            projection = Projection(projectionId, projectionElement.attributes['dir'].value, wkt, bbox, tilematrixsets, tms_xml)
+            projection = Projection(projectionId, wkt, bbox, tilematrixsets, tms_xml)
     
     if projection == None:
         mssg = "Projection " + projectionId + " could not be found in projection configuration file."
@@ -718,7 +738,7 @@ for conf in conf_files:
         except IndexError:
             indexFileLocation = None
         try:
-            projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration)
+            projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir)
         except IndexError:
             projection = None 
         try:
@@ -748,22 +768,17 @@ for conf in conf_files:
                     times.append(time.firstChild.data.strip())
                 except AttributeError:
                     times.append('')
-        
-        # Set end points
-        try:
-            wmtsEndPoint = get_dom_tag_value(dom, 'WMTSEndPoint')
-        except IndexError, e:
-            if projection != None:
-                wmtsEndPoint = 'wmts/' + projection.dir
-            else:
-                log_sig_exit('ERROR', str(e), sigevent_url)
-        try:
-            twmsEndPoint = get_dom_tag_value(dom, 'TWMSEndPoint')
-        except IndexError, e:
-            if projection != None:
-                twmsEndPoint = 'twms/' + projection.dir
-            else:
-                log_sig_exit('ERROR', str(e), sigevent_url)
+                    
+        # Set End Points
+        if environment.wmts_dir != None:
+            wmtsEndPoint = environment.wmts_dir
+        else: # default projection dir
+            wmtsEndPoint = lcdir + "/wmts/" + projection.id.replace(":","")
+        if environment.twms_dir != None:
+            twmsEndPoint = environment.twms_dir
+        else:
+            # default projection dir
+            twmsEndPoint = lcdir + "/twms/" + projection.id.replace(":","")
                 
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService)
@@ -928,16 +943,16 @@ for conf in conf_files:
         projectionElement.appendChild(mrf_dom.createCDATASection(projection.wkt))
         mrf_meta.appendChild(projectionElement)
     
-    if not os.path.exists(lcdir+'/'+twmsEndPoint):
-        os.makedirs(lcdir+'/'+twmsEndPoint)
-    if not os.path.exists(lcdir+'/'+wmtsEndPoint):
-        os.makedirs(lcdir+'/'+wmtsEndPoint)
+    if not os.path.exists(twmsEndPoint):
+        os.makedirs(twmsEndPoint)
+    if not os.path.exists(wmtsEndPoint):
+        os.makedirs(wmtsEndPoint)
         
-    twms_mrf_filename = lcdir+'/'+twmsEndPoint+'/'+mrf_base
+    twms_mrf_filename = twmsEndPoint+'/'+mrf_base
     twms_mrf_file = open(twms_mrf_filename,'w+')
     mrf_dom.writexml(twms_mrf_file)
     
-    wmts_mrf_filename = lcdir+'/'+wmtsEndPoint+'/'+mrf_base
+    wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
     wmts_mrf_file = open(wmts_mrf_filename,'w+')
     
     twms_mrf_file.seek(0)
@@ -981,10 +996,10 @@ for conf in conf_files:
     #getCapabilities
     try:
         # Open file.
-        getCapabilities_base=open(lcdir+'/'+twmsEndPoint+'/getCapabilities.base', 'r+')
+        getCapabilities_base=open(twmsEndPoint+'/getCapabilities.base', 'r+')
     except IOError:
         mssg=str().join(['Cannot read getCapabilities.base file:  ', 
-                         lcdir+'/'+twmsEndPoint+'/getCapabilities.base'])
+                         twmsEndPoint+'/getCapabilities.base'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
@@ -1012,7 +1027,7 @@ for conf in conf_files:
     #getCapabilities WMTS modify Service URL
     try:
         # Copy (if not exists) and open base GetCapabilities.
-        getCapabilities_file = lcdir+'/'+wmtsEndPoint+'/getCapabilities.xml'
+        getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
         if os.path.isfile(getCapabilities_file) == False:
             shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
         getCapabilities_base=open(getCapabilities_file, 'r+')
@@ -1049,10 +1064,10 @@ for conf in conf_files:
     #getTileService
     try:
         # Open file.
-        getTileService_base=open(lcdir+'/'+twmsEndPoint+'/getTileService.base', 'r+')
+        getTileService_base=open(twmsEndPoint+'/getTileService.base', 'r+')
     except IOError:
         mssg=str().join(['Cannot read getTileService.base file:  ', 
-                         lcdir+'/'+twmsEndPoint+'/getTileService.base'])
+                         twmsEndPoint+'/getTileService.base'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
@@ -1080,10 +1095,10 @@ for conf in conf_files:
     #wms_config
     try:
         # Open file.
-        wms_config_base=open(lcdir+'/'+twmsEndPoint+'/wms_config.base', 'r+')
+        wms_config_base=open(twmsEndPoint+'/wms_config.base', 'r+')
     except IOError:
         mssg=str().join(['Cannot read wms_config.base file:  ', 
-                         lcdir+'/'+twmsEndPoint+'/wms_config.base'])
+                         twmsEndPoint+'/wms_config.base'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
@@ -1108,10 +1123,10 @@ for conf in conf_files:
     #twms
     try:
         # Open file.
-        twms_make=open(lcdir+'/'+twmsEndPoint+'/Makefile', 'r+')
+        twms_make=open(twmsEndPoint+'/Makefile', 'r+')
     except IOError:
         mssg=str().join(['Cannot read twms Makefile file:  ', 
-                         lcdir+'/'+twmsEndPoint+'/Makefile'])
+                         twmsEndPoint+'/Makefile'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
     else:
@@ -1141,10 +1156,10 @@ for conf in conf_files:
 
     try:
         # Open GetCapabilities.
-        getCapabilities_base=open(lcdir+'/'+wmtsEndPoint+'/getCapabilities.xml', 'r+')
+        getCapabilities_base=open(wmtsEndPoint+'/getCapabilities.xml', 'r+')
     except IOError:
         mssg=str().join(['Cannot read getCapabilities.xml file:  ', 
-                         lcdir+'/'+wmtsEndPoint+'/getCapabilities.xml'])
+                         wmtsEndPoint+'/getCapabilities.xml'])
         sent=sigevent('ERROR', mssg, sigevent_url)
         sys.exit(mssg)
 
@@ -1235,21 +1250,21 @@ if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
-        cmd = 'make -C '+lcdir+'/'+twms_endpoint.path+'/ clean'
+        cmd = 'make -C '+twms_endpoint.path+'/ clean'
         run_command(cmd)
-        cmd = 'make -C '+lcdir+'/'+twms_endpoint.path+'/ all'
+        cmd = 'make -C '+twms_endpoint.path+'/ all'
         run_command(cmd)
         if no_cache == False:
             if twms_endpoint.cacheConfig:
-                shutil.copy(lcdir+'/'+twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig)
-                print '\nCopying: ' + lcdir+'/'+twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig
+                shutil.copy(twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig)
+                print '\nCopying: ' + twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig
         if no_xml == False:
             if twms_endpoint.getCapabilities:
-                shutil.copy(lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities)
-                print '\nCopying: ' + lcdir+'/'+twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities
+                shutil.copy(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities)
+                print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities
             if twms_endpoint.getTileService:
-                shutil.copy(lcdir+'/'+twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService)
-                print '\nCopying: ' + lcdir+'/'+twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService
+                shutil.copy(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService)
+                print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService
 
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -1257,18 +1272,18 @@ if no_wmts == False:
         print "\nRunning commands for endpoint: " + wmts_endpoint.path
         mrfs = ""
         # get list of MRF files
-        for mrf_file in os.listdir(lcdir+'/'+wmts_endpoint.path):
+        for mrf_file in os.listdir(wmts_endpoint.path):
             if mrf_file.endswith(".mrf"):
-                mrfs = mrfs + lcdir+'/'+wmts_endpoint.path+'/'+mrf_file + ' '
-        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config'
+                mrfs = mrfs + wmts_endpoint.path+'/'+mrf_file + ' '
+        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + wmts_endpoint.path+'/cache_wmts.config'
         run_command(cmd)
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
-                shutil.copy(lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig)
-                print '\nCopying: ' + lcdir+'/'+wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig
+                shutil.copy(wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig)
+                print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig
         if no_xml == False:
             if wmts_endpoint.getCapabilities:
-                getCapabilities_file = lcdir+'/'+wmts_endpoint.path+'/getCapabilities.xml'
+                getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
                 shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities)
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):

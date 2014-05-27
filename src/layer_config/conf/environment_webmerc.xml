@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EnvironmentConfiguration>
+    <GetCapabilitiesLocation service="wmts">/usr/share/onearth/demo/wmts-webmerc/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/twms-webmerc/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/usr/share/onearth/demo/twms-webmerc/.lib/</GetTileServiceLocation>
+    <CacheLocation>/usr/share/onearth/demo/data/EPSG3857/</CacheLocation>
+    <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3857/</StagingLocation>
+    <StagingLocation service="twms">/usr/share/onearth/ayer_config/twms/EPSG3857/</StagingLocation>
+    <ServiceURL service="wmts">http://localhost/wmts-webmerc/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/twms-webmerc/</ServiceURL>
+</EnvironmentConfiguration>

@@ -4,6 +4,8 @@
     <GetCapabilitiesLocation service="twms">/sites/twms-arctic/.lib/</GetCapabilitiesLocation>
     <GetTileServiceLocation>/sites/twms-arctic/.lib/</GetTileServiceLocation>
     <CacheLocation>/data/EPSG3413/</CacheLocation>
+    <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3413/</StagingLocation>
+    <StagingLocation service="twms">/usr/share/onearth/ayer_config/twms/EPSG3413/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-arctic/</ServiceURL>
     <ServiceURL service="twms">http://localhost/twms-arctic/</ServiceURL>
 </EnvironmentConfiguration>

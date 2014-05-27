@@ -15,12 +15,11 @@
         <xs:element ref="WGS84BoundingBox"/>
         <xs:element minOccurs="0" ref="BoundingBox"/>
       </xs:sequence>
-      <xs:attribute name="dir" use="required" type="xs:NCName"/>
       <xs:attribute name="id" use="required" type="xs:NMTOKEN"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="WKT" type="xs:string"/>
-  <xs:element name="TileMatrixSetConfig" type="xs:string"/>
+  <xs:element name="TileMatrixSetConfig" type="xs:NCName"/>
   <xs:element name="WGS84BoundingBox">
     <xs:complexType>
       <xs:sequence>
