@@ -993,7 +993,7 @@ for conf in conf_files:
         for idx in range(0, len(lines)):
             if execbeef in lines[idx]:
                 # don't add another execbeef if it's already there
-                print fileNamePrefix + ' already exists in getCapabilities'
+                print fileNamePrefix + ' already exists in TWMS getCapabilities'
                 break
             if '  </Layer>' in lines[idx]: #careful with spaces here
                 lines[idx-1] = '' # remove empty line
@@ -1211,15 +1211,22 @@ for conf in conf_files:
         # remove extra white space from lines
         line = line[3:]
         layer_output = layer_output + line
-    gc_lines = getCapabilities_base.readlines()
-    for idx in range(0, len(gc_lines)):
-        if "<Contents>" in gc_lines[idx]:
-            gc_lines[idx] = gc_lines[idx] + layer_output
-        if "</Contents>" in gc_lines[idx] and "TileMatrixSet" not in gc_lines[idx-1]:
-            gc_lines[idx] = projection.tilematrixset_xml + '\n' + gc_lines[idx]
-    getCapabilities_base.seek(0)
-    getCapabilities_base.truncate()
-    getCapabilities_base.writelines(gc_lines)        
+    gc = getCapabilities_base.read()
+    if "<ows:Title>"+title+"</ows:Title>" in gc:
+        print title + " already exists in WMTS GetCapabilities"
+    else:
+        getCapabilities_base.seek(0)
+        gc_lines = getCapabilities_base.readlines()
+        for idx in range(0, len(gc_lines)):
+            if "<Contents>" in gc_lines[idx]:
+                gc_lines[idx] = gc_lines[idx] + layer_output
+                print 'Adding %s to WMTS GetCapabilities' % title
+            if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
+                gc_lines[idx] = projection.tilematrixset_xml + '\n' + gc_lines[idx]
+                print "Adding TileMatrixSet to WMTS GetCapabilities"
+        getCapabilities_base.seek(0)
+        getCapabilities_base.truncate()
+        getCapabilities_base.writelines(gc_lines)        
     getCapabilities_base.close()
         
 # run scripts
@@ -1268,8 +1275,6 @@ if no_wmts == False:
                     os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
                 shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
-                os.remove(getCapabilities_file)
-                print '\nRemoving: ' + getCapabilities_file
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
