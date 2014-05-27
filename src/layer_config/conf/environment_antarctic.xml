@@ -5,7 +5,7 @@
     <GetTileServiceLocation>/sites/twms-antarctic/.lib/</GetTileServiceLocation>
     <CacheLocation>/data/EPSG3031/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3031/</StagingLocation>
-    <StagingLocation service="twms">/usr/share/onearth/ayer_config/twms/EPSG3031/</StagingLocation>
+    <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG3031/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-antarctic/</ServiceURL>
     <ServiceURL service="twms">http://localhost/twms-antarctic/</ServiceURL>
 </EnvironmentConfiguration>
