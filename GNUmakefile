@@ -3,7 +3,7 @@ GDAL_ARTIFACT=gdal-$(GDAL_VERSION).tar.gz
 GDAL_HOME=http://download.osgeo.org/gdal
 GDAL_URL=$(GDAL_HOME)/$(GDAL_VERSION)/$(GDAL_ARTIFACT)
 
-MOD_ONEARTH_VERSION=0.3.2
+MOD_ONEARTH_VERSION=0.3.3
 
 POSTGRES_VERSION=9.2
 
@@ -154,8 +154,6 @@ mod_onearth-install:
 	cp -r src/layer_config/conf \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/twms \
-		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
-	cp -r src/layer_config/wmts \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/layers \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
