@@ -67,7 +67,7 @@ from datetime import datetime, time, timedelta
 from time import asctime
 from optparse import OptionParser
 
-versionNumber = '0.3'
+versionNumber = '0.3.3'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -543,17 +543,21 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-c', '--conf_file',
-                  action='store', type='string', dest='configuration_filename',
+                  action='store', type='string', dest='layer_config_filename',
                   help='Full path of layer configuration filename.')
 parser.add_option('-d', '--layer_dir',
-                  action='store', type='string', dest='configuration_directory',
+                  action='store', type='string', dest='layer_directory',
                   default=lcdir+'/layers/',
                   help='Full path of directory containing configuration files.  Default: $LCDIR/layers/')
+parser.add_option('-l', '--lcdir',
+                  action='store', type='string', dest='lcdir',
+                  default=lcdir,
+                  help='Full path of directory containing configuration files.  Default: $LCDIR')
 parser.add_option("-n", "--no_twms",
                   action="store_true", dest="no_twms", 
                   default=False, help="Do not use configurations for Tiled-WMS")
@@ -585,9 +589,11 @@ parser.add_option("-z", "--no_cache",
 # Read command line args.
 (options, args) = parser.parse_args()
 # Configuration filename.
-configuration_filename = options.configuration_filename
+configuration_filename = options.layer_config_filename
 # Configuration directory.
-configuration_directory = options.configuration_directory
+configuration_directory = options.layer_directory
+# Command line set LCDIR.
+lcdir = options.lcdir
 # No XML configurations (getCapabilities, getTileService)
 no_xml = options.no_xml
 # No cache configuration.
@@ -638,7 +644,7 @@ conf_files = []
 wmts_endpoints = {}
 twms_endpoints = {}
 
-if not options.configuration_filename:
+if not options.layer_config_filename:
     conf = subprocess.Popen('ls ' + configuration_directory + '/*.xml',shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).stdout
     for line in conf:
         conf_files.append(line.strip())

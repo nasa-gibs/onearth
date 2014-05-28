@@ -124,7 +124,7 @@ mod_onearth-install:
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_wms.so
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/mod_onearth/oe_create_cache_config \
+	install -m 755 src/mod_onearth/twms_tool \
 		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
 	install -m 755 src/layer_config/bin/oe_create_twms_xml \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_create_twms_xml
