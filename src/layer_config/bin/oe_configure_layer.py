@@ -626,6 +626,9 @@ if no_cache:
 if no_xml and no_cache:
     print "no_xml and no_cache specified, nothing to do...exiting"
     exit()
+if no_twms and no_wmts:
+    print "no_twms and no_wmts specified, nothing to do...exiting"
+    exit()
     
 if configuration_time:
     if configuration_filename == None:
@@ -1003,256 +1006,262 @@ for conf in conf_files:
 
 # Modify service files
     
+
     #getCapabilities
-    try:
-        # Open file.
-        getCapabilities_base=open(twmsEndPoint+'/getCapabilities.base', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read getCapabilities.base file:  ', 
-                         twmsEndPoint+'/getCapabilities.base'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        execbeef = 'EXECBEEF: Layer='+fileNamePrefix+' eval $LT'
-        lines = getCapabilities_base.readlines()
-        for idx in range(0, len(lines)):
-            if execbeef in lines[idx]:
-                # don't add another execbeef if it's already there
-                print fileNamePrefix + ' already exists in TWMS getCapabilities'
-                break
-            if '  </Layer>' in lines[idx]: #careful with spaces here
-                lines[idx-1] = '' # remove empty line
-                lines[idx] = lines[idx].replace('  </Layer>',execbeef+'\n\n  </Layer>')
-                print 'Injecting to getCapabilities ' + execbeef
-            if 'OnlineResource' in lines[idx]:
-                spaces = lines[idx].index('<')
-                onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                onlineResource.attributes['xlink:href'] = twmsServiceUrl
-                lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
-        getCapabilities_base.seek(0)
-        getCapabilities_base.truncate()
-        getCapabilities_base.writelines(lines)
-        getCapabilities_base.close()
+    if no_twms == False:
+        try:
+            # Open file.
+            getCapabilities_base=open(twmsEndPoint+'/getCapabilities.base', 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read getCapabilities.base file:  ', 
+                             twmsEndPoint+'/getCapabilities.base'])
+            sent=sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
+        else:
+            execbeef = 'EXECBEEF: Layer='+fileNamePrefix+' eval $LT'
+            lines = getCapabilities_base.readlines()
+            for idx in range(0, len(lines)):
+                if execbeef in lines[idx]:
+                    # don't add another execbeef if it's already there
+                    print fileNamePrefix + ' already exists in TWMS getCapabilities'
+                    break
+                if '  </Layer>' in lines[idx]: #careful with spaces here
+                    lines[idx-1] = '' # remove empty line
+                    lines[idx] = lines[idx].replace('  </Layer>',execbeef+'\n\n  </Layer>')
+                    print 'Injecting to getCapabilities ' + execbeef
+                if 'OnlineResource' in lines[idx]:
+                    spaces = lines[idx].index('<')
+                    onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
+                    onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                    lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
+            getCapabilities_base.seek(0)
+            getCapabilities_base.truncate()
+            getCapabilities_base.writelines(lines)
+            getCapabilities_base.close()
     
     #getCapabilities WMTS modify Service URL
-    try:
-        # Copy (if not exists) and open base GetCapabilities.
-        getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
-        if os.path.isfile(getCapabilities_file) == False:
-            shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
-        getCapabilities_base=open(getCapabilities_file, 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read getcapabilities_base_wmts.xml file:  ', 
-                         lcdir+'/conf/getcapabilities_base_wmts.xml'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        lines = getCapabilities_base.readlines()
-        for idx in range(0, len(lines)):
-            if '<ows:Get' in lines[idx]:
-                spaces = lines[idx].index('<')
-                getUrlLine = lines[idx].replace('ows:Get','Get xmlns:xlink="http://www.w3.org/1999/xlink"').replace('>','/>')
-                getUrl = xml.dom.minidom.parseString(getUrlLine).getElementsByTagName('Get')[0]
-                if '1.0.0/WMTSCapabilities.xml' in lines[idx]:
-                    getUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
-                elif 'wmts.cgi?' in lines[idx]:
-                    getUrl.attributes['xlink:href'] = wmtsServiceUrl + 'wmts.cgi?'
-                else:
-                    getUrl.attributes['xlink:href'] = wmtsServiceUrl
-                lines[idx] = (' '*spaces) + getUrl.toprettyxml(indent=" ").replace('Get','ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','').replace('/>','>')
-            if 'ServiceMetadataURL' in lines[idx]:
-                spaces = lines[idx].index('<')
-                serviceMetadataUrlLine = lines[idx].replace('ServiceMetadataURL','ServiceMetadataURL xmlns:xlink="http://www.w3.org/1999/xlink"')
-                serviceMetadataUrl = xml.dom.minidom.parseString(serviceMetadataUrlLine).getElementsByTagName('ServiceMetadataURL')[0]
-                serviceMetadataUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
-                lines[idx] = (' '*spaces) + serviceMetadataUrl.toprettyxml(indent=" ").replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','')
-        getCapabilities_base.seek(0)
-        getCapabilities_base.truncate()
-        getCapabilities_base.writelines(lines)
-        getCapabilities_base.close()   
+    if no_wmts == False:
+        try:
+            # Copy (if not exists) and open base GetCapabilities.
+            getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
+            if os.path.isfile(getCapabilities_file) == False:
+                shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
+            getCapabilities_base=open(getCapabilities_file, 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read getcapabilities_base_wmts.xml file:  ', 
+                             lcdir+'/conf/getcapabilities_base_wmts.xml'])
+            sent=sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
+        else:
+            lines = getCapabilities_base.readlines()
+            for idx in range(0, len(lines)):
+                if '<ows:Get' in lines[idx]:
+                    spaces = lines[idx].index('<')
+                    getUrlLine = lines[idx].replace('ows:Get','Get xmlns:xlink="http://www.w3.org/1999/xlink"').replace('>','/>')
+                    getUrl = xml.dom.minidom.parseString(getUrlLine).getElementsByTagName('Get')[0]
+                    if '1.0.0/WMTSCapabilities.xml' in lines[idx]:
+                        getUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
+                    elif 'wmts.cgi?' in lines[idx]:
+                        getUrl.attributes['xlink:href'] = wmtsServiceUrl + 'wmts.cgi?'
+                    else:
+                        getUrl.attributes['xlink:href'] = wmtsServiceUrl
+                    lines[idx] = (' '*spaces) + getUrl.toprettyxml(indent=" ").replace('Get','ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','').replace('/>','>')
+                if 'ServiceMetadataURL' in lines[idx]:
+                    spaces = lines[idx].index('<')
+                    serviceMetadataUrlLine = lines[idx].replace('ServiceMetadataURL','ServiceMetadataURL xmlns:xlink="http://www.w3.org/1999/xlink"')
+                    serviceMetadataUrl = xml.dom.minidom.parseString(serviceMetadataUrlLine).getElementsByTagName('ServiceMetadataURL')[0]
+                    serviceMetadataUrl.attributes['xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
+                    lines[idx] = (' '*spaces) + serviceMetadataUrl.toprettyxml(indent=" ").replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','')
+            getCapabilities_base.seek(0)
+            getCapabilities_base.truncate()
+            getCapabilities_base.writelines(lines)
+            getCapabilities_base.close()   
 
     #getTileService
-    try:
-        # Open file.
-        getTileService_base=open(twmsEndPoint+'/getTileService.base', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read getTileService.base file:  ', 
-                         twmsEndPoint+'/getTileService.base'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
-        lines = getTileService_base.readlines()
-        for idx in range(0, len(lines)):
-            if execbeef in lines[idx]:
-                # don't add another execbeef if it's already there
-                print mrf_base + ' already exists in getTileService'
-                break
-            if '</TiledPatterns>' in lines[idx]:
-                lines[idx-1] = '' # remove empty line
-                lines[idx] = lines[idx].replace('</TiledPatterns>',execbeef+'\n\n</TiledPatterns>')
-                print 'Injecting to getTileService ' + execbeef
-            if 'OnlineResource' in lines[idx]:
-                spaces = lines[idx].index('<')
-                onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                onlineResource.attributes['xlink:href'] = twmsServiceUrl
-                lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
-        getTileService_base.seek(0)
-        getTileService_base.truncate()
-        getTileService_base.writelines(lines)
-        getTileService_base.close()
+    if no_twms == False:
+        try:
+            # Open file.
+            getTileService_base=open(twmsEndPoint+'/getTileService.base', 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read getTileService.base file:  ', 
+                             twmsEndPoint+'/getTileService.base'])
+            sent=sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
+        else:
+            execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
+            lines = getTileService_base.readlines()
+            for idx in range(0, len(lines)):
+                if execbeef in lines[idx]:
+                    # don't add another execbeef if it's already there
+                    print mrf_base + ' already exists in getTileService'
+                    break
+                if '</TiledPatterns>' in lines[idx]:
+                    lines[idx-1] = '' # remove empty line
+                    lines[idx] = lines[idx].replace('</TiledPatterns>',execbeef+'\n\n</TiledPatterns>')
+                    print 'Injecting to getTileService ' + execbeef
+                if 'OnlineResource' in lines[idx]:
+                    spaces = lines[idx].index('<')
+                    onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
+                    onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                    lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
+            getTileService_base.seek(0)
+            getTileService_base.truncate()
+            getTileService_base.writelines(lines)
+            getTileService_base.close()
 
     #wms_config
-    try:
-        # Open file.
-        wms_config_base=open(twmsEndPoint+'/wms_config.base', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read wms_config.base file:  ', 
-                         twmsEndPoint+'/wms_config.base'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
-        lines = wms_config_base.readlines()
-        for idx in range(0, len(lines)):
-            if execbeef in lines[idx]:
-                # don't add another execbeef if it's already there
-                print mrf_base + ' already exists in wms_config'
-                break
-            if '  </LayerList>' in lines[idx]: #careful with spaces here
-                lines[idx-1] = '' # remove empty line
-                lines[idx] = lines[idx].replace('  </LayerList>',execbeef+'\n\n  </LayerList>')
-                print 'Injecting to wms_config ' + execbeef
-        wms_config_base.seek(0)
-        wms_config_base.truncate()
-        wms_config_base.writelines(lines)
-        wms_config_base.close()
+    if no_twms == False:
+        try:
+            # Open file.
+            wms_config_base=open(twmsEndPoint+'/wms_config.base', 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read wms_config.base file:  ', 
+                             twmsEndPoint+'/wms_config.base'])
+            sent=sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
+        else:
+            execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
+            lines = wms_config_base.readlines()
+            for idx in range(0, len(lines)):
+                if execbeef in lines[idx]:
+                    # don't add another execbeef if it's already there
+                    print mrf_base + ' already exists in wms_config'
+                    break
+                if '  </LayerList>' in lines[idx]: #careful with spaces here
+                    lines[idx-1] = '' # remove empty line
+                    lines[idx] = lines[idx].replace('  </LayerList>',execbeef+'\n\n  </LayerList>')
+                    print 'Injecting to wms_config ' + execbeef
+            wms_config_base.seek(0)
+            wms_config_base.truncate()
+            wms_config_base.writelines(lines)
+            wms_config_base.close()
         
 # configure Makefiles
     
     #twms
-    try:
-        # Open file.
-        twms_make=open(twmsEndPoint+'/Makefile', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read twms Makefile file:  ', 
-                         twmsEndPoint+'/Makefile'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-    else:
-        lines = twms_make.readlines()
-        for idx in range(0, len(lines)):
-            # replace lines in Makefiles
-            if 'DEPTH=' in lines[idx]:
-                lines[idx] = 'DEPTH=' + depth + '\n'
-            if 'TGT_PATH=' in lines[idx]:
-                lines[idx] = 'TGT_PATH=' + twms_endpoints[twmsEndPoint].getTileService + '\n'
-            if fileNamePrefix in lines[idx]:
-                # don't add the layer if it's already there
-                print fileNamePrefix + ' already exists in twms Makefile'
-                break
-            if 'MRFS:=$' in lines[idx] and static == False:
-                lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
-                print 'Adding to twms Makefile: ' + fileNamePrefix
-            if 'TARGETS:=' in lines[idx] and static == True:
-                lines[idx-2] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
-                print 'Adding to twms Makefile: ' + fileNamePrefix
-        twms_make.seek(0)
-        twms_make.truncate()
-        twms_make.writelines(lines)
-        twms_make.close()
-        
-# create WMTS layer metadata for GetCapabilities
-
-    try:
-        # Open GetCapabilities.
-        getCapabilities_base=open(wmtsEndPoint+'/getCapabilities.xml', 'r+')
-    except IOError:
-        mssg=str().join(['Cannot read getCapabilities.xml file:  ', 
-                         wmtsEndPoint+'/getCapabilities.xml'])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
-
-    wmts_layer_template = """<Layer>
-            <ows:Title>$Title</ows:Title>
-            $BoundingBox
-            <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-            <Style isDefault="true">
-                <ows:Title>default</ows:Title>
-                <ows:Identifier>default</ows:Identifier>
-            </Style>
-            <Format>$Format</Format>
-            <Dimension>
-                <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
-                <Default>$DefaultDate</Default>
-                <Current>false</Current>
-                <Value>$DateRange</Value>
-            </Dimension>
-            <TileMatrixSetLink>
-                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
-            </TileMatrixSetLink>
-        </Layer>"""
-
-    layer_output = ""
-    lines = wmts_layer_template.splitlines(True)
-    for line in lines:
-        # replace lines in template
-        if '<Layer>' in line:
-            line = '         '+line
-        if '</Layer>' in line:
-            line = ' '+line+'\n'                
-        if '$Title' in line:
-            line = line.replace("$Title",title)
-        if '$BoundingBox' in line:
-            line = line.replace("$BoundingBox",projection.bbox_xml)
-        if '$Identifier' in line:
-            line = line.replace("$Identifier",identifier)
-        if '$ColorMap' in line:
-            if colormap == None:
-                line = ''
-            else:
-                line = line.replace("$ColorMap",str(colormap))
-        if '$Format' in line:
-            line = line.replace("$Format",mrf_format)
-        if '$TileMatrixSet' in line:
-            line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
-        if static == True or len(timeElements)==0:
-            if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
-                line = ''
+    if no_twms == False:
+        try:
+            # Open file.
+            twms_make=open(twmsEndPoint+'/Makefile', 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read twms Makefile file:  ', 
+                             twmsEndPoint+'/Makefile'])
+            sent=sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
         else:
-            if '$DefaultDate' in line:
-                defaultDate = ''
-                for timeElement in timeElements:
-                    defaultDate = timeElement.firstChild.data.strip().split('/')[1]
-                line = line.replace("$DefaultDate",defaultDate)
-            if '$DateRange' in line:
-                line = line.replace("$DateRange",timeElements[0].firstChild.data.strip())
-                iterTime = iter(timeElements)
-                next(iterTime)
-                for timeElement in iterTime:
-                    line = line + "             " + timeElement.toxml().replace('Time','Value')+"\n"
-        # remove extra white space from lines
-        line = line[3:]
-        layer_output = layer_output + line
-    gc = getCapabilities_base.read()
-    if "<ows:Title>"+title+"</ows:Title>" in gc:
-        print title + " already exists in WMTS GetCapabilities"
-    else:
-        getCapabilities_base.seek(0)
-        gc_lines = getCapabilities_base.readlines()
-        for idx in range(0, len(gc_lines)):
-            if "<Contents>" in gc_lines[idx]:
-                gc_lines[idx] = gc_lines[idx] + layer_output
-                print 'Adding %s to WMTS GetCapabilities' % title
-            if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
-                gc_lines[idx] = projection.tilematrixset_xml + '\n' + gc_lines[idx]
-                print "Adding TileMatrixSet to WMTS GetCapabilities"
-        getCapabilities_base.seek(0)
-        getCapabilities_base.truncate()
-        getCapabilities_base.writelines(gc_lines)        
-    getCapabilities_base.close()
+            lines = twms_make.readlines()
+            for idx in range(0, len(lines)):
+                # replace lines in Makefiles
+                if 'DEPTH=' in lines[idx]:
+                    lines[idx] = 'DEPTH=' + depth + '\n'
+                if 'TGT_PATH=' in lines[idx]:
+                    lines[idx] = 'TGT_PATH=' + twms_endpoints[twmsEndPoint].getTileService + '\n'
+                if fileNamePrefix in lines[idx]:
+                    # don't add the layer if it's already there
+                    print fileNamePrefix + ' already exists in twms Makefile'
+                    break
+                if 'MRFS:=$' in lines[idx] and static == False:
+                    lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
+                    print 'Adding to twms Makefile: ' + fileNamePrefix
+                if 'TARGETS:=' in lines[idx] and static == True:
+                    lines[idx-2] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
+                    print 'Adding to twms Makefile: ' + fileNamePrefix
+            twms_make.seek(0)
+            twms_make.truncate()
+            twms_make.writelines(lines)
+            twms_make.close()
+        
+    # create WMTS layer metadata for GetCapabilities
+    if no_wmts == False:
+        try:
+            # Open GetCapabilities.
+            getCapabilities_base=open(wmtsEndPoint+'/getCapabilities.xml', 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read getCapabilities.xml file:  ', 
+                             wmtsEndPoint+'/getCapabilities.xml'])
+            sent=sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
+    
+        wmts_layer_template = """<Layer>
+                <ows:Title>$Title</ows:Title>
+                $BoundingBox
+                <ows:Identifier>$Identifier</ows:Identifier>
+                <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+                <Style isDefault="true">
+                    <ows:Title>default</ows:Title>
+                    <ows:Identifier>default</ows:Identifier>
+                </Style>
+                <Format>$Format</Format>
+                <Dimension>
+                    <ows:Identifier>time</ows:Identifier>
+                    <UOM>ISO8601</UOM>
+                    <Default>$DefaultDate</Default>
+                    <Current>false</Current>
+                    <Value>$DateRange</Value>
+                </Dimension>
+                <TileMatrixSetLink>
+                    <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
+                </TileMatrixSetLink>
+            </Layer>"""
+    
+        layer_output = ""
+        lines = wmts_layer_template.splitlines(True)
+        for line in lines:
+            # replace lines in template
+            if '<Layer>' in line:
+                line = '         '+line
+            if '</Layer>' in line:
+                line = ' '+line+'\n'                
+            if '$Title' in line:
+                line = line.replace("$Title",title)
+            if '$BoundingBox' in line:
+                line = line.replace("$BoundingBox",projection.bbox_xml)
+            if '$Identifier' in line:
+                line = line.replace("$Identifier",identifier)
+            if '$ColorMap' in line:
+                if colormap == None:
+                    line = ''
+                else:
+                    line = line.replace("$ColorMap",str(colormap))
+            if '$Format' in line:
+                line = line.replace("$Format",mrf_format)
+            if '$TileMatrixSet' in line:
+                line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
+            if static == True or len(timeElements)==0:
+                if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
+                    line = ''
+            else:
+                if '$DefaultDate' in line:
+                    defaultDate = ''
+                    for timeElement in timeElements:
+                        defaultDate = timeElement.firstChild.data.strip().split('/')[1]
+                    line = line.replace("$DefaultDate",defaultDate)
+                if '$DateRange' in line:
+                    line = line.replace("$DateRange",timeElements[0].firstChild.data.strip())
+                    iterTime = iter(timeElements)
+                    next(iterTime)
+                    for timeElement in iterTime:
+                        line = line + "             " + timeElement.toxml().replace('Time','Value')+"\n"
+            # remove extra white space from lines
+            line = line[3:]
+            layer_output = layer_output + line
+        gc = getCapabilities_base.read()
+        if "<ows:Title>"+title+"</ows:Title>" in gc:
+            print title + " already exists in WMTS GetCapabilities"
+        else:
+            getCapabilities_base.seek(0)
+            gc_lines = getCapabilities_base.readlines()
+            for idx in range(0, len(gc_lines)):
+                if "<Contents>" in gc_lines[idx]:
+                    gc_lines[idx] = gc_lines[idx] + layer_output
+                    print 'Adding %s to WMTS GetCapabilities' % title
+                if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
+                    gc_lines[idx] = projection.tilematrixset_xml + '\n' + gc_lines[idx]
+                    print "Adding TileMatrixSet to WMTS GetCapabilities"
+            getCapabilities_base.seek(0)
+            getCapabilities_base.truncate()
+            getCapabilities_base.writelines(gc_lines)        
+        getCapabilities_base.close()
         
 # run scripts
 
