@@ -32,15 +32,15 @@ byte *imgarr;
 int bgcolor=255;
 int userfill=-1;
 int colorstyle=GRAYSCALE;
-int red, green, blue;
-int redarr[256], greenarr[256], bluearr[256];
+int red, green, blue, alpha;
+int redarr[256], greenarr[256], bluearr[256], alphaarr[256];
 unsigned char lutname[MAXNAMELENGTH];
 unsigned char verbose=FALSE;
 
 png_structp png_ptr;
 png_infop info_ptr;
-png_colorp png_palette;
-png_colorp dest_pal;
+png_color_8p png_palette;
+png_color_8p dest_pal;
 unsigned char *png_trans;
 
 png_structp in_png_ptr;
@@ -63,7 +63,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   lutname[0] = '\0';
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<LUT file or ColorMap file> -fill=<LUT value> -of=<output palette PNG file> <input RGBA PNG file>\n");
+    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<ColorMap file> -fill=<LUT index value> -of=<output palette PNG file> <input RGBA PNG file>\n");
     exit(-1);
   }
 
@@ -217,16 +217,19 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 
   imgarr = (byte *) malloc(height * width * sizeof(byte));
 
-  png_palette = (png_colorp)malloc( 256 * sizeof( png_color) );
+  png_palette = (png_color_8p)malloc( 256 * sizeof( png_color_8) );
   dest_pal = png_palette;
   if (colorstyle == GRAYSCALE)
     for (j=0; j<256; j++) {
       dest_pal->red = dest_pal->green = dest_pal->blue = j;
+      dest_pal->alpha = 255;
       dest_pal++;
+      
       redarr[j] = greenarr[j] = bluearr[j] = j;
+      alphaarr[j] = 255
   } else {
     if ( (lut = fopen(lutname, "r")) != NULL ) {
-    	if (strlen(lutname) > 4 && ((!strcmp(lutname + strlen(lutname) - 4, ".sld")) || (!strcmp(lutname + strlen(lutname) - 4, ".xml")))) {
+    	if (strlen(lutname) > 4 && ((!strcmp(lutname + strlen(lutname) - 4, ".xml")))) {
     		fprintf(stderr, "Opening colormap file %s\n", lutname);
 
     		if (lut) {
@@ -234,8 +237,10 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
     			int c;
     			int j = 0;
     			char *buffer = (char *)malloc(size);
-    			const char *color_key = "color=";
     			const char *rgb_key = "rgb=";
+    			const char *transparent_key = "transparent=";
+    			const char *true_str = "true";
+    			
     			do { // read all lines in file
 					pos = 0;
 					do { // read one line
@@ -248,30 +253,11 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 					} while(c != EOF && c != '\n');
 					buffer[pos] = 0;
 
-					char *color = strstr(buffer,color_key);
 					char *rgb = strstr(buffer,rgb_key);
-					// SLD hex values
-					if (color != NULL) {
-	        			char hex[7];
-						int color_length = strlen(color);
-						int color_pos = pos - color_length;
-						memcpy(hex, &buffer[color_pos+8], 6);
-						hex[6] = '\0';
-						int hexvalue = (int)strtol(hex, NULL, 16);
-						red = ((hexvalue >> 16) & 0xFF);
-						green = ((hexvalue >> 8) & 0xFF);
-						blue = ((hexvalue) & 0xFF);
-						dest_pal->red = red;
-						dest_pal->green = green;
-						dest_pal->blue = blue;
-						dest_pal++;
-						redarr[j] = red;
-						greenarr[j] = green;
-						bluearr[j] = blue;
-						//fprintf(stderr, "RGB: %d %d %d \n", redarr[j], greenarr[j] , bluearr[j]);
-						j++;
+					char *transparent = strstr(buffer,transparent_key);
+					
 					// GIBS colormap RGB values
-					} else if (rgb != NULL) {
+					if (rgb != NULL) {
 	        			char rgb_string[12];
 						int rgb_length = strlen(rgb);
 						int rgb_pos = pos - rgb_length;
@@ -289,11 +275,16 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 						dest_pal->red = red;
 						dest_pal->green = green;
 						dest_pal->blue = blue;
+						
+						alpha = strcmp(transparent, true_str) == 0 ? 0 : 255;
+						dest_pal->alpha = alpha;
+						
 						dest_pal++;
 						redarr[j] = red;
 						greenarr[j] = green;
 						bluearr[j] = blue;
-						//fprintf(stderr, "RGB: %d %d %d \n", redarr[j], greenarr[j] , bluearr[j]);
+						alphaarr[j] = alpha;
+						//fprintf(stderr, "RGB: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
 						j++;
 					}
     			} while(c != EOF);;
@@ -303,17 +294,19 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 
     	} else {
 			for (j=0; j<256; j++)
-			  if ( fscanf(lut, "%d %d %d", &red, &green, &blue) != 3 ) {
+			  if ( fscanf(lut, "%d %d %d %d", &red, &green, &blue, &alpha) != 4 ) {
 				  fprintf(stderr, "Cannot read color index %d in LUT file\n", j);
 				  exit(-1);
 			  } else {
 				  dest_pal->red = red;
 				  dest_pal->green = green;
 				  dest_pal->blue = blue;
+				  dest_pal->alpha = alpha;
 				  dest_pal++;
 				  redarr[j] = red;
 				  greenarr[j] = green;
 				  bluearr[j] = blue;
+				  alphaarr[j] = alpha;
 			  }
 			fclose(lut);
     	}
@@ -487,8 +480,8 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 
   fclose(fd);
   free(imgarr);
-  free( png_palette );
-  free (png_trans);
+  free(png_palette);
+  free(png_trans);
 
   if (info_ptr != NULL) png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
   if (png_ptr != NULL) png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
