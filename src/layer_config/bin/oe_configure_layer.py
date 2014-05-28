@@ -543,7 +543,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/conf/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -552,18 +552,16 @@ parser.add_option('-c', '--conf_file',
                   help='Full path of layer configuration filename.')
 parser.add_option('-d', '--layer_dir',
                   action='store', type='string', dest='layer_directory',
-                  default=lcdir+'/layers/',
-                  help='Full path of directory containing configuration files.  Default: $LCDIR/layers/')
+                  help='Full path of directory containing configuration files for layers.  Default: $LCDIR/layers/')
 parser.add_option('-l', '--lcdir',
                   action='store', type='string', dest='lcdir',
                   default=lcdir,
-                  help='Full path of directory containing configuration files.  Default: $LCDIR')
+                  help='Full path of the OnEarth Layer Configurator (layer_config) directory.  Default: $LCDIR')
 parser.add_option("-n", "--no_twms",
                   action="store_true", dest="no_twms", 
                   default=False, help="Do not use configurations for Tiled-WMS")
 parser.add_option('-p', '--projection_config',
                   action='store', type='string', dest='projection_configuration',
-                  default=lcdir+'/conf/projection.xml',
                   help='Full path of projection configuration file.  Default: $LCDIR/conf/projection.xml')
 parser.add_option("-r", "--restart_apache",
                   action="store_true", dest="restart", 
@@ -590,10 +588,13 @@ parser.add_option("-z", "--no_cache",
 (options, args) = parser.parse_args()
 # Configuration filename.
 configuration_filename = options.layer_config_filename
-# Configuration directory.
-configuration_directory = options.layer_directory
 # Command line set LCDIR.
 lcdir = options.lcdir
+# Configuration directory.
+if options.layer_directory:
+    configuration_directory = options.layer_directory
+else:
+    configuration_directory = lcdir+'/layers/'
 # No XML configurations (getCapabilities, getTileService)
 no_xml = options.no_xml
 # No cache configuration.
@@ -607,7 +608,10 @@ restart = options.restart
 # Time for conf file.
 configuration_time = options.time
 # Projection configuration
-projection_configuration = options.projection_configuration
+if options.projection_configuration:
+    projection_configuration = options.projection_configuration
+else:
+    projection_configuration = lcdir+'/conf/projection.xml'
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
