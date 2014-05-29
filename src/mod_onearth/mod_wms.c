@@ -1263,7 +1263,7 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
 	}
 	else if (version_match==0) {
-		version_mes = apr_psprintf(r->pool, "VERSION=%s is invalid", version);
+		version_mes = apr_psprintf(r->pool, "VERSION is invalid");
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
 	}
 	// LAYER
@@ -1271,16 +1271,16 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
 	}
 	else if (layer_match==0) {
-		layer_mes = apr_psprintf(r->pool, "LAYER %s does not exist",layer);
+		layer_mes = apr_psprintf(r->pool, "LAYER does not exist");
 		wmts_add_error(r,400,"InvalidParameterValue","LAYER", layer_mes);
 	}
 	else if (version[0]!='\0' && layer_version_match==0 && layer_match>0 && version_match>0) {
-		version_mes = apr_psprintf(r->pool, "LAYER=%s does not exist for VERSION=%s",layer, version);
+		version_mes = apr_psprintf(r->pool, "LAYER does not exist for VERSION");
 		wmts_add_error(r,400,"InvalidParameterValue","VERSION", version_mes);
 	}
 	// STYLE
 	if (style_match==0 && style[0]!='\0' && layer_match>0) {
-		style_mes = apr_psprintf(r->pool, "STYLE=%s is invalid for LAYER=%s",style, layer);
+		style_mes = apr_psprintf(r->pool, "STYLE is invalid for LAYER");
 		wmts_add_error(r,400,"InvalidParameterValue","STYLE", style_mes);
 	}
 	// FORMAT
@@ -1288,7 +1288,7 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","FORMAT", "Missing FORMAT parameter");
 	}
 	else if (format_match==0 && layer_match>0) {
-		format_mes = apr_psprintf(r->pool, "FORMAT=%s is invalid for LAYER=%s",format, layer);
+		format_mes = apr_psprintf(r->pool, "FORMAT is invalid for LAYER");
 		wmts_add_error(r,400,"InvalidParameterValue","FORMAT", format_mes);
 	}
 	// TILEMATRIXSET
@@ -1296,7 +1296,7 @@ static void specify_error(request_rec *r)
 		wmts_add_error(r,400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
 	}
 	else if (tilematrixset_match==0 && layer_match>0) {
-		tilematrixset_mes = apr_psprintf(r->pool, "TILEMATRIXSET=%s is invalid for LAYER=%s",tilematrixset, layer);
+		tilematrixset_mes = apr_psprintf(r->pool, "TILEMATRIXSET is invalid for LAYER");
 		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIXSET", tilematrixset_mes);
 	}
 	// TILEMATRIX
