@@ -506,8 +506,8 @@ else:
 
 # Verify that the empty tile image format is either PNG or JPEG.
 mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
-if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg':
-    mssg='Empty tile image format must be either png or jpeg.'
+if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff':
+    mssg='Empty tile image format must be either png, jpeg, or tiff.'
     log_sig_exit('ERROR', mssg, sigevent_url)
 
 # Verify that the empty tile matches MRF compression type.
@@ -809,8 +809,14 @@ if len(modtiles) > 0:
         # Linknames.
         cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.pjg'])
         cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.pjg'])
+    elif mrf_compression_type == 'TIFF':
+        # Output filename.
+        out_filename=str().join([output_dir, basename, '.ptf'])
+        # Linknames.
+        cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.ptf'])
+        cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.ptf'])
     else:
-        mssg='Unrecognized compression type for MRF.'
+        mssg='Unrecognized compression type for MRF: ' + mrf_compression_type 
         log_sig_exit('ERROR', mssg, sigevent_url)
 
     # The .vrt file is the XML describing the virtual image mosaic layout.
@@ -939,6 +945,8 @@ if len(modtiles) > 0:
             compress=str('COMPRESS=JPEG')
         elif mrf_compression_type == 'JPEG':
             compress=str('COMPRESS=JPEG')
+        elif mrf_compression_type == 'TIFF':
+            compress=str('COMPRESS=TIFF')
         else:
             mssg='Unrecognized compression type for MRF.'
             log_sig_exit('ERROR', mssg, sigevent_url)
