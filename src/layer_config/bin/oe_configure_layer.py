@@ -416,12 +416,12 @@ def get_projection(projectionId, projectionConfig, lcdir):
     
     return projection
 
-def detect_time(time, cacheLocation, fileNamePrefix, year):
+def detect_time(time, archiveLocation, fileNamePrefix, year):
     """
     Checks time element to see if start or end time must be detected on the file system.
     Arguments:
         time -- the time element (DETECT) keyword is utilized
-        cacheLocation -- the location of the cache data
+        archiveLocation -- the location of the archive data
         fileNamePrefix -- the prefix of the MRF files
         year -- whether or not the layer uses a year-based directory structure
     """
@@ -430,12 +430,12 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
     time = time.upper()
     detect = "DETECT"
     period = 'P1D' # default to period of 1 day
-    cacheLocation = add_trailing_slash(cacheLocation)
+    archiveLocation = add_trailing_slash(archiveLocation)
     
     if time == detect or time == '':
     #detect everything including breaks in date (assumes period of 1 day)
         dates = []
-        for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix, followlinks=True):
+        for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
             # Print subdirectories
             for subdirname in dirnames:
                 print "Searching:", os.path.join(dirname, subdirname)
@@ -450,7 +450,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
         dates = sorted(list(set(dates)))
         # Search for date ranges
         if len(dates) == 0:
-            message = "No files with dates found for '" + fileNamePrefix + "' in '" + cacheLocation + "' - please check if data exists."
+            message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
             log_sig_warn(message, sigevent_url)
             startdate = datetime.now() # default to now
         else:
@@ -499,7 +499,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
         if start==detect or end==detect:
             if year == True: # get newest and oldest years
                 years = []
-                for subdirname in os.walk(cacheLocation+fileNamePrefix, followlinks=True).next()[1]:
+                for subdirname in os.walk(archiveLocation, followlinks=True).next()[1]:
                     if subdirname != 'YYYY':
                         years.append(subdirname)
                 years = sorted(years)
@@ -508,7 +508,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
                 print "Year directories available: " + ",".join(years)
                             
         if start==detect:
-            for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+oldest_year, followlinks=True):
+            for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
                     filetime = filename[-12:-5]
@@ -518,7 +518,7 @@ def detect_time(time, cacheLocation, fileNamePrefix, year):
                 start = datetime.strftime(startdate,"%Y-%m-%d")
         
         if end==detect:
-            for dirname, dirnames, filenames in os.walk(cacheLocation+fileNamePrefix+'/'+newest_year, followlinks=True):
+            for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
                     filetime = filename[-12:-5]
@@ -843,6 +843,7 @@ for conf in conf_files:
             mrfLocation = archiveLocation
         else:
             mrfLocation = cacheConfig + archiveLocation
+            archiveLocation = mrfLocation
     else: # use archive location relative to cache if not defined
         mrfLocation = add_trailing_slash(cacheConfig)
     if year == True:
@@ -941,7 +942,7 @@ for conf in conf_files:
     if static == False:
         timeElements = []
         for time in times:
-            detected_times = detect_time(time, cacheConfig, fileNamePrefix, year)
+            detected_times = detect_time(time, archiveLocation, fileNamePrefix, year)
             for detected_time in detected_times:
                 timeElements.append(mrf_dom.createElement('Time'))
                 timeElements[-1].appendChild(mrf_dom.createTextNode(detected_time))
