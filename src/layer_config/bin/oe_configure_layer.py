@@ -72,19 +72,21 @@ versionNumber = '0.3.3'
 class WMTSEndPoint:
     """End point data for WMTS"""
     
-    def __init__(self, path, cacheConfig, getCapabilities):
+    def __init__(self, path, cacheConfig, getCapabilities, projection):
         self.path = path
         self.cacheConfig = cacheConfig
         self.getCapabilities = getCapabilities
+        self.projection = projection
         
 class TWMSEndPoint:
     """End point data for TWMS"""
     
-    def __init__(self, path, cacheConfig, getCapabilities, getTileService):
+    def __init__(self, path, cacheConfig, getCapabilities, getTileService, projection):
         self.path = path
         self.cacheConfig = cacheConfig
         self.getCapabilities = getCapabilities
         self.getTileService = getTileService
+        self.projection = projection
 
 class Environment:
     """Environment information for layer(s)"""
@@ -793,8 +795,8 @@ for conf in conf_files:
             # default projection dir
             twmsEndPoint = lcdir + "/twms/" + projection.id.replace(":","")
                 
-        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities)
-        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService)
+        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities, projection)
+        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService, projection)
         
         # Close file.
         config_file.close()
@@ -1041,12 +1043,11 @@ for conf in conf_files:
             getCapabilities_base.close()
     
     #getCapabilities WMTS modify Service URL
-    if no_wmts == False:
+    if no_wmts == False and no_xml == False:
         try:
-            # Copy (if not exists) and open base GetCapabilities.
+            # Copy and open base GetCapabilities.
             getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
-            if os.path.isfile(getCapabilities_file) == False:
-                shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
+            shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
             getCapabilities_base=open(getCapabilities_file, 'r+')
         except IOError:
             mssg=str().join(['Cannot read getcapabilities_base_wmts.xml file:  ', 
@@ -1176,34 +1177,34 @@ for conf in conf_files:
     if no_wmts == False:
         try:
             # Open GetCapabilities.
-            getCapabilities_base=open(wmtsEndPoint+'/getCapabilities.xml', 'r+')
+            layer_xml=open(wmts_mrf_filename.replace('.mrf','.xml'), 'w+')
         except IOError:
-            mssg=str().join(['Cannot read getCapabilities.xml file:  ', 
-                             wmtsEndPoint+'/getCapabilities.xml'])
+            mssg=str().join(['Cannot read layer XML file:  ', 
+                             wmts_mrf_filename.replace('.mrf','.xml')])
             sent=sigevent('ERROR', mssg, sigevent_url)
             sys.exit(mssg)
     
         wmts_layer_template = """<Layer>
-                <ows:Title>$Title</ows:Title>
-                $BoundingBox
-                <ows:Identifier>$Identifier</ows:Identifier>
-                <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-                <Style isDefault="true">
-                    <ows:Title>default</ows:Title>
-                    <ows:Identifier>default</ows:Identifier>
-                </Style>
-                <Format>$Format</Format>
-                <Dimension>
-                    <ows:Identifier>time</ows:Identifier>
-                    <UOM>ISO8601</UOM>
-                    <Default>$DefaultDate</Default>
-                    <Current>false</Current>
-                    <Value>$DateRange</Value>
-                </Dimension>
-                <TileMatrixSetLink>
-                    <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
-                </TileMatrixSetLink>
-            </Layer>"""
+            <ows:Title>$Title</ows:Title>
+            $BoundingBox
+            <ows:Identifier>$Identifier</ows:Identifier>
+            <ows:Metadata xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+            <Style isDefault="true">
+                <ows:Title>default</ows:Title>
+                <ows:Identifier>default</ows:Identifier>
+            </Style>
+            <Format>$Format</Format>
+            <Dimension>
+                <ows:Identifier>time</ows:Identifier>
+                <UOM>ISO8601</UOM>
+                <Default>$DefaultDate</Default>
+                <Current>false</Current>
+                <Value>$DateRange</Value>
+            </Dimension>
+            <TileMatrixSetLink>
+                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
+            </TileMatrixSetLink>
+        </Layer>"""
     
         layer_output = ""
         lines = wmts_layer_template.splitlines(True)
@@ -1246,23 +1247,8 @@ for conf in conf_files:
             # remove extra white space from lines
             line = line[3:]
             layer_output = layer_output + line
-        gc = getCapabilities_base.read()
-        if "<ows:Title>"+title+"</ows:Title>" in gc:
-            print title + " already exists in WMTS GetCapabilities"
-        else:
-            getCapabilities_base.seek(0)
-            gc_lines = getCapabilities_base.readlines()
-            for idx in range(0, len(gc_lines)):
-                if "<Contents>" in gc_lines[idx]:
-                    gc_lines[idx] = gc_lines[idx] + layer_output
-                    print 'Adding %s to WMTS GetCapabilities' % title
-                if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
-                    gc_lines[idx] = projection.tilematrixset_xml + '\n' + gc_lines[idx]
-                    print "Adding TileMatrixSet to WMTS GetCapabilities"
-            getCapabilities_base.seek(0)
-            getCapabilities_base.truncate()
-            getCapabilities_base.writelines(gc_lines)        
-        getCapabilities_base.close()
+        layer_xml.writelines(layer_output)
+        layer_xml.close()
         
 # run scripts
 
@@ -1303,7 +1289,26 @@ if no_wmts == False:
                 print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig
         if no_xml == False:
             if wmts_endpoint.getCapabilities:
+                # Add layer metadata to getCapabilities
+                layer_xml = ""
+                for xml_file in sorted(os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
+                    if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml":
+                        layer_xml = layer_xml + open(wmts_endpoint.path+'/'+str(xml_file), 'r').read()
                 getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
+                getCapabilities_base = open(getCapabilities_file, 'r+')
+                gc_lines = getCapabilities_base.readlines()
+                for idx in range(0, len(gc_lines)):
+                    if "<Contents>" in gc_lines[idx]:
+                        gc_lines[idx] = gc_lines[idx] + layer_xml
+                        print '\nAdding layers to WMTS GetCapabilities'
+                    if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
+                        gc_lines[idx] = wmts_endpoint.projection.tilematrixset_xml[2:] + '\n' + gc_lines[idx]
+                        print "\nAdding TileMatrixSet to WMTS GetCapabilities"
+                    getCapabilities_base.seek(0)
+                    getCapabilities_base.truncate()
+                    getCapabilities_base.writelines(gc_lines)        
+                getCapabilities_base.close()
+                
                 shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities)
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
