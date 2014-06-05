@@ -24,7 +24,7 @@
 * $Id$
 *
 * Project:  Meta Raster File Format Driver Implementation, Dataset
-* Purpose:  Implementation of Pile of Tile Format
+* Purpose:  Implementation of GDAL dataset
 *
 * Author:   Lucian Plesea, Lucian.Plesea@jpl.nasa.gov, lplesea@esri.com
 *
@@ -44,10 +44,27 @@
 using std::vector;
 using std::string;
 
+// Returns the size of the index for image and overlays
+// If scale is zero, only base image
+GIntBig IdxSize(const ILImage &full, const int scale=0) {
+    ILImage img=full;
+    pcount(img.pcount,img.size,img.pagesize);
+    GIntBig sz = img.pcount.l;
+    while ( scale != 0 && 1 != img.pcount.x * img.pcount.y )
+    {
+	img.size.x = pcount(img.size.x, scale);
+	img.size.y = pcount(img.size.y, scale);
+	img.size.l++;
+	pcount(img.pcount, img.size, img.pagesize);
+	sz += img.pcount.l;
+    }
+    return sz*sizeof(ILIdx);
+}
+
 GDALMRFDataset::GDALMRFDataset()
 
 {
-    ifp=dfp=0;
+    ifp.FP = dfp.FP = 0;
     pbuffer=0;
     pbsize=0;
     bdirty=0;
@@ -81,10 +98,10 @@ GDALMRFDataset::~GDALMRFDataset()
 {
     // Make sure everything gets written
     FlushCache();
-    if (ifp)
-	VSIFCloseL(ifp);
-    if (dfp)
-	VSIFCloseL(dfp);
+    if (ifp.FP)
+	VSIFCloseL(ifp.FP);
+    if (dfp.FP)
+	VSIFCloseL(dfp.FP);
     if (cds)
 	delete cds;
     if (poSrcDS)
@@ -238,7 +255,7 @@ CPLErr GDALMRFDataset::IBuildOverviews(
 
 	    // Initialize the empty overlays, all of them for a given scale
 	    // They could already exist, in which case they are not erased
-	    GIntBig idxsize = AddOverlays(int(scale));
+	    GIntBig idxsize = AddOverviews(int(scale));
 	    if (!CheckFileSize(current.idxfname, idxsize, GA_Update)) {
 		CPLError(CE_Failure,CPLE_AppDefined,"MRF: Can't extend index file");
 		return CE_Failure;
@@ -690,17 +707,17 @@ static CPLErr Init_ILImage(ILImage &image, CPLXMLNode *config, GDALMRFDataset *d
     CPLXMLNode *DataValues=CPLGetXMLNode(defimage,"DataValues");
     if (NULL!=DataValues) {
 	const char *pszValue;
-	pszValue=CPLGetXMLValue(DataValues,"NoData",0);
+	pszValue=CPLGetXMLValue(DataValues, "NoData", 0);
 	if (pszValue) ds->SetNoDataValue(pszValue);
-	pszValue=CPLGetXMLValue(DataValues,"min",0);
+	pszValue=CPLGetXMLValue(DataValues, "min", 0);
 	if (pszValue) ds->SetMinValue(pszValue);
-	pszValue=CPLGetXMLValue(DataValues,"max",0);
+	pszValue=CPLGetXMLValue(DataValues, "max", 0);
 	if (pszValue) ds->SetMaxValue(pszValue);
     }
 
     // Calculate the page size in bytes
     image.pageSizeBytes=GDALGetDataTypeSize(image.dt)/8*
-	image.pagesize.x*image.pagesize.y*image.pagesize.z*image.pagesize.c;
+	image.pagesize.x * image.pagesize.y * image.pagesize.z * image.pagesize.c;
 
     // Calculate the page count, including the total for the level
     pcount(image.pcount,image.size,image.pagesize);
@@ -708,12 +725,12 @@ static CPLErr Init_ILImage(ILImage &image, CPLXMLNode *config, GDALMRFDataset *d
     // Data File Name and offset
     image.datfname=getFname(defimage,"DataFile",ds->GetFname(),ILComp_Ext[image.comp]);
     image.dataoffset=static_cast<int>(
-	getXMLNum(CPLGetXMLNode(defimage,"DataFile"),"offset",0));
+	getXMLNum(CPLGetXMLNode(defimage,"DataFile"), "offset",0));
 
     // Index File Name and offset
-    image.idxfname=getFname(defimage,"IndexFile",ds->GetFname(),".idx");
+    image.idxfname=getFname(defimage, "IndexFile", ds->GetFname(), ".idx");
     image.idxoffset=static_cast<int>(
-	getXMLNum(CPLGetXMLNode(defimage,"IndexFile"),"offset",0));
+	getXMLNum(CPLGetXMLNode(defimage,"IndexFile"), "offset",0));
 
     return CE_None;
 }
@@ -736,28 +753,94 @@ char      **GDALMRFDataset::GetFileList()
 
 // Returns the dataset index file or null 
 VSILFILE *GDALMRFDataset::IdxFP() {
-    if (ifp != NULL) return ifp;
+    if (ifp.FP != NULL)
+	return ifp.FP;
     char *mode = "rb";
-    if (eAccess == GA_Update || !source.empty())
+    ifp.acc = GF_Read;
+
+    if (eAccess == GA_Update || !source.empty()) {
 	mode = "r+b";
-    ifp = VSIFOpenL(current.idxfname, mode );
-    if (NULL == ifp && current.comp != IL_NONE)
+	ifp.acc = GF_Write;
+    }
+    ifp.FP = VSIFOpenL(current.idxfname, mode );
+
+    // Got it open or it doesn't need one
+    if (ifp.FP || current.comp == IL_NONE)
+	return ifp.FP;
+
+    // Could be a caching MRF
+    if (source.empty()) {
 	CPLError(CE_Failure, CPLE_AppDefined,
 	"GDAL MRF: Can't open index file %s\n", current.idxfname.c_str());
-    return ifp;
+	return ifp.FP;
+    }
+
+    // This is a caching MRF, could be read only
+    mode = "rb";
+    ifp.acc = GF_Read;
+    ifp.FP = VSIFOpenL(current.idxfname.c_str(), mode);
+    if (NULL != ifp.FP)
+	return ifp.FP;
+
+    // Caching and not index file exits, try to create it
+    // Nope, try to create it, and make it large enough
+    int idx_sz = static_cast<int>(IdxSize(current, scale));
+    if (!CheckFileSize(current.idxfname.c_str(), idx_sz, GA_Update)) {
+	CPLError(CE_Failure,CPLE_AppDefined,"Can't create the cache index file");
+	return NULL;
+    }
+
+    // Try opening it again in rw mode
+    mode = "r+b";
+    ifp.acc = GF_Write;
+    ifp.FP = VSIFOpenL(current.idxfname.c_str(), mode);
+
+    // Nothing more we can do
+    if (NULL == ifp.FP)
+	CPLError(CE_Failure, CPLE_AppDefined,
+	"GDAL MRF: Can't open cache index file %s\n", current.idxfname.c_str());
+
+    return ifp.FP;
 };
 
+//
 // Returns the dataset data file or null 
+// Data file is opened either in Read or Append mode, never in straight write
+//
 VSILFILE *GDALMRFDataset::DataFP() {
-    if (dfp != NULL) return dfp;
+    if (dfp.FP != NULL)
+	return dfp.FP;
     char *mode = "rb";
-    if (eAccess == GA_Update || !source.empty())
-	mode = "r+b";
-    dfp = VSIFOpenL(current.datfname.c_str(), mode );
-    if (NULL == dfp)
+    dfp.acc = GF_Read;
+
+    // Open it for writing if updating or if caching
+    if (eAccess == GA_Update || !source.empty()) {
+	mode = "a+b";
+	dfp.acc = GF_Write;
+    }
+
+    dfp.FP = VSIFOpenL(current.datfname.c_str(), mode);
+    if (dfp.FP)
+	return dfp.FP;
+
+    // It could be a caching MRF
+    if (source.empty()) {
 	CPLError(CE_Failure, CPLE_AppDefined,
 	"GDAL MRF: Can't open data file %s\n", current.datfname.c_str());
-    return dfp;
+	return dfp.FP;
+    }
+
+    // Cloud be there but read only, remember it was open that way
+    mode = "rb";
+    dfp.acc = GF_Read;
+    dfp.FP = VSIFOpenL(current.datfname.c_str(), mode);
+    if (NULL != dfp.FP)
+	return dfp.FP;
+
+    // We should have created it above with "a+b"
+    CPLError(CE_Failure, CPLE_AppDefined,
+	"GDAL MRF: Can't open data file %s\n", current.datfname.c_str());
+    return dfp.FP;
 };
 
 /**
@@ -782,6 +865,8 @@ CPLErr GDALMRFDataset::Initialize(CPLXMLNode *config)
     // Bounding box
     CPLXMLNode *bbox = CPLGetXMLNode(config, "GeoTags.BoundingBox");
     if (NULL!=bbox) {
+	double x0,x1,y0,y1;
+
 	x0=atof(CPLGetXMLValue(bbox,"minx","0"));
 	x1=atof(CPLGetXMLValue(bbox,"maxx","1"));
 	y1=atof(CPLGetXMLValue(bbox,"maxy","1"));
@@ -830,7 +915,7 @@ CPLErr GDALMRFDataset::Initialize(CPLXMLNode *config)
     CPLXMLNode *rsets=CPLGetXMLNode(config,"Rsets");
     for (int i=1;i<=nBands;i++) {
 	// The subimages are low resolution copies of the current one.
-	GDALMRFRasterBand *band=newMRFRasterBand(this, current, i);
+	GDALMRFRasterBand *band = newMRFRasterBand(this, current, i);
 	SetBand(i,band);
 	band->SetColorInterpretation(BandInterp(nBands, i));
     }
@@ -847,7 +932,7 @@ CPLErr GDALMRFDataset::Initialize(CPLXMLNode *config)
 	    return CE_Failure;
 	}
 	// Looks like there are overlays
-	AddOverlays(int(scale));
+	AddOverviews(int(scale));
 	return CE_None;
     } else {
 	CPLError(CE_Failure, CPLE_AppDefined, "Unknown Rset definition");
@@ -872,30 +957,13 @@ GDALDataset *GDALMRFDataset::GetSrcDS() {
 	poSrcDS = (GDALDataset *) (GDALOpenShared( source.c_str(), GA_ReadOnly ));
 }
 
-// Returns the size of the index for image and overlays
-// If scale is zero, only base image
-GIntBig IdxSize(const ILImage &full, const int scale=0) {
-    ILImage img=full;
-    pcount(img.pcount,img.size,img.pagesize);
-    GIntBig sz = img.pcount.l;
-    while ( scale != 0 && 1 != img.pcount.x * img.pcount.y )
-    {
-	img.size.x = pcount(img.size.x, scale);
-	img.size.y = pcount(img.size.y, scale);
-	img.size.l++;
-	pcount(img.pcount, img.size, img.pagesize);
-	sz += img.pcount.l;
-    }
-    return sz*sizeof(ILIdx);
-}
-
 /**
 *\Brief Add or verify that all overlays exits
 *
 * @return size of the index file
 */
 
-GIntBig GDALMRFDataset::AddOverlays(int scale) {
+GIntBig GDALMRFDataset::AddOverviews(int scale) {
     // Fit the overlays
     ILImage img=full;
     do {
@@ -959,7 +1027,7 @@ GDALDataset *GDALMRFDataset::CreateCopy(const char *pszFilename,
     // Most formats can't handle more than 4 bands interleaved (JPEG,PNG)
     ILOrder ord = (nBands < 5) ? IL_Interleaved : IL_Separate;
     ILSize page(512,512,1,1);
-    int quality = -1;
+    int quality = 85;
     bool nbo=NET_ORDER;
 
     // Use the info from the input image
@@ -967,9 +1035,11 @@ GDALDataset *GDALMRFDataset::CreateCopy(const char *pszFilename,
     GDALRasterBand *poPBand=poSrcDS->GetRasterBand(1);
     GDALDataType dt=poPBand->GetRasterDataType();
 
-    // Use the blocks from the input image
+    // Use the blocks from the input image if it is reasonable, otherwise stick to the default
     int srcXBlk,srcYBlk;
     poPBand->GetBlockSize(&srcXBlk,&srcYBlk);
+    // Ignore the line blocking that TIF emulates
+    if (srcYBlk <= 2) srcYBlk=nYSize;
     if ((srcXBlk!=nXSize) && (srcYBlk!=nYSize)) {
 	page.x=srcXBlk;
 	page.y=srcYBlk;
@@ -989,11 +1059,13 @@ GDALDataset *GDALMRFDataset::CreateCopy(const char *pszFilename,
     if ( pszValue != NULL ) page.y = atoi( pszValue );
 
     // Get the quality setting
-    pszValue = CSLFetchNameValue(papszOptions,"QUALITY");
-    if ( pszValue != NULL ) quality = atoi( pszValue );
-    else quality = 85;
+    pszValue = CSLFetchNameValue(papszOptions,"QUALITY");    
+    if ( pszValue != NULL )
+	quality = atoi( pszValue );
+
     if ( quality < 0 || quality > 99 ) {
-	CPLError(CE_Warning, CPLE_AppDefined, "GDAL MRF: Quality setting should be between 0 and 99, using 85");
+	CPLError(CE_Warning, CPLE_AppDefined,
+	    "GDAL MRF: Quality setting should be between 0 and 99, using 85");
 	quality = 85;
     }
 
@@ -1008,21 +1080,18 @@ GDALDataset *GDALMRFDataset::CreateCopy(const char *pszFilename,
 	dfData=poSrcDS->GetRasterBand(i+1)->GetNoDataValue(&bHas);
 	if (bHas)
 	    NoData.append(PrintDouble(dfData) + " ");
-//	    NoData.append(CPLString().Printf(" %s",CPLString().FormatC(dfData,"%12.8f").c_str()));
     }
 
     for (int i=0; i <nBands; i++) {
 	dfData=poSrcDS->GetRasterBand(i+1)->GetMinimum(&bHas);
 	if (bHas)
 	    Min.append(PrintDouble(dfData) + " ");
-//	    Min.append(CPLString().Printf(" %s",CPLString().FormatC(dfData,"%12.8f").c_str()));
     }
 
     for (int i=0; i <nBands; i++) {
 	dfData=poSrcDS->GetRasterBand(i+1)->GetMaximum(&bHas);
 	if (bHas)
 	    Max.append(PrintDouble(dfData) + " ");
-//	    Max.append(CPLString().Printf(" %s",CPLString().FormatC(dfData,"%12.8f").c_str()));
     }
 
     // Network byte order requested?
@@ -1084,39 +1153,42 @@ GDALDataset *GDALMRFDataset::CreateCopy(const char *pszFilename,
     }
 
 #if defined(LERC)
-	if (comp==IL_LERC && ord!=IL_Separate) {
-		CPLError(CE_Warning, CPLE_AppDefined, "GDAL MRF: LERC ony handles BAND Interleave");
-		ord=IL_Separate;
-		page.c = 1;
-	}
+    if (comp==IL_LERC && ord!=IL_Separate) {
+	CPLError(CE_Warning, CPLE_AppDefined, "GDAL MRF: LERC ony handles BAND Interleave");
+	ord=IL_Separate;
+	page.c = 1;
+    }
 #endif
 
-	// Check data type
-	if ((IL_JPEG==comp) && (dt!=GDT_Byte)) {
-		CPLError(CE_Failure,CPLE_AppDefined, "GDAL MRF: JPEG compression only supports byte data");
-		return NULL;
-	} else if ((IL_PNG==comp) && (dt!=GDT_Byte) && (dt!=GDT_Int16) && (dt!=GDT_UInt16)) {
-		CPLError(CE_Failure,CPLE_AppDefined, "GDAL MRF: PNG only supports 8 and 16 bits of data, format is %s",GDALGetDataTypeName(dt));
-		return NULL;
-	}
+    // Check data type
+    if ((IL_JPEG==comp) && (dt!=GDT_Byte)) {
+	CPLError(CE_Failure,CPLE_AppDefined, "GDAL MRF: JPEG compression only supports byte data");
+	return NULL;
+    } else if ((IL_PNG==comp) && (dt!=GDT_Byte) && (dt!=GDT_Int16) && (dt!=GDT_UInt16)) {
+	CPLError(CE_Failure,CPLE_AppDefined, 
+	    "GDAL MRF: PNG only supports 8 and 16 bits of data, format is %s",GDALGetDataTypeName(dt));
+	return NULL;
+    }
 
-	CPLString fname_data(getFname(pszFilename, ILComp_Ext[comp]));
-	CPLString fname_idx(getFname(pszFilename, ".idx"));
+    CPLString fname_data(getFname(pszFilename, ILComp_Ext[comp]));
+    CPLString fname_idx(getFname(pszFilename, ".idx"));
 
-	// Get the color palette if we only have one band
-	if ( 1==nBands && GCI_PaletteIndex==poPBand->GetColorInterpretation() )
-		poColorTable=poPBand->GetColorTable()->Clone();
+    // Get the color palette if we only have one band
+    if ( 1==nBands && GCI_PaletteIndex==poPBand->GetColorInterpretation() )
+	poColorTable=poPBand->GetColorTable()->Clone();
 
-	// Check for format is PPNG and we don't have a palette
-	// TODO: create option to build a palette, using the syntax from VRT LUT
-	if (( poColorTable==NULL ) && ( comp==IL_PPNG )) {
-		comp=IL_PNG;
-		CPLError(CE_Warning,CPLE_AppDefined, "GDAL MRF: PPNG needs a palette based input, switching to PNG");
-	}
+    // Check for format is PPNG and we don't have a palette
+    // TODO: create option to build a palette, using the syntax from VRT LUT
+    if (( poColorTable==NULL ) && ( comp==IL_PPNG )) {
+	comp=IL_PNG;
+	CPLError(CE_Warning,CPLE_AppDefined, 
+	    "GDAL MRF: PPNG needs a palette based input, switching to PNG");
+    }
 
     int factor=0;
     pszValue = CSLFetchNameValue(papszOptions,"UNIFORM_OVERLAY_SCALE");
-    if ( pszValue != NULL ) factor = atoi( pszValue );
+    if ( pszValue != NULL )
+	factor = atoi( pszValue );
 
     if (!source.empty()) { // Extra stuff to worry about when caching
 
@@ -1260,8 +1332,9 @@ GDALDataset *GDALMRFDataset::CreateCopy(const char *pszFilename,
 	return poDS;
 
     // Need to flag the dataset as compressed (COMPRESSED=TRUE) to force block writes
+    // This might not be what we want, if the input and out order is separate
     char **papszCWROptions = CSLDuplicate(0);
-    papszCWROptions=CSLAddNameValue(papszCWROptions, "COMPRESSED", "TRUE");
+    papszCWROptions = CSLAddNameValue(papszCWROptions, "COMPRESSED", "TRUE");
     CPLErr err=GDALDatasetCopyWholeRaster( (GDALDatasetH) poSrcDS,
 	(GDALDatasetH) poDS, papszCWROptions, pfnProgress,
 	pProgressData);

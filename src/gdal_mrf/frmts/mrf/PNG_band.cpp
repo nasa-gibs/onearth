@@ -61,7 +61,7 @@ void pngEH(png_struct *png, png_const_charp message)
 }
 
 // Read memory handlers for PNG
-// No check for attempting to read past the end of the file
+// No check for attempting to read past the end of the buffer
 
 void read_png(png_structp pngp, png_bytep data, png_size_t length)
 {
@@ -79,8 +79,9 @@ void write_png( png_structp pngp, png_bytep data, png_size_t length) {
         mgr->buffer+=length;
         mgr->size-=length;
     } else {
+	// This is a bad error actually, but we can't report errors
         CPLError(CE_Warning,CPLE_AppDefined,
-            "MRF: PNG Write buffer too small, truncating");
+            "MRF: PNG Write buffer too small!!");
         memcpy(mgr->buffer,data,mgr->size);
         mgr->buffer+=mgr->size;
         mgr->size=0;
@@ -89,20 +90,15 @@ void write_png( png_structp pngp, png_bytep data, png_size_t length) {
 
 /**
  *\brief In memory decompression of PNG file
- *
- * @param data pointer to output buffer 
- * @param png pointer to PNG in memory
- * @param sz if non-zero, test that uncompressed data fits in the buffer.
  */
 
-// CPLErr GDALMRFRasterBand::DecompressPNG(buf_mgr &dst, buf_mgr &src) 
 CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src) 
 {
     png_bytep *png_rowp;
 
     // pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING,0,pngEH,pngWH);
     png_structp pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if ( 0 == pngp) {
+    if (0 == pngp) {
         CPLError(CE_Failure,CPLE_AppDefined,"MRF: Error creating PNG decompress");
         return CE_Failure;
     }
@@ -166,14 +162,13 @@ CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src)
 
 /**
  *\Brief Compres a page in PNG format
- * Returns the compressed size in dest.size
+ * Returns the compressed size in dst.size
  *
  */
 
 CPLErr PNG_Band::CompressPNG(buf_mgr &dst, buf_mgr &src) 
 
 {
-
     png_structp pngp;
     png_infop infop;
     buf_mgr mgr=dst;

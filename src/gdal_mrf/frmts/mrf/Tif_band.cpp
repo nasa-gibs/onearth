@@ -35,12 +35,19 @@
 // It is not completely safe, open the result as soon as possible
 CPLString uniq_memfname(const char *prefix)
 {
+
+// Define MRF_LOCAL_TMP to use local files instead of RAM
+// #define MRF_LOCAL_TMP
+#if defined(MRF_LOCAL_TMP)
+    return CPLGenerateTempFilename(prefix);
+#else
     CPLString fname;
     VSIStatBufL statb;
     static unsigned int cnt=0;
     do fname.Printf("/vsimem/%s_%08x",prefix, cnt++);
     while (!VSIStatL(fname, &statb));
     return fname;
+#endif
 }
 
 //
@@ -50,22 +57,9 @@ CPLString uniq_memfname(const char *prefix)
 CPLErr CompressTIF(buf_mgr &dst, buf_mgr &src, const ILImage &img, char **papszOptions)
 {
     CPLErr ret;
-    CPLString fname;
     GDALDriver *poTiffDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     VSIStatBufL statb;
-    // No point to check return or capabilities, GDAL had geotiff
-
-// #define MRF_LOCAL_TMP
-// Define MRF_LOCAL_TMP to use local files instead of RAM
-#if defined(MRF_LOCAL_TMP)
-    // This is a good alternative but uses the local temp folder
-    fname = CPLGenerateTempFilename("mrf_tif_write");
-#else
-    // This is troublesome, filenames are not guaranteed to be unique
-    // But it is in memory, so it is likely to be faster
-    fname = uniq_memfname("mrf_tif_write");
-#endif
-
+    CPLString fname = uniq_memfname("mrf_tif_write");
 
     GDALDataset *poTiff = poTiffDriver->Create(fname, img.pagesize.x, img.pagesize.y,
 	img.pagesize.c, img.dt, papszOptions );
@@ -80,23 +74,20 @@ CPLErr CompressTIF(buf_mgr &dst, buf_mgr &src, const ILImage &img, char **papszO
 	    NULL, 0,0,0);
     }
     if (CE_None != ret)	return ret;
-
-    // poTiff->FlushCache();
-    // Delete flushes and closes the file
     GDALClose(poTiff);
 
-    // Check that we can could read the file
+    // Check that we can read the file
     if (VSIStatL(fname, &statb))
     {
 	CPLError(CE_Failure,CPLE_AppDefined,
-	    CPLString().Printf("MRF: TIFF, cant stat %s", fname.c_str()));
+	    CPLString().Printf("MRF: TIFF, can't stat %s", fname.c_str()));
         return CE_Failure;
     }
 
     if (statb.st_size > dst.size)
     {
 	CPLError(CE_Failure,CPLE_AppDefined,
-	    CPLString().Printf("MRF: TIFF, Tiff too large"));
+	    CPLString().Printf("MRF: TIFF, Tiff generated is too large"));
         return CE_Failure;
     }
 
@@ -104,18 +95,14 @@ CPLErr CompressTIF(buf_mgr &dst, buf_mgr &src, const ILImage &img, char **papszO
     if (pf == NULL)
     {
 	CPLError(CE_Failure,CPLE_AppDefined,
-	    CPLString().Printf("MRF: TIFF, cant open %s", fname.c_str()));
+	    CPLString().Printf("MRF: TIFF, can't open %s", fname.c_str()));
         return CE_Failure;
     }
     
     VSIFReadL(dst.buffer, statb.st_size, 1, pf);
     dst.size = statb.st_size;
     VSIFCloseL(pf);
-    if (VSIUnlink(fname)) {
-	CPLError(CE_Failure,CPLE_AppDefined,
-	    CPLString().Printf("MRF: TIFF, cant unlink"));
-        return CE_Failure;
-    }
+    VSIUnlink(fname);
 
     return CE_None;
 }
@@ -125,16 +112,18 @@ CPLErr DecompressTIF(buf_mgr &dst, buf_mgr &src, const ILImage &img)
 {
     CPLString fname = uniq_memfname("mrf_tif_read");
     VSILFILE *fp = VSIFileFromMemBuffer(fname, (GByte *)(src.buffer), src.size, false);
-    if (fp) VSIFCloseL(fp);
+    // Comes back opened, but we can't use it
+    if (fp)
+	VSIFCloseL(fp);
     else {
 	CPLError(CE_Failure,CPLE_AppDefined,
-	    CPLString().Printf("MRF: TIFF, cant open %s as a temp file", fname.c_str()));
+	    CPLString().Printf("MRF: TIFF, can't open %s as a temp file", fname.c_str()));
         return CE_Failure;
     }
     GDALDataset *poTiff = reinterpret_cast<GDALDataset*>(GDALOpen(fname, GA_ReadOnly));
     if (!fp) {
 	CPLError(CE_Failure,CPLE_AppDefined,
-	    CPLString().Printf("MRF: TIFF, cant open page as a Tiff"));
+	    CPLString().Printf("MRF: TIFF, can't open page as a Tiff"));
         return CE_Failure;
     }
 
@@ -147,19 +136,11 @@ CPLErr DecompressTIF(buf_mgr &dst, buf_mgr &src, const ILImage &img)
 	    dst.buffer, img.pagesize.x, img.pagesize.y, img.dt, img.pagesize.c, 
 	    NULL, 0,0,0);
     }
-
+    GDALClose(poTiff);
     if (CE_None != ret)
 	return ret;
 
-    GDALClose(poTiff);
-
-    // This just removes the reference from vmem, the buffer stays allocated
     VSIUnlink(fname);
-
-    char **dirlist = CPLReadDir("/vsimem/");
-    CSLPrint(dirlist,stdout);
-    CSLDestroy(dirlist);
-
     return CE_None;
 }
 
@@ -167,6 +148,7 @@ CPLErr TIF_Band::Decompress(buf_mgr &dst, buf_mgr &src)
 { 
     return DecompressTIF(dst, src, img);
 }
+
 CPLErr TIF_Band::Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img) 
 { 
     return CompressTIF(dst,src,img, papszOptions); 
@@ -193,3 +175,4 @@ TIF_Band::~TIF_Band()
 {
     CSLDestroy(papszOptions);
 };
+

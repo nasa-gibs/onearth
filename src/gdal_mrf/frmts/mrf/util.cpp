@@ -304,7 +304,7 @@ GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *pDS, const ILImage &image, i
 
 {
     GDALMRFRasterBand *bnd;
-    switch(pDS->current.comp) 
+    switch(pDS->current.comp)
     {
     case IL_PPNG: // Uses the PNG code, just has a palette in each PNG
     case IL_PNG:  bnd = new PNG_Band(pDS,image,b,level); break;
@@ -313,7 +313,7 @@ GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *pDS, const ILImage &image, i
     case IL_ZLIB: bnd = new ZLIB_Band(pDS,image,b,level); break;
     case IL_TIF:  bnd = new TIF_Band(pDS,image,b,level); break;
 #if defined(LERC)
-	case IL_LERC: bnd = new LERC_Band(pDS,image,b,level); break;
+    case IL_LERC: bnd = new LERC_Band(pDS,image,b,level); break;
 #endif
     default:
         return NULL;

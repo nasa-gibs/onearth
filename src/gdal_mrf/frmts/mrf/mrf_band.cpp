@@ -103,7 +103,7 @@ GDALMRFRasterBand::GDALMRFRasterBand(GDALMRFDataset *parent_dataset,
     nBlockYSize = img.pagesize.y;
     nBlocksPerRow = img.pcount.x;
     nBlocksPerColumn = img.pcount.y;
-    dfp = ifp = NULL;
+    dfp.FP = ifp.FP = NULL;
     img.NoDataValue = GetNoDataValue( &img.hasNoData);
 }
 
@@ -177,32 +177,78 @@ double GDALMRFRasterBand::GetMaximum(int *pbSuccess)
 *\brief Fills a buffer with no data
 *
 */
-CPLErr GDALMRFRasterBand::IFillBlock(void *buffer)
+CPLErr GDALMRFRasterBand::FillBlock(void *buffer)
 {
     if ((eDataType == GDT_Byte) && poDS->vNoData.size())
-	memset(buffer, (char) GetNoDataValue(0), blockSizeBytes());
+	memset(buffer, (char) GetNoDataValue(NULL), blockSizeBytes());
     else
 	memset(buffer, 0, blockSizeBytes());
     return CE_None;
 }
 
+/*\brief Interleave block read
+ *
+ *  Acquire space for all the other bands, unpack there, then drop the locks
+ *  The current band output goes directly into the buffer
+ */
+
+CPLErr GDALMRFRasterBand::RB(int xblk, int yblk, buf_mgr src, void *buffer) {
+    vector<GDALRasterBlock *> blocks;
+
+    // Get 
+    for (int i = 0; i<poDS->nBands; i++) {
+	GDALRasterBand *b = poDS->GetRasterBand(i+1);
+	if (b->GetOverviewCount() && m_l)
+	    b = b->GetOverview(m_l-1);
+
+	void *ob = buffer;
+	// Get the other band blocks, keep them around until later
+	if (b != this)
+	{
+	    GDALRasterBlock *poBlock = b->GetLockedBlockRef(xblk, yblk, 1);
+	    ob = poBlock->GetDataRef();
+	    blocks.push_back(poBlock);
+	} 
+
+	// Just the right mix of templates and macros make deinterleaving tidy
+#define CpySI(T) cpy_stride_in<T> (buffer, (T *)poDS->pbuffer + i,\
+    blockSizeBytes()/sizeof(T), img.pagesize.c)
+
+	// Page is already in poDS->pbuffer, not empty
+	switch (GDALGetDataTypeSize(eDataType)/8)
+	{
+	case 1: CpySI(GByte); break;
+	case 2: CpySI(GInt16); break;
+	case 4: CpySI(GInt32); break;
+	case 8: CpySI(GIntBig); break;
+	}
+    }
+
+    // Drop the locks we acquired
+    for (int i=0; i<blocks.size(); i++)
+	blocks[i]->DropLock();
+
+    return CE_None;
+}
+
 /**
-*\brief Fetch a block from the backing store dataset and make a copy in the cache
+*\brief Fetch a block from the backing store dataset and keep a copy in the cache
 *
 * @xblk The X block number, zero based
 * @yblk The Y block number, zero based
 * @param tinfo The return, updated tinfo for this specific tile
 *
 */
-CPLErr GDALMRFRasterBand::IFetchBlock(int xblk, int yblk)
+CPLErr GDALMRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
 
 {
-    CPLDebug("MRF_IB","IFetchBlock %d,%d,0,%d, level  %d\n",xblk,yblk,m_band,m_l);
+    CPLDebug("MRF_IB","FetchBlock %d,%d,0,%d, level  %d\n", xblk, yblk, m_band, m_l);
 
     GDALDataset *poSrcDS;
     GInt32 cstride = img.pagesize.c;
     ILSize req(xblk, yblk, 0, m_band/cstride, m_l);
 
+    // Paranoid checks, should never happen
     if (poDS->source.empty()) {
 	CPLError( CE_Failure, CPLE_AppDefined, "MRF: No cached source image to fetch from");
 	return CE_Failure;
@@ -212,20 +258,19 @@ CPLErr GDALMRFRasterBand::IFetchBlock(int xblk, int yblk)
 	return CE_Failure;
     }
 
-    // Mark the current buffer as invalid
-    poDS->tile=ILSize();
-
     // Scale to base resolution
     double scl = pow(poDS->scale, m_l);
-    if (0 == m_l) scl = 1; // No scaling for base level
-    // How many bytes does a single band take
+    if ( 0 == m_l )
+	scl = 1; // To allow for precision issues
+
+    // Prepare parameters for RasterIO, they might be different from a full page
     int vsz = GDALGetDataTypeSize(eDataType)/8;
     int Xoff = xblk * img.pagesize.x * scl;
     int Yoff = yblk * img.pagesize.y * scl;
     int readszx = img.pagesize.x * scl;
     int readszy = img.pagesize.y * scl;
 
-    // Compare with the full size and clip if needed
+    // Compare with the full size and clip to the right and bottom if needed
     int clip=0;
     if (Xoff + readszx > poDS->full.size.x) {
 	clip |= 1;
@@ -236,25 +281,22 @@ CPLErr GDALMRFRasterBand::IFetchBlock(int xblk, int yblk)
 	readszy = poDS->full.size.y - Yoff;
     }
 
-    // Fill buffer with NoData if clipping
-    if (clip)
-	IFillBlock(poDS->pbuffer);
+    void *ob = buffer;
+    if (cstride != 1) 
+	poDS->pbuffer;
 
-    // Which bands to read
-    int *panBandMap = new int[cstride];
-    for (int i=0 ; i < cstride; i++)
-	panBandMap[i] = m_band + i + 1;
+    // Fill buffer with NoData if clipping
+    if (clip) 
+	FillBlock(ob);
 
     // Use the dataset RasterIO if reading all bands
     CPLErr ret = poSrcDS->RasterIO( GF_Read, Xoff, Yoff, readszx, readszy,
 	poDS->pbuffer, pcount(readszx, int(scl)), pcount(readszy, int(scl)),
-	eDataType, cstride, panBandMap,
+	eDataType, cstride, NULL,
 	// pixel, line, band stride
 	vsz * img.pagesize.c,
 	vsz * img.pagesize.c * img.pagesize.x, 
 	vsz * img.pagesize.c * img.pagesize.x * img.pagesize.y );
-
-    delete[] panBandMap;
 
     if (ret != CE_None)
 	return ret;
@@ -269,9 +311,9 @@ CPLErr GDALMRFRasterBand::IFetchBlock(int xblk, int yblk)
 	return WriteTile(req, (void *)1, 0);
 
     // Write the page in the local cache
-    buf_mgr src={(char *)poDS->pbuffer, img.pageSizeBytes};
+    buf_mgr fdest={(char *)ob, img.pageSizeBytes};
 
-    // Have to use a separate buffer.  We should make this one permanent too.
+    // Have to use a separate buffer for compression output.
     void *outbuff = CPLMalloc(poDS->pbsize);
 
     if (!outbuff) {
@@ -282,149 +324,109 @@ CPLErr GDALMRFRasterBand::IFetchBlock(int xblk, int yblk)
     }
 
     buf_mgr dst={(char *)outbuff, poDS->pbsize};
-    Compress(dst, src, img);
+    Compress(dst, fdest, img);
 
     // Update the tile index here
     ret = WriteTile(req, outbuff, dst.size);
     CPLFree(outbuff);
 
-    return ret;
+    if (ret != CE_None || cstride == 1)
+	return ret;
+
+    // data is already in dst buffer, deinterlace it in pixel blocks
+    return RB(xblk, yblk, dst, buffer);
 }
+
 
 /**
 *\brief read a block in the provided buffer
 * 
-*  For separate band model, the DS buffer is not used, the read is direct
+*  For separate band model, the DS buffer is not used, the read is direct in the buffer
 *  For pixel interleaved model, the DS buffer holds the temp copy
-*  and all the other bands are forced read.
+*  and all the other bands are force read
 *
 */
-CPLErr GDALMRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
 
+CPLErr GDALMRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
 {
     ILIdx tinfo;
     GInt32 cstride=img.pagesize.c;
     ILSize req(xblk,yblk,0,m_band/cstride,m_l);
-    VSILFILE *dfp=DataFP();
+    VSILFILE *dfp = DataFP();
 
+    // No data file to read from
     if (dfp == NULL)
 	return CE_Failure;
 
     CPLDebug("MRF_IB","IReadBlock %d,%d,0,%d, level  %d\n",xblk,yblk,m_band,m_l);
 
-    // Size of the buffer is the size of a page for a single band, single slice
-    // If a new page needs to be read and decompressed, do this:
-    if ((req.x!=poDS->tile.x || req.y!=poDS->tile.y || req.z!=poDS->tile.z || req.l!=poDS->tile.l)
-	|| (1 == cstride && req.c != m_band)
-	)
-    {
-	if (CE_None != ReadTileIdx(req, tinfo)) {
-	    CPLError( CE_Failure, CPLE_AppDefined,
-		"MRF: Unable to read index at offset %lld", IdxOffset(req, img));
-	    return CE_Failure;
-	}
-
-	CPLDebug("MRF_IB","Tinfo offset %lld, size %lld\n", tinfo.offset, tinfo.size);
-	// No source or tinfo.offset != 0 means there is no reason to check the source
-	if (0 == tinfo.size) {
-	    // since the pmDS->tile hasn't changed, each empty band will
-	    // just read the tile info and return
-	    if ( 0 != tinfo.offset || poDS->source.empty() || GA_Update == poDS->eAccess )
-		return IFillBlock(buffer);
-
-	    if (CE_None != IFetchBlock(xblk, yblk)) {
-		CPLError(CE_Failure, CPLE_AppDefined, "MRF: Unable to fetch data page, %d@%d",xblk ,yblk);
-		return CE_Failure;
-	    }
-
-	    // Try again, after the fetch
-	    return IReadBlock(xblk, yblk, buffer);
-	}
-
-
-	// Should use a permanent IO buffer to avoid repeated allocations
-	void *data = CPLMalloc(tinfo.size);
-	VSIFSeekL(dfp, tinfo.offset, SEEK_SET);
-	if (1 != VSIFReadL(data, tinfo.size, 1, dfp)) {
-	    CPLFree(data);
-	    CPLError(CE_Failure, CPLE_AppDefined, "Unable to read data page, %lld@%lld",
-		tinfo.size, tinfo.offset);
-	    return CE_Failure;
-	}
-
-	// We got the data, mark the buffer as invalid for now
-	if (1!=cstride)
-	    poDS->tile=ILSize();
-	CPLErr ret;
-
-	buf_mgr src={(char *)data, tinfo.size};
-
-	// For reading, the size has to be pageSizeBytes
-	buf_mgr dst={(char *)poDS->pbuffer, img.pageSizeBytes};
-
-	// If pages are separate, uncompress directly in output buffer
-	if (1==cstride)
-	    dst.buffer=(char *)buffer;
-
-	ret = Decompress(dst, src);
-	if (CE_None!=ret)
-	    return ret;
-
-	dst.size = img.pageSizeBytes; // In case decompress failed, force it back
-
-	// Swap whatever we decompressed if we need to
-	if (is_Endianess_Dependent(img.dt,img.comp)&&(img.nbo!=NET_ORDER)) 
-	    swab_buff(dst, img);
-
-	// Safe if null
-	CPLFree(data);
-
-	// If pages are separate, we're done, the read was in the output buffer
-	if (1==cstride)
-	    return CE_None;
-
-	// Got the page correctly, so let the other bands know
-	poDS->tile = req;
-
-	// Force load of the other bands only if the order is interleaved,
-	// they are already unpacked in the DS pbuffer
-	for (int i=1; i<poDS->nBands; i++) {
-	    GDALRasterBand *b = poDS->GetRasterBand(i+1);
-	    if (b->GetOverviewCount() && m_l)
-		b = b->GetOverview(m_l -1);
-	    GDALRasterBlock *poBlock = b->GetLockedBlockRef(xblk, yblk);
-	    poBlock->DropLock();
-	}
-    }
-
-    int boffset = (1==cstride)? 0:m_band;
-    // If the stride is 1, offset is allways 0, also buffer is only valid once
-    if (1 == cstride) {
-	boffset = 0;
-	poDS->tile=ILSize();
-    }
-
-    // Just the right mix of templates and macros make unpacking real tidy
-#define CpySI(T) cpy_stride_in<T> (buffer,(T *)poDS->pbuffer + boffset, \
-    blockSizeBytes()/sizeof(T),cstride)
-
-    // Page is already in poDS->pbuffer, not empty
-    switch (GDALGetDataTypeSize(eDataType)/8) {
-    case 1: CpySI(GByte); break;
-    case 2: CpySI(GInt16); break;
-    case 4: CpySI(GInt32); break;
-    case 8: CpySI(GIntBig); break;
-    default:
-	CPLError(CE_Failure,CPLE_AppDefined, "MRF: Datatype of size %d not implemented",
-	    GDALGetDataTypeSize(eDataType)/8);
+    if (CE_None != ReadTileIdx(req, tinfo)) {
+	CPLError( CE_Failure, CPLE_AppDefined,
+	    "MRF: Unable to read index at offset %lld", IdxOffset(req, img));
 	return CE_Failure;
     }
-    return CE_None;
+
+    CPLDebug("MRF_IB","Tinfo offset %lld, size %lld\n", tinfo.offset, tinfo.size);
+    // If we have a tile, read it
+
+    if (0 == tinfo.size) { // Could be missing or it could be caching
+	// Offset != 0 means no data, Update mode is for local MRFs only
+	// if caching index mode is RO don't try to fetch
+	// Also, caching MRFs can't be opened in update mode
+	if ( 0 != tinfo.offset || GA_Update == poDS->eAccess 
+	    || poDS->source.empty() || IdxMode() == GF_Read )
+	    return FillBlock(buffer);
+
+	// We might have a tile, return the fetched one
+	return FetchBlock(xblk, yblk, buffer);
+    }
+
+    // Should use a permanent buffer, like the pbuffer mechanism
+    void *data = CPLMalloc(tinfo.size);
+
+    // This part is not thread safe, but it is OK for GDAL
+    VSIFSeekL(dfp, tinfo.offset, SEEK_SET);
+    if (1 != VSIFReadL(data, tinfo.size, 1, dfp)) {
+	CPLFree(data);
+	CPLError(CE_Failure, CPLE_AppDefined, "Unable to read data page, %lld@%lld",
+	    tinfo.size, tinfo.offset);
+	return CE_Failure;
+    }
+
+    // We got the data, mark the buffer as invalid for now
+    buf_mgr src={(char *)data, tinfo.size};
+
+    // For reading, the size has to be pageSizeBytes
+    buf_mgr dst={(char *)buffer, img.pageSizeBytes};
+
+    // If pages are interleaved, use the dataset page buffer
+    if (1!=cstride)
+	dst.buffer = (char *)poDS->pbuffer;
+
+    CPLErr ret = Decompress(dst, src);
+    dst.size = img.pageSizeBytes; // In case the decompress failed, force it back
+    CPLFree(data);
+
+    // Swap whatever we decompressed if we need to
+    if (is_Endianess_Dependent(img.dt,img.comp) && (img.nbo != NET_ORDER) ) 
+	swab_buff(dst, img);
+
+    // If pages are separate, we're done, the read was in the output buffer
+    if ( 1 == cstride || CE_None != ret)
+	return ret;
+
+    // De-interleave page and return
+    return RB(xblk, yblk, dst, buffer);
 }
 
 // Write a tile at the end of the data file.
 // If buff and size are zero, it is equivalent to erasing the info
 // If only size is zero, it is a special empty tile, offset should be 1
+
+// To make it processor safe, we can either use write lock
+// Alternatively, verify the output should be pretty consistent
+// would be better if we can open the file in append mode
+//
 CPLErr GDALMRFRasterBand::WriteTile(const ILSize &pos, void *buff=0, size_t size=0) 
 
 {
@@ -433,14 +435,45 @@ CPLErr GDALMRFRasterBand::WriteTile(const ILSize &pos, void *buff=0, size_t size
     VSILFILE *dfp=DataFP();
     VSILFILE *ifp=IdxFP();
 
+    // Convert to native format
+    tinfo.size = net64(size);
     // This is the critical section for concurrent writes.
-    // There is no file lock support in VSI
     if (size) {
-	VSIFSeekL(dfp, 0, SEEK_END);
-	tinfo.offset = net64(VSIFTellL(dfp));
-	tinfo.size = net64(size);
-	if (size != VSIFWriteL(buff, 1, size, dfp))
-	    ret=CE_Failure;
+	// Pointer to verfiy buffer, if it doesn't exist everythign worked fine
+	void *tbuff = 0;
+	do {
+
+	    // The next lines plus the Flush below are the critical MP section
+	    VSIFSeekL(dfp, 0, SEEK_END);
+	    tinfo.offset = net64(VSIFTellL(dfp));
+	    if (size != VSIFWriteL(buff, 1, size, dfp))
+		ret=CE_Failure;
+
+	    //
+	    // If caching, flush and check that we can read it back, otherwise we're done
+	    // This makes the caching MRF MP safe, without using locks
+	    //
+	    if ( poDS->GetSrcDS() ) {
+		// Assume we failed
+		VSIFFlushL(dfp);
+		// Allocate the temp buffer if we haven't done so already
+		// This marks the check as failed
+		if (!tbuff)
+		    tbuff == CPLMalloc(size);
+		VSIFSeekL(dfp, tinfo.offset, SEEK_SET);
+		VSIFReadL(tbuff, 1, size, dfp);
+		// If memcmp returns zero, verify passed
+		if (!memcmp(buff,tbuff,size)) {
+		    CPLFree(tbuff);
+		    tbuff=NULL;
+		}
+		// Otherwise the tbuf stays allocated and try to write again
+		// This works best if the file is opened in append mode
+	    }
+
+	} while (tbuff);
+
+	// At this point, the data is in the datafile
     }
 
     // Special case
@@ -451,11 +484,11 @@ CPLErr GDALMRFRasterBand::WriteTile(const ILSize &pos, void *buff=0, size_t size
     VSIFSeekL(ifp, IdxOffset(pos, img), SEEK_SET);
     if (sizeof(tinfo) != VSIFWriteL(&tinfo, 1, sizeof(tinfo), ifp))
 	ret=CE_Failure;
+
     // Flush if this is a caching MRF
-    if (poDS->GetSrcDS()) {
-	VSIFFlushL(dfp);
+    if (poDS->GetSrcDS())
 	VSIFFlushL(ifp);
-    }
+
     return ret;
 };
 
@@ -505,6 +538,9 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
     // Multiple bands per page, we use the pbuffer to assemble the page
     poDS->tile=req; poDS->bdirty=0;
 
+    // Keep track of what bands are empty
+    GUIntBig empties=0;
+
     // Get the other bands from the block cache
     for (int iBand=0; iBand < poDS->nBands; iBand++ )
     {
@@ -522,17 +558,18 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 	    poBlock = ((GDALMRFRasterBand *)band)
 		->TryGetLockedBlockRef(xblk, yblk);
 	    if (NULL==poBlock) continue;
-	    // This should never happen, we can't have clean bands in this block
-	    if (!poBlock->GetDirty())
-	    {
-		poBlock->DropLock();
-		continue;
-	    }
-
 	    // This is where the image data is for this band
+
 	    pabyThisImage = (char*) poBlock->GetDataRef();
 	    poDS->bdirty|=bandbit(iBand);
 	}
+
+	// Keep track of empty bands, but encode them, in case some are not empty
+	if ((eDataType == GDT_Byte) && poDS->vNoData.size()) {
+	    if (is_empty((char *)poDS->pbuffer, img.pageSizeBytes, (char)GetNoDataValue(0)))
+		empties |= bandbit();
+        } else if (is_zero((char *)poDS->pbuffer, img.pageSizeBytes))
+	    empties |= bandbit();
 
 	// Copy the data into the dataset buffer here
 	// Just the right mix of templates and macros make this real tidy
@@ -551,7 +588,6 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 			"not implemented", GDALGetDataTypeSize(eDataType)/8);
 		return CE_Failure;
 	}
-#undef CpySO
 
 	if (poBlock != NULL)
 	{
@@ -560,6 +596,9 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 	}
     }
 
+    if (empties == AllBandMask())
+	return WriteTile(req, 0, 0);
+
     // Gets written on flush
     if (poDS->bdirty != AllBandMask())
 	CPLError(CE_Warning, CPLE_AppDefined,
@@ -567,17 +606,6 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 	poDS->bdirty, AllBandMask());
 
     //    ppmWrite("test.ppm",(char *)poDS->pbuffer,ILSize(nBlockXSize,nBlockYSize,0,poDS->nBands));
-
-    // Skip writing if the tile is nodata or if it is zeros
-    if ((eDataType == GDT_Byte) && poDS->vNoData.size()) {
-	if (is_empty((char *)poDS->pbuffer, img.pageSizeBytes, (char)GetNoDataValue(0))) {
-	    poDS->bdirty=0;
-	    return WriteTile(req, 0, 0);
-	}
-    } else if (is_zero((char *)poDS->pbuffer, img.pageSizeBytes)) {
-	poDS->bdirty = 0;
-	return WriteTile(req, 0, 0);
-    }
 
     buf_mgr src={(char *)poDS->pbuffer, img.pageSizeBytes};
 
@@ -603,7 +631,8 @@ CPLErr GDALMRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 /**
 *\brief Read a tile index, convert it to the host endianess
 *
-*
+* It handles the non-existent index case, for no compression
+* 
 */
 
 CPLErr GDALMRFRasterBand::ReadTileIdx(const ILSize &pos,ILIdx &tinfo) 
@@ -611,11 +640,16 @@ CPLErr GDALMRFRasterBand::ReadTileIdx(const ILSize &pos,ILIdx &tinfo)
 {
     VSILFILE *ifp = IdxFP();
     GIntBig offset = IdxOffset(pos, img);
+    if (ifp == NULL && img.comp == IL_NONE) {
+	tinfo.size = pageSizeBytes();
+	tinfo.offset = offset * tinfo.size;
+	return CE_None;
+    }
     VSIFSeekL(ifp, offset, SEEK_SET);
     if (1 != VSIFReadL(&tinfo, sizeof(ILIdx), 1, ifp))
 	return CE_Failure;
-    tinfo.offset=net64(tinfo.offset);
-    tinfo.size=net64(tinfo.size);
+    tinfo.offset = net64(tinfo.offset);
+    tinfo.size   = net64(tinfo.size);
     return CE_None;
 }
 

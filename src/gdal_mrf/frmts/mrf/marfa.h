@@ -3,7 +3,7 @@
  *
  * Project:  Meta Raster Format
  * Purpose:  MRF structures
- * Author:   Lucian Plesea, Lucian.Plesea@jpl.nasa.gov
+ * Author:   Lucian Plesea
  *
  ******************************************************************************
  * 
@@ -164,7 +164,7 @@ static inline unsigned long long int swab64(const unsigned long long int val)
 
 #ifdef WORDS_BIGENDIAN
 #define NET_ORDER true
-// These could be macros, but for the side effects
+// These could be macros, but for the side effects related to type
 static inline unsigned short net16(const unsigned short x)
 {
 	return (x);
@@ -206,9 +206,9 @@ GDALColorEntry HSVSwap(const GDALColorEntry& cein);
 // checks that the file exists and is at least sz, if access is update it extends it
 int CheckFileSize(const char *fname, GIntBig sz, GDALAccess eAccess);
 
-// Number of pages of size psz needed to hold tsz elements
-inline int pcount(const int tsz, const int psz) {
-    return (tsz-1) / psz +1;
+// Number of pages of size psz needed to hold n elements
+inline int pcount(const int n, const int sz) {
+    return (n-1) / sz +1;
 }
 
 // Total page count for a given image, pos is in pages
@@ -217,20 +217,27 @@ inline int pcount(const ILSize &pages) {
 }
 
 // Set up page count
-static inline void pcount(ILSize &pages, const ILSize &size, const ILSize &psz) {
-    pages.x=pcount(size.x,psz.x);
-    pages.y=pcount(size.y,psz.y);
-    pages.c=pcount(size.c,psz.c);
-    pages.z=pcount(size.z,psz.z);
-    pages.l=pcount(pages);
+inline void pcount(ILSize &pages, const ILSize &size, const ILSize &psz) {
+    pages.x = pcount(size.x,psz.x);
+    pages.y = pcount(size.y,psz.y);
+    pages.c = pcount(size.c,psz.c);
+    pages.z = pcount(size.z,psz.z);
+    // since pages don't have overviews, use it to hold total number of pages
+    pages.l = pcount(pages);
 }
+
+// Wrapper around the VISFile, remembers how the file was opened
+typedef struct {
+    VSILFILE *FP;
+    GDALRWFlag acc;
+} VF;
 
 // Offset of index, pos is in pages
 GIntBig IdxOffset(const ILSize &pos,const ILImage &img);
 
 class GDALMRFDataset : public GDALPamDataset {
     friend class GDALMRFRasterBand;
-    friend GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *pDS, const ILImage &image,int b, int level=0);
+    friend GDALMRFRasterBand *newMRFRasterBand(GDALMRFDataset *, const ILImage &, int, int level=0);
 
 public:
     GDALMRFDataset();
@@ -276,7 +283,7 @@ protected:
     CPLErr Initialize(CPLXMLNode *);
     CPLErr CleanOverviews(void);
     // Add uniform scaled overlays, returns the size of the index file
-    GIntBig AddOverlays(int scale);
+    GIntBig AddOverviews(int scale);
 
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
 	void *, int, int, GDALDataType,
@@ -287,6 +294,8 @@ protected:
 
     VSILFILE *IdxFP();
     VSILFILE *DataFP();
+    GDALRWFlag IdxMode() { return ifp.acc; };
+    GDALRWFlag DataMode() { return dfp.acc; };
     GDALDataset *GetSrcDS();
 
     /*
@@ -322,9 +331,8 @@ protected:
     GDALMRFDataset *cds;
     double scale;
 
-    // uncompressed buffer size
+    // A place to keep an uncompressed block, to keep from allocating it
     unsigned int pbsize;
-    // A place to keep the current uncompressed block
     void *pbuffer;
 
     ILSize tile; // ID of tile present in buffer
@@ -335,7 +343,6 @@ protected:
     // GeoTransform support
     double GeoTransform[6];
     int bGeoTransformValid;
-    double x0,x1,y0,y1;
 
     char *pszProjection;
     int bProjectionValid;
@@ -343,10 +350,10 @@ protected:
     GDALColorTable *poColorTable;
     int Quality;
 
-    // Default data file
-    VSILFILE *dfp;
-    // Default index file
-    VSILFILE *ifp;
+    // Default data file and access
+    VF dfp;
+    // Default index file and access
+    VF ifp;
 
     std::vector<double> vNoData,vMin,vMax;
 };
@@ -363,8 +370,15 @@ public:
     virtual double  GetNoDataValue(int * pbSuccess);
     virtual double  GetMinimum(int *);
     virtual double  GetMaximum(int *);
-    virtual CPLErr IFetchBlock(int xblk, int yblk);
-    virtual CPLErr IFillBlock(void *buffer);
+
+    // These two are MRF specific, fetch is from a remote source
+    CPLErr FetchBlock(int xblk, int yblk, void *buffer = NULL);
+    // Block not stored on disk
+    CPLErr FillBlock(void *buffer);
+
+    // de-interlace a buffer in pixel blocks
+    CPLErr RB(int xblk, int yblk, buf_mgr src, void *buffer);
+
     const char *GetOptionValue(const char *opt, const char *def);
     const ILImage *GetImage();
     void SetAccess( GDALAccess eA) { 
@@ -379,25 +393,36 @@ protected:
     GInt32 m_l;
     // The info about the current image, to enable R-sets
     ILImage img;
-    VSILFILE *dfp;
-    VSILFILE *ifp;
+//    VSILFILE *dfp;
+//    VSILFILE *ifp;
+    VF dfp;
+    VF ifp;
     std::vector<GDALMRFRasterBand *> overviews;
     int overview;
 
     VSILFILE *IdxFP() {
-        if (ifp != NULL) 
-        return ifp;
+        if (ifp.FP != NULL) 
+	    return ifp.FP;
     // Return and keep track of the parent one
-        return ifp = poDS->IdxFP();
+	ifp.FP = poDS->IdxFP();
+	ifp.acc = poDS->IdxMode();
+        return ifp.FP;
     }
 
     VSILFILE *DataFP() {
-        if (dfp != NULL) 
-            return dfp;
-        return dfp = poDS->DataFP(); 
+        if (dfp.FP != NULL) 
+            return dfp.FP;
+	dfp.FP  = poDS->DataFP();
+	dfp.acc = poDS->DataMode();
+        return dfp.FP;
     }
 
+    GDALRWFlag IdxMode() { return ifp.acc; };
+    GDALRWFlag DataMode() { return dfp.acc; };
+
     CPLErr WriteTile(const ILSize &pos,void *buff, size_t size);
+
+    // How many bytes are in a page
     GUInt32 pageSizeBytes() { 
         return poDS->current.pageSizeBytes;
     }
@@ -405,15 +430,15 @@ protected:
     // How many bytes are in a band block (not a page, a single band block)
     // Easiest is to calculate it from the pageSizeBytes
     GUInt32 blockSizeBytes() { 
-        return poDS->current.pageSizeBytes/poDS->current.pagesize.c;
+        return poDS->current.pageSizeBytes / poDS->current.pagesize.c;
     }
 
     // Compresion and decompression functions.  To be overwritten by specific implementations
     virtual CPLErr Compress(buf_mgr &, buf_mgr &, const ILImage &) =0;
     virtual CPLErr Decompress(buf_mgr &, buf_mgr &) =0;
     
-    // Read the index record itself
-    CPLErr ReadTileIdx(const ILSize &, ILIdx &);
+    // Read the index record itself, can be overwritten
+    virtual CPLErr ReadTileIdx(const ILSize &, ILIdx &);
 
     GIntBig bandbit() {
         return ((GIntBig)1) << m_band; 
@@ -439,11 +464,9 @@ protected:
 };
 
 /**
- * Each type of compression needs to define at least two procedures, a compress and a
+ * Each type of compression needs to define at least two methods, a compress and a
  * decompress, which take as arguments a dest and a source buffer, plus an image structure
  * that holds the information about the compression type.
- * These procedures are not defined as methods, to make it possible to use them from other
- * applications.
  * Filtering is needed, probably in the form of pack and unpack functions
  * 
  */
@@ -499,6 +522,20 @@ protected:
     virtual CPLErr Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img);
 };
 
+
+class TIF_Band : public GDALMRFRasterBand {
+    friend class GDALMRFDataset;
+public:
+    TIF_Band(GDALMRFDataset *pDS, const ILImage &image, int b, int level);
+    virtual ~TIF_Band();
+protected:
+    virtual CPLErr Decompress(buf_mgr &dst, buf_mgr &src);
+    virtual CPLErr Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img) ;
+
+    // Create options for TIF pages
+    char **papszOptions;
+};
+
 #if defined(LERC)
 class LERC_Band : public GDALMRFRasterBand {
     friend class GDALMRFDataset;
@@ -511,17 +548,6 @@ protected:
     double precision;
 };
 #endif
-
-class TIF_Band : public GDALMRFRasterBand {
-    friend class GDALMRFDataset;
-public:
-    TIF_Band(GDALMRFDataset *pDS, const ILImage &image, int b, int level);
-    virtual ~TIF_Band();
-protected:
-    virtual CPLErr Decompress(buf_mgr &dst, buf_mgr &src);
-    virtual CPLErr Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img) ;
-    char **papszOptions;
-};
 
 /*\brief band for level mrf
  *
