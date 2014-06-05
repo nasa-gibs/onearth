@@ -4,6 +4,8 @@
     <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/twms-geo/.lib/</GetCapabilitiesLocation>
     <GetTileServiceLocation>/usr/share/onearth/demo/twms-geo/.lib/</GetTileServiceLocation>
     <CacheLocation>/usr/share/onearth/demo/data/EPSG4326/</CacheLocation>
+    <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG4326/</StagingLocation>
+    <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG4326/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
     <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
 </EnvironmentConfiguration>

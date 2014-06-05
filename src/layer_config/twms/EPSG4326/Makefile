@@ -1,9 +1,9 @@
 DEPTH=/usr/bin
 
-COMPOSE=$(DEPTH)/compose
-TT=$(DEPTH)/twms_tool
+COMPOSE=$(DEPTH)/oe_create_twms_xml
+TT=$(DEPTH)/oe_create_cache_config
 
-TGT_PATH=/twms-geo/.lib
+TGT_PATH=
 
 TYPES:=
 

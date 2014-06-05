@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" xmlns:ows="http://www.opengis.net/ows/1.1">
+  <xs:import namespace="http://www.opengis.net/ows/1.1" schemaLocation="ows.xsd"/>
+  <xs:element name="TileMatrixSets">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="Projection"/>
+      </xs:sequence>
+      <xs:attribute name="schemaLocation" use="optional" type="xs:anyURI"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Projection">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="TileMatrixSet"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="TileMatrixSet">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ows:Identifier"/>
+        <xs:element ref="ows:SupportedCRS"/>
+        <xs:element minOccurs="0" ref="WellKnownScaleSet"/>
+        <xs:element maxOccurs="unbounded" ref="TileMatrix"/>
+      </xs:sequence>
+      <xs:attribute name="level" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="WellKnownScaleSet" type="xs:anyURI"/>
+  <xs:element name="TileMatrix">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ows:Identifier"/>
+        <xs:element ref="ScaleDenominator"/>
+        <xs:element ref="TopLeftCorner"/>
+        <xs:element ref="TileWidth"/>
+        <xs:element ref="TileHeight"/>
+        <xs:element ref="MatrixWidth"/>
+        <xs:element ref="MatrixHeight"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ScaleDenominator" type="xs:decimal"/>
+  <xs:element name="TopLeftCorner" type="xs:string"/>
+  <xs:element name="TileWidth" type="xs:integer"/>
+  <xs:element name="TileHeight" type="xs:integer"/>
+  <xs:element name="MatrixWidth" type="xs:integer"/>
+  <xs:element name="MatrixHeight" type="xs:integer"/>
+</xs:schema>

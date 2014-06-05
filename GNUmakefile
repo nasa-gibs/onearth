@@ -3,7 +3,7 @@ GDAL_ARTIFACT=gdal-$(GDAL_VERSION).tar.gz
 GDAL_HOME=http://download.osgeo.org/gdal
 GDAL_URL=$(GDAL_HOME)/$(GDAL_VERSION)/$(GDAL_ARTIFACT)
 
-MOD_ONEARTH_VERSION=0.3.2
+MOD_ONEARTH_VERSION=0.3.3
 
 POSTGRES_VERSION=9.2
 
@@ -125,17 +125,11 @@ mod_onearth-install:
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/mod_onearth/twms_tool \
-		$(DESTDIR)/$(PREFIX)/bin/twms_tool
-	install -m 755 src/layer_config/bin/compose \
-		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/get_GC_xml.sh \
-		-D $(DESTDIR)/$(PREFIX)/bin/get_GC_xml
-	install -m 755 src/layer_config/bin/get_mrfs \
-		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/FGDC \
-		-D $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/layer_config/bin/onearth_layer_configurator.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/onearth_layer_configurator
+		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
+	install -m 755 src/layer_config/bin/oe_create_twms_xml \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_create_twms_xml
+	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
 	install -m 755 src/onearth_logs/onearth_logs.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/onearth_logs
 	install -m 755 src/mrfgen/mrfgen.py  \
@@ -160,8 +154,6 @@ mod_onearth-install:
 	cp -r src/layer_config/conf \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/twms \
-		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
-	cp -r src/layer_config/wmts \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/layers \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config

@@ -8,9 +8,36 @@
     </xs:complexType>
   </xs:element>
   <xs:element name="Projection">
-    <xs:complexType mixed="true">
-      <xs:attribute name="dir" use="required" type="xs:NCName"/>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="WKT"/>
+        <xs:element ref="TileMatrixSetConfig"/>
+        <xs:element ref="WGS84BoundingBox"/>
+        <xs:element minOccurs="0" ref="BoundingBox"/>
+      </xs:sequence>
       <xs:attribute name="id" use="required" type="xs:NMTOKEN"/>
     </xs:complexType>
   </xs:element>
+  <xs:element name="WKT" type="xs:string"/>
+  <xs:element name="TileMatrixSetConfig" type="xs:NCName"/>
+  <xs:element name="WGS84BoundingBox">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="LowerCorner"/>
+        <xs:element ref="UpperCorner"/>
+      </xs:sequence>
+      <xs:attribute name="crs" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="BoundingBox">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="LowerCorner"/>
+        <xs:element ref="UpperCorner"/>
+      </xs:sequence>
+      <xs:attribute name="crs" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="LowerCorner" type="xs:string"/>
+  <xs:element name="UpperCorner" type="xs:string"/>
 </xs:schema>
