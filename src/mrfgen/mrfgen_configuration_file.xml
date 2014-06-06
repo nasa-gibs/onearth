@@ -11,5 +11,6 @@
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
  <resampling>average</resampling>
+ <extents>-180,-90,180,90</extents>
  <colormap></colormap>
 </mrfgen_configuration>

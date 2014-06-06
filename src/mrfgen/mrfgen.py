@@ -45,6 +45,8 @@
 #  <mrf_blocksize>256</mrf_blocksize>
 #  <mrf_compression_type>JPG</mrf_compression_type>
 #  <target_x>65536</target_x>
+#  <extents>-180,-90,180,90</extents>
+#  <resampling>average</resampling>
 #  <colormap></colormap>
 # </mrfgen_configuration>
 #
@@ -399,6 +401,12 @@ else:
         target_x               =get_dom_tag_value(dom, 'target_x')
     except IndexError:
         target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
+    # Target extents.
+    try:
+        extents        =get_dom_tag_value(dom, 'extents')
+    except IndexError:
+        extents = '-180,-90,180,90' # default to geographic
+    xmin, ymin, xmax, ymax = extents.split(',')
     # Input files.
     try:
         input_files        =get_dom_tag_value(dom, 'input_files')
@@ -483,6 +491,7 @@ log_info_mssg(str().join(['config mrf_blocksize:           ', mrf_blocksize]))
 log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
+log_info_mssg(str().join(['config extents:                 ', extents]))
 log_info_mssg(str().join(['config resampling:              ', resampling]))
 log_info_mssg(str().join(['config colormap:                     ', colormap]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
@@ -880,7 +889,7 @@ if len(modtiles) > 0:
     #target_x=str(360.0/int(target_x))
     #target_y=target_x
     gdalbuildvrt_command_list=['gdalbuildvrt',
-                               '-q', '-te', '-180', '-90', '180', '90',
+                               '-q', '-te', xmin, ymin, xmax, ymax,
                                '-vrtnodata', vrtnodata,
                                '-input_file_list', all_tiles_filename,
                                vrt_filename]
