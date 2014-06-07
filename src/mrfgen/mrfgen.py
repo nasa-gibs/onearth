@@ -47,6 +47,7 @@
 #  <target_x>65536</target_x>
 #  <extents>-180,-90,180,90</extents>
 #  <resampling>average</resampling>
+#  <resize>bilinear</resize>
 #  <colormap></colormap>
 # </mrfgen_configuration>
 #
@@ -417,6 +418,11 @@ else:
         resampling        =get_dom_tag_value(dom, 'resampling')
     except IndexError:
         resampling = 'nearest'    
+    # gdalwarp resampling method
+    try:
+        resize_resampling        =get_dom_tag_value(dom, 'resize')
+    except IndexError:
+        resize_resampling = ''   
     # colormap
     try:
         colormap               =get_dom_tag_value(dom, 'colormap')
@@ -493,6 +499,7 @@ log_info_mssg(str().join(['config mrf_compression_type:    ',
 log_info_mssg(str().join(['config target_x:                ', target_x]))
 log_info_mssg(str().join(['config extents:                 ', extents]))
 log_info_mssg(str().join(['config resampling:              ', resampling]))
+log_info_mssg(str().join(['config resize:                  ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                     ', colormap]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
@@ -888,11 +895,22 @@ if len(modtiles) > 0:
     #              '-addalpha',
     #target_x=str(360.0/int(target_x))
     #target_y=target_x
-    gdalbuildvrt_command_list=['gdalbuildvrt',
-                               '-q', '-te', xmin, ymin, xmax, ymax,
-                               '-vrtnodata', vrtnodata,
-                               '-input_file_list', all_tiles_filename,
-                               vrt_filename]
+    
+    # use resolution?
+    if target_x != '':
+        xres = str(360.0/int(target_x))
+        yres = xres
+        gdalbuildvrt_command_list=['gdalbuildvrt',
+            '-q', '-te', xmin, ymin, xmax, ymax,
+            '-vrtnodata', vrtnodata,'-resolution', 'user', '-tr',xres, yres,
+            '-input_file_list', all_tiles_filename,
+            vrt_filename]
+    else:
+        gdalbuildvrt_command_list=['gdalbuildvrt',
+            '-q', '-te', xmin, ymin, xmax, ymax,
+            '-vrtnodata', vrtnodata,
+            '-input_file_list', all_tiles_filename,
+            vrt_filename]
     # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
     #'-tr', target_x, target_y, '-resolution', 'user'
     # Log the gdalbuildvrt command.
@@ -908,6 +926,27 @@ if len(modtiles) > 0:
     subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
     #---------------------------------------------------------------------------
 
+    # use gdalwarp if resize with resampling method is declared
+    if resize_resampling != '':
+        target_y = int(int(target_x)/2)
+        gdal_warp_command_list = ['gdalwarp', '-of', 'GTiff' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', xmin, ymin, xmax, ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
+        gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-srcnodata', '0', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
+         
+        log_the_command(gdal_warp_command_list)
+        log_the_command(gdalbuildvrt_command_list2)
+        subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
+        subprocess.call(gdalbuildvrt_command_list2, stderr=gdalbuildvrt_stderr_file)
+        
+        # add transparency
+        new_vrt = open(vrt_filename,"r+")
+        vrt_lines = new_vrt.readlines()
+        for idx in range(0, len(vrt_lines)):
+            vrt_lines[idx] = vrt_lines[idx].replace('c1="0" c2="0" c3="0" c4="255"', 'c1="0" c2="0" c3="0" c4="0"')
+        new_vrt.seek(0)
+        new_vrt.truncate()
+        new_vrt.writelines(vrt_lines)
+        new_vrt.close() 
+    
     # Close stderr file.
     gdalbuildvrt_stderr_file.close()
 
@@ -1046,6 +1085,8 @@ if len(modtiles) > 0:
        
         # Clean up.
         remove_file(vrt_filename)
+        if resize_resampling != '':
+            remove_file(vrt_filename.replace('.vrt','.tif'))
 
         # Check if MRF was created.
         mrf_output=glob.glob(mrf_filename)
