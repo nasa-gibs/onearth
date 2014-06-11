@@ -32,22 +32,20 @@
 #
 # <?xml version="1.0" encoding="UTF-8"?>
 # <mrfgen_configuration>
-#  <date_of_data>20120825</date_of_data>
-#  <parameter_name>remss_windsat_l2p_gridded___sst___1440_x_720___night</parameter_name>
-#  <input_dir>~/sst/remss_windsat_l2p_gridded/img/20120825/night/</input_dir>
-#  <output_dir>~/TEST/test_output_dir</output_dir>
-#  <cache_dir>~/TEST/test_cache_dir</cache_dir>
-#  <working_dir>~/TEST/test_working_dir</working_dir>
-#  <logfile_dir>~/TEST/test_logfile_dir</logfile_dir>
-#  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
-#  <mrf_empty_tile_filename>~/TEST/transparent.png</mrf_empty_tile_filename>
+#  <date_of_data>20140606</date_of_data>
+#  <parameter_name>MORCR143LLDY</parameter_name>
+#  <input_dir>/mrfgen/input_dir</input_dir> 
+#  <output_dir>/mrfgen/output_dir</output_dir>
+#  <cache_dir>/mrfgen/cache_dir</cache_dir>
+#  <working_dir>/mrfgen/working_dir</working_dir>
+#  <logfile_dir>/mrfgen/working_dir</logfile_dir>
+#  <empty_tile>black</empty_tile>
 #  <vrtnodata>0</vrtnodata>
-#  <mrf_blocksize>256</mrf_blocksize>
-#  <mrf_compression_type>JPG</mrf_compression_type>
-#  <target_x>65536</target_x>
+#  <mrf_blocksize>512</mrf_blocksize>
+#  <mrf_compression_type>JPEG</mrf_compression_type>
+#  <resampling>nearest</resampling>
 #  <extents>-180,-90,180,90</extents>
-#  <resampling>average</resampling>
-#  <resize>bilinear</resize>
+#  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
 #  <colormap></colormap>
 # </mrfgen_configuration>
 #

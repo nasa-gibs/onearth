@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="mrfgen_configuration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="date_of_data"/>
+        <xs:element ref="parameter_name"/>
+        <xs:element ref="input_files" minOccurs="0"/>
+        <xs:element ref="input_dir" minOccurs="0"/>
+        <xs:element ref="output_dir"/>
+        <xs:element ref="cache_dir"/>
+        <xs:element ref="working_dir"/>
+        <xs:element ref="logfile_dir" minOccurs="0"/>
+        <xs:element ref="empty_tile" minOccurs="0"/>
+        <xs:element ref="mrf_empty_tile_filename" minOccurs="0"/>
+        <xs:element ref="vrtnodata"/>
+        <xs:element ref="mrf_blocksize"/>
+        <xs:element ref="mrf_compression_type"/>
+        <xs:element ref="resampling" minOccurs="0"/>
+        <xs:element ref="resize" minOccurs="0"/>
+        <xs:element ref="target_x" minOccurs="0"/>
+        <xs:element ref="extents" minOccurs="0"/>
+        <xs:element ref="mrf_name" minOccurs="0"/>
+        <xs:element ref="colormap" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="date_of_data" type="xs:integer"/>
+  <xs:element name="parameter_name" type="xs:NCName"/>
+  <xs:element name="input_files" type="xs:string" nillable="true"/>
+  <xs:element name="input_dir" type="xs:string" nillable="true"/>
+  <xs:element name="output_dir" type="xs:string"/>
+  <xs:element name="cache_dir" type="xs:string"/>
+  <xs:element name="working_dir" type="xs:string"/>
+  <xs:element name="logfile_dir" type="xs:string" nillable="true"/>
+  <xs:element name="empty_tile" type="xs:NCName" nillable="true"/>
+  <xs:element name="mrf_empty_tile_filename" type="xs:string" nillable="true"/>
+  <xs:element name="vrtnodata" type="xs:integer"/>
+  <xs:element name="mrf_blocksize" type="xs:integer"/>
+  <xs:element name="mrf_compression_type">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="JPG"/>
+        <xs:enumeration value="JPEG"/>
+        <xs:enumeration value="PNG"/>
+        <xs:enumeration value="PPNG"/>
+        <xs:enumeration value="TIFF"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="resampling" nillable="true" default="nearest">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="nearest"/>
+        <xs:enumeration value="average"/>
+        <xs:enumeration value="gauss"/>
+        <xs:enumeration value="cubic"/>
+        <xs:enumeration value="average_mp"/>
+        <xs:enumeration value="average_magphase"/>
+        <xs:enumeration value="mode"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="resize" nillable="true">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="near"/>
+        <xs:enumeration value="bilinear"/>
+        <xs:enumeration value="cubic"/>
+        <xs:enumeration value="cubicspline"/>
+        <xs:enumeration value="lanczos"/>
+        <xs:enumeration value="average"/>
+        <xs:enumeration value="mode"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="target_x" type="xs:integer" nillable="true"/>
+  <xs:element name="extents" type="xs:string" nillable="true"/>
+  <xs:element name="mrf_name" type="xs:string" nillable="true"/>
+  <xs:element name="colormap" type="xs:string" nillable="true"/>
+</xs:schema>
