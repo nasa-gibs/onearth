@@ -1047,7 +1047,7 @@ for conf in conf_files:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
-            shutil.copy(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
+            shutil.copyfile(lcdir+'/conf/getcapabilities_base_wmts.xml', getCapabilities_file)
             getCapabilities_base=open(getCapabilities_file, 'r+')
         except IOError:
             mssg=str().join(['Cannot read getcapabilities_base_wmts.xml file:  ', 
@@ -1262,15 +1262,15 @@ if no_twms == False:
         run_command(cmd)
         if no_cache == False:
             if twms_endpoint.cacheConfig:
-                shutil.copy(twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig)
-                print '\nCopying: ' + twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig
+                print '\nCopying: ' + twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig+'/cache.config'
+                shutil.copyfile(twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig+'/cache.config')
         if no_xml == False:
             if twms_endpoint.getCapabilities:
-                shutil.copy(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities)
-                print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities
+                print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities+'/getCapabilities.xml'
+                shutil.copyfile(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities+'/getCapabilities.xml')
             if twms_endpoint.getTileService:
-                shutil.copy(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService)
-                print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService
+                print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService+'/getTileService.xml'
+                shutil.copyfile(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService+'/getTileService.xml')
 
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -1285,8 +1285,8 @@ if no_wmts == False:
         run_command(cmd)
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
-                shutil.copy(wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig)
-                print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig
+                print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig+'/cache_wmts.config'
+                shutil.copyfile(wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig+'/cache_wmts.config')
         if no_xml == False:
             if wmts_endpoint.getCapabilities:
                 # Add layer metadata to getCapabilities
@@ -1309,12 +1309,12 @@ if no_wmts == False:
                     getCapabilities_base.writelines(gc_lines)        
                 getCapabilities_base.close()
                 
-                shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities)
-                print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities
+                print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities+'/getCapabilities.xml'
+                shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities+'/getCapabilities.xml')
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
                     os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-                shutil.copy(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
+                shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
