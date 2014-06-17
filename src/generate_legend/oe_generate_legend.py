@@ -103,7 +103,10 @@ def parse_colormap(colormap_location):
     for colormapentry in colormapentry_elements:
         rgb = colormapentry.attributes['rgb'].value
         red, green, blue = rgb.split(',')
-        value = colormapentry.attributes['value'].value
+        try:
+            value = colormapentry.attributes['value'].value
+        except KeyError: # use sourceValue?
+            value = colormapentry.attributes['sourceValue'].value
         try:
             transparent = True if colormapentry.attributes['transparent'].value.lower() == 'true' else False
         except KeyError:
@@ -127,22 +130,58 @@ def parse_colormap(colormap_location):
 
 def generate_legend(colormap, output):
     
-    fig = pyplot.figure(figsize=(3,1))
-    ax = fig.add_axes([0.05, 0.60, 0.9, 0.15])
+    fig = pyplot.figure(figsize=(4,0.75))
+    ax = fig.add_axes([0.05, 0.4, 0.8, 0.25])
     
-    bounds = []
+    is_large_colormap = False
+    bounds = [-1]
     colors = []
-    for colormap_entry in colormap.colormap_entries:
-        bounds.append(float(colormap_entry.value.split(',')[0].replace('[','')))
-        colors.append(colormap_entry.color)
+    ticklabels = []
+    ticks = []
+    for idx in range(0, len(colormap.colormap_entries)):
+        if colormap.colormap_entries[idx].transparent == False:
+            if "(" in colormap.colormap_entries[idx].value or "[" in colormap.colormap_entries[idx].value:
+                ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','')))
+                if idx == len(colormap.colormap_entries)-1:
+                    ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+#                     bounds.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+            else:
+                ticklabels.append(colormap.colormap_entries[idx].label)
+            ticks.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','')))
+            bounds.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','')))
+            colors.append(colormap.colormap_entries[idx].color)
 
+    if len(colors) > 7:
+        is_large_colormap = True
     cmap = mpl.colors.ListedColormap(colors)
-    
+
+    ax.set_xticklabels(ticklabels)
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                    norm=norm,
                                    orientation='horizontal')
-    cb.set_label(colormap.units)
+    
+    for tickline in cb.ax.xaxis.get_ticklines():
+        tickline.set_visible(False)
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(8) 
+        tick.label.set_horizontalalignment('left')
+        if is_large_colormap:
+            tick.label.set_visible(False)
+        
+    if is_large_colormap:
+        ticklabels = cb.ax.xaxis.get_ticklabels()
+        ticklabels[0].set_visible(True)
+        ticklabels[len(ticklabels)-1].set_visible(True)
+    else:
+        cb.ax.set_xticklabels(ticklabels)
+
+#     cb.set_label(colormap.units)
+    cb.ax.xaxis.set_units(colormap.units)
+    
+    pos = list(ax.get_position().bounds)
+    if colormap.units != None:
+        fig.text(pos[2]+0.19, pos[1]+0.05, colormap.units, fontsize=11, horizontalalignment='right')
     
     fig.savefig(output, transparent=True, format='svg')
 
