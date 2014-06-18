@@ -513,9 +513,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
-                    filetime = filename[-12:-5]
-                    filedate = datetime.strptime(filetime,"%Y%j")
-                    dates.append(filedate)
+                    try:
+                        filetime = filename[-12:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j")
+                        dates.append(filedate)
+                    except ValueError:
+                        print "Skipping", filename
                 startdate = min(dates)
                 start = datetime.strftime(startdate,"%Y-%m-%d")
         
@@ -523,9 +526,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
-                    filetime = filename[-12:-5]
-                    filedate = datetime.strptime(filetime,"%Y%j")
-                    dates.append(filedate)            
+                    try:
+                        filetime = filename[-12:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j")
+                        dates.append(filedate)
+                    except ValueError:
+                        print "Skipping", filename
                 enddate = max(dates)
                 end = datetime.strftime(enddate,"%Y-%m-%d")   
         
