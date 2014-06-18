@@ -170,6 +170,7 @@ def generate_legend(colormap, output):
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                    norm=norm,
                                    orientation='vertical')
+    cb.solids.set_edgecolor("face")
     
     for tickline in cb.ax.yaxis.get_ticklines():
         tickline.set_visible(True)
