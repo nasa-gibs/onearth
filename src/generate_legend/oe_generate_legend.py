@@ -134,29 +134,39 @@ def generate_legend(colormap, output):
     ax = fig.add_axes([0.05, 0.4, 0.8, 0.25])
     
     is_large_colormap = False
-    bounds = [-1]
+    bounds = []
     colors = []
     ticklabels = []
-    ticks = []
     for idx in range(0, len(colormap.colormap_entries)):
         if colormap.colormap_entries[idx].transparent == False:
-            if "(" in colormap.colormap_entries[idx].value or "[" in colormap.colormap_entries[idx].value:
-                ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','')))
-                if idx == len(colormap.colormap_entries)-1:
-                    ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
-#                     bounds.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
-            else:
+            try: # check if labels can be converted to numeric values
+                float(colormap.colormap_entries[idx].label)
                 ticklabels.append(colormap.colormap_entries[idx].label)
-            ticks.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','')))
-            bounds.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','')))
+                bounds.append(float(colormap.colormap_entries[idx].label))
+            except ValueError: # use actual values for colorbar
+                bounds.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
+                if "(" in colormap.colormap_entries[idx].value or "[" in colormap.colormap_entries[idx].value: # break apart values for ranges
+                    ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
+                    if idx == len(colormap.colormap_entries)-1: # add ending range value
+                        ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+                        bounds.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+                else:
+                    ticklabels.append(colormap.colormap_entries[idx].label)
             colors.append(colormap.colormap_entries[idx].color)
 
     if len(colors) > 7:
         is_large_colormap = True
     cmap = mpl.colors.ListedColormap(colors)
 
+    # prepend buffer value if needed
+    if len(bounds) == len(colors):
+        bounds.insert(0, bounds[0]-0.00001)
+        
     ax.set_xticklabels(ticklabels)
-    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    if len(colors) > 20:
+        norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+    else:
+        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                    norm=norm,
                                    orientation='horizontal')
@@ -173,6 +183,8 @@ def generate_legend(colormap, output):
         ticklabels = cb.ax.xaxis.get_ticklabels()
         ticklabels[0].set_visible(True)
         ticklabels[len(ticklabels)-1].set_visible(True)
+        ticklabels[0].set_horizontalalignment('center')
+        ticklabels[len(ticklabels)-1].set_horizontalalignment('center')
     else:
         cb.ax.set_xticklabels(ticklabels)
 
@@ -181,7 +193,7 @@ def generate_legend(colormap, output):
     
     pos = list(ax.get_position().bounds)
     if colormap.units != None:
-        fig.text(pos[2]+0.19, pos[1]+0.05, colormap.units, fontsize=11, horizontalalignment='right')
+        fig.text(pos[2]+0.19, pos[1]+0.05, colormap.units, fontsize=10, horizontalalignment='right')
     
     fig.savefig(output, transparent=True, format='svg')
 
