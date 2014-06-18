@@ -130,8 +130,8 @@ def parse_colormap(colormap_location):
 
 def generate_legend(colormap, output):
     
-    fig = pyplot.figure(figsize=(4,0.75))
-    ax = fig.add_axes([0.05, 0.4, 0.8, 0.25])
+    fig = pyplot.figure(figsize=(1,4))
+    ax = fig.add_axes([0.2, 0.05, 0.20, 0.8])
     
     is_large_colormap = False
     bounds = []
@@ -162,38 +162,33 @@ def generate_legend(colormap, output):
     if len(bounds) == len(colors):
         bounds.insert(0, bounds[0]-0.00001)
         
-    ax.set_xticklabels(ticklabels)
+    ax.set_yticklabels(ticklabels)
     if len(colors) > 20:
         norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
     else:
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                    norm=norm,
-                                   orientation='horizontal')
+                                   orientation='vertical')
     
-    for tickline in cb.ax.xaxis.get_ticklines():
-        tickline.set_visible(False)
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(8) 
-        tick.label.set_horizontalalignment('left')
+    for tickline in cb.ax.yaxis.get_ticklines():
+        tickline.set_visible(True)
+    for tick in cb.ax.yaxis.get_ticklabels():
+        tick.set_fontsize(11) 
         if is_large_colormap:
-            tick.label.set_visible(False)
+            tick.set_visible(True)
         
     if is_large_colormap:
-        ticklabels = cb.ax.xaxis.get_ticklabels()
+        ticklabels = cb.ax.yaxis.get_ticklabels()
         ticklabels[0].set_visible(True)
         ticklabels[len(ticklabels)-1].set_visible(True)
-        ticklabels[0].set_horizontalalignment('center')
-        ticklabels[len(ticklabels)-1].set_horizontalalignment('center')
     else:
-        cb.ax.set_xticklabels(ticklabels)
+        cb.ax.set_yticklabels(ticklabels)
 
-#     cb.set_label(colormap.units)
-    cb.ax.xaxis.set_units(colormap.units)
+    cb.ax.yaxis.set_units(colormap.units)
     
-    pos = list(ax.get_position().bounds)
     if colormap.units != None:
-        fig.text(pos[2]+0.19, pos[1]+0.05, colormap.units, fontsize=10, horizontalalignment='right')
+        fig.text(0.1, 0.9, colormap.units, fontsize=11, horizontalalignment='left')
     
     fig.savefig(output, transparent=True, format='svg')
 
