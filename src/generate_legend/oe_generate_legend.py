@@ -42,9 +42,10 @@ versionNumber = "v0.4"
 class ColorMap:
     """ColorMap metadata"""
     
-    def __init__(self, units, colormap_entries):
+    def __init__(self, units, colormap_entries, style):
         self.units = units
         self.colormap_entries = colormap_entries
+        self.style = str(style).lower()
         
     def __repr__(self):
         if self.units != None:
@@ -74,7 +75,11 @@ class ColorMapEntry:
         self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
         
     def __repr__(self):
-        return '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.value, self.label)
+        if self.value != None:
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.value, self.label)
+        else:
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.label)
+        return xml
     
     def __str__(self):
         return self.__repr__().encode(sys.stdout.encoding)
@@ -98,6 +103,7 @@ def parse_colormap(colormap_location):
         units = None
     print "ColorMap units:", units
     
+    style = "discrete"
     colormap_entries = []
     colormapentry_elements = colormap_element.getElementsByTagName("ColorMapEntry")
     for colormapentry in colormapentry_elements:
@@ -105,8 +111,11 @@ def parse_colormap(colormap_location):
         red, green, blue = rgb.split(',')
         try:
             value = colormapentry.attributes['value'].value
-        except KeyError: # use sourceValue?
-            value = colormapentry.attributes['sourceValue'].value
+            if "(" in value or "[" in value:
+                style = "range"
+        except KeyError:
+            value = None
+            style = "classification"
         try:
             transparent = True if colormapentry.attributes['transparent'].value.lower() == 'true' else False
         except KeyError:
@@ -121,8 +130,9 @@ def parse_colormap(colormap_location):
             label = value
         
         colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label))
-    
-    colormap = ColorMap(units, colormap_entries)
+        
+    print "ColorMap style:", style
+    colormap = ColorMap(units, colormap_entries, style)
     print colormap
     
     return colormap
@@ -130,40 +140,63 @@ def parse_colormap(colormap_location):
 
 def generate_legend(colormap, output):
     
-    fig = pyplot.figure(figsize=(1,4))
-    ax = fig.add_axes([0.2, 0.05, 0.20, 0.8])
+    fig = pyplot.figure(figsize=(1.5,3))
+    ax = fig.add_axes([0.2, 0.05, 0.15, 0.8])
     
     is_large_colormap = False
     bounds = []
     colors = []
+    ticks = []
     ticklabels = []
-    for idx in range(0, len(colormap.colormap_entries)):
-        if colormap.colormap_entries[idx].transparent == False:
-            try: # check if labels can be converted to numeric values
-                float(colormap.colormap_entries[idx].label)
-                ticklabels.append(colormap.colormap_entries[idx].label)
-                bounds.append(float(colormap.colormap_entries[idx].label))
-            except ValueError: # use actual values for colorbar
-                bounds.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
-                if "(" in colormap.colormap_entries[idx].value or "[" in colormap.colormap_entries[idx].value: # break apart values for ranges
-                    ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
-                    if idx == len(colormap.colormap_entries)-1: # add ending range value
-                        ticklabels.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
-                        bounds.append(float(colormap.colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+    
+    # remove transparent values
+    colormap_entries = []
+    for colormap_entry in colormap.colormap_entries:
+        if colormap_entry.transparent == False:
+            colormap_entries.append(colormap_entry)
+            colors.append(colormap_entry.color)
+    
+    if len(colors) >= 20:
+        is_large_colormap = True    
+    
+    for idx in range(0, len(colormap_entries)):
+        if colormap.style == "classification": # use label and source_value for classification
+            ticklabels.append(colormap_entries[idx].label)
+            if idx == 0:
+                increment = (float(colormap_entries[idx+1].source_value) - float(colormap_entries[idx].source_value))
+                bounds.append(float(colormap_entries[idx].source_value) - increment)                    
+                bounds.append(float(colormap_entries[idx].source_value))
+            elif idx == len(colormap_entries)-1:
+                increment = (float(colormap_entries[idx].source_value) - float(colormap_entries[idx-1].source_value))
+                bounds.append(float(colormap_entries[idx].source_value))
+            else:
+                increment = (float(colormap_entries[idx+1].source_value) - float(colormap_entries[idx].source_value))
+                bounds.append(float(colormap_entries[idx].source_value))
+            ticks.append(float(colormap_entries[idx].source_value) - increment/2)
+            
+        elif colormap.style == "range": # break apart values for ranges
+            bounds.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
+            ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
+            if idx == len(colormap_entries)-1 and ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # add ending range value
+                ticklabels.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+                bounds.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
+                
+        else: # assume discrete values
+            bounds.append(float(colormap_entries[idx].value))
+            ticklabels.append(colormap_entries[idx].value)
+            if is_large_colormap == False:
+                if idx == len(colormap_entries)-1:
+                    increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
+                    ticks.append(float(colormap_entries[idx].value) + increment/2)
+                    bounds.append(float(colormap_entries[idx].value)+ increment)
                 else:
-                    ticklabels.append(colormap.colormap_entries[idx].label)
-            colors.append(colormap.colormap_entries[idx].color)
-
-    if len(colors) > 7:
-        is_large_colormap = True
-    cmap = mpl.colors.ListedColormap(colors)
-
-    # prepend buffer value if needed
-    if len(bounds) == len(colors):
-        bounds.insert(0, bounds[0]-0.00001)
+                    increment = (float(colormap_entries[idx+1].value) - float(colormap_entries[idx].value))
+                    ticks.append(float(colormap_entries[idx].value) + increment/2)
+                
         
+    cmap = mpl.colors.ListedColormap(colors)        
     ax.set_yticklabels(ticklabels)
-    if len(colors) > 20:
+    if is_large_colormap == True:
         norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
     else:
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
@@ -171,25 +204,18 @@ def generate_legend(colormap, output):
                                    norm=norm,
                                    orientation='vertical')
     cb.solids.set_edgecolor("face")
-    
-    for tickline in cb.ax.yaxis.get_ticklines():
-        tickline.set_visible(True)
+            
     for tick in cb.ax.yaxis.get_ticklabels():
-        tick.set_fontsize(11) 
-        if is_large_colormap:
-            tick.set_visible(True)
-        
-    if is_large_colormap:
-        ticklabels = cb.ax.yaxis.get_ticklabels()
-        ticklabels[0].set_visible(True)
-        ticklabels[len(ticklabels)-1].set_visible(True)
-    else:
-        cb.ax.set_yticklabels(ticklabels)
+        tick.set_fontsize(10) 
 
-    cb.ax.yaxis.set_units(colormap.units)
+    if is_large_colormap == False and (colormap.style == "classification" or colormap.style == "discrete"):
+        cb.set_ticks(ticks)
+        for tickline in cb.ax.yaxis.get_ticklines():
+            tickline.set_visible(False)
+        cb.ax.set_yticklabels(ticklabels)
     
     if colormap.units != None:
-        fig.text(0.1, 0.9, colormap.units, fontsize=11, horizontalalignment='left')
+        fig.text(0.2, 0.9, colormap.units, fontsize=10, horizontalalignment='left')
     
     fig.savefig(output, transparent=True, format='svg')
 
