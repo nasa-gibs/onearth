@@ -820,8 +820,10 @@ VSILFILE *GDALMRFDataset::DataFP() {
     }
 
     dfp.FP = VSIFOpenL(current.datfname.c_str(), mode);
-    if (dfp.FP)
+    if (dfp.FP) {
+	fprintf(stderr, "Opened %s mode %s\n",current.datfname.c_str(),mode);
 	return dfp.FP;
+    }
 
     // It could be a caching MRF
     if (source.empty()) {
@@ -834,8 +836,10 @@ VSILFILE *GDALMRFDataset::DataFP() {
     mode = "rb";
     dfp.acc = GF_Read;
     dfp.FP = VSIFOpenL(current.datfname.c_str(), mode);
-    if (NULL != dfp.FP)
+    if (NULL != dfp.FP) {
+	fprintf(stderr, "Opened %s RO mode %s\n",current.datfname.c_str(),mode);
 	return dfp.FP;
+    }
 
     // We should have created it above with "a+b"
     CPLError(CE_Failure, CPLE_AppDefined,
