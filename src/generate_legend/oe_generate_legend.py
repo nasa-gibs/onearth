@@ -141,7 +141,7 @@ def parse_colormap(colormap_location):
 def generate_legend(colormap, output):
     
     fig = pyplot.figure(figsize=(1.5,3))
-    ax = fig.add_axes([0.2, 0.05, 0.15, 0.8])
+    ax = fig.add_axes([0.2, 0.05, 0.15, 0.9])
     
     is_large_colormap = False
     bounds = []
@@ -206,7 +206,7 @@ def generate_legend(colormap, output):
     cb.solids.set_edgecolor("face")
             
     for tick in cb.ax.yaxis.get_ticklabels():
-        tick.set_fontsize(10) 
+        tick.set_fontsize(10)
 
     if is_large_colormap == False and (colormap.style == "classification" or colormap.style == "discrete"):
         cb.set_ticks(ticks)
@@ -214,10 +214,19 @@ def generate_legend(colormap, output):
             tickline.set_visible(False)
         cb.ax.set_yticklabels(ticklabels)
     
+    # set units on first and last labels, if applicable
     if colormap.units != None:
-        fig.text(0.2, 0.9, colormap.units, fontsize=10, horizontalalignment='left')
+        ticklabels = cb.ax.get_yticklabels()
+        ticklabels = [label.get_text() for label in ticklabels]
+        if colormap.style == "discrete" or colormap.style == "range":
+            ticklabels[0] = str(ticklabels[0]) + " " + colormap.units
+            ticklabels[-1] = str(ticklabels[-1]) + " " + colormap.units
+        cb.ax.set_yticklabels(ticklabels)
     
-    fig.savefig(output, transparent=True, format='svg')
+#     if colormap.units != None:
+#         fig.text(0.2, 0.9, colormap.units, fontsize=10, horizontalalignment='left')
+    
+    fig.savefig(output, transparent=True, format='png')
 
     print output + " generated successfully"
     
