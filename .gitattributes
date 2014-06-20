@@ -6,3 +6,5 @@
 *.c text eol=lf
 *.cpp text eol=lf
 *.h text eol=lf
+*.vc text eol=lf
+
