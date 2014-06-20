@@ -1,7 +1,7 @@
 GDAL_ROOT	=	..\..
 !INCLUDE $(GDAL_ROOT)\nmake.opt
 
-OBJ	=	Tif_band.obj ZLIB_band.obj Raw_band.obj PNG_band.obj JPEG_band.obj mrf_band.obj util.obj marfa_dataset.obj
+OBJ	=	Tif_band.obj ZLIB_band.obj Raw_band.obj PNG_band.obj JPEG_band.obj mrf_band.obj mrf_util.obj marfa_dataset.obj
 
 # Use the LERC_Band.cpp presence as a signal to use LERC
 !IF EXIST(LERC_Band.cpp)
