@@ -498,6 +498,9 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 start = intervals[0]
                 end = detect
         
+        newest_year = ''
+        oldest_year = ''
+        
         if start==detect or end==detect:
             if year == True: # get newest and oldest years
                 years = []
@@ -505,9 +508,21 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                     if subdirname != 'YYYY':
                         years.append(subdirname)
                 years = sorted(years)
-                newest_year = years[-1]
-                oldest_year = years[0]
                 print "Year directories available: " + ",".join(years)
+                for idx in range(0, len(years)):
+                    if len(os.listdir(archiveLocation+'/'+years[idx])) > 0:
+                        oldest_year = years[idx]
+                        break; 
+                for idx in reversed(range(0, len(years))):
+                    if len(os.listdir(archiveLocation+'/'+years[idx])) > 0:
+                        newest_year = years[idx]
+                        break;
+        
+        print "Available range with data is %s to %s" % (oldest_year, newest_year)
+        if newest_year == '' or oldest_year == '':
+            mssg = "No data files found in year directories in " + archiveLocation 
+            sigevent('ERROR', mssg, sigevent_url)
+            sys.exit(mssg)
                             
         if start==detect:
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
