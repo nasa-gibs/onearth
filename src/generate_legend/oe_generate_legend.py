@@ -156,8 +156,8 @@ def generate_legend(colormap, output):
             colormap_entries.append(colormap_entry)
             colors.append(colormap_entry.color)
     
-    if len(colors) >= 20:
-        is_large_colormap = True    
+    if len(colors) > 10:
+        is_large_colormap = True
     
     for idx in range(0, len(colormap_entries)):
         if colormap.style == "classification": # use label and source_value for classification
@@ -222,11 +222,28 @@ def generate_legend(colormap, output):
             ticklabels[0] = str(ticklabels[0]) + " " + colormap.units
             ticklabels[-1] = str(ticklabels[-1]) + " " + colormap.units
         cb.ax.set_yticklabels(ticklabels)
+
+    # use legend for classifications
+    if colormap.style == "classification":
+        patches = []
+        for color in colors:
+            polygon = mpl.patches.Rectangle((0, 0), 10, 10, color=color)
+            patches.append(polygon)
+        if len(colors) < 7:
+            fig.set_figheight(1.5)
+        if len(colors) > 14:
+            fig.set_figwidth(3)
+            col = 2
+            fontsize = 8
+        else: 
+            col = 1
+            fontsize = 9
+        legend = fig.legend(patches, ticklabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
+        cb.ax.cla()
+        ax.set_axis_off()
+        legend.get_frame().set_alpha(0.5)
     
-#     if colormap.units != None:
-#         fig.text(0.2, 0.9, colormap.units, fontsize=10, horizontalalignment='left')
-    
-    fig.savefig(output, transparent=True, format='png')
+    fig.savefig(output, transparent=True, format='svg')
 
     print output + " generated successfully"
     
