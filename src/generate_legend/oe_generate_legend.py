@@ -138,7 +138,7 @@ def parse_colormap(colormap_location):
     return colormap
 
 
-def generate_legend(colormap, output):
+def generate_legend(colormap, output, output_format):
     
     # set ticklines out
     rcParams['xtick.direction'] = 'out'
@@ -170,7 +170,7 @@ def generate_legend(colormap, output):
                 legendcolors.append(colormap_entry.color)
                 legendlabels.append(colormap_entry.label)
     
-    if len(colors) > 20:
+    if len(colors) > 10:
         is_large_colormap = True
     
     for idx in range(0, len(colormap_entries)):
@@ -254,7 +254,7 @@ def generate_legend(colormap, output):
                 # resize colorbar if classification
                 cb.ax.set_position((0.2, 0.05, 0.075, 0.9))      
     
-    fig.savefig(output, transparent=True, format='svg')
+    fig.savefig(output, transparent=True, format=output_format)
 
     print output + " generated successfully"
     
@@ -270,9 +270,12 @@ parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-c', '--colormap',
                   action='store', type='string', dest='colormap',
                   help='Full path or URL of colormap filename.')
+parser.add_option('-f', '--format',
+                  action='store', type='string', dest='format', default = 'svg',
+                  help='Format of output file. Default: SVG')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
-                  help='The full path of the output SVG file')
+                  help='The full path of the output file')
 parser.add_option('-u', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -302,7 +305,7 @@ except IOError,e:
 
 # generate legend
 try:
-    generate_legend(colormap, output_location)
+    generate_legend(colormap, output_location, options.format)
 except IOError,e:
     print str(e)
     exit()
