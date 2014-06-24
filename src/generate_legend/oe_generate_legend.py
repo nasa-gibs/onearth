@@ -149,6 +149,7 @@ def generate_legend(colormap, output):
     
     is_large_colormap = False
     has_values = False
+    hide_ticks = False
     bounds = []
     colors = []
     ticks = []
@@ -169,7 +170,7 @@ def generate_legend(colormap, output):
                 legendcolors.append(colormap_entry.color)
                 legendlabels.append(colormap_entry.label)
     
-    if len(colors) > 10:
+    if len(colors) > 20:
         is_large_colormap = True
     
     for idx in range(0, len(colormap_entries)):
@@ -184,6 +185,7 @@ def generate_legend(colormap, output):
             bounds.append(float(colormap_entries[idx].value))
             ticklabels.append(colormap_entries[idx].value)
             if is_large_colormap == False:
+                hide_ticks = True
                 if idx == len(colormap_entries)-1:
                     increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
                     ticks.append(float(colormap_entries[idx].value) + increment/2)
@@ -196,7 +198,8 @@ def generate_legend(colormap, output):
     if colormap.style == "classification":
         patches = []
         for color in legendcolors:
-            polygon = mpl.patches.Rectangle((0, 0), 10, 10, color=color)
+            polygon = mpl.patches.Rectangle((0, 0), 10, 10, facecolor=color)
+            polygon.set_linewidth(0.5)
             patches.append(polygon)
         if len(legendcolors) < 7 and has_values == False:
             fig.set_figheight(1.5)
@@ -232,7 +235,7 @@ def generate_legend(colormap, output):
         for tick in cb.ax.yaxis.get_ticklabels():
             tick.set_fontsize(10)
     
-        if is_large_colormap == False and colormap.style == "discrete":
+        if hide_ticks == True:
             cb.set_ticks(ticks)
             for tickline in cb.ax.yaxis.get_ticklines():
                 tickline.set_visible(False)
