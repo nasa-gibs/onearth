@@ -33,11 +33,11 @@ import urllib
 import xml.dom.minidom
 from optparse import OptionParser
 from matplotlib import pyplot
+from matplotlib import rcParams
 import matplotlib as mpl
 
 toolName = "oe_generate_legend.py"
 versionNumber = "v0.4"
-
 
 class ColorMap:
     """ColorMap metadata"""
@@ -139,6 +139,10 @@ def parse_colormap(colormap_location):
 
 
 def generate_legend(colormap, output):
+    
+    # set ticklines out
+    rcParams['xtick.direction'] = 'out'
+    rcParams['ytick.direction'] = 'out'
     
     fig = pyplot.figure(figsize=(1.5,3))
     ax = fig.add_axes([0.2, 0.05, 0.15, 0.9])
