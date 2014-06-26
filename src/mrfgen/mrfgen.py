@@ -387,7 +387,8 @@ else:
     try:
         mrf_name=get_dom_tag_value(dom, 'mrf_name')
     except IndexError:
-        mrf_name=''
+        # default to GIBS naming convention
+        mrf_name='{$parameter_name}%Y%j_.mrf'
     # MRF specific parameters.
     try:
         mrf_empty_tile_filename=get_dom_tag_value(dom, 'mrf_empty_tile_filename')
