@@ -35,6 +35,15 @@ from optparse import OptionParser
 from matplotlib import pyplot
 from matplotlib import rcParams
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+from StringIO import StringIO
+
+# for SVG tooltips
+try:
+    import lxml.etree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
+    ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
 versionNumber = "v0.4"
@@ -154,6 +163,7 @@ def generate_legend(colormap, output, output_format):
     colors = []
     ticks = []
     ticklabels = []
+    labels = []
     
     legendcolors = []
     legendlabels = []
@@ -162,6 +172,7 @@ def generate_legend(colormap, output, output_format):
     colormap_entries = []
     for colormap_entry in colormap.colormap_entries:
         if colormap_entry.transparent == False:
+            labels.append(colormap_entry.label)
             if colormap_entry.value != None:
                 has_values = True
                 colormap_entries.append(colormap_entry)
@@ -194,7 +205,7 @@ def generate_legend(colormap, output, output_format):
                     increment = (float(colormap_entries[idx+1].value) - float(colormap_entries[idx].value))
                     ticks.append(float(colormap_entries[idx].value) + increment/2)
                 
-        # use legend for classifications
+    # use legend for classifications
     if colormap.style == "classification":
         patches = []
         for color in legendcolors:
@@ -252,9 +263,80 @@ def generate_legend(colormap, output, output_format):
             
             if colormap.style == "classification":
                 # resize colorbar if classification
-                cb.ax.set_position((0.2, 0.05, 0.075, 0.9))      
-    
+                cb.ax.set_position((0.2, 0.05, 0.075, 0.9))     
+        
     fig.savefig(output, transparent=True, format=output_format)
+    
+    # Add tooltips to SVG    
+    if output_format == 'svg' and has_values == True and is_large_colormap == False:
+        
+        for i, ticklabel in enumerate(ax.get_yticklabels()):
+            if i < len(labels):
+                text = labels[i]
+                ax.annotate(text, 
+                xy=ticklabel.get_position(),
+                textcoords='offset points', 
+                color='black', 
+                ha='center', 
+                fontsize=10,
+                gid='tooltip',
+                bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
+                )
+
+        # Set id for the annotations
+        for i, t in enumerate(ax.texts):
+            t.set_gid('tooltip_%d'%i)
+            
+        # Save the figure
+        f = StringIO()
+        plt.savefig(f, format="svg")     
+        
+        # Create XML tree from the SVG file
+        tree, xmlid = ET.XMLID(f.getvalue())
+        tree.set('onload', 'init(evt)')
+        
+        # Hide the tooltips
+        for i, t in enumerate(ax.texts):
+            el = xmlid['tooltip_%d'%i]
+            el.set('visibility', 'hidden')            
+        
+        # Add mouseover events to color bar
+        el = xmlid['QuadMesh_1']
+        elements = list(el)
+        elements.pop(0) # remove definitions
+        for i, t in enumerate(elements):
+            el = elements[i]
+            el.set('onmouseover', "ShowTooltip("+str(i)+")")
+            el.set('onmouseout', "HideTooltip("+str(i)+")")
+        
+        # This is the script defining the ShowTooltip and HideTooltip functions.
+        script = """
+            <script type="text/ecmascript">
+            <![CDATA[
+            
+            function init(evt) {
+                if ( window.svgDocument == null ) {
+                    svgDocument = evt.target.ownerDocument;
+                    }
+                }
+                
+            function ShowTooltip(idx) {
+                var tip = svgDocument.getElementById('tooltip_'+idx);
+                tip.setAttribute('visibility',"visible")
+                }
+                
+            function HideTooltip(idx) {
+                var tip = svgDocument.getElementById('tooltip_'+idx);
+                tip.setAttribute('visibility',"hidden")
+                }
+                
+            ]]>
+            </script>
+            """
+        
+        # Insert the script at the top of the file and save it.
+        tree.insert(0, ET.XML(script))
+        ET.ElementTree(tree).write(output)
 
     print output + " generated successfully"
     
