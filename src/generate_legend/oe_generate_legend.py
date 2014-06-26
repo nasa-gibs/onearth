@@ -158,7 +158,7 @@ def generate_legend(colormap, output, output_format):
     
     is_large_colormap = False
     has_values = False
-    hide_ticks = False
+    center_ticks = False
     bounds = []
     colors = []
     ticks = []
@@ -196,7 +196,7 @@ def generate_legend(colormap, output, output_format):
             bounds.append(float(colormap_entries[idx].value))
             ticklabels.append(colormap_entries[idx].value)
             if is_large_colormap == False:
-                hide_ticks = True
+                center_ticks = True
                 if idx == len(colormap_entries)-1:
                     increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
                     ticks.append(float(colormap_entries[idx].value) + increment/2)
@@ -246,10 +246,8 @@ def generate_legend(colormap, output, output_format):
         for tick in cb.ax.yaxis.get_ticklabels():
             tick.set_fontsize(10)
     
-        if hide_ticks == True:
+        if center_ticks == True:
             cb.set_ticks(ticks)
-            for tickline in cb.ax.yaxis.get_ticklines():
-                tickline.set_visible(False)
             cb.ax.set_yticklabels(ticklabels)
         
         # set units on first and last labels, if applicable
@@ -289,7 +287,7 @@ def generate_legend(colormap, output, output_format):
             
         # Save the figure
         f = StringIO()
-        plt.savefig(f, format="svg")     
+        plt.savefig(f, transparent=True, format="svg")     
         
         # Create XML tree from the SVG file
         tree, xmlid = ET.XMLID(f.getvalue())
