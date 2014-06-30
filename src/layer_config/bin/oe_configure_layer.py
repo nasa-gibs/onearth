@@ -575,14 +575,32 @@ def generate_legend(colormap, output, legend_url):
         legend_url -- URL to access legend from GetCapabilities
     """
     
-    print "Generating legend from: " + colormap
-    print "Legend location: " + output
+    print "\nLegend location: " + output
     print "Legend URL: " + legend_url
+    print "Color Map: " + colormap
     pt = 1.25 #pixels in point
     
-    cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
-    run_command(cmd)
-    
+    if os.path.isfile(output) == False:
+        print "Generating new legend"
+        cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
+        run_command(cmd)
+    else:
+        print "Legend already exists"
+        try:
+            colormap_file = urllib.urlopen(colormap)
+            last_modified = colormap_file.info().getheader("Last-Modified")
+            colormap_file.close()
+            colormap_time = datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT")
+            legend_time = datetime.fromtimestamp(os.path.getmtime(output))
+            print "Color map last modified on: " + str(colormap_time)
+            print "Legend last modified on: " + str(legend_time)
+            if colormap_time > legend_time:
+                print "Updated color map found"
+                print "Generating new legend"
+                cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
+                run_command(cmd)
+        except Exception, e:
+            print e
     # check file
     try:
         # Open file.
