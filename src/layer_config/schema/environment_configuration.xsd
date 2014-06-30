@@ -8,6 +8,8 @@
         <xs:element ref="CacheLocation"/>
         <xs:element maxOccurs="unbounded" ref="StagingLocation"/>
         <xs:element maxOccurs="unbounded" ref="ServiceURL"/>
+        <xs:element ref="LegendLocation" minOccurs="0"/>
+        <xs:element ref="LegendURL" maxOccurs="1" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -32,4 +34,6 @@
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
+  <xs:element name="LegendLocation" type="xs:string" nillable="true"/>
+  <xs:element name="LegendURL" type="xs:anyURI" nillable="true"/>
 </xs:schema>

@@ -8,4 +8,6 @@
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG4326/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
     <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
+    <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
+    <LegendURL>http://localhost/legends/</LegendURL>
 </EnvironmentConfiguration>

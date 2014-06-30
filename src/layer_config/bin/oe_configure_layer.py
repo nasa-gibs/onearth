@@ -91,7 +91,7 @@ class TWMSEndPoint:
 class Environment:
     """Environment information for layer(s)"""
     
-    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir):
+    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl):
         self.cache = cache
         self.getCapabilities_wmts = getCapabilities_wmts
         self.getCapabilities_twms = getCapabilities_twms
@@ -100,6 +100,8 @@ class Environment:
         self.twmsServiceUrl = twmsServiceUrl
         self.wmts_dir = projection_wmts_dir
         self.twms_dir = projection_twms_dir
+        self.legend_dir = legend_dir
+        self.legendUrl = legendUrl
         
 class Projection:
     """Projection information for layer"""
@@ -342,7 +344,15 @@ def get_environment(environmentConfig):
     if wmtsStagingLocation != None:
         add_trailing_slash(wmtsStagingLocation)
         if not os.path.exists(wmtsStagingLocation):
-            os.makedirs(wmtsStagingLocation)
+            os.makedirs(wmtsStagingLocation)           
+    try:
+        legendLocation = add_trailing_slash(get_dom_tag_value(dom, 'LegendLocation'))
+    except IndexError:
+        legendLocation = None
+    try:
+        legendUrl = add_trailing_slash(get_dom_tag_value(dom, 'LegendURL'))
+    except IndexError:
+        legendUrl = None
         
     return Environment(add_trailing_slash(cacheConfig), 
                        add_trailing_slash(wmts_getCapabilities), 
@@ -350,7 +360,8 @@ def get_environment(environmentConfig):
                        add_trailing_slash(getTileService),
                        add_trailing_slash(wmtsServiceUrl), 
                        add_trailing_slash(twmsServiceUrl),
-                       wmtsStagingLocation, twmsStagingLocation)
+                       wmtsStagingLocation, twmsStagingLocation,
+                       legendLocation, legendUrl)
     
 def get_projection(projectionId, projectionConfig, lcdir):
     """
@@ -497,11 +508,10 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             else:
                 start = intervals[0]
                 end = detect
-        
-        newest_year = ''
-        oldest_year = ''
-        
+              
         if start==detect or end==detect:
+            newest_year = ''
+            oldest_year = ''
             if year == True: # get newest and oldest years
                 years = []
                 for subdirname in os.walk(archiveLocation, followlinks=True).next()[1]:
@@ -518,11 +528,11 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                         newest_year = years[idx]
                         break;
         
-        print "Available range with data is %s to %s" % (oldest_year, newest_year)
-        if newest_year == '' or oldest_year == '':
-            mssg = "No data files found in year directories in " + archiveLocation 
-            sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
+            print "Available range with data is %s to %s" % (oldest_year, newest_year)
+            if newest_year == '' or oldest_year == '':
+                mssg = "No data files found in year directories in " + archiveLocation 
+                sigevent('ERROR', mssg, sigevent_url)
+                sys.exit(mssg)
                             
         if start==detect:
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
@@ -555,6 +565,42 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         times.append(time)
         
     return times
+
+def generate_legend(colormap, output, legend_url):
+    """
+    Generate an SVG legend graphic from GIBS color map.
+    Arguments:
+        colormap -- the color map file name
+        output -- the output file name
+        legend_url -- URL to access legend from GetCapabilities
+    """
+    
+    print "Generating legend from: " + colormap
+    print "Legend location: " + output
+    print "Legend URL: " + legend_url
+    pt = 1.25 #pixels in point
+    
+    cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
+    run_command(cmd)
+    
+    # check file
+    try:
+        # Open file.
+        svg=open(output, 'r')
+    except IOError:
+        mssg=str().join(['Cannot read SVG legend file:  ', output])
+        sigevent('ERROR', mssg, sigevent_url)
+        
+    # get widht and height
+    dom = xml.dom.minidom.parse(svg)
+    svgElement = dom.getElementsByTagName('svg')[0]
+    height = float(svgElement.attributes['height'].value.replace('pt','')) * pt
+    width = float(svgElement.attributes['width'].value.replace('pt','')) * pt
+    svg.close()
+    
+    legend_url_template = '<LegendURL format="image/svg+xml" xlink:href="%s" width="%d" height="%d"/>' % (legend_url, int(width), int(height))
+    
+    return legend_url_template
     
 #-------------------------------------------------------------------------------   
 
@@ -576,6 +622,9 @@ parser.add_option('-c', '--conf_file',
 parser.add_option('-d', '--layer_dir',
                   action='store', type='string', dest='layer_directory',
                   help='Full path of directory containing configuration files for layers.  Default: $LCDIR/layers/')
+parser.add_option("-g", "--generate_legend",
+                  action="store_true", dest="generate_legend", 
+                  default=False, help="Generate legends for layers using color maps in configuration.")
 parser.add_option('-l', '--lcdir',
                   action='store', type='string', dest='lcdir',
                   default=lcdir,
@@ -630,6 +679,8 @@ no_wmts = options.no_wmts
 restart = options.restart
 # Time for conf file.
 configuration_time = options.time
+# Generate legends
+legend = options.generate_legend
 # Projection configuration
 if options.projection_configuration:
     projection_configuration = options.projection_configuration
@@ -1193,6 +1244,20 @@ for conf in conf_files:
             twms_make.truncate()
             twms_make.writelines(lines)
             twms_make.close()
+    
+    # generate color map if requested
+    legendUrl = ''    
+    if legend == True and colormap != None:
+        legend_output = ''
+        try:
+            legend_output = environment.legend_dir + identifier + '.svg'
+        except:
+            print "Warning: Legend directory has not been defined for this environment"
+        try:
+            if legend_output != '':
+                legendUrl = generate_legend(colormap, legend_output, environment.legendUrl + identifier + '.svg')
+        except:
+            print "Warning: Legend URL has not been defined for this environment"
         
     # create WMTS layer metadata for GetCapabilities
     if no_wmts == False:
@@ -1213,6 +1278,7 @@ for conf in conf_files:
             <Style isDefault="true">
                 <ows:Title>default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
+                $LegendURL
             </Style>
             <Format>$Format</Format>
             <Dimension>
@@ -1241,6 +1307,8 @@ for conf in conf_files:
                 line = line.replace("$BoundingBox",projection.bbox_xml)
             if '$Identifier' in line:
                 line = line.replace("$Identifier",identifier)
+            if '$LegendURL' in line:
+                line = line.replace("$LegendURL",legendUrl)
             if '$ColorMap' in line:
                 if colormap == None:
                     line = ''
