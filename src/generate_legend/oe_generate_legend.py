@@ -94,23 +94,32 @@ class ColorMapEntry:
         return self.__repr__().encode(sys.stdout.encoding)
     
 
-def parse_colormap(colormap_location):
+def parse_colormap(colormap_location, verbose):
     
-    try:    
-        print "Reading color map:", colormap_location
+    try:
+        if verbose:
+            print "Reading color map:", colormap_location
         colormap_file = open(colormap_location,'r')
         dom = xml.dom.minidom.parse(colormap_file)
         colormap_file.close()
     except IOError:
         print "Accessing URL", colormap_location
-        dom = xml.dom.minidom.parse(urllib.urlopen(colormap_location))
+        try:
+            dom = xml.dom.minidom.parse(urllib.urlopen(colormap_location))
+        except:
+            msg = "ERROR: URL " + colormap_location + " is not accessible"
+            print >> sys.stderr, msg
+            raise Exception(msg)
+            sys.exit(1)
+
         
     colormap_element = dom.getElementsByTagName("ColorMap")[0]
     try:
         units = colormap_element.attributes['units'].value
     except KeyError:
         units = None
-    print "ColorMap units:", units
+    if verbose:
+        print "ColorMap units:", units
     
     style = "discrete"
     colormap_entries = []
@@ -140,9 +149,10 @@ def parse_colormap(colormap_location):
         
         colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label))
         
-    print "ColorMap style:", style
     colormap = ColorMap(units, colormap_entries, style)
-    print colormap
+    if verbose:
+        print "ColorMap style:", style
+        print colormap
     
     return colormap
 
@@ -361,6 +371,8 @@ parser.add_option('-u', '--sigevent_url',
                   default=
                   'http://localhost:8100/sigevent/events/create',
                   help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
+                  default=False, help="Print out detailed log messages")
 
 # read command line args
 (options, args) = parser.parse_args()
@@ -378,7 +390,7 @@ else:
     
 # parse colormap
 try:
-    colormap = parse_colormap(colormap_location)
+    colormap = parse_colormap(colormap_location, options.verbose)
 except IOError,e:
     print str(e)
     exit()
@@ -389,3 +401,5 @@ try:
 except IOError,e:
     print str(e)
     exit()
+    
+exit()
