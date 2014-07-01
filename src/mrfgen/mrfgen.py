@@ -322,7 +322,9 @@ def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data):
         mrf = mrf.replace(time_param,datetime.datetime.strftime(mrf_date,time_param))
     index = mrf.replace('.mrf', '.idx')
     data = mrf.replace('.mrf', os.path.basename(mrf_data)[-4:])
-    return (mrf, index, data)
+    aux = mrf + '.aux.xml'
+    vrt = mrf.replace('.mrf', '.vrt')
+    return (mrf, index, data, aux, vrt)
 
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
@@ -1209,13 +1211,18 @@ if len(modtiles) > 0:
         
     # Rename MRFs
     if mrf_name != '':
-        output_mrf, output_idx, output_data = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data)
+        output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data)
         log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
         shutil.move(mrf_filename, output_dir+output_mrf)
         log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
         shutil.move(idx_filename, output_dir+output_idx)
         log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
         shutil.move(out_filename, output_dir+output_data)
+        if data_only == False:
+            log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', output_dir+output_aux]))
+            shutil.move(mrf_filename+".aux.xml", output_dir+output_aux)
+            log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', output_dir+output_vrt]))
+            shutil.move(str().join([output_dir, basename, '.vrt']), output_dir+output_vrt)
         mrf_filename = output_dir+output_mrf
         out_filename = output_dir+output_data
         
