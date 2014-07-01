@@ -1309,6 +1309,7 @@ for conf in conf_files:
             <TileMatrixSetLink>
                 <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
             </TileMatrixSetLink>
+            <ResourceURL format="$Format" resourceType="tile" template="$WMTSServiceURL$Identifier/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.$FileType"/>
         </Layer>"""
     
         layer_output = ""
@@ -1334,6 +1335,10 @@ for conf in conf_files:
                     line = line.replace("$ColorMap",str(colormap))
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
+            if '$FileType' in line:
+                line = line.replace("$FileType",mrf_format.split('/')[1])
+            if '$WMTSServiceURL' in line:
+                line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)      
             if '$TileMatrixSet' in line:
                 line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
             if static == True or len(timeElements)==0:
