@@ -67,7 +67,7 @@ from datetime import datetime, time, timedelta
 from time import asctime
 from optparse import OptionParser
 
-versionNumber = '0.3.3'
+versionNumber = '0.4.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
