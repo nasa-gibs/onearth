@@ -858,9 +858,16 @@ for conf in conf_files:
             
         # Patterns
         patterns = []
+        rest_patterns = []
         patternTags = dom.getElementsByTagName('Pattern')
         for pattern in patternTags:
-            patterns.append(pattern.firstChild.data.strip())
+            try:
+                if pattern.attributes['type'].value == "WMTS-REST": # append WMTS REST patterns
+                    rest_patterns.append(pattern.firstChild.data.strip())
+                else: # assume TWMS key-value pair
+                    patterns.append(pattern.firstChild.data.strip())
+            except KeyError: # append if type does not exist
+                patterns.append(pattern.firstChild.data.strip())
             
         # Time
         if configuration_time:
@@ -923,6 +930,8 @@ for conf in conf_files:
     if colormap:
         log_info_mssg('config: ColorMap: ' + str(colormap))
     log_info_mssg('config: Patterns: ' + str(patterns))
+    if len(rest_patterns) > 0:
+        log_info_mssg('config: WMTS-REST Patterns: ' + str(rest_patterns))
     if len(times) > 0:
         log_info_mssg('config: Time: ' + str(times))
     
@@ -1084,6 +1093,10 @@ for conf in conf_files:
             if pattern_replaced == False:
                 patternline = line.split('Pattern')
                 line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]
+                if len(rest_patterns) > 0:
+                    rest_pattern = '<![CDATA[' + rest_patterns[0].replace('{Time}','[-0-9]*').replace('{TileMatrixSet}',projection.tilematrixsets[levels]).replace('{TileMatrix}','[0-9]*').replace('{TileRow}','[0-9]*').replace('{TileCol}','[0-9]*') + ']]>'
+                    patternline = line.split('</Pattern>')
+                    line = patternline[0] + "</Pattern>\n    <Pattern>" + rest_pattern + "</Pattern>" + patternline[-1]                    
                 pattern_replaced = True
             else:
                 line = ''
