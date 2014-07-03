@@ -1,5 +1,5 @@
 Name:		mod_onearth
-Version:	0.3.3
+Version:	0.4.0
 Release:	1%{?dist}
 Summary:	Apache module for OnEarth
 
