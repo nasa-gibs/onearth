@@ -46,7 +46,7 @@ DIT environment
 make mod_onearth PREFIX=%{_prefix}
 
 
-%install demo
+%install
 rm -rf %{buildroot}
 make mod_onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
@@ -76,7 +76,7 @@ rm -rf %{buildroot}
 %{_libdir}/httpd/modules/*
 %defattr(-,gibs,gibs,775)
 %dir %{_datadir}/onearth
-%defattr(664,gibs,gibs,775)
+%defattr(775,gibs,gibs,775)
 %{_datadir}/onearth/cgi
 %{_datadir}/onearth/empty_tiles
 %{_datadir}/onearth/onearth_logs

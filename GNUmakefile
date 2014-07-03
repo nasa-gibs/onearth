@@ -208,7 +208,7 @@ mod_onearth-artifact: mod_onearth-clean
 	tar cjvf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,mod_onearth-$(MOD_ONEARTH_VERSION)/," \
 		src/mod_onearth src/layer_config src/mrfgen src/cgi \
-		src/demo src/onearth_logs GNUmakefile
+		src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------
 # RPM
