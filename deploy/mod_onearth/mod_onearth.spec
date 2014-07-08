@@ -1,6 +1,6 @@
 Name:		mod_onearth
 Version:	0.4.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Apache module for OnEarth
 
 License:	ASL 2.0+
@@ -82,11 +82,13 @@ rm -rf %{buildroot}
 
 %defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/empty_tiles
+%{_datadir}/onearth/empty_tiles/empty_config
 
 %defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/onearth_logs
 
 %defattr(664,gibs,gibs,775)
+%{_datadir}/onearth/layer_config/
 %config(noreplace) %{_datadir}/onearth/layer_config/conf
 %{_datadir}/onearth/layer_config/layers
 %{_datadir}/onearth/layer_config/schema
