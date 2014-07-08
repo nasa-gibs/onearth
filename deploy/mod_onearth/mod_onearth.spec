@@ -76,11 +76,21 @@ rm -rf %{buildroot}
 %{_libdir}/httpd/modules/*
 %defattr(-,gibs,gibs,775)
 %dir %{_datadir}/onearth
+
 %defattr(775,gibs,gibs,775)
 %{_datadir}/onearth/cgi
+
+%defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/empty_tiles
+
+%defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/onearth_logs
-%{_datadir}/onearth/layer_config
+
+%defattr(664,gibs,gibs,775)
+%config(noreplace) %{_datadir}/onearth/layer_config/conf
+%{_datadir}/onearth/layer_config/layers
+%{_datadir}/onearth/layer_config/schema
+%{_datadir}/onearth/layer_config/twms
 
 %files demo
 %defattr(-,gibs,gibs,-)
