@@ -496,8 +496,11 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         else:
             start = ''
         for interval in list(intervals):
-            if interval[0] == 'P':
-                period = interval
+            if len(interval) > 0:
+                if interval[0] == 'P':
+                    period = interval
+                    intervals.remove(interval)
+            else:
                 intervals.remove(interval)
         if len(intervals) == 2:
             start = intervals[0]
