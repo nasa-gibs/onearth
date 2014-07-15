@@ -1645,9 +1645,51 @@ static int mrf_handler(request_rec *r)
   return OK;
 }
 
+int rewrite_rest_uri(request_rec *r) {
+
+	int i;
+	char *p;
+	char *params[9];
+	char *last;
+	i = 0;
+	p = apr_strtok(r->uri,"/",&last);
+	while (p != NULL && i < 10) {
+		params[i++] = p;
+		p = apr_strtok(NULL, "/",&last);
+	}
+
+	int length = i;
+	// tested using number of slashes...regex may be better
+	if (length < 7 || length > 8)
+		return -1;
+
+	i = i-1; // step back to split on "."
+	p = apr_strtok(params[i],".",&last);
+	while (p != NULL) {
+		params[i++] = p;
+		p = apr_strtok(NULL, ".",&last);
+	}
+
+	if (length == 7)
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1],params[2],params[3],params[4],params[5],params[6],params[7]);
+	if (length == 8)
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1],params[2],params[4],params[5],params[6],params[7],params[8],params[3]);
+	return 0;
+}
+
 static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
-  if ((r->method_number != M_GET) || (!(r->args))) return DECLINED;
+  if (r->method_number != M_GET) return DECLINED;
+  if (!(r->args)) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg"))) {
+		  if (rewrite_rest_uri(r) < 0)
+			  return DECLINED;
+		  else
+			  return mrf_handler(r);
+	  }
+	  else
+		  return DECLINED;
+  }
 
   if (ap_strstr(r->args,kmltype)) // This is the KML hook
     return kml_handler(r);
