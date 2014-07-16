@@ -1096,10 +1096,10 @@ for conf in conf_files:
             if pattern_replaced == False:
                 patternline = line.split('Pattern')
                 line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]
-                if len(rest_patterns) > 0:
-                    rest_pattern = '<![CDATA[' + rest_patterns[0].replace('{Time}','[-0-9]*').replace('{TileMatrixSet}',projection.tilematrixsets[levels]).replace('{TileMatrix}','[0-9]*').replace('{TileRow}','[0-9]*').replace('{TileCol}','[0-9]*') + ']]>'
-                    patternline = line.split('</Pattern>')
-                    line = patternline[0] + "</Pattern>\n    <Pattern>" + rest_pattern + "</Pattern>" + patternline[-1]                    
+#                 if len(rest_patterns) > 0:
+#                     rest_pattern = '<![CDATA[' + rest_patterns[0].replace('{Time}','[-0-9]*').replace('{TileMatrixSet}',projection.tilematrixsets[levels]).replace('{TileMatrix}','[0-9]*').replace('{TileRow}','[0-9]*').replace('{TileCol}','[0-9]*') + ']]>'
+#                     patternline = line.split('</Pattern>')
+#                     line = patternline[0] + "</Pattern>\n    <Pattern>" + rest_pattern + "</Pattern>" + patternline[-1]                    
                 pattern_replaced = True
             else:
                 line = ''
