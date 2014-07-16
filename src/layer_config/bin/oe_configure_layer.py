@@ -445,8 +445,13 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     period = 'P1D' # default to period of 1 day
     archiveLocation = add_trailing_slash(archiveLocation)
     
-    if time == detect or time == '':
-    #detect everything including breaks in date (assumes period of 1 day)
+    if time == detect or time == '' or time.startswith(detect+'/P'):
+    #detect everything including breaks in date
+        if time.startswith(detect+'/P'):
+            period = time.split('/')[1]
+        else:
+            print "Warning: No period in configuration"
+        print "Using period " + period
         dates = []
         for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
             # Print subdirectories
@@ -468,6 +473,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             startdate = datetime.now() # default to now
         else:
             startdate = min(dates)
+            print "Start of data " + datetime.strftime(startdate,"%Y-%m-%d")
         enddate = startdate # set end date to start date for lone dates
         for i, d in enumerate(dates):
             # print d
@@ -476,6 +482,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 if dates[i+1] == next_day:
                     enddate = next_day # set end date to next existing day
                 else: # end of range
+                    print "Break in data beginning on " + datetime.strftime(next_day,"%Y-%m-%d")
                     start = datetime.strftime(startdate,"%Y-%m-%d")
                     end = datetime.strftime(enddate,"%Y-%m-%d")
                     times.append(start+'/'+end+'/'+period)
@@ -486,6 +493,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 start = datetime.strftime(startdate,"%Y-%m-%d")
                 end = datetime.strftime(enddate,"%Y-%m-%d")
                 times.append(start+'/'+end+'/'+period)
+                print "End of data " + end
                 print "Time ranges: " + ", ".join(times)
                 return times
     
@@ -495,13 +503,18 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             start = detect
         else:
             start = ''
+        has_period = False
         for interval in list(intervals):
             if len(interval) > 0:
                 if interval[0] == 'P':
+                    has_period = True
                     period = interval
                     intervals.remove(interval)
             else:
                 intervals.remove(interval)
+        if has_period == False:
+            print "Warning: No period in configuration"
+        print "Using period " + period
         if len(intervals) == 2:
             start = intervals[0]
             end = intervals[1]
