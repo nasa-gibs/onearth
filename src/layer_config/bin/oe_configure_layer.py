@@ -1543,5 +1543,15 @@ if len(warnings) == 0 and len(errors) == 0:
     message = completion + "successully."
 print ""
 message = message + " " + ("Cache created.", "No cache.")[no_cache] + " " + ("XML created","No XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
-log_sig_exit('INFO', message, sigevent_url)
+
+try:
+    sigevent('INFO', asctime() + " " + message, sigevent_url)
+except urllib2.URLError:
+    print 'sigevent service is unavailable'
+print 'Exiting oe_configure_layer.'
+
+if len(errors) > 0:
+    sys.exit(len(errors))
+else:
+    sys.exit(0)
     
