@@ -384,8 +384,8 @@ else:
         working_dir            ='/tmp/'
     try:
         logfile_dir            =get_dom_tag_value(dom, 'logfile_dir')
-    except IndexError: #use output_dir if not specified
-        logfile_dir            =get_dom_tag_value(dom, 'output_dir')
+    except IndexError: #use working_dir if not specified
+        logfile_dir            =working_dir
     try:
         mrf_name=get_dom_tag_value(dom, 'mrf_name')
     except IndexError:
@@ -479,7 +479,7 @@ if os.path.dirname(configuration_filename) != os.path.dirname(input_dir):
         at_dest_preexisting=glob.glob(at_dest_filename)
         if len(at_dest_preexisting) > 0:
             remove_file(at_dest_filename)
-        shutil.copy(configuration_filename, output_dir+"/"+basename+".configuration_file.xml")
+        shutil.copy(configuration_filename, working_dir+"/"+basename+".configuration_file.xml")
         log_info_mssg(str().join([
                           'config XML file:  moved to      ', input_dir]))
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
@@ -1219,10 +1219,10 @@ if len(modtiles) > 0:
         log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
         shutil.move(out_filename, output_dir+output_data)
         if data_only == False:
-            log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', output_dir+output_aux]))
-            shutil.move(mrf_filename+".aux.xml", output_dir+output_aux)
-            log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', output_dir+output_vrt]))
-            shutil.move(str().join([output_dir, basename, '.vrt']), output_dir+output_vrt)
+            log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
+            shutil.move(mrf_filename+".aux.xml", working_dir+output_aux)
+            log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', working_dir+output_vrt]))
+            shutil.move(str().join([output_dir, basename, '.vrt']), working_dir+output_vrt)
         mrf_filename = output_dir+output_mrf
         out_filename = output_dir+output_data
         
@@ -1230,7 +1230,7 @@ if len(modtiles) > 0:
     if data_only == True:
         remove_file(log_filename)
         remove_file(output_dir+"/"+basename+".mrf.aux.xml")
-        remove_file(output_dir+"/"+basename+".configuration_file.xml")
+        remove_file(working_dir+"/"+basename+".configuration_file.xml")
 
 # Remove temp tiles
 for tilename in (alltiles):
