@@ -113,6 +113,9 @@ class Projection:
         self.tilematrixsets = projection_tilematrixsets
         self.tilematrixset_xml = projection_tilematrixset_xml
 
+warnings = []
+errors = []
+
 def sigevent(type, mssg, sigevent_url):
     """
     Send a message to sigevent service.
@@ -179,11 +182,29 @@ def log_sig_warn(mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Send to log.
-    logging.warning(asctime())
-    logging.warning(mssg)
+    logging.warning(asctime() + " " + mssg)
+    global warnings
+    warnings.append(asctime() + " " + mssg)
     # Send to sigevent.
     try:
-        sent=sigevent('WARN', mssg, sigevent_url)
+        sigevent('WARN', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
+        
+def log_sig_err(mssg, sigevent_url):
+    """
+    Send a warning to the log and to sigevent.
+    Arguments:
+        mssg -- 'message for operations'
+        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
+    """
+    # Send to log.
+    logging.error(asctime() + " " + mssg)
+    global errors
+    errors.append(asctime() + " " + mssg)
+    # Send to sigevent.
+    try:
+        sigevent('ERROR', mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
 
@@ -199,7 +220,7 @@ def log_sig_exit(type, mssg, sigevent_url):
     mssg=str().join([mssg, '  Exiting oe_configure_layer.'])
     # Send to sigevent.
     try:
-        sent=sigevent(type, mssg, sigevent_url)
+        sigevent(type, mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
     # Send to log.
@@ -247,7 +268,7 @@ def change_dom_tag_value(dom, tag_name, value):
     tag = dom.getElementsByTagName(tag_name)
     tag[0].firstChild.nodeValue = value
     
-def run_command(cmd):
+def run_command(cmd, sigevent_url):
     """
     Runs the provided command on the terminal.
     Arguments:
@@ -259,7 +280,7 @@ def run_command(cmd):
     for output in process.stdout:
         print output.strip()
     for error in process.stderr:
-        sigevent('ERROR', error.strip(), sigevent_url)
+        log_sig_err(error.strip(), sigevent_url)
         raise Exception(error.strip())
     
 def add_trailing_slash(directory_path):
@@ -286,14 +307,13 @@ def get_environment(environmentConfig):
         print ('\nUsing environment config: ' + environmentConfig + '\n')
     except IOError:
         mssg=str().join(['Cannot read environment configuration file:  ', environmentConfig])
-        sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
+        raise Exception(mssg)
         
     dom = xml.dom.minidom.parse(environment_config)
     try:
         cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
     except IndexError:
-        log_sig_exit('ERROR', 'Required <CacheLocation> element is missing in ' + conf, sigevent_url)
+        raise Exception('Required <CacheLocation> element is missing in ' + environmentConfig)
         
     # Services
     try:
@@ -311,7 +331,7 @@ def get_environment(environmentConfig):
             elif str(getCapabilities.attributes['service'].value).lower() == "twms":
                 twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
         except KeyError:
-            log_sig_exit('ERROR', 'service is not defined in <GetCapabilitiesLocation>', sigevent_url)
+            raise Exception('service is not defined in <GetCapabilitiesLocation>')
             
     serviceUrlElements = dom.getElementsByTagName('ServiceURL')
     wmtsServiceUrl = None
@@ -323,7 +343,7 @@ def get_environment(environmentConfig):
             elif str(serviceUrl.attributes['service'].value).lower() == "twms":
                 twmsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
         except KeyError:
-            log_sig_exit('ERROR', 'service is not defined in <ServiceURL>', sigevent_url)        
+            raise Exception('service is not defined in <ServiceURL>')      
  
     stagingLocationElements = dom.getElementsByTagName('StagingLocation')
     wmtsStagingLocation = None
@@ -335,7 +355,7 @@ def get_environment(environmentConfig):
             elif str(stagingLocation.attributes['service'].value).lower() == "twms":
                 twmsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
         except KeyError:
-            log_sig_exit('ERROR', 'service is not defined in <StagingLocation>', sigevent_url)  
+            raise Exception('service is not defined in <StagingLocation>') 
     
     if twmsStagingLocation != None:
         add_trailing_slash(twmsStagingLocation)
@@ -424,8 +444,7 @@ def get_projection(projectionId, projectionConfig, lcdir):
     
     if projection == None:
         mssg = "Projection " + projectionId + " could not be found in projection configuration file."
-        sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
+        raise Exception(mssg)
     
     return projection
 
@@ -445,12 +464,18 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     period = 'P1D' # default to period of 1 day
     archiveLocation = add_trailing_slash(archiveLocation)
     
+    if not os.path.isdir(archiveLocation):
+        message = archiveLocation + " is not a valid location"
+        log_sig_err(message, sigevent_url)
+        return times
+    
     if time == detect or time == '' or time.startswith(detect+'/P'):
     #detect everything including breaks in date
         if time.startswith(detect+'/P'):
             period = time.split('/')[1]
         else:
-            print "Warning: No period in configuration"
+            message = "No period in time configuration for " + fileNamePrefix
+            log_sig_warn(message, sigevent_url)
         print "Using period " + period
         dates = []
         for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
@@ -469,7 +494,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         # Search for date ranges
         if len(dates) == 0:
             message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
-            log_sig_warn(message, sigevent_url)
+            log_sig_err(message, sigevent_url)
             startdate = datetime.now() # default to now
         else:
             startdate = min(dates)
@@ -513,7 +538,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             else:
                 intervals.remove(interval)
         if has_period == False:
-            print "Warning: No period in configuration"
+            message = "No period in time configuration for " + fileNamePrefix
+            log_sig_warn(message, sigevent_url)
         print "Using period " + period
         if len(intervals) == 2:
             start = intervals[0]
@@ -547,8 +573,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             print "Available range with data is %s to %s" % (oldest_year, newest_year)
             if newest_year == '' or oldest_year == '':
                 mssg = "No data files found in year directories in " + archiveLocation 
-                sigevent('ERROR', mssg, sigevent_url)
-                sys.exit(mssg)
+                log_sig_err(mssg, sigevent_url)
+                return times
                             
         if start==detect:
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
@@ -560,6 +586,10 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                         dates.append(filedate)
                     except ValueError:
                         print "Skipping", filename
+                if len(dates) == 0:
+                    message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
+                    log_sig_err(message, sigevent_url)
+                    return times
                 startdate = min(dates)
                 start = datetime.strftime(startdate,"%Y-%m-%d")
         
@@ -599,7 +629,7 @@ def generate_legend(colormap, output, legend_url):
     if os.path.isfile(output) == False:
         print "Generating new legend"
         cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
-        run_command(cmd)
+        run_command(cmd, sigevent_url)
     else:
         print "Legend already exists"
         try:
@@ -614,7 +644,7 @@ def generate_legend(colormap, output, legend_url):
                 print "Updated color map found"
                 print "Generating new legend"
                 cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
-                run_command(cmd)
+                run_command(cmd, sigevent_url)
         except Exception, e:
             print e
     # check file
@@ -781,10 +811,8 @@ for conf in conf_files:
         config_file=open(conf, 'r')
         print ('\nUsing config: ' + conf)
     except IOError:
-        mssg=str().join(['Cannot read configuration file:  ', 
-                         conf])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
+        log_sig_err(str().join(['Cannot read configuration file: ', conf]), sigevent_url)
+        continue
     else:
         dom = xml.dom.minidom.parse(config_file)
         
@@ -792,11 +820,13 @@ for conf in conf_files:
         try:
             identifier = get_dom_tag_value(dom, 'Identifier')
         except IndexError:
-            log_sig_exit('ERROR', 'Required <Identifier> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <Identifier> element is missing in ' + conf, sigevent_url)
+            continue
         try:
             title = get_dom_tag_value(dom, 'Title')
         except IndexError:
-            log_sig_exit('ERROR', 'Required <Title> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <Title> element is missing in ' + conf, sigevent_url)
+            continue
         try:
             compression = get_dom_tag_value(dom, 'Compression')
             compression = compression.upper()
@@ -805,26 +835,36 @@ for conf in conf_files:
             if compression == "PPNG":
                 compression = "PNG"
             if compression not in ["JPEG", "PNG"]:
-                log_sig_exit('ERROR', '<Compression> must be either JPEG or PNG in ' + conf, sigevent_url)
+                log_sig_err('<Compression> must be either JPEG or PNG in ' + conf, sigevent_url)
+                continue
         except IndexError:
-            log_sig_exit('ERROR', 'Required <Compression> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
+            continue
         try:
             levels = get_dom_tag_value(dom, 'Levels')
         except IndexError:
-            log_sig_exit('ERROR', 'Required <Levels> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <Levels> element is missing in ' + conf, sigevent_url)
+            continue
         try:
             emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
         except IndexError:
-            log_sig_exit('ERROR', 'Required <EmptyTileSize> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <EmptyTileSize> element is missing in ' + conf, sigevent_url)
+            continue
         try:
             fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
         except IndexError:
-            log_sig_exit('ERROR', 'Required <FileNamePrefix> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <FileNamePrefix> element is missing in ' + conf, sigevent_url)
+            continue
         try:
             environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
-            environment = get_environment(environmentConfig)
+            try:
+                environment = get_environment(environmentConfig)
+            except Exception, e:
+                log_sig_err(str(e), sigevent_url)
+                continue
         except IndexError:
-            log_sig_exit('ERROR', 'Required <EnvironmentConfig> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <EnvironmentConfig> element is missing in ' + conf, sigevent_url)
+            continue
             
         cacheConfig = environment.cache
         wmts_getCapabilities = environment.getCapabilities_wmts
@@ -861,7 +901,11 @@ for conf in conf_files:
         try:
             projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir)
         except IndexError:
-            projection = None 
+            log_sig_err('Required <Projection> element is missing in ' + conf, sigevent_url)
+            continue
+        except Exception, e:
+            log_sig_err(str(e), sigevent_url)
+            continue
         try:
             emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
         except:
@@ -884,6 +928,9 @@ for conf in conf_files:
                     patterns.append(pattern.firstChild.data.strip())
             except KeyError: # append if type does not exist
                 patterns.append(pattern.firstChild.data.strip())
+        if len(patterns) == 0:
+            log_sig_err('No <Pattern> elements for TWMS found in ' + conf, sigevent_url)
+            continue
             
         # Time
         if configuration_time:
@@ -1009,10 +1056,8 @@ for conf in conf_files:
         # Open file.
         mrf_file=open(headerFileName, 'r')
     except IOError:
-        mssg=str().join(['Cannot read MRF header file:  ', 
-                         headerFileName])
-        sent=sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
+        log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
+        continue
     else:
         mrf_dom = xml.dom.minidom.parse(mrf_file)
     
@@ -1299,12 +1344,18 @@ for conf in conf_files:
         try:
             legend_output = environment.legend_dir + identifier + '.svg'
         except:
-            print "Warning: Legend directory has not been defined for this environment"
+            message = "Legend directory has not been defined for environment with cache location: " + environment.cache
+            log_sig_err(message, sigevent_url)
         try:
-            if legend_output != '':
-                legendUrl = generate_legend(colormap, legend_output, environment.legendUrl + identifier + '.svg')
+            if environment.legendUrl != None:
+                if legend_output != '':
+                    legendUrl = generate_legend(colormap, legend_output, environment.legendUrl + identifier + '.svg')
+            else:
+                message = "Legend URL has not been defined for environment with cache location: " + environment.cache
+                log_sig_err(message, sigevent_url)
         except:
-            print "Warning: Legend URL has not been defined for this environment"
+            message = "Error generating legend for " + identifier
+            log_sig_err(message, sigevent_url)
         
     # create WMTS layer metadata for GetCapabilities
     if no_wmts == False:
@@ -1399,9 +1450,9 @@ if no_twms == False:
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
         cmd = 'make -C '+twms_endpoint.path+'/ clean'
-        run_command(cmd)
+        run_command(cmd, sigevent_url)
         cmd = 'make -C '+twms_endpoint.path+'/ all'
-        run_command(cmd)
+        run_command(cmd, sigevent_url)
         if no_cache == False:
             if twms_endpoint.cacheConfig:
                 print '\nCopying: ' + twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig+'/cache.config'
@@ -1424,7 +1475,7 @@ if no_wmts == False:
             if mrf_file.endswith(".mrf"):
                 mrfs = mrfs + wmts_endpoint.path+'/'+mrf_file + ' '
         cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + wmts_endpoint.path+'/cache_wmts.config'
-        run_command(cmd)
+        run_command(cmd, sigevent_url)
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
                 print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig+'/cache_wmts.config'
@@ -1464,13 +1515,33 @@ if no_cache == False:
 
 if restart==True:
     cmd = 'sudo apachectl stop'
-    run_command(cmd)
+    try:
+        run_command(cmd, sigevent_url)
+    except Exception, e:
+        log_sig_err(str(e), sigevent_url)
     cmd = 'sleep 3'
-    run_command(cmd)
+    run_command(cmd, sigevent_url)
     cmd = 'sudo apachectl start'
-    run_command(cmd)
+    try:
+        run_command(cmd, sigevent_url)
+    except Exception, e:
+        log_sig_err(str(e), sigevent_url)
     print '\nThe Apache server was restarted successfully'
-    
-message = "The OnEarth Layer Configurator completed successully. " + ("Cache created.", "No cache.")[no_cache] + " " + ("XML created","No XML")[no_xml] + "."
+
+completion = "The OnEarth Layer Configurator completed "
+if len(warnings) > 0:
+    message = completion + "with warnings."
+    print "Warnings:"
+    for warning in warnings:
+        print warning
+if len(errors) > 0:
+    message = completion + "with errors."
+    print "\nErrors:"
+    for error in errors:
+        print error
+if len(warnings) == 0 and len(errors) == 0:
+    message = completion + "successully."
+print ""
+message = message + " " + ("Cache created.", "No cache.")[no_cache] + " " + ("XML created","No XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
 log_sig_exit('INFO', message, sigevent_url)
     
