@@ -1,7 +1,7 @@
-%global gdal_version 1.10.1
-%global gdal_release 6%{?dist}
+%global gdal_version 1.11.0
+%global gdal_release 1%{?dist}
 %global mrf_version 0.4.0
-%global mrf_release 1%{?dist}
+%global mrf_release 2%{?dist}
 
 Name:		gibs-gdal
 Version:	%{gdal_version}
@@ -140,6 +140,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Jul 18 2014 Mike McGann <mike.mcgann@nasa.gov> - 1.11.0-1
+- New upstream GDAL version
+
 * Wed Apr 30 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.10.1-5
 - Changed MRF version to 0.3.1
 
