@@ -1372,8 +1372,7 @@ for conf in conf_files:
             <ows:Title>$Title</ows:Title>
             $BoundingBox
             <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" 
-                xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
             <Style isDefault="true">
                 <ows:Title>default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
