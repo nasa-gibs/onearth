@@ -132,7 +132,7 @@ static void *p_file_pread(apr_pool_t *p, char *fname,
 char *tstamp_fname(request_rec *r,char *fname)
 {
   static char* timearg="time=";
-  static char* tstamp="TTTTTTT";
+  static char* tstamp="TTTTTTT_";
   char *targ;
 
   if ((targ=ap_strcasestr(r->args,timearg))&&ap_strstr(fname,tstamp)) { 
@@ -177,7 +177,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 {
   int fd;
   static char* timearg="time=";
-  static char* tstamp="TTTTTTT";
+  static char* tstamp="TTTTTTT_";
   static char* year="YYYY";
   char *targ=0,*fnloc=0,*yearloc=0;
 
