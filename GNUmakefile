@@ -1,4 +1,4 @@
-GDAL_VERSION=1.10.1
+GDAL_VERSION=1.11.0
 GDAL_ARTIFACT=gdal-$(GDAL_VERSION).tar.gz
 GDAL_HOME=http://download.osgeo.org/gdal
 GDAL_URL=$(GDAL_HOME)/$(GDAL_VERSION)/$(GDAL_ARTIFACT)
@@ -59,12 +59,12 @@ build/gdal/swig/python/GNUmakefile: deploy/gibs-gdal/python-install.patch
 		patch -p0 < ../../deploy/gibs-gdal/python-install.patch )
 # 	Use external libtool
 	sed -i 's|@LIBTOOL@|/usr/bin/libtool|g' build/gdal/GDALmake.opt.in
-	
+
 #   Build MRF into GDAL
 	sed -i 's|GDAL_FORMATS = |GDAL_FORMATS = mrf |g' build/gdal/GDALmake.opt.in
 	sed -i -e'/^CPL_C_START/a void CPL_DLL GDALRegister_mrf(void);' build/gdal/gcore/gdal_frmts.h
 	sed -i -e'/AutoLoadDrivers/a #ifdef FRMT_mrf\n    GDALRegister_mrf();\n#endif' build/gdal/frmts/gdalallregister.cpp
-	
+
 #	Patch gcore/overview.cpp	
 	( cd build/gdal/gcore ; \
 		patch < ../../../deploy/gibs-gdal/overview.patch )
@@ -166,7 +166,7 @@ mod_onearth-install:
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
 	cp -r src/layer_config/schema \
 		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
-		
+
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
 	cp -r src/onearth_logs/logs.* \
 		$(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
