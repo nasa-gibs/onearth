@@ -1219,10 +1219,12 @@ if len(modtiles) > 0:
         log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
         shutil.move(out_filename, output_dir+output_data)
         if data_only == False:
-            log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
-            shutil.move(mrf_filename+".aux.xml", working_dir+output_aux)
-            log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', working_dir+output_vrt]))
-            shutil.move(str().join([output_dir, basename, '.vrt']), working_dir+output_vrt)
+            if os.path.isfile(mrf_filename+".aux.xml"):
+                log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
+                shutil.move(mrf_filename+".aux.xml", working_dir+output_aux)
+            if os.path.isfile(str().join([output_dir, basename, '.vrt'])):
+                log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', working_dir+output_vrt]))
+                shutil.move(str().join([output_dir, basename, '.vrt']), working_dir+output_vrt)
         mrf_filename = output_dir+output_mrf
         out_filename = output_dir+output_data
         
