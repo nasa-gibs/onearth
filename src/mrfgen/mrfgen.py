@@ -245,6 +245,19 @@ def remove_file(filename):
     #Normalizing the path with abspath and comparing it against the target 
     #directory avoids file names like "../../../etc/passwd" or similar.
 
+def check_abs_path(directory_path):
+    """
+    Check if directory is absolute path.
+    If not, prepend current working directory.
+        Argument:
+            directory_path -- path to check if absolute
+    """
+    if directory_path[0] != '/':
+        directory_path = os.getcwd() +'/' + directory_path
+    
+    return directory_path
+    
+
 def add_trailing_slash(directory_path):
     """
     Add trailing slash if one is not already present.
@@ -393,7 +406,7 @@ else:
         mrf_name='{$parameter_name}%Y%j_.mrf'
     # MRF specific parameters.
     try:
-        mrf_empty_tile_filename=get_dom_tag_value(dom, 'mrf_empty_tile_filename')
+        mrf_empty_tile_filename=check_abs_path(get_dom_tag_value(dom, 'mrf_empty_tile_filename'))
     except IndexError:
         mrf_empty_tile_filename=lookupEmptyTile(get_dom_tag_value(dom, 'empty_tile'))
     vrtnodata              =get_dom_tag_value(dom, 'vrtnodata')
@@ -433,11 +446,11 @@ else:
     config_file.close()
 
 # Make certain each directory exists and has a trailing slash.
-input_dir  =add_trailing_slash(input_dir)
-output_dir =add_trailing_slash(output_dir)
-cache_dir  =add_trailing_slash(cache_dir)
-working_dir=add_trailing_slash(working_dir)
-logfile_dir=add_trailing_slash(logfile_dir)
+input_dir  =add_trailing_slash(check_abs_path(input_dir))
+output_dir =add_trailing_slash(check_abs_path(output_dir))
+cache_dir  =add_trailing_slash(check_abs_path(cache_dir))
+working_dir=add_trailing_slash(check_abs_path(working_dir))
+logfile_dir=add_trailing_slash(check_abs_path(logfile_dir))
 
 # Save script_dir
 script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
@@ -1053,8 +1066,7 @@ if len(modtiles) > 0:
         #-----------------------------------------------------------------------
         # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
         log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
-        log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,
-                                  ' to ', out_filename]))
+        log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
         shutil.copy(mrf_empty_tile_filename, out_filename)
         #-----------------------------------------------------------------------    
 
