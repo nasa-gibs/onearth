@@ -864,7 +864,7 @@ if len(modtiles) > 0:
         if '.mrf' in tile.lower():
             mrf_list.append(tile)
             alltiles.remove(tile)
-    if len(mrf_list) == 0:
+    if len(mrf_list) == 0 and input_files == '':
         mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
     # Should only be one MRF, so use that one
     if len(mrf_list) > 0:
