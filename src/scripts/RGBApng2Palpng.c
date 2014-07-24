@@ -1,7 +1,7 @@
 /*
   gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
-  NOTE: this currently only works for palette PNGs.
+  NOTE: this currently only outputs a palette PNG.
 */
 
 #include <stdio.h>
@@ -57,13 +57,14 @@ int found;
 
 int num_not_found=0;
 int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_NOT_FOUND];
+int return_code=0;
 
   filename1[0] = '\0';
   filename2[0] = '\0';
   lutname[0] = '\0';
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<ColorMap file> -fill=<LUT index value> -of=<output palette PNG file> <input RGBA PNG file>\n");
+    fprintf(stderr, "Usage: RGBApng2Palpng [-v] -lut=<ColorMap file (must contain RGBA)> -fill=<LUT index value> -of=<output palette PNG file> <input RGBA PNG file>\n");
     exit(-1);
   }
 
@@ -317,7 +318,6 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   }
 
   png_trans = (unsigned char *)malloc(256 * sizeof(unsigned char));
-  /* making all colors opaque for now */
   for (j=0; j<256; j++) {
     png_trans[j] = alphaarr[j];
   }
@@ -337,6 +337,12 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
             fprintf(stderr, "Unknown Color Type: %d\n", color_type);
             exit(-1);
   }
+  
+  if ( color_type != PNG_COLOR_TYPE_RGB && color_type != PNG_COLOR_TYPE_RGB_ALPHA ) {
+    fprintf(stderr, "Color Type must be RGB or RGBA.\n");
+    exit(-1);
+  }
+  
   if ( verbose ) fprintf(stderr, "Bytes per Pixel: %d\n", bytesperpixel);
 
   for (i = 0;  i < height;  i++) {
@@ -382,6 +388,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   }
 
   if ( num_not_found > 0 ) {
+    return_code = num_not_found;
     fprintf(stderr, "%d Colors in image not found in color table\n", num_not_found);
     for (k = 0; k < num_not_found; k++) {
       fprintf(stderr, "%3d %3d %3d\n", rednotfound[k], greennotfound[k], bluenotfound[k]);
@@ -486,6 +493,6 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   if (info_ptr != NULL) png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
   if (png_ptr != NULL) png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
 
-  return 0;
+  return return_code;
 
 }
