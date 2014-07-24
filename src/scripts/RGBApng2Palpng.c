@@ -226,7 +226,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
       dest_pal++;
       
       redarr[j] = greenarr[j] = bluearr[j] = j;
-      alphaarr[j] = 255
+      alphaarr[j] = 255;
   } else {
     if ( (lut = fopen(lutname, "r")) != NULL ) {
     	if (strlen(lutname) > 4 && ((!strcmp(lutname + strlen(lutname) - 4, ".xml")))) {
@@ -239,7 +239,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
     			char *buffer = (char *)malloc(size);
     			const char *rgb_key = "rgb=";
     			const char *transparent_key = "transparent=";
-    			const char *true_str = "true";
+    			const char *true_str = "\"true\"";
     			
     			do { // read all lines in file
 					pos = 0;
@@ -276,7 +276,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 						dest_pal->green = green;
 						dest_pal->blue = blue;
 						
-						alpha = strcmp(transparent, true_str) == 0 ? 0 : 255;
+						alpha = strstr(transparent, true_str) != NULL ? 0 : 255;
 						dest_pal->alpha = alpha;
 						
 						dest_pal++;
@@ -284,7 +284,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
 						greenarr[j] = green;
 						bluearr[j] = blue;
 						alphaarr[j] = alpha;
-						//fprintf(stderr, "RGB: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
+						// fprintf(stderr, "RGB: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
 						j++;
 					}
     			} while(c != EOF);;
@@ -319,7 +319,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
   png_trans = (unsigned char *)malloc(256 * sizeof(unsigned char));
   /* making all colors opaque for now */
   for (j=0; j<256; j++) {
-    png_trans[j] = 255;
+    png_trans[j] = alphaarr[j];
   }
 
   switch(color_type) {
@@ -444,7 +444,7 @@ int rednotfound[MAX_NOT_FOUND], greennotfound[MAX_NOT_FOUND], bluenotfound[MAX_N
     exit(-1);
   }
 
-  png_set_PLTE(png_ptr, info_ptr, png_palette, 256);
+  png_set_PLTE(png_ptr, info_ptr, (png_colorp) png_palette, 256);
 
   if (setjmp(png_jmpbuf(png_ptr))) {
     fprintf(stderr, "Error during PNG set transparency\n");
