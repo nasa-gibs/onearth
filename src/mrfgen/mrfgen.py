@@ -694,14 +694,26 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 log_the_command(RGBApng2Palpng_command_list)
          
                 # Execute RGBApng2Palpng.
-                subprocess.call(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                try:
+                    RGBApng2Palpng = subprocess.Popen(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except OSError:
+                    log_sig_exit('ERROR', "RGBApng2Palpng tool cannot be found.", sigevent_url)
+                
+                RGBApng2Palpng.wait()
+                if RGBApng2Palpng.returncode != None:
+                    if  0 < RGBApng2Palpng.returncode < 255:
+                        mssg = "RGBApng2Palpng: " + str(RGBApng2Palpng.returncode) + " colors in image not found in color table"
+                        sigevent('INFO', mssg, sigevent_url)
+                    if RGBApng2Palpng.returncode == 255:
+                        mssg = sigevent('ERROR', "RGBApng2Palpng: " + str(RGBApng2Palpng.stderr.readlines()[-1]), sigevent_url)
                 
                 if os.path.isfile(output_tile):
-                    print output_tile, "created"
+                    mssg = output_tile + " created"
+                    sigevent('INFO', mssg, sigevent_url)
                     # Replace with new tiles
                     alltiles[i] = output_tile
                 else:
-                    raise Exception("Failed to create " + output_tile) #exception or warning?
+                    sigevent('ERROR', "RGBApng2Palpng failed to create " + output_tile, sigevent_url)
                 
                 # Make a copy of world file
                 if os.path.isfile(tile.split('.')[0]+'.pgw'):
@@ -876,7 +888,10 @@ if len(modtiles) > 0:
             mrf_insert_command_list.append(tile)
         mrf_insert_command_list.append(mrf)
         log_the_command(mrf_insert_command_list)
-        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError:
+            log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
         insert_message = mrf_insert.stderr.readlines()
         # Continue or break if there is an error?
         for message in insert_message:
