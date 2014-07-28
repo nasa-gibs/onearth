@@ -304,7 +304,10 @@ def lookupEmptyTile(empty_tile):
     script_dir = os.path.dirname(__file__)
     if script_dir == '/usr/bin':
         script_dir = '/usr/share/onearth' # use default directory if in bin
-    empty_config_file=open(script_dir+"/empty_tiles/empty_config", 'r')
+    try:
+        empty_config_file=open(script_dir+"/empty_tiles/empty_config", 'r')
+    except IOError:
+        log_sig_exit('ERROR', script_dir+"/empty_tiles/empty_config could not be found", sigevent_url)
     tiles = {}
     for line in empty_config_file:
         (key, val) = line.split()
@@ -408,7 +411,11 @@ else:
     try:
         mrf_empty_tile_filename=check_abs_path(get_dom_tag_value(dom, 'mrf_empty_tile_filename'))
     except IndexError:
-        mrf_empty_tile_filename=lookupEmptyTile(get_dom_tag_value(dom, 'empty_tile'))
+        try:
+            mrf_empty_tile_filename=lookupEmptyTile(get_dom_tag_value(dom, 'empty_tile'))
+        except IndexError:
+            log_sig_warn("Empty tile was not found for " + parameter_name, sigevent_url)
+            mrf_empty_tile_filename = ''
     vrtnodata              =get_dom_tag_value(dom, 'vrtnodata')
     mrf_blocksize          =get_dom_tag_value(dom, 'mrf_blocksize')
     mrf_compression_type   =get_dom_tag_value(dom, 'mrf_compression_type')
@@ -534,29 +541,29 @@ else:
         mssg=str().join(['Specified empty tile file not found:  ', mrf_empty_tile_filename])
         log_sig_exit('ERROR', mssg, sigevent_url)
 
-# Verify that the empty tile image format is either PNG or JPEG.
-mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
-if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff':
-    mssg='Empty tile image format must be either png, jpeg, or tiff.'
-    log_sig_exit('ERROR', mssg, sigevent_url)
-
-# Verify that the empty tile matches MRF compression type.
-if mrf_empty_tile_what == 'png':
-    # Check the last 3 characters in case of PNG or PPNG.
-    if mrf_compression_type[-3:len(mrf_compression_type)] != 'PNG':
-        mssg='Empty tile format does not match MRF compression type.'
+    # Verify that the empty tile image format is either PNG or JPEG.
+    mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
+    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff':
+        mssg='Empty tile image format must be either png, jpeg, or tiff.'
         log_sig_exit('ERROR', mssg, sigevent_url)
-
-if mrf_empty_tile_what == 'jpeg':
-    # Check the first 2 characters in case of JPG or JPEG.
-    if mrf_compression_type[0:2] != 'JP':
-        mssg='Empty tile format does not match MRF compression type.'
-        log_sig_exit('ERROR', mssg, sigevent_url)
-
-# Report empty tile size in bytes.
-mrf_empty_tile_bytes=os.path.getsize(mrf_empty_tile_filename)
-log_info_mssg(str().join(['Empty tile size is:             ',
-                          str(mrf_empty_tile_bytes), ' bytes.']))
+    
+    # Verify that the empty tile matches MRF compression type.
+    if mrf_empty_tile_what == 'png':
+        # Check the last 3 characters in case of PNG or PPNG.
+        if mrf_compression_type[-3:len(mrf_compression_type)] != 'PNG':
+            mssg='Empty tile format does not match MRF compression type.'
+            log_sig_exit('ERROR', mssg, sigevent_url)
+    
+    if mrf_empty_tile_what == 'jpeg':
+        # Check the first 2 characters in case of JPG or JPEG.
+        if mrf_compression_type[0:2] != 'JP':
+            mssg='Empty tile format does not match MRF compression type.'
+            log_sig_exit('ERROR', mssg, sigevent_url)
+    
+    # Report empty tile size in bytes.
+    mrf_empty_tile_bytes=os.path.getsize(mrf_empty_tile_filename)
+    log_info_mssg(str().join(['Empty tile size is:             ',
+                              str(mrf_empty_tile_bytes), ' bytes.']))
 
 # Read previous cycle time string value from disk file.  
 # Time format in txt file is "yyyymmdd.hhmmss" and will be treated as a double 
@@ -703,7 +710,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 if RGBApng2Palpng.returncode != None:
                     if  0 < RGBApng2Palpng.returncode < 255:
                         mssg = "RGBApng2Palpng: " + str(RGBApng2Palpng.returncode) + " colors in image not found in color table"
-                        sigevent('INFO', mssg, sigevent_url)
+                        sigevent('WARN', mssg, sigevent_url)
                     if RGBApng2Palpng.returncode == 255:
                         mssg = sigevent('ERROR', "RGBApng2Palpng: " + str(RGBApng2Palpng.stderr.readlines()[-1]), sigevent_url)
                 
@@ -1080,9 +1087,10 @@ if len(modtiles) > 0:
 
         #-----------------------------------------------------------------------
         # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
-        log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
-        log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
-        shutil.copy(mrf_empty_tile_filename, out_filename)
+        if mrf_empty_tile_filename != '':
+            log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
+            log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
+            shutil.copy(mrf_empty_tile_filename, out_filename)
         #-----------------------------------------------------------------------    
 
         # Create the gdal_translate command.
@@ -1269,6 +1277,7 @@ for tilename in (alltiles):
             remove_file(tilename+'.aux.xml')
         if '_indexed.' in tilename:
             remove_file(tilename.split('.')[0]+'.pgw')
+remove_file(ptime_filename)
 
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])
