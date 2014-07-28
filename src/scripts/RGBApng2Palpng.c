@@ -29,7 +29,6 @@ char filename1[MAXNAMELENGTH], filename2[MAXNAMELENGTH];
 int idx, k, j;
 FILE *fd, *lut=NULL;
 byte *imgarr;
-int bgcolor=255;
 int userfill=-1;
 int colorstyle=GRAYSCALE;
 int red, green, blue, alpha;
@@ -39,8 +38,8 @@ unsigned char verbose=FALSE;
 
 png_structp png_ptr;
 png_infop info_ptr;
-png_color_8p png_palette;
-png_color_8p dest_pal;
+png_colorp png_palette;
+png_colorp dest_pal;
 unsigned char *png_trans;
 
 png_structp in_png_ptr;
@@ -218,12 +217,11 @@ int return_code=0;
 
   imgarr = (byte *) malloc(height * width * sizeof(byte));
 
-  png_palette = (png_color_8p)malloc( 256 * sizeof( png_color_8) );
+  png_palette = (png_colorp)malloc( 256 * sizeof( png_color) );
   dest_pal = png_palette;
   if (colorstyle == GRAYSCALE)
     for (j=0; j<256; j++) {
       dest_pal->red = dest_pal->green = dest_pal->blue = j;
-      dest_pal->alpha = 255;
       dest_pal++;
       
       redarr[j] = greenarr[j] = bluearr[j] = j;
@@ -278,14 +276,13 @@ int return_code=0;
 						dest_pal->blue = blue;
 						
 						alpha = strstr(transparent, true_str) != NULL ? 0 : 255;
-						dest_pal->alpha = alpha;
 						
 						dest_pal++;
 						redarr[j] = red;
 						greenarr[j] = green;
 						bluearr[j] = blue;
 						alphaarr[j] = alpha;
-						// fprintf(stderr, "RGB: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
+						//fprintf(stderr, "RGB: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
 						j++;
 					}
     			} while(c != EOF);;
@@ -302,8 +299,8 @@ int return_code=0;
 				  dest_pal->red = red;
 				  dest_pal->green = green;
 				  dest_pal->blue = blue;
-				  dest_pal->alpha = alpha;
 				  dest_pal++;
+				  
 				  redarr[j] = red;
 				  greenarr[j] = green;
 				  bluearr[j] = blue;
@@ -337,7 +334,7 @@ int return_code=0;
             fprintf(stderr, "Unknown Color Type: %d\n", color_type);
             exit(-1);
   }
-  
+
   if ( color_type != PNG_COLOR_TYPE_RGB && color_type != PNG_COLOR_TYPE_RGB_ALPHA ) {
     fprintf(stderr, "Color Type must be RGB or RGBA.\n");
     exit(-1);
@@ -451,7 +448,7 @@ int return_code=0;
     exit(-1);
   }
 
-  png_set_PLTE(png_ptr, info_ptr, (png_colorp) png_palette, 256);
+  png_set_PLTE(png_ptr, info_ptr, png_palette, 256);
 
   if (setjmp(png_jmpbuf(png_ptr))) {
     fprintf(stderr, "Error during PNG set transparency\n");
