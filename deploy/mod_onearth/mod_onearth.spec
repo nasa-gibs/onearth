@@ -1,6 +1,6 @@
 Name:		mod_onearth
-Version:	0.4.0
-Release:	2%{?dist}
+Version:	0.4.1
+Release:	1%{?dist}
 Summary:	Apache module for OnEarth
 
 License:	ASL 2.0+
@@ -90,17 +90,20 @@ rm -rf %{buildroot}
 %defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/layer_config/
 %config(noreplace) %{_datadir}/onearth/layer_config/conf
-%{_datadir}/onearth/layer_config/layers
+%config(noreplace) %{_datadir}/onearth/layer_config/layers
 %{_datadir}/onearth/layer_config/schema
 %{_datadir}/onearth/layer_config/twms
 
 %files demo
 %defattr(-,gibs,gibs,-)
 %{_datadir}/onearth/demo
-%config %{_sysconfdir}/httpd/conf.d/on_earth-demo.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/on_earth-demo.conf
 
 
 %changelog
+* Mon Jul 28 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.4.1-1
+- Added noreplace options to configuration directories
+
 * Wed May 14 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.3.2-1
 - Renamed mod_onearth directory to onearth and added TWMS directories
 
