@@ -637,6 +637,23 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 else: # Default to png
     tiff_compress = "PNG"
     
+# Filter out bad JPEGs
+goodtiles = []
+if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
+    for i, tile in enumerate(alltiles):
+        # Create the identify command.
+        identify_command_list=['identify', tile]
+        # Log the identify command.
+        log_the_command(identify_command_list)
+        # Execute identify.
+        identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        identify_process.wait()
+        if 'DirectClass' in identify_process.stdout.readlines()[0]:
+            goodtiles.append(tile)
+        else:
+            sigevent('ERROR', 'Bad JPEG tile detected: ' + tile, sigevent_url)
+    alltiles = goodtiles
+    
 # Convert TIFF files
 # for i, tile in enumerate(alltiles):
 #     if '.tif' in tile:
@@ -741,7 +758,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')     
         
-#print alltiles
+# print alltiles
 alltiles.sort()
 
 # Initialize list of tile modification times.
