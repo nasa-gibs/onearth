@@ -8,6 +8,8 @@ import os
 import unittest
 import subprocess
 import filecmp
+import urllib
+import shutil
 from osgeo import gdal
 
 def run_command(cmd):
@@ -24,24 +26,40 @@ def run_command(cmd):
     for error in process.stderr:
         print error.strip()
         raise Exception(error.strip())
-            
+                    
+
 class TestMRFGeneration(unittest.TestCase):
     
     def setUp(self):
         self.dirpath = os.path.dirname(__file__)
         self.test_config = self.dirpath + "/test/mrfgen_test_config.xml"
+        self.input_dir = self.dirpath + "/test/input_dir/"
         self.output_dir = self.dirpath + "/test/output_dir"
         self.working_dir = self.dirpath + "/test/working_dir"
         self.logfile_dir = self.dirpath + "/test/logfile_dir"
-        self.output_mrf = self.output_dir+ "/sst2014203_.mrf"
-        self.output_png = self.output_dir+ "/sst2014203_.png"
-        self.compare_png = self.dirpath + "/test/test_comp1.png"
+        self.output_mrf = self.output_dir+ "/MYR4ODLOLLDY2014203_.mrf"
+        self.output_img = self.output_dir+ "/MYR4ODLOLLDY2014203_.png"
+        self.compare_img = self.dirpath + "/test/test_comp1.png"
+        if not os.path.exists(self.input_dir):
+            os.makedirs(self.input_dir)
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir)
         if not os.path.exists(self.logfile_dir):
             os.makedirs(self.logfile_dir)
+        
+        # download tile
+        image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/2014/MYR4ODLOLLDY_global_2014203_10km.png"
+        world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/2014/MYR4ODLOLLDY_global_2014203_10km.pgw"
+        image_name = self.input_dir + image_url.split('/')[-1]
+        world_name = self.input_dir + world_url.split('/')[-1]
+        print "Downloading", image_url
+        image_file=urllib.URLopener()
+        image_file.retrieve(image_url,image_name)
+        print "Downloading", world_url
+        world_file=urllib.URLopener()
+        world_file.retrieve(world_url,world_name)
             
         #generate MRF
         run_command("python mrfgen.py -c " + self.test_config)
@@ -85,26 +103,132 @@ class TestMRFGeneration(unittest.TestCase):
             color = band.GetRasterColorTable().GetColorEntry(x)
             print color
             if x == 0:
-                self.assertEqual(str(color), '(0, 0, 0, 0)', "Color does not match")
+                self.assertEqual(str(color), '(220, 220, 255, 0)', "Color does not match")
             if x == 1:
-                self.assertEqual(str(color), '(43, 0, 26, 255)', "Color does not match")
+                self.assertEqual(str(color), '(0, 0, 0, 255)', "Color does not match")
         
         # Convert and compare MRF
         mrf = gdal.Open(self.output_mrf)
         driver = gdal.GetDriverByName("PNG")       
-        png = driver.CreateCopy(self.output_png, mrf, 0 )
+        img = driver.CreateCopy(self.output_img, mrf, 0 )
         
-        print 'Generated: ' + ' '.join(png.GetFileList())
-        print 'Size: ',png.RasterXSize,'x',png.RasterYSize, 'x',png.RasterCount
-        self.assertEqual(png.RasterXSize, dataset.RasterXSize, "Size does not match")
-        self.assertEqual(png.RasterYSize, dataset.RasterYSize, "Size does not match")
-        self.assertEqual(png.RasterCount, dataset.RasterCount, "Size does not match")
+        print 'Generated: ' + ' '.join(img.GetFileList())
+        print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+        self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
+        self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
+        self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
-        print "Comparing: " + self.output_png + " to " + self.compare_png
-        self.assertTrue(filecmp.cmp(self.output_png, self.compare_png), "Output PNG does not match")
+        print "Comparing: " + self.output_img + " to " + self.compare_img
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
-        png = None
+        img = None
         mrf = None
+        
+        print "\n***Test Case Passed***\n"
+        
+    def tearDown(self):
+        shutil.rmtree(self.input_dir)
+        shutil.rmtree(self.working_dir)
+        shutil.rmtree(self.logfile_dir)
+        shutil.rmtree(self.output_dir)
+
+
+class TestMRFGeneration_polar(unittest.TestCase):
+    
+    def setUp(self):
+        self.dirpath = os.path.dirname(__file__)
+        self.test_config = self.dirpath + "/test/mrfgen_test_config2.xml"
+        self.input_dir = self.dirpath + "/test/input_dir/"
+        self.output_dir = self.dirpath + "/test/output_dir"
+        self.working_dir = self.dirpath + "/test/working_dir"
+        self.logfile_dir = self.dirpath + "/test/logfile_dir"
+        self.output_mrf = self.output_dir+ "/MORCR143ARDY2014203_.mrf"
+        self.output_img = self.output_dir+ "/MORCR143ARDY2014203_.jpg"
+        self.compare_img = self.dirpath + "/test/test_comp2.jpg"
+        if not os.path.exists(self.input_dir):
+            os.makedirs(self.input_dir)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        if not os.path.exists(self.working_dir):
+            os.makedirs(self.working_dir)
+        if not os.path.exists(self.logfile_dir):
+            os.makedirs(self.logfile_dir)
+        
+        # download tiles
+        for r in range(0,8):
+            for c in range(0,8):
+                image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/2014203/Arctic_r%02dc%02d.2014203.aqua.250m.jpg" % (r,c,r,c)
+                world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/2014203/Arctic_r%02dc%02d.2014203.aqua.250m.jgw" % (r,c,r,c)
+                image_name = self.input_dir + image_url.split('/')[-1]
+                world_name = self.input_dir + world_url.split('/')[-1]
+                print "Downloading", image_url
+                image_file=urllib.URLopener()
+                image_file.retrieve(image_url,image_name)
+                print "Downloading", world_url
+                world_file=urllib.URLopener()
+                world_file.retrieve(world_url,world_name)
+            
+        #generate MRF
+        run_command("python mrfgen.py -c " + self.test_config)
+           
+    def test_generate_mrf_polar(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+        
+        print 'Files:', ' '.join(dataset.GetFileList())
+        self.assertEqual(len(dataset.GetFileList()),3,"MRF does not contain triplet")
+        
+        print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+        
+        print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 4096, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 3, "Size does not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -4194304, "Origin does not match")
+        self.assertEqual(geotransform[3], 4194304, "Origin does not match")
+        print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(int(geotransform[1]), 2048, "Pixel size does not match")
+        self.assertEqual(int(geotransform[5]), -2048, "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 3, "Overview count does not match")
+        
+        # Convert and compare MRF
+        mrf = gdal.Open(self.output_mrf)
+        driver = gdal.GetDriverByName("JPEG")       
+        img = driver.CreateCopy(self.output_img, mrf, 0 )
+        
+        print 'Generated: ' + ' '.join(img.GetFileList())
+        print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+        self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
+        self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
+        self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
+        
+        filesize = os.path.getsize(self.output_img)
+        print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
+        self.assertEqual(filesize, 3891603, "Output image does not match")
+        
+        img = None
+        mrf = None
+        
+        print "\n***Test Case Passed***\n"
+        
+    def tearDown(self):
+        shutil.rmtree(self.input_dir)
+        shutil.rmtree(self.working_dir)
+        shutil.rmtree(self.logfile_dir)
+        shutil.rmtree(self.output_dir)
 
 if __name__ == '__main__':
     unittest.main()

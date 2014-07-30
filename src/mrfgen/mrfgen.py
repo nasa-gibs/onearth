@@ -643,8 +643,6 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
     for i, tile in enumerate(alltiles):
         # Create the identify command.
         identify_command_list=['identify', tile]
-        # Log the identify command.
-        log_the_command(identify_command_list)
         # Execute identify.
         identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         identify_process.wait()
