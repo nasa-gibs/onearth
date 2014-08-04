@@ -61,7 +61,7 @@ void pngEH(png_struct *png, png_const_charp message)
 }
 
 // Read memory handlers for PNG
-// No check for attempting to read past the end of the file
+// No check for attempting to read past the end of the buffer
 
 void read_png(png_structp pngp, png_bytep data, png_size_t length)
 {
@@ -79,8 +79,9 @@ void write_png( png_structp pngp, png_bytep data, png_size_t length) {
         mgr->buffer+=length;
         mgr->size-=length;
     } else {
+	// This is a bad error actually, but we can't report errors
         CPLError(CE_Warning,CPLE_AppDefined,
-            "MRF: PNG Write buffer too small, truncating");
+            "MRF: PNG Write buffer too small!!");
         memcpy(mgr->buffer,data,mgr->size);
         mgr->buffer+=mgr->size;
         mgr->size=0;
@@ -89,26 +90,21 @@ void write_png( png_structp pngp, png_bytep data, png_size_t length) {
 
 /**
  *\brief In memory decompression of PNG file
- *
- * @param data pointer to output buffer 
- * @param png pointer to PNG in memory
- * @param sz if non-zero, test that uncompressed data fits in the buffer.
  */
 
-// CPLErr GDALMRFRasterBand::DecompressPNG(buf_mgr &dst, buf_mgr &src) 
 CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src) 
 {
-    png_structp pngp;
-    png_infop infop;
     png_bytep *png_rowp;
 
     // pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING,0,pngEH,pngWH);
-    if (!(pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING,NULL,NULL,NULL))) {
+    png_structp pngp=png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (0 == pngp) {
         CPLError(CE_Failure,CPLE_AppDefined,"MRF: Error creating PNG decompress");
         return CE_Failure;
     }
 
-    if (!(infop=png_create_info_struct(pngp))) {
+    png_infop infop=png_create_info_struct(pngp);
+    if ( 0 == infop ) {
         if (pngp) png_destroy_read_struct(&pngp,&infop,0);
         CPLError(CE_Failure,CPLE_AppDefined,"MRF: Error creating PNG info");
         return CE_Failure;
@@ -147,7 +143,8 @@ CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src)
     if (byte_count!=1) { // Swap from net order if data is short
         for (int i=0;i<height;i++) {
             unsigned short int*p=(unsigned short int *)png_rowp[i];
-            for (int j=0;j<rowbytes/2;j++,p++) *p=net16(*p);
+            for (int j=0; j<rowbytes/2; j++,p++)
+				*p=net16(*p);
         }
     }
 
@@ -165,14 +162,13 @@ CPLErr PNG_Band::DecompressPNG(buf_mgr &dst, buf_mgr &src)
 
 /**
  *\Brief Compres a page in PNG format
- * Returns the compressed size in dest.size
+ * Returns the compressed size in dst.size
  *
  */
 
 CPLErr PNG_Band::CompressPNG(buf_mgr &dst, buf_mgr &src) 
 
 {
-
     png_structp pngp;
     png_infop infop;
     buf_mgr mgr=dst;
@@ -213,11 +209,26 @@ CPLErr PNG_Band::CompressPNG(buf_mgr &dst, buf_mgr &src)
              }
     }
 
-    png_set_IHDR(pngp,infop,img.pagesize.x,img.pagesize.y, 
-        GDALGetDataTypeSize(img.dt),png_ctype,
-        PNG_INTERLACE_NONE,PNG_COMPRESSION_TYPE_BASE,PNG_FILTER_TYPE_BASE);
+    png_set_IHDR(pngp, infop, img.pagesize.x, img.pagesize.y, 
+        GDALGetDataTypeSize(img.dt), png_ctype,
+        PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-    // Should let the quality control the compression level
+	// Optional, force certain filters only.  Makes it somewhat faster but worse compression
+	// png_set_filter(pngp, PNG_FILTER_TYPE_BASE, PNG_FILTER_SUB);
+	
+#if defined(PNG_LIBPNG_VER) && (PNG_LIBPNG_VER > 10200)
+	png_uint_32 mask, flags;
+
+	flags = png_get_asm_flags(pngp);
+	mask = png_get_asm_flagmask(PNG_SELECT_READ | PNG_SELECT_WRITE);
+	png_set_asm_flags(pngp, flags | mask); // use flags &~mask to disable all
+
+	// Test that the MMX is compiled into PNG
+//	fprintf(stderr,"MMX support is %d\n", png_mmx_support());
+
+#endif
+
+	// Should let the quality control the compression level
 
     // Write the palete and the transparencies if they exist
     if (PNGColors!=NULL)
@@ -280,12 +291,11 @@ CPLErr PNG_Band::Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img)
  */
 
 PNG_Band::PNG_Band(GDALMRFDataset *pDS, const ILImage &image, int b, int level) : 
-GDALMRFRasterBand(pDS,image,b,level) {
-    PNGColors=NULL;
-    PNGAlpha=NULL;
+	GDALMRFRasterBand(pDS,image,b,level),PNGColors(NULL),PNGAlpha(NULL)
 
+{
     if (image.comp==IL_PPNG)
-    {
+    {  // Convert the GDAL LUT to PNG style
         GDALColorTable *poCT=GetColorTable();
         TransSize=PalSize=poCT->GetColorEntryCount();
 
@@ -304,16 +314,17 @@ GDALMRFRasterBand(pDS,image,b,level) {
 	    pasPNGColors[iColor].red = (png_byte) sEntry.c1;
 	    pasPNGColors[iColor].green = (png_byte) sEntry.c2;
 	    pasPNGColors[iColor].blue = (png_byte) sEntry.c3;
-	    if (NoTranspYet && sEntry.c4==255) TransSize--;
+	    if (NoTranspYet && sEntry.c4==255)
+		TransSize--;
 	    else {
 		NoTranspYet=false;
 		pabyAlpha[iColor]=(unsigned char) sEntry.c4;
             }
         }
     }
-};
+}
 
 PNG_Band::~PNG_Band() {
-    if (PNGColors) CPLFree(PNGColors);
-    if (PNGAlpha) CPLFree(PNGAlpha);
-};
+    CPLFree(PNGColors);
+    CPLFree(PNGAlpha);
+}

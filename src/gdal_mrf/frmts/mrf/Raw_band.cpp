@@ -1,5 +1,3 @@
-
-
 /*
 * Copyright (c) 2002-2012, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -27,30 +25,24 @@
  * raw band
  * raw page compression and decompression functions
  * Simple copy of data
- * These functions are not methods, they reside in the global space
  *
  */
 
 #include "marfa.h"
 
-CPLErr DecompressNONE(buf_mgr &dst, buf_mgr &src)
+inline CPLErr NONE(buf_mgr &dst, buf_mgr &src)
 {
-    memcpy(dst.buffer,src.buffer,src.size);
+    memcpy(dst.buffer, src.buffer, src.size);
     dst.size=src.size;
     return CE_None;
 }
 
-CPLErr CompressNONE(buf_mgr &dst, buf_mgr &src, const ILImage &img)
-{
-    return DecompressNONE(dst,src);
-}
-
 CPLErr Raw_Band::Decompress(buf_mgr &dst, buf_mgr &src) 
 { 
-    return DecompressNONE(dst,src); 
+    return NONE(dst,src);
 }
 
 CPLErr Raw_Band::Compress(buf_mgr &dst, buf_mgr &src,const ILImage &img) 
 { 
-    return CompressNONE(dst,src,img); 
+    return NONE(dst,src);
 }
