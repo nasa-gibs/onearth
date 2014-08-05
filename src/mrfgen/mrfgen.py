@@ -643,21 +643,24 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
     for i, tile in enumerate(alltiles):
         # Create the identify command.
         identify_command_list=['identify', tile]
-        # Execute identify.
-        try:
-            identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            identify_process.wait()
-            if 'DirectClass' in identify_process.stdout.readlines()[0]:
-                goodtiles.append(tile)
-            else:
-                try:
-                    sigevent('ERROR', 'Bad JPEG tile detected: ' + tile, sigevent_url)
-                except urllib2.URLError:
-                    print 'sigevent service is unavailable'
-        except OSError:
-            if i==0:
-                log_sig_warn('identify command not found, unable to detect bad JPEG tiles', sigevent_url)
+        if ".mrf" in tile: # ignore MRF inserts
             goodtiles.append(tile)
+        else:
+            # Execute identify.
+            try:
+                identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                identify_process.wait()
+                if 'DirectClass' in identify_process.stdout.readlines()[0]:
+                    goodtiles.append(tile)
+                else:
+                    try:
+                        sigevent('ERROR', 'Bad JPEG tile detected: ' + tile, sigevent_url)
+                    except urllib2.URLError:
+                        print 'sigevent service is unavailable'
+            except OSError:
+                if i==0:
+                    log_sig_warn('identify command not found, unable to detect bad JPEG tiles', sigevent_url)
+                goodtiles.append(tile)
     alltiles = goodtiles
     
 # Convert TIFF files
