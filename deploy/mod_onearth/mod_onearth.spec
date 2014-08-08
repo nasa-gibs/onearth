@@ -1,6 +1,6 @@
 Name:		mod_onearth
 Version:	0.4.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Apache module for OnEarth
 
 License:	ASL 2.0+
@@ -109,6 +109,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Aug 8 2014 Mike McGann <mike.mcgann@nasa.gov> - 0.4.1-2
+- Updates for building on EL7
+
 * Mon Jul 28 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.4.1-1
 - Added noreplace options to configuration directories
 
