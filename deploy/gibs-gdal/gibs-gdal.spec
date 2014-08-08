@@ -23,7 +23,11 @@ BuildRequires:	jpackage-utils
 BuildRequires:	jasper-devel cfitsio-devel libdap-devel librx-devel 
 BuildRequires:	hdf-static hdf-devel
 BuildRequires:	unixODBC-devel mysql-devel sqlite-devel 
+%if 0%{?el6}
 BuildRequires:	postgresql92-devel postgis2_92-devel
+%else
+BuildRequires:	postgresql93-devel postgis2_93-devel
+%endif
 BuildRequires:	zlib-devel
 BuildRequires:	proj-devel geos-devel netcdf-devel hdf5-devel ogdi-devel 
 BuildRequires:	libgeotiff-devel
@@ -73,7 +77,11 @@ cp %{SOURCE1} upstream
 
 
 %build
-make gdal PREFIX=/usr
+%if 0%{?el6}
+make gdal PREFIX=/usr POSTGRES_VERSION=9.2
+%else
+make gdal PREFIX=/usr POSTGRES_VERSION=9.3
+%endif
 
 
 %install

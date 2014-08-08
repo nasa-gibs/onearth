@@ -10,7 +10,11 @@ Source0:	%{name}-%{version}.tar.bz2
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
 BuildRequires:	gibs-gdal-devel
+%if 0%{?el6}
 BuildRequires:	postgresql92-devel
+%else
+BuildRequires:	postgresql93-devel
+%endif
 Requires:	httpd
 Requires:	gibs-gdal
 
@@ -43,7 +47,11 @@ DIT environment
 
 
 %build
-make mod_onearth PREFIX=%{_prefix}
+%if 0%{?el6}
+make mod_onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.2
+%else
+make mod_onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.3
+%endif
 
 
 %install
