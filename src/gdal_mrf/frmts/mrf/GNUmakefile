@@ -27,7 +27,7 @@ install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
 $(OBJ) $(O_OBJ):	marfa.h
 
 plugin: $(OBJ)
-	g++ -shared -W1,-soname,gdal_mrf.so.1 $(OBJ) -o gdal_mrf.so.1
+	g++ -shared -Wl,-soname,gdal_mrf.so.1 $(OBJ) -o gdal_mrf.so.1
 
 iplugin: gdal_mrf.so.1 plugin
 	cp $< $(prefix)/lib/gdalplugins/1.9/$<
