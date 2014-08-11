@@ -16,9 +16,10 @@
         <xs:element ref="vrtnodata"/>
         <xs:element ref="mrf_blocksize"/>
         <xs:element ref="mrf_compression_type"/>
-        <xs:element ref="resampling" minOccurs="0"/>
-        <xs:element ref="resize" minOccurs="0"/>
+        <xs:element ref="overview_resampling" minOccurs="0"/>
+        <xs:element ref="resize_resampling" minOccurs="0"/>
         <xs:element ref="target_x" minOccurs="0"/>
+        <xs:element ref="epsg" minOccurs="0"/>
         <xs:element ref="extents" minOccurs="0"/>
         <xs:element ref="mrf_name" minOccurs="0"/>
         <xs:element ref="colormap" minOccurs="0"/>
@@ -48,7 +49,7 @@
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
-  <xs:element name="resampling" nillable="true" default="nearest">
+  <xs:element name="overview_resampling" nillable="true" default="nearest">
     <xs:simpleType>
       <xs:restriction base="xs:string">
         <xs:enumeration value="nearest"/>
@@ -61,7 +62,7 @@
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
-  <xs:element name="resize" nillable="true">
+  <xs:element name="resize_resampling" nillable="true">
     <xs:simpleType>
       <xs:restriction base="xs:string">
         <xs:enumeration value="near"/>
@@ -75,6 +76,7 @@
     </xs:simpleType>
   </xs:element>
   <xs:element name="target_x" type="xs:integer" nillable="true"/>
+  <xs:element name="epsg" type="xs:integer"/>
   <xs:element name="extents" type="xs:string" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
   <xs:element name="colormap" type="xs:string" nillable="true"/>

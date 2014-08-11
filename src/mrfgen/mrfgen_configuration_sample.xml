@@ -11,7 +11,8 @@
  <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
- <resampling>nearest</resampling>
+ <overview_resampling>nearest</overview_resampling>
+ <epsg>4326</epsg>
  <extents>-180,-90,180,90</extents>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <colormap></colormap>

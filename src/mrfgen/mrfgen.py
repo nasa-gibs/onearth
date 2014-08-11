@@ -43,7 +43,8 @@
 #  <vrtnodata>0</vrtnodata>
 #  <mrf_blocksize>512</mrf_blocksize>
 #  <mrf_compression_type>JPEG</mrf_compression_type>
-#  <resampling>nearest</resampling>
+#  <overview_resampling>nearest</overview_resampling>
+#  <epsg>4326</epsg>
 #  <extents>-180,-90,180,90</extents>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
 #  <colormap></colormap>
@@ -423,6 +424,11 @@ else:
         target_x               =get_dom_tag_value(dom, 'target_x')
     except IndexError:
         target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
+    # EPSG code projection.
+    try:
+        epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'epsg'))
+    except IndexError:
+        epsg = 'EPSG:4326' # default to geographic
     # Target extents.
     try:
         extents        =get_dom_tag_value(dom, 'extents')
@@ -436,12 +442,12 @@ else:
         input_files = ''
     # resampling method
     try:
-        resampling        =get_dom_tag_value(dom, 'resampling')
+        overview_resampling        =get_dom_tag_value(dom, 'overview_resampling')
     except IndexError:
-        resampling = 'nearest'    
+        overview_resampling = 'nearest'    
     # gdalwarp resampling method
     try:
-        resize_resampling        =get_dom_tag_value(dom, 'resize')
+        resize_resampling        =get_dom_tag_value(dom, 'resize_resampling')
     except IndexError:
         resize_resampling = ''   
     # colormap
@@ -518,10 +524,11 @@ log_info_mssg(str().join(['config mrf_blocksize:           ', mrf_blocksize]))
 log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
+log_info_mssg(str().join(['config epsg:                    ', epsg]))
 log_info_mssg(str().join(['config extents:                 ', extents]))
-log_info_mssg(str().join(['config resampling:              ', resampling]))
-log_info_mssg(str().join(['config resize:                  ', resize_resampling]))
-log_info_mssg(str().join(['config colormap:                     ', colormap]))
+log_info_mssg(str().join(['config overview resampling:     ', overview_resampling]))
+log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
+log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
@@ -964,7 +971,7 @@ if len(modtiles) > 0:
         yres = xres
         gdalbuildvrt_command_list=['gdalbuildvrt',
             '-q', '-te', xmin, ymin, xmax, ymax,
-            '-vrtnodata', vrtnodata,'-resolution', 'user', '-tr',xres, yres,
+            '-vrtnodata', vrtnodata,'-resolution', 'user', '-tr',xres, yres, '-a_srs', epsg,
             '-input_file_list', all_tiles_filename,
             vrt_filename]
     else:
@@ -1188,7 +1195,7 @@ if len(modtiles) > 0:
             remove_file(gdal_translate_stderr_filename)
 
             # Create the gdaladdo command.
-            gdaladdo_command_list=['gdaladdo', '-q', '-r', resampling,
+            gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
                                    str(mrf_filename)]
             # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
             overview=2
