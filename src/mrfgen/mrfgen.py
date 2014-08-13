@@ -314,8 +314,11 @@ def lookupEmptyTile(empty_tile):
         (key, val) = line.split()
         tiles[key] = val
     
-    try:   
-        return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
+    try:
+        if tiles[empty_tile][0] == '/':   
+            return os.path.abspath(tiles[empty_tile])
+        else:
+            return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
     except KeyError:
         mssg = '"' + empty_tile + '" is not a valid empty tile.'
         log_sig_exit('ERROR', mssg, sigevent_url)
