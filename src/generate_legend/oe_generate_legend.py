@@ -46,7 +46,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v0.4"
+versionNumber = "v0.5"
 
 class ColorMap:
     """ColorMap metadata"""
@@ -157,15 +157,12 @@ def parse_colormap(colormap_location, verbose):
     return colormap
 
 
-def generate_legend(colormap, output, output_format):
+def generate_legend(colormap, output, output_format, orientation):
     
     # set ticklines out
     rcParams['xtick.direction'] = 'out'
     rcParams['ytick.direction'] = 'out'
-    
-    fig = pyplot.figure(figsize=(1.5,3))
-    ax = fig.add_axes([0.2, 0.05, 0.15, 0.9])
-    
+
     is_large_colormap = False
     has_values = False
     center_ticks = False
@@ -214,71 +211,113 @@ def generate_legend(colormap, output, output_format):
                 else:
                     increment = (float(colormap_entries[idx+1].value) - float(colormap_entries[idx].value))
                     ticks.append(float(colormap_entries[idx].value) + increment/2)
-                
-    # use legend for classifications
-    if colormap.style == "classification":
-        patches = []
-        for color in legendcolors:
-            polygon = mpl.patches.Rectangle((0, 0), 10, 10, facecolor=color)
-            polygon.set_linewidth(0.5)
-            patches.append(polygon)
-        if len(legendcolors) < 7 and has_values == False:
-            fig.set_figheight(1.5)
-        if len(legendcolors) > 14:
-            fig.set_figwidth(3)
-            col = 2
-            fontsize = 8
-        else: 
-            col = 1
-            fontsize = 9
-
-        if has_values == True:
-            fig.set_figwidth(3)
-            legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center left', ncol=1, fancybox=True, prop={'size':fontsize})
-            legend.get_frame().set_alpha(0)
-        else:
-            legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
-            legend.get_frame().set_alpha(0.5)
-            ax.set_axis_off()
- 
-    if has_values == True:
-        cmap = mpl.colors.ListedColormap(colors)        
-        ax.set_yticklabels(ticklabels)
-        if is_large_colormap == True:
-            norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
-        else:
-            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-        cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
-                                       norm=norm,
-                                       orientation='vertical')
-        cb.solids.set_edgecolor("face")
-                
-        for tick in cb.ax.yaxis.get_ticklabels():
-            tick.set_fontsize(10)
+                    
+    if colormap.style == 'classification':
+        orientation = 'vertical' # force vertical orientation for classifications for now
     
-        if center_ticks == True:
-            cb.set_ticks(ticks)
-            cb.ax.set_yticklabels(ticklabels)
-        
-        # set units on first and last labels, if applicable
-        if colormap.units != None:
-            if len(cb.ax.get_yticklabels()) > 0:
-                ticklabels = cb.ax.get_yticklabels()
-                ticklabels = [label.get_text() for label in ticklabels]
-            ticklabels[0] = str(ticklabels[0]) + " " + colormap.units
-            ticklabels[-1] = str(ticklabels[-1]) + " " + colormap.units
-            cb.ax.set_yticklabels(ticklabels)
+    if orientation == 'horizontal':
+        fig = pyplot.figure(figsize=(4,0.75))
+        ax = fig.add_axes([0.05, 0.6, 0.9, 0.25])
             
-            if colormap.style == "classification":
-                # resize colorbar if classification
-                cb.ax.set_position((0.2, 0.05, 0.075, 0.9))     
+        if has_values == True:
+            
+            cmap = mpl.colors.ListedColormap(colors)
+            ax.set_xticklabels(ticklabels)
+            if is_large_colormap == True:
+                norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+            else:
+                norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+            cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
+                                           norm=norm,
+                                           orientation=orientation)
+            cb.solids.set_edgecolor("face")
         
-    fig.savefig(output, transparent=True, format=output_format)
+            for tick in cb.ax.xaxis.get_ticklabels():
+                tick.set_fontsize(8)
+                
+            if center_ticks == True:
+                cb.set_ticks(ticks)
+                cb.ax.set_xticklabels(ticklabels)
+            
+            if colormap.units != None:
+                fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
+            
+        fig.savefig(output, transparent=True, format=output_format)
+        
+        
+    else: # default vertical orientation
+        
+        fig = pyplot.figure(figsize=(1.5,3))
+        ax = fig.add_axes([0.2, 0.05, 0.15, 0.9])
+                    
+        # use legend for classifications
+        if colormap.style == "classification":
+            patches = []
+            for color in legendcolors:
+                polygon = mpl.patches.Rectangle((0, 0), 10, 10, facecolor=color)
+                polygon.set_linewidth(0.5)
+                patches.append(polygon)
+            if len(legendcolors) < 7 and has_values == False:
+                fig.set_figheight(1.5)
+            if len(legendcolors) > 14:
+                fig.set_figwidth(3)
+                col = 2
+                fontsize = 8
+            else: 
+                col = 1
+                fontsize = 9
     
+            if has_values == True:
+                fig.set_figwidth(3)
+                legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center left', ncol=1, fancybox=True, prop={'size':fontsize})
+                legend.get_frame().set_alpha(0)
+            else:
+                legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
+                legend.get_frame().set_alpha(0.5)
+                ax.set_axis_off()
+     
+        if has_values == True:
+            cmap = mpl.colors.ListedColormap(colors)        
+            ax.set_yticklabels(ticklabels)
+            if is_large_colormap == True:
+                norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+            else:
+                norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+            cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
+                                           norm=norm,
+                                           orientation=orientation)
+            cb.solids.set_edgecolor("face")
+                    
+            for tick in cb.ax.yaxis.get_ticklabels():
+                tick.set_fontsize(10)
+        
+            if center_ticks == True:
+                cb.set_ticks(ticks)
+                cb.ax.set_yticklabels(ticklabels)
+            
+            # set units on first and last labels, if applicable
+            if colormap.units != None:
+                if len(cb.ax.get_yticklabels()) > 0:
+                    ticklabels = cb.ax.get_yticklabels()
+                    ticklabels = [label.get_text() for label in ticklabels]
+                ticklabels[0] = str(ticklabels[0]) + " " + colormap.units
+                ticklabels[-1] = str(ticklabels[-1]) + " " + colormap.units
+                cb.ax.set_yticklabels(ticklabels)
+                
+                if colormap.style == "classification":
+                    # resize colorbar if classification
+                    cb.ax.set_position((0.2, 0.05, 0.075, 0.9))     
+            
+        fig.savefig(output, transparent=True, format=output_format)
+        
     # Add tooltips to SVG    
     if output_format == 'svg' and has_values == True and is_large_colormap == False:
         
-        for i, ticklabel in enumerate(ax.get_yticklabels()):
+        if orientation == "horizontal":
+            ticklabels = ax.get_xticklabels()
+        else:
+            ticklabels = ax.get_yticklabels()
+        for i, ticklabel in enumerate(ticklabels):
             if i < len(labels):
                 text = labels[i]
                 ax.annotate(text, 
@@ -345,7 +384,8 @@ def generate_legend(colormap, output, output_format):
         # Insert the script at the top of the file and save it.
         tree.insert(0, ET.XML(script))
         ET.ElementTree(tree).write(output)
-
+        print "SVG tooltips added"
+    
     print output + " generated successfully"
     
 
@@ -366,6 +406,9 @@ parser.add_option('-f', '--format',
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
+parser.add_option('-r', '--orientation',
+                  action='store', type='string', dest='orientation', default = 'vertical',
+                  help='Orientation of the legend: horizontal or vertical (default)')
 parser.add_option('-u', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -388,6 +431,12 @@ else:
     print "output file must be specified...exiting"
     exit()
     
+# check orientation
+if options.orientation:
+    if options.orientation not in ['horizontal','vertical']:
+        print str(options.orientation) + " is not a valid legend orientation. Please choose horizontal or vertical."
+        exit()
+    
 # parse colormap
 try:
     colormap = parse_colormap(colormap_location, options.verbose)
@@ -397,7 +446,7 @@ except IOError,e:
 
 # generate legend
 try:
-    generate_legend(colormap, output_location, options.format)
+    generate_legend(colormap, output_location, options.format, options.orientation)
 except IOError,e:
     print str(e)
     exit()
