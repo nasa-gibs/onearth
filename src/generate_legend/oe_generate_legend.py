@@ -211,16 +211,42 @@ def generate_legend(colormap, output, output_format, orientation):
                 else:
                     increment = (float(colormap_entries[idx+1].value) - float(colormap_entries[idx].value))
                     ticks.append(float(colormap_entries[idx].value) + increment/2)
-                    
-    if colormap.style == 'classification':
-        orientation = 'vertical' # force vertical orientation for classifications for now
-    
-    if orientation == 'horizontal':
+                        
+    if orientation == 'horizontal':        
         fig = pyplot.figure(figsize=(4,0.75))
-        ax = fig.add_axes([0.05, 0.6, 0.9, 0.25])
+            
+        # use legend for classifications
+        if colormap.style == "classification":
+            fig.set_figheight(3)
+            fig.set_figwidth(1.5)
+            patches = []
+            for color in legendcolors:
+                polygon = mpl.patches.Rectangle((0, 0), 10, 10, facecolor=color)
+                polygon.set_linewidth(0.5)
+                patches.append(polygon)
+            if len(legendcolors) < 7 and has_values == False:
+                fig.set_figheight(1.5)
+            if len(legendcolors) <= 14: 
+                col = 1
+                fontsize = 9
+            if len(legendcolors) > 14:
+                fig.set_figwidth(3)
+                col = 2
+                fontsize = 8
+            if len(legendcolors) > 28:
+                fig.set_figwidth(4)
+                col = 3
+                fontsize = 7
+            if has_values == True:
+                fig.set_figwidth(4)
+                legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.05, 0.3], loc='lower left', ncol=col, fancybox=True, prop={'size':fontsize})
+                legend.get_frame().set_alpha(0)
+            else:
+                legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
+                legend.get_frame().set_alpha(0.5)
             
         if has_values == True:
-            
+            ax = fig.add_axes([0.05, 0.6, 0.9, 0.25])
             cmap = mpl.colors.ListedColormap(colors)
             ax.set_xticklabels(ticklabels)
             if is_large_colormap == True:
@@ -241,12 +267,12 @@ def generate_legend(colormap, output, output_format, orientation):
             
             if colormap.units != None:
                 fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
-            
-        fig.savefig(output, transparent=True, format=output_format)
-        
+                
+            if colormap.style == "classification":
+                # resize colorbar if classification
+                cb.ax.set_position((0.05, 0.175, 0.9, 0.0625))
         
     else: # default vertical orientation
-        
         fig = pyplot.figure(figsize=(1.5,3))
         ax = fig.add_axes([0.2, 0.05, 0.15, 0.9])
                     
@@ -259,14 +285,17 @@ def generate_legend(colormap, output, output_format, orientation):
                 patches.append(polygon)
             if len(legendcolors) < 7 and has_values == False:
                 fig.set_figheight(1.5)
+            if len(legendcolors) <= 14: 
+                col = 1
+                fontsize = 9
             if len(legendcolors) > 14:
                 fig.set_figwidth(3)
                 col = 2
                 fontsize = 8
-            else: 
-                col = 1
-                fontsize = 9
-    
+            if len(legendcolors) > 28:
+                fig.set_figwidth(4)
+                col = 3
+                fontsize = 7
             if has_values == True:
                 fig.set_figwidth(3)
                 legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center left', ncol=1, fancybox=True, prop={'size':fontsize})
@@ -308,7 +337,7 @@ def generate_legend(colormap, output, output_format, orientation):
                     # resize colorbar if classification
                     cb.ax.set_position((0.2, 0.05, 0.075, 0.9))     
             
-        fig.savefig(output, transparent=True, format=output_format)
+    fig.savefig(output, transparent=True, format=output_format)
         
     # Add tooltips to SVG    
     if output_format == 'svg' and has_values == True and is_large_colormap == False:
