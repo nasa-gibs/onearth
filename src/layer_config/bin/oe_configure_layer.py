@@ -67,7 +67,7 @@ from datetime import datetime, time, timedelta
 from time import asctime
 from optparse import OptionParser
 
-versionNumber = '0.4.0'
+versionNumber = '0.4.2'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -612,23 +612,25 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         
     return times
 
-def generate_legend(colormap, output, legend_url):
+def generate_legend(colormap, output, legend_url, orientation):
     """
     Generate an SVG legend graphic from GIBS color map.
     Arguments:
         colormap -- the color map file name
         output -- the output file name
         legend_url -- URL to access legend from GetCapabilities
+        orientation -- the orientation of the legend
     """
     
     print "\nLegend location: " + output
     print "Legend URL: " + legend_url
     print "Color Map: " + colormap
+    print "Orientation: " + orientation
     pt = 1.25 #pixels in point
     
     if os.path.isfile(output) == False:
         print "Generating new legend"
-        cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
+        cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output + ' -r ' + orientation
         run_command(cmd, sigevent_url)
     else:
         print "Legend already exists"
@@ -643,7 +645,7 @@ def generate_legend(colormap, output, legend_url):
             if colormap_time > legend_time:
                 print "Updated color map found"
                 print "Generating new legend"
-                cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output
+                cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output + ' -r ' + orientation
                 run_command(cmd, sigevent_url)
         except Exception, e:
             print e
@@ -662,7 +664,10 @@ def generate_legend(colormap, output, legend_url):
     width = float(svgElement.attributes['width'].value.replace('pt','')) * pt
     svg.close()
     
-    legend_url_template = '<LegendURL format="image/svg+xml" xlink:href="%s" width="%d" height="%d"/>' % (legend_url, int(width), int(height))
+    if orientation == 'horizontal':
+        legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (legend_url, int(width), int(height))
+    else:
+        legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (legend_url, int(width), int(height))
     
     return legend_url_template
     
@@ -676,7 +681,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -1338,18 +1343,20 @@ for conf in conf_files:
             twms_make.close()
     
     # generate color map if requested
-    legendUrl = ''    
+    legendUrl_vertical = ''
+    legendUrl_horizontal = '' 
     if legend == True and colormap != None:
         legend_output = ''
         try:
-            legend_output = environment.legend_dir + identifier + '.svg'
+            legend_output = environment.legend_dir + identifier
         except:
             message = "Legend directory has not been defined for environment with cache location: " + environment.cache
             log_sig_err(message, sigevent_url)
         try:
             if environment.legendUrl != None:
                 if legend_output != '':
-                    legendUrl = generate_legend(colormap, legend_output, environment.legendUrl + identifier + '.svg')
+                    legendUrl_vertical = generate_legend(colormap, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
+                    legendUrl_horizontal = generate_legend(colormap, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
             else:
                 message = "Legend URL has not been defined for environment with cache location: " + environment.cache
                 log_sig_err(message, sigevent_url)
@@ -1376,7 +1383,8 @@ for conf in conf_files:
             <Style isDefault="true">
                 <ows:Title>default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
-                $LegendURL
+                $LegendURL_vertical
+                $LegendURL_horizontal
             </Style>
             <Format>$Format</Format>
             <Dimension>
@@ -1406,8 +1414,10 @@ for conf in conf_files:
                 line = line.replace("$BoundingBox",projection.bbox_xml)
             if '$Identifier' in line:
                 line = line.replace("$Identifier",identifier)
-            if '$LegendURL' in line:
-                line = line.replace("$LegendURL",legendUrl)
+            if '$LegendURL_vertical' in line:
+                line = line.replace("$LegendURL_vertical",legendUrl_vertical)
+            if '$LegendURL_horizontal' in line:
+                line = line.replace("$LegendURL_horizontal",legendUrl_horizontal)
             if '$ColorMap' in line:
                 if colormap == None:
                     line = ''
