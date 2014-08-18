@@ -1,3 +1,2 @@
-black blackRGB.jpg
-transparent TransparentIDX.png
-rgba RGBA_512.png
+black /usr/share/onearth/mrfgen/black.jpg
+transparent /usr/share/onearth/mrfgen/transparent.png
