@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	0.4.2
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -35,7 +35,6 @@ Demonstration of OnEarth
 
 %package metrics
 Summary:	OnEarth log tool for metrics
-Requires:	%{name} = %{version}-%{release}
 BuildArch:	noarch
 
 %description metrics
@@ -44,7 +43,7 @@ OnEarth log tool for metrics
 
 %package mrfgen
 Summary:	MRF generator for OnEarth
-Requires:	%{name} = %{version}-%{release}
+Requires:	gibs-gdal
 
 %description mrfgen
 MRF generator for OnEarth
@@ -142,7 +141,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Mon Aug 18 2014 Mike McGann <joe.t.roberts@jpl.nasa.gov> - 0.4.2-1
+* Mon Aug 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.4.2-1
 - Reorganized into separate packages for different components
 
 * Fri Aug 8 2014 Mike McGann <mike.mcgann@nasa.gov> - 0.4.1-2
