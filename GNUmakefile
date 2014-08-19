@@ -3,7 +3,7 @@ GDAL_ARTIFACT=gdal-$(GDAL_VERSION).tar.gz
 GDAL_HOME=http://download.osgeo.org/gdal
 GDAL_URL=$(GDAL_HOME)/$(GDAL_VERSION)/$(GDAL_ARTIFACT)
 
-MOD_ONEARTH_VERSION=0.4.1
+ONEARTH_VERSION=0.4.2
 
 POSTGRES_VERSION=9.2
 
@@ -17,11 +17,11 @@ LIB_DIR=$(shell \
 RPMBUILD_FLAGS=-ba
 
 all: 
-	@echo "Use targets gdal-rpm or mod_onearth-rpm"
+	@echo "Use targets gdal-rpm or onearth-rpm"
 
 gdal: gdal-unpack mrf-overlay gdal-patch gdal-compile
 
-mod_onearth: mod_onearth-compile
+onearth: onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
@@ -107,7 +107,7 @@ gdal-compile:
 	$(MAKE) -C build/gdal $(SMP_FLAGS) all man
 	$(MAKE) -C build/gdal/frmts/mrf plugin
 
-mod_onearth-compile:
+onearth-compile:
 	$(MAKE) -C src/mod_onearth \
 		LIBS=-L/usr/pgsql-$(POSTGRES_VERSION)/lib \
 		LDFLAGS=-lpq
@@ -115,13 +115,13 @@ mod_onearth-compile:
 #-----------------------------------------------------------------------------
 # Install
 #-----------------------------------------------------------------------------
-install: gdal-install mod_onearth-install 
+install: gdal-install onearth-install 
 
 gdal-install:
 	$(MAKE) -C build/gdal install install-man PREFIX=$(PREFIX)
 	$(MAKE) -C build/gdal/my_apps install
 
-mod_onearth-install:
+onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules
 	install -m 755 src/mod_onearth/.libs/mod_twms.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_twms.so
@@ -136,7 +136,7 @@ mod_onearth-install:
 	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
 	install -m 755 src/onearth_logs/onearth_logs.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/onearth_logs
+		-D $(DESTDIR)/$(PREFIX)/bin/onearth_metrics
 	install -m 755 src/generate_legend/oe_generate_legend.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_generate_legend.py
 	install -m 755 src/mrfgen/mrfgen.py  \
@@ -147,31 +147,41 @@ mod_onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/cgi
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
 	install -m 755 src/cgi/twms.cgi \
-		-t $(DESTDIR)/$(PREFIX)/share/onearth/cgi
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 src/cgi/wmts.cgi \
-		-t $(DESTDIR)/$(PREFIX)/share/onearth/cgi
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	cp src/cgi/kml/* \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
+	cp src/cgi/index.html \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	cp src/mrfgen/empty_tiles/black.jpg \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	cp src/mrfgen/empty_tiles/transparent.png \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/mrfgen
 	cp src/mrfgen/empty_tiles/* \
-		$(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
+		$(DESTDIR)/$(PREFIX)/share/onearth/mrfgen
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+	install -m 755 -d $(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/conf \
-		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/twms \
-		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/layers \
-		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/schema \
-		$(DESTDIR)/$(PREFIX)/share/onearth/layer_config
+		$(DESTDIR)/etc/onearth/config
+	install -m 755 -d $(DESTDIR)/etc/onearth/config/headers
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
+	install -m 755 -d $(DESTDIR)/etc/onearth/metrics
 	cp -r src/onearth_logs/logs.* \
-		$(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
+		$(DESTDIR)/etc/onearth/metrics
 	cp -r src/onearth_logs/tilematrixsetmap.* \
-		$(DESTDIR)/$(PREFIX)/share/onearth/onearth_logs
+		$(DESTDIR)/etc/onearth/metrics
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
@@ -180,20 +190,20 @@ mod_onearth-install:
 #-----------------------------------------------------------------------------
 # Local install
 #-----------------------------------------------------------------------------
-local-install: gdal-local-install mod_onearth-local-install
+local-install: gdal-local-install onearth-local-install
 
 gdal-local-install: 
 	mkdir -p build/install
 	$(MAKE) gdal-install DESTDIR=$(PWD)/build/install
 
-mod_onearth-local-install: 
+onearth-local-install: 
 	mkdir -p build/install
-	$(MAKE) mod_onearth-install DESTDIR=$(PWD)/build/install
+	$(MAKE) onearth-install DESTDIR=$(PWD)/build/install
 
 #-----------------------------------------------------------------------------
 # Artifacts
 #-----------------------------------------------------------------------------
-artifacts: gdal-artifact mod_onearth-artifact
+artifacts: gdal-artifact onearth-artifact
 
 gdal-artifact: 
 	mkdir -p dist
@@ -202,18 +212,18 @@ gdal-artifact:
 		--transform="s,^,gibs-gdal-$(GDAL_VERSION)/," \
 		src/gdal_mrf deploy/gibs-gdal GNUmakefile
 
-mod_onearth-artifact: mod_onearth-clean
+onearth-artifact: onearth-clean
 	mkdir -p dist
-	rm -rf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2
-	tar cjvf dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
-		--transform="s,^,mod_onearth-$(MOD_ONEARTH_VERSION)/," \
+	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
+	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
+		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
 		src/mod_onearth src/layer_config src/mrfgen src/cgi \
 		src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------
 # RPM
 #-----------------------------------------------------------------------------
-rpm: gdal-rpm mod_onearth-rpm
+rpm: gdal-rpm onearth-rpm
 
 gdal-rpm: gdal-artifact 
 	mkdir -p build/rpmbuild/SOURCES
@@ -230,30 +240,30 @@ gdal-rpm: gdal-artifact
 	mv build/rpmbuild/RPMS/*/gibs-gdal*.rpm dist
 	mv build/rpmbuild/SRPMS/gibs-gdal*.rpm dist
 
-mod_onearth-rpm: mod_onearth-artifact 
+onearth-rpm: onearth-artifact 
 	mkdir -p build/rpmbuild/SOURCES
 	mkdir -p build/rpmbuild/BUILD	
 	mkdir -p build/rpmbuild/BUILDROOT
-	rm -f dist/mod_onearth*.rpm
+	rm -f dist/onearth*.rpm
 	cp \
-		dist/mod_onearth-$(MOD_ONEARTH_VERSION).tar.bz2 \
+		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \
 		--define _topdir\ "$(PWD)/build/rpmbuild" \
-		-ba deploy/mod_onearth/mod_onearth.spec 
-	mv build/rpmbuild/RPMS/*/mod_onearth*.rpm dist
+		-ba deploy/onearth/onearth.spec 
+	mv build/rpmbuild/RPMS/*/onearth*.rpm dist
 
 #-----------------------------------------------------------------------------
 # Mock
 #-----------------------------------------------------------------------------
-mock: gdal-mock mod_onearth-mock
+mock: gdal-mock onearth-mock
 
 gdal-mock:
 	mock --clean
 	mock --root=gibs-epel-6-$(shell arch) \
 		dist/gibs-gdal-$(GDAL_VERSION)-*.src.rpm
 
-mod_onearth-mock:
+onearth-mock:
 	mock --clean
 	mock --init
 	mock --copyin dist/gibs-gdal-*$(GDAL_VERSION)-*.$(shell arch).rpm /
@@ -261,15 +271,15 @@ mod_onearth-mock:
 	mock --shell \
 	       "yum install -y /gibs-gdal-*$(GDAL_VERSION)-*.$(shell arch).rpm"
 	mock --rebuild --no-clean \
-		dist/mod_twms-$(MOD_ONEARTH_VERSION)-*.src.rpm
+		dist/mod_twms-$(ONEARTH_VERSION)-*.src.rpm
 
 #-----------------------------------------------------------------------------
 # Clean
 #-----------------------------------------------------------------------------
-clean: mod_onearth-clean
+clean: onearth-clean
 	rm -rf build
 
-mod_onearth-clean:
+onearth-clean:
 	$(MAKE) -C src/mod_onearth clean
 
 distclean: clean

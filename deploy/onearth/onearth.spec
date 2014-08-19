@@ -1,7 +1,7 @@
-Name:		mod_onearth
-Version:	0.4.1
-Release:	2%{?dist}
-Summary:	Apache module for OnEarth
+Name:		onearth
+Version:	0.4.2
+Release:	1%{?dist}
+Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
 URL:		http://earthdata.nasa.gov
@@ -18,10 +18,10 @@ BuildRequires:	postgresql93-devel
 Requires:	httpd
 Requires:	gibs-gdal
 
-Obsoletes:	mod_twms mod_wms
+Obsoletes:	mod_twms mod_wms mod_onearth
 
 %description
-Apache module for OnEarth
+Installation packages for OnEarth
 
 
 %package demo
@@ -33,13 +33,30 @@ BuildArch:	noarch
 Demonstration of OnEarth
 
 
-%package dit
-Summary:	DIT environment
+%package metrics
+Summary:	OnEarth log tool for metrics
 Requires:	%{name} = %{version}-%{release}
 BuildArch:	noarch
 
-%description dit
-DIT environment
+%description metrics
+OnEarth log tool for metrics
+
+
+%package mrfgen
+Summary:	MRF generator for OnEarth
+Requires:	%{name} = %{version}-%{release}
+
+%description mrfgen
+MRF generator for OnEarth
+
+
+%package config
+Summary:	Layer configuration tools for OnEarth
+Requires:	%{name} = %{version}-%{release}
+BuildArch:	noarch
+
+%description config
+Layer configuration tools for OnEarth
 
 
 %prep
@@ -48,30 +65,34 @@ DIT environment
 
 %build
 %if 0%{?el6}
-make mod_onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.2
+make onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.2
 %else
-make mod_onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.3
+make onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.3
 %endif
 
 
 %install
 rm -rf %{buildroot}
-make mod_onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
+make onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
-ln -s %{_datadir}/onearth/cgi/wmts.cgi \
+ln -s %{_datadir}/onearth/apache/wmts.cgi \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
-ln -s %{_datadir}/onearth/empty_tiles/black.jpg \
+ln -s %{_datadir}/onearth/apache/black.jpg \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
-ln -s %{_datadir}/onearth/empty_tiles/RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
-ln -s %{_datadir}/onearth/empty_tiles/TransparentIDX.png \
+ln -s %{_datadir}/onearth/apache/transparent.png \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
+ln -s %{_datadir}/onearth/apache/twms.cgi \
+   %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+ln -s %{_datadir}/onearth/apache/black.jpg \
+   %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+ln -s %{_datadir}/onearth/apache/transparent.png \
+   %{buildroot}/%{_datadir}/onearth/demo/twms-geo
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/on_earth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
 
 
 %clean
@@ -79,28 +100,40 @@ rm -rf %{buildroot}
 
 
 %files
-%defattr(755,root,root,-)
-%{_bindir}/*
 %{_libdir}/httpd/modules/*
 %defattr(-,gibs,gibs,775)
 %dir %{_datadir}/onearth
-
 %defattr(775,gibs,gibs,775)
-%{_datadir}/onearth/cgi
+%{_datadir}/onearth/apache
+%defattr(755,root,root,-)
+%{_bindir}/oe_create_cache_config
 
+%files config
 %defattr(664,gibs,gibs,775)
-%{_datadir}/onearth/empty_tiles
-%{_datadir}/onearth/empty_tiles/empty_config
+%{_sysconfdir}/onearth/config/
+%config(noreplace) %{_sysconfdir}/onearth/config/conf
+%config(noreplace) %{_sysconfdir}/onearth/config/layers
+%config(noreplace) %{_sysconfdir}/onearth/config/headers
+%{_sysconfdir}/onearth/config/schema
+%{_sysconfdir}/onearth/config/twms
+%defattr(755,root,root,-)
+%{_bindir}/oe_configure_layer
+%{_bindir}/oe_create_twms_xml
+%{_bindir}/oe_generate_legend.py
 
+%files mrfgen
 %defattr(664,gibs,gibs,775)
-%{_datadir}/onearth/onearth_logs
+%{_datadir}/onearth/mrfgen
+%defattr(755,root,root,-)
+%{_bindir}/RGBApng2Palpng
+%{_bindir}/mrfgen
+%{_bindir}/colormap2vrt.py
 
+%files metrics
 %defattr(664,gibs,gibs,775)
-%{_datadir}/onearth/layer_config/
-%config(noreplace) %{_datadir}/onearth/layer_config/conf
-%config(noreplace) %{_datadir}/onearth/layer_config/layers
-%{_datadir}/onearth/layer_config/schema
-%{_datadir}/onearth/layer_config/twms
+%{_sysconfdir}/onearth/metrics
+%defattr(755,root,root,-)
+%{_bindir}/onearth_metrics
 
 %files demo
 %defattr(-,gibs,gibs,-)
@@ -109,6 +142,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Aug 18 2014 Mike McGann <joe.t.roberts@jpl.nasa.gov> - 0.4.2-1
+- Reorganized into separate packages for different components
+
 * Fri Aug 8 2014 Mike McGann <mike.mcgann@nasa.gov> - 0.4.1-2
 - Updates for building on EL7
 
