@@ -239,7 +239,7 @@ def generate_legend(colormap, output, output_format, orientation):
                 fontsize = 7
             if has_values == True:
                 fig.set_figwidth(4)
-                legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.05, 0.3], loc='lower left', ncol=col, fancybox=True, prop={'size':fontsize})
+                legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.025, 0.775], loc='upper left', ncol=col, fancybox=True, prop={'size':fontsize})
                 legend.get_frame().set_alpha(0)
             else:
                 legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
@@ -266,11 +266,15 @@ def generate_legend(colormap, output, output_format, orientation):
                 cb.ax.set_xticklabels(ticklabels)
             
             if colormap.units != None:
-                fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
+                if colormap.style != "classification":
+                    fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
+                else:
+                    fig.text(0.5, 0.8, colormap.units, fontsize=10, horizontalalignment='center')
                 
             if colormap.style == "classification":
                 # resize colorbar if classification
-                cb.ax.set_position((0.05, 0.175, 0.9, 0.0625))
+                cb.ax.set_position((0.05, 0.925, 0.9, 0.0625))
+                    
         
     else: # default vertical orientation
         fig = pyplot.figure(figsize=(1.5,3))
