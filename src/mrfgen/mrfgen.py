@@ -997,6 +997,14 @@ if len(modtiles) > 0:
     # Execute gdalbuildvrt.
     subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
     #---------------------------------------------------------------------------
+    
+    # Reproject to Web Mercator
+    if epsg == "EPSG:3857":
+        log_info_mssg("Converting tiles to Web Mercator")
+        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', 'cubic', '-s_srs', 'EPSG:4326', '-t_srs', 'EPSG:3857', '-te', '-20037508.34', '-20037508.34', '20037508.34', '20037508.34', '-multi', vrt_filename, vrt_filename.replace('.vrt','_merc.vrt')]
+        log_the_command(gdal_warp_command_list)
+        subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
+        vrt_filename = vrt_filename.replace('.vrt','_merc.vrt')
 
     # use gdalwarp if resize with resampling method is declared
     if resize_resampling != '':
@@ -1120,6 +1128,9 @@ if len(modtiles) > 0:
             #target_x=x_size
             target_y=y_size
             log_info_mssg('Setting target_y from VRT to ' + target_y)
+            
+        if epsg == "EPSG:3857":
+            target_y = target_x
 
         #-----------------------------------------------------------------------
         # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
