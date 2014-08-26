@@ -429,15 +429,27 @@ else:
         target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
     # EPSG code projection.
     try:
-        epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'epsg'))
+        target_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
     except IndexError:
-        epsg = 'EPSG:4326' # default to geographic
+        target_epsg = 'EPSG:4326' # default to geographic
+    try:
+        source_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
+    except IndexError:
+        source_epsg = 'EPSG:4326' # default to geographic
     # Target extents.
     try:
         extents        =get_dom_tag_value(dom, 'extents')
     except IndexError:
         extents = '-180,-90,180,90' # default to geographic
     xmin, ymin, xmax, ymax = extents.split(',')
+    try:
+        target_extents        =get_dom_tag_value(dom, 'target_extents')
+    except IndexError:
+        if target_epsg == 'EPSG:3857':
+            target_extents = '-20037508.34,-20037508.34,20037508.34,20037508.34'
+        else:
+            target_extents = extents # default to extents
+    target_xmin, target_ymin, target_xmax, target_ymax = target_extents.split(',')
     # Input files.
     try:
         input_files        =get_dom_tag_value(dom, 'input_files')
@@ -448,11 +460,16 @@ else:
         overview_resampling        =get_dom_tag_value(dom, 'overview_resampling')
     except IndexError:
         overview_resampling = 'nearest'    
-    # gdalwarp resampling method
+    # gdalwarp resampling method for resizing
     try:
         resize_resampling        =get_dom_tag_value(dom, 'resize_resampling')
     except IndexError:
-        resize_resampling = ''   
+        resize_resampling = ''  
+    # gdalwarp resampling method for reprojection
+    try:
+        reprojection_resampling        =get_dom_tag_value(dom, 'reprojection_resampling')
+    except IndexError:
+        reprojection_resampling = 'cubic' # default to cubic  
     # colormap
     try:
         colormap               =get_dom_tag_value(dom, 'colormap')
@@ -527,9 +544,12 @@ log_info_mssg(str().join(['config mrf_blocksize:           ', mrf_blocksize]))
 log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
-log_info_mssg(str().join(['config epsg:                    ', epsg]))
+log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
+log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
 log_info_mssg(str().join(['config extents:                 ', extents]))
+log_info_mssg(str().join(['config target_extents:          ', target_extents]))
 log_info_mssg(str().join(['config overview resampling:     ', overview_resampling]))
+log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resampling]))
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
@@ -974,7 +994,7 @@ if len(modtiles) > 0:
         yres = xres
         gdalbuildvrt_command_list=['gdalbuildvrt',
             '-q', '-te', xmin, ymin, xmax, ymax,
-            '-vrtnodata', vrtnodata,'-resolution', 'user', '-tr',xres, yres, '-a_srs', epsg,
+            '-vrtnodata', vrtnodata,'-resolution', 'user', '-tr',xres, yres, '-a_srs', target_epsg,
             '-input_file_list', all_tiles_filename,
             vrt_filename]
     else:
@@ -998,13 +1018,13 @@ if len(modtiles) > 0:
     subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
     #---------------------------------------------------------------------------
     
-    # Reproject to Web Mercator
-    if epsg == "EPSG:3857":
-        log_info_mssg("Converting tiles to Web Mercator")
-        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', 'cubic', '-s_srs', 'EPSG:4326', '-t_srs', 'EPSG:3857', '-te', '-20037508.34', '-20037508.34', '20037508.34', '20037508.34', '-multi', vrt_filename, vrt_filename.replace('.vrt','_merc.vrt')]
+    # Reproject to target EPSG
+    if target_epsg != source_epsg:
+        log_info_mssg("Converting tiles to " + target_epsg)
+        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', reprojection_resampling, '-s_srs', source_epsg, '-t_srs', target_epsg, '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-multi', vrt_filename, vrt_filename.replace('.vrt','_reproj.vrt')]
         log_the_command(gdal_warp_command_list)
         subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
-        vrt_filename = vrt_filename.replace('.vrt','_merc.vrt')
+        vrt_filename = vrt_filename.replace('.vrt','_reproj.vrt')
 
     # use gdalwarp if resize with resampling method is declared
     if resize_resampling != '':
@@ -1129,7 +1149,7 @@ if len(modtiles) > 0:
             target_y=y_size
             log_info_mssg('Setting target_y from VRT to ' + target_y)
             
-        if epsg == "EPSG:3857":
+        if target_epsg == "EPSG:3857":
             target_y = target_x
 
         #-----------------------------------------------------------------------

@@ -8,7 +8,7 @@
         <xs:element ref="input_files" minOccurs="0"/>
         <xs:element ref="input_dir" minOccurs="0"/>
         <xs:element ref="output_dir"/>
-        <xs:element ref="cache_dir"/>
+        <xs:element ref="cache_dir" minOccurs="0"/>
         <xs:element ref="working_dir"/>
         <xs:element ref="logfile_dir" minOccurs="0"/>
         <xs:element ref="empty_tile" minOccurs="0"/>
@@ -17,10 +17,13 @@
         <xs:element ref="mrf_blocksize"/>
         <xs:element ref="mrf_compression_type"/>
         <xs:element ref="overview_resampling" minOccurs="0"/>
+        <xs:element ref="reprojection_resampling" minOccurs="0"/>
         <xs:element ref="resize_resampling" minOccurs="0"/>
         <xs:element ref="target_x" minOccurs="0"/>
-        <xs:element ref="epsg" minOccurs="0"/>
+        <xs:element ref="target_epsg" minOccurs="0"/>
+        <xs:element ref="source_epsg" minOccurs="0"/>
         <xs:element ref="extents" minOccurs="0"/>
+        <xs:element ref="target_extents" minOccurs="0"/>
         <xs:element ref="mrf_name" minOccurs="0"/>
         <xs:element ref="colormap" minOccurs="0"/>
       </xs:sequence>
@@ -31,7 +34,7 @@
   <xs:element name="input_files" type="xs:string" nillable="true"/>
   <xs:element name="input_dir" type="xs:string" nillable="true"/>
   <xs:element name="output_dir" type="xs:string"/>
-  <xs:element name="cache_dir" type="xs:string"/>
+  <xs:element name="cache_dir" type="xs:string" nillable="true"/>
   <xs:element name="working_dir" type="xs:string"/>
   <xs:element name="logfile_dir" type="xs:string" nillable="true"/>
   <xs:element name="empty_tile" type="xs:NCName" nillable="true"/>
@@ -62,6 +65,19 @@
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
+  <xs:element name="reprojection_resampling" nillable="true">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="near"/>
+        <xs:enumeration value="bilinear"/>
+        <xs:enumeration value="cubic"/>
+        <xs:enumeration value="cubicspline"/>
+        <xs:enumeration value="lanczos"/>
+        <xs:enumeration value="average"/>
+        <xs:enumeration value="mode"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
   <xs:element name="resize_resampling" nillable="true">
     <xs:simpleType>
       <xs:restriction base="xs:string">
@@ -76,8 +92,10 @@
     </xs:simpleType>
   </xs:element>
   <xs:element name="target_x" type="xs:integer" nillable="true"/>
-  <xs:element name="epsg" type="xs:integer"/>
+  <xs:element name="target_epsg" type="xs:integer"/>
+  <xs:element name="source_epsg" type="xs:integer"/>
   <xs:element name="extents" type="xs:string" nillable="true"/>
+  <xs:element name="target_extents" type="xs:string" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
   <xs:element name="colormap" type="xs:string" nillable="true"/>
 </xs:schema>
