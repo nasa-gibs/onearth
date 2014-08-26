@@ -304,11 +304,11 @@ def lookupEmptyTile(empty_tile):
     """
     script_dir = os.path.dirname(__file__)
     if script_dir == '/usr/bin':
-        script_dir = '/usr/share/onearth' # use default directory if in bin
+        script_dir = '/usr/share/onearth/mrfgen' # use default directory if in bin
     try:
-        empty_config_file=open(script_dir+"/empty_tiles/empty_config", 'r')
+        empty_config_file=open(script_dir+"/empty_config", 'r')
     except IOError:
-        log_sig_exit('ERROR', script_dir+"/empty_tiles/empty_config could not be found", sigevent_url)
+        log_sig_exit('ERROR', script_dir+"/empty_config could not be found", sigevent_url)
     tiles = {}
     for line in empty_config_file:
         (key, val) = line.split()
@@ -318,7 +318,7 @@ def lookupEmptyTile(empty_tile):
         if tiles[empty_tile][0] == '/':   
             return os.path.abspath(tiles[empty_tile])
         else:
-            return os.path.abspath(script_dir+"/empty_tiles/"+tiles[empty_tile])
+            return os.path.abspath(script_dir+"/"+tiles[empty_tile])
     except KeyError:
         mssg = '"' + empty_tile + '" is not a valid empty tile.'
         log_sig_exit('ERROR', mssg, sigevent_url)
