@@ -65,7 +65,7 @@
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
-  <xs:element name="reprojection_resampling" nillable="true">
+  <xs:element name="reprojection_resampling" nillable="true" default="cubic">
     <xs:simpleType>
       <xs:restriction base="xs:string">
         <xs:enumeration value="near"/>
@@ -92,8 +92,8 @@
     </xs:simpleType>
   </xs:element>
   <xs:element name="target_x" type="xs:integer" nillable="true"/>
-  <xs:element name="target_epsg" type="xs:integer"/>
-  <xs:element name="source_epsg" type="xs:integer"/>
+  <xs:element name="target_epsg" type="xs:integer" default="4326"/>
+  <xs:element name="source_epsg" type="xs:integer" default="4326"/>
   <xs:element name="extents" type="xs:string" nillable="true"/>
   <xs:element name="target_extents" type="xs:string" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
