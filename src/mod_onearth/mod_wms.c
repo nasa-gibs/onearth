@@ -108,9 +108,16 @@ static char WMTS_marker[]="=WMTS";
 // This module
 module AP_MODULE_DECLARE_DATA wms_module;
 
+// Evaluate the time period for days
+static int evaluate_period(char *time_period)
+{
+	// assumes day periods for now
+	int days = apr_atoi64(time_period+1)-1;
+	return days;
+}
+
 // single shot, open fname file, read nbytes from location, close file.
 // Allocates memory form request pool, returns a pointer to the buffer
-
 static void *p_file_pread(apr_pool_t *p, char *fname, 
                           apr_size_t nbytes, apr_off_t location)
 {
@@ -128,7 +135,7 @@ static void *p_file_pread(apr_pool_t *p, char *fname,
   return (readbytes==nbytes)?buffer:0;
 }
 
-// Apply a time stamp to a movie
+// Get the filename with timestamp
 char *tstamp_fname(request_rec *r,char *fname)
 {
   static char* timearg="time=";
@@ -173,16 +180,20 @@ char *tstamp_fname(request_rec *r,char *fname)
 // Same, but uses a request, and does the time stamp part
 
 static void *r_file_pread(request_rec *r, char *fname, 
-                          apr_size_t nbytes, apr_off_t location)
+                          apr_size_t nbytes, apr_off_t location, char *time_period, char *start_time)
 {
   int fd;
   static char* timearg="time=";
   static char* tstamp="TTTTTTT_";
   static char* year="YYYY";
   char *targ=0,*fnloc=0,*yearloc=0;
+  apr_time_exp_t tm;
 
   void *buffer;
   apr_size_t readbytes;
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Filename: %s",fname);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Period: %s",time_period);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Start: %s",start_time);
 
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
   //  "Pread file %s size %ld at %ld",fname,nbytes,location);
@@ -197,7 +208,7 @@ static void *r_file_pread(request_rec *r, char *fname,
   // Hook and name change for time variant file names
   if ((targ=ap_strcasestr(r->args,timearg))&&(fnloc=ap_strstr(fn,tstamp))) { 
     // This part is not apr compatible, since mktime is not available easily
-    apr_time_exp_t tm;
+//    apr_time_exp_t tm;
     char old_char=*(fnloc+7);
     targ+=5; // Skip the time= part
     if (strlen(targ)==10 || strlen(targ)==0) { // Make sure time is in correct length
@@ -235,10 +246,29 @@ static void *r_file_pread(request_rec *r, char *fname,
 
   if (0>(fd=open(fn,O_RDONLY))) 
   {
-    if (!fnloc) return 0; else { // It was a timestamp, covert to default
-      fnloc[1]=fnloc[2]=fnloc[3]=fnloc[4]=fnloc[5]=fnloc[6]=fnloc[7]='T';
-      fnloc[0]='_';
-      if (0>(fd=open(fn,O_RDONLY))) return 0;
+	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"period: %s",time_period);
+	  int scan_days = evaluate_period(time_period);
+	  if (!fnloc) return 0; else {
+    	// check period
+		  if (sizeof(time_period) > 0) {
+			  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"start day: %03d",tm.tm_yday);
+			  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"days to scan: %d",scan_days);
+			  while (scan_days--) {
+				  tm.tm_yday -= 1;
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"new day: %03d",tm.tm_yday);
+				  char old_char=*(fnloc+7);
+				  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
+				  *(fnloc+7)=old_char;
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"checking filename: %s",fn);
+				  if (0<(fd=open(fn,O_RDONLY))) {
+					  break;
+				  }
+			  }
+		  }
+      if (scan_days < 0) {
+    	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid file exists for time period");
+    	  return 0;
+      }
     }
   }
 
@@ -426,6 +456,8 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     // Adjust the relative pointers, by adding the start of the real storage area
     cache->pattern+=(apr_off_t)caches;
     cache->prefix+=(apr_off_t)caches;
+    cache->time_period+=(apr_off_t)caches;
+    cache->start_time+=(apr_off_t)caches;
 
     ap_log_error(APLOG_MARK,APLOG_DEBUG,0,server,
       "Cache number %d at %llx, count %d, first string %s",count,(long long) cache,
@@ -1505,7 +1537,7 @@ static int mrf_handler(request_rec *r)
   }
   this_record=r_file_pread(r,
               ifname,
-              sizeof(index_s),offset);
+              sizeof(index_s),offset, cache->time_period, cache->start_time);
 
 	if (!this_record) {
 		if (errors > 0)
@@ -1590,7 +1622,7 @@ static int mrf_handler(request_rec *r)
   if (this_record->size) {
 	  this_data=r_file_pread(r,
             dfname,
-            this_record->size,this_record->offset);
+            this_record->size,this_record->offset, cache->time_period, cache->start_time);
   } else {
     int lc=level-GETLEVELS(cache);
     if ((cfg->meta[count].empties[lc].index.size)&&

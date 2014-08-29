@@ -38,6 +38,8 @@ typedef struct {
   int num_patterns; // num_patterns
   char *pattern; // patterns that cache matcheS
   char *prefix;
+  char *time_period;
+  char *start_time;
 } WMSCache;
 
 typedef struct { // One of these per cache pack

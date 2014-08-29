@@ -66,6 +66,7 @@ void PrintUsage() {
         "       <Levels> Defaults to all\n"
         "       <EmptyInfo> size,offset [0,0]\n"
         "       <Pattern> One or more, enclose in <!CDATA[[ ]]>, the first one is used for pattern generation\n"
+        "       <Time> One or more, ISO 8601 time range for the product layer\n"
         );
 }
 
@@ -120,6 +121,8 @@ public:
     long long int empty_size,empty_offset;
     string h_format;
     string data_fname,idx_fname;
+    string time_period;
+    string start_time;
     mrf_data(const char *ifname);
     void mrf2cache(ostream &out);
     void mrf2cachex(ostream &ofname);
@@ -166,6 +169,8 @@ void server_config::dump(ostream &ofname) {
     for (int i=0;i<count;i++) {
         caches[i].pattern+=string_offset;
         caches[i].prefix+=string_offset;
+        caches[i].start_time+=string_offset;
+        caches[i].time_period+=string_offset;
         // The levelt_offset is relative to each particular cache
         caches[i].levelt_offset+=sizeof(WMSCache)*(count-i);
         ofname.write((char *)&caches[i],sizeof(WMSCache));
@@ -214,6 +219,9 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
 
     c.orientation=orientation;
     c.signature=sig;
+
+    c.start_time += cfg.string_insert(start_time);
+    c.time_period += cfg.string_insert(time_period);
 
     long long offset=0;
     // Use a zero levels mrf for blocking access
@@ -335,6 +343,14 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             patt.push_back(CPLGetXMLValue(pat,0,0));
             pat=CPLGetXMLNode(pat->psNext,"=Pattern");
         }
+
+        string first_time_range;
+        first_time_range = CPLGetXMLValue(input,"TWMS.Time","1970-01-01/2099-12-31/P1D");
+        int firstSlash = first_time_range.find('/');
+        int lastSlash = first_time_range.rfind('/');
+        time_period = first_time_range.substr(lastSlash + 1);
+        start_time = first_time_range.substr(0,firstSlash);
+
     }
     catch (CPLString message) {
         CPLDestroyXMLNode(input);
