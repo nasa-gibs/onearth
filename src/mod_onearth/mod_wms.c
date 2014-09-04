@@ -102,8 +102,8 @@ static char kmltype[]="application/vnd.google-earth.kml+xml";
 static int kmlt_len=36; // Number of charachters in kmltype
 static char Matrix[]="TILEMATRIX=";
 static int matrix_len=11; // Number of chars in Matrix;
-
 static char WMTS_marker[]="=WMTS";
+static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
 
 // This module
 module AP_MODULE_DECLARE_DATA wms_module;
@@ -111,8 +111,27 @@ module AP_MODULE_DECLARE_DATA wms_module;
 // Evaluate the time period for days
 static int evaluate_period(char *time_period)
 {
-	// assumes day periods for now
-	int days = apr_atoi64(time_period+1)-1;
+	if (time_period[0] != 'P') return 0;
+	int days;
+	// currently only supports periods of single type
+	char interval = time_period[(strlen(time_period)-1)];
+	switch(interval) // uses max days for each period, allows for fallback
+	{
+	   case 'Y' :
+		   days = apr_atoi64(time_period+1) * 366;
+	       break;
+	   case 'M' :
+		   days = apr_atoi64(time_period+1) * 31;
+		   break;
+	   case 'W' :
+		   days = apr_atoi64(time_period+1) * 7;
+		   break;
+	   case 'D' :
+		   days = apr_atoi64(time_period+1);
+	      break;
+	   default :
+		   days = 0;
+	}
 	return days;
 }
 
@@ -160,7 +179,6 @@ char *tstamp_fname(request_rec *r,char *fname)
     day=apr_atoi64(targ);
 
     if ((year>0)&&(month>0)&&(day>0)) { // We do have a time stamp
-      static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
       int leap=(year%4)?0:((year%400)?((year%100)?1:0):1);
       sprintf(fnloc,"%04d%03d",year,day+moffset[month-1]+((month>2)?leap:0));
       *(fnloc+7)=old_char; // We have to put this character back
@@ -187,7 +205,7 @@ static void *r_file_pread(request_rec *r, char *fname,
   static char* tstamp="TTTTTTT_";
   static char* year="YYYY";
   char *targ=0,*fnloc=0,*yearloc=0;
-  apr_time_exp_t tm;
+  apr_time_exp_t tm; tm.tm_yday=0; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0;
 
   void *buffer;
   apr_size_t readbytes;
@@ -223,7 +241,6 @@ static void *r_file_pread(request_rec *r, char *fname,
     	return 0;
     }
 	if ((tm.tm_year>0)&&(tm.tm_year<1100)&&(tm.tm_mon>0)&&(tm.tm_mon<13)&&(tm.tm_mday>0)&&(tm.tm_mday<32)) { // We do have a time stamp
-	  static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
 	  int leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
 	  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
 	  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
@@ -242,34 +259,68 @@ static void *r_file_pread(request_rec *r, char *fname,
     }
   }
 
-//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"filename: %s",fn);
-
+  // check if layer has multi-day period if file not found
   if (0>(fd=open(fn,O_RDONLY))) 
   {
-	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"period: %s",time_period);
-	  int scan_days = evaluate_period(time_period);
+	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"%s not valid",fn);
 	  if (!fnloc) return 0; else {
-    	// check period
+    	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
-			  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"start day: %03d",tm.tm_yday);
-			  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"days to scan: %d",scan_days);
-			  while (scan_days--) {
-				  tm.tm_yday -= 1;
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"new day: %03d",tm.tm_yday);
+			  int interval = 0;
+			  int start_offset = 0;
+			  // check to see if there is a start time
+			  if (strlen(start_time)==10) {
+				  apr_time_exp_t st;
+				  st.tm_year=apr_atoi64(start_time)-1900;
+				  if (tm.tm_year >= st.tm_year) {
+					  start_time+=5;
+					  st.tm_mon=apr_atoi64(start_time);
+					  if (tm.tm_year == st.tm_year && tm.tm_mon < st.tm_mon)
+						  return 0;
+					  else {
+						  start_time+=3;
+						  st.tm_mday=apr_atoi64(start_time);
+						  if (tm.tm_mon == st.tm_mon && tm.tm_mday < st.tm_mday)
+							  return 0;
+					  }
+				  } else return 0; // stop if request date is before start date
+
+			  	  int leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
+			  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?leap:0);
+			  	  // get the offset from starting date
+			  	  start_offset = st.tm_yday-1;
+			  }
+			  // get the time interval period
+			  interval = evaluate_period(time_period);
+			  // don't check periods less than 1 day
+			  if (interval <= 1) {
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data for requested date");
+				  return 0;
+			  }
+			  // calculate the last date in the span of the time interval
+			  int span = abs(tm.tm_yday-start_offset) % interval;
+			  // loop as fallback, check backward every day during interval
+			  while (interval--) {
+				  if (span==0)
+					  span=interval+1;
+				  tm.tm_yday = (tm.tm_yday+1) - span;
 				  char old_char=*(fnloc+7);
 				  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
 				  *(fnloc+7)=old_char;
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"checking filename: %s",fn);
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Checking for multi-day period (%s) %s",time_period,fn);
 				  if (0<(fd=open(fn,O_RDONLY))) {
-					  break;
+					  break; // stop if file is found
+				  } else {
+					  tm.tm_yday = (tm.tm_yday-1+span)-1;
+					  span = 1;
 				  }
 			  }
+			  if (interval <= 1) {
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data exists for time period");
+				  return 0;
+			  }
 		  }
-      if (scan_days < 0) {
-    	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid file exists for time period");
-    	  return 0;
-      }
-    }
+	  }
   }
 
   readbytes=pread64(fd,buffer,nbytes,location);
