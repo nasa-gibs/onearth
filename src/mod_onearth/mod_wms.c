@@ -201,6 +201,7 @@ static void *r_file_pread(request_rec *r, char *fname,
                           apr_size_t nbytes, apr_off_t location, char *time_period, char *start_time)
 {
   int fd;
+  int leap=0;
   static char* timearg="time=";
   static char* tstamp="TTTTTTT_";
   static char* year="YYYY";
@@ -241,7 +242,7 @@ static void *r_file_pread(request_rec *r, char *fname,
     	return 0;
     }
 	if ((tm.tm_year>0)&&(tm.tm_year<1100)&&(tm.tm_mon>0)&&(tm.tm_mon<13)&&(tm.tm_mday>0)&&(tm.tm_mday<32)) { // We do have a time stamp
-	  int leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
+	  leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
 	  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
 	  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
 	  *(fnloc+7)=old_char; // so we have to put this character back
@@ -262,15 +263,23 @@ static void *r_file_pread(request_rec *r, char *fname,
   // check if layer has multi-day period if file not found
   if (0>(fd=open(fn,O_RDONLY))) 
   {
-	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"%s not valid",fn);
+	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%s is not available",fn);
 	  if (!fnloc) return 0; else {
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
 			  int interval = 0;
 			  int start_offset = 0;
+			  apr_time_exp_t st; st.tm_mday=1;
+			  int start_leap = 0;
+			  // get the time interval period
+			  interval = evaluate_period(time_period);
+			  // don't check periods 1 day or less
+			  if (interval <= 1) {
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data for requested date");
+				  return 0;
+			  }
 			  // check to see if there is a start time
 			  if (strlen(start_time)==10) {
-				  apr_time_exp_t st;
 				  st.tm_year=apr_atoi64(start_time)-1900;
 				  if (tm.tm_year >= st.tm_year) {
 					  start_time+=5;
@@ -280,22 +289,15 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  else {
 						  start_time+=3;
 						  st.tm_mday=apr_atoi64(start_time);
-						  if (tm.tm_mon == st.tm_mon && tm.tm_mday < st.tm_mday)
+						  if (tm.tm_year == st.tm_year && tm.tm_mon == st.tm_mon && tm.tm_mday < st.tm_mday)
 							  return 0;
 					  }
-				  } else return 0; // stop if request date is before start date
-
-			  	  int leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
-			  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?leap:0);
+				  } else
+					  return 0; // stop if request date is before start date
+			  	  start_leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
+			  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?start_leap:0);
 			  	  // get the offset from starting date
 			  	  start_offset = st.tm_yday-1;
-			  }
-			  // get the time interval period
-			  interval = evaluate_period(time_period);
-			  // don't check periods less than 1 day
-			  if (interval <= 1) {
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data for requested date");
-				  return 0;
 			  }
 			  // calculate the last date in the span of the time interval
 			  int span = abs(tm.tm_yday-start_offset) % interval;
@@ -303,23 +305,31 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  while (interval--) {
 				  if (span==0)
 					  span=interval+1;
-				  tm.tm_yday = (tm.tm_yday+1) - span;
+			  	  // check if month period
+				  if ((time_period[(strlen(time_period)-1)] == 'M') && span != 1) {
+					  tm.tm_mday = st.tm_mday;
+					  span = tm.tm_yday; // store old value
+					  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
+					  span = span-tm.tm_yday+1; // get actual span
+					  // scan back dates if nothing is found
+				  } else
+					  tm.tm_yday = (tm.tm_yday+1) - span;
 				  char old_char=*(fnloc+7);
 				  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
 				  *(fnloc+7)=old_char;
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Checking for multi-day period (%s) %s",time_period,fn);
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period (%s) %s",time_period,fn);
 				  if (0<(fd=open(fn,O_RDONLY))) {
 					  break; // stop if file is found
 				  } else {
 					  tm.tm_yday = (tm.tm_yday-1+span)-1;
-					  span = 1;
+					  span = 1; // scan back 1 day until interval is reached
 				  }
 			  }
-			  if (interval <= 1) {
+			  if (interval < 1) {
 				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data exists for time period");
 				  return 0;
 			  }
-		  }
+		  } else return 0;
 	  }
   }
 
