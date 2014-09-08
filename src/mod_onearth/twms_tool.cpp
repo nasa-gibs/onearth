@@ -58,6 +58,7 @@ void PrintUsage() {
         "       <Compression> - [PNG]\n"
         "  <Rsets>\n"
         "       checks model=uniform attribute for levels\n"
+        "       checks scale=N attribute for powers of overviews\n"
         "       <IndexFileName> Defaults to mrf basename + .idx\n"
         "       <DataFileName>  Default to mrf basename + compression dependent extension\n"
         "  <GeoTags>\n"
@@ -114,6 +115,7 @@ public:
     CPLString pattern;
     vector<CPLString> patt;
     int levels,sig;
+    int scale;
     int whole_size_x,whole_size_y,tile_size_x,tile_size_y;
     int orientation;
     int bands;
@@ -236,10 +238,10 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
         level.Y1=cov_uy;
         level.empty_record.offset=empty_offset;
         level.empty_record.size  =empty_size;
-        level.levelx=(cov_ux - cov_lx) * (tile_size_x << i) / whole_size_x;
-        level.levely=(cov_uy - cov_ly) * (tile_size_y << i) / whole_size_y;
-        level.xcount=(whole_size_x - 1) / (tile_size_x << i) + 1;
-        level.ycount=(whole_size_y - 1) / (tile_size_y << i) + 1;
+        level.levelx=(cov_ux - cov_lx) * (tile_size_x * pow(scale,i)) / whole_size_x;
+        level.levely=(cov_uy - cov_ly) * (tile_size_y * pow(scale,i)) / whole_size_y;
+        level.xcount=(whole_size_x - 1) / (tile_size_x * pow(scale,i)) + 1;
+        level.ycount=(whole_size_y - 1) / (tile_size_y * pow(scale,i)) + 1;
         level.index_add=offset;
         // These two are string pointers, will be adjusted later
         level.dfname+=cfg.string_insert(data_fname);
@@ -313,6 +315,12 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         stringstream(CPLGetXMLValue(input,"GeoTags.BoundingBox.miny","-90")) >> cov_ly;
         stringstream(CPLGetXMLValue(input,"GeoTags.BoundingBox.maxy","90")) >> cov_uy;
 
+        // Let the user set the powers between overviews
+        if (CPLGetXMLNode(input,"Rsets.scale"))
+            stringstream(CPLGetXMLValue(input,"Rsets.scale","2")) >> scale;
+        else
+            scale = 2;
+
         // Figure out the number of levels
         int szx=whole_size_x, szy=whole_size_y;
 
@@ -322,8 +330,8 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             while (1<pcount(szx,tile_size_x)*pcount(szy,tile_size_y)) {
                 // Next level, round size up
                 levels++;
-                szx=(szx>>1)+(szx&1); // same as szx/2+szx%2, divide by 2 with round up
-                szy=(szy>>1)+(szy&1);
+                szx=(szx/scale)+(szx%scale); // same as szx/2+szx%2, divide by 2 with round up
+                szy=(szy/scale)+(szy%scale);
             }
         };
 
@@ -375,12 +383,12 @@ void mrf_data::mrf2cache(ostream &out) {
     for (int i=0;i<levels;i++) {
         out << tile_size_x << "," << tile_size_y << " // Page size for this level\n";
         out << cov_lx << "," << cov_ly << "," << cov_ux << "," << cov_uy << " // Coverage area\n";
-        out << (cov_ux - cov_lx) * (tile_size_x << i) / whole_size_x << "," <<
-            (cov_uy - cov_ly) * (tile_size_y << i) / whole_size_y << " // Tile size \n";
+        out << (cov_ux - cov_lx) * (tile_size_x * pow(scale,i)) / whole_size_x << "," <<
+            (cov_uy - cov_ly) * (tile_size_y * pow(scale,i)) / whole_size_y << " // Tile size \n";
         out << data_fname << endl;
         out << idx_fname << " " << offset << endl;
-        offset+=static_cast<long long>(16)*((whole_size_x-1)/(tile_size_x << i) +1) *
-            ((whole_size_y-1)/(tile_size_y << i) +1);
+        offset+=static_cast<long long>(16)*((whole_size_x-1)/(tile_size_x * pow(scale,i)) +1) *
+            ((whole_size_y-1)/(tile_size_y * pow(scale,i)) +1);
         out << empty_offset << "," << empty_size << endl;
     }
 
@@ -427,15 +435,15 @@ void mrf_data::mrf2cachex(ostream &out) {
             CXT_Text,CPLString().FormatC(cov_uy,FMT).c_str());
         CPLXMLNode *TileRes=CPLCreateXMLNode(level,CXT_Element,"TileResolution");
         CPLCreateXMLNode(CPLCreateXMLNode(TileRes,CXT_Attribute,"x"),
-            CXT_Text,CPLString().FormatC((cov_ux - cov_lx) * (tile_size_x << i) / whole_size_x,FMT).c_str());
+            CXT_Text,CPLString().FormatC((cov_ux - cov_lx) * (tile_size_x * pow(scale,i)) / whole_size_x,FMT).c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(TileRes,CXT_Attribute,"y"),
-            CXT_Text,CPLString().FormatC((cov_uy - cov_ly) * (tile_size_y << i) / whole_size_y,FMT).c_str());
+            CXT_Text,CPLString().FormatC((cov_uy - cov_ly) * (tile_size_y * pow(scale,i)) / whole_size_y,FMT).c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"DataFileName"),CXT_Text,data_fname.c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"IndexFileName"),CXT_Text,idx_fname.c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"IndexOffset"),
             CXT_Text,CPLString().Printf("%lld",offset).c_str());
-        offset+=static_cast<long long>(16)*((whole_size_x-1)/(tile_size_x << i) +1) *
-            ((whole_size_y-1)/(tile_size_y << i) +1);
+        offset+=static_cast<long long>(16)*((whole_size_x-1)/(tile_size_x * pow(scale,i)) +1) *
+            ((whole_size_y-1)/(tile_size_y * pow(scale,i)) +1);
 
         CPLXMLNode *empty=CPLCreateXMLNode(level,CXT_Element,"EmptyInfo");
         CPLCreateXMLNode(CPLCreateXMLNode(empty,CXT_Attribute,"size"),
