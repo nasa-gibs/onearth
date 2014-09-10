@@ -330,8 +330,8 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             while (1<pcount(szx,tile_size_x)*pcount(szy,tile_size_y)) {
                 // Next level, round size up
                 levels++;
-                szx=(szx/scale)+(szx%scale); // same as szx/2+szx%2, divide by 2 with round up
-                szy=(szy/scale)+(szy%scale);
+                szx = (szx-1)/scale + 1;
+                szy = (szy-1)/scale + 1;
             }
         };
 
