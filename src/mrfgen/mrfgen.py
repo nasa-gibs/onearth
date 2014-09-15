@@ -162,6 +162,7 @@ def log_sig_exit(type, mssg, sigevent_url):
         mssg -- 'message for operations'
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
+    exit_code = 0
     # Add "Exiting" to mssg.
     mssg=str().join([mssg, '  Exiting mrfgen.'])
     # Send to sigevent.
@@ -178,8 +179,9 @@ def log_sig_exit(type, mssg, sigevent_url):
     elif type == 'ERROR':
         logging.error(time.asctime())
         logging.error(mssg)
+        exit_code = 1
     # Exit.
-    sys.exit()
+    sys.exit(exit_code)
 
 def log_the_command(command_list):
     """
@@ -380,8 +382,7 @@ try:
 except IOError:
     mssg=str().join(['Cannot read configuration file:  ', 
                      configuration_filename])
-    sent=sigevent('ERROR', mssg, sigevent_url)
-    sys.exit(mssg)
+    log_sig_exit('ERROR', mssg, sigevent_url)
 else:
     # Get dom from XML file.
     dom=xml.dom.minidom.parse(config_file)
@@ -766,17 +767,26 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 if RGBApng2Palpng.returncode != None:
                     if  0 < RGBApng2Palpng.returncode < 255:
                         mssg = "RGBApng2Palpng: " + str(RGBApng2Palpng.returncode) + " colors in image not found in color table"
-                        sigevent('WARN', mssg, sigevent_url)
+                        log_sig_warn(mssg, sigevent_url)
                     if RGBApng2Palpng.returncode == 255:
-                        mssg = sigevent('ERROR', "RGBApng2Palpng: " + str(RGBApng2Palpng.stderr.readlines()[-1]), sigevent_url)
+                        try:
+                            mssg = sigevent('ERROR', "RGBApng2Palpng: " + str(RGBApng2Palpng.stderr.readlines()[-1]), sigevent_url)
+                        except urllib2.URLError:
+                            print 'sigevent service is unavailable'
                 
                 if os.path.isfile(output_tile):
                     mssg = output_tile + " created"
-                    sigevent('INFO', mssg, sigevent_url)
+                    try:
+                        sigevent('INFO', mssg, sigevent_url)
+                    except urllib2.URLError:
+                        print 'sigevent service is unavailable'
                     # Replace with new tiles
                     alltiles[i] = output_tile
                 else:
-                    sigevent('ERROR', "RGBApng2Palpng failed to create " + output_tile, sigevent_url)
+                    try:
+                        sigevent('ERROR', "RGBApng2Palpng failed to create " + output_tile, sigevent_url)
+                    except urllib2.URLError:
+                        print 'sigevent service is unavailable'
                 
                 # Make a copy of world file
                 if os.path.isfile(tile.split('.')[0]+'.pgw'):
