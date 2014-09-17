@@ -121,7 +121,7 @@ static int evaluate_period(char *time_period)
 		   days = apr_atoi64(time_period+1) * 366;
 	       break;
 	   case 'M' :
-		   days = apr_atoi64(time_period+1) * 31;
+		   days = apr_atoi64(time_period+1); // special case for months
 		   break;
 	   case 'W' :
 		   days = apr_atoi64(time_period+1) * 7;
@@ -269,14 +269,16 @@ static void *r_file_pread(request_rec *r, char *fname,
 		  if (sizeof(time_period) > 0) {
 			  int interval = 0;
 			  int start_offset = 0;
-			  apr_time_exp_t st; st.tm_mday=1;
+			  apr_time_exp_t st; st.tm_mday=1;st.tm_yday=1;
 			  int start_leap = 0;
 			  // get the time interval period
 			  interval = evaluate_period(time_period);
 			  // don't check periods 1 day or less
 			  if (interval <= 1) {
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data for requested date");
-				  return 0;
+				  if (time_period[(strlen(time_period)-1)] == 'D') {
+					  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data for requested date");
+					  return 0;
+				  }
 			  }
 			  // check to see if there is a start time
 			  if (strlen(start_time)==10) {
@@ -296,36 +298,40 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  return 0; // stop if request date is before start date
 			  	  start_leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
 			  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?start_leap:0);
+
 			  	  // get the offset from starting date
-			  	  start_offset = st.tm_yday-1;
+			  	  start_offset = tm.tm_yday-st.tm_yday;
+			  	  // add prior years if layer does not restart every year (based on daily product with starting period day of Jan 01)
+			  	  if (st.tm_yday!=1 && (time_period[(strlen(time_period)-1)] == 'D')) {
+			  		  while (tm.tm_year>st.tm_year) {
+						  if ((st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1)==1) {
+							  start_offset+=366;
+						  } else
+							  start_offset+=365;
+						  st.tm_year+=1;
+					  }
+			  	  }
 			  }
 			  // calculate the last date in the span of the time interval
-			  int span = abs(tm.tm_yday-start_offset) % interval;
-			  // loop as fallback, check backward every day during interval
-			  while (interval--) {
-				  if (span==0)
-					  span=interval+1;
-			  	  // check if month period
-				  if ((time_period[(strlen(time_period)-1)] == 'M') && span != 1) {
+			  int span = start_offset % interval;
+//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]",tm.tm_yday, start_offset, interval, (tm.tm_yday-span));
+			  if (start_offset <= interval+1)
+				  tm.tm_yday = st.tm_yday;
+			  else {
+				  // check if month period
+				  if (time_period[(strlen(time_period)-1)] == 'M') {
 					  tm.tm_mday = st.tm_mday;
 					  span = tm.tm_yday; // store old value
-					  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
+					  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
 					  span = span-tm.tm_yday+1; // get actual span
-					  // scan back dates if nothing is found
 				  } else
-					  tm.tm_yday = (tm.tm_yday+1) - span;
-				  char old_char=*(fnloc+7);
-				  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
-				  *(fnloc+7)=old_char;
-				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period (%s) %s",time_period,fn);
-				  if (0<(fd=open(fn,O_RDONLY))) {
-					  break; // stop if file is found
-				  } else {
-					  tm.tm_yday = (tm.tm_yday-1+span)-1;
-					  span = 1; // scan back 1 day until interval is reached
-				  }
+					  tm.tm_yday = tm.tm_yday - span;
 			  }
-			  if (interval < 1) {
+			  char old_char=*(fnloc+7);
+			  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
+			  *(fnloc+7)=old_char;
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period (%s) %s",time_period,fn);
+			  if (0>(fd=open(fn,O_RDONLY))) {
 				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data exists for time period");
 				  return 0;
 			  }
