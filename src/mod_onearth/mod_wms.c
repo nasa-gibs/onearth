@@ -111,23 +111,23 @@ module AP_MODULE_DECLARE_DATA wms_module;
 // Evaluate the time period for days
 static int evaluate_period(char *time_period)
 {
-	if (time_period[0] != 'P') return 0;
+	if (time_period[22] != 'P') return 0;
 	int days;
 	// currently only supports periods of single type
 	char interval = time_period[(strlen(time_period)-1)];
 	switch(interval) // uses max days for each period, allows for fallback
 	{
 	   case 'Y' :
-		   days = apr_atoi64(time_period+1) * 366;
+		   days = apr_atoi64(time_period+23) * 366;
 	       break;
 	   case 'M' :
-		   days = apr_atoi64(time_period+1); // special case for months
+		   days = apr_atoi64(time_period+23); // special case for months
 		   break;
 	   case 'W' :
-		   days = apr_atoi64(time_period+1) * 7;
+		   days = apr_atoi64(time_period+23) * 7;
 		   break;
 	   case 'D' :
-		   days = apr_atoi64(time_period+1);
+		   days = apr_atoi64(time_period+23);
 	      break;
 	   default :
 		   days = 0;
@@ -198,7 +198,7 @@ char *tstamp_fname(request_rec *r,char *fname)
 // Same, but uses a request, and does the time stamp part
 
 static void *r_file_pread(request_rec *r, char *fname, 
-                          apr_size_t nbytes, apr_off_t location, char *time_period, char *start_time)
+                          apr_size_t nbytes, apr_off_t location, char *time_period, int num_periods)
 {
   int fd;
   int leap=0;
@@ -210,9 +210,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 
   void *buffer;
   apr_size_t readbytes;
-//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Filename: %s",fname);
-//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Period: %s",time_period);
-//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Start: %s",start_time);
 
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
   //  "Pread file %s size %ld at %ld",fname,nbytes,location);
@@ -267,74 +264,86 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  if (!fnloc) return 0; else {
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
+			  apr_time_exp_t st; st.tm_mday=1;st.tm_yday=1;
 			  int interval = 0;
 			  int start_offset = 0;
-			  apr_time_exp_t st; st.tm_mday=1;st.tm_yday=1;
 			  int start_leap = 0;
-			  // get the time interval period
-			  interval = evaluate_period(time_period);
-			  // don't check periods 1 day or less
-			  if (interval <= 1) {
-				  if (time_period[(strlen(time_period)-1)] == 'D') {
-					  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data for requested date");
-					  return 0;
+			  int i;
+			  for (i=0;i<num_periods;i++) {
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
+				  // get the time interval period
+				  interval = evaluate_period(time_period);
+				  // don't check periods 1 day or less
+				  if ((interval <= 1) && (time_period[(strlen(time_period)-1)] == 'D')){
+					  time_period+=strlen(time_period)+1;
+					  continue; // skip to the next period if there is one
 				  }
-			  }
-			  // check to see if there is a start time
-			  if (strlen(start_time)==10) {
-				  st.tm_year=apr_atoi64(start_time)-1900;
-				  if (tm.tm_year >= st.tm_year) {
-					  start_time+=5;
-					  st.tm_mon=apr_atoi64(start_time);
-					  if (tm.tm_year == st.tm_year && tm.tm_mon < st.tm_mon)
-						  return 0;
-					  else {
-						  start_time+=3;
-						  st.tm_mday=apr_atoi64(start_time);
-						  if (tm.tm_year == st.tm_year && tm.tm_mon == st.tm_mon && tm.tm_mday < st.tm_mday)
-							  return 0;
+				  // check to see if there is a start time
+				  if (strlen(time_period)>=10) {
+					  st.tm_year=apr_atoi64(time_period)-1900;
+					  if (tm.tm_year >= st.tm_year) {
+						  time_period+=5;
+						  st.tm_mon=apr_atoi64(time_period);
+						  if (tm.tm_year == st.tm_year && tm.tm_mon < st.tm_mon) {
+							  time_period+=strlen(time_period)+1;
+							  continue;
+						  }
+						  else {
+							  time_period+=3;
+							  st.tm_mday=apr_atoi64(time_period);
+							  if (tm.tm_year == st.tm_year && tm.tm_mon == st.tm_mon && tm.tm_mday < st.tm_mday) {
+								  time_period+=strlen(time_period)+1;
+								  continue;
+							  }
+						  }
+					  } else {
+						  time_period+=strlen(time_period)+1;
+						  continue; // try next period if request before start date
 					  }
+				  	  start_leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
+				  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?start_leap:0);
+				  	  // get the offset from starting date
+				  	  start_offset = tm.tm_yday-st.tm_yday;
+				  	  // add prior years if not monthly
+				  	  if (time_period[(strlen(time_period)-1)] != 'M') {
+				  		  while (tm.tm_year>st.tm_year) {
+							  if ((st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1)==1) {
+								  start_offset+=366;
+							  } else
+								  start_offset+=365;
+							  st.tm_year+=1;
+						  }
+				  	  }
+				  }
+				  // calculate the last date in the span of the time interval
+				  int span = start_offset % interval;
+				  int request_day = tm.tm_yday;
+				  if (start_offset <= interval)
+					  request_day = st.tm_yday;
+				  else {
+					  // check if month period
+					  if (time_period[(strlen(time_period)-1)] == 'M') {
+						  tm.tm_mday = st.tm_mday;
+						  span = request_day; // store old value
+						  request_day=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
+						  span = span-request_day+1; // get actual span
+					  } else {
+						  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
+						  request_day = request_day - span;
+					  }
+				  }
+				  char old_char=*(fnloc+7);
+				  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,request_day);
+				  *(fnloc+7)=old_char;
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period in file %s",fn);
+				  if (0>(fd=open(fn,O_RDONLY))) {
+					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
+					  time_period+=strlen(time_period)+1; // try next period
 				  } else
-					  return 0; // stop if request date is before start date
-			  	  start_leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
-			  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?start_leap:0);
+					  break;
+			  }
+			  if (i==num_periods) return 0; // no data found within all periods
 
-			  	  // get the offset from starting date
-			  	  start_offset = tm.tm_yday-st.tm_yday;
-			  	  // add prior years if layer does not restart every year (based on daily product with starting period day of Jan 01)
-			  	  if (st.tm_yday!=1 && (time_period[(strlen(time_period)-1)] == 'D')) {
-			  		  while (tm.tm_year>st.tm_year) {
-						  if ((st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1)==1) {
-							  start_offset+=366;
-						  } else
-							  start_offset+=365;
-						  st.tm_year+=1;
-					  }
-			  	  }
-			  }
-			  // calculate the last date in the span of the time interval
-			  int span = start_offset % interval;
-//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]",tm.tm_yday, start_offset, interval, (tm.tm_yday-span));
-			  if (start_offset <= interval+1)
-				  tm.tm_yday = st.tm_yday;
-			  else {
-				  // check if month period
-				  if (time_period[(strlen(time_period)-1)] == 'M') {
-					  tm.tm_mday = st.tm_mday;
-					  span = tm.tm_yday; // store old value
-					  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
-					  span = span-tm.tm_yday+1; // get actual span
-				  } else
-					  tm.tm_yday = tm.tm_yday - span;
-			  }
-			  char old_char=*(fnloc+7);
-			  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
-			  *(fnloc+7)=old_char;
-			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period (%s) %s",time_period,fn);
-			  if (0>(fd=open(fn,O_RDONLY))) {
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No valid data exists for time period");
-				  return 0;
-			  }
 		  } else return 0;
 	  }
   }
@@ -524,7 +533,6 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     cache->pattern+=(apr_off_t)caches;
     cache->prefix+=(apr_off_t)caches;
     cache->time_period+=(apr_off_t)caches;
-    cache->start_time+=(apr_off_t)caches;
 
     ap_log_error(APLOG_MARK,APLOG_DEBUG,0,server,
       "Cache number %d at %llx, count %d, first string %s",count,(long long) cache,
@@ -1604,7 +1612,7 @@ static int mrf_handler(request_rec *r)
   }
   this_record=r_file_pread(r,
               ifname,
-              sizeof(index_s),offset, cache->time_period, cache->start_time);
+              sizeof(index_s),offset, cache->time_period, cache->num_periods);
 
 	if (!this_record) {
 		if (errors > 0)
@@ -1689,7 +1697,7 @@ static int mrf_handler(request_rec *r)
   if (this_record->size) {
 	  this_data=r_file_pread(r,
             dfname,
-            this_record->size,this_record->offset, cache->time_period, cache->start_time);
+            this_record->size,this_record->offset, cache->time_period, cache->num_periods);
   } else {
     int lc=level-GETLEVELS(cache);
     if ((cfg->meta[count].empties[lc].index.size)&&

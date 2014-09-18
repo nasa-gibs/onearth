@@ -28,6 +28,7 @@
 // For windows, this file should exist but be empty on Linux
 #include "stdafx.h"
 #include "cache.h"
+#include <algorithm>
 
 #if defined(LINUX)
 #include "twms_tool.h"
@@ -123,8 +124,7 @@ public:
     long long int empty_size,empty_offset;
     string h_format;
     string data_fname,idx_fname;
-    string time_period;
-    string start_time;
+    vector<string> time_period;
     mrf_data(const char *ifname);
     void mrf2cache(ostream &out);
     void mrf2cachex(ostream &ofname);
@@ -171,7 +171,6 @@ void server_config::dump(ostream &ofname) {
     for (int i=0;i<count;i++) {
         caches[i].pattern+=string_offset;
         caches[i].prefix+=string_offset;
-        caches[i].start_time+=string_offset;
         caches[i].time_period+=string_offset;
         // The levelt_offset is relative to each particular cache
         caches[i].levelt_offset+=sizeof(WMSCache)*(count-i);
@@ -222,8 +221,12 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
     c.orientation=orientation;
     c.signature=sig;
 
-    c.start_time += cfg.string_insert(start_time);
-    c.time_period += cfg.string_insert(time_period);
+    c.num_periods = 1;
+    c.time_period += cfg.string_add(time_period[time_period.size()-1]);
+    for (int i=time_period.size()-2;i>=0;i--) {
+        cfg.string_add(time_period[i]);
+        c.num_periods++;
+    }
 
     long long offset=0;
     // Use a zero levels mrf for blocking access
@@ -352,12 +355,14 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             pat=CPLGetXMLNode(pat->psNext,"=Pattern");
         }
 
-        string first_time_range;
-        first_time_range = CPLGetXMLValue(input,"TWMS.Time","1970-01-01/2099-12-31/P1D");
-        int firstSlash = first_time_range.find('/');
-        int lastSlash = first_time_range.rfind('/');
-        time_period = first_time_range.substr(lastSlash + 1);
-        start_time = first_time_range.substr(0,firstSlash);
+        CPLXMLNode *time_node=CPLGetXMLNode(input,"TWMS.Time");
+        if (!time_node) // add default value
+        	time_period.push_back(CPLGetXMLValue(time_node,0,"1970-01-01/2099-12-31/P1D"));
+        while (time_node!=0) {
+        	time_period.push_back(CPLGetXMLValue(time_node,0,"1970-01-01/2099-12-31/P1D"));
+        	time_node=CPLGetXMLNode(time_node->psNext,"=Time");
+        }
+        sort(time_period.begin(), time_period.end());
 
     }
     catch (CPLString message) {
