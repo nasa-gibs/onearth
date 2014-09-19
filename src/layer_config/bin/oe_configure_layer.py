@@ -43,7 +43,7 @@
  <EnvironmentConfig>/layer_config/conf/environment_geographic.xml</EnvironmentConfig>
  <ArchiveLocation static="false" year="true">/data/EPSG4326/MYR6CTTLLNI</ArchiveLocation>
  <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
- <Time>DETECT/2014-03-28/P1D</Time>
+ <Time>DETECT</Time>
  <Time>2014-04-01/DETECT/P1D</Time>
 </LayerConfiguration>
 '''
@@ -63,7 +63,6 @@ import logging
 import shutil
 import re
 import distutils.spawn
-import calendar
 from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
@@ -463,7 +462,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     print "\nAssessing time", time
     time = time.upper()
     detect = "DETECT"
-    period = 'P1D' # default to period of 1 day
+    period = "P1D"
     period_value = 1 # numeric value of period
     archiveLocation = add_trailing_slash(archiveLocation)
     
@@ -474,13 +473,6 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     
     if time == detect or time == '' or time.startswith(detect+'/P'):
     #detect everything including breaks in date
-        if time.startswith(detect+'/P'):
-            period = time.split('/')[1]
-        else:
-            message = "No period in time configuration for " + fileNamePrefix
-            log_sig_warn(message, sigevent_url)
-        print "Using period " + period
-        period_value = int(period[1:-1])
         dates = []
         for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
             # Print subdirectories
@@ -495,6 +487,24 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 except ValueError:
                     print "Skipping", filename
         dates = sorted(list(set(dates)))
+        # Get period, attempt to figure out period (in days) if none
+        if time.startswith(detect+'/P'):
+            period = time.split('/')[1]
+        else:
+            if len(dates) >= 3: #check if the difference between first three dates are the same
+                diff1 = abs((dates[0] - dates[1]).days)
+                diff2 = abs((dates[1] - dates[2]).days)
+                diff3 = abs((dates[2] - dates[3]).days)
+                if diff1==diff2==diff3:
+                    period = "P"+str(diff1)+"D"
+                elif 31 in [diff1, diff2, diff3]:
+                    period = "P1M"
+                if 365 in [diff1, diff2, diff3]:
+                    period = "P1Y"
+            message = "No period in time configuration for " + fileNamePrefix + " - detected " + period
+            log_sig_warn(message, sigevent_url)
+        print "Using period " + str(period)
+        period_value = int(period[1:-1])
         # Search for date ranges
         if len(dates) == 0:
             message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
@@ -550,7 +560,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             else:
                 intervals.remove(interval)
         if has_period == False:
-            message = "No period in time configuration for " + fileNamePrefix
+            message = "No period in time configuration for " + fileNamePrefix + " - using P1D"
             log_sig_warn(message, sigevent_url)
         print "Using period " + period
         if len(intervals) == 2:

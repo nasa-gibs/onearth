@@ -15,5 +15,5 @@
  <EnvironmentConfig>/usr/share/onearth/layer_config/conf/environment_geographic.xml</EnvironmentConfig>
  <ArchiveLocation static="false" year="true">/usr/share/onearth/demo/data/EPSG4326/MYR6CTTLLNI</ArchiveLocation>
  <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
- <Time>DETECT/DETECT/P1D</Time>
+ <Time>DETECT</Time>
 </LayerConfiguration>
