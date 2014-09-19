@@ -63,8 +63,10 @@ import logging
 import shutil
 import re
 import distutils.spawn
+import calendar
 from datetime import datetime, time, timedelta
 from time import asctime
+from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
 versionNumber = '0.4.2'
@@ -462,6 +464,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     time = time.upper()
     detect = "DETECT"
     period = 'P1D' # default to period of 1 day
+    period_value = 1 # numeric value of period
     archiveLocation = add_trailing_slash(archiveLocation)
     
     if not os.path.isdir(archiveLocation):
@@ -477,6 +480,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             message = "No period in time configuration for " + fileNamePrefix
             log_sig_warn(message, sigevent_url)
         print "Using period " + period
+        period_value = int(period[1:-1])
         dates = []
         for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
             # Print subdirectories
@@ -502,7 +506,15 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         enddate = startdate # set end date to start date for lone dates
         for i, d in enumerate(dates):
             # print d
-            next_day = d + timedelta(days=1)
+            if period[-1] == "W":
+                next_day = d + timedelta(weeks=period_value)
+            elif period[-1] == "M":
+                next_day = d + relativedelta(months=period_value)
+            elif period[-1] == "Y":
+                next_day = d + relativedelta(years=period_value)
+            else:
+                next_day = d + timedelta(days=period_value)
+            
             try:
                 if dates[i+1] == next_day:
                     enddate = next_day # set end date to next existing day
