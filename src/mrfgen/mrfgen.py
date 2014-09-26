@@ -924,7 +924,7 @@ if len(modtiles) > 0:
         # Linknames.
         cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.pjg'])
         cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.pjg'])
-    elif mrf_compression_type == 'TIFF':
+    elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.ptf'])
         # Linknames.
@@ -1103,8 +1103,8 @@ if len(modtiles) > 0:
             compress=str('COMPRESS=JPEG')
         elif mrf_compression_type == 'JPEG':
             compress=str('COMPRESS=JPEG')
-        elif mrf_compression_type == 'TIFF':
-            compress=str('COMPRESS=TIFF')
+        elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
+            compress=str('COMPRESS=TIF')
         else:
             mssg='Unrecognized compression type for MRF.'
             log_sig_exit('ERROR', mssg, sigevent_url)
