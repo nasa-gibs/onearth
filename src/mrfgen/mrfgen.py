@@ -43,7 +43,10 @@
 #  <vrtnodata>0</vrtnodata>
 #  <mrf_blocksize>512</mrf_blocksize>
 #  <mrf_compression_type>JPEG</mrf_compression_type>
+#  <outsize>327680 163840</outsize>
+#  <overview_levels>2 4 8 16 32 64 128 256 512 1024</overview_levels>
 #  <overview_resampling>nearest</overview_resampling>
+#  <overview_scale>2</overview_scale>
 #  <epsg>4326</epsg>
 #  <extents>-180,-90,180,90</extents>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
@@ -425,9 +428,18 @@ else:
     mrf_blocksize          =get_dom_tag_value(dom, 'mrf_blocksize')
     mrf_compression_type   =get_dom_tag_value(dom, 'mrf_compression_type')
     try:
-        target_x               =get_dom_tag_value(dom, 'target_x')
+        outsize = get_dom_tag_value(dom, 'outsize')
+        target_x, target_y = outsize.split(' ')
     except IndexError:
-        target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
+        outsize = ''
+        try:
+            target_x               =get_dom_tag_value(dom, 'target_x')
+        except IndexError:
+            target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
+        try:
+            target_y               =get_dom_tag_value(dom, 'target_y')
+        except IndexError:
+            target_y = ''
     # EPSG code projection.
     try:
         target_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -456,6 +468,14 @@ else:
         input_files        =get_dom_tag_value(dom, 'input_files')
     except IndexError:
         input_files = ''
+    # overview levels
+    try:
+        overview_levels       =get_dom_tag_value(dom, 'overview_levels').split(' ')
+        for level in overview_levels:
+            if level.isdigit() == False:
+                log_sig_exit("ERROR", "'" + level + "' is not a valid overview value.", sigevent_url)
+    except IndexError:
+        overview_levels = ''
     # resampling method
     try:
         overview_resampling        =get_dom_tag_value(dom, 'overview_resampling')
@@ -544,11 +564,14 @@ log_info_mssg(str().join(['config vrtnodata:               ', vrtnodata]))
 log_info_mssg(str().join(['config mrf_blocksize:           ', mrf_blocksize]))
 log_info_mssg(str().join(['config mrf_compression_type:    ',
                           mrf_compression_type]))
+log_info_mssg(str().join(['config outsize:                 ', outsize]))
 log_info_mssg(str().join(['config target_x:                ', target_x]))
+log_info_mssg(str().join(['config target_y:                ', target_y]))
 log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
 log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
 log_info_mssg(str().join(['config extents:                 ', extents]))
 log_info_mssg(str().join(['config target_extents:          ', target_extents]))
+log_info_mssg(str().join(['config overview levels:         ', ' '.join(overview_levels)]))
 log_info_mssg(str().join(['config overview resampling:     ', overview_resampling]))
 log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resampling]))
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
@@ -1038,7 +1061,8 @@ if len(modtiles) > 0:
 
     # use gdalwarp if resize with resampling method is declared
     if resize_resampling != '':
-        target_y = int(int(target_x)/2)
+        if target_y == '':
+            target_y = int(int(target_x)/2)
         gdal_warp_command_list = ['gdalwarp', '-of', 'GTiff' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', xmin, ymin, xmax, ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
         gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-srcnodata', '0', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
          
@@ -1238,71 +1262,76 @@ if len(modtiles) > 0:
         if idxf >= vrtf:
             remove_file(gdal_translate_stderr_filename)
 
-            # Create the gdaladdo command.
-            gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
-                                   str(mrf_filename)]
-            # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
-            overview=2
-            gdaladdo_command_list.append(str(overview))
-            exp=2
-            while (overview*long(mrf_blocksize)) < actual_size:
-                overview=2**exp
-                exp=exp+1
-                gdaladdo_command_list.append(str(overview))
-            # Log the gdaladdo command.
-            log_the_command(gdaladdo_command_list)
-            # Capture stderr.
-            gdaladdo_stderr_filename=str().join([working_dir, basename,
-                                                 '_gdaladdo_stderr.txt'])
-            # Open stderr file for write.
-            gdaladdo_stderr_file=open(gdaladdo_stderr_filename, 'w')
-
-            #-------------------------------------------------------------------
-            # Execute gdaladdo.
-            subprocess.call(gdaladdo_command_list, stderr=gdaladdo_stderr_file)
-            #-------------------------------------------------------------------
-
-            # Close stderr file.
-            gdaladdo_stderr_file.close()
-
-            # Update previous cycle time only if gdaladdo was successful.
-            addf=get_modification_time(idx_filename)
-            new_stats=os.stat(idx_filename)
-
-            # Check for gdaladdo success by checking time stamp and file size.
-            if (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
-                remove_file(gdaladdo_stderr_filename)
-                # If MRF sucessfully created, then store current cycle time.
-                # Write string value of current cycle time to disk file, to be 
-                # used in the next cycle as the previous cycle time.  Time 
-                # format is "yyyymmdd.hhmmss"
-                try:
-                    # GET FILENAME AND PATH FROM CONFIGURATION FILE.
-                    # Open file.
-                    ptime_file=open(ptime_filename, 'w')
-                except IOError:
-                    mssg1='Cannot open for write:  '
-                    mssg2=ptime_filename
-                    mssg3='  On next cycle all tiles will be processed.'
-                    mssg=str().join([mssg1, mssg2, mssg3])
-                    log_sig_warn(mssg, sigevent_url)
+            if overview_levels == '' or int(overview_levels[0])>1:
+                # Create the gdaladdo command.
+                gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
+                                       str(mrf_filename)]
+                # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
+                if overview_levels == '':
+                    overview=2
+                    gdaladdo_command_list.append(str(overview))
+                    exp=2
+                    while (overview*long(mrf_blocksize)) < actual_size:
+                        overview=2**exp
+                        exp=exp+1
+                        gdaladdo_command_list.append(str(overview))
                 else:
-                    # Write to file with line termination.
-                    ptime_file.write(str().join([current_cycle_time, '\n']))
-                    # Close file.
-                    ptime_file.close()
-            else:
-                log_info_mssg(str().join(['addf = ',str(addf)]))
-                log_info_mssg(str().join(['compare_time = ',str(compare_time)]))
-                log_info_mssg('addf should be >= compare_time')
-                log_info_mssg(str().join(['new_stats.st_size = ',
-                                          str(new_stats.st_size)]))
-                log_info_mssg(str().join(['old_stats.st_size = ',
-                                          str(old_stats.st_size)]))
-                log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
-                mssg=str().join(['Unsuccessful:  gdaladdo   Check stderr file: ',
-                                 gdaladdo_stderr_filename])
-                log_sig_exit('ERROR', mssg, sigevent_url)
+                    for overview in overview_levels:
+                        gdaladdo_command_list.append(str(overview))
+                # Log the gdaladdo command.
+                log_the_command(gdaladdo_command_list)
+                # Capture stderr.
+                gdaladdo_stderr_filename=str().join([working_dir, basename,
+                                                     '_gdaladdo_stderr.txt'])
+                # Open stderr file for write.
+                gdaladdo_stderr_file=open(gdaladdo_stderr_filename, 'w')
+    
+                #-------------------------------------------------------------------
+                # Execute gdaladdo.
+                subprocess.call(gdaladdo_command_list, stderr=gdaladdo_stderr_file)
+                #-------------------------------------------------------------------
+    
+                # Close stderr file.
+                gdaladdo_stderr_file.close()
+    
+                # Update previous cycle time only if gdaladdo was successful.
+                addf=get_modification_time(idx_filename)
+                new_stats=os.stat(idx_filename)
+    
+                # Check for gdaladdo success by checking time stamp and file size.
+                if (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
+                    remove_file(gdaladdo_stderr_filename)
+                    # If MRF sucessfully created, then store current cycle time.
+                    # Write string value of current cycle time to disk file, to be 
+                    # used in the next cycle as the previous cycle time.  Time 
+                    # format is "yyyymmdd.hhmmss"
+                    try:
+                        # GET FILENAME AND PATH FROM CONFIGURATION FILE.
+                        # Open file.
+                        ptime_file=open(ptime_filename, 'w')
+                    except IOError:
+                        mssg1='Cannot open for write:  '
+                        mssg2=ptime_filename
+                        mssg3='  On next cycle all tiles will be processed.'
+                        mssg=str().join([mssg1, mssg2, mssg3])
+                        log_sig_warn(mssg, sigevent_url)
+                    else:
+                        # Write to file with line termination.
+                        ptime_file.write(str().join([current_cycle_time, '\n']))
+                        # Close file.
+                        ptime_file.close()
+                else:
+                    log_info_mssg(str().join(['addf = ',str(addf)]))
+                    log_info_mssg(str().join(['compare_time = ',str(compare_time)]))
+                    log_info_mssg('addf should be >= compare_time')
+                    log_info_mssg(str().join(['new_stats.st_size = ',
+                                              str(new_stats.st_size)]))
+                    log_info_mssg(str().join(['old_stats.st_size = ',
+                                              str(old_stats.st_size)]))
+                    log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
+                    mssg=str().join(['Unsuccessful:  gdaladdo   Check stderr file: ',
+                                     gdaladdo_stderr_filename])
+                    log_sig_exit('ERROR', mssg, sigevent_url)
         else:
             log_info_mssg(str().join(['idxf = ',str(idxf)]))
             log_info_mssg(str().join(['vrtf = ',str(vrtf)]))

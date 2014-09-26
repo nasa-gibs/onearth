@@ -11,6 +11,8 @@
  <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
+ <outsize>327680 163840</outsize>
+ <overview_levels>2 4 8 16 32 64 128 256 512 1024</overview_levels>
  <overview_resampling>nearest</overview_resampling>
  <target_epsg>4326</target_epsg>
  <extents>-180,-90,180,90</extents>

@@ -16,10 +16,13 @@
         <xs:element ref="vrtnodata"/>
         <xs:element ref="mrf_blocksize"/>
         <xs:element ref="mrf_compression_type"/>
+        <xs:element ref="outsize" minOccurs="0"/>
+        <xs:element ref="overview_levels" minOccurs="0"/>
         <xs:element ref="overview_resampling" minOccurs="0"/>
         <xs:element ref="reprojection_resampling" minOccurs="0"/>
         <xs:element ref="resize_resampling" minOccurs="0"/>
         <xs:element ref="target_x" minOccurs="0"/>
+        <xs:element ref="target_y" minOccurs="0"/>
         <xs:element ref="target_epsg" minOccurs="0"/>
         <xs:element ref="source_epsg" minOccurs="0"/>
         <xs:element ref="extents" minOccurs="0"/>
@@ -48,10 +51,13 @@
         <xs:enumeration value="JPEG"/>
         <xs:enumeration value="PNG"/>
         <xs:enumeration value="PPNG"/>
+        <xs:enumeration value="TIF"/>
         <xs:enumeration value="TIFF"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
+  <xs:element name="outsize" type="xs:string"/>
+  <xs:element name="overview_levels" type="xs:string"/>
   <xs:element name="overview_resampling" nillable="true" default="nearest">
     <xs:simpleType>
       <xs:restriction base="xs:string">
@@ -92,6 +98,7 @@
     </xs:simpleType>
   </xs:element>
   <xs:element name="target_x" type="xs:integer" nillable="true"/>
+  <xs:element name="target_y" type="xs:integer" nillable="true"/>
   <xs:element name="target_epsg" type="xs:integer" default="4326"/>
   <xs:element name="source_epsg" type="xs:integer" default="4326"/>
   <xs:element name="extents" type="xs:string" nillable="true"/>
