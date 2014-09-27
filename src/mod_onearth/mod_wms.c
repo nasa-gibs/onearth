@@ -1182,6 +1182,8 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Fpng");
 	} else if (ap_strcasecmp_match(format, "image/jpeg") == 0) {
 		strcpy(format,"image%2Fjpeg");
+	} else if (ap_strcasecmp_match(format, "image/tiff") == 0) {
+		strcpy(format,"image%2Ftiff");
 	}
 
 	// check if TWMS or WMTS
@@ -1788,7 +1790,7 @@ static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
   if (!(r->args)) {
-	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg"))) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") )) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else
