@@ -68,7 +68,7 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.4.2'
+versionNumber = '0.5.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -861,8 +861,10 @@ for conf in conf_files:
                 compression = "JPEG"
             if compression == "PPNG":
                 compression = "PNG"
-            if compression not in ["JPEG", "PNG"]:
-                log_sig_err('<Compression> must be either JPEG or PNG in ' + conf, sigevent_url)
+            if compression == "TIFF":
+                compression = "TIF"
+            if compression not in ["JPEG", "PNG", "TIF"]:
+                log_sig_err('<Compression> must be either JPEG, PNG, or TIF in ' + conf, sigevent_url)
                 continue
         except IndexError:
             log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
@@ -1072,6 +1074,9 @@ for conf in conf_files:
         if compression.lower() in ['jpg', 'jpeg']:
             dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
             mrf_format = 'image/jpeg'
+        elif compression.lower() in ['tif', 'tiff']:
+            dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
+            mrf_format = 'image/tiff'
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
