@@ -33,7 +33,7 @@
  <Title>MODIS AQUA Nighttime Cloud Top Temperature</Title>
  <FileNamePrefix>MYR6CTTLLNI</FileNamePrefix>
  <Compression>PNG</Compression>
- <Levels>6</Levels>
+ <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
  <EmptyTileSize offset="0">1397</EmptyTileSize>
  <Projection>EPSG:4326</Projection> 
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
@@ -111,7 +111,7 @@ class Projection:
         self.id = projection_id
         self.wkt = projection_wkt
         self.bbox_xml = projection_bbox
-        self.tilematrixsets = projection_tilematrixsets
+        self.tilematrixsets = projection_tilematrixsets #returns just tilematrixset levels for now
         self.tilematrixset_xml = projection_tilematrixset_xml
 
 warnings = []
@@ -437,7 +437,7 @@ def get_projection(projectionId, projectionConfig, lcdir):
                         tms_xml = re.sub(r'<TileMatrixSet level="\d+">', '<TileMatrixSet>', tms_xml) # remove added level metadata
                         tileMatrixSetElements = tms_projection.getElementsByTagName('TileMatrixSet')
                         for tilematrixset in tileMatrixSetElements:
-                            tilematrixsets[tilematrixset.attributes['level'].value] = tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip()
+                            tilematrixsets[tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip()] = tilematrixset.getElementsByTagName("TileMatrix").length
                 except KeyError, e:
                     log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixsetconfig_name, sigevent_url)
                 
@@ -870,9 +870,9 @@ for conf in conf_files:
             log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
             continue
         try:
-            levels = get_dom_tag_value(dom, 'Levels')
+            tilematrixset = get_dom_tag_value(dom, 'TileMatrixSet')
         except IndexError:
-            log_sig_err('Required <Levels> element is missing in ' + conf, sigevent_url)
+            log_sig_err('Required <TileMatrixSet> element is missing in ' + conf, sigevent_url)
             continue
         try:
             emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
@@ -994,7 +994,7 @@ for conf in conf_files:
     log_info_mssg('config: Title: ' + title)
     log_info_mssg('config: FileNamePrefix: ' + fileNamePrefix)
     log_info_mssg('config: Compression: ' + compression)
-    log_info_mssg('config: Levels: ' + levels)
+    log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
     log_info_mssg('config: EmptyTileSize: ' + str(emptyTileSize))
     log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
     if headerFileName:
@@ -1112,7 +1112,7 @@ for conf in conf_files:
     
     twms = mrf_dom.createElement('TWMS')
     levelsElement = mrf_dom.createElement('Levels')
-    levelsElement.appendChild(mrf_dom.createTextNode(levels))
+    levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset])))
     emptyInfoElement = mrf_dom.createElement('EmptyInfo')
     emptyInfoElement.setAttribute('size', str(emptyTileSize))
     emptyInfoElement.setAttribute('offset', str(emptyTileOffset))
@@ -1178,9 +1178,9 @@ for conf in conf_files:
     # change patterns for WMTS
     pattern_replaced = False
     try:
-        wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, projection.tilematrixsets[levels], mrf_format.replace("/","%2F"))
+        wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
     except KeyError:
-        log_sig_exit('ERROR', 'TileMatrixSet level ' + levels + ' not found for projection: ' + projection.id, sigevent_url)
+        log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
     for line in lines:
         if '<Pattern>' in line:
             if pattern_replaced == False:
@@ -1457,7 +1457,7 @@ for conf in conf_files:
             if '$WMTSServiceURL' in line:
                 line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)      
             if '$TileMatrixSet' in line:
-                line = line.replace("$TileMatrixSet",projection.tilematrixsets[levels])
+                line = line.replace("$TileMatrixSet",tilematrixset)
             if static == True or len(timeElements)==0:
                 if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
                     line = ''
