@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TileMatrixSets xmlns:ows="http://www.opengis.net/ows/1.1">
    <Projection id="EPSG:3031">
-      <TileMatrixSet level="4">
+      <TileMatrixSet>
          <ows:Identifier>EPSG3031_1km</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
          <TileMatrix>
@@ -41,7 +41,7 @@
             <MatrixHeight>16</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="5">
+      <TileMatrixSet>
          <ows:Identifier>EPSG3031_500m</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
          <TileMatrix>
@@ -90,7 +90,7 @@
             <MatrixHeight>32</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="6">
+      <TileMatrixSet>
          <ows:Identifier>EPSG3031_250m</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
          <TileMatrix>
@@ -150,7 +150,7 @@
       </TileMatrixSet>
    </Projection>
    <Projection id="EPSG:3413">
-      <TileMatrixSet level="4">
+      <TileMatrixSet>
          <ows:Identifier>EPSG3413_1km</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3413</ows:SupportedCRS>
          <TileMatrix>
@@ -190,7 +190,7 @@
             <MatrixHeight>16</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="5">
+      <TileMatrixSet>
          <ows:Identifier>EPSG3413_500m</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3413</ows:SupportedCRS>
          <TileMatrix>
@@ -239,7 +239,7 @@
             <MatrixHeight>32</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="6">
+      <TileMatrixSet>
          <ows:Identifier>EPSG3413_250m</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3413</ows:SupportedCRS>
          <TileMatrix>
@@ -299,7 +299,7 @@
       </TileMatrixSet>
    </Projection>
    <Projection id="EPSG:3857">
-      <TileMatrixSet level="3">
+      <TileMatrixSet>
          <ows:Identifier>GoogleMapsCompatible_Level3</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18:3:3857</ows:SupportedCRS>
          <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
@@ -340,7 +340,7 @@
             <MatrixHeight>8</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="6">
+      <TileMatrixSet>
          <ows:Identifier>GoogleMapsCompatible_Level6</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18:3:3857</ows:SupportedCRS>
          <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
@@ -408,7 +408,7 @@
             <MatrixHeight>64</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="7">
+      <TileMatrixSet>
          <ows:Identifier>GoogleMapsCompatible_Level7</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18:3:3857</ows:SupportedCRS>
          <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
@@ -485,7 +485,7 @@
             <MatrixHeight>128</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="8">
+      <TileMatrixSet>
          <ows:Identifier>GoogleMapsCompatible_Level8</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18:3:3857</ows:SupportedCRS>
          <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
@@ -571,7 +571,7 @@
             <MatrixHeight>256</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="9">
+      <TileMatrixSet>
          <ows:Identifier>GoogleMapsCompatible_Level9</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18:3:3857</ows:SupportedCRS>
          <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
@@ -666,7 +666,7 @@
             <MatrixHeight>512</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="10">
+      <TileMatrixSet>
          <ows:Identifier>GoogleMapsCompatible_Level10</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18:3:3857</ows:SupportedCRS>
          <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
@@ -772,7 +772,7 @@
       </TileMatrixSet>
    </Projection>
    <Projection id="EPSG:4326">
-        <TileMatrixSet level="3">
+        <TileMatrixSet>
          <ows:Identifier>EPSG4326_16km</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
          <TileMatrix>
@@ -803,7 +803,7 @@
             <MatrixHeight>3</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="6">
+      <TileMatrixSet>
          <ows:Identifier>EPSG4326_2km</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
          <TileMatrix>
@@ -861,7 +861,7 @@
             <MatrixHeight>20</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="7">
+      <TileMatrixSet>
          <ows:Identifier>EPSG4326_1km</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
          <TileMatrix>
@@ -928,7 +928,7 @@
             <MatrixHeight>40</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="8">
+      <TileMatrixSet>
          <ows:Identifier>EPSG4326_500m</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
          <TileMatrix>
@@ -1004,7 +1004,7 @@
             <MatrixHeight>80</MatrixHeight>
          </TileMatrix>
       </TileMatrixSet>
-      <TileMatrixSet level="9">
+      <TileMatrixSet>
          <ows:Identifier>EPSG4326_250m</ows:Identifier>
          <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
          <TileMatrix>

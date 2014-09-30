@@ -113,6 +113,13 @@ class Projection:
         self.bbox_xml = projection_bbox
         self.tilematrixsets = projection_tilematrixsets #returns just tilematrixset levels for now
         self.tilematrixset_xml = projection_tilematrixset_xml
+        
+class TileMatrixSetMeta:
+    """TileMatrixSet metadata for WMTS"""
+     
+    def __init__(self, levels, scale):
+        self.levels = levels
+        self.scale = scale
 
 warnings = []
 errors = []
@@ -437,7 +444,14 @@ def get_projection(projectionId, projectionConfig, lcdir):
                         tms_xml = re.sub(r'<TileMatrixSet level="\d+">', '<TileMatrixSet>', tms_xml) # remove added level metadata
                         tileMatrixSetElements = tms_projection.getElementsByTagName('TileMatrixSet')
                         for tilematrixset in tileMatrixSetElements:
-                            tilematrixsets[tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip()] = tilematrixset.getElementsByTagName("TileMatrix").length
+                            scale_denominators = tilematrixset.getElementsByTagName("ScaleDenominator")
+                            if scale_denominators.length > 1:
+                                scale = int(round(float(scale_denominators[0].firstChild.nodeValue.strip())/float(scale_denominators[1].firstChild.nodeValue.strip())))
+                            else:
+                                scale = 2 # default to powers of 2 scale
+                            print "TileMatrixSet: " + tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip() + " - levels: " + str(tilematrixset.getElementsByTagName("TileMatrix").length) + ", overview scale: " + str(scale)
+                            tilematrixsets[tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip()] = TileMatrixSetMeta(tilematrixset.getElementsByTagName("TileMatrix").length, scale)
+                                
                 except KeyError, e:
                     log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixsetconfig_name, sigevent_url)
                 
@@ -871,7 +885,7 @@ for conf in conf_files:
             continue
         try:
             tilematrixset = get_dom_tag_value(dom, 'TileMatrixSet')
-        except IndexError:
+        except:
             log_sig_err('Required <TileMatrixSet> element is missing in ' + conf, sigevent_url)
             continue
         try:
@@ -1103,6 +1117,16 @@ for conf in conf_files:
         rasterElement.appendChild(compressionElement)
     
     rsets = mrf_dom.getElementsByTagName('Rsets')[0]
+    scale_attribute = rsets.getAttribute('scale')
+    if scale_attribute:
+        if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
+            log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + headerFileName + ": " + scale_attribute, sigevent_url)
+            continue
+    try:
+        rsets.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+    except KeyError:
+        log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+        continue
     dataFileNameElement = mrf_dom.createElement('DataFileName')
     dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
     indexFileNameElement = mrf_dom.createElement('IndexFileName')
@@ -1112,7 +1136,7 @@ for conf in conf_files:
     
     twms = mrf_dom.createElement('TWMS')
     levelsElement = mrf_dom.createElement('Levels')
-    levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset])))
+    levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
     emptyInfoElement = mrf_dom.createElement('EmptyInfo')
     emptyInfoElement.setAttribute('size', str(emptyTileSize))
     emptyInfoElement.setAttribute('offset', str(emptyTileOffset))
@@ -1207,15 +1231,14 @@ for conf in conf_files:
     
 
     #getCapabilities
-    if no_twms == False:
+    if no_twms == False and no_xml == False:
         try:
             # Open file.
             getCapabilities_base=open(twmsEndPoint+'/getCapabilities.base', 'r+')
         except IOError:
             mssg=str().join(['Cannot read getCapabilities.base file:  ', 
                              twmsEndPoint+'/getCapabilities.base'])
-            sent=sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
+            log_sig_exit('ERROR', mssg, sigevent_url)
         else:
             execbeef = 'EXECBEEF: Layer='+fileNamePrefix+' eval $LT'
             lines = getCapabilities_base.readlines()
@@ -1248,8 +1271,7 @@ for conf in conf_files:
         except IOError:
             mssg=str().join(['Cannot read getcapabilities_base_wmts.xml file:  ', 
                              lcdir+'/conf/getcapabilities_base_wmts.xml'])
-            sent=sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
+            log_sig_exit('ERROR', mssg, sigevent_url)
         else:
             lines = getCapabilities_base.readlines()
             for idx in range(0, len(lines)):
@@ -1276,15 +1298,14 @@ for conf in conf_files:
             getCapabilities_base.close()   
 
     #getTileService
-    if no_twms == False:
+    if no_twms == False and no_xml == False:
         try:
             # Open file.
             getTileService_base=open(twmsEndPoint+'/getTileService.base', 'r+')
         except IOError:
             mssg=str().join(['Cannot read getTileService.base file:  ', 
                              twmsEndPoint+'/getTileService.base'])
-            sent=sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
+            log_sig_exit('ERROR', mssg, sigevent_url)
         else:
             execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
             lines = getTileService_base.readlines()
@@ -1308,15 +1329,14 @@ for conf in conf_files:
             getTileService_base.close()
 
     #wms_config
-    if no_twms == False:
+    if no_twms == False and no_xml == False:
         try:
             # Open file.
             wms_config_base=open(twmsEndPoint+'/wms_config.base', 'r+')
         except IOError:
             mssg=str().join(['Cannot read wms_config.base file:  ', 
                              twmsEndPoint+'/wms_config.base'])
-            sent=sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
+            log_sig_exit('ERROR', mssg, sigevent_url)
         else:
             execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
             lines = wms_config_base.readlines()
