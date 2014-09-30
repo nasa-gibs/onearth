@@ -13,7 +13,7 @@
         <xs:element ref="logfile_dir" minOccurs="0"/>
         <xs:element ref="empty_tile" minOccurs="0"/>
         <xs:element ref="mrf_empty_tile_filename" minOccurs="0"/>
-        <xs:element ref="vrtnodata"/>
+        <xs:element ref="vrtnodata" minOccurs="0"/>
         <xs:element ref="mrf_blocksize"/>
         <xs:element ref="mrf_compression_type"/>
         <xs:element ref="outsize" minOccurs="0"/>
@@ -42,7 +42,7 @@
   <xs:element name="logfile_dir" type="xs:string" nillable="true"/>
   <xs:element name="empty_tile" type="xs:NCName" nillable="true"/>
   <xs:element name="mrf_empty_tile_filename" type="xs:string" nillable="true"/>
-  <xs:element name="vrtnodata" type="xs:integer"/>
+  <xs:element name="vrtnodata" type="xs:integer" nillable="true"/>
   <xs:element name="mrf_blocksize" type="xs:integer"/>
   <xs:element name="mrf_compression_type">
     <xs:simpleType>

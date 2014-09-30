@@ -8,7 +8,6 @@
  <working_dir>/mrfgen/working_dir</working_dir>
  <logfile_dir>/mrfgen/working_dir</logfile_dir>
  <mrf_empty_tile_filename>/mrfgen/empty_tiles/black.jpg</mrf_empty_tile_filename>
- <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
  <outsize>327680 163840</outsize>

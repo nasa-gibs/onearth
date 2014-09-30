@@ -40,7 +40,6 @@
 #  <working_dir>/mrfgen/working_dir</working_dir>
 #  <logfile_dir>/mrfgen/working_dir</logfile_dir>
 #  <empty_tile>black</empty_tile>
-#  <vrtnodata>0</vrtnodata>
 #  <mrf_blocksize>512</mrf_blocksize>
 #  <mrf_compression_type>JPEG</mrf_compression_type>
 #  <outsize>327680 163840</outsize>
@@ -424,7 +423,10 @@ else:
         except IndexError:
             log_sig_warn("Empty tile was not found for " + parameter_name, sigevent_url)
             mrf_empty_tile_filename = ''
-    vrtnodata              =get_dom_tag_value(dom, 'vrtnodata')
+    try:
+        vrtnodata = get_dom_tag_value(dom, 'vrtnodata')
+    except IndexError:
+        vrtnodata = ""
     mrf_blocksize          =get_dom_tag_value(dom, 'mrf_blocksize')
     mrf_compression_type   =get_dom_tag_value(dom, 'mrf_compression_type')
     try:
@@ -775,8 +777,12 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 output_tile = working_dir + os.path.basename(tile).split('.')[0]+'_indexed.png'
                 
                 # Create the RGBApng2Palpng command.
+                if vrtnodata == "":
+                    fill = 0
+                else:
+                    fill = vrtnodata
                 RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + colormap,
-                                             '-fill='+vrtnodata, '-of='+output_tile, tile]
+                                             '-fill='+fill, '-of='+output_tile, tile]
                 # Log the RGBApng2Palpng command.
                 log_the_command(RGBApng2Palpng_command_list)
          
@@ -1021,21 +1027,24 @@ if len(modtiles) > 0:
     #target_x=str(360.0/int(target_x))
     #target_y=target_x
     
+    gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
     # use resolution?
     if target_x != '':
         xres = str(360.0/int(target_x))
         yres = xres
-        gdalbuildvrt_command_list=['gdalbuildvrt',
-            '-q', '-te', xmin, ymin, xmax, ymax,
-            '-vrtnodata', vrtnodata,'-resolution', 'user', '-tr',xres, yres, '-a_srs', target_epsg,
-            '-input_file_list', all_tiles_filename,
-            vrt_filename]
-    else:
-        gdalbuildvrt_command_list=['gdalbuildvrt',
-            '-q', '-te', xmin, ymin, xmax, ymax,
-            '-vrtnodata', vrtnodata,
-            '-input_file_list', all_tiles_filename,
-            vrt_filename]
+        gdalbuildvrt_command_list.append('-resolution')
+        gdalbuildvrt_command_list.append('user')
+        gdalbuildvrt_command_list.append('-tr')
+        gdalbuildvrt_command_list.append(xres)
+        gdalbuildvrt_command_list.append(yres)
+        gdalbuildvrt_command_list.append('-a_srs')
+        gdalbuildvrt_command_list.append(target_epsg)
+    if vrtnodata != "":
+        gdalbuildvrt_command_list.append('-vrtnodata')
+        gdalbuildvrt_command_list.append(vrtnodata)
+    # add VRT filename at the end        
+    gdalbuildvrt_command_list.append(vrt_filename)
+    
     # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
     #'-tr', target_x, target_y, '-resolution', 'user'
     # Log the gdalbuildvrt command.
