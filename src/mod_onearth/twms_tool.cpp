@@ -294,7 +294,7 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             dat_ext=".pjg";
             sig=sig_jpg;
             h_format="Content-type: image/jpeg";
-        } else if (compression=="TIFF") {
+        } else if (compression=="TIF") {
             dat_ext=".ptf";
             sig=tif_sig;
             h_format="Content-type: image/tiff";
