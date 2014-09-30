@@ -1123,7 +1123,8 @@ for conf in conf_files:
             log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + headerFileName + ": " + scale_attribute, sigevent_url)
             continue
     try:
-        rsets.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+        if projection.tilematrixsets[tilematrixset].levels > 1:
+            rsets.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
     except KeyError:
         log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
         continue
