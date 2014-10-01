@@ -1186,6 +1186,14 @@ for conf in conf_files:
     mrf_dom.writexml(twms_mrf_file)
     
     wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
+    # check if file already exists and has same TileMatrixSet, if not then create another file
+    if os.path.isfile(wmts_mrf_filename):
+        wmts_mrf_file = open(wmts_mrf_filename,'r')
+        if tilematrixset not in wmts_mrf_file.read():
+            log_sig_warn(tilematrixset + " not found in existing " + wmts_mrf_filename + ". Creating new file for TileMatrixSet.", sigevent_url)
+            wmts_mrf_filename = wmts_mrf_filename.split(".mrf")[0] + "_" + tilematrixset + ".mrf"
+        wmts_mrf_file.close()
+        
     wmts_mrf_file = open(wmts_mrf_filename,'w+')
     
     twms_mrf_file.seek(0)
@@ -1479,6 +1487,7 @@ for conf in conf_files:
                 line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)      
             if '$TileMatrixSet' in line:
                 line = line.replace("$TileMatrixSet",tilematrixset)
+                tilematrixset_line = line
             if static == True or len(timeElements)==0:
                 if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
                     line = ''
@@ -1498,6 +1507,26 @@ for conf in conf_files:
             line = line[3:]
             layer_output = layer_output + line
         layer_xml.writelines(layer_output)
+        
+        # special case, add additional tilematrixsets from existing file and then remove
+        existing_layer_xml_filename = wmts_mrf_filename.replace('.mrf','.xml').replace("_"+tilematrixset,'')
+        if tilematrixset in wmts_mrf_filename:
+            try:
+                # Open GetCapabilities.
+                existing_layer_xml=open(existing_layer_xml_filename, 'r+')
+                lines = existing_layer_xml.readlines()
+                os.remove(existing_layer_xml_filename)
+                for idx in range(0, len(lines)):
+                    if '<TileMatrixSet>' in lines[idx]:
+                        lines[idx] = lines[idx] + tilematrixset_line
+                layer_xml.seek(0)
+                layer_xml.writelines(lines)
+                existing_layer_xml.close()
+            except:
+                mssg=str().join(['Cannot read existing layer XML file:  ', existing_layer_xml_filename])
+                log_sig_err(mssg, sigevent_url)
+        
+        # close new file        
         layer_xml.close()
         
 # run scripts
