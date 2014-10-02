@@ -8,8 +8,8 @@
     http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
     version="1.0.0">
     <ows:ServiceIdentification>
-        <ows:Title>NASA Global Imagery Browse Services for EOSDIS</ows:Title>
-        <ows:Abstract>
+        <ows:Title xml:lang="en">NASA Global Imagery Browse Services for EOSDIS</ows:Title>
+        <ows:Abstract xml:lang="en">
             Near real time imagery from multiple NASA instruments
         </ows:Abstract>
         <ows:Keywords>
