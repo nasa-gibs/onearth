@@ -107,12 +107,14 @@ class Environment:
 class Projection:
     """Projection information for layer"""
     
-    def __init__(self, projection_id, projection_wkt, projection_bbox, projection_tilematrixsets, projection_tilematrixset_xml):
+    def __init__(self, projection_id, projection_wkt, projection_bbox, projection_tilematrixsets, projection_tilematrixset_xml, projection_lowercorner, projection_uppercorner):
         self.id = projection_id
         self.wkt = projection_wkt
         self.bbox_xml = projection_bbox
-        self.tilematrixsets = projection_tilematrixsets #returns just tilematrixset levels for now
+        self.tilematrixsets = projection_tilematrixsets #returns TileMatrixSetMeta
         self.tilematrixset_xml = projection_tilematrixset_xml
+        self.lowercorner = projection_lowercorner
+        self.uppercorner = projection_uppercorner
         
 class TileMatrixSetMeta:
     """TileMatrixSet metadata for WMTS"""
@@ -418,10 +420,13 @@ def get_projection(projectionId, projectionConfig, lcdir):
             except:
                 wgsbbox = ""
             try:
-                bbox = "\n         " + projectionElement.getElementsByTagName('BoundingBox')[0].toxml().replace("BoundingBox", "ows:BoundingBox")
+                boundbox = "\n         " + projectionElement.getElementsByTagName('BoundingBox')[0].toxml().replace("BoundingBox", "ows:BoundingBox")
             except:
-                bbox = ""
-            bbox = str(wgsbbox + bbox).replace("LowerCorner","ows:LowerCorner").replace("UpperCorner","ows:UpperCorner")
+                boundbox = ""
+            bbox = str(wgsbbox + boundbox).replace("LowerCorner","ows:LowerCorner").replace("UpperCorner","ows:UpperCorner")
+            # get corners...a bit messy
+            lowercorner = xml.dom.minidom.parseString("<bbox>"+str(boundbox+wgsbbox).replace("ows:", "")+"</bbox>").getElementsByTagName('LowerCorner')[0].firstChild.nodeValue.split(" ")
+            uppercorner = xml.dom.minidom.parseString("<bbox>"+str(boundbox+wgsbbox).replace("ows:", "")+"</bbox>").getElementsByTagName('UpperCorner')[0].firstChild.nodeValue.split(" ")
             tilematrixsets = {}
             tilematrixsetconfig_name = projectionElement.getElementsByTagName('TileMatrixSetConfig')[0].firstChild.data.strip()
             if tilematrixsetconfig_name[0] != '/': # use conf directory if not full path
@@ -455,7 +460,7 @@ def get_projection(projectionId, projectionConfig, lcdir):
                 except KeyError, e:
                     log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixsetconfig_name, sigevent_url)
                 
-            projection = Projection(projectionId, wkt, bbox, tilematrixsets, tms_xml)
+            projection = Projection(projectionId, wkt, bbox, tilematrixsets, tms_xml, lowercorner, uppercorner)
     
     if projection == None:
         mssg = "Projection " + projectionId + " could not be found in projection configuration file."
@@ -1108,10 +1113,11 @@ for conf in conf_files:
         mrf_dom = xml.dom.minidom.parse(mrf_file)
     
     mrf_meta = mrf_dom.getElementsByTagName('MRF_META')[0]
+    rasterElement = mrf_dom.getElementsByTagName('Raster')[0]
+    bands = rasterElement.getElementsByTagName('Size')[0].getAttribute('c')
     try:
         change_dom_tag_value(mrf_dom, 'Compression', compression)
     except IndexError: #Add Compression tag if it is missing
-        rasterElement = mrf_dom.getElementsByTagName('Raster')[0]
         compressionElement = mrf_dom.createElement('Compression')
         compressionElement.appendChild(mrf_dom.createTextNode(compression))
         rasterElement.appendChild(compressionElement)
@@ -1236,30 +1242,49 @@ for conf in conf_files:
     print '\n'+ wmts_mrf_filename + ' configured successfully\n'
 
 
+    # generate color map if requested
+    legendUrl_vertical = ''
+    legendUrl_horizontal = '' 
+    if legend == True and colormap != None:
+        legend_output = ''
+        try:
+            legend_output = environment.legend_dir + identifier
+        except:
+            message = "Legend directory has not been defined for environment with cache location: " + environment.cache
+            log_sig_err(message, sigevent_url)
+        try:
+            if environment.legendUrl != None:
+                if legend_output != '':
+                    legendUrl_vertical = generate_legend(colormap, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
+                    legendUrl_horizontal = generate_legend(colormap, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
+            else:
+                message = "Legend URL has not been defined for environment with cache location: " + environment.cache
+                log_sig_err(message, sigevent_url)
+        except:
+            message = "Error generating legend for " + identifier
+            log_sig_err(message, sigevent_url)
+            
 # Modify service files
     
 
-    #getCapabilities
+    #getCapabilities TWMS
     if no_twms == False and no_xml == False:
         try:
-            # Open file.
-            getCapabilities_base=open(twmsEndPoint+'/getCapabilities.base', 'r+')
+            # Copy and open base GetCapabilities.
+            getCapabilities_file = twmsEndPoint+'/getCapabilities.xml'
+            shutil.copyfile(lcdir+'/conf/getcapabilities_base_twms.xml', getCapabilities_file)
+            getCapabilities_base=open(getCapabilities_file, 'r+')
         except IOError:
-            mssg=str().join(['Cannot read getCapabilities.base file:  ', 
-                             twmsEndPoint+'/getCapabilities.base'])
+            mssg=str().join(['Cannot read getcapabilities_base_twms.xml file:  ', 
+                             lcdir+'/conf/getcapabilities_base_twms.xml'])
             log_sig_exit('ERROR', mssg, sigevent_url)
         else:
-            execbeef = 'EXECBEEF: Layer='+fileNamePrefix+' eval $LT'
             lines = getCapabilities_base.readlines()
             for idx in range(0, len(lines)):
-                if execbeef in lines[idx]:
-                    # don't add another execbeef if it's already there
-                    print fileNamePrefix + ' already exists in TWMS getCapabilities'
-                    break
-                if '  </Layer>' in lines[idx]: #careful with spaces here
-                    lines[idx-1] = '' # remove empty line
-                    lines[idx] = lines[idx].replace('  </Layer>',execbeef+'\n\n  </Layer>')
-                    print 'Injecting to getCapabilities ' + execbeef
+                if '<SRS></SRS>' in lines[idx]:
+                    lines[idx] =  lines[idx].replace('<SRS></SRS>', '<SRS>'+projection.id+'</SRS>')
+                if '<CRS></CRS>' in lines[idx]:
+                    lines[idx] =  lines[idx].replace('<CRS></CRS>', '<CRS>'+projection.id+'</CRS>')
                 if 'OnlineResource' in lines[idx]:
                     spaces = lines[idx].index('<')
                     onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
@@ -1269,6 +1294,32 @@ for conf in conf_files:
             getCapabilities_base.truncate()
             getCapabilities_base.writelines(lines)
             getCapabilities_base.close()
+    
+        #getTileService
+    if no_twms == False and no_xml == False:
+        try:
+            # Copy and open base GetTileService.
+            getTileService_file = twmsEndPoint+'/getTileService.xml'
+            shutil.copyfile(lcdir+'/conf/gettileservice_base.xml', getTileService_file)
+            getTileService_base=open(getTileService_file, 'r+')
+        except IOError:
+            mssg=str().join(['Cannot read gettileservice_base.xml file:  ', 
+                             lcdir+'/conf/gettileservice_base.xml'])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+        else:
+            lines = getTileService_base.readlines()
+            for idx in range(0, len(lines)):
+                if 'BoundingBox' in lines[idx]:
+                    lines[idx] = lines[idx].replace("{minx}",projection.lowercorner[0]).replace("{miny}",projection.lowercorner[1]).replace("{maxx}",projection.uppercorner[0]).replace("{maxy}",projection.uppercorner[1])
+                if 'OnlineResource' in lines[idx]:
+                    spaces = lines[idx].index('<')
+                    onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
+                    onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                    lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
+            getTileService_base.seek(0)
+            getTileService_base.truncate()
+            getTileService_base.writelines(lines)
+            getTileService_base.close()
     
     #getCapabilities WMTS modify Service URL
     if no_wmts == False and no_xml == False:
@@ -1305,131 +1356,17 @@ for conf in conf_files:
             getCapabilities_base.truncate()
             getCapabilities_base.writelines(lines)
             getCapabilities_base.close()   
-
-    #getTileService
-    if no_twms == False and no_xml == False:
-        try:
-            # Open file.
-            getTileService_base=open(twmsEndPoint+'/getTileService.base', 'r+')
-        except IOError:
-            mssg=str().join(['Cannot read getTileService.base file:  ', 
-                             twmsEndPoint+'/getTileService.base'])
-            log_sig_exit('ERROR', mssg, sigevent_url)
-        else:
-            execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
-            lines = getTileService_base.readlines()
-            for idx in range(0, len(lines)):
-                if execbeef in lines[idx]:
-                    # don't add another execbeef if it's already there
-                    print mrf_base + ' already exists in getTileService'
-                    break
-                if '</TiledPatterns>' in lines[idx]:
-                    lines[idx-1] = '' # remove empty line
-                    lines[idx] = lines[idx].replace('</TiledPatterns>',execbeef+'\n\n</TiledPatterns>')
-                    print 'Injecting to getTileService ' + execbeef
-                if 'OnlineResource' in lines[idx]:
-                    spaces = lines[idx].index('<')
-                    onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                    onlineResource.attributes['xlink:href'] = twmsServiceUrl
-                    lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
-            getTileService_base.seek(0)
-            getTileService_base.truncate()
-            getTileService_base.writelines(lines)
-            getTileService_base.close()
-
-    #wms_config
-    if no_twms == False and no_xml == False:
-        try:
-            # Open file.
-            wms_config_base=open(twmsEndPoint+'/wms_config.base', 'r+')
-        except IOError:
-            mssg=str().join(['Cannot read wms_config.base file:  ', 
-                             twmsEndPoint+'/wms_config.base'])
-            log_sig_exit('ERROR', mssg, sigevent_url)
-        else:
-            execbeef = 'EXECBEEF: N="'+title+'" Name="$N tileset" Title="$N" LN='+mrf_base+' eval $TILED_GROUP'
-            lines = wms_config_base.readlines()
-            for idx in range(0, len(lines)):
-                if execbeef in lines[idx]:
-                    # don't add another execbeef if it's already there
-                    print mrf_base + ' already exists in wms_config'
-                    break
-                if '  </LayerList>' in lines[idx]: #careful with spaces here
-                    lines[idx-1] = '' # remove empty line
-                    lines[idx] = lines[idx].replace('  </LayerList>',execbeef+'\n\n  </LayerList>')
-                    print 'Injecting to wms_config ' + execbeef
-            wms_config_base.seek(0)
-            wms_config_base.truncate()
-            wms_config_base.writelines(lines)
-            wms_config_base.close()
-        
-# configure Makefiles
-    
-    #twms
-    if no_twms == False:
-        try:
-            # Open file.
-            twms_make=open(twmsEndPoint+'/Makefile', 'r+')
-        except IOError:
-            mssg=str().join(['Cannot read twms Makefile file:  ', 
-                             twmsEndPoint+'/Makefile'])
-            sent=sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
-        else:
-            lines = twms_make.readlines()
-            for idx in range(0, len(lines)):
-                # replace lines in Makefiles
-                if 'DEPTH=' in lines[idx]:
-                    lines[idx] = 'DEPTH=' + depth + '\n'
-                if 'TGT_PATH=' in lines[idx]:
-                    lines[idx] = 'TGT_PATH=' + twms_endpoints[twmsEndPoint].getTileService + '\n'
-                if fileNamePrefix in lines[idx]:
-                    # don't add the layer if it's already there
-                    print fileNamePrefix + ' already exists in twms Makefile'
-                    break
-                if 'MRFS:=$' in lines[idx] and static == False:
-                    lines[idx-2] = '\nTYPES:=' + fileNamePrefix + ' $(TYPES)\n\n'
-                    print 'Adding to twms Makefile: ' + fileNamePrefix
-                if 'TARGETS:=' in lines[idx] and static == True:
-                    lines[idx-2] = '\nMRFS:=' + fileNamePrefix + '.mrf $(MRFS)\n\n'
-                    print 'Adding to twms Makefile: ' + fileNamePrefix
-            twms_make.seek(0)
-            twms_make.truncate()
-            twms_make.writelines(lines)
-            twms_make.close()
-    
-    # generate color map if requested
-    legendUrl_vertical = ''
-    legendUrl_horizontal = '' 
-    if legend == True and colormap != None:
-        legend_output = ''
-        try:
-            legend_output = environment.legend_dir + identifier
-        except:
-            message = "Legend directory has not been defined for environment with cache location: " + environment.cache
-            log_sig_err(message, sigevent_url)
-        try:
-            if environment.legendUrl != None:
-                if legend_output != '':
-                    legendUrl_vertical = generate_legend(colormap, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
-                    legendUrl_horizontal = generate_legend(colormap, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
-            else:
-                message = "Legend URL has not been defined for environment with cache location: " + environment.cache
-                log_sig_err(message, sigevent_url)
-        except:
-            message = "Error generating legend for " + identifier
-            log_sig_err(message, sigevent_url)
+            
         
     # create WMTS layer metadata for GetCapabilities
     if no_wmts == False:
         try:
-            # Open GetCapabilities.
+            # Open layer XML file
             layer_xml=open(wmts_mrf_filename.replace('.mrf','.xml'), 'w+')
         except IOError:
             mssg=str().join(['Cannot read layer XML file:  ', 
                              wmts_mrf_filename.replace('.mrf','.xml')])
-            sent=sigevent('ERROR', mssg, sigevent_url)
-            sys.exit(mssg)
+            log_sig_exit('ERROR', mssg, sigevent_url)
     
         wmts_layer_template = """<Layer>
             <ows:Title>$Title</ows:Title>
@@ -1529,15 +1466,124 @@ for conf in conf_files:
         # close new file        
         layer_xml.close()
         
+        
+    # create TWMS layer metadata for GetCapabilities
+    if no_twms == False:
+        try:
+            # Open layer XML file
+            layer_xml=open(twms_mrf_filename.replace('.mrf','_gc.xml'), 'w+')
+        except IOError:
+            mssg=str().join(['Cannot read layer XML file:  ', 
+                             twms_mrf_filename.replace('.mrf','_gc.xml')])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+    
+        twms_layer_template = """    <Layer queryable=\"0\">
+      <Name>$Layer</Name>
+      <Title>$Title</Title>
+      <Abstract>$Abstract</Abstract>
+      <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\"/>
+      <Style>
+        <Name>default</Name> <Title>(default) Default style</Title>
+      </Style>
+      <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
+      </Layer>"""
+    
+        layer_output = ""
+        lines = twms_layer_template.splitlines(True)
+        for line in lines:
+            # replace lines in template
+            if '</Layer>' in line:
+                line = ' '+line+'\n'  
+            if '$Layer' in line:
+                line = line.replace("$Layer",identifier)              
+            if '$Title' in line:
+                line = line.replace("$Title",title)
+            if '$Abstract' in line:
+                line = line.replace("$Abstract",title + " Abstract")
+            if '$minx' in line:
+                line = line.replace("$minx",projection.lowercorner[0])
+            if '$miny' in line:
+                line = line.replace("$miny",projection.lowercorner[1])
+            if '$maxx' in line:
+                line = line.replace("$maxx",projection.uppercorner[0])
+            if '$maxy' in line:
+                line = line.replace("$maxy",projection.uppercorner[1])
+            layer_output = layer_output + line
+        layer_xml.writelines(layer_output)
+        layer_xml.close()
+        
+    # create TWMS layer metadata for GetTileService
+    if no_twms == False:
+        try:
+            # Open layer XML file
+            layer_xml=open(twms_mrf_filename.replace('.mrf','_gts.xml'), 'w+')
+        except IOError:
+            mssg=str().join(['Cannot read layer XML file:  ', 
+                             twms_mrf_filename.replace('.mrf','_gts.xml')])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+    
+        twms_layer_template = """<TiledGroup>
+    <Name>$Name</Name>
+    <Title>$Title</Title>
+    <Abstract>$Name</Abstract>
+    <Projection>$Projection</Projection>
+    <Pad>0</Pad>
+    <Bands>$Bands</Bands>
+    <BoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
+    <Key>\${time}</Key>
+$Patterns</TiledGroup>"""
+    
+        layer_output = ""
+        lines = twms_layer_template.splitlines(True)
+        for line in lines:
+            # replace lines in template 
+            if '</TiledGroup>' in line:
+                line = ' '+line+'\n'              
+            if '$Name' in line:
+                line = line.replace("$Name",identifier) 
+            if '$Title' in line:
+                line = line.replace("$Title",title)
+            if '$Projection' in line:
+                line = line.replace("$Projection",projection.wkt)
+            if '$Bands' in line:
+                line = line.replace("$Bands",bands)
+            if '$minx' in line:
+                line = line.replace("$minx",projection.lowercorner[0])
+            if '$miny' in line:
+                line = line.replace("$miny",projection.lowercorner[1])
+            if '$maxx' in line:
+                line = line.replace("$maxx",projection.uppercorner[0])
+            if '$maxy' in line:
+                line = line.replace("$maxy",projection.uppercorner[1])
+            if '$Patterns' in line:
+                patterns = ""
+                cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
+                try:
+                    print '\nRunning command: ' + cmd
+                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    process.wait()
+                    for output in process.stdout:
+                        patterns = patterns + output
+                except:
+                    log_sig_err("Error running command " + cmd, sigevent_url)
+                line = line.replace("$Patterns",patterns)
+            layer_output = layer_output + line
+        layer_xml.writelines(layer_output)
+        layer_xml.close()   
+             
+        
 # run scripts
 
 if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
-        cmd = 'make -C '+twms_endpoint.path+'/ clean'
-        run_command(cmd, sigevent_url)
-        cmd = 'make -C '+twms_endpoint.path+'/ all'
+        mrfs = ""
+        # get list of MRF files
+        for mrf_file in os.listdir(twms_endpoint.path):
+            if mrf_file.endswith(".mrf"):
+                mrfs = mrfs + twms_endpoint.path+'/'+mrf_file + ' '
+        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + twms_endpoint.path+'/cache.config'
         run_command(cmd, sigevent_url)
         if no_cache == False:
             if twms_endpoint.cacheConfig:
@@ -1545,9 +1591,43 @@ if no_twms == False:
                 shutil.copyfile(twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig+'/cache.config')
         if no_xml == False:
             if twms_endpoint.getCapabilities:
+                # Add layer metadata to getCapabilities
+                layer_xml = ""
+                for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
+                    if xml_file.endswith("_gc.xml") and xml_file != "getCapabilities.xml":
+                        layer_xml = layer_xml + open(twms_endpoint.path+'/'+str(xml_file), 'r').read()
+                getCapabilities_file = twms_endpoint.path+'/getCapabilities.xml'
+                getCapabilities_base = open(getCapabilities_file, 'r+')
+                gc_lines = getCapabilities_base.readlines()
+                for idx in range(0, len(gc_lines)):
+                    if "</Layer>" in gc_lines[idx]:
+                        gc_lines[idx] = layer_xml + gc_lines[idx]
+                        print '\nAdding layers to TWMS GetCapabilities'
+                    getCapabilities_base.seek(0)
+                    getCapabilities_base.truncate()
+                    getCapabilities_base.writelines(gc_lines)        
+                getCapabilities_base.close()
+                
                 print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities+'/getCapabilities.xml'
                 shutil.copyfile(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities+'/getCapabilities.xml')
+                
             if twms_endpoint.getTileService:
+                # Add layer metadata to getTileService
+                layer_xml = ""
+                for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
+                    if xml_file.endswith("_gts.xml") and xml_file != "getTileService.xml":
+                        layer_xml = layer_xml + open(twms_endpoint.path+'/'+str(xml_file), 'r').read()
+                getTileService_file = twms_endpoint.path+'/getTileService.xml'
+                getTileService_base = open(getTileService_file, 'r+')
+                gc_lines = getTileService_base.readlines()
+                for idx in range(0, len(gc_lines)):
+                    if "</TiledPatterns>" in gc_lines[idx]:
+                        gc_lines[idx] = layer_xml + gc_lines[idx]
+                        print '\nAdding layers to TWMS GetTileService'
+                    getTileService_base.seek(0)
+                    getTileService_base.truncate()
+                    getTileService_base.writelines(gc_lines)        
+                getTileService_base.close()                
                 print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService+'/getTileService.xml'
                 shutil.copyfile(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService+'/getTileService.xml')
 
