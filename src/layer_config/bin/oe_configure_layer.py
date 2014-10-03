@@ -393,7 +393,7 @@ def get_environment(environmentConfig):
                        wmtsStagingLocation, twmsStagingLocation,
                        legendLocation, legendUrl)
     
-def get_projection(projectionId, projectionConfig, lcdir):
+def get_projection(projectionId, projectionConfig, lcdir, tilematrixset_configuration):
     """
     Gets projection metadata from a projection configuration file based on the projection ID.
     Arguments:
@@ -428,17 +428,13 @@ def get_projection(projectionId, projectionConfig, lcdir):
             lowercorner = xml.dom.minidom.parseString("<bbox>"+str(boundbox+wgsbbox).replace("ows:", "")+"</bbox>").getElementsByTagName('LowerCorner')[0].firstChild.nodeValue.split(" ")
             uppercorner = xml.dom.minidom.parseString("<bbox>"+str(boundbox+wgsbbox).replace("ows:", "")+"</bbox>").getElementsByTagName('UpperCorner')[0].firstChild.nodeValue.split(" ")
             tilematrixsets = {}
-            tilematrixsetconfig_name = projectionElement.getElementsByTagName('TileMatrixSetConfig')[0].firstChild.data.strip()
-            if tilematrixsetconfig_name[0] != '/': # use conf directory if not full path
-                tilematrixsetconfig_name = lcdir + "/conf/" + tilematrixsetconfig_name
             try:
                 # Open file.
-                tilematrixsetconfig=open(tilematrixsetconfig_name, 'r')
-                print ('Using TileMatrixSet config: ' + tilematrixsetconfig_name + '\n')
+                tilematrixsetconfig=open(tilematrixset_configuration, 'r')
+                print ('Using TileMatrixSet config: ' + tilematrixset_configuration + '\n')
             except IOError:
-                mssg=str().join(['Cannot read TileMatrixSet configuration file:  ', tilematrixsetconfig_name])
-                sigevent('ERROR', mssg, sigevent_url)
-                sys.exit(mssg)
+                mssg=str().join(['Cannot read TileMatrixSet configuration file:  ', tilematrixset_configuration])
+                log_sig_exit('ERROR', mssg, sigevent_url)
             tms_dom = xml.dom.minidom.parse(tilematrixsetconfig)
             tms_projections = tms_dom.getElementsByTagName('Projection')
             tms_xml = ""
@@ -458,7 +454,7 @@ def get_projection(projectionId, projectionConfig, lcdir):
                             tilematrixsets[tilematrixset.getElementsByTagName('ows:Identifier')[0].firstChild.nodeValue.strip()] = TileMatrixSetMeta(tilematrixset.getElementsByTagName("TileMatrix").length, scale)
                                 
                 except KeyError, e:
-                    log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixsetconfig_name, sigevent_url)
+                    log_sig_exit('ERROR', 'Projection ' + projectionId + " " + str(e) + ' missing in TileMatrixSet configuration ' + tilematrixset_configuration, sigevent_url)
                 
             projection = Projection(projectionId, wkt, bbox, tilematrixsets, tms_xml, lowercorner, uppercorner)
     
@@ -739,6 +735,9 @@ parser.add_option('-l', '--lcdir',
                   action='store', type='string', dest='lcdir',
                   default=lcdir,
                   help='Full path of the OnEarth Layer Configurator (layer_config) directory.  Default: $LCDIR')
+parser.add_option('-m', '--tilematrixset_config',
+                  action='store', type='string', dest='tilematrixset_configuration',
+                  help='Full path of TileMatrixSet configuration file.  Default: $LCDIR/conf/tilematrixsets.xml')
 parser.add_option("-n", "--no_twms",
                   action="store_true", dest="no_twms", 
                   default=False, help="Do not use configurations for Tiled-WMS")
@@ -796,6 +795,11 @@ if options.projection_configuration:
     projection_configuration = options.projection_configuration
 else:
     projection_configuration = lcdir+'/conf/projection.xml'
+# TileMatrixSet configuration
+if options.tilematrixset_configuration:
+    tilematrixset_configuration = options.tilematrixset_configuration
+else:
+    tilematrixset_configuration = lcdir+'/conf/tilematrixsets.xml'
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
@@ -947,7 +951,7 @@ for conf in conf_files:
         except IndexError:
             indexFileLocation = None
         try:
-            projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir)
+            projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir, tilematrixset_configuration)
         except IndexError:
             log_sig_err('Required <Projection> element is missing in ' + conf, sigevent_url)
             continue
@@ -1124,11 +1128,11 @@ for conf in conf_files:
     
     rsets = mrf_dom.getElementsByTagName('Rsets')[0]
     scale_attribute = rsets.getAttribute('scale')
-    if scale_attribute:
-        if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
-            log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + headerFileName + ": " + scale_attribute, sigevent_url)
-            continue
     try:
+        if scale_attribute:
+            if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
+                log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + headerFileName + ": " + scale_attribute, sigevent_url)
+                continue
         if projection.tilematrixsets[tilematrixset].levels > 1:
             rsets.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
     except KeyError:
