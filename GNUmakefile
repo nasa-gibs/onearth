@@ -131,8 +131,6 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/mod_onearth/twms_tool \
 		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
-	install -m 755 src/layer_config/bin/oe_create_twms_xml \
-		-D $(DESTDIR)/$(PREFIX)/bin/oe_create_twms_xml
 	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
 	install -m 755 src/onearth_logs/onearth_logs.py  \
@@ -168,8 +166,6 @@ onearth-install:
 
 	install -m 755 -d $(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/conf \
-		$(DESTDIR)/etc/onearth/config
-	cp -r src/layer_config/twms \
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/layers \
 		$(DESTDIR)/etc/onearth/config

@@ -1,6 +1,6 @@
 Name:		onearth
-Version:	0.4.2
-Release:	3%{?dist}
+Version:	0.5.0
+Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -114,10 +114,8 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/onearth/config/layers
 %config(noreplace) %{_sysconfdir}/onearth/config/headers
 %{_sysconfdir}/onearth/config/schema
-%{_sysconfdir}/onearth/config/twms
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer
-%{_bindir}/oe_create_twms_xml
 %{_bindir}/oe_generate_legend.py
 
 %files mrfgen
@@ -141,6 +139,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri OCt 03 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.5.0-1
+- Removed deprecated OnEarth layer configuration files and folders
+
 * Mon Aug 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.4.2-1
 - Reorganized into separate packages for different components
 
