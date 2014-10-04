@@ -392,6 +392,32 @@ def get_environment(environmentConfig):
                        add_trailing_slash(twmsServiceUrl),
                        wmtsStagingLocation, twmsStagingLocation,
                        legendLocation, legendUrl)
+
+def get_archive(archive_root, archive_configuration):
+    """
+    Gets archive location from an archive configuration file based on the archive root ID.
+    Arguments:
+        archive_root -- the key used for the archive
+        archive_configuration -- the location of the archive configuration file
+    """
+    try:
+        # Open file.
+        archive_config=open(archive_configuration, 'r')
+        print ('Using archive config: ' + archive_configuration)
+    except IOError:
+        mssg=str().join(['Cannot read archive configuration file:  ', archive_configuration])
+        log_sig_exit('ERROR', mssg, sigevent_url)
+    
+    location = ""
+    dom = xml.dom.minidom.parse(archive_config)
+    archiveElements = dom.getElementsByTagName('Archive')
+    for archiveElement in archiveElements:
+        if str(archiveElement.attributes['id'].value).lower() == archive_root.lower():
+                location = archiveElement.getElementsByTagName('Location')[0].firstChild.data.strip()
+                print "Archive location: " + location + " \n"
+    if location == "":
+        log_sig_err('Archive "' + archive_root + '" not found in ' + archive_configuration, sigevent_url)
+    return location
     
 def get_projection(projectionId, projectionConfig, lcdir, tilematrixset_configuration):
     """
@@ -406,8 +432,7 @@ def get_projection(projectionId, projectionConfig, lcdir, tilematrixset_configur
         print ('Using projection config: ' + projectionConfig + '\n')
     except IOError:
         mssg=str().join(['Cannot read projection configuration file:  ', projectionConfig])
-        sigevent('ERROR', mssg, sigevent_url)
-        sys.exit(mssg)
+        log_sig_exit('ERROR', mssg, sigevent_url)
         
     dom = xml.dom.minidom.parse(projection_config)
     projection = None
@@ -722,6 +747,9 @@ usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
+parser.add_option('-a', '--archive_config',
+                  action='store', type='string', dest='archive_configuration',
+                  help='Full path of archive configuration file.  Default: $LCDIR/conf/archive.xml')
 parser.add_option('-c', '--conf_file',
                   action='store', type='string', dest='layer_config_filename',
                   help='Full path of layer configuration filename.')
@@ -800,6 +828,11 @@ if options.tilematrixset_configuration:
     tilematrixset_configuration = options.tilematrixset_configuration
 else:
     tilematrixset_configuration = lcdir+'/conf/tilematrixsets.xml'
+# Archive configuration
+if options.archive_configuration:
+    archive_configuration = options.archive_configuration
+else:
+    archive_configuration = lcdir+'/conf/archive.xml'
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
@@ -938,6 +971,11 @@ for conf in conf_files:
             year = dom.getElementsByTagName('ArchiveLocation')[0].attributes['year'].value.lower() in ['true']
         except:
             year = False
+        try:
+            archive_root = get_archive(dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value, archive_configuration)
+        except:
+            archive_root = ""
+        archiveLocation = archive_root + archiveLocation
         try:
             headerFileName = get_dom_tag_value(dom, 'HeaderFileName')
         except IndexError:

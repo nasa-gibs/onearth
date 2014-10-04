@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ArchiveConfiguration>
+    <Archive id="antarctic">
+        <Location>/usr/share/onearth/demo/data/EPSG3031/</Location>
+    </Archive>
+    <Archive id="arctic">
+        <Location>/usr/share/onearth/demo/data/EPSG3413/</Location>
+    </Archive>
+    <Archive id="geographic">
+        <Location>/usr/share/onearth/demo/data/EPSG4326/</Location>
+    </Archive>
+    <Archive id="webmercator">
+        <Location>/usr/share/onearth/demo/data/EPSG3857/</Location>
+    </Archive>
+</ArchiveConfiguration>

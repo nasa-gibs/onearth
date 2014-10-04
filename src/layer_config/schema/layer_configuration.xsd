@@ -10,7 +10,7 @@
         <xs:element ref="DataFileLocation" minOccurs="0"/>
         <xs:element ref="IndexFileLocation" minOccurs="0"/>
         <xs:element ref="Compression"/>
-        <xs:element ref="Levels"/>
+        <xs:element ref="TileMatrixSet"/>
         <xs:element ref="EmptyTileSize"/>
         <xs:element ref="Projection"/>
         <xs:element maxOccurs="unbounded" ref="Pattern"/>
@@ -18,8 +18,6 @@
         <xs:element ref="ArchiveLocation" minOccurs="0"/>
         <xs:element ref="ColorMap" minOccurs="0"/>
         <xs:element ref="Time" minOccurs="0" maxOccurs="unbounded"/>
-        <xs:element ref="WMTSEndPoint" minOccurs="0"/>
-        <xs:element ref="TWMSEndPoint" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -30,13 +28,14 @@
     <xs:complexType mixed="true">
       <xs:attribute name="static" use="required" type="xs:boolean"/>
       <xs:attribute name="year" use="required" type="xs:boolean"/>
+      <xs:attribute name="root" use="required" type="xs:string"/>
     </xs:complexType>
   </xs:element>
-  <xs:element name="HeaderFileName" type="xs:NCName" nillable="true"/>
+  <xs:element name="HeaderFileName" type="xs:string" nillable="true"/>
   <xs:element name="DataFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="IndexFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="Compression" type="xs:NCName"/>
-  <xs:element name="Levels" type="xs:integer"/>
+  <xs:element name="TileMatrixSet" type="xs:string"/>
   <xs:element name="EmptyTileSize">
     <xs:complexType>
       <xs:simpleContent>
@@ -51,6 +50,4 @@
   <xs:element name="EnvironmentConfig" type="xs:string"/>
   <xs:element name="ColorMap" type="xs:anyURI"/>
   <xs:element name="Time" type="xs:string" nillable="true"/>
-  <xs:element name="WMTSEndPoint" type="xs:NCName" nillable="true"/>
-  <xs:element name="TWMSEndPoint" type="xs:NCName" nillable="true"/>
 </xs:schema>

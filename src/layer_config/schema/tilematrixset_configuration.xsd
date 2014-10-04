@@ -25,7 +25,6 @@
         <xs:element minOccurs="0" ref="WellKnownScaleSet"/>
         <xs:element maxOccurs="unbounded" ref="TileMatrix"/>
       </xs:sequence>
-      <xs:attribute name="level" use="required" type="xs:integer"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="WellKnownScaleSet" type="xs:anyURI"/>
