@@ -79,7 +79,7 @@ class TestLayerConfig(unittest.TestCase):
         contains_layer = False
         getTileService = open(self.lcdir + "/twms/EPSG4326/getTileService.xml", 'r')
         for line in getTileService.readlines():
-            if "<Name>MODIS Aqua Aerosol tileset</Name>" in line:
+            if "<Name>MODIS_Aqua_Aerosol</Name>" in line:
                 print "Layer found in TWMS GetTileService"
                 contains_layer = True
         getTileService.close()

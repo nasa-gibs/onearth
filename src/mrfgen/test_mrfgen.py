@@ -10,7 +10,11 @@ import subprocess
 import filecmp
 import urllib
 import shutil
+import datetime
 from osgeo import gdal
+
+year = datetime.datetime.now().strftime('%Y')
+doy = str(int(datetime.datetime.now().strftime('%j'))-1)
 
 def run_command(cmd):
     """
@@ -37,8 +41,8 @@ class TestMRFGeneration(unittest.TestCase):
         self.output_dir = self.dirpath + "/test/output_dir"
         self.working_dir = self.dirpath + "/test/working_dir"
         self.logfile_dir = self.dirpath + "/test/logfile_dir"
-        self.output_mrf = self.output_dir+ "/MYR4ODLOLLDY2014203_.mrf"
-        self.output_img = self.output_dir+ "/MYR4ODLOLLDY2014203_.png"
+        self.output_mrf = self.output_dir+ "/MYR4ODLOLLDY2014277_.mrf"
+        self.output_img = self.output_dir+ "/MYR4ODLOLLDY2014277_.png"
         self.compare_img = self.dirpath + "/test/test_comp1.png"
         if not os.path.exists(self.input_dir):
             os.makedirs(self.input_dir)
@@ -50,16 +54,16 @@ class TestMRFGeneration(unittest.TestCase):
             os.makedirs(self.logfile_dir)
         
         # download tile
-        image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/2014/MYR4ODLOLLDY_global_2014203_10km.png"
-        world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/2014/MYR4ODLOLLDY_global_2014203_10km.pgw"
-        image_name = self.input_dir + image_url.split('/')[-1]
-        world_name = self.input_dir + world_url.split('/')[-1]
-        print "Downloading", image_url
-        image_file=urllib.URLopener()
-        image_file.retrieve(image_url,image_name)
-        print "Downloading", world_url
-        world_file=urllib.URLopener()
-        world_file.retrieve(world_url,world_name)
+#         image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/%s/MYR4ODLOLLDY_global_%s%s_10km.png" % (year,year,doy)
+#         world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/%s/MYR4ODLOLLDY_global_%s%s_10km.pgw" % (year,year,doy)
+#         image_name = self.input_dir + image_url.split('/')[-1]
+#         world_name = self.input_dir + world_url.split('/')[-1]
+#         print "Downloading", image_url
+#         image_file=urllib.URLopener()
+#         image_file.retrieve(image_url,image_name)
+#         print "Downloading", world_url
+#         world_file=urllib.URLopener()
+#         world_file.retrieve(world_url,world_name)
             
         #generate MRF
         run_command("python mrfgen.py -c " + self.test_config)
@@ -127,7 +131,6 @@ class TestMRFGeneration(unittest.TestCase):
         print "\n***Test Case Passed***\n"
         
     def tearDown(self):
-        shutil.rmtree(self.input_dir)
         shutil.rmtree(self.working_dir)
         shutil.rmtree(self.logfile_dir)
         shutil.rmtree(self.output_dir)
@@ -157,8 +160,8 @@ class TestMRFGeneration_polar(unittest.TestCase):
         # download tiles
         for r in range(0,8):
             for c in range(0,8):
-                image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/2014203/Arctic_r%02dc%02d.2014203.aqua.250m.jpg" % (r,c,r,c)
-                world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/2014203/Arctic_r%02dc%02d.2014203.aqua.250m.jgw" % (r,c,r,c)
+                image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
+                world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
                 image_name = self.input_dir + image_url.split('/')[-1]
                 world_name = self.input_dir + world_url.split('/')[-1]
                 print "Downloading", image_url
@@ -215,9 +218,9 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
-        filesize = os.path.getsize(self.output_img)
-        print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
-        self.assertEqual(filesize, 3891603, "Output image does not match")
+#         filesize = os.path.getsize(self.output_img)
+#         print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
+#         self.assertEqual(filesize, 3891603, "Output image does not match")
         
         img = None
         mrf = None
