@@ -3,6 +3,7 @@
  <Identifier>MODIS_Aqua_Aerosol</Identifier>
  <Title>MODIS Aqua Aerosol</Title>
  <FileNamePrefix>MODIS_Aqua_Aerosol</FileNamePrefix>
+ <HeaderFileName>MODIS_Aqua_AerosolTTTTTTT_.mrf</HeaderFileName>
  <Compression>PNG</Compression>
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
  <EmptyTileSize offset="0">1397</EmptyTileSize>

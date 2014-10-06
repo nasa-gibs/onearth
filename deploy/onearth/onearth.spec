@@ -10,6 +10,7 @@ Source0:	%{name}-%{version}.tar.bz2
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
 BuildRequires:	gibs-gdal-devel
+BuildRequires:  python-dateutil
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
 %else
@@ -139,7 +140,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Fri OCt 03 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.5.0-1
+* Fri Oct 03 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.5.0-1
 - Removed deprecated OnEarth layer configuration files and folders
 
 * Mon Aug 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.4.2-1

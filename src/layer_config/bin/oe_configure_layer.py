@@ -884,8 +884,7 @@ print 'Configuration file(s):'
 print conf_files
 if conf_files==[]:
     mssg = 'No configuration files found.'
-    sigevent('ERROR', mssg, sigevent_url)
-    sys.exit(mssg)
+    log_sig_exit('ERROR', mssg, sigevent_url)
     
 for conf in conf_files:
     
