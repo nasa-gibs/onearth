@@ -7,6 +7,7 @@
 import os
 import unittest
 import subprocess
+import filecmp
 
 def run_command(cmd):
     """
@@ -32,6 +33,8 @@ class TestLayerConfig(unittest.TestCase):
             self.lcdir = os.path.abspath(os.path.dirname(__file__) + '/..')
         else:
             self.lcdir = os.environ['LCDIR']
+        self.legend_v = self.lcdir + "/test/MODIS_Aqua_Aerosol_V.svg"
+        self.legend_h = self.lcdir + "/test/MODIS_Aqua_Aerosol_H.svg"
         
     def test_layer_config_default(self):
         #Run layer config
@@ -97,13 +100,30 @@ class TestLayerConfig(unittest.TestCase):
         print "\n***Test Case Passed***\n"
         
     def test_layer_config_legends(self):
+        #Get legend location
+        environment = open(self.lcdir + "/conf/environment_geographic.xml", 'r')
+        legend_location = "/usr/share/onearth/demo/legends/" #default
+        for line in environment.readlines():
+            if "<LegendLocation>" in line:
+                legend_location = line.replace('<LegendLocation>','').replace('</LegendLocation>','').strip()
+        print "\nLegend Location: " + legend_location 
+        # remove legends if exist
+        try:
+            os.remove(legend_location + "/MODIS_Aqua_Aerosol_V.svg")
+            os.remove(legend_location + "/MODIS_Aqua_Aerosol_H.svg")
+        except OSError:
+            print "Legends do not yet exist"
+        
         #Run layer config
         layer_config_file = self.lcdir + "/test/layer_configuration_test1.xml"
         errors = run_command("python " + self.lcdir + "/bin/oe_configure_layer.py -g -l " + self.lcdir + " -c " + layer_config_file)
         print "Errors: " + str(errors)
         
         self.assertEqual(errors, 0, "Errors detected with layer configuration tool")
-        #TODO: check for legend creation
+        print "Comparing: " + legend_location + "/MODIS_Aqua_Aerosol_V.svg to" + self.legend_v
+        self.assertTrue(filecmp.cmp(legend_location + "/MODIS_Aqua_Aerosol_V.svg", self.legend_v), "Legend does not match expected")
+        print "Comparing: " + legend_location + "/MODIS_Aqua_Aerosol_H.svg to" + self.legend_h
+        self.assertTrue(filecmp.cmp(legend_location + "/MODIS_Aqua_Aerosol_H.svg", self.legend_h), "Legend does not match expected")
         
     def tearDown(self):
         os.remove(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.mrf")

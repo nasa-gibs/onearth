@@ -10,5 +10,6 @@
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Aerosol&srs=EPSG:4326&format=image/png&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
  <EnvironmentConfig>../conf/environment_geographic.xml</EnvironmentConfig>
  <ArchiveLocation static="false" year="true" root="geographic">MODIS_Aqua_Aerosol</ArchiveLocation>
+ <ColorMap>https://raw.githubusercontent.com/nasa-gibs/onearth/master/src/layer_config/test/MODIS_Aqua_Aerosol-GIBS.xml</ColorMap>
  <Time>DETECT/P1D</Time>
 </LayerConfiguration>
