@@ -7,7 +7,6 @@
  <working_dir>test/working_dir</working_dir>
  <logfile_dir>test/logfile_dir</logfile_dir>
  <mrf_empty_tile_filename>empty_tiles/transparent.png</mrf_empty_tile_filename>
- <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <target_x>4096</target_x>
