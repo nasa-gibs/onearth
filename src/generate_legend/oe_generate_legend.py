@@ -37,6 +37,7 @@ from matplotlib import rcParams
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from StringIO import StringIO
+import numpy as np
 
 # for SVG tooltips
 try:
@@ -251,11 +252,11 @@ def generate_legend(colormap, output, output_format, orientation):
             ax.set_xticklabels(ticklabels)
             if is_large_colormap == True:
                 norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+                v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
+                cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
             else:
                 norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-            cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
-                                           norm=norm,
-                                           orientation=orientation)
+                cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation=orientation)
             cb.solids.set_edgecolor("face")
         
             for tick in cb.ax.xaxis.get_ticklabels():
@@ -314,11 +315,11 @@ def generate_legend(colormap, output, output_format, orientation):
             ax.set_yticklabels(ticklabels)
             if is_large_colormap == True:
                 norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+                v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
+                cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
             else:
                 norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-            cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
-                                           norm=norm,
-                                           orientation=orientation)
+                cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation=orientation)
             cb.solids.set_edgecolor("face")
                     
             for tick in cb.ax.yaxis.get_ticklabels():
@@ -435,7 +436,7 @@ parser.add_option('-c', '--colormap',
                   help='Full path or URL of colormap filename.')
 parser.add_option('-f', '--format',
                   action='store', type='string', dest='format', default = 'svg',
-                  help='Format of output file. Default: SVG')
+                  help='Format of output file. Supported formats: eps, pdf, pgf, png, ps, raw, rgba, svg (default), svgz.')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
