@@ -1,5 +1,5 @@
-%global gdal_version 1.11.0
-%global gdal_release 2%{?dist}
+%global gdal_version 1.11.1
+%global gdal_release 1%{?dist}
 %global mrf_version 0.5.0
 %global mrf_release 1%{?dist}
 
@@ -37,6 +37,7 @@ BuildRequires:	chrpath
 BuildRequires:	swig 
 BuildRequires:	doxygen
 BuildRequires:	expat-devel
+BuildRequires:  python-setuptools
 Requires:	proj-devel
 
 Provides:	gdal = %{gdal_version}-%{gdal_release}
@@ -148,6 +149,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Oct 14 2014 Mike McGann <mike.mcgann@nasa.gov> - 1.11.1-1
+- New upstream GDAL version
+
 * Fri Aug 8 2014 Mike McGann <mike.mcgann@nasa.gov> - 1.11.0-2
 - Updates for building on EL7
 

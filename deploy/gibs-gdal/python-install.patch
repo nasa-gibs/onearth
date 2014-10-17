@@ -7,5 +7,6 @@
 -	$(PYTHON) setup.py install 
 +	$(PYTHON) setup.py install --root=$(DESTDIR) --prefix=$(PREFIX)
  else
- 	$(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
+-	$(PYTHON) setup.py install --prefix=$(DESTDIR)$(prefix)
++       $(PYTHON) setup.py install --root=$(DESTDIR) --prefix=$(PREFIX) 
  endif
