@@ -971,6 +971,10 @@ for conf in conf_files:
         except:
             year = False
         try:
+            subdaily = dom.getElementsByTagName('ArchiveLocation')[0].attributes['subdaily'].value.lower() in ['true']
+        except:
+            subdaily = False
+        try:
             archive_root = get_archive(dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value, archive_configuration)
         except:
             archive_root = ""
@@ -1060,7 +1064,7 @@ for conf in conf_files:
     if headerFileName:
         log_info_mssg('config: HeaderFileName: ' + headerFileName)
     if archiveLocation:
-        log_info_mssg('config: ArchiveLocation static=' + str(static) + ' year=' + str(year) + ': ' + archiveLocation)
+        log_info_mssg('config: ArchiveLocation static=' + str(static) + ' year=' + str(year) + ' subdaily=' + str(subdaily) + ': ' + archiveLocation)
     if dataFileLocation:
         log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
     if indexFileLocation:
@@ -1111,8 +1115,12 @@ for conf in conf_files:
         if headerFileName == None:
             headerFileName = mrf
     else:
-        mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
-        mrf_base = fileNamePrefix + 'TTTTTTT_.mrf'
+        if subdaily == True:
+            mrf = mrfLocation + fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
+            mrf_base = fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
+        else:
+            mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
+            mrf_base = fileNamePrefix + 'TTTTTTT_.mrf'
         if headerFileName == None:
             headerFileName = mrf
     
