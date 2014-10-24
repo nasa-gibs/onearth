@@ -160,16 +160,19 @@ class TestMRFGeneration_polar(unittest.TestCase):
         # download tiles
         for r in range(0,8):
             for c in range(0,8):
-                image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
-                world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
-                image_name = self.input_dir + image_url.split('/')[-1]
-                world_name = self.input_dir + world_url.split('/')[-1]
-                print "Downloading", image_url
-                image_file=urllib.URLopener()
-                image_file.retrieve(image_url,image_name)
-                print "Downloading", world_url
-                world_file=urllib.URLopener()
-                world_file.retrieve(world_url,world_name)
+                try:
+                    image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
+                    world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
+                    image_name = self.input_dir + image_url.split('/')[-1]
+                    world_name = self.input_dir + world_url.split('/')[-1]
+                    print "Downloading", image_url
+                    image_file=urllib.URLopener()
+                    image_file.retrieve(image_url,image_name)
+                    print "Downloading", world_url
+                    world_file=urllib.URLopener()
+                    world_file.retrieve(world_url,world_name)
+                except Exception,e:
+                    print str(e)
             
         #generate MRF
         run_command("python mrfgen.py -c " + self.test_config)
