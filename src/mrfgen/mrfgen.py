@@ -327,7 +327,7 @@ def lookupEmptyTile(empty_tile):
         mssg = '"' + empty_tile + '" is not a valid empty tile.'
         log_sig_exit('ERROR', mssg, sigevent_url)
         
-def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data):
+def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data, time_of_data):
     """
     Convert MRF filenames to specified naming convention (mrf_name).
     Argument:
@@ -335,8 +335,12 @@ def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data):
         mrf_name -- the MRF naming convention to use
         parameter_name -- MRF parameter name
         date_of_data -- the date of the MRF data, example: 20120730
+        time_of_data -- the time of subdaily MRF data in UTC, 113019 (11:30:19am)
     """
-    mrf_date = datetime.datetime.strptime(date_of_data,"%Y%m%d")
+    if len(time_of_data) == 6:
+        mrf_date = datetime.datetime.strptime(str(date_of_data)+str(time_of_data),"%Y%m%d%H%M%S")
+    else: 
+        mrf_date = datetime.datetime.strptime(date_of_data,"%Y%m%d")
     mrf = mrf_name.replace('{$parameter_name}', parameter_name)
     time_params = []
     for i, char in enumerate(mrf):
@@ -391,6 +395,11 @@ else:
     # Parameter name.
     parameter_name         =get_dom_tag_value(dom, 'parameter_name')
     date_of_data           =get_dom_tag_value(dom, 'date_of_data')
+    # for sub-daily imagery
+    try: 
+        time_of_data = get_dom_tag_value(dom, 'time_of_data')
+    except:
+        time_of_data = ''
     # Directories.
     try:
         input_dir            =get_dom_tag_value(dom, 'input_dir')
@@ -553,6 +562,7 @@ if os.path.dirname(configuration_filename) != os.path.dirname(input_dir):
                           'config XML file:  moved to      ', input_dir]))
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
 log_info_mssg(str().join(['config date_of_data:            ', date_of_data]))
+log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
 log_info_mssg(str().join(['config input_files:             ', input_files]))
 log_info_mssg(str().join(['config input_dir:               ', input_dir]))
 log_info_mssg(str().join(['config output_dir:              ', output_dir]))
@@ -584,6 +594,10 @@ log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 # Verify that date is 8 characters.
 if len(date_of_data) != 8:
     mssg='Format for <date_of_data> (in mrfgen XML config file) is:  yyyymmdd'
+    log_sig_exit('ERROR', mssg, sigevent_url)
+    
+if time_of_data != '' and len(time_of_data) != 6:
+    mssg='Format for <time_of_data> (in mrfgen XML config file) is:  HHMMSS'
     log_sig_exit('ERROR', mssg, sigevent_url)
 
 # Check if empty tile filename was specified.
@@ -1361,7 +1375,7 @@ if len(modtiles) > 0:
         
     # Rename MRFs
     if mrf_name != '':
-        output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data)
+        output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
         log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
         shutil.move(mrf_filename, output_dir+output_mrf)
         log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
