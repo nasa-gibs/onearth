@@ -104,6 +104,7 @@ static char Matrix[]="TILEMATRIX=";
 static int matrix_len=11; // Number of chars in Matrix;
 static char WMTS_marker[]="=WMTS";
 static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
+static char colon[] = "%3A";
 
 // This module
 module AP_MODULE_DECLARE_DATA wms_module;
@@ -206,7 +207,7 @@ static void *r_file_pread(request_rec *r, char *fname,
   static char* tstamp="TTTTTTT_";
   static char* year="YYYY";
   char *targ=0,*fnloc=0,*yearloc=0;
-  apr_time_exp_t tm; tm.tm_yday=0; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0;
+  apr_time_exp_t tm; tm.tm_yday=0; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0; tm.tm_hour=0; tm.tm_min=0; tm.tm_sec=0;
 
   void *buffer;
   apr_size_t readbytes;
@@ -242,6 +243,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			tm.tm_sec = apr_atoi64(targ);
 		}
     } else {
+    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
 		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ (URL encoded)");
     	return 0;
@@ -1200,6 +1202,20 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Fjpeg");
 	} else if (ap_strcasecmp_match(format, "image/tiff") == 0) {
 		strcpy(format,"image%2Ftiff");
+	}
+
+	// handle colons
+	if (ap_strchr(time, ':') != 0) {
+		int i; i= 0;
+		char *times[3];
+		char *t;
+		char *last;
+		t = apr_strtok(time,":",&last);
+		while (t != NULL && i < 4) {
+			times[i++] = t;
+			t = apr_strtok(NULL,":",&last);
+		}
+		time = apr_psprintf(r->pool, "%s%s%s%s%s", times[0],colon,times[1],colon,times[2]);
 	}
 
 	// check if TWMS or WMTS
