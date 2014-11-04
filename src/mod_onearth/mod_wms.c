@@ -203,6 +203,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 {
   int fd;
   int leap=0;
+  int hastime=0;
   static char* timearg="time=";
   static char* tstamp="TTTTTTT_";
   static char* year="YYYY";
@@ -235,6 +236,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		targ+=3; // Skip the MM- part
 		tm.tm_mday=apr_atoi64(targ);
 		if (strlen(targ)==16) {
+			hastime=1;
 			targ+=3;
 			tm.tm_hour = apr_atoi64(targ);
 			targ+=5;
@@ -252,7 +254,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
 	  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
 
-	  if (0 <= tm.tm_min && tm.tm_min < 100) {
+	  if (hastime==1) {
 		  fnloc-=6;
 		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 		  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year+1900,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
