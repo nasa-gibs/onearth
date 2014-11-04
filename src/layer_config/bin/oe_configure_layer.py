@@ -1410,12 +1410,12 @@ for conf in conf_files:
             log_sig_exit('ERROR', mssg, sigevent_url)
     
         wmts_layer_template = """<Layer>
-            <ows:Title>$Title</ows:Title>
+            <ows:Title xml:lang=\"en\">$Title</ows:Title>
             $BoundingBox
             <ows:Identifier>$Identifier</ows:Identifier>
             <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
             <Style isDefault="true">
-                <ows:Title>default</ows:Title>
+                <ows:Title xml:lang=\"en\">default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
                 $LegendURL_vertical
                 $LegendURL_horizontal
@@ -1520,11 +1520,11 @@ for conf in conf_files:
     
         twms_layer_template = """    <Layer queryable=\"0\">
       <Name>$Layer</Name>
-      <Title>$Title</Title>
-      <Abstract>$Abstract</Abstract>
+      <Title xml:lang=\"en\">$Title</Title>
+      <Abstract xml:lang=\"en\">$Abstract</Abstract>
       <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\"/>
       <Style>
-        <Name>default</Name> <Title>(default) Default style</Title>
+        <Name>default</Name> <Title xml:lang=\"en\">(default) Default style</Title>
       </Style>
       <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
       </Layer>"""
@@ -1565,8 +1565,8 @@ for conf in conf_files:
     
         twms_layer_template = """<TiledGroup>
     <Name>$Name</Name>
-    <Title>$Title</Title>
-    <Abstract>$Name</Abstract>
+    <Title xml:lang=\"en\">$Title</Title>
+    <Abstract xml:lang=\"en\">$Name</Abstract>
     <Projection>$Projection</Projection>
     <Pad>0</Pad>
     <Bands>$Bands</Bands>
