@@ -68,6 +68,7 @@
         <xs:enumeration value="average_mp"/>
         <xs:enumeration value="average_magphase"/>
         <xs:enumeration value="mode"/>
+        <xs:enumeration value="avg"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
@@ -84,7 +85,7 @@
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
-  <xs:element name="resize_resampling" nillable="true">
+  <xs:element name="resize_resampling" nillable="true" default="none">
     <xs:simpleType>
       <xs:restriction base="xs:string">
         <xs:enumeration value="near"/>
@@ -94,6 +95,7 @@
         <xs:enumeration value="lanczos"/>
         <xs:enumeration value="average"/>
         <xs:enumeration value="mode"/>
+        <xs:enumeration value="none"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
