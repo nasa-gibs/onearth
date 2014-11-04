@@ -495,8 +495,13 @@ else:
     # gdalwarp resampling method for resizing
     try:
         resize_resampling        =get_dom_tag_value(dom, 'resize_resampling')
+        if resize_resampling == "none":
+            resize_resampling = ''
     except IndexError:
-        resize_resampling = ''  
+        resize_resampling = ''
+    if resize_resampling != '' and target_x == '':
+        log_sig_exit('ERROR', "target_x or outsize must be provided for resizing", sigevent_url)
+          
     # gdalwarp resampling method for reprojection
     try:
         reprojection_resampling        =get_dom_tag_value(dom, 'reprojection_resampling')

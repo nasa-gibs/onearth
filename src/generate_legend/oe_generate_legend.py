@@ -32,9 +32,11 @@ import sys
 import urllib
 import xml.dom.minidom
 from optparse import OptionParser
+import matplotlib as mpl
+mpl.use('Agg')
+print(mpl.matplotlib_fname())
 from matplotlib import pyplot
 from matplotlib import rcParams
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from StringIO import StringIO
 import numpy as np
@@ -47,7 +49,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v0.5"
+versionNumber = "v0.5.1"
 
 class ColorMap:
     """ColorMap metadata"""
