@@ -109,31 +109,53 @@ static char colon[] = "%3A";
 // This module
 module AP_MODULE_DECLARE_DATA wms_module;
 
-// Evaluate the time period for days
-static int evaluate_period(char *time_period)
+// Evaluate the time period for days or seconds
+static int evaluate_period(char *time_period, int hastime)
 {
-	if (time_period[22] != 'P') return 0;
-	int days;
-	// currently only supports periods of single type
-	char interval = time_period[(strlen(time_period)-1)];
-	switch(interval) // uses max days for each period, allows for fallback
-	{
-	   case 'Y' :
-		   days = apr_atoi64(time_period+23) * 366;
-	       break;
-	   case 'M' :
-		   days = apr_atoi64(time_period+23); // special case for months
-		   break;
-	   case 'W' :
-		   days = apr_atoi64(time_period+23) * 7;
-		   break;
-	   case 'D' :
-		   days = apr_atoi64(time_period+23);
-	      break;
-	   default :
-		   days = 0;
+	if (hastime == 0) {
+		if (time_period[22] != 'P') return 0;
+		int days;
+		// currently only supports periods of single type
+		char interval = time_period[(strlen(time_period)-1)];
+		switch(interval) // uses max days for each period, allows for fallback
+		{
+		   case 'Y' :
+			   days = apr_atoi64(time_period+23) * 366;
+			   break;
+		   case 'M' :
+			   days = apr_atoi64(time_period+23); // special case for months
+			   break;
+		   case 'W' :
+			   days = apr_atoi64(time_period+23) * 7;
+			   break;
+		   case 'D' :
+			   days = apr_atoi64(time_period+23);
+			  break;
+		   default :
+			   days = 0;
+		}
+		return days;
+	} else {
+		if (time_period[43] != 'T') return 0;
+		int seconds;
+		// currently only supports periods of single type
+		char interval = time_period[(strlen(time_period)-1)];
+		switch(interval) // uses max days for each period, allows for fallback
+		{
+		   case 'H' :
+			   seconds = apr_atoi64(time_period+44) * 3600; // special case for months
+			   break;
+		   case 'M' :
+			   seconds = apr_atoi64(time_period+44) * 60;
+			   break;
+		   case 'S' :
+			   seconds = apr_atoi64(time_period+44);
+			  break;
+		   default :
+			   seconds = 0;
+		}
+		return seconds;
 	}
-	return days;
 }
 
 // single shot, open fname file, read nbytes from location, close file.
@@ -284,7 +306,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  if (!fnloc) return 0; else {
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
-			  apr_time_exp_t st; st.tm_mday=1;st.tm_yday=1;
+			  apr_time_exp_t st; st.tm_year=0;st.tm_mon=0;st.tm_mday=1;st.tm_yday=1;st.tm_hour=0;st.tm_min=0;st.tm_sec=0;
 			  int interval = 0;
 			  int start_offset = 0;
 			  int start_leap = 0;
@@ -292,13 +314,13 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  for (i=0;i<num_periods;i++) {
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
 				  // get the time interval period
-				  interval = evaluate_period(time_period);
-				  // don't check periods 1 day or less
+				  interval = evaluate_period(time_period, hastime);
+				  // don't check periods of 1 day
 				  if ((interval <= 1) && (time_period[(strlen(time_period)-1)] == 'D')){
 					  time_period+=strlen(time_period)+1;
 					  continue; // skip to the next period if there is one
 				  }
-				  // check to see if there is a start time
+				  // check to see if there is a start time before the request time
 				  if (strlen(time_period)>=10) {
 					  st.tm_year=apr_atoi64(time_period)-1900;
 					  if (tm.tm_year >= st.tm_year) {
@@ -320,6 +342,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 						  time_period+=strlen(time_period)+1;
 						  continue; // try next period if request before start date
 					  }
+
 				  	  start_leap=(st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
 				  	  st.tm_yday=st.tm_mday+moffset[st.tm_mon-1]+((st.tm_mon>2)?start_leap:0);
 				  	  // get the offset from starting date
@@ -335,26 +358,63 @@ static void *r_file_pread(request_rec *r, char *fname,
 						  }
 				  	  }
 				  }
-				  // calculate the last date in the span of the time interval
-				  int span = start_offset % interval;
-				  int request_day = tm.tm_yday;
-				  if (start_offset <= interval)
-					  request_day = st.tm_yday;
-				  else {
-					  // check if month period
-					  if (time_period[(strlen(time_period)-1)] == 'M') {
-						  tm.tm_mday = st.tm_mday;
-						  span = request_day; // store old value
-						  request_day=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
-						  span = span-request_day+1; // get actual span
-					  } else {
-						  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
-						  request_day = request_day - span;
-					  }
+
+				  // if hhmmss are included in time period
+				  if (time_period>11) {
+					  time_period+=3;
+					  st.tm_hour = apr_atoi64(time_period);
+					  time_period+=3;
+					  st.tm_min = apr_atoi64(time_period);
+					  time_period+=3;
+					  st.tm_sec = apr_atoi64(time_period);
 				  }
-				  char old_char=*(fnloc+7);
-				  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,request_day);
-				  *(fnloc+7)=old_char;
+
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"DEBUG Start time period: year %d month %d day %d hour %d minute %d second %d offset %d interval %d", st.tm_year, st.tm_mon, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, start_offset, interval);
+
+				  if (hastime==0) {
+					  // calculate the last date in the span of the time interval
+					  int span = start_offset % interval;
+					  int request_day = tm.tm_yday;
+					  if (start_offset <= interval)
+						  request_day = st.tm_yday;
+					  else {
+						  // check if month period
+						  if (time_period[(strlen(time_period)-1)] == 'M') {
+							  tm.tm_mday = st.tm_mday;
+							  span = request_day; // store old value
+							  request_day=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
+							  span = span-request_day+1; // get actual span
+						  } else {
+							  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
+							  request_day = request_day - span;
+						  }
+					  }
+					  char old_char=*(fnloc+7);
+					  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,request_day);
+					  *(fnloc+7)=old_char;
+				  } else { // subdaily request
+					  //convert to seconds
+					  int request_secs = (tm.tm_hour * 3600) + (tm.tm_min * 60) + tm.tm_sec;
+					  start_offset = ((tm.tm_yday * 86400) + request_secs) - ((start_offset * 86400) + (st.tm_hour * 3600) + (st.tm_min * 60) + st.tm_sec);
+
+					  // calculate the last date in the span of the time interval
+					  int span = start_offset % interval;
+					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request seconds] - (%d [seconds since start] %% %d [period in seconds]) = %d [granule time in seconds]", request_secs, start_offset, interval, (request_secs-span));
+					  request_secs = request_secs - span;
+
+					  // convert seconds to hhmmss
+					  tm.tm_hour = request_secs/3600;
+					  request_secs = request_secs%3600;
+					  tm.tm_min = request_secs/60;
+					  request_secs = request_secs%60;
+					  tm.tm_sec = request_secs;
+
+					  char old_char=*(fnloc+13);
+					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+					  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year+1900,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+					  *(fnloc+13)=old_char;
+				  }
+
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period in file %s",fn);
 				  if (0>(fd=open(fn,O_RDONLY))) {
 					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
