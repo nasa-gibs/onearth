@@ -68,7 +68,7 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.5.0'
+versionNumber = '0.6.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -505,6 +505,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     period = "P1D"
     period_value = 1 # numeric value of period
     archiveLocation = add_trailing_slash(archiveLocation)
+    is_subdaily = False
     
     if not os.path.isdir(archiveLocation):
         message = archiveLocation + " is not a valid location"
@@ -525,26 +526,49 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                     filedate = datetime.strptime(filetime,"%Y%j")
                     dates.append(filedate)
                 except ValueError:
-                    print "Skipping", filename
+                    # check for subdaily time
+                    try:
+                        filetime = filename[-18:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                        dates.append(filedate)
+                    except ValueError:
+                        print "Skipping", filename
         dates = sorted(list(set(dates)))
+        for testdate in dates:
+            print datetime.strftime(testdate,"%Y-%m-%dT%H:%M:%SZ")
         # Get period, attempt to figure out period (in days) if none
         if time.startswith(detect+'/P'):
             period = time.split('/')[1]
         else:
             if len(dates) >= 3: #check if the difference between first three dates are the same
-                diff1 = abs((dates[0] - dates[1]).days)
-                diff2 = abs((dates[1] - dates[2]).days)
-                diff3 = abs((dates[2] - dates[3]).days)
-                if diff1==diff2==diff3:
-                    period = "P"+str(diff1)+"D"
-                elif 31 in [diff1, diff2, diff3]:
-                    period = "P1M"
-                if 365 in [diff1, diff2, diff3]:
-                    period = "P1Y"
+                if subdaily == False:
+                    diff1 = abs((dates[0] - dates[1]).days)
+                    diff2 = abs((dates[1] - dates[2]).days)
+                    diff3 = abs((dates[2] - dates[3]).days)
+                    if diff1==diff2==diff3:
+                        period = "P"+str(diff1)+"D"
+                    elif 31 in [diff1, diff2, diff3]:
+                        period = "P1M"
+                    if 365 in [diff1, diff2, diff3]:
+                        period = "P1Y"
+                else:
+                    diff1 = abs((dates[0] - dates[1]))
+                    diff2 = abs((dates[1] - dates[2]))
+                    diff3 = abs((dates[2] - dates[3]))
+                    if diff1==diff2==diff3:
+                        if diff1.seconds % 3600 == 0:
+                            period = "PT"+str(diff1.seconds/3600)+"H"
+                        elif diff1.seconds % 60 == 0:
+                            period = "PT"+str(diff1.seconds/60)+"M"
+                        else:
+                            period = "PT"+str(diff1.seconds)+"S"
             message = "No period in time configuration for " + fileNamePrefix + " - detected " + period
             log_sig_warn(message, sigevent_url)
         print "Using period " + str(period)
-        period_value = int(period[1:-1])
+        if subdaily == False:
+            period_value = int(period[1:-1])
+        else:
+            period_value = int(period[2:-1])
         # Search for date ranges
         if len(dates) == 0:
             message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
@@ -552,16 +576,22 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             startdate = datetime.now() # default to now
         else:
             startdate = min(dates)
-            print "Start of data " + datetime.strftime(startdate,"%Y-%m-%d")
+            print "Start of data " + datetime.strftime(startdate,"%Y-%m-%dT%H:%M:%SZ")
         enddate = startdate # set end date to start date for lone dates
         for i, d in enumerate(dates):
             # print d
             if period[-1] == "W":
                 next_day = d + timedelta(weeks=period_value)
-            elif period[-1] == "M":
+            elif period[-1] == "M" and subdaily == False:
                 next_day = d + relativedelta(months=period_value)
             elif period[-1] == "Y":
                 next_day = d + relativedelta(years=period_value)
+            elif period[-1] == "H":
+                next_day = d + relativedelta(hours=period_value)
+            elif period[-1] == "M" and subdaily == True:
+                next_day = d + relativedelta(minutes=period_value)
+            elif period[-1] == "S":
+                next_day = d + relativedelta(seconds=period_value)
             else:
                 next_day = d + timedelta(days=period_value)
             
@@ -569,16 +599,25 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 if dates[i+1] == next_day:
                     enddate = next_day # set end date to next existing day
                 else: # end of range
-                    print "Break in data beginning on " + datetime.strftime(next_day,"%Y-%m-%d")
-                    start = datetime.strftime(startdate,"%Y-%m-%d")
-                    end = datetime.strftime(enddate,"%Y-%m-%d")
+                    if subdaily == False:
+                        print "Break in data beginning on " + datetime.strftime(next_day,"%Y-%m-%d")
+                        start = datetime.strftime(startdate,"%Y-%m-%d")
+                        end = datetime.strftime(enddate,"%Y-%m-%d")
+                    else:
+                        print "Break in data beginning on " + datetime.strftime(next_day,"%Y-%m-%dT%H:%M:%SZ")
+                        start = datetime.strftime(startdate,"%Y-%m-%dT%H:%M:%SZ")
+                        end = datetime.strftime(enddate,"%Y-%m-%dT%H:%M:%SZ")    
                     times.append(start+'/'+end+'/'+period)
                     startdate = dates[i+1] # start new range loop
                     enddate = startdate
             except IndexError:
                 # breaks when loop completes
-                start = datetime.strftime(startdate,"%Y-%m-%d")
-                end = datetime.strftime(enddate,"%Y-%m-%d")
+                if subdaily == False:
+                    start = datetime.strftime(startdate,"%Y-%m-%d")
+                    end = datetime.strftime(enddate,"%Y-%m-%d")
+                else:
+                    start = datetime.strftime(startdate,"%Y-%m-%dT%H:%M:%SZ")
+                    end = datetime.strftime(enddate,"%Y-%m-%dT%H:%M:%SZ")                    
                 times.append(start+'/'+end+'/'+period)
                 print "End of data " + end
                 print "Time ranges: " + ", ".join(times)
