@@ -269,7 +269,7 @@ static void *r_file_pread(request_rec *r, char *fname,
     } else {
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
-		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ (URL encoded)");
+		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
     	return 0;
     }
 	if ((tm.tm_year>0)&&(tm.tm_year<1100)&&(tm.tm_mon>0)&&(tm.tm_mon<13)&&(tm.tm_mday>0)&&(tm.tm_mday<32)) { // We do have a time stamp
@@ -278,7 +278,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 
 	  if (hastime==1) {
 		  fnloc-=6;
-		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+//		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 		  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year+1900,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 		  *(fnloc+13)=old_char;
 	  } else {
@@ -294,7 +294,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  }
 	} else if (tm.tm_year>0) { // Needs to know if there is at least a time value somehow
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format");
-		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format (must be YYYY-MM-DD)");
+		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
     	return 0;
     }
   }
@@ -360,7 +360,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  }
 
 				  // if hhmmss are included in time period
-				  if (time_period>11) {
+				  if (strlen(time_period)>11) {
 					  time_period+=3;
 					  st.tm_hour = apr_atoi64(time_period);
 					  time_period+=3;
@@ -369,7 +369,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  st.tm_sec = apr_atoi64(time_period);
 				  }
 
-				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"DEBUG Start time period: year %d month %d day %d hour %d minute %d second %d offset %d interval %d", st.tm_year, st.tm_mon, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, start_offset, interval);
+//				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"DEBUG Start time period: year %d month %d day %d hour %d minute %d second %d offset %d interval %d", st.tm_year, st.tm_mon, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, start_offset, interval);
 
 				  if (hastime==0) {
 					  // calculate the last date in the span of the time interval
@@ -385,7 +385,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 							  request_day=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
 							  span = span-request_day+1; // get actual span
 						  } else {
-							  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
+//							  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
 							  request_day = request_day - span;
 						  }
 					  }
@@ -399,7 +399,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 
 					  // calculate the last date in the span of the time interval
 					  int span = start_offset % interval;
-					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request seconds] - (%d [seconds since start] %% %d [period in seconds]) = %d [granule time in seconds]", request_secs, start_offset, interval, (request_secs-span));
+//					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request seconds] - (%d [seconds since start] %% %d [period in seconds]) = %d [granule time in seconds]", request_secs, start_offset, interval, (request_secs-span));
 					  request_secs = request_secs - span;
 
 					  // convert seconds to hhmmss
@@ -410,12 +410,12 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  tm.tm_sec = request_secs;
 
 					  char old_char=*(fnloc+13);
-					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+//					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 					  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year+1900,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 					  *(fnloc+13)=old_char;
 				  }
 
-				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Checking for multi-day period in file %s",fn);
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Snapping to period in file %s",fn);
 				  if (0>(fd=open(fn,O_RDONLY))) {
 					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
 					  time_period+=strlen(time_period)+1; // try next period
