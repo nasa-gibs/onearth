@@ -77,6 +77,8 @@ import string
 import shutil
 import imghdr
 
+versionNumber = '0.6.0'
+
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
 # CONSIDER BREAKING OUT SUBROUTINES TO SEPARATE FILES.

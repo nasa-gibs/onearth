@@ -1,4 +1,4 @@
-ONEARTH_VERSION=0.5.1
+ONEARTH_VERSION=0.6.0
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
