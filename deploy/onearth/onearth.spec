@@ -11,6 +11,8 @@ BuildRequires:	httpd-devel
 BuildRequires:	chrpath
 BuildRequires:	gibs-gdal-devel
 BuildRequires:  python-dateutil
+BuildRequires:  python-matplotlib
+BuildRequires:  numpy
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
 %else
