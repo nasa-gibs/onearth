@@ -1212,7 +1212,7 @@ for conf in conf_files:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
         
-    log_info_mssg('MRF: ' + mrf)
+    log_info_mssg('MRF Archetype: ' + headerFileName)
     
     # Modify MRF Archetype
     try:
