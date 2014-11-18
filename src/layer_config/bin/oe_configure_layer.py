@@ -505,7 +505,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
     period = "P1D"
     period_value = 1 # numeric value of period
     archiveLocation = add_trailing_slash(archiveLocation)
-    is_subdaily = False
+    subdaily = False
     
     if not os.path.isdir(archiveLocation):
         message = archiveLocation + " is not a valid location"
@@ -531,6 +531,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                         filetime = filename[-18:-5]
                         filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
                         dates.append(filedate)
+                        subdaily = True
                     except ValueError:
                         print "Skipping", filename
         dates = sorted(list(set(dates)))
@@ -565,10 +566,13 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             message = "No period in time configuration for " + fileNamePrefix + " - detected " + period
             log_sig_warn(message, sigevent_url)
         print "Using period " + str(period)
-        if subdaily == False:
-            period_value = int(period[1:-1])
-        else:
-            period_value = int(period[2:-1])
+        try:
+            if subdaily == False:
+                period_value = int(period[1:-1])
+            else:
+                period_value = int(period[2:-1])
+        except ValueError:
+            log_sig_err("Mixed period values are not supported on server: " + period, sigevent_url)
         # Search for date ranges
         if len(dates) == 0:
             message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
@@ -686,13 +690,23 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                         filedate = datetime.strptime(filetime,"%Y%j")
                         dates.append(filedate)
                     except ValueError:
-                        print "Skipping", filename
+                        # check for subdaily time
+                        try:
+                            filetime = filename[-18:-5]
+                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                            dates.append(filedate)
+                            subdaily = True
+                        except ValueError:
+                            print "Skipping", filename
                 if len(dates) == 0:
                     message = "No files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation + "' - please check if data exists."
                     log_sig_err(message, sigevent_url)
                     return times
                 startdate = min(dates)
-                start = datetime.strftime(startdate,"%Y-%m-%d")
+                if subdaily == False:
+                    start = datetime.strftime(startdate,"%Y-%m-%d")
+                else:
+                    start = datetime.strftime(startdate,"%Y-%m-%dT%H:%M:%SZ")
         
         if end==detect:
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
@@ -703,9 +717,19 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                         filedate = datetime.strptime(filetime,"%Y%j")
                         dates.append(filedate)
                     except ValueError:
-                        print "Skipping", filename
+                        # check for subdaily time
+                        try:
+                            filetime = filename[-18:-5]
+                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                            dates.append(filedate)
+                            subdaily = True
+                        except ValueError:
+                            print "Skipping", filename
                 enddate = max(dates)
-                end = datetime.strftime(enddate,"%Y-%m-%d")   
+                if subdaily == False:
+                    end = datetime.strftime(enddate,"%Y-%m-%d")
+                else:
+                    end = datetime.strftime(enddate,"%Y-%m-%dT%H:%M:%SZ")
         
         print "Time: start="+start+" end="+end+" period="+period
         time = start+'/'+end+'/'+period
