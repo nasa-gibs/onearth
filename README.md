@@ -10,3 +10,13 @@ The source code contains the Meta Raster Format (MRF) plugin for GDAL, the mod_o
 The software implements a data and image storage format driver for GDAL. The format supports extremely large, tiled, multi-resolution and multi-spectral data.  Sparse raster data is supported efficiently.  JPEG (lossy) and PNG (lossless) compression per tile are currently supported. Grayscale, color, indexed (palette) color models are supported.
 
 For more information, visit https://earthdata.nasa.gov/gibs
+
+## Other Information
+
+* [Installation](doc/install.md)
+* [Layer Configuration](doc/layer_config.md)
+
+## Contact
+
+Contact us by sending an email to
+[support@earthdata.nasa.gov](mailto:support@earthdata.nasa.gov)
