@@ -41,6 +41,8 @@ onearth-install:
 		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
 	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
+	install -m 755 src/layer_config/bin/oe_generate_empty_tile.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_generate_empty_tile.py
 	install -m 755 src/onearth_logs/onearth_logs.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/onearth_metrics
 	install -m 755 src/generate_legend/oe_generate_legend.py  \

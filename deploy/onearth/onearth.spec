@@ -121,6 +121,7 @@ rm -rf %{buildroot}
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_generate_legend.py
+%{_bindir}/oe_generate_empty_tile.py
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
