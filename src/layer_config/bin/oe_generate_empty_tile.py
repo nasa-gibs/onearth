@@ -1,0 +1,241 @@
+#!/bin/env python
+
+# Copyright (c) 2002-2014, California Institute of Technology.
+# All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
+# 
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#   2. Redistributions in binary form must reproduce the above copyright notice,
+#      this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#   3. Neither the name of the California Institute of Technology (Caltech), its operating division the Jet Propulsion Laboratory (JPL),
+#      the National Aeronautics and Space Administration (NASA), nor the names of its contributors may be used to
+#      endorse or promote products derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE CALIFORNIA INSTITUTE OF TECHNOLOGY BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#
+# oe_generate_empty_tile.py
+# The OnEarth Empty Tile Generator.
+#
+#
+# Global Imagery Browse Services
+# NASA Jet Propulsion Laboratory
+# 2014
+
+import sys
+import urllib
+import xml.dom.minidom
+from optparse import OptionParser
+import png
+
+# for SVG tooltips
+try:
+    import lxml.etree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
+    ET.register_namespace("","http://www.w3.org/2000/svg")
+
+toolName = "oe_generate_empty_tile.py"
+versionNumber = "v0.6.1"
+
+class ColorMap:
+    """ColorMap metadata"""
+    
+    def __init__(self, units, colormap_entries, style):
+        self.units = units
+        self.colormap_entries = colormap_entries
+        self.style = str(style).lower()
+        
+    def __repr__(self):
+        if self.units != None:
+            xml = '<ColorMap units="%s">' % (self.units)
+        else:
+            xml = '<ColorMap>'
+        for colormap_entry in self.colormap_entries:
+            xml = xml + '\n    ' + colormap_entry.__repr__()
+        xml = xml + '\n</ColorMap>'
+        return xml
+
+    def __str__(self):
+        return self.__repr__().encode(sys.stdout.encoding)
+
+
+class ColorMapEntry:
+    """ColorMapEntry values within a ColorMap"""
+    
+    def __init__(self, red, green, blue, transparent, source_value, value, label):
+        self.red = int(red)
+        self.green = int(green)
+        self.blue = int(blue)
+        self.transparent = transparent
+        self.source_value = source_value
+        self.value = value
+        self.label = label
+        self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
+        
+    def __repr__(self):
+        if self.value != None:
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.value, self.label)
+        else:
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.label)
+        return xml
+    
+    def __str__(self):
+        return self.__repr__().encode(sys.stdout.encoding)
+    
+
+def parse_colormap(colormap_location, verbose):
+    
+    try:
+        if verbose:
+            print "Reading color map:", colormap_location
+        colormap_file = open(colormap_location,'r')
+        dom = xml.dom.minidom.parse(colormap_file)
+        colormap_file.close()
+    except IOError:
+        print "Accessing URL", colormap_location
+        try:
+            dom = xml.dom.minidom.parse(urllib.urlopen(colormap_location))
+        except:
+            msg = "ERROR: URL " + colormap_location + " is not accessible"
+            print >> sys.stderr, msg
+            raise Exception(msg)
+            sys.exit(1)
+
+        
+    colormap_element = dom.getElementsByTagName("ColorMap")[0]
+    try:
+        units = colormap_element.attributes['units'].value
+    except KeyError:
+        units = None
+    if verbose:
+        print "ColorMap units:", units
+    
+    style = "discrete"
+    colormap_entries = []
+    colormapentry_elements = colormap_element.getElementsByTagName("ColorMapEntry")
+    for colormapentry in colormapentry_elements:
+        rgb = colormapentry.attributes['rgb'].value
+        red, green, blue = rgb.split(',')
+        try:
+            value = colormapentry.attributes['value'].value
+            if "(" in value or "[" in value:
+                style = "range"
+        except KeyError:
+            value = None
+            style = "classification"
+        try:
+            transparent = True if colormapentry.attributes['transparent'].value.lower() == 'true' else False
+        except KeyError:
+            transparent = False
+        try:
+            source_value = colormapentry.attributes['sourceValue'].value
+        except KeyError:
+            source_value = value
+        try:
+            label = colormapentry.attributes['label'].value
+        except KeyError:
+            label = value
+        
+        colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label))
+        
+    colormap = ColorMap(units, colormap_entries, style)
+    if verbose:
+        print "ColorMap style:", style
+        print colormap
+    
+    return colormap
+    
+
+#-------------------------------------------------------------------------------
+
+print toolName + ' ' + versionNumber + '\n'
+
+usageText = toolName + " --colormap [file] --output [file] --index [0] --height [int] --width [int] "
+
+# Define command line options and args.
+parser=OptionParser(usage=usageText, version=versionNumber)
+parser.add_option('-c', '--colormap',
+                  action='store', type='string', dest='colormap',
+                  help='Full path or URL of colormap filename.')
+parser.add_option('-f', '--format',
+                  action='store', type='string', dest='format', default = 'png',
+                  help='Format of output file. Supported formats: png')
+parser.add_option('-i', '--index',
+                  action='store', type='int', dest='index', default = 0,
+                  help='The index of the color map to be used as the empty tile palette entry')
+parser.add_option('-o', '--output',
+                  action='store', type='string', dest='output',
+                  help='The full path of the output file')
+parser.add_option('-u', '--sigevent_url',
+                  action='store', type='string', dest='sigevent_url',
+                  default=
+                  'http://localhost:8100/sigevent/events/create',
+                  help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
+                  default=False, help="Print out detailed log messages")
+parser.add_option('-x', '--width',
+                  action='store', type='int', dest='width', default = 512,
+                  help='Width of the empty tile')
+parser.add_option('-y', '--height',
+                  action='store', type='int', dest='height', default = 512,
+                  help='Height of the empty tile')
+
+# read command line args
+(options, args) = parser.parse_args()
+
+if options.colormap:
+    colormap_location = options.colormap
+else:
+    print "colormap file must be specified...exiting"
+    exit()
+if options.output:
+    output_location = options.output
+else:
+    print "output file must be specified...exiting"
+    exit()
+    
+    
+# parse colormap and get color entry
+try:
+    colormap = parse_colormap(colormap_location, options.verbose)
+    colormap_entry = colormap.colormap_entries[options.index]
+except IOError,e:
+    print str(e)
+    exit()
+
+# generate empty_tile
+try:
+    print "Using entry based on index " + str(options.index) + ":\n" + str(colormap_entry)
+    
+    rows = []
+    img = []
+    for i in range (1, (options.width*3)+1):
+        if i%3 == 1:
+            rows.append(colormap_entry.red)
+        elif i%3 == 2:
+            rows.append(colormap_entry.green)
+        elif i%3 == 0:
+            rows.append(colormap_entry.blue)
+    
+    for i in range (0, options.height):
+        img.append(rows)
+
+    f = open(output_location, 'wb')
+    w = png.Writer(options.width, options.height)
+    w.write(f, img)
+    f.close()
+    
+    print "\nSuccessfully generated empty tile " + output_location + " of size: " + str(options.width) + " by " + str(options.height)
+    
+except IOError,e:
+    print str(e)
+    exit()
+    
+exit()
