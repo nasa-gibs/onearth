@@ -1,5 +1,5 @@
 Name:		onearth
-Version:	0.6.0
+Version:	0.6.1
 Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
@@ -12,6 +12,7 @@ BuildRequires:	chrpath
 BuildRequires:	gibs-gdal-devel
 BuildRequires:  python-dateutil
 BuildRequires:  python-matplotlib
+BuildRequires:  python-pypng
 BuildRequires:  numpy
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
