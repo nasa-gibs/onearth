@@ -69,7 +69,7 @@ class ColorMap:
 class ColorMapEntry:
     """ColorMapEntry values within a ColorMap"""
     
-    def __init__(self, red, green, blue, transparent, source_value, value, label):
+    def __init__(self, red, green, blue, transparent, source_value, value, label, nodata):
         self.red = int(red)
         self.green = int(green)
         self.blue = int(blue)
@@ -77,13 +77,14 @@ class ColorMapEntry:
         self.source_value = source_value
         self.value = value
         self.label = label
+        self.nodata = nodata
         self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
         
     def __repr__(self):
         if self.value != None:
-            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.value, self.label)
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.value, self.label)
         else:
-            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" sourceValue="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.source_value, self.label)
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.label)
         return xml
     
     def __str__(self):
@@ -142,8 +143,12 @@ def parse_colormap(colormap_location, verbose):
             label = colormapentry.attributes['label'].value
         except KeyError:
             label = value
+        try:
+            nodata = True if colormapentry.attributes['nodata'].value.lower() == 'true' else False
+        except KeyError:
+            nodata = False
         
-        colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label))
+        colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label, nodata))
         
     colormap = ColorMap(units, colormap_entries, style)
     if verbose:
@@ -157,7 +162,7 @@ def parse_colormap(colormap_location, verbose):
 
 print toolName + ' ' + versionNumber + '\n'
 
-usageText = toolName + " --colormap [file] --output [file] --index [0] --height [int] --width [int] "
+usageText = toolName + " --colormap [file] --output [file] --height [int] --width [int] "
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -168,8 +173,8 @@ parser.add_option('-f', '--format',
                   action='store', type='string', dest='format', default = 'png',
                   help='Format of output file. Supported formats: png')
 parser.add_option('-i', '--index',
-                  action='store', type='int', dest='index', default = 0,
-                  help='The index of the color map to be used as the empty tile palette entry')
+                  action='store', type='int', dest='index',
+                  help='The index of the color map to be used as the empty tile palette entry, overrides nodata value')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
@@ -205,14 +210,21 @@ else:
 # parse colormap and get color entry
 try:
     colormap = parse_colormap(colormap_location, options.verbose)
-    colormap_entry = colormap.colormap_entries[options.index]
+    colormap_entry = colormap.colormap_entries[0] # default to first entry if none specified
+    if options.index != None:
+        colormap_entry = colormap.colormap_entries[options.index]
+    else:
+        for entry in colormap.colormap_entries:
+            if entry.nodata == True:
+                colormap_entry = entry
+                break # use first nodata entry found
 except IOError,e:
     print str(e)
     exit()
 
 # generate empty_tile
 try:
-    print "Using entry based on index " + str(options.index) + ":\n" + str(colormap_entry)
+    print "Using entry:\n" + str(colormap_entry)
     
     rows = []
     img = []
