@@ -68,7 +68,7 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.6.0'
+versionNumber = '0.6.1'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -782,7 +782,7 @@ def generate_legend(colormap, output, legend_url, orientation):
         mssg=str().join(['Cannot read SVG legend file:  ', output])
         sigevent('ERROR', mssg, sigevent_url)
         
-    # get widht and height
+    # get width and height
     dom = xml.dom.minidom.parse(svg)
     svgElement = dom.getElementsByTagName('svg')[0]
     height = float(svgElement.attributes['height'].value.replace('pt','')) * pt
@@ -795,6 +795,36 @@ def generate_legend(colormap, output, legend_url, orientation):
         legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (legend_url, int(width), int(height))
     
     return legend_url_template
+
+def generate_empty_tile(colormap, output, width, height):
+    """
+    Generate an empty tile from nodata value in GIBS color map.
+    Arguments:
+        colormap -- the color map file name
+        output -- the output file name
+        width -- the width of the empty tile
+        height -- the height of the empty tile
+    """
+    
+    print "Generating empty tile"
+    print "Empty Tile Location: " + output
+    print "Color Map: " + colormap
+    print "Width: " + str(width)
+    print "Height: " + str(height)
+    
+    cmd = 'oe_generate_empty_tile.py -c '+colormap+' -o ' + output + ' -x ' + str(width) + ' -y ' + str(height)
+    run_command(cmd, sigevent_url)
+
+    # check file
+    try:
+        # Get file size
+        empty_size = os.path.getsize(output)
+        print "Empty tile size: " + str(empty_size)
+    except:
+        mssg=str().join(['Cannot read generated empty tile:  ', output])
+        log_sig_err(mssg, sigevent_url)
+    
+    return empty_size
     
 #-------------------------------------------------------------------------------   
 
@@ -995,8 +1025,11 @@ for conf in conf_files:
         try:
             emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
         except IndexError:
-            log_sig_err('Required <EmptyTileSize> element is missing in ' + conf, sigevent_url)
-            continue
+            try:
+                emptyTile = get_dom_tag_value(dom, 'EmptyTile')
+            except IndexError: # Required if EmptyTile is not specified
+                log_sig_err('Required <EmptyTileSize> element is missing in ' + conf, sigevent_url)
+                continue
         try:
             fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
         except IndexError:
@@ -1071,6 +1104,11 @@ for conf in conf_files:
             colormap = get_dom_tag_value(dom, 'ColorMap')
         except IndexError:
             colormap = None
+                
+        try:
+            emptyTile = get_dom_tag_value(dom, 'EmptyTile')
+        except IndexError:
+            emptyTile = None
             
         # Patterns
         patterns = []
@@ -1124,6 +1162,8 @@ for conf in conf_files:
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
     log_info_mssg('config: EmptyTileSize: ' + str(emptyTileSize))
     log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
+    if emptyTile:
+        log_info_mssg('config: EmptyTile: ' + emptyTile)
     if headerFileName:
         log_info_mssg('config: HeaderFileName: ' + headerFileName)
     if archiveLocation:
@@ -1256,6 +1296,14 @@ for conf in conf_files:
     twms = mrf_dom.createElement('TWMS')
     levelsElement = mrf_dom.createElement('Levels')
     levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
+    
+    # Generate empty tile and override size
+    if colormap != None and emptyTile != None:
+        pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
+        tileX = int(pageSize.getAttribute('x'))
+        tileY = int(pageSize.getAttribute('y'))
+        emptyTileSize = generate_empty_tile(colormap, emptyTile, tileX, tileY)
+    
     emptyInfoElement = mrf_dom.createElement('EmptyInfo')
     emptyInfoElement.setAttribute('size', str(emptyTileSize))
     emptyInfoElement.setAttribute('offset', str(emptyTileOffset))
