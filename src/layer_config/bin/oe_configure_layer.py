@@ -1026,9 +1026,10 @@ for conf in conf_files:
             emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
         except IndexError:
             try:
+                emptyTileSize = ""
                 emptyTile = get_dom_tag_value(dom, 'EmptyTile')
             except IndexError: # Required if EmptyTile is not specified
-                log_sig_err('Required <EmptyTileSize> element is missing in ' + conf, sigevent_url)
+                log_sig_err('Required <EmptyTileSize> or <EmptyTile> element is missing in ' + conf, sigevent_url)
                 continue
         try:
             fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
@@ -1160,10 +1161,11 @@ for conf in conf_files:
     log_info_mssg('config: FileNamePrefix: ' + fileNamePrefix)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
-    log_info_mssg('config: EmptyTileSize: ' + str(emptyTileSize))
-    log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
     if emptyTile:
         log_info_mssg('config: EmptyTile: ' + emptyTile)
+    if str(emptyTileSize) != "":
+        log_info_mssg('config: EmptyTileSize: ' + str(emptyTileSize))
+    log_info_mssg('config: EmptyTileOffset: ' + str(emptyTileOffset))
     if headerFileName:
         log_info_mssg('config: HeaderFileName: ' + headerFileName)
     if archiveLocation:

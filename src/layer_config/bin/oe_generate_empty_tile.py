@@ -173,7 +173,7 @@ parser.add_option('-f', '--format',
                   action='store', type='string', dest='format', default = 'png',
                   help='Format of output file. Supported formats: png')
 parser.add_option('-i', '--index',
-                  action='store', type='int', dest='index',
+                  action='store', type='string', dest='index',
                   help='The index of the color map to be used as the empty tile palette entry, overrides nodata value')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
@@ -186,10 +186,10 @@ parser.add_option('-u', '--sigevent_url',
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Print out detailed log messages")
 parser.add_option('-x', '--width',
-                  action='store', type='int', dest='width', default = 512,
+                  action='store', type='string', dest='width', default = '512',
                   help='Width of the empty tile')
 parser.add_option('-y', '--height',
-                  action='store', type='int', dest='height', default = 512,
+                  action='store', type='string', dest='height', default = '512',
                   help='Height of the empty tile')
 
 # read command line args
@@ -206,13 +206,12 @@ else:
     print "output file must be specified...exiting"
     exit()
     
-    
 # parse colormap and get color entry
 try:
     colormap = parse_colormap(colormap_location, options.verbose)
     colormap_entry = colormap.colormap_entries[0] # default to first entry if none specified
     if options.index != None:
-        colormap_entry = colormap.colormap_entries[options.index]
+        colormap_entry = colormap.colormap_entries[int(options.index)]
     else:
         for entry in colormap.colormap_entries:
             if entry.nodata == True:
@@ -224,11 +223,12 @@ except IOError,e:
 
 # generate empty_tile
 try:
-    print "Using entry:\n" + str(colormap_entry)
+    if options.verbose:
+        print "Using entry:\n" + str(colormap_entry)
     
     rows = []
     img = []
-    for i in range (1, (options.width*3)+1):
+    for i in range (1, (int(options.width)*3)+1):
         if i%3 == 1:
             rows.append(colormap_entry.red)
         elif i%3 == 2:
@@ -236,11 +236,11 @@ try:
         elif i%3 == 0:
             rows.append(colormap_entry.blue)
     
-    for i in range (0, options.height):
+    for i in range (0, int(options.height)):
         img.append(rows)
 
     f = open(output_location, 'wb')
-    w = png.Writer(options.width, options.height)
+    w = png.Writer(int(options.width), int(options.height))
     w.write(f, img)
     f.close()
     
