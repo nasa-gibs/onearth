@@ -228,19 +228,24 @@ try:
     
     rows = []
     img = []
-    for i in range (1, (int(options.width)*3)+1):
-        if i%3 == 1:
+    for i in range (1, (int(options.width)*4)+1):
+        if i%4 == 1:
             rows.append(colormap_entry.red)
-        elif i%3 == 2:
+        elif i%4 == 2:
             rows.append(colormap_entry.green)
-        elif i%3 == 0:
+        elif i%4 == 3:
             rows.append(colormap_entry.blue)
+        elif i%4 == 0:
+            if colormap_entry.transparent == True:
+                rows.append(0)
+            else:
+                rows.append(255)
     
     for i in range (0, int(options.height)):
         img.append(rows)
 
     f = open(output_location, 'wb')
-    w = png.Writer(int(options.width), int(options.height))
+    w = png.Writer(int(options.width), int(options.height), alpha=True)
     w.write(f, img)
     f.close()
     
