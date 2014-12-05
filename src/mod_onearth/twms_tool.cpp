@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2013, California Institute of Technology.
+* Copyright (c) 2002-2014, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -458,7 +458,7 @@ void mrf_data::mrf2cachex(ostream &out) {
     }
 
     char *text=CPLSerializeXMLTree(cache);
-    cout << text;
+    out << text;
     CPLFree(text);
 
     CPLDestroyXMLNode(cache);

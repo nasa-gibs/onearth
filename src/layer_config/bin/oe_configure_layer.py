@@ -1747,10 +1747,14 @@ if no_twms == False:
                 mrfs = mrfs + twms_endpoint.path+'/'+mrf_file + ' '
         cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + twms_endpoint.path+'/cache.config'
         run_command(cmd, sigevent_url)
+        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + twms_endpoint.path+'/cache.xml'
+        run_command(cmd, sigevent_url)
         if no_cache == False:
             if twms_endpoint.cacheConfig:
                 print '\nCopying: ' + twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig+'/cache.config'
                 shutil.copyfile(twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig+'/cache.config')
+                print '\nCopying: ' + twms_endpoint.path+'/cache.xml' + ' -> ' + twms_endpoint.cacheConfig+'/cache.xml'
+                shutil.copyfile(twms_endpoint.path+'/cache.xml', twms_endpoint.cacheConfig+'/cache.xml')
         if no_xml == False:
             if twms_endpoint.getCapabilities:
                 # Add layer metadata to getCapabilities
@@ -1804,10 +1808,14 @@ if no_wmts == False:
                 mrfs = mrfs + wmts_endpoint.path+'/'+mrf_file + ' '
         cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + wmts_endpoint.path+'/cache_wmts.config'
         run_command(cmd, sigevent_url)
+        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + wmts_endpoint.path+'/cache_wmts.xml'
+        run_command(cmd, sigevent_url)
         if no_cache == False:
             if wmts_endpoint.cacheConfig:
                 print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig+'/cache_wmts.config'
                 shutil.copyfile(wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig+'/cache_wmts.config')
+                print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.xml' + ' -> ' + wmts_endpoint.cacheConfig+'/cache_wmts.xml'
+                shutil.copyfile(wmts_endpoint.path+'/cache_wmts.xml', wmts_endpoint.cacheConfig+'/cache_wmts.xml')
         if no_xml == False:
             if wmts_endpoint.getCapabilities:
                 # Add layer metadata to getCapabilities
@@ -1870,7 +1878,7 @@ if len(errors) > 0:
 if len(warnings) == 0 and len(errors) == 0:
     message = completion + "successully."
 print ""
-message = message + " " + ("Cache created.", "No cache.")[no_cache] + " " + ("XML created","No XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
+message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
 
 try:
     sigevent('INFO', asctime() + " " + message, sigevent_url)
