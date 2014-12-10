@@ -127,7 +127,7 @@ public:
     vector<string> time_period;
     mrf_data(const char *ifname);
     void mrf2cache(ostream &out);
-    void mrf2cachex(ostream &ofname);
+    void mrf2cachex(ostream &ofname, CPLXMLNode &cache);
     void mrf2cacheb(server_config &cfg, bool verbose=false);
     void mrf2patterns(const char *ofname);
 };
@@ -401,33 +401,53 @@ void mrf_data::mrf2cache(ostream &out) {
 
 const char *FMT="%.16g";
 
-void mrf_data::mrf2cachex(ostream &out) {
-    CPLXMLNode *layer=CPLCreateXMLNode(0,CXT_Element,"Layer");
+void mrf_data::mrf2cachex(ostream &out, CPLXMLNode &cache) {
+    CPLXMLNode *layer=CPLCreateXMLNode(&cache,CXT_Element,"Layer");
 
     CPLXMLNode *plist=CPLCreateXMLNode(layer,CXT_Element,"Patterns");
     for (vector<CPLString>::iterator i=patt.begin(); i!=patt.end(); i++)
-        CPLCreateXMLNode(CPLCreateXMLNode(plist,CXT_Element,"pattern"),
+        CPLCreateXMLNode(CPLCreateXMLNode(plist,CXT_Element,"Pattern"),
         CXT_Literal,CPLString().Printf("<![CDATA[%s]]>",i->c_str()).c_str());
-
-    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Levels"),
-        CXT_Text,CPLString().Printf("%d",levels));
 
     CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"HTMLHeader"),
         CXT_Text,CPLString().Printf("%d",levels));
 
-    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Magic"),
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"HTMLFormat"),
+        CXT_Text,h_format.c_str());
+
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Signature"),
         CXT_Text,CPLString().Printf("%d",sig));
 
     CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"BinaryOrientation"),
         CXT_Text,CPLString().Printf("%d",orientation));
 
+    CPLXMLNode *LayerSize=CPLCreateXMLNode(layer,CXT_Element,"LayerSize");
+    CPLCreateXMLNode(CPLCreateXMLNode(LayerSize,CXT_Attribute,"x"),
+        CXT_Text,CPLString().Printf("%d",whole_size_x).c_str());
+    CPLCreateXMLNode(CPLCreateXMLNode(LayerSize,CXT_Attribute,"y"),
+        CXT_Text,CPLString().Printf("%d",whole_size_y).c_str());
+
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Bands"),
+        CXT_Text,CPLString().Printf("%d",bands));
+
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Scale"),
+        CXT_Text,CPLString().Printf("%d",scale));
+
+    CPLXMLNode *tlist=CPLCreateXMLNode(layer,CXT_Element,"TimePeriods");
+    for (vector<string>::iterator i=time_period.begin(); i!=time_period.end(); i++)
+        CPLCreateXMLNode(CPLCreateXMLNode(tlist,CXT_Element,"TimePeriod"),
+        CXT_Text,CPLString().Printf("%s",i->c_str()));
+
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Levels"),
+        CXT_Text,CPLString().Printf("%d",levels));
+
     long long int offset=0;
     for (int i=0;i<levels;i++) {
         CPLXMLNode *level=CPLCreateXMLNode(layer,CXT_Element,"Level");
-        CPLXMLNode *Size=CPLCreateXMLNode(level,CXT_Element,"TileSize");
-        CPLCreateXMLNode(CPLCreateXMLNode(Size,CXT_Attribute,"x"),
+        CPLXMLNode *TileSize=CPLCreateXMLNode(level,CXT_Element,"TileSize");
+        CPLCreateXMLNode(CPLCreateXMLNode(TileSize,CXT_Attribute,"x"),
             CXT_Text,CPLString().Printf("%d",tile_size_x).c_str());
-        CPLCreateXMLNode(CPLCreateXMLNode(Size,CXT_Attribute,"y"),
+        CPLCreateXMLNode(CPLCreateXMLNode(TileSize,CXT_Attribute,"y"),
             CXT_Text,CPLString().Printf("%d",tile_size_y).c_str());
         CPLXMLNode *Bbox=CPLCreateXMLNode(level,CXT_Element,"BoundingBox");
         CPLCreateXMLNode(CPLCreateXMLNode(Bbox,CXT_Attribute,"xmin"),
@@ -456,12 +476,6 @@ void mrf_data::mrf2cachex(ostream &out) {
         CPLCreateXMLNode(CPLCreateXMLNode(empty,CXT_Attribute,"offset"),
             CXT_Text,CPLString().Printf("%lld",empty_offset));
     }
-
-    char *text=CPLSerializeXMLTree(layer);
-    out << text;
-    CPLFree(text);
-
-    CPLDestroyXMLNode(layer);
 }
 
 // Generate XML for patterns.
@@ -566,8 +580,14 @@ void mrf2cache(vector<mrf_data> &in, opts &o) {
     }
 
     if (o.xml) {
-        for (vector<mrf_data>::iterator i=in.begin();i!=in.end();i++)
-            i->mrf2cachex(*out);
+    	CPLXMLNode *cache=CPLCreateXMLNode(0,CXT_Element,"Cache");
+        for (vector<mrf_data>::iterator i=in.begin();i!=in.end();i++) {
+            i->mrf2cachex(*out, *cache);
+        }
+        char *text=CPLSerializeXMLTree(cache);
+        *out << text;
+        CPLFree(text);
+        CPLDestroyXMLNode(cache);
     } else if (o.binary) {
         server_config cfg={0};
         for (vector<mrf_data>::iterator i=in.begin();i!=in.end();i++)
