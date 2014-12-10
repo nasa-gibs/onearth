@@ -402,28 +402,28 @@ void mrf_data::mrf2cache(ostream &out) {
 const char *FMT="%.16g";
 
 void mrf_data::mrf2cachex(ostream &out) {
-    CPLXMLNode *cache=CPLCreateXMLNode(0,CXT_Element,"TWMS_Cache");
+    CPLXMLNode *layer=CPLCreateXMLNode(0,CXT_Element,"Layer");
 
-    CPLXMLNode *plist=CPLCreateXMLNode(cache,CXT_Element,"Patterns");
+    CPLXMLNode *plist=CPLCreateXMLNode(layer,CXT_Element,"Patterns");
     for (vector<CPLString>::iterator i=patt.begin(); i!=patt.end(); i++)
         CPLCreateXMLNode(CPLCreateXMLNode(plist,CXT_Element,"pattern"),
         CXT_Literal,CPLString().Printf("<![CDATA[%s]]>",i->c_str()).c_str());
 
-    CPLCreateXMLNode(CPLCreateXMLNode(cache,CXT_Element,"Levels"),
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Levels"),
         CXT_Text,CPLString().Printf("%d",levels));
 
-    CPLCreateXMLNode(CPLCreateXMLNode(cache,CXT_Element,"HTMLHeader"),
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"HTMLHeader"),
         CXT_Text,CPLString().Printf("%d",levels));
 
-    CPLCreateXMLNode(CPLCreateXMLNode(cache,CXT_Element,"Magic"),
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Magic"),
         CXT_Text,CPLString().Printf("%d",sig));
 
-    CPLCreateXMLNode(CPLCreateXMLNode(cache,CXT_Element,"BinaryOrientation"),
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"BinaryOrientation"),
         CXT_Text,CPLString().Printf("%d",orientation));
 
     long long int offset=0;
     for (int i=0;i<levels;i++) {
-        CPLXMLNode *level=CPLCreateXMLNode(cache,CXT_Element,"Level");
+        CPLXMLNode *level=CPLCreateXMLNode(layer,CXT_Element,"Level");
         CPLXMLNode *Size=CPLCreateXMLNode(level,CXT_Element,"TileSize");
         CPLCreateXMLNode(CPLCreateXMLNode(Size,CXT_Attribute,"x"),
             CXT_Text,CPLString().Printf("%d",tile_size_x).c_str());
@@ -457,11 +457,11 @@ void mrf_data::mrf2cachex(ostream &out) {
             CXT_Text,CPLString().Printf("%lld",empty_offset));
     }
 
-    char *text=CPLSerializeXMLTree(cache);
+    char *text=CPLSerializeXMLTree(layer);
     out << text;
     CPLFree(text);
 
-    CPLDestroyXMLNode(cache);
+    CPLDestroyXMLNode(layer);
 }
 
 // Generate XML for patterns.
