@@ -144,6 +144,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Nov 24 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.1-1
+- Added oe_generate_empty_tile and missing python dependencies
+
 * Fri Oct 03 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.5.0-1
 - Removed deprecated OnEarth layer configuration files and folders
 

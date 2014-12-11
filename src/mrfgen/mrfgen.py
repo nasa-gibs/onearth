@@ -45,7 +45,6 @@
 #  <outsize>327680 163840</outsize>
 #  <overview_levels>2 4 8 16 32 64 128 256 512 1024</overview_levels>
 #  <overview_resampling>nearest</overview_resampling>
-#  <overview_scale>2</overview_scale>
 #  <epsg>4326</epsg>
 #  <extents>-180,-90,180,90</extents>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
@@ -77,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.0'
+versionNumber = '0.6.1'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
