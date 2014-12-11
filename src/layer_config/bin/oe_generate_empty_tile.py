@@ -34,13 +34,6 @@ import xml.dom.minidom
 from optparse import OptionParser
 import png
 
-# for SVG tooltips
-try:
-    import lxml.etree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
-    ET.register_namespace("","http://www.w3.org/2000/svg")
-
 toolName = "oe_generate_empty_tile.py"
 versionNumber = "v0.6.1"
 
