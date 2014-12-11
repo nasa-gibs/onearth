@@ -6,7 +6,7 @@
  <HeaderFileName>MODIS_Aqua_AerosolTTTTTTT_.mrf</HeaderFileName>
  <Compression>PNG</Compression>
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
- <EmptyTileSize offset="0">1397</EmptyTileSize>
+ <EmptyTile>empty_tile.png</EmptyTile>
  <Projection>EPSG:4326</Projection> 
  <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Aerosol&srs=EPSG:4326&format=image/png&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
  <EnvironmentConfig>../conf/environment_geographic.xml</EnvironmentConfig>

@@ -1,5 +1,5 @@
 <ColorMap>
-   <ColorMapEntry rgb="0,0,0"         sourceValue="-9999"        label="Missing Data -9999"     transparent="true"/>
+   <ColorMapEntry rgb="0,0,0"         sourceValue="-9999"        label="Missing Data -9999"     transparent="true"    nodata="true"/>
    <ColorMapEntry rgb="0,0,1"         sourceValue="-300"         label="Missing Data -300"      transparent="true"/>
    <ColorMapEntry rgb="0,0,2"         sourceValue="[-260,-250]"  label="Missing Data -260,-250" transparent="true"/>
    <ColorMapEntry rgb="0,0,3"         sourceValue="-220"         label="Missing Data -220"      transparent="true"/>

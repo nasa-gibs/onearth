@@ -97,6 +97,10 @@ class TestLayerConfig(unittest.TestCase):
         cacheConfig.close()
         self.assertTrue(contains_layer, "TWMS cache configuration does not contain layer")
         
+        # check empty tile
+        empty_tile = os.path.getsize(self.lcdir + "/test/empty_tile.png")
+        self.assertEqual(empty_tile, 1108, "Empty tile does not match expected")
+        
         print "\n***Test Case Passed***\n"
         
     def test_layer_config_legends(self):
@@ -129,6 +133,7 @@ class TestLayerConfig(unittest.TestCase):
         os.remove(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.mrf")
         os.remove(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.xml")
         os.remove(self.lcdir + "/twms/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.mrf")
+        os.remove(self.lcdir + "/test/empty_tile.png")
 
 if __name__ == '__main__':
     unittest.main()
