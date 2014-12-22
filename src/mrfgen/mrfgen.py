@@ -404,72 +404,72 @@ else:
     # Directories.
     try:
         input_dir            =get_dom_tag_value(dom, 'input_dir')
-    except IndexError: #use output_dir if not specified (for previous cycle time)
+    except: #use output_dir if not specified (for previous cycle time)
         input_dir            =get_dom_tag_value(dom, 'output_dir')
     output_dir             =get_dom_tag_value(dom, 'output_dir')
     try:
         cache_dir              =get_dom_tag_value(dom, 'cache_dir')
-    except IndexError: # use output dir if not provided
+    except: # use output dir if not provided
         cache_dir              =get_dom_tag_value(dom, 'output_dir')
     try:
         working_dir            =get_dom_tag_value(dom, 'working_dir')
-    except IndexError: # use /tmp/ as default
+    except: # use /tmp/ as default
         working_dir            ='/tmp/'
     try:
         logfile_dir            =get_dom_tag_value(dom, 'logfile_dir')
-    except IndexError: #use working_dir if not specified
+    except: #use working_dir if not specified
         logfile_dir            =working_dir
     try:
         mrf_name=get_dom_tag_value(dom, 'mrf_name')
-    except IndexError:
+    except:
         # default to GIBS naming convention
         mrf_name='{$parameter_name}%Y%j_.mrf'
     # MRF specific parameters.
     try:
         mrf_empty_tile_filename=check_abs_path(get_dom_tag_value(dom, 'mrf_empty_tile_filename'))
-    except IndexError:
+    except:
         try:
             mrf_empty_tile_filename=lookupEmptyTile(get_dom_tag_value(dom, 'empty_tile'))
-        except IndexError:
+        except:
             log_sig_warn("Empty tile was not found for " + parameter_name, sigevent_url)
             mrf_empty_tile_filename = ''
     try:
         vrtnodata = get_dom_tag_value(dom, 'vrtnodata')
-    except IndexError:
+    except:
         vrtnodata = ""
     mrf_blocksize          =get_dom_tag_value(dom, 'mrf_blocksize')
     mrf_compression_type   =get_dom_tag_value(dom, 'mrf_compression_type')
     try:
         outsize = get_dom_tag_value(dom, 'outsize')
         target_x, target_y = outsize.split(' ')
-    except IndexError:
+    except:
         outsize = ''
         try:
             target_x               =get_dom_tag_value(dom, 'target_x')
-        except IndexError:
+        except:
             target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
         try:
             target_y               =get_dom_tag_value(dom, 'target_y')
-        except IndexError:
+        except:
             target_y = ''
     # EPSG code projection.
     try:
         target_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
-    except IndexError:
+    except:
         target_epsg = 'EPSG:4326' # default to geographic
     try:
         source_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
-    except IndexError:
+    except:
         source_epsg = 'EPSG:4326' # default to geographic
     # Target extents.
     try:
         extents        =get_dom_tag_value(dom, 'extents')
-    except IndexError:
+    except:
         extents = '-180,-90,180,90' # default to geographic
     xmin, ymin, xmax, ymax = extents.split(',')
     try:
         target_extents        =get_dom_tag_value(dom, 'target_extents')
-    except IndexError:
+    except:
         if target_epsg == 'EPSG:3857':
             target_extents = '-20037508.34,-20037508.34,20037508.34,20037508.34'
         else:
@@ -478,7 +478,7 @@ else:
     # Input files.
     try:
         input_files        =get_dom_tag_value(dom, 'input_files')
-    except IndexError:
+    except:
         input_files = ''
     # overview levels
     try:
@@ -486,19 +486,19 @@ else:
         for level in overview_levels:
             if level.isdigit() == False:
                 log_sig_exit("ERROR", "'" + level + "' is not a valid overview value.", sigevent_url)
-    except IndexError:
+    except:
         overview_levels = ''
     # resampling method
     try:
         overview_resampling        =get_dom_tag_value(dom, 'overview_resampling')
-    except IndexError:
+    except:
         overview_resampling = 'nearest'    
     # gdalwarp resampling method for resizing
     try:
         resize_resampling        =get_dom_tag_value(dom, 'resize_resampling')
         if resize_resampling == "none":
             resize_resampling = ''
-    except IndexError:
+    except:
         resize_resampling = ''
     if resize_resampling != '' and target_x == '':
         log_sig_exit('ERROR', "target_x or outsize must be provided for resizing", sigevent_url)
@@ -506,7 +506,7 @@ else:
     # gdalwarp resampling method for reprojection
     try:
         reprojection_resampling        =get_dom_tag_value(dom, 'reprojection_resampling')
-    except IndexError:
+    except:
         reprojection_resampling = 'cubic' # default to cubic  
     # colormap
     try:
