@@ -2,14 +2,13 @@
 
 The OnEarth configuration process requires the following support configuration files:
 
-* Archive Configuration - Configurable file system archive locations for logically separated MRFs.
-* Projection Configuration - Projection-specific metadata required when building WMTS and TWMS service documents.
-* Environment Configuration - Environment specific paths for items such as service location URLs.
-* Tile Matrix Sets - WMTS TileMatrixSet XML elements used during WMTS GetCapabilities generation.
-* WMTS GetCapabilities Base - XML content used as a base for the WMTS GetCapabilities XML during generation.
-* TWMS GetCapabilities Base - XML content used as a base for the TWMS GetCapabilities XML during generation.
-* TWMS GetTileService Base - XML content used as a base for the TWMS GetTileService XML during generation.
-
+* **Archive Configuration** - Configurable file system archive locations for logically separated MRFs.
+* **Projection Configuration** - Projection-specific metadata required when building WMTS and TWMS service documents.
+* **Environment Configuration** - Environment specific paths for items such as service location URLs.
+* **Tile Matrix Sets** - WMTS TileMatrixSet XML elements used during WMTS GetCapabilities generation.
+* **WMTS GetCapabilities Base** - XML content used as a base for the WMTS GetCapabilities XML during generation.
+* **TWMS GetCapabilities Base** - XML content used as a base for the TWMS GetCapabilities XML during generation.
+* **TWMS GetTileService Base** - XML content used as a base for the TWMS GetTileService XML during generation.
 
 
 ## Archive Configuration
@@ -26,9 +25,11 @@ The archive configuration file contains a listing of "archive" file system locat
 
 ## Projection Configuration
 The projection configuration file contains a set of metadata elements for each projection supported during imagery access.  The metadata associated with each projections includes the following:
-Well Known Text Spatial Reference System  - The well-known text representation of the projection's spatial reference system providing a standard textual representation for spatial reference system information.  The definitions of the well-known text representation are modeled after the POSC/EPSG coordinate system data model. A dataset's coordinate system is identified by the PROJCS keyword if the data is in projected coordinates, by GEOGCS if in geographic coordinates, or by GEOCCS if in geocentric coordinates. WKT values can be found on the SpatialReference.org website.
-WGS 84 Bounding Box - The lower-left and upper-right corners defining the extent of the projection in WGS 84 (urn:ogc:def:crs:OGC:2:84) coordinate reference system.
-"Native" Bounding Box - The lower-left and upper-right corners defining the extent of the projection in the projection's coordinate reference system's units.
+
+* **Well Known Text Spatial Reference System**  - The well-known text representation of the projection's spatial reference system providing a standard textual representation for spatial reference system information.  The definitions of the well-known text representation are modeled after the POSC/EPSG coordinate system data model. A dataset's coordinate system is identified by the PROJCS keyword if the data is in projected coordinates, by GEOGCS if in geographic coordinates, or by GEOCCS if in geocentric coordinates. WKT values can be found on the SpatialReference.org website.
+* **WGS 84 Bounding Box** - The lower-left and upper-right corners defining the extent of the projection in WGS 84 (urn:ogc:def:crs:OGC:2:84) coordinate reference system.
+* **"Native" Bounding Box** - The lower-left and upper-right corners defining the extent of the projection in the projection's coordinate reference system's units.
+
 Each projection is identified by a unique name, specified in the id attribute, which is used for to reference the projection outside of the file.  A sample projection configuration file is included below:
 
 ```bash
@@ -59,13 +60,13 @@ Each projection is identified by a unique name, specified in the id attribute, w
 
 The environment configuration file contains information that the OnEarth layer configuration tool uses during service metadata and cache configuration file creation.  The information associated with each environment includes the following:
 
-* GetCapabilities Location - The file system path where the WMTS and TWMS GetCapabilities XML files are copied after generation.
-* GetTileService Location - The file system path where the TWMS GetTileService XML file should be placed for external access.
-* Cache Location - The file system path where the WMTS and TWMS OnEarth cache config binary files are copied after generation.
-* Staging Location - The file system path where intermediary and final configuration files are staged.
-* Service URL - The base URL for WMTS and TWMS tiled access used during GetCapabilities XML creation.
-* Legend Location - The file system path where legend images are copied after generation. 
-* Legend URL - The base URL for external access to legend images.
+* **GetCapabilities Location** - The file system path where the WMTS and TWMS GetCapabilities XML files are copied after generation.
+* **GetTileService Location** - The file system path where the TWMS GetTileService XML file should be placed for external access.
+* **Cache Location** - The file system path where the WMTS and TWMS OnEarth cache config binary files are copied after generation.
+* **Staging Location** - The file system path where intermediary and final configuration files are staged.
+* **Service URL** - The base URL for WMTS and TWMS tiled access used during GetCapabilities XML creation.
+* **Legend Location** - The file system path where legend images are copied after generation. 
+* **Legend URL** - The base URL for external access to legend images.
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
 
