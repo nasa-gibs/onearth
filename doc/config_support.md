@@ -14,7 +14,7 @@ The OnEarth configuration process requires the following support configuration f
 ## Archive Configuration
 The archive configuration file contains a listing of "archive" file system locations.  Each "archive" location represents a separate top level directory within which MRF files will be located.  This allows for logical organization of an MRF archive based on factors such as projection, mission, etc.  Each archive location is identified by a unique name, specified in the id attribute, which is used for to reference the archive location outside of the file.  A sample archive configuration file is included below:
 
-```bash
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <ArchiveConfiguration>
     <Archive id="antarctic">
@@ -32,7 +32,7 @@ The projection configuration file contains a set of metadata elements for each p
 
 Each projection is identified by a unique name, specified in the id attribute, which is used for to reference the projection outside of the file.  A sample projection configuration file is included below:
 
-```bash
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <ProjectionConfiguration>
     <Projection id="EPSG:3857">
@@ -70,7 +70,7 @@ The environment configuration file contains information that the OnEarth layer c
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
 
-```bash
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <EnvironmentConfiguration>
     <GetCapabilitiesLocation service="wmts">/srv/www/onearth/wmts/antarctic/</GetCapabilitiesLocation>
@@ -89,7 +89,7 @@ The environment configuration does not have unique identifier.  Reference to the
 ## TileMatrixSets
 The Tile Matrix Sets configuration file contains a superset of all WMTS TileMatrixSet XML elements that are included in the WMTS GetCapabilities file during generation.  Tile Matrices are organized by projection.  The projection id identified by a unique name, specified in the id attribute, which is used for reference to the projection outside of the file.  The individual TileMatrixSet elements are uniquely identified by the Identifier child element, which is the primary identifier of the TileMatrixSet according to the WMTS specification.  A sample Tile Matrix Sets configuration file is included below:
 
-```bash
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <TileMatrixSets xmlns:ows="http://www.opengis.net/ows/1.1">
    <Projection id="EPSG:3857">
@@ -174,7 +174,7 @@ The Tile Matrix Sets configuration file contains a superset of all WMTS TileMatr
 ## WMTS GetCapabilities Base
 When generating the WMTS GetCapabilities XML file, there are a set of high level static elements containing information about the project and image services.  For simpler generation, OnEarth uses a static configuration file containing this base WMTS GetCapabilities content.  Details regarding the contents of this section can be found in the WMTS specification.  Note that the OnEarth configuration file contains a "{ServiceURL}" pattern that is replaced by the Service URL value as contained within the environment configuration file specified above.   A sample WMTS GetCapabilities Base configuration file is included below:
 
-```bash
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <Capabilities xmlns="http://www.opengis.net/wmts/1.0"
     xmlns:ows="http://www.opengis.net/ows/1.1"
@@ -265,7 +265,7 @@ When generating the WMTS GetCapabilities XML file, there are a set of high level
 ## TWMS GetCapabilities Base
 When generating the TWMS GetCapabilities XML file, there are a set of high level static elements containing information about the project and image services.  For simpler generation, OnEarth uses a static configuration file containing this base TWMS GetCapabilities content.  Details regarding the contents of this section can be found in the WMS specification.  Note that the OnEarth configuration file contains a "{ServiceURL}" pattern that is replaced by the Service URL value as contained within the environment configuration file specified above.   A sample TWMS GetCapabilities Base configuration file is included below:
 
-```bash
+```xml
 <?xml version='1.0' encoding="UTF-8" standalone="no" ?>
 <!DOCTYPE WMT_MS_Capabilities SYSTEM "http://localhost/WMS_MS_Capabilities.dtd" [ <!ELEMENT VendorSpecificCapabilities EMPTY> ]>
 <WMT_MS_Capabilities version="1.1.1">
@@ -331,7 +331,7 @@ When generating the TWMS GetCapabilities XML file, there are a set of high level
 ## TWMS GetTileService Base
 When generating the TWMS GetTileService XML file, there are a set of high level static elements containing information about the project and image services.  For simpler generation, OnEarth uses a static configuration file containing this base TWMS GetTileService content.  Details regarding the contents of this section can be found in the WMS specification.  Note that the OnEarth configuration file contains a "{ServiceURL}" pattern that is replaced by the Service URL value as contained within the environment configuration file specified above.   A sample TWMS GetTileService Base configuration file is included below:
 
-```bash
+```xml
 <WMS_Tile_Service version="0.1.0">
   <Service>
     <Name>GIBS:WMS:Tile</Name>
