@@ -13,8 +13,8 @@ For more information, visit https://earthdata.nasa.gov/gibs
 
 ## Other Information
 
-* [Installation](doc/install.md)
-* [Layer Configuration](doc/layer_config.md)
+* [Installation](doc/installation.md)
+* [Layer Configuration](doc/configuration.md)
 
 ## Contact
 
