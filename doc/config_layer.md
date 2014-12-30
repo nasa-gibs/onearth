@@ -6,20 +6,20 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **FileNamePrefix** - An internal "short name" used as the prefix for MRF index, image, and metadata file names.
 * **HeaderFileName** - A file path to an existing MRF metadata file for the layer.
 * **Compression** - The image file format.   Valid values are 'PNG', "JPG", "TIF".
-* **Projection** - The identifier of the layer's associated projection as contained within the "projection configuration" support file.
-* **TileMatrixSet** - The identifier of the layer's associated TileMatrixSet within the projection as contained within the "projection configuration" support file.
+* **Projection** - The identifier of the layer's associated projection as contained within the [projection configuration](config_support.md#projection-configuration) and [TileMatrixSets](config_support.md#tilematrixsets) support files.
+* **TileMatrixSet** - The identifier of the layer's associated TileMatrixSet within the projection as contained within the [TileMatrixSets](config_support.md#tilematrixsets) support file.
 * **EmptyTileSize** - The size, in bytes, of the layer's associated empty tile.  
-The offset attribute is used to indicate an offset within the MRF's image file that points to the beginning of the empty tile.  If the empty tile is at the beginning of the MRF image file, then the offset is '0'.
+  * The offset attribute is used to indicate an offset within the MRF's image file that points to the beginning of the empty tile.  If the empty tile is at the beginning of the MRF image file, then the offset is '0'.
 * **Pattern(s)** - Pre-generated URL request patterns that are compiled into the OnEarth cache configuration file for optimized request matching.
-..* DOCUMENT ELSEWHERE
-* **EnvironmentConfig** - The file path to the layer's associated "environment configuration" support file.
+  * DOCUMENT ELSEWHERE
+* **EnvironmentConfig** - The file path to the layer's associated [environment configuration](config_support.md#environment-configuration) support file.
 * **ArchiveLocation** - The directory name within which MRF index, image, and metadata files will be placed.
 * The static attribute indicates whether the layer varies by date (false) or is a single static image (true).
 * The year attribute indicates whether files are grouped into subdirectories by year (true) or are all in the base directory (false).
-* The root attribute references the unique identifier of the layer's associated archive location as contained in the "archive configuration" support file.
+* The root attribute references the unique identifier of the layer's associated archive location as contained in the [archive configuration](config_support.md#archive-configuration) support file.
 * ColorMap (Optional) - A URL to the layer's associated colormap, if one exists, to be included in the WMTS GetCapabilities service document.
 * **Time** - 
-..* DOCUMENT ELSEWHERE
+  * DOCUMENT ELSEWHERE
 
 A sample layer configuration file is shown here:
 
