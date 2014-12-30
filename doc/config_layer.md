@@ -23,7 +23,7 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 
 A sample layer configuration file is shown here:
 
-```bash
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <LayerConfiguration>
  <Identifier>MODIS_Aqua_Cloud_Effective_Radius_v6</Identifier>
