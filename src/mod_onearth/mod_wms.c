@@ -82,6 +82,7 @@ typedef struct {
   apr_pool_t *p;    // The persistent server pool
   char *cachedir;   // The cache directory name
   meta_cache *meta; // Run-time information for each cache
+  char *dir;		// The server directory
 } wms_cfg;
 
 // WMTS error handling
@@ -545,6 +546,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
   int readb;
   int cachesize,count;
   Caches *caches; // Pointer to where the cache config file is loaded
+  cfg->dir = cmd->path; // Need directory path to translate REST calls properly
 
   // This should never happen
   if (!cfg) {
@@ -1850,10 +1852,14 @@ static int mrf_handler(request_rec *r)
 
 int rewrite_rest_uri(request_rec *r) {
 
+	wms_cfg *cfg;
+	cfg = (wms_cfg *)ap_get_module_config(r->per_dir_config,&wms_module);
+
 	int i;
 	char *p;
-	char *params[9];
+	char *params[16];
 	char *last;
+
 	i = 0;
 	p = apr_strtok(r->uri,"/",&last);
 	while (p != NULL && i < 10) {
@@ -1861,8 +1867,16 @@ int rewrite_rest_uri(request_rec *r) {
 		p = apr_strtok(NULL, "/",&last);
 	}
 
-	int length = i;
-	// tested using number of slashes...regex may be better
+	int d = -1; // directories before first REST param
+	int j = 0;
+	for(j = 0; j < i; j++) {
+		if(ap_strstr(cfg->dir, params[j]) != NULL) {
+			d++;
+		}
+	}
+
+	int length = i-d;
+	// test using number of slashes
 	if (length < 7 || length > 8)
 		return -1;
 
@@ -1874,9 +1888,10 @@ int rewrite_rest_uri(request_rec *r) {
 	}
 
 	if (length == 7)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1],params[2],params[3],params[4],params[5],params[6],params[7]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],params[7+d]);
 	if (length == 8)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1],params[2],params[4],params[5],params[6],params[7],params[8],params[3]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],params[8+d],params[3+d]);
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST rewrite %s",r->args);
 	return 0;
 }
 
