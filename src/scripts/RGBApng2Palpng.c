@@ -257,24 +257,24 @@ int return_code=0;
 					
 					// GIBS colormap RGB values
 					if (rgb != NULL) {
-	        			char rgb_string[12];
+	        			char rgb_string[11];
 						int rgb_length = strlen(rgb);
 						int rgb_pos = pos - rgb_length;
 						memcpy(rgb_string, &buffer[rgb_pos+5], 11);
-						rgb_string[12] = '\0';
+						rgb_string[11] = '\0';
 						// break rgb string into int values
 						int rgb_array[3];
 						int i = 0;
 						char *rgb_values = strtok(rgb_string, ",");
 						while (rgb_values != NULL) {
-							rgb_array[i++] = atoi(rgb_values);
+							rgb_array[i++] = strtol(rgb_values,NULL,10);
 							rgb_values = strtok(NULL, ",");
 						}
 						red = rgb_array[0]; green = rgb_array[1]; blue = rgb_array[2];
 						dest_pal->red = red;
 						dest_pal->green = green;
 						dest_pal->blue = blue;
-						
+
 						alpha = strstr(transparent, true_str) != NULL ? 0 : 255;
 						
 						dest_pal++;
@@ -282,7 +282,7 @@ int return_code=0;
 						greenarr[j] = green;
 						bluearr[j] = blue;
 						alphaarr[j] = alpha;
-						//fprintf(stderr, "RGB: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
+						if ( verbose ) fprintf(stderr, "RGBA: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
 						j++;
 					}
     			} while(c != EOF);;
