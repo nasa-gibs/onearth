@@ -1123,9 +1123,10 @@ for conf in conf_files:
                     patterns.append(pattern.firstChild.data.strip())
             except KeyError: # append if type does not exist
                 patterns.append(pattern.firstChild.data.strip())
-        if len(patterns) == 0:
-            log_sig_err('No <Pattern> elements for TWMS found in ' + conf, sigevent_url)
-            continue
+
+#         if len(patterns) == 0:
+#             log_sig_err('No <Pattern> elements for TWMS found in ' + conf, sigevent_url)
+#             continue
             
         # Time
         if configuration_time:
@@ -1317,6 +1318,12 @@ for conf in conf_files:
         metadataElement.appendChild(mrf_dom.createTextNode(colormap))
         twms.appendChild(twms.appendChild(metadataElement))
     
+    # add default TWMS patterns
+    twms_time_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
+    twms_notime_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
+    patterns.append(twms_time_pattern)
+    patterns.append(twms_notime_pattern)
+
     patternElements = []
     for pattern in patterns:
         patternElements.append(mrf_dom.createElement('Pattern'))
@@ -1386,11 +1393,7 @@ for conf in conf_files:
         if '<Pattern>' in line:
             if pattern_replaced == False:
                 patternline = line.split('Pattern')
-                line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]
-#                 if len(rest_patterns) > 0:
-#                     rest_pattern = '<![CDATA[' + rest_patterns[0].replace('{Time}','[-0-9]*').replace('{TileMatrixSet}',projection.tilematrixsets[levels]).replace('{TileMatrix}','[0-9]*').replace('{TileRow}','[0-9]*').replace('{TileCol}','[0-9]*') + ']]>'
-#                     patternline = line.split('</Pattern>')
-#                     line = patternline[0] + "</Pattern>\n    <Pattern>" + rest_pattern + "</Pattern>" + patternline[-1]                    
+                line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]               
                 pattern_replaced = True
             else:
                 line = ''
