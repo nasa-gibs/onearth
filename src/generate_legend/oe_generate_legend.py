@@ -49,15 +49,33 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v0.6.1"
+versionNumber = "v0.6.2"
+
+class ColorMaps:
+    """Collection of ColorMaps"""
+    
+    def __init__(self, colormaps):
+        self.colormaps = colormaps
+        
+    def __repr__(self):
+        xml = '<ColorMaps>'
+        for colormap in self.colormaps:
+            xml = xml + '\n    ' + colormap.__repr__()
+        xml = xml + '\n</ColorMaps>'
+        return xml
+
+    def __str__(self):
+        return self.__repr__().encode(sys.stdout.encoding)
+        
 
 class ColorMap:
     """ColorMap metadata"""
     
-    def __init__(self, units, colormap_entries, style):
+    def __init__(self, units, colormap_entries, style, legend):
         self.units = units
         self.colormap_entries = colormap_entries
         self.style = str(style).lower()
+        self.legend = legend
         
     def __repr__(self):
         if self.units != None:
@@ -67,6 +85,8 @@ class ColorMap:
         for colormap_entry in self.colormap_entries:
             xml = xml + '\n    ' + colormap_entry.__repr__()
         xml = xml + '\n</ColorMap>'
+        if self.legend:
+            xml = xml + '\n' + self.legend.__repr__()
         return xml
 
     def __str__(self):
@@ -96,10 +116,60 @@ class ColorMapEntry:
     
     def __str__(self):
         return self.__repr__().encode(sys.stdout.encoding)
-    
 
-def parse_colormap(colormap_location, verbose):
+
+class Legend:
+    """Legend metadata"""
     
+    def __init__(self, max_label, min_label, legend_type, legend_entries):
+        self.max_label = max_label
+        self.min_label = min_label
+        self.legend_type = legend_type
+        self.legend_entries = legend_entries
+        
+    def __repr__(self):
+        if self.max_label != None and self.min_label != None:
+            xml = '<Legend maxLabel="%s" minLabel="%s" type="%s">' % (self.max_label, self.min_label, self.legend_type)
+        else:
+            xml = '<Legend>'
+        for legend_entry in self.legend_entries:
+            xml = xml + '\n    ' + legend_entry.__repr__()
+        xml = xml + '\n</Legend>'
+        return xml
+
+    def __str__(self):
+        return self.__repr__().encode(sys.stdout.encoding)    
+    
+    
+class LegendEntry:
+    """LegendEntry values within a Legend"""
+    
+    def __init__(self, entry_id, red, green, blue, transparent, source_value, value, label, nodata):
+        self.entry_id = int(entry_id)
+        self.red = int(red)
+        self.green = int(green)
+        self.blue = int(blue)
+        self.transparent = transparent
+        self.source_value = source_value
+        self.value = value
+        self.label = label.replace(u'\u2013', '-')
+        self.nodata = nodata
+        self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
+        
+    def __repr__(self):
+        if self.value != None:
+            xml = '<LegendEntry id="%d" rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.entry_id, self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.value, self.label)
+        else:
+            xml = '<LegendEntry id="%d" rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" label="%s"/>' % (self.entry_id, self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.label)
+        return xml
+    
+    def __str__(self):
+        return self.__repr__().encode(sys.stdout.encoding)
+
+
+def parse_colormaps(colormap_location, verbose):
+    """Parse the color map XML file"""
+
     try:
         if verbose:
             print "Reading color map:", colormap_location
@@ -115,8 +185,24 @@ def parse_colormap(colormap_location, verbose):
             print >> sys.stderr, msg
             raise Exception(msg)
             sys.exit(1)
+    
+    tree=ET.fromstring(dom.toxml())
+    colormaps = []   
+    if tree.tag == 'ColorMap':
+        colormaps.append(tree)
+        if verbose:
+            print '-------------------\n' +  ET.tostring(tree, encoding='utf8', method='xml') + '\n-------------------'
+    for colormap in tree.findall('ColorMap'):
+        colormaps.append(colormap)
+        if verbose:
+            print '-------------------\n' + ET.tostring(colormap, encoding='utf8', method='xml') + '\n-------------------'
+    
+    return colormaps
 
-        
+def parse_colormap(colormap_xml, verbose):
+    
+    dom = xml.dom.minidom.parseString(ET.tostring(colormap_xml))
+           
     colormap_element = dom.getElementsByTagName("ColorMap")[0]
     try:
         units = colormap_element.attributes['units'].value
@@ -156,13 +242,70 @@ def parse_colormap(colormap_location, verbose):
             nodata = False
         
         colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label, nodata))
+    
+    legend = None
+    legend_elements = dom.getElementsByTagName("Legend")
+    if len(legend_elements) > 0:
+        legend = parse_legend(colormap_xml)
+        style = legend.legend_type
         
-    colormap = ColorMap(units, colormap_entries, style)
+    colormap = ColorMap(units, colormap_entries, style, legend)
+    
     if verbose:
         print "ColorMap style:", style
         print colormap
     
     return colormap
+
+def parse_legend(legend_xml):
+    
+    legend_entries = []
+    legend_element = legend_xml.find('Legend')
+    legend_entry_elements = legend_element.findall("LegendEntry")
+    for legend_entry in legend_entry_elements:    
+        red, green, blue = legend_entry.get("rgb").split(",")
+        try:
+            transparent = legend_entry.get('transparent')
+            if transparent != None:
+                transparent = True if transparent.lower() == 'true' else False
+            else:
+                transparent = False
+        except KeyError:
+            transparent = False
+        try:
+            value = legend_entry.get('value')
+        except KeyError:
+            value = None
+        try:
+            source_value = legend_entry.get('sourceValue')
+        except KeyError:
+            source_value = value
+        try:
+            label = legend_entry.get('label')
+        except KeyError:
+            label = value
+        try:
+            nodata = legend_entry.get('nodata')
+            if nodata != None:
+                
+                nodata = True if nodata.lower() == 'true' else False
+        except KeyError:
+            nodata = False
+        legend_entry = LegendEntry(legend_entry.get("id"), red, green, blue, transparent, source_value, value, label, nodata)
+        legend_entries.append(legend_entry)
+    
+    try:
+        max_label = legend_element.get("maxLabel")
+    except KeyError:
+        max_label = None
+    try:
+        min_label = legend_element.get("minLabel")
+    except KeyError:
+        min_label = None
+    
+    legend = Legend(max_label, min_label,legend_element.get("type"), legend_entries)
+    
+    return legend
 
 
 def generate_legend(colormap, output, output_format, orientation):
@@ -185,40 +328,66 @@ def generate_legend(colormap, output, output_format, orientation):
     
     # remove transparent values
     colormap_entries = []
-    for colormap_entry in colormap.colormap_entries:
-        if colormap_entry.transparent == False:
-            labels.append(colormap_entry.label)
-            if colormap_entry.value != None:
-                has_values = True
-                colormap_entries.append(colormap_entry)
-                colors.append(colormap_entry.color)
-            elif colormap.style == "classification" and colormap_entry.value == None:
-                legendcolors.append(colormap_entry.color)
-                legendlabels.append(colormap_entry.label)
     
-    if len(colors) > 10:
-        is_large_colormap = True
+    if colormap.legend == None:
+        for colormap_entry in colormap.colormap_entries:
+            if colormap_entry.transparent == False:
+                labels.append(colormap_entry.label)
+                if colormap_entry.value != None:
+                    has_values = True
+                    colormap_entries.append(colormap_entry)
+                    colors.append(colormap_entry.color)
+                elif colormap.style == "classification" and colormap_entry.value == None:
+                    legendcolors.append(colormap_entry.color)
+                    legendlabels.append(colormap_entry.label)
+                    
+        if len(colors) > 10:
+            is_large_colormap = True
+                    
+    else:
+        for legend_entry in colormap.legend.legend_entries:
+            if legend_entry.transparent == False:
+                labels.append(legend_entry.label)
+                if legend_entry.value != None:
+                    has_values = True
+                    colormap_entries.append(legend_entry)
+                    colors.append(legend_entry.color)
+                    legendcolors.append(legend_entry.color)
+                    legendlabels.append(legend_entry.label)            
+    
     
     for idx in range(0, len(colormap_entries)):
+        if "(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value and ',' not in colormap_entries[idx].value:
+            colormap_entries[idx].value = colormap_entries[idx].value.replace('[','').replace(']','')
         if colormap.style == "range" or ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # break apart values for ranges
-            bounds.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
-            ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace('(','')))
+            bounds.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
+            if colormap.legend == None:
+                ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
+            else:
+                ticks.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
+                ticklabels.append(colormap_entries[idx].label)
             if idx == len(colormap_entries)-1 and ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # add ending range value
-                ticklabels.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
-                bounds.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace(']','')))
-                
-        else: # assume discrete values
-            bounds.append(float(colormap_entries[idx].value))
-            ticklabels.append(colormap_entries[idx].value)
-            if is_large_colormap == False:
-                center_ticks = True
-                if idx == len(colormap_entries)-1:
-                    increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
-                    ticks.append(float(colormap_entries[idx].value) + increment/2)
-                    bounds.append(float(colormap_entries[idx].value)+ increment)
+                bounds.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
+                if colormap.legend == None:
+                    ticklabels.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
                 else:
-                    increment = (float(colormap_entries[idx+1].value) - float(colormap_entries[idx].value))
-                    ticks.append(float(colormap_entries[idx].value) + increment/2)
+                    ticks.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
+                    ticklabels.append(colormap_entries[idx].label)
+        else:  # assume discrete values
+                bounds.append(float(colormap_entries[idx].value))
+                if colormap.legend == None:
+                    ticklabels.append(colormap_entries[idx].value)
+                else:
+                    ticklabels.append(colormap_entries[idx].label)
+                if is_large_colormap == False:
+                    center_ticks = True
+                    if idx == len(colormap_entries)-1:
+                        increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
+                        ticks.append(float(colormap_entries[idx].value) + increment/2)
+                        bounds.append(float(colormap_entries[idx].value)+ increment)
+                    else:
+                        increment = (float(colormap_entries[idx+1].value.replace('[','').replace(']','')) - float(colormap_entries[idx].value))
+                        ticks.append(float(colormap_entries[idx].value) + increment/2)
                         
     if orientation == 'horizontal':        
         fig = pyplot.figure(figsize=(4,0.75))
@@ -269,9 +438,10 @@ def generate_legend(colormap, output, output_format, orientation):
             for tick in cb.ax.xaxis.get_ticklabels():
                 tick.set_fontsize(8)
                 
-            if center_ticks == True:
+            if center_ticks == True or colormap.legend != None:
                 cb.set_ticks(ticks)
-                cb.ax.set_xticklabels(ticklabels)
+                if len(ticklabels[0]) <= 5:
+                    cb.ax.set_xticklabels(ticklabels)
             
             if colormap.units != None:
                 if colormap.style != "classification":
@@ -318,7 +488,7 @@ def generate_legend(colormap, output, output_format, orientation):
                 ax.set_axis_off()
      
         if has_values == True:
-            cmap = mpl.colors.ListedColormap(colors)        
+            cmap = mpl.colors.ListedColormap(colors)
             ax.set_yticklabels(ticklabels)
             if is_large_colormap == True:
                 norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
@@ -332,9 +502,10 @@ def generate_legend(colormap, output, output_format, orientation):
             for tick in cb.ax.yaxis.get_ticklabels():
                 tick.set_fontsize(10)
         
-            if center_ticks == True:
+            if center_ticks == True or colormap.legend != None:
                 cb.set_ticks(ticks)
-                cb.ax.set_yticklabels(ticklabels)
+                if len(ticklabels[0]) <= 8:
+                    cb.ax.set_yticklabels(ticklabels)
             
             # set units on first and last labels, if applicable
             if colormap.units != None:
@@ -477,19 +648,28 @@ if options.orientation:
     if options.orientation not in ['horizontal','vertical']:
         print str(options.orientation) + " is not a valid legend orientation. Please choose horizontal or vertical."
         exit()
-    
-# parse colormap
+
+# parse colormap file
 try:
-    colormap = parse_colormap(colormap_location, options.verbose)
+    colormaps = parse_colormaps(colormap_location, options.verbose)
 except IOError,e:
     print str(e)
     exit()
+    
+# parse colormaps
+for colormap_xml in colormaps:
+    
+    try:
+        colormap = parse_colormap(colormap_xml, options.verbose)
+    except IOError,e:
+        print str(e)
+        exit()
 
 # generate legend
-try:
-    generate_legend(colormap, output_location, options.format, options.orientation)
-except IOError,e:
-    print str(e)
-    exit()
+    try:
+        generate_legend(colormap, output_location, options.format, options.orientation)
+    except IOError,e:
+        print str(e)
+        exit()
     
 exit()
