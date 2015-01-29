@@ -833,7 +833,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --skip_empty_tiles'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -846,6 +846,9 @@ parser.add_option('-c', '--conf_file',
 parser.add_option('-d', '--layer_dir',
                   action='store', type='string', dest='layer_directory',
                   help='Full path of directory containing configuration files for layers.  Default: $LCDIR/layers/')
+parser.add_option("-e", "--skip_empty_tiles",
+                  action="store_true", dest="skip_empty_tiles", 
+                  default=False, help="Do not generate empty tiles for layers using color maps in configuration.")
 parser.add_option("-g", "--generate_legend",
                   action="store_true", dest="generate_legend", 
                   default=False, help="Generate legends for layers using color maps in configuration.")
@@ -875,7 +878,7 @@ parser.add_option('-t', '--time',
                   help='ISO 8601 time(s) for single configuration file (conf_file must be specified).')
 parser.add_option("-w", "--no_wmts",
                   action="store_true", dest="no_wmts", 
-                  default=False, help="Do not use configurations for WMTS")
+                  default=False, help="Do not use configurations for WMTS.")
 parser.add_option("-x", "--no_xml",
                   action="store_true", dest="no_xml", 
                   default=False, help="Do not generate getCapabilities and getTileService XML.")
@@ -906,6 +909,8 @@ no_wmts = options.no_wmts
 restart = options.restart
 # Time for conf file.
 configuration_time = options.time
+# Generate Empty Tiles
+skip_empty_tiles = options.skip_empty_tiles
 # Generate legends
 legend = options.generate_legend
 # Projection configuration
@@ -1054,15 +1059,15 @@ for conf in conf_files:
         # Optional parameters
         try:
             tiledGroupName = get_dom_tag_value(dom, 'TiledGroupName')
-        except IndexError:
+        except:
             tiledGroupName = identifier + " tileset"
         try:
             abstract = get_dom_tag_value(dom, 'Abstract')
-        except IndexError:
+        except:
             abstract = identifier + " abstract"
         try:
             archiveLocation = get_dom_tag_value(dom, 'ArchiveLocation')
-        except IndexError:
+        except:
             archiveLocation = None
         try:
             static = dom.getElementsByTagName('ArchiveLocation')[0].attributes['static'].value.lower() in ['true']
@@ -1083,15 +1088,15 @@ for conf in conf_files:
         archiveLocation = archive_root + archiveLocation
         try:
             headerFileName = get_dom_tag_value(dom, 'HeaderFileName')
-        except IndexError:
+        except:
             headerFileName = None
         try:
             dataFileLocation = get_dom_tag_value(dom, 'DataFileLocation')
-        except IndexError:
+        except:
             dataFileLocation = None
         try:
             indexFileLocation = get_dom_tag_value(dom, 'IndexFileLocation')
-        except IndexError:
+        except:
             indexFileLocation = None
         try:
             projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir, tilematrixset_configuration)
@@ -1103,11 +1108,11 @@ for conf in conf_files:
             continue
         try:
             colormap = get_dom_tag_value(dom, 'ColorMap')
-        except IndexError:
+        except:
             colormap = None
         try:
             emptyTile = get_dom_tag_value(dom, 'EmptyTile')
-        except IndexError:
+        except:
             emptyTile = None
         try:
             if emptyTile == None:
@@ -1307,12 +1312,22 @@ for conf in conf_files:
     levelsElement = mrf_dom.createElement('Levels')
     levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
     
-    # Generate empty tile and override size
-    if colormap != None and emptyTile != None:
-        pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
-        tileX = int(pageSize.getAttribute('x'))
-        tileY = int(pageSize.getAttribute('y'))
-        emptyTileSize = generate_empty_tile(colormap, emptyTile, tileX, tileY)
+    if emptyTile != None:
+        # Generate empty tile and override size if colormap is used
+        if colormap != None and skip_empty_tiles == False:
+            pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
+            tileX = int(pageSize.getAttribute('x'))
+            tileY = int(pageSize.getAttribute('y'))
+            emptyTileSize = generate_empty_tile(colormap, emptyTile, tileX, tileY)
+        else: # Override size if there is no colormap
+            try:
+                # Get file size
+                print "\nReading empty tile file: " + emptyTile
+                emptyTileSize = os.path.getsize(emptyTile)
+                print "Empty tile size: " + str(emptyTileSize)
+            except:
+                mssg=str().join(['Cannot read empty tile:  ', emptyTile])
+                log_sig_err(mssg, sigevent_url)
     
     emptyInfoElement = mrf_dom.createElement('EmptyInfo')
     emptyInfoElement.setAttribute('size', str(emptyTileSize))
