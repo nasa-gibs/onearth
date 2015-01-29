@@ -6,6 +6,8 @@
         <xs:element ref="Identifier"/>
         <xs:element ref="Title"/>
         <xs:element ref="FileNamePrefix"/>
+        <xs:element ref="Abstract" minOccurs="0"/>
+        <xs:element ref="TiledGroupName" minOccurs="0"/>
         <xs:element ref="HeaderFileName" minOccurs="0"/>
         <xs:element ref="DataFileLocation" minOccurs="0"/>
         <xs:element ref="IndexFileLocation" minOccurs="0"/>
@@ -14,7 +16,7 @@
         <xs:element ref="EmptyTileSize" minOccurs="0"/>
         <xs:element ref="EmptyTile" minOccurs="0"/>
         <xs:element ref="Projection"/>
-        <xs:element maxOccurs="unbounded" ref="Pattern"/>
+        <xs:element ref="Pattern" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="EnvironmentConfig"/>
         <xs:element ref="ArchiveLocation" minOccurs="0"/>
         <xs:element ref="ColorMap" minOccurs="0"/>
@@ -25,6 +27,8 @@
   <xs:element name="Identifier" type="xs:NCName"/>
   <xs:element name="Title" type="xs:string"/>
   <xs:element name="FileNamePrefix" type="xs:string"/>
+  <xs:element name="Abstract" type="xs:string"/>
+  <xs:element name="TiledGroupName" type="xs:string"/>
   <xs:element name="ArchiveLocation" nillable="true">
     <xs:complexType mixed="true">
       <xs:attribute name="static" use="required" type="xs:boolean"/>

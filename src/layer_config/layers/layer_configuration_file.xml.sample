@@ -3,6 +3,7 @@
  <Identifier>MODIS_Aqua_Cloud_Top_Temp_Night</Identifier>
  <Title>MODIS AQUA Nighttime Cloud Top Temperature</Title>
  <FileNamePrefix>MYR6CTTLLNI</FileNamePrefix>
+ <TiledGroupName>MODIS AQUA Nighttime Cloud Top Temperature tileset</TiledGroupName>
  <HeaderFileName>/etc/onearth/config/headers/MYR6CTTLLNITTTTTTT_.mrf</HeaderFileName>
  <Compression>PNG</Compression>
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>

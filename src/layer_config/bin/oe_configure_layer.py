@@ -32,14 +32,11 @@
  <Identifier>MODIS_Aqua_Cloud_Top_Temp_Night</Identifier>
  <Title>MODIS AQUA Nighttime Cloud Top Temperature</Title>
  <FileNamePrefix>MYR6CTTLLNI</FileNamePrefix>
+ <TiledGroupName>MODIS AQUA Nighttime Cloud Top Temperature tileset</TiledGroupName>
  <Compression>PNG</Compression>
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
  <EmptyTileSize offset="0">1397</EmptyTileSize>
  <Projection>EPSG:4326</Projection> 
- <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
- <Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Cloud_Top_Temp_Night&srs=EPSG:4326&format=image%2Fpng&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
- <Pattern><![CDATA[LAYERS=MODIS_Aqua_Cloud_Top_Temp_Night&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A4326&BBOX=[-,\.0-9+Ee]*&WIDTH=512&HEIGHT=512]]></Pattern>
- <Pattern><![CDATA[service=WMS&request=GetMap&version=1.1.1&srs=EPSG:4326&layers=MODIS_Aqua_Cloud_Top_Temp_Night&styles=default&transparent=TRUE&format=image%2Fpng&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
  <EnvironmentConfig>/layer_config/conf/environment_geographic.xml</EnvironmentConfig>
  <ArchiveLocation static="false" year="true">/data/EPSG4326/MYR6CTTLLNI</ArchiveLocation>
  <ColorMap>http://localhost/colormap/sample.xml</ColorMap>
@@ -50,7 +47,7 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2014
+# 2015
 
 import os
 import subprocess
@@ -68,7 +65,7 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.6.1'
+versionNumber = '0.6.2'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -1056,6 +1053,14 @@ for conf in conf_files:
 
         # Optional parameters
         try:
+            tiledGroupName = get_dom_tag_value(dom, 'TiledGroupName')
+        except IndexError:
+            tiledGroupName = identifier + " tileset"
+        try:
+            abstract = get_dom_tag_value(dom, 'Abstract')
+        except IndexError:
+            abstract = identifier + " abstract"
+        try:
             archiveLocation = get_dom_tag_value(dom, 'ArchiveLocation')
         except IndexError:
             archiveLocation = None
@@ -1160,6 +1165,7 @@ for conf in conf_files:
     log_info_mssg('config: Identifier: ' + identifier)
     log_info_mssg('config: Title: ' + title)
     log_info_mssg('config: FileNamePrefix: ' + fileNamePrefix)
+    log_info_mssg('config: TiledGroupName: ' + tiledGroupName)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
     if emptyTile:
@@ -1643,7 +1649,7 @@ for conf in conf_files:
             log_sig_exit('ERROR', mssg, sigevent_url)
     
         twms_layer_template = """    <Layer queryable=\"0\">
-      <Name>$Layer</Name>
+      <Name>$Identifier</Name>
       <Title xml:lang=\"en\">$Title</Title>
       <Abstract xml:lang=\"en\">$Abstract</Abstract>
       <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\"/>
@@ -1659,12 +1665,12 @@ for conf in conf_files:
             # replace lines in template
             if '</Layer>' in line:
                 line = ' '+line+'\n'  
-            if '$Layer' in line:
-                line = line.replace("$Layer",identifier)              
+            if '$Identifier' in line:
+                line = line.replace("$Identifier",identifier)              
             if '$Title' in line:
                 line = line.replace("$Title",title)
             if '$Abstract' in line:
-                line = line.replace("$Abstract",title + " Abstract")
+                line = line.replace("$Abstract", abstract)
             if '$minx' in line:
                 line = line.replace("$minx",projection.lowercorner[0])
             if '$miny' in line:
@@ -1688,9 +1694,9 @@ for conf in conf_files:
             log_sig_exit('ERROR', mssg, sigevent_url)
     
         twms_layer_template = """<TiledGroup>
-    <Name>$Name</Name>
+    <Name>$TiledGroupName</Name>
     <Title xml:lang=\"en\">$Title</Title>
-    <Abstract xml:lang=\"en\">$Name</Abstract>
+    <Abstract xml:lang=\"en\">$Abstract</Abstract>
     <Projection>$Projection</Projection>
     <Pad>0</Pad>
     <Bands>$Bands</Bands>
@@ -1704,10 +1710,12 @@ $Patterns</TiledGroup>"""
             # replace lines in template 
             if '</TiledGroup>' in line:
                 line = ' '+line+'\n'              
-            if '$Name' in line:
-                line = line.replace("$Name",identifier) 
+            if '$TiledGroupName' in line:
+                line = line.replace("$TiledGroupName",tiledGroupName) 
             if '$Title' in line:
                 line = line.replace("$Title",title)
+            if '$Abstract' in line:
+                line = line.replace("$Abstract",abstract)
             if '$Projection' in line:
                 line = line.replace("$Projection",projection.wkt)
             if '$Bands' in line:
