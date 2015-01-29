@@ -26,7 +26,7 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2014
+# 2015
 
 import sys
 import urllib
@@ -153,7 +153,7 @@ class LegendEntry:
         self.transparent = transparent
         self.source_value = source_value
         self.value = value
-        self.label = label.replace(u'\u2013', '-')
+        self.label = None if label==None else label.replace(u'\u2013', '-')
         self.nodata = nodata
         self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
         
@@ -384,7 +384,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legendcolors.append(colormap_entry.color)
                     legendlabels.append(colormap_entry.label)
                         
-            if len(colors) > 10 and colormap.legend == None:
+            if len(colors) > 12:
                 is_large_colormap = True         
         
         
@@ -480,10 +480,15 @@ def generate_legend(colormaps, output, output_format, orientation):
                 for tick in cb.ax.xaxis.get_ticklabels():
                     tick.set_fontsize(8)
                     
-                if center_ticks == True or colormap.legend != None:
+                if center_ticks == True:
                     cb.set_ticks(ticks)
-                    if len(ticklabels[0]) <= 5:
-                        cb.ax.set_xticklabels(ticklabels)
+                    cb.ax.set_xticklabels(ticklabels) 
+                    
+                if colormap.legend != None and is_large_colormap == False:
+                    cb.set_ticks(ticks)
+                    if ticklabels[0] != None:
+                        if len(ticklabels[0]) <= 5:
+                            cb.ax.set_xticklabels(ticklabels)   
                 
                 if colormap.units != None and style != "classification":
                     fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
@@ -548,10 +553,15 @@ def generate_legend(colormaps, output, output_format, orientation):
                 for tick in cb.ax.yaxis.get_ticklabels():
                     tick.set_fontsize(10)
             
-                if center_ticks == True or colormap.legend != None:
+                if center_ticks == True:
                     cb.set_ticks(ticks)
-                    if len(ticklabels[0]) <= 8:
-                        cb.ax.set_yticklabels(ticklabels)
+                    cb.ax.set_yticklabels(ticklabels) 
+                    
+                if colormap.legend != None and is_large_colormap == False:
+                    cb.set_ticks(ticks)
+                    if ticklabels[0] != None:
+                        if len(ticklabels[0]) <= 8:
+                            cb.ax.set_yticklabels(ticklabels)                   
                 
                 # set units on first and last labels, if applicable
                 if colormap.units != None:
@@ -575,7 +585,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                 else:
                     title_left = 0.5
                 if colormap.style != "classification":
-                    fig.text(title_left, 0.95, colormap.title, fontsize=10, horizontalalignment='center') 
+                    fig.text(title_left, 0.96, colormap.title, fontsize=10, horizontalalignment='center') 
                 else:
                     fig.text(title_left, 1-t, colormap.title, fontsize=10, horizontalalignment='center')
             

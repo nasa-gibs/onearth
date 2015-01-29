@@ -1,17 +1,28 @@
-<ColorMap units="mm">
-    <ColorMapEntry rgb="017,017,017" transparent="true" sourceValue="[0,2)" value="[0,2)" label="0 – 2 mm"/>
-    <ColorMapEntry rgb="035,000,035" transparent="false" sourceValue="[2,4)" value="[2,4)" label="2 – 4 mm"/>
-    <ColorMapEntry rgb="078,000,078" transparent="false" sourceValue="[4,6)" value="[4,6)" label="4 – 6 mm"/>
-    <ColorMapEntry rgb="120,000,120" transparent="false" sourceValue="[6,8)" value="[6,8)" label="6 – 8 mm"/>
-    <ColorMapEntry rgb="163,000,163" transparent="false" sourceValue="[8,10)" value="[8,10)" label="8 – 10 mm"/>
-    <ColorMapEntry rgb="205,000,205" transparent="false" sourceValue="[10,12)" value="[10,12)" label="10 – 12 mm"/>
-    <ColorMapEntry rgb="248,000,248" transparent="false" sourceValue="[12,14)" value="[12,14)" label="12 – 14 mm"/>
-    <ColorMapEntry rgb="0,0,255" transparent="false" sourceValue="0" label="Frozen"/>
-    <ColorMapEntry rgb="255,0,0" transparent="false" sourceValue="1" label="Thawed"/>
-    <ColorMapEntry rgb="165,165,0" transparent="false" sourceValue="2" label="Transitional"/>
-    <ColorMapEntry rgb="0,255,0" transparent="false" sourceValue="3" label="Inv Transitional"/>
-    <ColorMapEntry rgb="255,255,255" transparent="false" sourceValue="251" label="No FT Status"/>
-    <ColorMapEntry rgb="17,17,17" transparent="false" sourceValue="252" label="Non-Cold Area"/>
-    <ColorMapEntry rgb="119,85,51" transparent="false" sourceValue="254" label="Open Water"/>
-    <ColorMapEntry rgb="119,154,187" transparent="false" sourceValue="255" label="Fill"/>
-</ColorMap>
+<ColorMaps>
+    <ColorMap units="m">
+        <Entries minLabel="10 m" maxLabel="70 m">
+            <ColorMapEntry rgb="102,000,119" transparent="false" sourceValue="[1000,2000)" value="[10,20)" label="10 – 20 m" ref="1"/>
+            <ColorMapEntry rgb="102,001,119" transparent="false" sourceValue="[2000,3000)" value="[20,30)" label="20 – 30 m" ref="1"/>
+            <ColorMapEntry rgb="102,002,119" transparent="false" sourceValue="[3000,4000)" value="[30,40)" label="30 – 40 m" ref="1"/>
+            <ColorMapEntry rgb="183,015,141" transparent="false" sourceValue="[4000,5000)" value="[40,50)" label="40 – 50 m" ref="2"/>
+            <ColorMapEntry rgb="183,016,141" transparent="false" sourceValue="[5000,6000)" value="[50,60)" label="50 – 60 m" ref="2"/>
+            <ColorMapEntry rgb="183,017,141" transparent="false" sourceValue="[6000,7000)" value="[60,70)" label="60 – 70 m" ref="2"/>
+        </Entries>
+        <Legend type="continuous" minLabel="10 m" maxLabel="70 m">
+            <LegendEntry rgb="102,000,119" value="[10,40)" label="10 – 40 m" id="1"/>
+            <LegendEntry rgb="183,015,141" value="[40,70)" label="40 – 70 m" id="2"/>
+        </Legend>
+    </ColorMap>
+    <ColorMap units="">
+        <Entries>
+            <ColorMapEntry rgb="111,220,255" transparent="false" sourceValue="[1]" label="Frozen" ref="1"/>
+            <ColorMapEntry rgb="222,220,255" transparent="false" sourceValue="[2]" label="Thawed" ref="2"/>
+            <ColorMapEntry rgb="000,220,255" transparent="false" sourceValue="[3]" label="Transitional" ref="3"/>
+        </Entries>
+        <Legend type="classification">
+            <LegendEntry rgb="111,220,255" label="Frozen" id="1"/>
+            <LegendEntry rgb="222,220,255" label="Thawed" id="2"/>
+            <LegendEntry rgb="000,220,255" label="Transitional" id="3"/>
+        </Legend>
+    </ColorMap>
+</ColorMaps>
