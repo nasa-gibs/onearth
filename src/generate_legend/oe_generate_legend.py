@@ -574,7 +574,10 @@ def generate_legend(colormaps, output, output_format, orientation):
                     title_left = left+0.025
                 else:
                     title_left = 0.5
-                fig.text(title_left, 0.95, colormap.title, fontsize=10, horizontalalignment='center') 
+                if colormap.style != "classification":
+                    fig.text(title_left, 0.95, colormap.title, fontsize=10, horizontalalignment='center') 
+                else:
+                    fig.text(title_left, 1-t, colormap.title, fontsize=10, horizontalalignment='center')
             
     fig.savefig(output, transparent=True, format=output_format)
         
