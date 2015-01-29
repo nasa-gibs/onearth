@@ -42,7 +42,11 @@
   <xs:element name="IndexFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="Compression" type="xs:NCName"/>
   <xs:element name="TileMatrixSet" type="xs:string"/>
-  <xs:element name="EmptyTile" type="xs:string" nillable="true"/>
+  <xs:element name="EmptyTile" nillable="true">
+    <xs:complexType mixed="true">
+      <xs:attribute name="offset" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="EmptyTileSize">
     <xs:complexType>
       <xs:simpleContent>

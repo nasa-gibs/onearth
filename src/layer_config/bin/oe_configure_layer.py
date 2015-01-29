@@ -1102,19 +1102,20 @@ for conf in conf_files:
             log_sig_err(str(e), sigevent_url)
             continue
         try:
-            emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
-        except:
-            emptyTileOffset = 0
-
-        try:
             colormap = get_dom_tag_value(dom, 'ColorMap')
         except IndexError:
             colormap = None
-                
         try:
             emptyTile = get_dom_tag_value(dom, 'EmptyTile')
         except IndexError:
             emptyTile = None
+        try:
+            if emptyTile == None:
+                emptyTileOffset = dom.getElementsByTagName('EmptyTileSize')[0].attributes['offset'].value
+            else:
+                emptyTileOffset = dom.getElementsByTagName('EmptyTile')[0].attributes['offset'].value
+        except:
+            emptyTileOffset = 0
             
         # Patterns
         patterns = []
