@@ -1824,7 +1824,7 @@ if no_wmts == False:
                 # Add layer metadata to getCapabilities
                 layer_xml = ""
                 for xml_file in sorted(os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
-                    if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml":
+                    if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml" and xml_file != "cache_wmts.xml":
                         layer_xml = layer_xml + open(wmts_endpoint.path+'/'+str(xml_file), 'r').read()
                 getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
                 getCapabilities_base = open(getCapabilities_file, 'r+')
