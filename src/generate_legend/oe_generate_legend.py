@@ -350,13 +350,13 @@ def generate_legend(colormaps, output, output_format, orientation):
     colors = []
     colormap_entries = []
     colormap_count = 0
+    labels = []
         
     for colormap in colormaps:
         colormap_count += 1
         is_large_colormap = False
         center_ticks = False
         bounds = []
-        labels = []
         ticks = []
         ticklabels = []
         legendcolors = []
@@ -499,7 +499,6 @@ def generate_legend(colormaps, output, output_format, orientation):
         else: # default vertical orientation
             left = 0.2 + (0.3*(colormap_count-1))
             width = 0.15/lc
-            ax = fig.add_axes([left, 0.05-(t/4), width, 0.9])
                         
             # use legend for classifications
             if colormap.style == "classification":
@@ -532,9 +531,9 @@ def generate_legend(colormaps, output, output_format, orientation):
                 else:
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
-                ax.set_axis_off()
          
             if has_values == True and colormap.style != "classification":
+                ax = fig.add_axes([left, 0.06-(t/4), width, 0.9])
                 cmap = mpl.colors.ListedColormap(colors)
                 ax.set_yticklabels(ticklabels)
                 if is_large_colormap == True:
@@ -581,11 +580,13 @@ def generate_legend(colormaps, output, output_format, orientation):
         
     # Add tooltips to SVG    
     if output_format == 'svg' and has_values == True and is_large_colormap == False:
-        
+            
+        ax = fig.get_axes()[0] # only supports one axis
         if orientation == "horizontal":
             ticklabels = ax.get_xticklabels()
         else:
             ticklabels = ax.get_yticklabels()
+
         for i, ticklabel in enumerate(ticklabels):
             if i < len(labels):
                 text = labels[i]
@@ -601,8 +602,8 @@ def generate_legend(colormaps, output, output_format, orientation):
 
         # Set id for the annotations
         for i, t in enumerate(ax.texts):
-            t.set_gid('tooltip_%d'%i)
-            
+            t.set_gid('tooltip_%d' % i)
+        
         # Save the figure
         f = StringIO()
         plt.savefig(f, transparent=True, format="svg")     
@@ -613,9 +614,9 @@ def generate_legend(colormaps, output, output_format, orientation):
         
         # Hide the tooltips
         for i, t in enumerate(ax.texts):
-            el = xmlid['tooltip_%d'%i]
+            el = xmlid['tooltip_%d' % i]
             el.set('visibility', 'hidden')            
-        
+    
         # Add mouseover events to color bar
         el = xmlid['QuadMesh_1']
         elements = list(el)
