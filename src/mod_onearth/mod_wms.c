@@ -1855,6 +1855,9 @@ int rewrite_rest_uri(request_rec *r) {
 	wms_cfg *cfg;
 	cfg = (wms_cfg *)ap_get_module_config(r->per_dir_config,&wms_module);
 
+	if (cfg->dir == NULL)
+		return -1;
+
 	int i;
 	char *p;
 	char *params[16];
