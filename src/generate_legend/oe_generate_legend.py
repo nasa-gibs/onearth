@@ -463,7 +463,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
             
-            if has_values == True and colormap.style != "classification":
+            if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 ax = fig.add_axes([0.05, bottom, 0.9, height])
                 cmap = mpl.colors.ListedColormap(colors)
                 ax.set_xticklabels(ticklabels)
@@ -532,7 +532,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
          
-            if has_values == True and colormap.style != "classification":
+            if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 ax = fig.add_axes([left, 0.06-(t/4), width, 0.9])
                 cmap = mpl.colors.ListedColormap(colors)
                 ax.set_yticklabels(ticklabels)
