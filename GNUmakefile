@@ -52,6 +52,7 @@ build/numpy/VERSION:
 	tar xf upstream/$(NUMPY_ARTIFACT) -C build/numpy \
 		--strip-components=1 --exclude=.gitignore
 	( cd build/numpy ; \
+		sudo yum remove numpy ; \
 		sudo python setup.py build; \
 		sudo python setup.py install )
 		
