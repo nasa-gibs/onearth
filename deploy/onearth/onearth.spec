@@ -6,6 +6,8 @@ Summary:	Installation packages for OnEarth
 License:	ASL 2.0+
 URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
+Source1:	https://pypi.python.org/packages/source/n/numpy/numpy-1.5.1.tar.gz
+Source2:	http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matplotlib-1.3.1/matplotlib-1.3.1.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -23,11 +25,6 @@ Requires:	httpd
 Requires:	gibs-gdal
 
 Obsoletes:	mod_twms mod_wms mod_onearth
-
-Provides:	numpy = 1.5.1
-Obsoletes:	numpy < 1.5.1
-Provides:	python-matplotlib = 1.3.1
-Obsoletes:	python-matplotlib < 1.3.1
 
 %description
 Installation packages for OnEarth
@@ -62,14 +59,19 @@ MRF generator for OnEarth
 Summary:	Layer configuration tools for OnEarth
 Requires:	%{name} = %{version}-%{release}
 BuildArch:	noarch
+Conflicts:  numpy < 1.5.1
+Provides:	python-matplotlib = 1.3.1
+Obsoletes:	python-matplotlib < 1.3.1
 
 %description config
-Layer configuration tools for OnEarth
+Layer configuration tools for OnEarth including Legend Generator
 
 
 %prep
 %setup -q
-
+mkdir upstream
+cp %{SOURCE1} upstream
+cp %{SOURCE2} upstream
 
 %build
 %if 0%{?el6}
@@ -102,10 +104,8 @@ install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/on_earth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
 
-
 %clean
 rm -rf %{buildroot}
-
 
 %files
 %{_libdir}/httpd/modules/*
@@ -127,6 +127,16 @@ rm -rf %{buildroot}
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_generate_legend.py
 %{_bindir}/oe_generate_empty_tile.py
+%{_datadir}/numpy
+%{_datadir}/mpl
+
+%post config
+cd %{_datadir}/numpy/
+sudo python setup.py build
+sudo python setup.py install
+cd %{_datadir}/mpl/
+sudo python setup.py build
+sudo python setup.py install
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)

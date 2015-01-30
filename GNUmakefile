@@ -17,7 +17,7 @@ MPL_URL=http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matpl
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: download numpy-unpack mpl-unpack onearth-compile
+onearth: numpy-unpack mpl-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
@@ -51,10 +51,6 @@ build/numpy/VERSION:
 	mkdir -p build/numpy
 	tar xf upstream/$(NUMPY_ARTIFACT) -C build/numpy \
 		--strip-components=1 --exclude=.gitignore
-	( cd build/numpy ; \
-		sudo yum remove numpy ; \
-		sudo python setup.py build; \
-		sudo python setup.py install )
 		
 mpl-unpack: build/mpl/VERSION
 
@@ -62,9 +58,6 @@ build/mpl/VERSION:
 	mkdir -p build/mpl
 	tar xf upstream/$(MPL_ARTIFACT) -C build/mpl \
 		--strip-components=1 --exclude=.gitignore
-	( cd build/mpl ; \
-		sudo python setup.py build; \
-		sudo python setup.py install )
 
 onearth-compile:
 	$(MAKE) -C src/mod_onearth \
@@ -138,6 +131,11 @@ onearth-install:
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
+	
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/numpy
+	cp -r build/numpy/* $(DESTDIR)/$(PREFIX)/share/numpy
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mpl
+	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
 
 
 #-----------------------------------------------------------------------------
@@ -173,6 +171,8 @@ onearth-rpm: onearth-artifact
 	mkdir -p build/rpmbuild/BUILDROOT
 	rm -f dist/onearth*.rpm
 	cp \
+		upstream/$(NUMPY_ARTIFACT) \
+		upstream/$(MPL_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \
