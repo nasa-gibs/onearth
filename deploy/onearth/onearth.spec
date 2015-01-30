@@ -1,5 +1,5 @@
 Name:		onearth
-Version:	0.6.1
+Version:	0.6.2
 Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
@@ -11,9 +11,9 @@ BuildRequires:	httpd-devel
 BuildRequires:	chrpath
 BuildRequires:	gibs-gdal-devel
 BuildRequires:  python-dateutil
-BuildRequires:  python-matplotlib
 BuildRequires:  python-pypng
-BuildRequires:  numpy
+BuildRequires:  python-lxml
+BuildRequires:  freetype-devel
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
 %else
@@ -23,6 +23,11 @@ Requires:	httpd
 Requires:	gibs-gdal
 
 Obsoletes:	mod_twms mod_wms mod_onearth
+
+Provides:	numpy = 1.5.1
+Obsoletes:	numpy < 1.5.1
+Provides:	python-matplotlib = 1.3.1
+Obsoletes:	python-matplotlib < 1.3.1
 
 %description
 Installation packages for OnEarth
@@ -144,6 +149,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Jan 29 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.2-1
+- Updated dependencies including downloads for numpy and matplotlib
+
 * Mon Nov 24 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.1-1
 - Added oe_generate_empty_tile and missing python dependencies
 

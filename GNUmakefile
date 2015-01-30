@@ -1,4 +1,4 @@
-ONEARTH_VERSION=0.6.1
+ONEARTH_VERSION=0.6.2
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -9,15 +9,61 @@ LIB_DIR=$(shell \
 )
 RPMBUILD_FLAGS=-ba
 
+NUMPY_ARTIFACT=numpy-1.5.1.tar.gz
+NUMPY_URL=https://pypi.python.org/packages/source/n/numpy/$(NUMPY_ARTIFACT)
+MPL_ARTIFACT=matplotlib-1.3.1.tar.gz
+MPL_URL=http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matplotlib-1.3.1/$(MPL_ARTIFACT)
+
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: onearth-compile
+onearth: download numpy-unpack mpl-unpack onearth-compile
 
+#-----------------------------------------------------------------------------
+# Download
+#-----------------------------------------------------------------------------
+
+download: numpy-download mpl-download 
+
+numpy-download: upstream/$(NUMPY_ARTIFACT).downloaded
+
+upstream/$(NUMPY_ARTIFACT).downloaded: 
+	mkdir -p upstream
+	rm -f upstream/$(NUMPY_ARTIFACT)
+	( cd upstream ; wget $(NUMPY_URL) )
+	touch upstream/$(NUMPY_ARTIFACT).downloaded
+	
+mpl-download: upstream/$(MPL_ARTIFACT).downloaded
+
+upstream/$(MPL_ARTIFACT).downloaded: 
+	mkdir -p upstream
+	rm -f upstream/$(MPL_ARTIFACT)
+	( cd upstream ; wget $(MPL_URL) )
+	touch upstream/$(MPL_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
 #-----------------------------------------------------------------------------
+
+numpy-unpack: build/numpy/VERSION
+
+build/numpy/VERSION:
+	mkdir -p build/numpy
+	tar xf upstream/$(NUMPY_ARTIFACT) -C build/numpy \
+		--strip-components=1 --exclude=.gitignore
+	( cd build/numpy ; \
+		sudo python setup.py build; \
+		sudo python setup.py install )
+		
+mpl-unpack: build/mpl/VERSION
+
+build/mpl/VERSION:
+	mkdir -p build/mpl
+	tar xf upstream/$(MPL_ARTIFACT) -C build/mpl \
+		--strip-components=1 --exclude=.gitignore
+	( cd build/mpl ; \
+		sudo python setup.py build; \
+		sudo python setup.py install )
 
 onearth-compile:
 	$(MAKE) -C src/mod_onearth \
