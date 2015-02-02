@@ -1058,7 +1058,7 @@ if len(modtiles) > 0:
         gdalbuildvrt_command_list.append(xres)
         gdalbuildvrt_command_list.append(yres)
         gdalbuildvrt_command_list.append('-a_srs')
-        gdalbuildvrt_command_list.append(target_epsg)
+        gdalbuildvrt_command_list.append(source_epsg)
     if vrtnodata != "":
         gdalbuildvrt_command_list.append('-vrtnodata')
         gdalbuildvrt_command_list.append(vrtnodata)
