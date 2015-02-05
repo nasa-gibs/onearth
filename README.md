@@ -13,6 +13,7 @@ For more information, visit https://earthdata.nasa.gov/gibs
 
 ## Other Information
 
+* [RPM Build](doc/rpm_build.md)
 * [Installation](doc/installation.md)
 * [Layer Configuration](doc/configuration.md)
 
