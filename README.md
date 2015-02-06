@@ -11,11 +11,21 @@ The software implements a data and image storage format driver for GDAL. The for
 
 For more information, visit https://earthdata.nasa.gov/gibs
 
-## Other Information
+## Components
+
+* [mod_onearth](src/mod_onearth/README.md)
+* [mrfgen](src/mrfgen/README.md)
+* [OnEarth Layer Configurator](src/layer_config/README.md)
+* [OnEarth Legend Generator](src/generate_legend/README.md)
+* [OnEarth Metrics](src/onearth_logs/README.md)
+* [OnEarth Scripts](src/scripts/README.md)
+
+## Setup
 
 * [RPM Build](doc/rpm_build.md)
 * [Installation](doc/installation.md)
-* [Layer Configuration](doc/configuration.md)
+* [Configuration](doc/configuration.md)
+* [Creating Image Archive](doc/archive.md)
 
 ## Contact
 

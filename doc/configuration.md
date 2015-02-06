@@ -1,10 +1,19 @@
 # OnEarth Configuration
 
+## Apache
+
+Dependent RPMs: 
+* onearth
+
+Steps:
+* [Configure Apache](config_apache.md)
+* [Configure Endpoint](config_endpoint.md)
+
 ## Imagery Layers
 
 Dependent RPMs: 
-* gibs-gdal?
-* onearth-config?
+* gibs-gdal
+* onearth-config
 
 Steps:
 * Generate MRF metadata file
@@ -16,13 +25,4 @@ Steps:
 * Execute layer configuration tool  
 * Restart Apache 
 
-## Imagery Endpoint
-
-Dependent RPMs: 
-* onearth
-
-Steps:
-* [Configure Endpoint](config_endpoint)
-* [Configure Apache](config_apache)
-* Generate Cache Configuration File
-* Restart Apache
+## Log Metrics
