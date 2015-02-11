@@ -11,6 +11,15 @@ Steps:
 * [Configure Apache](config_apache.md)
 * [Configure Endpoint](config_endpoint.md)
 
+## Image Archive
+
+Dependent RPMs: 
+* gibs-gdal
+* onearth-mrfgen
+
+* [Creating Image Archive](archive.md)
+
+
 ## Imagery Layers
 
 Dependent RPMs: 
@@ -26,9 +35,5 @@ Steps:
 * Update/Create OnEarth [Support Configuration](config_support.md) files 
 * Execute layer configuration tool  
 * Restart Apache 
-
-## Creating Image Archive
-
-* [Creating Image Archive](doc/archive.md)
 
 ## Log Metrics

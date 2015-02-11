@@ -10,6 +10,13 @@ The source code contains the mod_onearth Apache Module (formerly Tiled WMS/KML s
 
 For more information, visit https://earthdata.nasa.gov/gibs
 
+## Setup
+
+* [RPM Build](doc/rpm_build.md)
+* [Installation](doc/installation.md)
+* [Configuration](doc/configuration.md)
+* [Creating Image Archive](doc/archive.md)
+
 ## Components
 
 * [mod_onearth](src/mod_onearth/README.md)
@@ -18,13 +25,6 @@ For more information, visit https://earthdata.nasa.gov/gibs
 * [OnEarth Legend Generator](src/generate_legend/README.md)
 * [OnEarth Metrics](src/onearth_logs/README.md)
 * [OnEarth Scripts](src/scripts/README.md)
-
-## Setup
-
-* [RPM Build](doc/rpm_build.md)
-* [Installation](doc/installation.md)
-* [Configuration](doc/configuration.md)
-* [Creating Image Archive](doc/archive.md)
 
 ## Other Information
 
