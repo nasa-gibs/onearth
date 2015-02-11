@@ -74,6 +74,12 @@ OnEarth Demo
 /etc/httpd/conf.d/on_earth-demo.conf
 ```
 
+## Next Steps
+
+* [Configuration](doc/configuration.md)
+* [Creating Image Archive](doc/archive.md)
+
+
 ## Contact
 
 Contact us by sending an email to

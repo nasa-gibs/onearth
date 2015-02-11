@@ -1,6 +1,8 @@
 # OnEarth Configuration
 
-## Apache
+This documentation will go through the steps needed to configure the OnEarth server with imagery.
+
+## Apache/mod_onearth
 
 Dependent RPMs: 
 * onearth
@@ -24,5 +26,9 @@ Steps:
 * Update/Create OnEarth [Support Configuration](config_support.md) files 
 * Execute layer configuration tool  
 * Restart Apache 
+
+## Creating Image Archive
+
+* [Creating Image Archive](doc/archive.md)
 
 ## Log Metrics
