@@ -106,7 +106,7 @@ oe_generate_empty_tile.py -c MODIS_Terra_Chlorophyll_A.xml -f png -x 512 -y 512 
 
 ### Update/Create OnEarth Layer Configuration file
 
-A [layer configuration file](config_layer.md) must be created to be used as input for the OnEarth Layer Configuration tool.  For this example, we will use the [layer configuration file found here](../src/layer_config/test/layer_configuration_test1.xml). 
+A [layer configuration file](config_layer.md) must be created to be used as input for the OnEarth Layer Configuration tool.  For this example, we will use the layer configuration file found [here](../src/layer_config/test/layer_configuration_test1.xml). Please review this documentation for more detailed information: [Layer Configuration File](config_layer.md)
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -175,3 +175,5 @@ The imagery layers should now be available.  If errors were discovered, please v
 
 Dependent RPMs: 
 * onearth-metrics
+
+Please refer to the following documentation: [OnEarth Metrics](src/onearth_logs/README.md)
