@@ -76,8 +76,8 @@ OnEarth Demo
 
 ## Next Steps
 
-* [Configuration](doc/configuration.md)
-* [Creating Image Archive](doc/archive.md)
+* [Configuration](configuration.md)
+* [Creating Image Archive](archive.md)
 
 
 ## Contact

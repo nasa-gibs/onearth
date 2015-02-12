@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This describes how to create an image archive for the OnEarth server by converting imagery into the Meta Raster Format (MRF) and placing them into proper archive locations.
+This describes how to create an image archive for the OnEarth server by generating the proper directory structures for placing Meta Raster Format (MRF) files.
 
 ## Archive Location
 
@@ -20,7 +20,7 @@ Layers in OnEarth can either be static or time dependent.
 
 Time dependent refers to layers that have new data over time.  For the Global Imagery Browse Services (GIBS), most data products are updated daily for several years.  A new MRF file is created for each day and can be referenced in a request by the `TIME=` parameter.
 
-Static, on the other hand, refers to a layer that does not change over time.  Therefore, the layer can be represented as a single file.  The 'TIME=' parameter in a request is ignored.
+Static, on the other hand, refers to a layer that does not change over time.  Therefore, the layer can be represented as a single file.  The `TIME=` parameter in a request is ignored.
 
 The OnEarth server expects an MRF archive for time dependent layers to be logically ordered.  The following directory scheme is used: `/archive/layer/year/`
 
