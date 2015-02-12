@@ -1858,6 +1858,8 @@ int rewrite_rest_uri(request_rec *r) {
 	if (cfg->dir == NULL)
 		return -1;
 
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Config dir %s",cfg->dir);
+
 	int i;
 	char *p;
 	char *params[16];
@@ -1875,6 +1877,9 @@ int rewrite_rest_uri(request_rec *r) {
 	for(j = 0; j < i; j++) {
 		if(ap_strstr(cfg->dir, params[j]) != NULL) {
 			d++;
+			if ((ap_strstr(cfg->dir, params[j+1])) == '\0') {
+				break;
+			}
 		}
 	}
 
