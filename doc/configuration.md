@@ -31,8 +31,8 @@ Steps:
 * Update/Create OnEarth [Support Configuration](config_support.md) files
 * Generate MRF metadata file 
 * Generate Color Map (Optional)
-* Update/Create OnEarth [Layer Configuration](config_layer.md) file 
 * Generate Empty Tile (Optional)
+* Update/Create OnEarth [Layer Configuration](config_layer.md) file 
 * Generate Legend Images (Optional)
 * Execute OnEarth Layer Configuration tool
 * Restart Apache
@@ -147,10 +147,17 @@ Run the oe_configure_layer with the layer configuration file
 oe_configure_layer --conf_file layer_configuration_file.xml --generate_legend --restart_apache
 ```
 
-The `--generation_legend` is not needed if a legend is not desired or if it has already been created. The `--restart_apache` can also be skipped if a restart of Apache is not desired.
+The `--generation_legend` option is not needed if a legend is not desired or if it has already been created. The `--restart_apache` can also be skipped if a restart of Apache is not desired.
 
-The tool will generate the XML files for WMTS GetCapabilities, TWMS GetCapabilities, TWMS GetTileService, and the cache configuration files for both WMTS and TWMS.  Each configured end point should include the appropriate files.
+By default, the tool will generate the XML files for WMTS GetCapabilities, TWMS GetCapabilities, TWMS GetTileService, and the cache configuration files for both WMTS and TWMS.  Each configured end point should include the appropriate files.  There are some self-explanatory options for limiting which files are generated: `-n, --no_twms` `-w, --no_wmts` `-x, --no_xml` `-z, --no_cache`
 
+The tool can also configure multiple layers by specifying a directory.
+
+```Shell
+oe_configure_layer --layer_dir /etc/onearth/config/layers
+```
+
+If no configuration file or directory is specified, the tool will look for files files in a default directory relative to the layer configuration directory `--lcdir`.
 
 ### Restart Apache
 
