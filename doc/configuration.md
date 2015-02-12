@@ -28,16 +28,24 @@ Dependent RPMs:
 * onearth-config
 
 Steps:
-* Generate MRF metadata file
-* Generate Empty Tile (Optional) 
-* Generate Legend Images (Optional) 
-* Generate ColorMap 
+* Update/Create OnEarth [Support Configuration](config_support.md) files
+* Generate MRF metadata file 
+* Generate Color Map (Optional)
 * Update/Create OnEarth [Layer Configuration](config_layer.md) file 
-* Update/Create OnEarth [Support Configuration](config_support.md) files 
+* Generate Empty Tile (Optional)
+* Generate Legend Images (Optional)
 * Execute OnEarth Layer Configuration tool
 * Restart Apache
 
 The following steps involve the use of the [OnEarth Layer Configuration tool](../src/layer_config/README.md).  These steps should allow one to become familiar with the tool and demonstrate how to quickly configure a layer on the OnEarth server.
+
+### Update/Create OnEarth Support Configuration files
+
+Ensure that the supporting configuration files for the OnEarth Layer Configuration tool have been properly configured for your environment.  Please review [Support Configuration Files](config_support.md) before proceeding.
+
+The default location for these configuration files is: `/etc/onearth/config/conf`
+
+Schema files can be found [here](../src/layer_config/schema).
 
 ### Generate MRF metadata file
 
@@ -49,28 +57,114 @@ The MRF metadata file may simply be copied from an existing [image archive](arch
 
 The following example shows how to generate an MRF file to be used as an archetype for the layer.
 
-1) Run the mrfgen tool to generate an MRF image.  Source imagery may be found [here](..src/mrfgen/test/mrfgen_test_config.xml).  The test configuration may be found [here](../src/mrfgen/test/MYR4ODLOLLDY).
+1) Run the mrfgen tool to generate an MRF image.  Source imagery may be found [here](../src/mrfgen/test/MYR4ODLOLLDY).  The test configuration may be found [here](../src/mrfgen/test/mrfgen_test_config.xml).
 ```Shell
 mrfgen -c mrfgen_test_config.xml
 ```
 
-2) Copy the .mrf header file to a "headers" subdirectory with your layer configuration directory.  If there is a timestamp at the end of the filename, replace it with "TTTTTTT".
+2) Copy the .mrf header file to a "headers" subdirectory with your layer configuration directory.  The file can be renamed to something easier on the eyes.  If there is a timestamp at the end of the filename, replace it with "TTTTTTT".
 ```Shell
-cp MYR4ODLOLLDY2014277_.mrf /etc/onearth/config/headers/MYR4ODLOLLDYTTTTTTT_.mrf
+cp MYR4ODLOLLDY2014277_.mrf /etc/onearth/config/headers/MODIS_Aqua_AerosolTTTTTTT_.mrf
 ```
- 
+This can be used as the `<HeaderFileName>` in the layer configuration file (upcoming steps)
+```Shell
+<HeaderFileName>MODIS_Aqua_AerosolTTTTTTT_.mrf</HeaderFileName>
+```
+
+### Generate Color Map (Optional)
+
+OnEarth supports the used of a color map within MRF imagery.  Typically, the MRF will be generated used paletted PNG files as input, however, RGBA PNG files may be converted if a color map is provided.  OnEarth uses the GIBS color map XML format ([samples here](../src/generate_legend/samples)).  OnEarth also uses the color map for the generation of color legends (see the [OnEarth Legend Generator](../src/generate_legend/README.md) for more details).
+
+The OnEarth source currently does not include tools to generate a GIBS color map.
+
 ### Generate Empty Tile (Optional)
 
-### Generate Legend Images (Optional) 
+An "empty tile" is a tile that is returned by the server when there no data are available.  This may happen when a specified region contains no valid data, no data is available for a given time region (e.g., future date), or when there is an error with the server.  In many cases, a client application prefers a tile being returned versus an error message due to ease of handling.
 
-### Generate ColorMap
- 
+Two [empty tiles](../src/mrfgen/empty_tiles) are available in the source code.  Typically a black opaque image is used for JPEG imagery, while a transparent image is used for PNG.  There are reasons that these "empty tiles" may not be desired for use: the tiles may not be consistent with the colors in the actual imagery, or perhaps another color is preferred over black or transparent.  
+
+The oe_generate_empty_tile.py tool was designed to create a custom empty tile that is fitting for a given layer. The OnEarth Layer Configuration tool will automatically generate empty tiles by leveraging this tool if a colormap is specified (unless `--skip_empty_tiles` is used). But this can also be done manually by the following steps:
+
+1) Generate or choose a color map that matches the imagery.  This [sample](../src/layer_config/test/MODIS_Aqua_Aerosol-GIBS.xml) can be used.
+
+2) Choose the desired color to be used as the nodata value for the empty tile.  Simply set the nodata value to "true" for the chosen color.
+
+```xml
+<ColorMapEntry rgb="0,0,0" sourceValue="-9999" label="Missing Data -9999" transparent="true" nodata="true"/>
+```
+
+3) Run the oe_generate_empty_tile.py tool passing in the color map, output format, tile size, and output file.
+
+```Shell
+oe_generate_empty_tile.py -c MODIS_Terra_Chlorophyll_A.xml -f png -x 512 -y 512 -o empty_tile.png
+```
+
+4) Use the output tile as the `<EmptyTile>` value in the layer configuration file in the next step
+```xml
+<EmptyTile>empty_tile.png</EmptyTile>
+```
+
 ### Update/Create OnEarth Layer Configuration file
 
-### Update/Create OnEarth Support Configuration files
+A [layer configuration file](config_layer.md) must be created to be used as input for the OnEarth Layer Configuration tool.  For this example, we will use the [layer configuration file found here](../src/layer_config/test/layer_configuration_test1.xml). 
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<LayerConfiguration>
+	<Identifier>MODIS_Aqua_Aerosol</Identifier>
+	<Title>MODIS Aqua Aerosol</Title>
+	<FileNamePrefix>MODIS_Aqua_Aerosol</FileNamePrefix>
+	<HeaderFileName>MODIS_Aqua_AerosolTTTTTTT_.mrf</HeaderFileName>
+	<Compression>PNG</Compression>
+	<TileMatrixSet>EPSG4326_2km</TileMatrixSet>
+	<EmptyTile>empty_tile.png</EmptyTile>
+	<Projection>EPSG:4326</Projection>
+	<Pattern><![CDATA[request=GetMap&layers=MODIS_Aqua_Aerosol&srs=EPSG:4326&format=image/png&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+	<EnvironmentConfig>../conf/environment_geographic.xml</EnvironmentConfig>
+	<ArchiveLocation static="false" year="true" root="geographic">MODIS_Aqua_Aerosol</ArchiveLocation>
+	<ColorMap>https://raw.githubusercontent.com/nasa-gibs/onearth/master/src/layer_config/test/MODIS_Aqua_Aerosol-GIBS.xml</ColorMap>
+	<Time>DETECT/P1D</Time>
+</LayerConfiguration>
+```
+
+The file may need to be updated to fit your environment.  Layer configuration files are generally kept in: `/etc/onearth/config/layers` 
+
+Note that the `<ColorMap>` element is referencing the sample file on the Web.  A local color map file from the previous step may be used instead.
+
+### Generate Legend Images (Optional)
+
+The OnEarth Layer Configuration tool can generate a color legend for each layer if a colormap is specified and the `-g` or `--generate_legend` option is used.  The legends can also be created by running the [oe_generate_legend.py](../src/generate_legend/README.md) tool.
+
+There are many options for how to output the legend graphic.  Please refer to the tool's [documentation](../src/generate_legend/README.md) for specific details.  The legends can be placed somewhere on the server that is accessible to web clients.
 
 ### Execute OnEarth Layer Configuration tool
 
+It is time to execute the OnEarth Layer Configuration tool after all of the configuration files have been properly created.
+
+Run the oe_configure_layer with the layer configuration file
+
+```Shell
+oe_configure_layer --conf_file layer_configuration_file.xml --generate_legend --restart_apache
+```
+
+The `--generation_legend` is not needed if a legend is not desired or if it has already been created. The `--restart_apache` can also be skipped if a restart of Apache is not desired.
+
+The tool will generate the XML files for WMTS GetCapabilities, TWMS GetCapabilities, TWMS GetTileService, and the cache configuration files for both WMTS and TWMS.  Each configured end point should include the appropriate files.
+
+
 ### Restart Apache
 
+Apache must be restarted for the configuration changes to take effect.  Passing the `-r` or `--restart_apache` with oe_configure_layer will automatically restart the server, however, this can also be run manually:
+
+```Shell
+sudo apachectl stop
+sudo apachectl start
+```
+
+The imagery layers should now be available.  If errors were discovered, please visit the [troubleshooting documentation](troubleshooting.md) or contact us by sending an email to
+[support@earthdata.nasa.gov](mailto:support@earthdata.nasa.gov)
+
 ## Log Metrics
+
+Dependent RPMs: 
+* onearth-metrics
