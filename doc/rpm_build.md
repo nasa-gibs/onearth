@@ -86,5 +86,5 @@ make download onearth-rpm
 To install the OnEarth RPMs:
 
 ```Shell
-sudo yum -y install dist/onearth-0.*.*-1.el6.x86_64.rpm onearth-config-0.*.*-1.el6.noarch.rpm onearth-demo-0.*.*-1.el6.noarch.rpm onearth-metrics-0.*.*-1.el6.noarch.rpm onearth-mrfgen-0.*.*-1.el6.x86_64.rpm
+sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-metrics-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm
 ```

@@ -15,6 +15,7 @@ BuildRequires:	gibs-gdal-devel
 BuildRequires:	libpng-devel
 BuildRequires:	gcc-c++
 BuildRequires:	freetype-devel
+BuildRequires:	python-devel
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
 %else
@@ -63,6 +64,7 @@ Requires:	gcc-c++
 Requires:	agg
 Requires:	agg-devel
 Requires:	pyparsing
+Requires:	python-devel
 Requires:	python-tornado
 Requires:	python-pycxx-devel
 Requires:	python-dateutil
