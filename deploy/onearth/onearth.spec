@@ -1,5 +1,5 @@
 Name:		onearth
-Version:	0.6.2
+Version:	0.6.3
 Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
@@ -12,10 +12,9 @@ Source2:	http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matp
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
 BuildRequires:	gibs-gdal-devel
-BuildRequires:  python-dateutil
-BuildRequires:  python-pypng
-BuildRequires:  python-lxml
-BuildRequires:  freetype-devel
+BuildRequires:	libpng-devel
+BuildRequires:	gcc-c++
+BuildRequires:	freetype-devel
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
 %else
@@ -58,6 +57,18 @@ MRF generator for OnEarth
 %package config
 Summary:	Layer configuration tools for OnEarth
 Requires:	%{name} = %{version}-%{release}
+Requires:	libpng-devel
+Requires:	chrpath
+Requires:	gcc-c++
+Requires:	agg
+Requires:	agg-devel
+Requires:	pyparsing
+Requires:	python-tornado
+Requires:	python-pycxx-devel
+Requires:	python-dateutil
+Requires:	python-pypng
+Requires:	python-lxml
+Requires:	freetype-devel
 BuildArch:	noarch
 Conflicts:  numpy < 1.5.1
 Provides:	python-matplotlib = 1.3.1
@@ -159,6 +170,9 @@ sudo python setup.py install
 
 
 %changelog
+* Thu Feb 12 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.3-1
+- Updated BuildRequires and config package Requires
+
 * Thu Jan 29 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.2-1
 - Updated dependencies including downloads for numpy and matplotlib
 
