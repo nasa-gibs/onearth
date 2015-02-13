@@ -35,7 +35,7 @@ from optparse import OptionParser
 import png
 
 toolName = "oe_generate_empty_tile.py"
-versionNumber = "v0.6.2"
+versionNumber = "v0.6.3"
 
 class ColorMap:
     """ColorMap metadata"""
@@ -97,10 +97,9 @@ def parse_colormap(colormap_location, verbose):
         try:
             dom = xml.dom.minidom.parse(urllib.urlopen(colormap_location))
         except:
-            msg = "ERROR: URL " + colormap_location + " is not accessible"
+            msg = "URL " + colormap_location + " is not accessible"
             print >> sys.stderr, msg
             raise Exception(msg)
-            sys.exit(1)
 
         
     colormap_element = dom.getElementsByTagName("ColorMap")[0]
@@ -155,7 +154,7 @@ def parse_colormap(colormap_location, verbose):
 
 print toolName + ' ' + versionNumber + '\n'
 
-usageText = toolName + " --colormap [file] --output [file] --height [int] --width [int] "
+usageText = toolName + " --colormap [file] --output [file] --height [int] --width [int] --type [palette]"
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -171,6 +170,9 @@ parser.add_option('-i', '--index',
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
+parser.add_option('-t', '--type',
+                  action='store', type='string', dest='type', default = 'palette',
+                  help='The image type: rgba or palette. Default: palette')
 parser.add_option('-u', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -199,53 +201,85 @@ else:
     print "output file must be specified...exiting"
     exit()
     
+color_index = 0
+
 # parse colormap and get color entry
 try:
     colormap = parse_colormap(colormap_location, options.verbose)
-    colormap_entry = colormap.colormap_entries[0] # default to first entry if none specified
+    colormap_entry = colormap.colormap_entries[color_index] # default to first entry if none specified
     if options.index != None:
         colormap_entry = colormap.colormap_entries[int(options.index)]
+        color_index = int(options.index)
     else:
-        for entry in colormap.colormap_entries:
+        for index,entry in enumerate(colormap.colormap_entries):
             if entry.nodata == True:
                 colormap_entry = entry
+                color_index = index
                 break # use first nodata entry found
-except IOError,e:
-    print str(e)
-    exit()
+except Exception, e:
+    print >> sys.stderr, toolName + ": ERROR: " + str(e) + "\n"
+    sys.exit(1)
 
 # generate empty_tile
 try:
     if options.verbose:
-        print "Using entry:\n" + str(colormap_entry)
+        print "Using index " + str(color_index) + " with entry:\n" + str(colormap_entry)
     
-    rows = []
-    img = []
-    for i in range (1, (int(options.width)*4)+1):
-        if i%4 == 1:
-            rows.append(colormap_entry.red)
-        elif i%4 == 2:
-            rows.append(colormap_entry.green)
-        elif i%4 == 3:
-            rows.append(colormap_entry.blue)
-        elif i%4 == 0:
-            if colormap_entry.transparent == True:
-                rows.append(0)
-            else:
-                rows.append(255)
-    
-    for i in range (0, int(options.height)):
-        img.append(rows)
-
     f = open(output_location, 'wb')
-    w = png.Writer(int(options.width), int(options.height), alpha=True)
-    w.write(f, img)
+        
+    if options.type == "palette":
+            
+        palette = []
+        for j in range (0, 256):
+            try:
+                entry = colormap.colormap_entries[j]
+                if entry.transparent == True:
+                    alpha = 0
+                else:
+                    alpha = 255
+                palette.append((entry.red,entry.green,entry.blue,alpha))
+            except IndexError: # pad with zeroes
+                palette.append((0,0,0,0))
+        
+        rows = []
+        img = []
+        for i in range (1, (int(options.width))+1):
+            rows.append(color_index)
+        for i in range (0, int(options.height)):
+            img.append(rows)
+    
+        w = png.Writer(int(options.width), int(options.height), palette=palette, bitdepth=8)
+        w.write(f, img)
+    
+    else: # use RGBA
+        
+        rows = []
+        img = []
+        for i in range (1, (int(options.width)*4)+1):
+            if i%4 == 1:
+                rows.append(colormap_entry.red)
+            elif i%4 == 2:
+                rows.append(colormap_entry.green)
+            elif i%4 == 3:
+                rows.append(colormap_entry.blue)
+            elif i%4 == 0:
+                if colormap_entry.transparent == True:
+                    rows.append(0)
+                else:
+                    rows.append(255)
+        
+        for i in range (0, int(options.height)):
+            img.append(rows)
+    
+        w = png.Writer(int(options.width), int(options.height), alpha=True)
+        w.write(f, img)
+    
     f.close()
     
     print "\nSuccessfully generated empty tile " + output_location + " of size: " + str(options.width) + " by " + str(options.height)
     
 except IOError,e:
-    print str(e)
-    exit()
+    print >> sys.stderr, toolName + ": " + str(e)
+    sys.exit(1)
     
 exit()

@@ -818,8 +818,11 @@ def generate_empty_tile(colormap, output, width, height):
     print "Width: " + str(width)
     print "Height: " + str(height)
     
-    cmd = 'oe_generate_empty_tile.py -c '+colormap+' -o ' + output + ' -x ' + str(width) + ' -y ' + str(height)
-    run_command(cmd, sigevent_url)
+    try:
+        cmd = 'oe_generate_empty_tile.py -c '+colormap+' -o ' + output + ' -x ' + str(width) + ' -y ' + str(height)
+        run_command(cmd, sigevent_url)
+    except Exception, e:
+        log_sig_err("Error generating empty tile: " + str(e), sigevent_url)
 
     # check file
     try:
