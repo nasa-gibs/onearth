@@ -32,8 +32,7 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2014
-# Joe.T.Roberts@jpl.nasa.gov
+# 2015
 
 from optparse import OptionParser
 import logging
@@ -44,7 +43,7 @@ import urllib
 import urllib2
 import xml.dom.minidom
 
-versionNumber = '0.3.0'
+versionNumber = '0.6.3'
     
 class ColorEntry:
     """RGBA values for VRT color table"""
@@ -249,7 +248,7 @@ colortable = [] # Apply SLDs with multiple color maps to one color table
 
 idx = 0
 
-for colorMap in colorMaps: 
+for count, colorMap in enumerate(colorMaps): 
     # ColorMapEntry
     if colorMap.parentNode.getElementsByTagName('Opacity').length > 0:
         alpha = float(colorMap.parentNode.getElementsByTagName('Opacity')[0].firstChild.nodeValue.strip()) * 255
@@ -275,10 +274,11 @@ for colorMap in colorMaps:
         colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], entry_alpha)
         colortable.append(colorEntry)
         idx+=1
-    while idx < 256: # pad out with zero values to get 256 colors for MRFs
-        colorEntry = ColorEntry(idx, 0, 0, 0, 0)
-        colortable.append(colorEntry)
-        idx+=1
+    if (count+1) == len(colorMaps):
+        while idx < 256: # pad out with zero values to get 256 colors for MRFs
+            colorEntry = ColorEntry(idx, 0, 0, 0, 0)
+            colortable.append(colorEntry)
+            idx+=1
 
 # output color table as template if no merge VRT is provided
 if merge_vrt == None:
