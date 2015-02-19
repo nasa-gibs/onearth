@@ -70,6 +70,7 @@ Requires:	python-pycxx-devel
 Requires:	python-dateutil
 Requires:	python-pypng
 Requires:	python-lxml
+Requires:	python-nose
 Requires:	freetype-devel
 BuildArch:	noarch
 Conflicts:  numpy < 1.5.1
