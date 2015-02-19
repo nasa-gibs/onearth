@@ -20,7 +20,7 @@ A '<Directory>' element must be included in the Apache configuration for each On
 Sample WMTS endpoint
 ```Shell
 <Directory "/usr/share/onearth/demo/wmts-geo">
-    OptionsIndexes FollowSymLinks +ExecCGI
+    Options Indexes FollowSymLinks +ExecCGI
     AddHandler cgi-script .cgi
     AllowOverride None
     Order allow,deny
@@ -36,6 +36,7 @@ Sample Tiled-WMS endpoint
 ```Shell
 <Directory "/usr/share/onearth/demo/twms-geo">
     Options Indexes FollowSymLinks ExecCGI
+    AddHandler cgi-script .cgi
     AllowOverride None
     Order allow,deny
     Allow from all
@@ -47,7 +48,7 @@ Sample Tiled-WMS endpoint
 A new endpoint must be create for each projection.  For instance, if Web Mercator projected imagery is also desired as a WMTS endpoint:
 ```Shell
 <Directory "/usr/share/onearth/demo/wmts-webmerc">
-    OptionsIndexes FollowSymLinks +ExecCGI
+    Options Indexes FollowSymLinks +ExecCGI
     AddHandler cgi-script .cgi
     AllowOverride None
     Order allow,deny
