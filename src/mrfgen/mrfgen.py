@@ -76,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.1'
+versionNumber = '0.6.3'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -554,18 +554,18 @@ verify_directory_path_exists(working_dir, 'working_dir')
 # Log all of the configuration information.
 log_info_mssg_with_timestamp(str().join(['config XML file:  ', 
                                           configuration_filename]))
-# Copy configuration file to input_dir (if it's not already there)
+# Copy configuration file to working_dir (if it's not already there)
 # so that the MRF can be recreated if needed.
 if os.path.dirname(configuration_filename) != os.path.dirname(input_dir):
     config_preexisting=glob.glob(configuration_filename)
     if len(config_preexisting) > 0:
-        at_dest_filename=str().join([input_dir, configuration_filename])
+        at_dest_filename=str().join([working_dir, configuration_filename])
         at_dest_preexisting=glob.glob(at_dest_filename)
         if len(at_dest_preexisting) > 0:
             remove_file(at_dest_filename)
         shutil.copy(configuration_filename, working_dir+"/"+basename+".configuration_file.xml")
         log_info_mssg(str().join([
-                          'config XML file:  moved to      ', input_dir]))
+                          'config XML file:  copied to     ', working_dir]))
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
 log_info_mssg(str().join(['config date_of_data:            ', date_of_data]))
 log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
