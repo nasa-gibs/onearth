@@ -4,6 +4,11 @@ This is a set of tools used to configure imagery layers for the OnEarth server.
 
 ## oe_configure_layer.py
 
+The OnEarth Layer Configuration Tool (oe_configure_layer.py) is a Python script that streamlines MRF layer configuration for OnEarth services. It enables the automatic generation of server files (e.g., GetCapabilities.xml).
+
+* The tool generates getCapabilities.xml and the server cache configuration file for WMTS.
+* The tool generates getCapabilities.xml, getTileService.xml, and server cache configuration file for Tiled-WMS.
+
 ```
 Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --skip_empty_tiles
 
@@ -47,7 +52,55 @@ Options:
                         location.
 ```
 
+The tool uses the following environment (recommended, but not required):
+
+**$LCDIR** - this should reference the layer_config directory.  The tool will default to (script_path)/../ if not specified.
+This may also be specified by the -d, --layer_dir option.
+
+The layer_config directory should contain the following directories:
+
+* layers - location of layer configuration files
+* twms - staging area for Tiled-WMS configurations
+* wmts - staging area for WMTS configurations
+* headers - location of MRF headers
+
+### Running oe_configure_layer.py
+
+The tool can simply be run without any options.  By default, the tool will configure all layers that have an existing configuration file in the $LCDIR/layers directory.
+```
+/usr/bin/oe_configure_layer
+```
+
+To specify a single configuration file to use, add the -c or --conf_file option:
+```
+oe_configure_layer -c layer_configuration_file.xml
+```
+
+To specify a directory of layer configuration files, add the -d or --layer_dir option:
+```
+oe_configure_layer -d layers/
+```
+
+An Apache server restart is required when a new layer is added. The tool does NOT restart the server by default. Use -r, --restart_apache to restart the server and load new layers.
+```
+oe_configure_layer -r
+```
+
+A SigEvent server URL, used for error reporting, may be specified using the -s or --sigevent_url option:
+```
+oe_configure_layer -s http://localhost:8100/sigevent/events/create
+```
+
+
+####Please refer to the following documents on how to properly configure layers:
+* [OnEarth Configuration](../../doc/configuration.md)
+* [Support Configuration Files](../../doc/config_support.md)
+* [Layer Configuration Files](../../doc/config_layer.md)
+* [Time Detection](../../doc/time_detection.md)
+
 ## oe_create_cache_config
+
+This tool generates server cache configuration files from a list of MRF headers. It is used by oe_configure_layer.py.
 
 ```
 TWMS configuration tool
@@ -89,6 +142,8 @@ twms_tool [MODE] [OPTION]... [INPUT] [OUTPUT]
 ```
 
 ## oe_generate_empty_tile.py
+
+This tool generates an empty (nodata) tile for mod_onearth. It is used by oe_configure_layer.py, which passes in a specified colormap from the layer configuration file and sets the width and height to match the proper MRF tiles.
 
 ```
 Usage: oe_generate_empty_tile.py --colormap [file] --output [file] --height [int] --width [int] 
