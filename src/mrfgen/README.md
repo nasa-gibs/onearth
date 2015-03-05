@@ -40,7 +40,7 @@ Sample imagery and configurations may be found [here](test/).
 
 ### Prepare Imagery
 
-* Gather image files for generating the MRF.  Imagery must be PNG, JPEG, or GeoTIFF.  ESRI [world files](http://en.wikipedia.org/wiki/World_file) may be used for geo-referencing.
+* Gather image files for generating the MRF.  Imagery must be PNG, JPEG, or [GeoTIFF](http://trac.osgeo.org/geotiff/).  ESRI [world files](http://en.wikipedia.org/wiki/World_file) may be used for geo-referencing.
 
 * Bit depth must be 24-bit true color or-bit indexed color; alpha channel is optional.
 
@@ -68,7 +68,7 @@ Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may
 
 #### Parameters
 
-* date_of_data: Denotes the actual date of the file, which will be appended to the resulting MRF filename.  ```<time_of_data>``` may be used for sub-daily imagery.
+* date_of_data: (format: yyyymmdd) Denotes the actual date of the file, which will be appended to the resulting MRF filename.  ```<time_of_data>``` (format: HHMMSS) may be used for sub-daily imagery.
 * parameter_name: The layer name, which is also used as the suffix of the file name.
 * input_dir: The location of the input tiles. Individual tiles may be alternatively specified using ```<input_files>```
 * output_dir: The location of the resulting MRF.
@@ -77,7 +77,7 @@ Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may
 * mrf_empty_tile_filename: The file to be used for when there is a request for a tile with that is empty or contains all NoData values. It should be in the same file format as the MRF.
 * mrf_blocksize: The MRF tile size. All tiles are square.
 * mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), or PPNG (for 256 color paletted PNGs).
-* target_x: The full x output size of the MRF image. The y value is half of x when not provided using ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
+* target_x: The full x output size of the MRF image. target_y is calculated to maintain native aspect ratio if not defined in ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
 
 These parameters are available but not used in the example above nor necessarily required.
 
@@ -136,6 +136,51 @@ mrfgen is compatible with the SigEvent reporting server. This is helpful for sen
 ```Shell
 mrfgen.py -c test/mrfgen_test_config.xml -s http://localhost:8100/sigevent/events/create
 ```
+
+## mrfgen Processes
+
+The following encoding steps occur in the mrfgen script:
+
+* Seeding the MRF data file with a default empty tile
+    * The empty tile is copied to MRF data file before it is built. The data file is modified by appending. See not about empty tile block.
+* Creating a virtual mosaic
+    * Input tiles are consolidated into a VRT file using [gdalbuildvrt](http://www.gdal.org/gdalbuildvrt.html) before conversion into MRF. E.g., ```gdalbuildvrt -te -180 -90 180 90 -input_file_list input_list.txt input.vrt```
+* Converting the image data into the MRF data format
+    * mrfgen uses [gdal_translate](http://www.gdal.org/gdal_translate.html) to convert the VRT into MRF. E.g., ```gdal_translate -of mrf -co BLOCKSIZE=512 -co COMPRESS=PPNG input.vrt output.mrf```
+* Appending pyramid levels
+    * mrfgen uses [gdaladdo](http://www.gdal.org/gdaladdo.html) to add overview levels. E.g., ```gdaladdo output.mrf -r average 2 4 8 16 ```
+
+### Incremental updates to an MRF using mrfgen
+
+mrfgen supports incremental updates to an existing MRF. This is useful for generating global near-real time imagery without the need to wait for all input tiles to be available.
+
+This is done automatically if an MRF file is included in the ```<input_dir>``` or listed in ```<input_files>```.  This requires the [mrf_insert](https://github.com/nasa-gibs/mrf/tree/master/src/gdal_mrf/mrf_apps) tool to be installed.
+
+### Empty Tile Block
+
+The MRF format has another efficiency, which is the empty block. The empty block is a single block of the same size as the other internal blocks and is entirely the color of no data. The color of no data is usually black, white, or transparent. The empty block may be any image, but must be the same size as the internal blocks. The advantage gained by using the empty block is to speed the loading of that block when many instances are expected. If your data is sparse, then as the internal tiling is parceled out and the pyramid is built, there will be likely be many instances where an internal block contains no data. In those cases, the actual block is omitted from the MRF. Instead, it is flagged in the index file as an empty block. When the server requests a block that is flagged, the server will use the already-cached empty block. This eliminates one block request, which can add up to a lot of savings depending on how many empty blocks are in the data.
+
+Adding an empty block to the MRF can be done two ways. First is to seed the MRF with the empty block. To seed the MRF with the empty block, copy the empty block to the name of the MRF output before running gdal_translate. The second method is to append the empty block to the end of the MRF. Appending should be done after adding the pyramid. The location of the empty block will be configured when the system is set up.
+
+**When using the OnEarth system to serve palette color images to a Google Earth client:** Where the empty block is transparent, the color vectors and transparency vector must all be 256 elements. Otherwise the transparent empty block will appear opaque black.
+
+### Optimizing the Input Size
+
+The input image dimensions are not restricted, per se, but may need to be optimized. For example, clients built on OpenLayers will require that all data layers have nested dimensions, where the full resolution data of each layer is the same size as one of the pyramid levels of the highest resolution data layer. This constraint is imposed by the OpenLayers software, and unmatched layers will not overlay correctly. This constraint may be further constrained by the image data with the hightest resolution, where it may be undesireable to resample due to a very large size. If the data with the highest resolution (using the MODIS case) has dimensions of 163840 x 81920, then that should become the standard to which other layers must abide. A lower resolution layer might have a native resolution of 16384 x 8192, which could be changed to 20480 x 10240 to match the third pyramid level of the highest resolution data layer. Notice that the new size is increased to the next largest pyramid level in order preserve all of the native information. Here is the layout of the pyramid levels (for this example):
+
+```
+163840 x 81920 highest resolution data layer
+81920 x 40960 first pyramid level
+40960 x 20480 second pyramid level
+20480 x 10240 third pyramid level
+10240 x 5120
+5120 x 2560
+2560 x 1280
+1280 x 640
+640 x 320 final pyramid level
+```
+
+Another example would be for an input data layer with a custom overall size, such as 16000 x 8000. Increasing the resolution to 16384 x 8192 will enable the internal tiling size of 512 (or 256) to nest perfectly with the image dimension, with no partial blocks. Partial blocks can cause unwanted edge effects where the global image wraps around. Optimization of the input image dimensions (or the overall size of the input tile set) is generally recommended, but should be evaluated on a case-by-case basis.
 
 ## Contact
 
