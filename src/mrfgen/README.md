@@ -36,7 +36,7 @@ Options:
 
 ## Instructions
 
-Sample imagery and configurations may be found [here](/test/).
+Sample imagery and configurations may be found [here](test/).
 
 ### Prepare Imagery
 
@@ -48,7 +48,7 @@ Sample imagery and configurations may be found [here](/test/).
 
 ### Create Configuration File
 
-Prepare an MRF configuration file.  This [file](/test/mrfgen_test_config.xml) may be used as an example:
+Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may be used as an example:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -79,7 +79,7 @@ Prepare an MRF configuration file.  This [file](/test/mrfgen_test_config.xml) ma
 * mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), or PPNG (for 256 color paletted PNGs).
 * target_x: The full x output size of the MRF image. The y value is half of x when not provided using ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
 
-These parameters are available but not used in the example above.
+These parameters are available but not used in the example above nor necessarily required.
 
 * vrtnodata: The value to be used as "NoData" in the VRT (which propagates to the MRF). mrfgen builds uses a VRT of input tiles to generate the MRF. The rules for vrtnodata as the same as [gdalbuildvrt](http://www.gdal.org/gdalbuildvrt.html).
 * overview_levels: The overview levels used in the MRF. This is the same as the "levels" used in [gdaladdo](http://www.gdal.org/gdaladdo.html). By default, mrfgen calculates the levels based on the output size of the MRF using powers of 2 (e.g., ```<overview_levels>2 4 8</overview_levels>```).
