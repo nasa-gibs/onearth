@@ -1225,10 +1225,12 @@ if len(modtiles) > 0:
         #-----------------------------------------------------------------------    
 
         # Create the gdal_translate command.
-        gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF',
-                                     '-co', compress, '-co', blocksize,
-                                     '-outsize', target_x, target_y,
-                                     vrt_filename, mrf_filename]
+        if compress == "COMPRESS=JPEG":
+            # Use JPEG quality of 80
+            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, mrf_filename]
+        else:           
+            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, mrf_filename]
+            
         # Log the gdal_translate command.
         log_the_command(gdal_translate_command_list)
         # Capture stderr.
