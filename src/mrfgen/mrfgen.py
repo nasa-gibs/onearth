@@ -355,6 +355,27 @@ def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data, time_of_data
     vrt = mrf.replace('.mrf', '.vrt')
     return (mrf, index, data, aux, vrt)
 
+def diff_resolution(tiles):
+    if len(tiles) <= 1:
+        print "Single tile detected"
+        return False
+    
+    print "Checking for different resolutions in tiles"
+    res = ""
+    for tile in tiles:
+        gdalinfo_command_list=['gdalinfo', tile]
+        gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        for line in gdalinfo.stdout.readlines():
+            if "Pixel Size =" in line:
+                if res == "":
+                    res = line.split("=")[1].strip()
+                    print "Input tile pixel size is: " + res
+                else:
+                    if line.split("=")[1].strip() != res:
+                        print "Different tile resolutions detected"
+                        return True              
+    return False
+
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
 #-------------------------------------------------------------------------------
@@ -857,8 +878,11 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')     
         
-# print alltiles
+# sort
 alltiles.sort()
+
+# check for different resolutions
+diff_res = diff_resolution(alltiles)
 
 # Initialize list of tile modification times.
 modtimes=[]
@@ -1050,14 +1074,16 @@ if len(modtiles) > 0:
     
     gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
     # use resolution?
-    if target_x != '':
+    if diff_res == True:
         xres = str(360.0/int(target_x))
         yres = xres
+        log_sig_warn("Different tile resolutions detected, using: " + str(xres), sigevent_url)
         gdalbuildvrt_command_list.append('-resolution')
         gdalbuildvrt_command_list.append('user')
         gdalbuildvrt_command_list.append('-tr')
         gdalbuildvrt_command_list.append(xres)
         gdalbuildvrt_command_list.append(yres)
+    if source_epsg != "":
         gdalbuildvrt_command_list.append('-a_srs')
         gdalbuildvrt_command_list.append(source_epsg)
     if vrtnodata != "":
