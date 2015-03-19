@@ -433,6 +433,12 @@ def generate_legend(colormaps, output, output_format, orientation):
             upperinf = math.isinf(bounds[-1])
             bounds =  [x for x in bounds if math.isinf(x) == False]
             ticks = [x for x in ticks if math.isinf(x) == False]
+            
+        # Check for long labels
+        longlabels = False
+        for legendlabel in legendlabels:
+            if len(legendlabel) > 14:
+                longlabels = True
         
         if orientation == 'horizontal':        
             if lc == 1:
@@ -445,7 +451,10 @@ def generate_legend(colormaps, output, output_format, orientation):
             if colormap.style == "classification":
                 if lc == 1:
                     fig.set_figheight(3)
-                    fig.set_figwidth(1.5)
+                    if longlabels:
+                        fig.set_figwidth(3)
+                    else:
+                        fig.set_figwidth(1.5)
                 patches = []
                 for color in legendcolors:
                     polygon = mpl.patches.Rectangle((0, 0), 10, 10, facecolor=color)
@@ -530,6 +539,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                         
             # use legend for classifications
             if colormap.style == "classification":
+                if longlabels and fig.get_figwidth() < 3:
+                    fig.set_figwidth(3)
                 patches = []
                 for color in legendcolors:
                     polygon = mpl.patches.Rectangle((0, 0), 10, 10, facecolor=color)
