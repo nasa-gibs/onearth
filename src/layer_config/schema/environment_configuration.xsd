@@ -5,7 +5,7 @@
       <xs:sequence>
         <xs:element maxOccurs="unbounded" ref="GetCapabilitiesLocation"/>
         <xs:element ref="GetTileServiceLocation"/>
-        <xs:element ref="CacheLocation"/>
+        <xs:element maxOccurs="2" ref="CacheLocation"/>
         <xs:element maxOccurs="unbounded" ref="StagingLocation"/>
         <xs:element maxOccurs="unbounded" ref="ServiceURL"/>
         <xs:element ref="LegendLocation" minOccurs="0"/>
@@ -19,7 +19,12 @@
     </xs:complexType>
   </xs:element>
   <xs:element name="GetTileServiceLocation" type="xs:string"/>
-  <xs:element name="CacheLocation" type="xs:string"/>
+  <xs:element name="CacheLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="basename" use="required" type="xs:NCName"/>
+      <xs:attribute name="service" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="StagingLocation">
     <xs:complexType mixed="true">
       <xs:attribute name="service" use="required" type="xs:NCName"/>

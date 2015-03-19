@@ -3,7 +3,8 @@
     <GetCapabilitiesLocation service="wmts">/sites/wmts-antarctic/</GetCapabilitiesLocation>
     <GetCapabilitiesLocation service="twms">/sites/twms-antarctic/.lib/</GetCapabilitiesLocation>
     <GetTileServiceLocation>/sites/twms-antarctic/.lib/</GetTileServiceLocation>
-    <CacheLocation>/data/EPSG3031/</CacheLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">/usr/share/onearth/demo/data/EPSG3031/</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">/usr/share/onearth/demo/data/EPSG3031/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3031/</StagingLocation>
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG3031/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-antarctic/</ServiceURL>

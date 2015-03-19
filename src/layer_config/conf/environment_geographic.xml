@@ -3,7 +3,8 @@
     <GetCapabilitiesLocation service="wmts">/usr/share/onearth/demo/wmts-geo/</GetCapabilitiesLocation>
     <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/twms-geo/.lib/</GetCapabilitiesLocation>
     <GetTileServiceLocation>/usr/share/onearth/demo/twms-geo/.lib/</GetTileServiceLocation>
-    <CacheLocation>/usr/share/onearth/demo/data/EPSG4326/</CacheLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">/usr/share/onearth/demo/data/EPSG4326/</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">/usr/share/onearth/demo/data/EPSG4326/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG4326/</StagingLocation>
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG4326/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>

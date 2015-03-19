@@ -65,23 +65,25 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.6.2'
+versionNumber = '0.6.3'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
     
-    def __init__(self, path, cacheConfig, getCapabilities, projection):
+    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, getCapabilities, projection):
         self.path = path
-        self.cacheConfig = cacheConfig
+        self.cacheConfigLocation = cacheConfigLocation
+        self.cacheConfigBasename = cacheConfigBasename
         self.getCapabilities = getCapabilities
         self.projection = projection
         
 class TWMSEndPoint:
     """End point data for TWMS"""
     
-    def __init__(self, path, cacheConfig, getCapabilities, getTileService, projection):
+    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, getCapabilities, getTileService, projection):
         self.path = path
-        self.cacheConfig = cacheConfig
+        self.cacheConfigLocation = cacheConfigLocation
+        self.cacheConfigBasename = cacheConfigBasename
         self.getCapabilities = getCapabilities
         self.getTileService = getTileService
         self.projection = projection
@@ -89,8 +91,11 @@ class TWMSEndPoint:
 class Environment:
     """Environment information for layer(s)"""
     
-    def __init__(self, cache, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl):
-        self.cache = cache
+    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl):
+        self.cacheLocation_wmts = cacheLocation_wmts
+        self.cacheLocation_twms = cacheLocation_twms
+        self.cacheBasename_wmts = cacheBasename_wmts
+        self.cacheBasename_twms = cacheBasename_twms
         self.getCapabilities_wmts = getCapabilities_wmts
         self.getCapabilities_twms = getCapabilities_twms
         self.getTileService = getTileService
@@ -317,8 +322,29 @@ def get_environment(environmentConfig):
         raise Exception(mssg)
         
     dom = xml.dom.minidom.parse(environment_config)
+    
+    # Caches
     try:
-        cacheConfig = get_dom_tag_value(dom, 'CacheLocation')
+        cacheLocationElements = dom.getElementsByTagName('CacheLocation')
+        cacheLocation_wmts = None
+        cacheLocation_twms = None
+        cacheBasename_wmts = None
+        cacheBasename_twms = None
+        for cacheLocation in cacheLocationElements:
+            try:
+                if str(cacheLocation.attributes['service'].value).lower() == "wmts":
+                    cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
+                    cacheBasename_wmts = cacheLocation.attributes['basename'].value
+                elif str(cacheLocation.attributes['service'].value).lower() == "twms":
+                    cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
+                    cacheBasename_twms = cacheLocation.attributes['basename'].value
+            except KeyError:
+                # Set to defaults
+                cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
+                cacheBasename_wmts = "cache_all_wmts" 
+                cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
+                cacheBasename_twms = "cache_all_twms"
+                log_sig_warn("'service' or 'basename' not defined in <CacheLocation>"+cacheLocation_wmts+"</CacheLocation> Using defaults TWMS:'cache_all_twms', WMTS:'cache_all_wmts'", sigevent_url)    
     except IndexError:
         raise Exception('Required <CacheLocation> element is missing in ' + environmentConfig)
         
@@ -381,7 +407,9 @@ def get_environment(environmentConfig):
     except IndexError:
         legendUrl = None
         
-    return Environment(add_trailing_slash(cacheConfig), 
+    return Environment(add_trailing_slash(cacheLocation_wmts),
+                       add_trailing_slash(cacheLocation_twms),
+                       cacheBasename_wmts, cacheBasename_twms, 
                        add_trailing_slash(wmts_getCapabilities), 
                        add_trailing_slash(twms_getCapabilities), 
                        add_trailing_slash(getTileService),
@@ -1061,7 +1089,11 @@ for conf in conf_files:
             log_sig_err('Required <EnvironmentConfig> element is missing in ' + conf, sigevent_url)
             continue
             
-        cacheConfig = environment.cache
+        cacheLocation_wmts = environment.cacheLocation_wmts
+        cacheBasename_wmts = environment.cacheBasename_wmts
+        cacheLocation_twms = environment.cacheLocation_twms
+        cacheBasename_twms = environment.cacheBasename_twms
+        cacheConfig = cacheLocation_wmts # default to WMTS cache location
         wmts_getCapabilities = environment.getCapabilities_wmts
         twms_getCapabilities = environment.getCapabilities_twms
         getTileService = environment.getTileService
@@ -1174,8 +1206,8 @@ for conf in conf_files:
             # default projection dir
             twmsEndPoint = lcdir + "/twms/" + projection.id.replace(":","")
                 
-        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheConfig, wmts_getCapabilities, projection)
-        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheConfig, twms_getCapabilities, getTileService, projection)
+        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
+        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
         
         # Close file.
         config_file.close()
@@ -1207,8 +1239,14 @@ for conf in conf_files:
         log_info_mssg('config: WMTS GetCapabilitiesLocation: ' + str(wmts_getCapabilities))
     if twms_getCapabilities:
         log_info_mssg('config: TWMS GetCapabilitiesLocation: ' + str(twms_getCapabilities))
-    if cacheConfig:
-        log_info_mssg('config: CacheLocation: ' + str(cacheConfig))
+    if cacheLocation_wmts:
+        log_info_mssg('config: WMTS CacheLocation: ' + str(cacheLocation_wmts))
+    if cacheLocation_twms:
+        log_info_mssg('config: TWMS CacheLocation: ' + str(cacheLocation_twms))
+    if cacheBasename_wmts:
+        log_info_mssg('config: WMTS Basename: ' + str(cacheLocation_wmts))
+    if cacheBasename_twms:
+        log_info_mssg('config: TWMS Basename: ' + str(cacheLocation_twms))
     if wmtsEndPoint:
         log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     if twmsEndPoint:
@@ -1784,16 +1822,16 @@ if no_twms == False:
         for mrf_file in os.listdir(twms_endpoint.path):
             if mrf_file.endswith(".mrf"):
                 mrfs = mrfs + twms_endpoint.path+'/'+mrf_file + ' '
-        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + twms_endpoint.path+'/cache.config'
+        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
         run_command(cmd, sigevent_url)
-        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + twms_endpoint.path+'/cache.xml'
+        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'
         run_command(cmd, sigevent_url)
         if no_cache == False:
-            if twms_endpoint.cacheConfig:
-                print '\nCopying: ' + twms_endpoint.path+'/cache.config' + ' -> ' + twms_endpoint.cacheConfig+'/cache.config'
-                shutil.copyfile(twms_endpoint.path+'/cache.config', twms_endpoint.cacheConfig+'/cache.config')
-                print '\nCopying: ' + twms_endpoint.path+'/cache.xml' + ' -> ' + twms_endpoint.cacheConfig+'/cache.xml'
-                shutil.copyfile(twms_endpoint.path+'/cache.xml', twms_endpoint.cacheConfig+'/cache.xml')
+            if twms_endpoint.cacheConfigLocation:
+                print '\nCopying: ' + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config' + ' -> ' + twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.config'
+                shutil.copyfile(twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config', twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.config')
+                print '\nCopying: ' + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml' + ' -> ' + twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.xml'
+                shutil.copyfile(twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml', twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.xml')
         if no_xml == False:
             if twms_endpoint.getCapabilities:
                 # Add layer metadata to getCapabilities
@@ -1845,22 +1883,22 @@ if no_wmts == False:
         for mrf_file in os.listdir(wmts_endpoint.path):
             if mrf_file.endswith(".mrf"):
                 mrfs = mrfs + wmts_endpoint.path+'/'+mrf_file + ' '
-        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + wmts_endpoint.path+'/cache_wmts.config'
+        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config'
         run_command(cmd, sigevent_url)
-        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + wmts_endpoint.path+'/cache_wmts.xml'
+        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
         run_command(cmd, sigevent_url)
         if no_cache == False:
-            if wmts_endpoint.cacheConfig:
-                print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.config' + ' -> ' + wmts_endpoint.cacheConfig+'/cache_wmts.config'
-                shutil.copyfile(wmts_endpoint.path+'/cache_wmts.config', wmts_endpoint.cacheConfig+'/cache_wmts.config')
-                print '\nCopying: ' + wmts_endpoint.path+'/cache_wmts.xml' + ' -> ' + wmts_endpoint.cacheConfig+'/cache_wmts.xml'
-                shutil.copyfile(wmts_endpoint.path+'/cache_wmts.xml', wmts_endpoint.cacheConfig+'/cache_wmts.xml')
+            if wmts_endpoint.cacheConfigLocation:
+                print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config'
+                shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config')
+                print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
+                shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml')
         if no_xml == False:
             if wmts_endpoint.getCapabilities:
                 # Add layer metadata to getCapabilities
                 layer_xml = ""
                 for xml_file in sorted(os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
-                    if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml" and xml_file != "cache_wmts.xml":
+                    if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml" and (xml_file.startswith("cache")==False):
                         layer_xml = layer_xml + open(wmts_endpoint.path+'/'+str(xml_file), 'r').read()
                 getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
                 getCapabilities_base = open(getCapabilities_file, 'r+')
