@@ -62,7 +62,7 @@ The environment configuration file contains information that the OnEarth layer c
 
 * **GetCapabilities Location** - The file system path where the WMTS and TWMS GetCapabilities XML files are copied after generation.
 * **GetTileService Location** - The file system path where the TWMS GetTileService XML file should be placed for external access.
-* **Cache Location** - The file system path where the WMTS and TWMS OnEarth cache config binary files are copied after generation.
+* **Cache Location** - The file system path where the WMTS and TWMS OnEarth cache config binary and XML files are copied after generation. The base filename is specified using the "basename" attribute.
 * **Staging Location** - The file system path where intermediary and final configuration files are staged.
 * **Service URL** - The base URL for WMTS and TWMS tiled access used during GetCapabilities XML creation.
 * **Legend Location** - The file system path where legend images are copied after generation. 
@@ -76,7 +76,8 @@ The environment configuration does not have unique identifier.  Reference to the
     <GetCapabilitiesLocation service="wmts">/srv/www/onearth/wmts/antarctic/</GetCapabilitiesLocation>
     <GetCapabilitiesLocation service="twms">/srv/www/onearth/twms/antarctic/.lib/</GetCapabilitiesLocation>
     <GetTileServiceLocation>/srv/www/onearth/twms/antarctic/.lib/</GetTileServiceLocation>
-    <CacheLocation>/archive/imagery/antarctic</CacheLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">/archive/imagery/antarctic/</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">/archive/imagery/antarctic/</CacheLocation>
     <StagingLocation service="wmts">/etc/onearth/config/wmts/EPSG3031/</StagingLocation>
     <StagingLocation service="twms">/etc/onearth/config/twms/EPSG3031/</StagingLocation>
     <ServiceURL service="wmts">http://onearth.project.org/wmts/antarctic/</ServiceURL>
