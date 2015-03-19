@@ -40,6 +40,7 @@ from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from StringIO import StringIO
 import numpy as np
+import math
 
 # for SVG tooltips
 try:
@@ -49,7 +50,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v0.6.2"
+versionNumber = "v0.6.3"
 
 class ColorMaps:
     """Collection of ColorMaps"""
@@ -421,6 +422,12 @@ def generate_legend(colormaps, output, output_format, orientation):
                             increment = (float(colormap_entries[idx+1].value.replace('[','').replace(']','')) - float(colormap_entries[idx].value))
                             ticks.append(float(colormap_entries[idx].value) + increment/2)       
      
+        # Handle +/- INF
+        lowerinf = math.isinf(bounds[0])
+        upperinf = math.isinf(bounds[-1])
+        bounds =  [x for x in bounds if math.isinf(x) == False]
+        ticks = [x for x in ticks if math.isinf(x) == False]
+        
         if orientation == 'horizontal':        
             if lc == 1:
                 bottom = 0.6 - t
@@ -484,11 +491,21 @@ def generate_legend(colormaps, output, output_format, orientation):
                     cb.set_ticks(ticks)
                     cb.ax.set_xticklabels(ticklabels) 
                     
-                if colormap.legend != None and is_large_colormap == False:
-                    cb.set_ticks(ticks)
-                    if ticklabels[0] != None:
-                        if len(ticklabels[0]) <= 5:
-                            cb.ax.set_xticklabels(ticklabels)   
+                if colormap.legend != None:
+                    if is_large_colormap == False:
+                        cb.set_ticks(ticks)
+                        if ticklabels[0] != None:
+                            if len(ticklabels[0]) <= 5:
+                                cb.ax.set_xticklabels(ticklabels)
+                    else: # Check for infinity bounds
+                        if len(cb.ax.get_xticklabels()) > 0 and (lowerinf==True or upperinf==True):
+                            ticklabels = cb.ax.get_xticklabels()
+                            ticklabels = [label.get_text() for label in ticklabels]
+                            if lowerinf:
+                                ticklabels[0] = "<=" + ticklabels[0]
+                            if upperinf:
+                                ticklabels[-1] = ">=" + ticklabels[-1]
+                            cb.ax.set_xticklabels(ticklabels)                
                 
                 if colormap.units != None and style != "classification":
                     fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
@@ -568,8 +585,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                     if len(cb.ax.get_yticklabels()) > 0:
                         ticklabels = cb.ax.get_yticklabels()
                         ticklabels = [label.get_text() for label in ticklabels]    
-                    ticklabels[0] = str(ticklabels[0]) + " " + colormap.units
-                    ticklabels[-1] = str(ticklabels[-1]) + " " + colormap.units
+                    ticklabels[0] = str(ticklabels[0].encode('ascii', 'replace')) + " " + colormap.units
+                    ticklabels[-1] = str(ticklabels[-1].encode('ascii', 'replace')) + " " + colormap.units
                     
                     if colormap.legend != None:
                         if colormap.legend.min_label != None:
