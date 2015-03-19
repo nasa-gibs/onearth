@@ -512,15 +512,24 @@ def generate_legend(colormaps, output, output_format, orientation):
                         if ticklabels[0] != None:
                             if len(ticklabels[0]) <= 5:
                                 cb.ax.set_xticklabels(ticklabels)
-                    else: # Check for infinity bounds
-                        if len(cb.ax.get_xticklabels()) > 0 and (lowerinf==True or upperinf==True):
-                            ticklabels = cb.ax.get_xticklabels()
-                            ticklabels = [label.get_text() for label in ticklabels]
-                            if lowerinf:
-                                ticklabels[0] = "<=" + ticklabels[0]
-                            if upperinf:
-                                ticklabels[-1] = ">=" + ticklabels[-1]
-                            cb.ax.set_xticklabels(ticklabels)                
+
+                    if len(cb.ax.get_xticklabels()) > 0:
+                        ticklabels = cb.ax.get_xticklabels()
+                        ticklabels = [label.get_text() for label in ticklabels]
+                        # Check for infinity
+                        if lowerinf:
+                            ticklabels[0] = "<=" + ticklabels[0]
+                        if upperinf:
+                            ticklabels[-1] = ">=" + ticklabels[-1]
+                        # Use min/max labels if they fit
+                        if colormap.legend.min_label != None:
+                            if len(colormap.legend.min_label) <=6:
+                                ticklabels[0] = colormap.legend.min_label
+                        if colormap.legend.max_label != None:
+                            if len(colormap.legend.max_label) <=6:
+                                ticklabels[-1] = colormap.legend.max_label
+ 
+                        cb.ax.set_xticklabels(ticklabels)
                 
                 if colormap.units != None and style != "classification":
                     fig.text(0.5, 0.05, colormap.units, fontsize=10, horizontalalignment='center')
