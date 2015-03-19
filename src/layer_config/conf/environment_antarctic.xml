@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EnvironmentConfiguration>
-    <GetCapabilitiesLocation service="wmts">/sites/wmts-antarctic/</GetCapabilitiesLocation>
-    <GetCapabilitiesLocation service="twms">/sites/twms-antarctic/.lib/</GetCapabilitiesLocation>
-    <GetTileServiceLocation>/sites/twms-antarctic/.lib/</GetTileServiceLocation>
+    <GetCapabilitiesLocation service="wmts">/usr/share/onearth/demo/wmts-antarctic/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/twms-antarctic/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/usr/share/onearth/demo/twms-antarctic/.lib/</GetTileServiceLocation>
     <CacheLocation service="wmts" basename="cache_all_wmts">/usr/share/onearth/demo/data/EPSG3031/</CacheLocation>
     <CacheLocation service="twms" basename="cache_all_twms">/usr/share/onearth/demo/data/EPSG3031/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3031/</StagingLocation>
