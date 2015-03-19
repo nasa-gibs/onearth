@@ -11,4 +11,6 @@
     <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
     <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
     <LegendURL>http://localhost/legends/</LegendURL>
+    <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
+    <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
 </EnvironmentConfiguration>

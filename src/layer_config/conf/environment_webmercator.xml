@@ -9,4 +9,8 @@
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG3857/</StagingLocation>
     <ServiceURL service="wmts">http://localhost/wmts-webmerc/</ServiceURL>
     <ServiceURL service="twms">http://localhost/twms-webmerc/</ServiceURL>
+    <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
+    <LegendURL>http://localhost/legends/</LegendURL>
+    <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
+    <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
 </EnvironmentConfiguration>

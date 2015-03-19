@@ -67,6 +67,8 @@ The environment configuration file contains information that the OnEarth layer c
 * **Service URL** - The base URL for WMTS and TWMS tiled access used during GetCapabilities XML creation.
 * **Legend Location** - The file system path where legend images are copied after generation. 
 * **Legend URL** - The base URL for external access to legend images.
+* **ColorMap Location** - The file system path where color map files may be found. 
+* **ColorMap URL** - The base URL for external access to color maps.
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
 
@@ -84,6 +86,8 @@ The environment configuration does not have unique identifier.  Reference to the
     <ServiceURL service="twms">http://onearth.project.org/twms/antarctic/</ServiceURL>
     <LegendLocation>/usr/share/onearth/legends</LegendLocation>
     <LegendURL>http://onearth.project.org/legends/</LegendURL>
+    <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
+    <ColorMapURL>http://onearth.project.org/colormaps/</ColorMapURL>
 </EnvironmentConfiguration>
 ```
 

@@ -91,7 +91,7 @@ class TWMSEndPoint:
 class Environment:
     """Environment information for layer(s)"""
     
-    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl):
+    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dir, colormapUrl):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -105,6 +105,8 @@ class Environment:
         self.twms_dir = projection_twms_dir
         self.legend_dir = legend_dir
         self.legendUrl = legendUrl
+        self.colormap_dir = colormap_dir
+        self.colormapUrl = colormapUrl
         
 class Projection:
     """Projection information for layer"""
@@ -407,6 +409,15 @@ def get_environment(environmentConfig):
     except IndexError:
         legendUrl = None
         
+    try:
+        colormapLocation = add_trailing_slash(get_dom_tag_value(dom, 'ColorMapLocation'))
+    except IndexError:
+        colormapLocation = None
+    try:
+        colormapUrl = add_trailing_slash(get_dom_tag_value(dom, 'ColorMapURL'))
+    except IndexError:
+        colormapUrl = None
+        
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),
                        cacheBasename_wmts, cacheBasename_twms, 
@@ -416,7 +427,8 @@ def get_environment(environmentConfig):
                        add_trailing_slash(wmtsServiceUrl), 
                        add_trailing_slash(twmsServiceUrl),
                        wmtsStagingLocation, twmsStagingLocation,
-                       legendLocation, legendUrl)
+                       legendLocation, legendUrl,
+                       colormapLocation, colormapUrl)
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -790,7 +802,10 @@ def generate_legend(colormap, output, legend_url, orientation):
     if os.path.isfile(output) == False:
         print "Generating new legend"
         cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output + ' -r ' + orientation
-        run_command(cmd, sigevent_url)
+        try:
+            run_command(cmd, sigevent_url)
+        except Exception, e:
+            log_sig_err("Error generating legend: " + str(e), sigevent_url)
     else:
         print "Legend already exists"
         try:
@@ -807,7 +822,7 @@ def generate_legend(colormap, output, legend_url, orientation):
                 cmd = 'oe_generate_legend.py -c '+colormap+' -o ' + output + ' -r ' + orientation
                 run_command(cmd, sigevent_url)
         except Exception, e:
-            print e
+            log_sig_err("Error generating legend: " + str(e), sigevent_url)
     # check file
     try:
         # Open file.
@@ -1368,7 +1383,13 @@ for conf in conf_files:
             pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
             tileX = int(pageSize.getAttribute('x'))
             tileY = int(pageSize.getAttribute('y'))
-            emptyTileSize = generate_empty_tile(colormap, emptyTile, tileX, tileY)
+            if environment.colormap_dir != None:
+                colormap_path = environment.colormap_dir + colormap
+            else:
+                colormap_path = colormap
+                message = "ColorMapLocation not defined for environment " + environmentConfig + " - Trying colormap path " + colormap_path
+                log_sig_warn(message, sigevent_url)
+            emptyTileSize = generate_empty_tile(colormap_path, emptyTile, tileX, tileY)
         else: # Override size if there is no colormap
             try:
                 # Get file size
@@ -1385,10 +1406,11 @@ for conf in conf_files:
     twms.appendChild(levelsElement)
     twms.appendChild(emptyInfoElement)
 
-    if colormap:
-        metadataElement = mrf_dom.createElement('Metadata')
-        metadataElement.appendChild(mrf_dom.createTextNode(colormap))
-        twms.appendChild(twms.appendChild(metadataElement))
+# No longer used
+#     if colormap:
+#         metadataElement = mrf_dom.createElement('Metadata')
+#         metadataElement.appendChild(mrf_dom.createTextNode(colormap))
+#         twms.appendChild(twms.appendChild(metadataElement))
     
     # add default TWMS patterns
     twms_time_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
@@ -1489,11 +1511,17 @@ for conf in conf_files:
         except:
             message = "Legend directory has not been defined for environment with cache location: " + environment.cache
             log_sig_err(message, sigevent_url)
+        if environment.colormap_dir != None:
+            colormap_path = environment.colormap_dir + colormap
+        else:
+            colormap_path = colormap
+            message = "ColorMapLocation not defined for environment " + environmentConfig + " - Trying colormap path " + colormap_path
+            log_sig_warn(message, sigevent_url)
         try:
             if environment.legendUrl != None:
                 if legend_output != '':
-                    legendUrl_vertical = generate_legend(colormap, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
-                    legendUrl_horizontal = generate_legend(colormap, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
+                    legendUrl_vertical = generate_legend(colormap_path, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
+                    legendUrl_horizontal = generate_legend(colormap_path, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
             else:
                 message = "Legend URL has not been defined for environment with cache location: " + environment.cache
                 log_sig_err(message, sigevent_url)
@@ -1652,7 +1680,13 @@ for conf in conf_files:
                 if colormap == None:
                     line = ''
                 else:
-                    line = line.replace("$ColorMap",str(colormap))
+                    if environment.colormapUrl != None:
+                        colormapUrl = environment.colormapUrl + colormap
+                    else:
+                        colormapUrl = colormap
+                        message = "ColorMapURL not defined for environment " + environmentConfig + " - Trying colormap URL " + colormapUrl
+                        log_sig_warn(message, sigevent_url)
+                    line = line.replace("$ColorMap",str(colormapUrl))
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
             if '$FileType' in line:
