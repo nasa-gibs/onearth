@@ -305,7 +305,10 @@ def parse_legend(legend_xml):
                 nodata = True if nodata.lower() == 'true' else False
         except KeyError:
             nodata = False
-        legend_entry = LegendEntry(legend_entry.get("id"), red, green, blue, transparent, source_value, value, label, nodata)
+        entry_id = legend_entry.get("id")
+        if entry_id == None: 
+            entry_id = 0
+        legend_entry = LegendEntry(entry_id, red, green, blue, transparent, source_value, value, label, nodata)
         legend_entries.append(legend_entry)
     
     try:
@@ -423,10 +426,13 @@ def generate_legend(colormaps, output, output_format, orientation):
                             ticks.append(float(colormap_entries[idx].value) + increment/2)       
      
         # Handle +/- INF
-        lowerinf = math.isinf(bounds[0])
-        upperinf = math.isinf(bounds[-1])
-        bounds =  [x for x in bounds if math.isinf(x) == False]
-        ticks = [x for x in ticks if math.isinf(x) == False]
+        lowerinf = False
+        upperinf = False
+        if len(bounds) > 0:
+            lowerinf = math.isinf(bounds[0])
+            upperinf = math.isinf(bounds[-1])
+            bounds =  [x for x in bounds if math.isinf(x) == False]
+            ticks = [x for x in ticks if math.isinf(x) == False]
         
         if orientation == 'horizontal':        
             if lc == 1:
@@ -519,7 +525,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     
         
         else: # default vertical orientation
-            left = 0.2 + (0.3*(colormap_count-1))
+            left = 0.10 + ((0.9/lc)*(colormap_count-1))
             width = 0.15/lc
                         
             # use legend for classifications
