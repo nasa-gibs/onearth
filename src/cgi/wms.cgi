@@ -15,7 +15,7 @@ then
     cat black.jpg
   else
     echo -e "Content-type: image/png\n"
-    cat RGBA_512.png
+    cat transparent.png
   fi
   exit
 else
