@@ -1553,7 +1553,7 @@ static int mrf_handler(request_rec *r)
   cfg=(wms_cfg *) 
     ap_get_module_config(r->per_dir_config,&wms_module);
 
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got config");
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got config");
 
   if (!(cfg->caches)) return DECLINED; // Not configured?
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got caches %d",cfg->caches->count);
@@ -1708,17 +1708,18 @@ static int mrf_handler(request_rec *r)
   } else {
   	  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
   }
-  this_record=r_file_pread(r,
-              ifname,
-              sizeof(index_s),offset, cache->time_period, cache->num_periods);
+  this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods);
 
 	if (!this_record) {
+		// try to read from 0,0 in static index
+		this_record = p_file_pread(r->pool, ifname, sizeof(index_s), 0);
+	}
+	if (!this_record) {
+		// still no record
 		if (errors > 0)
 			return wmts_return_all_errors(r);
 		char *fname = tstamp_fname(r,ifname);
-		ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-					 "Can't get index record from %s Based on %s",
-			 fname,r->args);
+		ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Can't get index record from %s Based on %s", fname,r->args);
 //		perror("Index read error: ");
 		return DECLINED;
 
@@ -1793,31 +1794,24 @@ static int mrf_handler(request_rec *r)
 	  dfname = apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0);
   }
   if (this_record->size) {
-	  this_data=r_file_pread(r,
-            dfname,
-            this_record->size,this_record->offset, cache->time_period, cache->num_periods);
-  } else {
+	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods);
+  } else { // get empty tile
     int lc=level-GETLEVELS(cache);
-    if ((cfg->meta[count].empties[lc].index.size)&&
-	(cfg->meta[count].empties[lc].data)) {
+    if ((cfg->meta[count].empties[lc].index.size)&& (cfg->meta[count].empties[lc].data)) {
         this_record->size=cfg->meta[count].empties[lc].index.size;
         this_data=cfg->meta[count].empties[lc].data;
     } else { // This might be first time, we need to read the empty page
       if (cfg->meta[count].empties[lc].index.size) {
         this_record->size=cfg->meta[count].empties[lc].index.size;
         this_record->offset=cfg->meta[count].empties[lc].index.offset;
-	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-	  "INITIALIZING EMPTY FOR: %s",r->args);
-        this_data=
-	cfg->meta[count].empties[lc].data=p_file_pread(cfg->p,
-		dfname,
-		this_record->size, this_record->offset);
+        ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "INITIALIZING EMPTY FOR: %s",r->args);
+        this_data=cfg->meta[count].empties[lc].data=p_file_pread(cfg->p,
+        		dfname, this_record->size, this_record->offset);
       }
       if (!this_data) { // No empty tile provided, let it pass
-	miss_count--;
-	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-	  "Record not present %s",r->args);
-        return DECLINED;
+    	  miss_count--;
+    	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Record not present %s",r->args);
+    	  return DECLINED;
       }
     }
   }
