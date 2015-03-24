@@ -73,13 +73,13 @@ This can be used as the `<HeaderFileName>` in the layer configuration file (upco
 
 ### Generate Color Map (Optional)
 
-OnEarth supports the used of a color map within MRF imagery.  Typically, the MRF will be generated used paletted PNG files as input, however, RGBA PNG files may be converted if a color map is provided.  OnEarth uses the GIBS color map XML format ([samples here](../src/generate_legend/samples)).  OnEarth also uses the color map for the generation of color legends (see the [OnEarth Legend Generator](../src/generate_legend/README.md) for more details).
+OnEarth supports the used of a color map within MRF imagery.  Typically, the MRF will be generated using paletted PNG files as input, however, RGBA PNG files may be converted if a color map is provided.  OnEarth uses the GIBS color map XML format ([samples here](../src/generate_legend/samples)).  OnEarth also uses the color map for the generation of color legends (see the [OnEarth Legend Generator](../src/generate_legend/README.md) for more details).
 
 The OnEarth source currently does not include tools to generate a GIBS color map.
 
 ### Generate Empty Tile (Optional)
 
-An "empty tile" is a tile that is returned by the server when there no data are available.  This may happen when a specified region contains no valid data, no data is available for a given time region (e.g., future date), or when there is an error with the server.  In many cases, a client application prefers a tile being returned versus an error message due to ease of handling.
+An "empty tile" is a tile that is returned by the server when there are no data available.  This may happen when a specified region contains no valid data, no data is available for a given time region (e.g., future date), or when there is an error with the server.  In many cases, a client application prefers a tile being returned versus an error message due to ease of handling.
 
 Two [empty tiles](../src/mrfgen/empty_tiles) are available in the source code.  Typically a black opaque image is used for JPEG imagery, while a transparent image is used for PNG.  There are reasons that these "empty tiles" may not be desired for use: the tiles may not be consistent with the colors in the actual imagery, or perhaps another color is preferred over black or transparent.  
 
@@ -103,6 +103,8 @@ oe_generate_empty_tile.py -c MODIS_Terra_Chlorophyll_A.xml -f png -x 512 -y 512 
 ```xml
 <EmptyTile>empty_tile.png</EmptyTile>
 ```
+
+Note that mod_onearth uses a CGI script at each endpoint that will reference an empty tile should one not exist for the requested layer or if there is a problem retrieving it.
 
 ### Update/Create OnEarth Layer Configuration file
 
@@ -159,6 +161,8 @@ oe_configure_layer --layer_dir /etc/onearth/config/layers
 
 If no configuration file or directory is specified, the tool will look for files files in a default directory relative to the layer configuration directory `--lcdir`.
 
+There is also a `--generate_links` option that will automatically create soft links to files designated as the "default" for time varying layers (read this [documentation](archive.md#default-files) for more information on "Default Files"). 
+
 ### Restart Apache
 
 Apache must be restarted for the configuration changes to take effect.  Passing the `-r` or `--restart_apache` with oe_configure_layer will automatically restart the server, however, this can also be run manually:
@@ -176,4 +180,4 @@ The imagery layers should now be available.  If errors were discovered, please v
 Dependent RPMs: 
 * onearth-metrics
 
-Please refer to the following documentation: [OnEarth Metrics](src/onearth_logs/README.md)
+Please refer to the following documentation: [OnEarth Metrics](../src/onearth_logs/README.md)

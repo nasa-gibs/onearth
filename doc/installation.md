@@ -23,7 +23,6 @@ sudo yum -y install gibs-gdal-*
 
 Install OnEarth packages
 ```Shell
-sudo yum -y install gibs-gdal-*
 sudo yum -y install onearth-*
 ```
 
@@ -44,6 +43,9 @@ mod_onearth
 ```
 /etc/httpd/modules/mod_twms.so
 /etc/httpd/modules/mod_wms.so
+/usr/bin//oe_create_cache_config
+/usr/share/onearth/apache/*
+/usr/share/onearth/apache/kml/*
 ```
 
 mrfgen

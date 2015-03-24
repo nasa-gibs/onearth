@@ -16,7 +16,7 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * The static attribute indicates whether the layer varies by date (false) or is a single static image (true).
 * The year attribute indicates whether files are grouped into subdirectories by year (true) or are all in the base directory (false).
 * The root attribute references the unique identifier of the layer's associated archive location as contained in the [archive configuration](config_support.md#archive-configuration) support file.
-* **ColorMap (Optional)** - A URL to the layer's associated colormap, if one exists, to be included in the WMTS GetCapabilities service document.
+* **ColorMap (Optional)** - The file name for layer's associated colormap, if one exists, to be included in the WMTS GetCapabilities service document. The path is specified with `<ColorMapLocation>` in the environment configuration. A URL may also be used instead of a file name (deprecated).
 * **Time** - The ISO 8601 time range for the layer.  The tool may be configured to scan the file system to detect the the time (e.g., `<Time>DETECT</Time>`).  See [Time Detection](time_detection.md) for details.
 
 A sample layer configuration file is shown here:
