@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2014, California Institute of Technology.
+# Copyright (c) 2002-2015, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -877,6 +877,64 @@ def generate_empty_tile(colormap, output, width, height):
         log_sig_err(mssg, sigevent_url)
     
     return empty_size
+
+def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation):
+    """
+    Generate a archive links for a layer based on the last provided time period
+    Arguments:
+        detected_times -- the list of available time periods
+        archiveLocation -- the location of the archive data
+        fileNamePrefix -- the prefix of the MRF files
+        year -- whether or not the layer uses a year-based directory structure
+        dataFileLocation -- file location for the default data file
+    """
+    
+    last_time = detected_times[-1].split("/")[1]
+    if 'T' in last_time: # sub-daily files
+        t = datetime.strptime(last_time,"%Y-%m-%dT%H:%M:%SZ")
+        filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
+        last_year = datetime.strftime(t,"%Y")
+    else:
+        t = datetime.strptime(last_time,"%Y-%m-%d")
+        filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
+        last_year = datetime.strftime(t,"%Y")
+    
+    link_pre, data_ext = os.path.splitext(dataFileLocation)
+    
+    mrf = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".mrf"
+    idx = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".idx"
+    data = archiveLocation + ("",str(last_year)+"/")[year] + filename + data_ext
+    
+    mrf_link = link_pre + ".mrf"
+    idx_link = link_pre + ".idx"
+    data_link = link_pre + data_ext
+    
+    if os.path.isfile(mrf):
+        if os.path.isfile(mrf_link):
+            os.remove(mrf_link)
+            print "Removed existing file " + mrf_link
+        os.symlink(mrf, mrf_link)
+        print "Created soft link " + mrf_link + " -> " + mrf
+    else:
+        log_sig_warn("Default MRF header file " + mrf + " does not exist", sigevent_url)
+    if os.path.isfile(idx):
+        if os.path.isfile(idx_link):
+            os.remove(idx_link)
+            print "Removed existing file " + idx_link
+        os.symlink(idx, idx_link)
+        print "Created soft link " + idx_link + " -> " + idx
+    else:
+        log_sig_warn("Default MRF index file " + idx + " does not exist", sigevent_url)
+    if os.path.isfile(data):
+        if os.path.isfile(data_link):
+            os.remove(data_link)
+            print "Removed existing file " + data_link
+        os.symlink(data, data_link)
+        print "Created soft link " + data_link + " -> " + data
+    else:
+        log_sig_warn("Default MRF data file " + data + " does not exist", sigevent_url)
+    
+    return mrf_link, idx_link, data_link
     
 #-------------------------------------------------------------------------------   
 
@@ -937,6 +995,9 @@ parser.add_option("-w", "--no_wmts",
 parser.add_option("-x", "--no_xml",
                   action="store_true", dest="no_xml", 
                   default=False, help="Do not generate getCapabilities and getTileService XML.")
+parser.add_option("-y", "--generate_links",
+                  action="store_true", dest="generate_links", 
+                  default=False, help="Generate default/current day links in the archive for time varying layers.")
 parser.add_option("-z", "--no_cache",
                   action="store_true", dest="no_cache", 
                   default=False, help="Do not copy cache configuration files to cache location.")
@@ -968,6 +1029,8 @@ configuration_time = options.time
 skip_empty_tiles = options.skip_empty_tiles
 # Generate legends
 legend = options.generate_legend
+# Generate links
+links = options.generate_links
 # Projection configuration
 if options.projection_configuration:
     projection_configuration = options.projection_configuration
@@ -1427,6 +1490,7 @@ for conf in conf_files:
         twms.appendChild(patternElement)
     
     # Time elements
+    detected_times = []
     if static == False:
         timeElements = []
         for time in times:
@@ -1434,7 +1498,7 @@ for conf in conf_files:
             for detected_time in detected_times:
                 timeElements.append(mrf_dom.createElement('Time'))
                 timeElements[-1].appendChild(mrf_dom.createTextNode(detected_time))
-        
+
         for timeElement in timeElements:
             twms.appendChild(timeElement)
                 
@@ -1499,7 +1563,14 @@ for conf in conf_files:
     
     print '\n'+ twms_mrf_filename + ' configured successfully\n'
     print '\n'+ wmts_mrf_filename + ' configured successfully\n'
-
+    
+    # generate archive links if requested
+    if links == True:
+        if len(detected_times) > 0:
+            print "Generating archive links for " + fileNamePrefix
+            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation)
+        else:
+            print fileNamePrefix + " is not a time varying layer" 
 
     # generate color map if requested
     legendUrl_vertical = ''
@@ -1989,7 +2060,7 @@ if len(errors) > 0:
 if len(warnings) == 0 and len(errors) == 0:
     message = completion + "successully."
 print ""
-message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
+message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " " + ("Archive links not generated","Archive links generated")[links] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
 
 try:
     sigevent('INFO', asctime() + " " + message, sigevent_url)
