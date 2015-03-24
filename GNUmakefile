@@ -13,17 +13,19 @@ NUMPY_ARTIFACT=numpy-1.5.1.tar.gz
 NUMPY_URL=https://pypi.python.org/packages/source/n/numpy/$(NUMPY_ARTIFACT)
 MPL_ARTIFACT=matplotlib-1.3.1.tar.gz
 MPL_URL=http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matplotlib-1.3.1/$(MPL_ARTIFACT)
+CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
+CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
 
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: numpy-unpack mpl-unpack onearth-compile
+onearth: numpy-unpack mpl-unpack cgicc-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: numpy-download mpl-download 
+download: numpy-download mpl-download cgicc-download
 
 numpy-download: upstream/$(NUMPY_ARTIFACT).downloaded
 
@@ -40,6 +42,14 @@ upstream/$(MPL_ARTIFACT).downloaded:
 	rm -f upstream/$(MPL_ARTIFACT)
 	( cd upstream ; wget $(MPL_URL) )
 	touch upstream/$(MPL_ARTIFACT).downloaded
+	
+cgicc-download: upstream/$(CGICC_ARTIFACT).downloaded
+
+upstream/$(CGICC_ARTIFACT).downloaded: 
+	mkdir -p upstream
+	rm -f upstream/$(CGICC_ARTIFACT)
+	( cd upstream ; wget $(CGICC_URL) )
+	touch upstream/$(CGICC_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
@@ -57,6 +67,13 @@ mpl-unpack: build/mpl/VERSION
 build/mpl/VERSION:
 	mkdir -p build/mpl
 	tar xf upstream/$(MPL_ARTIFACT) -C build/mpl \
+		--strip-components=1 --exclude=.gitignore
+		
+cgicc-unpack: build/cgicc/VERSION
+
+build/cgicc/VERSION:
+	mkdir -p build/cgicc
+	tar xf upstream/$(CGICC_ARTIFACT) -C build/cgicc \
 		--strip-components=1 --exclude=.gitignore
 
 onearth-compile:
@@ -131,11 +148,13 @@ onearth-install:
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
-	
+
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/numpy
 	cp -r build/numpy/* $(DESTDIR)/$(PREFIX)/share/numpy
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mpl
 	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
+	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
 
 
 #-----------------------------------------------------------------------------
@@ -173,6 +192,7 @@ onearth-rpm: onearth-artifact
 	cp \
 		upstream/$(NUMPY_ARTIFACT) \
 		upstream/$(MPL_ARTIFACT) \
+		upstream/$(CGICC_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \

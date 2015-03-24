@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	0.6.3
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -8,6 +8,7 @@ URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	https://pypi.python.org/packages/source/n/numpy/numpy-1.5.1.tar.gz
 Source2:	http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matplotlib-1.3.1/matplotlib-1.3.1.tar.gz
+Source3:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -86,6 +87,7 @@ Layer configuration tools for OnEarth including Legend Generator
 mkdir upstream
 cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
+cp %{SOURCE3} upstream
 
 %build
 %if 0%{?el6}
@@ -129,6 +131,12 @@ rm -rf %{buildroot}
 %{_datadir}/onearth/apache
 %defattr(755,root,root,-)
 %{_bindir}/oe_create_cache_config
+%{_datadir}/cgicc
+
+%post
+cd %{_datadir}/cgicc/
+sudo %{_datadir}/cgicc/configure --prefix=/usr
+sudo make install
 
 %files config
 %defattr(664,gibs,gibs,775)
@@ -173,6 +181,9 @@ sudo python setup.py install
 
 
 %changelog
+* Tue Mar 24 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.3-2
+- Added installation of cgicc for kmlgen
+
 * Thu Feb 12 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.3-1
 - Updated BuildRequires and config package Requires
 
