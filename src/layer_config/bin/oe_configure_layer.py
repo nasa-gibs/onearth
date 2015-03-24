@@ -900,6 +900,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         last_year = datetime.strftime(t,"%Y")
     
     link_pre, data_ext = os.path.splitext(dataFileLocation)
+    link_dir = os.path.dirname(link_pre)
     
     mrf = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".mrf"
     idx = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".idx"
@@ -908,6 +909,11 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
     mrf_link = link_pre + ".mrf"
     idx_link = link_pre + ".idx"
     data_link = link_pre + data_ext
+    
+    # make sure link directory exists
+    if not os.path.exists(link_dir):
+        os.makedirs(link_dir)
+        print "Created directory " + link_dir   
     
     if os.path.isfile(mrf):
         if os.path.isfile(mrf_link):
