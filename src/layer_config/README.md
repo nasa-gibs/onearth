@@ -10,7 +10,7 @@ The OnEarth Layer Configuration Tool (oe_configure_layer.py) is a Python script 
 * The tool generates getCapabilities.xml, getTileService.xml, and server cache configuration file for Tiled-WMS.
 
 ```
-Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --skip_empty_tiles
+Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles
 
 Options:
   --version             show program's version number and exit
@@ -48,6 +48,8 @@ Options:
   -w, --no_wmts         Do not use configurations for WMTS.
   -x, --no_xml          Do not generate getCapabilities and getTileService
                         XML.
+  -y, --generate_links  Generate default/current day links in the archive for
+                        time varying layers.
   -z, --no_cache        Do not copy cache configuration files to cache
                         location.
 ```
