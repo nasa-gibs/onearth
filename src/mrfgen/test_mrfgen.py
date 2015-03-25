@@ -14,7 +14,7 @@ import datetime
 from osgeo import gdal
 
 year = datetime.datetime.now().strftime('%Y')
-doy = str(int(datetime.datetime.now().strftime('%j'))-1)
+doy = int(datetime.datetime.now().strftime('%j'))-1
 
 def run_command(cmd):
     """
@@ -161,8 +161,8 @@ class TestMRFGeneration_polar(unittest.TestCase):
         for r in range(0,8):
             for c in range(0,8):
                 try:
-                    image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
-                    world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%s/Arctic_r%02dc%02d.%s%s.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
+                    image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%03d/Arctic_r%02dc%02d.%s%03d.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
+                    world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%03d/Arctic_r%02dc%02d.%s%03d.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
                     image_name = self.input_dir + image_url.split('/')[-1]
                     world_name = self.input_dir + world_url.split('/')[-1]
                     print "Downloading", image_url
