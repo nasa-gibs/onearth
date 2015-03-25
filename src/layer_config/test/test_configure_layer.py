@@ -43,11 +43,11 @@ class TestLayerConfig(unittest.TestCase):
         print "Errors: " + str(errors)
         
         self.assertEqual(errors, 0, "Errors detected with layer configuration tool")
-        self.assertTrue(os.path.isfile(self.lcdir + "/wmts/EPSG4326/cache_wmts.config"), "cache_wmts.config does not exist")
+        self.assertTrue(os.path.isfile(self.lcdir + "/wmts/EPSG4326/cache_all_wmts.config"), "cache_all_wmts.config does not exist")
         self.assertTrue(os.path.isfile(self.lcdir + "/wmts/EPSG4326/getCapabilities.xml"), "WMTS getCapabilities.xml does not exist")
         self.assertTrue(os.path.isfile(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.mrf"), "MODIS_Aqua_AerosolTTTTTTT_.mrf does not exist")
         self.assertTrue(os.path.isfile(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.xml"), "MODIS_Aqua_AerosolTTTTTTT_.xml does not exist")
-        self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/cache.config"), "cache.config does not exist")
+        self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/cache_all_twms.config"), "cache_all_twms.config does not exist")
         self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/getCapabilities.xml"), "TWMS getCapabilities.xml does not exist")
         self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/getTileService.xml"), "TWMS getTileService.xml does not exist")
         self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.mrf"), "MODIS_Aqua_AerosolTTTTTTT_.mrf does not exist")
@@ -62,7 +62,7 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(contains_layer, "WMTS GetCapabilities does not contain layer")
         
         contains_layer = False
-        cacheConfig = open(self.lcdir + "/wmts/EPSG4326/cache_wmts.config", 'r')
+        cacheConfig = open(self.lcdir + "/wmts/EPSG4326/cache_all_wmts.config", 'r')
         for line in cacheConfig.readlines():
             if "SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=MODIS_Aqua_Aerosol&STYLE=(default)?&TILEMATRIXSET=EPSG4326_2km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fpng" in line:
                 print "Layer found in WMTS cache configuration"
@@ -82,14 +82,14 @@ class TestLayerConfig(unittest.TestCase):
         contains_layer = False
         getTileService = open(self.lcdir + "/twms/EPSG4326/getTileService.xml", 'r')
         for line in getTileService.readlines():
-            if "<Name>MODIS_Aqua_Aerosol</Name>" in line:
+            if "<Name>MODIS_Aqua_Aerosol tileset</Name>" in line:
                 print "Layer found in TWMS GetTileService"
                 contains_layer = True
         getTileService.close()
         self.assertTrue(contains_layer, "GetTileService does not contain layer")
         
         contains_layer = False
-        cacheConfig = open(self.lcdir + "/twms/EPSG4326/cache.config", 'r')
+        cacheConfig = open(self.lcdir + "/twms/EPSG4326/cache_all_twms.config", 'r')
         for line in cacheConfig.readlines():
             if "MODIS_Terra_Chlorophyll_A/YYYY/MODIS_Terra_Chlorophyll_ATTTTTTT_.ppg" in line:
                 print "Layer found in TWMS cache configuration"
@@ -99,7 +99,7 @@ class TestLayerConfig(unittest.TestCase):
         
         # check empty tile
         empty_tile = os.path.getsize(self.lcdir + "/test/empty_tile.png")
-        self.assertEqual(empty_tile, 1108, "Empty tile does not match expected")
+        self.assertEqual(empty_tile, 1382, "Empty tile does not match expected")
         
         print "\n***Test Case Passed***\n"
         
@@ -124,9 +124,9 @@ class TestLayerConfig(unittest.TestCase):
         print "Errors: " + str(errors)
         
         self.assertEqual(errors, 0, "Errors detected with layer configuration tool")
-        print "Comparing: " + legend_location + "/MODIS_Aqua_Aerosol_V.svg to" + self.legend_v
+        print "Comparing: " + legend_location + "/MODIS_Aqua_Aerosol_V.svg to " + self.legend_v
         self.assertTrue(filecmp.cmp(legend_location + "/MODIS_Aqua_Aerosol_V.svg", self.legend_v), "Legend does not match expected")
-        print "Comparing: " + legend_location + "/MODIS_Aqua_Aerosol_H.svg to" + self.legend_h
+        print "Comparing: " + legend_location + "/MODIS_Aqua_Aerosol_H.svg to " + self.legend_h
         self.assertTrue(filecmp.cmp(legend_location + "/MODIS_Aqua_Aerosol_H.svg", self.legend_h), "Legend does not match expected")
         
     def tearDown(self):
