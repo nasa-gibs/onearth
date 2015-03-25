@@ -182,6 +182,15 @@ The input image dimensions are not restricted, per se, but may need to be optimi
 
 Another example would be for an input data layer with a custom overall size, such as 16000 x 8000. Increasing the resolution to 16384 x 8192 will enable the internal tiling size of 512 (or 256) to nest perfectly with the image dimension, with no partial blocks. Partial blocks can cause unwanted edge effects where the global image wraps around. Optimization of the input image dimensions (or the overall size of the input tile set) is generally recommended, but should be evaluated on a case-by-case basis.
 
+## mrfgen Tests
+
+The test_mrfgen.py script may be used to test basic functionalities of mrfgen. It must be run from the mrfgen/ directory and the mrfgen/test/ directory must exist.
+
+```Shell
+cd mrfgen/
+./test_mrfgen.py
+```
+
 ## Contact
 
 Contact us by sending an email to
