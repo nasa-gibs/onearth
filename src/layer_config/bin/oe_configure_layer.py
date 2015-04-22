@@ -65,7 +65,7 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.6.3'
+versionNumber = '0.6.4'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -921,8 +921,6 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
             print "Removed existing file " + mrf_link
         os.symlink(mrf, mrf_link)
         print "Created soft link " + mrf_link + " -> " + mrf
-    else:
-        log_sig_warn("Default MRF header file " + mrf + " does not exist", sigevent_url)
     if os.path.isfile(idx):
         if os.path.isfile(idx_link):
             os.remove(idx_link)
