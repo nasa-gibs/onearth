@@ -558,20 +558,22 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 print "Searching:", os.path.join(dirname, subdirname)
 
             for filename in filenames:
-                if str(filename).startswith(fileNamePrefix):
-                    filetime = filename[-12:-5]
+                if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                     try:
+                        filetime = filename[-12:-5]
                         filedate = datetime.strptime(filetime,"%Y%j")
                         dates.append(filedate)
                     except ValueError:
-                        # check for subdaily time
-                        try:
-                            filetime = filename[-18:-5]
-                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                            dates.append(filedate)
-                            subdaily = True
-                        except ValueError:
-                            print "Skipping", filename
+                        print "Skipping", filename
+                elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                    try:
+                        filetime = filename[-18:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                        dates.append(filedate)
+                        subdaily = True
+                        period = "PT24H"
+                    except ValueError:
+                        print "Skipping", filename
                 else:
                     print "Ignoring", filename
         dates = sorted(list(set(dates)))
@@ -725,20 +727,21 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
-                    if str(filename).startswith(fileNamePrefix):
+                    if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                         try:
                             filetime = filename[-12:-5]
                             filedate = datetime.strptime(filetime,"%Y%j")
                             dates.append(filedate)
                         except ValueError:
-                            # check for subdaily time
-                            try:
-                                filetime = filename[-18:-5]
-                                filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                                dates.append(filedate)
-                                subdaily = True
-                            except ValueError:
-                                print "Skipping", filename
+                            print "Skipping", filename
+                    elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                        try:
+                            filetime = filename[-18:-5]
+                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                            dates.append(filedate)
+                            subdaily = True
+                        except ValueError:
+                            print "Skipping", filename
                     else:
                         print "Ignoring", filename
                 if len(dates) == 0:
@@ -755,20 +758,21 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
-                    if str(filename).startswith(fileNamePrefix):
+                    if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                         try:
                             filetime = filename[-12:-5]
                             filedate = datetime.strptime(filetime,"%Y%j")
                             dates.append(filedate)
                         except ValueError:
-                            # check for subdaily time
-                            try:
-                                filetime = filename[-18:-5]
-                                filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                                dates.append(filedate)
-                                subdaily = True
-                            except ValueError:
-                                print "Skipping", filename
+                            print "Skipping", filename
+                    elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                        try:
+                            filetime = filename[-18:-5]
+                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                            dates.append(filedate)
+                            subdaily = True
+                        except ValueError:
+                            print "Skipping", filename
                     else:
                         print "Ignoring", filename
                 enddate = max(dates)
