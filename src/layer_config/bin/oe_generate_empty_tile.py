@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2014, California Institute of Technology.
+# Copyright (c) 2002-2015, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -26,7 +26,7 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2014
+# 2015
 
 import sys
 import urllib
@@ -35,7 +35,7 @@ from optparse import OptionParser
 import png
 
 toolName = "oe_generate_empty_tile.py"
-versionNumber = "v0.6.3"
+versionNumber = "v0.6.4"
 
 class ColorMap:
     """ColorMap metadata"""
@@ -102,17 +102,17 @@ def parse_colormap(colormap_location, verbose):
             raise Exception(msg)
 
         
-    colormap_element = dom.getElementsByTagName("ColorMap")[0]
-    try:
-        units = colormap_element.attributes['units'].value
-    except KeyError:
-        units = None
-    if verbose:
-        print "ColorMap units:", units
+#     colormap_element = dom.getElementsByTagName("ColorMap")[0]
+#     try:
+#         units = colormap_element.attributes['units'].value
+#     except KeyError:
+#         units = None
+#     if verbose:
+#         print "ColorMap units:", units
     
     style = "discrete"
     colormap_entries = []
-    colormapentry_elements = colormap_element.getElementsByTagName("ColorMapEntry")
+    colormapentry_elements = dom.getElementsByTagName("ColorMapEntry")
     for colormapentry in colormapentry_elements:
         rgb = colormapentry.attributes['rgb'].value
         red, green, blue = rgb.split(',')
@@ -142,7 +142,7 @@ def parse_colormap(colormap_location, verbose):
         
         colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label, nodata))
         
-    colormap = ColorMap(units, colormap_entries, style)
+    colormap = ColorMap(None, colormap_entries, style)
     if verbose:
         print "ColorMap style:", style
         print colormap
