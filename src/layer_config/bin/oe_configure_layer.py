@@ -1365,16 +1365,13 @@ for conf in conf_files:
     
     if static == True:
         mrf = mrfLocation + fileNamePrefix + '.mrf'
-        mrf_base = fileNamePrefix + '.mrf'
         if headerFileName == None:
             headerFileName = mrf
     else:
         if subdaily == True:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
-            mrf_base = fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
         else:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
-            mrf_base = fileNamePrefix + 'TTTTTTT_.mrf'
         if headerFileName == None:
             headerFileName = mrf
     
@@ -1404,6 +1401,7 @@ for conf in conf_files:
             mrf_format = 'image/png'
         
     log_info_mssg('MRF Archetype: ' + headerFileName)
+    mrf_base = os.path.basename(headerFileName)
     
     # Modify MRF Archetype
     try:
