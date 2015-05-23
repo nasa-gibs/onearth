@@ -146,7 +146,7 @@ class Legend:
 class LegendEntry:
     """LegendEntry values within a Legend"""
     
-    def __init__(self, entry_id, red, green, blue, transparent, source_value, value, label, nodata):
+    def __init__(self, entry_id, red, green, blue, transparent, source_value, value, label, nodata, showtick, showvalue):
         self.entry_id = int(entry_id)
         self.red = int(red)
         self.green = int(green)
@@ -156,13 +156,15 @@ class LegendEntry:
         self.value = value
         self.label = None if label==None else label.replace(u'\u2013', '-')
         self.nodata = nodata
+        self.showtick = showtick
+        self.showvalue = showvalue
         self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
         
     def __repr__(self):
         if self.value != None:
-            xml = '<LegendEntry id="%d" rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.entry_id, self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.value, self.label)
+            xml = '<LegendEntry id="%d" rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" value="%s" label="%s" showTick="%s" showValue="%s"/>' % (self.entry_id, self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.value, self.label, self.showtick, self.showvalue)
         else:
-            xml = '<LegendEntry id="%d" rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" label="%s"/>' % (self.entry_id, self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.label)
+            xml = '<LegendEntry id="%d" rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" label="%s" showTick="%s" showValue="%s"/>' % (self.entry_id, self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.label, self.showtick, self.showvalue)
         return xml
     
     def __str__(self):
@@ -260,7 +262,7 @@ def parse_colormap(colormap_xml, verbose):
     legend = None
     legend_elements = dom.getElementsByTagName("Legend")
     if len(legend_elements) > 0:
-        legend = parse_legend(colormap_xml)
+        legend = parse_legend(colormap_xml) #should only have one legend per color map
         style = legend.legend_type
         
     colormap = ColorMap(units, colormap_entries, style, title, legend)
@@ -301,14 +303,31 @@ def parse_legend(legend_xml):
         try:
             nodata = legend_entry.get('nodata')
             if nodata != None:
-                
                 nodata = True if nodata.lower() == 'true' else False
+            else:
+                nodata = False
         except KeyError:
             nodata = False
+        try:
+            showtick = legend_entry.get('showTick')
+            if showtick != None:
+                showtick = True if showtick.lower() == 'true' else False
+            else:
+                showtick = False
+        except KeyError:
+            showtick = False
+        try:
+            showvalue = legend_entry.get('showValue')
+            if showvalue != None:
+                showvalue = True if showvalue.lower() == 'true' else False
+            else:
+                showvalue = False
+        except KeyError:
+            showvalue = False
         entry_id = legend_entry.get("id")
         if entry_id == None: 
             entry_id = 0
-        legend_entry = LegendEntry(entry_id, red, green, blue, transparent, source_value, value, label, nodata)
+        legend_entry = LegendEntry(entry_id, red, green, blue, transparent, source_value, value, label, nodata, showtick, showvalue)
         legend_entries.append(legend_entry)
     
     try:
@@ -355,11 +374,11 @@ def generate_legend(colormaps, output, output_format, orientation):
         
     for colormap in colormaps:
         colormap_count += 1
-        is_large_colormap = False
+#         is_large_colormap = False
         center_ticks = False
         bounds = []
         ticks = []
-        ticklabels = []
+        ticklabels=[]
         legendcolors = []
         legendlabels = []
     
@@ -372,6 +391,13 @@ def generate_legend(colormaps, output, output_format, orientation):
             # clear colors if not classification
                 colors = []
                 colormap_entries = []
+        
+        # use only entries with showTick or showValues in newer colormap schema
+        show_all = True
+        for colormap_entry in entries:
+            if colormap_entry.showtick == True or colormap_entry.showvalue == True:
+                print colormap_entry
+                show_all = False    
             
         for colormap_entry in entries:
             if colormap_entry.transparent == False:
@@ -385,8 +411,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                         colormap_entries.append(colormap_entry)
                         colors.append(colormap_entry.color)
                         
-            if len(colors) > 12:
-                is_large_colormap = True         
+#             if len(colors) > 12:
+#                 is_large_colormap = True         
         
         if colormap.style != "classification":
             for idx in range(0, len(colormap_entries)):
@@ -394,37 +420,49 @@ def generate_legend(colormaps, output, output_format, orientation):
                     colormap_entries[idx].value = colormap_entries[idx].value.replace('[','').replace(']','')
                 if colormap.style == "range" or ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # break apart values for ranges
                     bounds.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
-                    if colormap.legend == None:
-                        ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
-                    else:
+                    if show_all == True:
                         ticks.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
-                        ticklabels.append(colormap_entries[idx].value)
-    #                     ticklabels.append(colormap_entries[idx].label)
+                    else:
+                        if idx == 0:
+                            # always add the first value
+                            value = float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(',''))
+                            if math.isinf(value) == True:
+                                value = float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']',''))
+                            ticks.append(value)
+                            ticklabels.append(value)
+                        elif idx != len(colormap_entries)-1 :
+                            if colormap_entries[idx].showtick == True or colormap_entries[idx].showvalue == True:
+                                ticks.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
+                            if colormap_entries[idx].showvalue == True:
+                                ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
                     if idx == len(colormap_entries)-1 and ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # add ending range value
                         bounds.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
-                        if colormap.legend == None:
-                            ticklabels.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
-                        else:
-                            ticks.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
-    #                         ticklabels.append(colormap_entries[idx].label)
-                            ticklabels.append(colormap_entries[idx].value)
-                else:  # assume discrete values
+                        # always add the last value
+                        value = float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']',''))
+                        if math.isinf(value) == True:
+                            value = float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(',''))
+                        ticks.append(value)
+                        ticklabels.append(value)
+
+                else:  # discrete values
                         bounds.append(float(colormap_entries[idx].value))
-                        ticklabels.append(colormap_entries[idx].value)
-    #                     if colormap.legend == None:
-    #                         ticklabels.append(colormap_entries[idx].value)
-    #                     else:
-    #                         ticklabels.append(colormap_entries[idx].label)
-                        if is_large_colormap == False:
-                            center_ticks = True
-                            if idx == len(colormap_entries)-1:
-                                increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
-                                ticks.append(float(colormap_entries[idx].value) + increment/2)
-                                bounds.append(float(colormap_entries[idx].value)+ increment)
+                        center_ticks = True
+                        if idx == len(colormap_entries)-1:
+                            increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
+                            bounds.append(float(colormap_entries[idx].value)+ increment)
+                            ticks.append(float(colormap_entries[idx].value) + increment/2)
+                            if show_all == False:
+                                ticklabels.append(float(colormap_entries[idx].value))
+                        else:
+                            increment = (float(colormap_entries[idx+1].value.replace('[','').replace(']','')) - float(colormap_entries[idx].value))
+                            if show_all == True:
+                                ticks.append(float(colormap_entries[idx].value) + increment/2)    
                             else:
-                                increment = (float(colormap_entries[idx+1].value.replace('[','').replace(']','')) - float(colormap_entries[idx].value))
-                                ticks.append(float(colormap_entries[idx].value) + increment/2)       
-     
+                                if colormap_entries[idx].showtick == True or colormap_entries[idx].showvalue == True or idx == 0:
+                                    ticks.append(float(colormap_entries[idx].value) + increment/2)   
+                                if colormap_entries[idx].showvalue == True or idx == 0:
+                                    ticklabels.append(float(colormap_entries[idx].value))                                  
+
         # Handle +/- INF
         lowerinf = False
         upperinf = False
@@ -446,8 +484,6 @@ def generate_legend(colormaps, output, output_format, orientation):
             else:
                 bottom = 0.9 - ((0.9/lc)*(colormap_count-1)) - (0.25/lc)
             height = 0.25/lc  
-            print "height is " + str(height)
-            print "My bottom is " + str(bottom)
         
             # use legend for classifications
             if colormap.style == "classification":
@@ -490,50 +526,59 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legend.get_frame().set_alpha(0.5)
             
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
+                labels = bounds
                 ax = fig.add_axes([0.075, bottom, 0.85, height])
                 cmap = mpl.colors.ListedColormap(colors)
-                ax.set_xticklabels(ticks)
 
-                if is_large_colormap == True:
+                if show_all == True:
                     norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
                     v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
+                    cb.set_ticks(ticks)
                 else:
                     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-                    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation=orientation)
+                    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
+                    cb.ax.set_xticklabels(ticks) 
+                    
                 cb.solids.set_edgecolor("face")
             
                 for tick in cb.ax.xaxis.get_ticklabels():
                     tick.set_fontsize(8)
-                    
-                if center_ticks == True:
-                    cb.set_ticks(ticks)
-                    cb.ax.set_xticklabels(ticks) 
-                    
-                if colormap.legend != None:
-                    if is_large_colormap == False:
-                        cb.set_ticks(ticks)
-#                         if ticklabels[0] != None:
-#                             if len(ticklabels[0]) <= 5:
-#                                 cb.ax.set_xticklabels(ticklabels)
 
+                if colormap.legend != None:
                     if len(cb.ax.get_xticklabels()) > 0:
-                        ticklabels = cb.ax.get_xticklabels()
-                        ticklabels = [label.get_text() for label in ticklabels]
+                        xticklabels = cb.ax.get_xticklabels()
+                        xticklabels = [label.get_text() for label in xticklabels]
                         # Check for infinity
                         if lowerinf:
-                            ticklabels[0] = "<=" + ticklabels[0]
+                            xticklabels[0] = "<=" + xticklabels[0]
                         if upperinf:
-                            ticklabels[-1] = ">=" + ticklabels[-1]
-                        # Use min/max labels if they fit
+                            xticklabels[-1] = ">=" + xticklabels[-1]
+                            
+                        # show only those with showValue
+                        if show_all == False:
+                            for idx in range(0, len(xticklabels)):
+                                if center_ticks == True:
+                                    if float(xticklabels[idx])-(increment/2) not in ticklabels:
+                                        xticklabels[idx] = ""
+                                    else:
+                                        xticklabels[idx] = (float(xticklabels[idx])-(increment/2))
+                                else:
+                                    try:
+                                        if float(xticklabels[idx]) not in ticklabels:
+                                            xticklabels[idx] = ""
+                                    except ValueError:
+                                        xticklabels[idx] = ""
+                                        
+                        # Use min/max labels
                         if colormap.legend.min_label != None:
-#                             if len(colormap.legend.min_label) <=6:
-                            ticklabels[0] = colormap.legend.min_label
+                            xticklabels[0] = colormap.legend.min_label
                         if colormap.legend.max_label != None:
-#                             if len(colormap.legend.max_label) <=6:
-                            ticklabels[-1] = colormap.legend.max_label
- 
-                        cb.ax.set_xticklabels(ticklabels)
+                            xticklabels[-1] = colormap.legend.max_label
+                                                                        
+                        # use int labels if all values are integers
+#                         xticklabels = [int(float(label)) for label in xticklabels if float(label).is_integer()]
+                        cb.ax.set_xticklabels(xticklabels)
                 
                 if colormap.units != None:
                     fig.text(0.5, bottom-height-(0.14/lc), colormap.units, fontsize=10, horizontalalignment='center')
@@ -585,47 +630,59 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legend.get_frame().set_alpha(0.5)
          
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
+                labels = bounds
                 ax = fig.add_axes([left, 0.1, width, 0.8])
                 cmap = mpl.colors.ListedColormap(colors)
-                ax.set_yticklabels(ticks)
-                if is_large_colormap == True:
+
+                if show_all == True:
                     norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
                     v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
+                    cb.set_ticks(ticks)
                 else:
                     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-                    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation=orientation)
+                    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
+                    cb.ax.set_yticklabels(ticks) 
+                    
                 cb.solids.set_edgecolor("face")
                         
                 for tick in cb.ax.yaxis.get_ticklabels():
-                    tick.set_fontsize(10)
-            
-                if center_ticks == True:
-                    cb.set_ticks(ticks)
-                    cb.ax.set_yticklabels(ticks) 
-                    
-                if colormap.legend != None and is_large_colormap == False:
-                    cb.set_ticks(ticks)
-#                     if ticklabels[0] != None:
-#                         if len(ticklabels[0]) <= 8:
-#                             cb.ax.set_yticklabels(ticklabels)                   
+                    tick.set_fontsize(10)        
                     
                 if colormap.legend != None:
                     if len(cb.ax.get_yticklabels()) > 0:
-                        ticklabels = cb.ax.get_yticklabels()
-                        ticklabels = [label.get_text() for label in ticklabels]
+                        yticklabels = cb.ax.get_yticklabels()
+                        yticklabels = [label.get_text() for label in yticklabels]
                         # Check for infinity
                         if lowerinf:
-                            ticklabels[0] = "<=" + ticklabels[0]
+                            yticklabels[0] = "<=" + yticklabels[0]
                         if upperinf:
-                            ticklabels[-1] = ">=" + ticklabels[-1]
-                        # Use min/max labels if they fit
+                            yticklabels[-1] = ">=" + yticklabels[-1]
+                            
+                        # show only those with showValue
+                        if show_all == False:
+                            for idx in range(0, len(yticklabels)):
+                                if center_ticks == True:
+                                    if float(yticklabels[idx])-(increment/2) not in ticklabels:
+                                        yticklabels[idx] = ""
+                                    else:
+                                        yticklabels[idx] = str(float(yticklabels[idx])-(increment/2))
+                                else:
+                                    try:
+                                        if float(yticklabels[idx]) not in ticklabels:
+                                            yticklabels[idx] = ""  
+                                    except ValueError:
+                                        yticklabels[idx] = ""
+                        
+                        # Use min/max labels
                         if colormap.legend.min_label != None:
-                            ticklabels[0] = colormap.legend.min_label
+                            yticklabels[0] = colormap.legend.min_label
                         if colormap.legend.max_label != None:
-                            ticklabels[-1] = colormap.legend.max_label
- 
-                        cb.ax.set_yticklabels(ticklabels)
+                            yticklabels[-1] = colormap.legend.max_label       
+                                     
+                        # use int labels if all values are integers
+#                         yticklabels = [int(float(label)) for label in yticklabels if float(label).is_integer()]
+                        cb.ax.set_yticklabels(yticklabels)
                 
                 if colormap.units != None:
                     fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center')
@@ -637,14 +694,23 @@ def generate_legend(colormaps, output, output_format, orientation):
                 if len(colormap.title) > 14:
                     fs = 8
                 if len(colormap.title) > 16:
-                    colormap.title = colormap.title[0:16] + ".."
+                    title_words = colormap.title.split(" ")
+                    half = (len(title_words)/2)
+                    if len(title_words) > 2: half += 1
+                    title = ""
+                    for word in title_words[0:half]:
+                        title = title + word + " "
+                    title = title + "\n"
+                    for word in title_words[half:len(title_words)]:
+                        title = title + word + " "                    
+                    colormap.title = title
                 title_left = left+(0.08/lc)
-                fig.text(title_left, 0.96, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold') 
+                fig.text(title_left, 0.94, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold') 
             
     fig.savefig(output, transparent=True, format=output_format)
         
     # Add tooltips to SVG    
-    if output_format == 'svg' and has_values == True and is_large_colormap == False:
+    if output_format == 'svg' and has_values == True:
             
         ax = fig.get_axes()[0] # only supports one axis
         if orientation == "horizontal":
