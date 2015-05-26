@@ -363,7 +363,7 @@ def generate_legend(colormaps, output, output_format, orientation):
              
     if orientation == 'horizontal':        
         t = 0.15
-        fig = pyplot.figure(figsize=(4.2,t+0.75+(1*(lc-1))))
+        fig = pyplot.figure(figsize=(4.2,t+0.8+(1*(lc-1))))
     else: # default vertical orientation
         fig = pyplot.figure(figsize=(1.5+(2*(lc-1)),3.2))
    
@@ -479,8 +479,8 @@ def generate_legend(colormaps, output, output_format, orientation):
             if lc == 1:
                 bottom = 0.6 - t
             else:
-                bottom = 0.9 - ((0.9/lc)*(colormap_count-1)) - (0.25/lc)
-            height = 0.25/lc  
+                bottom = 0.90 - ((0.9/lc)*(colormap_count-1)) - (0.20/lc)
+            height = 0.20/lc  
         
             # use legend for classifications
             if colormap.style == "classification":
@@ -566,6 +566,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                                         xticklabels[idx] = ""
                                     else:
                                         xticklabels[idx] = (float(xticklabels[idx])-(increment/2))
+                                        if float(xticklabels[idx]).is_integer():
+                                                xticklabels[idx] = int(float(xticklabels[idx])) 
                                 else:
                                     if float(xticklabels[idx]) not in ticklabels:
                                             xticklabels[idx] = ""    
@@ -574,6 +576,9 @@ def generate_legend(colormaps, output, output_format, orientation):
                                     try:
                                         if float(xticklabels[idx]) not in ticklabels:
                                             xticklabels[idx] = ""
+                                        else:
+                                            if float(xticklabels[idx]).is_integer():
+                                                xticklabels[idx] = int(float(xticklabels[idx]))                                               
                                     except ValueError:
                                         xticklabels[idx] = ""
                                         
@@ -588,14 +593,17 @@ def generate_legend(colormaps, output, output_format, orientation):
                         cb.ax.set_xticklabels(xticklabels)
                 
                 if colormap.units != None:
-                    fig.text(0.5, bottom-height-(0.14/lc), colormap.units, fontsize=10, horizontalalignment='center')
+                    fig.text(0.5, bottom-height-(0.20/lc), colormap.units, fontsize=10, horizontalalignment='center')
                     
             if colormap.title != None:
                 if lc ==1:
                     title_loc = 1-t
                 else:
-                    title_loc = bottom+height+(0.065/lc)
-                fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
+                    title_loc = bottom+height+(0.07/lc)
+                if colormap.style == "classification":
+                    fig.text(0.125, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
+                else:
+                    fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
                     
         
         else: # default vertical orientation
@@ -630,7 +638,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                 if has_values == True:
                     if lc <= 2:
                         fig.set_figwidth(3.2)
-                    legend = fig.legend(patches, legendlabels, bbox_to_anchor=[left-(0.15/lc), 0.5], loc='center left', ncol=1, fancybox=True, prop={'size':fontsize})
+                    legend = fig.legend(patches, legendlabels, bbox_to_anchor=[left-(0.15/lc), 0.9], loc='upper left', ncol=1, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0)
                 else:
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
@@ -680,6 +688,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                                         yticklabels[idx] = ""
                                     else:
                                         yticklabels[idx] = str(float(yticklabels[idx])-(increment/2))
+                                        if float(yticklabels[idx]).is_integer():
+                                                yticklabels[idx] = int(float(yticklabels[idx])) 
                                 else:
                                     if float(yticklabels[idx]) not in ticklabels:
                                             yticklabels[idx] = ""                                 
@@ -687,7 +697,11 @@ def generate_legend(colormaps, output, output_format, orientation):
                                 if show_all == False:
                                     try:
                                         if float(yticklabels[idx]) not in ticklabels:
-                                            yticklabels[idx] = ""  
+                                            yticklabels[idx] = ""
+                                        else:
+                                            if float(yticklabels[idx]).is_integer():
+                                                yticklabels[idx] = int(float(yticklabels[idx]))                              
+#                                           yticklabels[idx] = "%.2f" % float(yticklabels[idx])
                                     except ValueError:
                                         yticklabels[idx] = ""
                         
@@ -703,8 +717,15 @@ def generate_legend(colormaps, output, output_format, orientation):
                 
                 if colormap.units != None:
                     fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center')
-                        
+
+                                            
             if colormap.title != None:
+                title_left = left+(0.08/lc)
+                title_top = 0.94
+                if colormap.style == "classification":
+                    if lc == 1:
+                        title_left = 0.5 #center if only one classification legend
+                        title_top = 1-t
                 fs = 10
                 if len(colormap.title) > 10:
                     fs = 9
@@ -721,8 +742,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     for word in title_words[half:len(title_words)]:
                         title = title + word + " "                    
                     colormap.title = title
-                title_left = left+(0.08/lc)
-                fig.text(title_left, 0.94, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold') 
+                fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold') 
             
     fig.savefig(output, transparent=True, format=output_format)
         
@@ -731,13 +751,13 @@ def generate_legend(colormaps, output, output_format, orientation):
             
         ax = fig.get_axes()[0] # only supports one axis
         if orientation == "horizontal":
-            ticklabels = ax.get_xticklabels()
+            ax_ticklabels = ax.get_xticklabels()
         else:
-            ticklabels = ax.get_yticklabels()
+            ax_ticklabels = ax.get_yticklabels()
 
-        for i, ticklabel in enumerate(ticklabels):
+        for i, ticklabel in enumerate(ax_ticklabels):
             if i < len(labels):
-                text = labels[i]
+                text = ticklabels[i]
                 ax.annotate(text, 
                 xy=ticklabel.get_position(),
                 textcoords='offset points', 
