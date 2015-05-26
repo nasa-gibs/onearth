@@ -374,7 +374,7 @@ def generate_legend(colormaps, output, output_format, orientation):
         
     for colormap in colormaps:
         colormap_count += 1
-#         is_large_colormap = False
+        is_large_colormap = False
         center_ticks = False
         bounds = []
         ticks = []
@@ -384,6 +384,10 @@ def generate_legend(colormaps, output, output_format, orientation):
     
         if colormap.legend == None:
             entries = colormap.colormap_entries
+            # ensure showTick and showValue exist if no legend
+            for idx in range(0, len(entries)):
+                entries[idx].showtick = False
+                entries[idx].showvalue = False
         else:
             entries = colormap.legend.legend_entries
             colormap.style = colormap.legend.legend_type
@@ -396,8 +400,7 @@ def generate_legend(colormaps, output, output_format, orientation):
         show_all = True
         for colormap_entry in entries:
             if colormap_entry.showtick == True or colormap_entry.showvalue == True:
-                print colormap_entry
-                show_all = False    
+                show_all = False                    
             
         for colormap_entry in entries:
             if colormap_entry.transparent == False:
@@ -411,8 +414,9 @@ def generate_legend(colormaps, output, output_format, orientation):
                         colormap_entries.append(colormap_entry)
                         colors.append(colormap_entry.color)
                         
-#             if len(colors) > 12:
-#                 is_large_colormap = True         
+            if len(colors) > 12:
+                # legacy linear interpolation of values if large colormap
+                is_large_colormap = True         
         
         if colormap.style != "classification":
             for idx in range(0, len(colormap_entries)):
@@ -420,21 +424,18 @@ def generate_legend(colormaps, output, output_format, orientation):
                     colormap_entries[idx].value = colormap_entries[idx].value.replace('[','').replace(']','')
                 if colormap.style == "range" or ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # break apart values for ranges
                     bounds.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
-                    if show_all == True:
-                        ticks.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
-                    else:
-                        if idx == 0:
-                            # always add the first value
-                            value = float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(',''))
-                            if math.isinf(value) == True:
-                                value = float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']',''))
-                            ticks.append(value)
-                            ticklabels.append(value)
-                        elif idx != len(colormap_entries)-1 :
-                            if colormap_entries[idx].showtick == True or colormap_entries[idx].showvalue == True:
-                                ticks.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
-                            if colormap_entries[idx].showvalue == True:
-                                ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
+                    if idx == 0:
+                        # always add the first value
+                        value = float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(',''))
+                        if math.isinf(value) == True:
+                            value = float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']',''))
+                        ticks.append(value)
+                        ticklabels.append(value)
+                    elif idx != len(colormap_entries)-1 :
+                        if show_all==True or colormap_entries[idx].showtick == True or colormap_entries[idx].showvalue == True:
+                            ticks.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
+                        if show_all==True or colormap_entries[idx].showvalue == True:
+                            ticklabels.append(float(colormap_entries[idx].value.split(',')[0].replace('[','').replace(']','').replace('(','')))
                     if idx == len(colormap_entries)-1 and ("(" in colormap_entries[idx].value or "[" in colormap_entries[idx].value): # add ending range value
                         bounds.append(float(colormap_entries[idx].value.split(',')[1].replace(')','').replace('[','').replace(']','')))
                         # always add the last value
@@ -451,17 +452,13 @@ def generate_legend(colormaps, output, output_format, orientation):
                             increment = (float(colormap_entries[idx].value) - float(colormap_entries[idx-1].value))
                             bounds.append(float(colormap_entries[idx].value)+ increment)
                             ticks.append(float(colormap_entries[idx].value) + increment/2)
-                            if show_all == False:
-                                ticklabels.append(float(colormap_entries[idx].value))
+                            ticklabels.append(float(colormap_entries[idx].value))
                         else:
                             increment = (float(colormap_entries[idx+1].value.replace('[','').replace(']','')) - float(colormap_entries[idx].value))
-                            if show_all == True:
-                                ticks.append(float(colormap_entries[idx].value) + increment/2)    
-                            else:
-                                if colormap_entries[idx].showtick == True or colormap_entries[idx].showvalue == True or idx == 0:
-                                    ticks.append(float(colormap_entries[idx].value) + increment/2)   
-                                if colormap_entries[idx].showvalue == True or idx == 0:
-                                    ticklabels.append(float(colormap_entries[idx].value))                                  
+                            if show_all==True or colormap_entries[idx].showtick == True or colormap_entries[idx].showvalue == True or idx == 0:
+                                ticks.append(float(colormap_entries[idx].value) + increment/2)   
+                            if show_all==True or colormap_entries[idx].showvalue == True or idx == 0:
+                                ticklabels.append(float(colormap_entries[idx].value))                                  
 
         # Handle +/- INF
         lowerinf = False
@@ -531,10 +528,16 @@ def generate_legend(colormaps, output, output_format, orientation):
                 cmap = mpl.colors.ListedColormap(colors)
 
                 if show_all == True:
-                    norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
-                    v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
-                    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
-                    cb.set_ticks(ticks)
+                    if is_large_colormap == True:
+                        norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+                        v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
+                        cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
+                    else:
+                        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+                        cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation=orientation)
+                        if center_ticks == True:
+                            cb.set_ticks(ticks)
+                            cb.ax.set_xticklabels(ticklabels)
                 else:
                     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
@@ -556,14 +559,18 @@ def generate_legend(colormaps, output, output_format, orientation):
                             xticklabels[-1] = ">=" + xticklabels[-1]
                             
                         # show only those with showValue
-                        if show_all == False:
-                            for idx in range(0, len(xticklabels)):
-                                if center_ticks == True:
+                        for idx in range(0, len(xticklabels)):
+                            if center_ticks == True:
+                                if show_all == False:
                                     if float(xticklabels[idx])-(increment/2) not in ticklabels:
                                         xticklabels[idx] = ""
                                     else:
                                         xticklabels[idx] = (float(xticklabels[idx])-(increment/2))
                                 else:
+                                    if float(xticklabels[idx]) not in ticklabels:
+                                            xticklabels[idx] = ""    
+                            else:
+                                if show_all == False:
                                     try:
                                         if float(xticklabels[idx]) not in ticklabels:
                                             xticklabels[idx] = ""
@@ -617,7 +624,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     fontsize = 8
                 if len(legendcolors) > 28:
                     if lc <= 2:
-                        fig.set_figwidth(3.2)
+                        fig.set_figwidth(4.2)
                     col = 3
                     fontsize = 7
                 if has_values == True:
@@ -635,10 +642,16 @@ def generate_legend(colormaps, output, output_format, orientation):
                 cmap = mpl.colors.ListedColormap(colors)
 
                 if show_all == True:
-                    norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
-                    v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
-                    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
-                    cb.set_ticks(ticks)
+                    if is_large_colormap == True:
+                        norm = mpl.colors.Normalize(bounds[0], bounds[len(bounds)-1])
+                        v = np.linspace(bounds[0], bounds[len(bounds)-1], 9, endpoint=True)
+                        cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=v, orientation=orientation)
+                    else:
+                        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+                        cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, orientation=orientation)
+                        if center_ticks == True:
+                            cb.set_ticks(ticks)
+                            cb.ax.set_yticklabels(ticklabels)
                 else:
                     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
@@ -660,14 +673,18 @@ def generate_legend(colormaps, output, output_format, orientation):
                             yticklabels[-1] = ">=" + yticklabels[-1]
                             
                         # show only those with showValue
-                        if show_all == False:
-                            for idx in range(0, len(yticklabels)):
-                                if center_ticks == True:
+                        for idx in range(0, len(yticklabels)):
+                            if center_ticks == True:
+                                if show_all == False:
                                     if float(yticklabels[idx])-(increment/2) not in ticklabels:
                                         yticklabels[idx] = ""
                                     else:
                                         yticklabels[idx] = str(float(yticklabels[idx])-(increment/2))
                                 else:
+                                    if float(yticklabels[idx]) not in ticklabels:
+                                            yticklabels[idx] = ""                                 
+                            else:
+                                if show_all == False:
                                     try:
                                         if float(yticklabels[idx]) not in ticklabels:
                                             yticklabels[idx] = ""  
