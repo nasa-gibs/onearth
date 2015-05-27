@@ -76,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.4'
+versionNumber = '0.6.4s'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -1250,29 +1250,75 @@ if len(modtiles) > 0:
             shutil.copy(mrf_empty_tile_filename, out_filename)
         #-----------------------------------------------------------------------    
 
-        # Create the gdal_translate command.
-        if compress == "COMPRESS=JPEG":
-            # Use JPEG quality of 80
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, mrf_filename]
-        else:           
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, mrf_filename]
+        # Workaround potential MRF resampling issue with single tile
+        if len(alltiles) == 1:
+            print "Single tile detected"
             
-        # Log the gdal_translate command.
-        log_the_command(gdal_translate_command_list)
-        # Capture stderr.
-        gdal_translate_stderr_filename=str().join([working_dir, basename,
-                                                  '_gdal_translate_stderr.txt'])
-        # Open stderr file for write.
-        gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
-
-        #-----------------------------------------------------------------------
-        # Execute gdal_translate.
-        subprocess.call(gdal_translate_command_list, 
-                        stderr=gdal_translate_stderr_file)
-        #-----------------------------------------------------------------------
-
-        # Close stderr file.
-        gdal_translate_stderr_file.close()
+            # Create the gdal_translate command for JPEG or PNG
+            if compress == "COMPRESS=JPEG":
+                img_filename=str().join([output_dir, basename, '.jpg'])
+                # Use JPEG quality of 80
+                gdal_translate_command_list=['gdal_translate', '-q', '-of', 'JPEG', '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, img_filename]
+            else:          
+                img_filename=str().join([output_dir, basename, '.png']) 
+                gdal_translate_command_list=['gdal_translate', '-q', '-of', 'PNG', '-outsize', target_x, target_y, vrt_filename, img_filename]
+            # Log the gdal_translate command.
+            log_the_command(gdal_translate_command_list)
+            # Capture stderr.
+            gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_img_stderr.txt'])
+            # Open stderr file for write.
+            gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
+            #-----------------------------------------------------------------------
+            # Execute gdal_translate.
+            subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
+            #-----------------------------------------------------------------------
+            # Close stderr file.
+            gdal_translate_stderr_file.close()
+            
+            # Rerun gdal_translate to MRF
+            if compress == "COMPRESS=JPEG":
+                # Use JPEG quality of 80
+                gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, img_filename, mrf_filename]
+            else:           
+                gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, img_filename, mrf_filename]
+            # Log the gdal_translate command.
+            log_the_command(gdal_translate_command_list)
+            # Capture stderr.
+            gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_vrt_stderr.txt'])
+            # Open stderr file for write.
+            gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
+            #-----------------------------------------------------------------------
+            # Execute gdal_translate.
+            subprocess.call(gdal_translate_command_list,stderr=gdal_translate_stderr_file)
+            #-----------------------------------------------------------------------
+            # Close stderr file.
+            gdal_translate_stderr_file.close()
+                        
+        else: # multiple input files
+            # Create the gdal_translate command.
+            if compress == "COMPRESS=JPEG":
+                # Use JPEG quality of 80
+                gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, mrf_filename]
+            else:           
+                gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, mrf_filename]
+                
+            # Log the gdal_translate command.
+            log_the_command(gdal_translate_command_list)
+            # Capture stderr.
+            gdal_translate_stderr_filename=str().join([working_dir, basename,
+                                                      '_gdal_translate_stderr.txt'])
+            # Open stderr file for write.
+            gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
+    
+            #-----------------------------------------------------------------------
+            # Execute gdal_translate.
+            subprocess.call(gdal_translate_command_list, 
+                            stderr=gdal_translate_stderr_file)
+            #-----------------------------------------------------------------------
+    
+            # Close stderr file.
+            gdal_translate_stderr_file.close()
+        
        
         # Copy vrt to output
         if data_only == False:
