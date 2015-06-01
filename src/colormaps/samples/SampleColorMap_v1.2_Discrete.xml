@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ColorMaps>
+  <ColorMap Title="Fractional Snow Cover" units="%"> 
+    <Entries minLabel="1" maxLabel="20">
+      <ColorMapEntry rgb="0,255,0" sourceValue="0" value="0" transparent="true" label="0" ref="0"/>
+      <ColorMapEntry rgb="240,240,128" sourceValue="1" value="1" transparent="false" label="1" ref="1"/>
+      <ColorMapEntry rgb="240,240,129" sourceValue="2" value="2" transparent="false" label="2" ref="2"/>
+      <ColorMapEntry rgb="240,240,130" sourceValue="3" value="3" transparent="false" label="3" ref="3"/>
+      <ColorMapEntry rgb="240,240,131" sourceValue="4" value="4" transparent="false" label="4" ref="4"/>
+      <ColorMapEntry rgb="240,240,132" sourceValue="5" value="5" transparent="false" label="5" ref="5"/>
+      <ColorMapEntry rgb="240,240,133" sourceValue="6" value="6" transparent="false" label="6" ref="6"/>
+      <ColorMapEntry rgb="240,240,134" sourceValue="7" value="7" transparent="false" label="7" ref="7"/>
+      <ColorMapEntry rgb="240,240,135" sourceValue="8" value="8" transparent="false" label="8" ref="8"/>
+      <ColorMapEntry rgb="240,240,136" sourceValue="9" value="9" transparent="false" label="9" ref="9"/>
+      <ColorMapEntry rgb="240,240,137" sourceValue="10" value="10" transparent="false" label="10" ref="10"/>
+      <ColorMapEntry rgb="240,240,138" sourceValue="11" value="11" transparent="false" label="11" ref="11"/>
+      <ColorMapEntry rgb="240,240,139" sourceValue="12" value="12" transparent="false" label="12" ref="12"/>
+      <ColorMapEntry rgb="240,240,140" sourceValue="13" value="13" transparent="false" label="13" ref="13"/>
+      <ColorMapEntry rgb="240,240,141" sourceValue="14" value="14" transparent="false" label="14" ref="14"/>
+      <ColorMapEntry rgb="240,240,142" sourceValue="15" value="15" transparent="false" label="15" ref="15"/>
+      <ColorMapEntry rgb="240,240,143" sourceValue="16" value="16" transparent="false" label="16" ref="16"/>
+      <ColorMapEntry rgb="240,240,144" sourceValue="17" value="17" transparent="false" label="17" ref="17"/>
+      <ColorMapEntry rgb="240,240,145" sourceValue="18" value="18" transparent="false" label="18" ref="18"/>
+      <ColorMapEntry rgb="240,240,146" sourceValue="19" value="19" transparent="false" label="19" ref="19"/>
+      <ColorMapEntry rgb="240,240,147" sourceValue="20" value="20" transparent="false" label="20" ref="20"/>
+    </Entries>
+    <Legend type="discrete" minLabel="1" maxLabel="20">
+      <LegendEntry rgb="240,240,128" id="1"/>
+      <LegendEntry rgb="240,240,129" id="2"/>
+      <LegendEntry rgb="240,240,130" id="3"/>
+      <LegendEntry rgb="240,240,131" id="4"/>
+      <LegendEntry rgb="240,240,132" label="5" showLabel="true" id="5"/>
+      <LegendEntry rgb="240,240,133" id="6"/>
+      <LegendEntry rgb="240,240,134" id="7"/>
+      <LegendEntry rgb="240,240,135" id="8"/>
+      <LegendEntry rgb="240,240,136" id="9"/>
+      <LegendEntry rgb="240,240,137" label="10" showLabel="true" id="10"/>
+      <LegendEntry rgb="240,240,138" id="11"/>
+      <LegendEntry rgb="240,240,139" id="12"/>
+      <LegendEntry rgb="240,240,140" id="13"/>
+      <LegendEntry rgb="240,240,141" id="14"/>
+      <LegendEntry rgb="240,240,142" label="15" showLabel="true" id="15"/>
+      <LegendEntry rgb="240,240,143" id="16"/>
+      <LegendEntry rgb="240,240,144" id="17"/>
+      <LegendEntry rgb="240,240,145" id="18"/>
+      <LegendEntry rgb="240,240,146" id="19"/>
+      <LegendEntry rgb="240,240,147" id="20"/>
+    </Legend>
+  </ColorMap>
+  <ColorMap title="Classifications">
+    <Entries>
+      <ColorMapEntry rgb="255,200,255" transparent="true" sourceValue="200" label="Missing Data"/>
+      <ColorMapEntry rgb="200,200,200" transparent="true" sourceValue="201" label="No Decision"/>
+      <ColorMapEntry rgb="189,0,189" transparent="true" sourceValue="211" label="Night"/>
+      <ColorMapEntry rgb="0,0,255" transparent="true" sourceValue="237" label="Inland Water"/>
+      <ColorMapEntry rgb="35,35,117" transparent="true" sourceValue="239" label="Ocean"/>
+      <ColorMapEntry rgb="0,255,255" transparent="true" sourceValue="250" label="Cloud"/>
+      <ColorMapEntry rgb="0,225,225" transparent="true" sourceValue="251" label="Probable Cloud"/>
+      <ColorMapEntry rgb="170,0,0" transparent="true" sourceValue="254" label="Detector Saturated"/>
+      <ColorMapEntry rgb="255,255,254" transparent="true" sourceValue="255" label="Fill" nodata="true"/>
+    </Entries>
+  </ColorMap>
+</ColorMaps>
