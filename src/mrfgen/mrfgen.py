@@ -76,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.3'
+versionNumber = '0.6.4'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.

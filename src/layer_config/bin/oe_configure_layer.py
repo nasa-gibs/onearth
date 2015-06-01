@@ -65,7 +65,7 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 
-versionNumber = '0.6.3'
+versionNumber = '0.6.4'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -558,20 +558,22 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                 print "Searching:", os.path.join(dirname, subdirname)
 
             for filename in filenames:
-                if str(filename).startswith(fileNamePrefix):
-                    filetime = filename[-12:-5]
+                if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                     try:
+                        filetime = filename[-12:-5]
                         filedate = datetime.strptime(filetime,"%Y%j")
                         dates.append(filedate)
                     except ValueError:
-                        # check for subdaily time
-                        try:
-                            filetime = filename[-18:-5]
-                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                            dates.append(filedate)
-                            subdaily = True
-                        except ValueError:
-                            print "Skipping", filename
+                        print "Skipping", filename
+                elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                    try:
+                        filetime = filename[-18:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                        dates.append(filedate)
+                        subdaily = True
+                        period = "PT24H"
+                    except ValueError:
+                        print "Skipping", filename
                 else:
                     print "Ignoring", filename
         dates = sorted(list(set(dates)))
@@ -725,20 +727,21 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
-                    if str(filename).startswith(fileNamePrefix):
+                    if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                         try:
                             filetime = filename[-12:-5]
                             filedate = datetime.strptime(filetime,"%Y%j")
                             dates.append(filedate)
                         except ValueError:
-                            # check for subdaily time
-                            try:
-                                filetime = filename[-18:-5]
-                                filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                                dates.append(filedate)
-                                subdaily = True
-                            except ValueError:
-                                print "Skipping", filename
+                            print "Skipping", filename
+                    elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                        try:
+                            filetime = filename[-18:-5]
+                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                            dates.append(filedate)
+                            subdaily = True
+                        except ValueError:
+                            print "Skipping", filename
                     else:
                         print "Ignoring", filename
                 if len(dates) == 0:
@@ -755,20 +758,21 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
                 dates = []
                 for filename in filenames:
-                    if str(filename).startswith(fileNamePrefix):
+                    if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                         try:
                             filetime = filename[-12:-5]
                             filedate = datetime.strptime(filetime,"%Y%j")
                             dates.append(filedate)
                         except ValueError:
-                            # check for subdaily time
-                            try:
-                                filetime = filename[-18:-5]
-                                filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                                dates.append(filedate)
-                                subdaily = True
-                            except ValueError:
-                                print "Skipping", filename
+                            print "Skipping", filename
+                    elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                        try:
+                            filetime = filename[-18:-5]
+                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                            dates.append(filedate)
+                            subdaily = True
+                        except ValueError:
+                            print "Skipping", filename
                     else:
                         print "Ignoring", filename
                 enddate = max(dates)
@@ -921,8 +925,6 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
             print "Removed existing file " + mrf_link
         os.symlink(mrf, mrf_link)
         print "Created soft link " + mrf_link + " -> " + mrf
-    else:
-        log_sig_warn("Default MRF header file " + mrf + " does not exist", sigevent_url)
     if os.path.isfile(idx):
         if os.path.isfile(idx_link):
             os.remove(idx_link)
@@ -1363,16 +1365,13 @@ for conf in conf_files:
     
     if static == True:
         mrf = mrfLocation + fileNamePrefix + '.mrf'
-        mrf_base = fileNamePrefix + '.mrf'
         if headerFileName == None:
             headerFileName = mrf
     else:
         if subdaily == True:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
-            mrf_base = fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
         else:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
-            mrf_base = fileNamePrefix + 'TTTTTTT_.mrf'
         if headerFileName == None:
             headerFileName = mrf
     
@@ -1402,6 +1401,7 @@ for conf in conf_files:
             mrf_format = 'image/png'
         
     log_info_mssg('MRF Archetype: ' + headerFileName)
+    mrf_base = os.path.basename(headerFileName)
     
     # Modify MRF Archetype
     try:
