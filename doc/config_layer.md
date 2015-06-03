@@ -4,7 +4,7 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **Identifier** - A unique identifier used as the WMTS Layer/Identifier and TWMS TiledGroup/Name values in the service GetCapabilities document.  Ideally the identifier does not use any special characters as it is included in all WMTS and TWMS http requests.
 * **Title** - A human readable title used as the WMTS Layer/Title and TWMS TiledGroup/Title values in the service GetCapabilities document.
 * **FileNamePrefix** - An internal "short name" used as the prefix for MRF index, image, and metadata file names.
-* **HeaderFileName** - A file path to an existing MRF metadata file for the layer.
+* **HeaderFileName** - A file path to an existing MRF metadata file for the layer. If provided, this will also be used as the filename in the staging directories.
 * **Compression** - The image file format.   Valid values are 'PNG', "JPG", "TIF".
 * **Projection** - The identifier of the layer's associated projection as contained within the [projection configuration](config_support.md#projection-configuration) and [TileMatrixSets](config_support.md#tilematrixsets) support files.
 * **TileMatrixSet** - The identifier of the layer's associated TileMatrixSet within the projection as contained within the [TileMatrixSets](config_support.md#tilematrixsets) support file.
