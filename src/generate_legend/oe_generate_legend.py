@@ -371,6 +371,7 @@ def generate_legend(colormaps, output, output_format, orientation):
     colormap_entries = []
     colormap_count = 0
     labels = []
+    label_index = []
         
     for colormap in colormaps:
         colormap_count += 1
@@ -404,10 +405,10 @@ def generate_legend(colormaps, output, output_format, orientation):
             
         for colormap_entry in entries:
             if colormap_entry.transparent == False:
-                labels.append(colormap_entry.label)
                 if colormap.style == "classification":
                     legendcolors.append(colormap_entry.color)
                     legendlabels.append(colormap_entry.label)
+                    labels.append(colormap_entry.label)
                 else:
                     if colormap_entry.color != None:
                         has_values = True
@@ -473,13 +474,18 @@ def generate_legend(colormaps, output, output_format, orientation):
                                 ticks.append(idx)
                         if colormap_entries[idx].showlabel == True:
                             ticklabels.append(colormap_entries[idx].label)
+                            labels.append(colormap_entries[idx].label)
                         elif idx == 0 and colormap.legend.min_label != None:
                             ticklabels.append(colormap.legend.min_label)
+                            labels.append(colormap.legend.min_label)
                         elif idx == len(colormap_entries)-1 and colormap.legend.max_label != None:
                             ticklabels.append(colormap.legend.max_label)
+                            labels.append(colormap.legend.max_label)
                         else:
                             ticklabels.append("")
-                                       
+                            labels.append("")
+                        label_index.append(idx)
+                                                        
         # Handle +/- INF
         lowerinf = False
         upperinf = False
@@ -543,7 +549,6 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legend.get_frame().set_alpha(0.5)
             
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
-                labels = bounds
                 ax = fig.add_axes([0.075, bottom, 0.85, height])
                 cmap = mpl.colors.ListedColormap(colors)
 
@@ -670,7 +675,6 @@ def generate_legend(colormaps, output, output_format, orientation):
                     legend.get_frame().set_alpha(0.5)
          
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
-                labels = bounds
                 ax = fig.add_axes([left, 0.1, width, 0.8])
                 cmap = mpl.colors.ListedColormap(colors)
 
@@ -751,7 +755,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                                             
             if colormap.title != None:
                 title_left = left+(0.08/lc)
-                title_top = 0.94
+                title_top = 0.935
                 if colormap.style == "classification":
                     if lc == 1:
                         title_left = 0.5 #center if only one classification legend
@@ -787,7 +791,8 @@ def generate_legend(colormaps, output, output_format, orientation):
 
         for i, ticklabel in enumerate(ax_ticklabels):
             if i < len(colors):
-                text = ax_ticklabels[i].get_text()
+#                 text = ax_ticklabels[i].get_text()
+                text = labels[i]
                 ax.annotate(text, 
                 xy=ticklabel.get_position(),
                 textcoords='offset points', 
@@ -822,6 +827,9 @@ def generate_legend(colormaps, output, output_format, orientation):
         el = xmlid['QuadMesh_1']
         elements = list(el)
         elements.pop(0) # remove definitions
+        for i, t in enumerate(elements):
+            if i not in label_index:
+                elements.pop(i)
         for i, t in enumerate(elements):
             el = elements[i]
             el.set('onmouseover', "ShowTooltip("+str(i)+")")
