@@ -25,24 +25,24 @@ Options:
 
 ### Examples:
 
-Generate classification type legend:
+Generate sample legend
 ```
-oe_generate_legend.py -c sample_classifications.xml -o sample_classifications.svg
-```
-
-Generate vertical legend with discrete values as svg with tooltips:
-```
-oe_generate_legend.py -c sample_discrete.xml -f svg -r vertical -o sample_discrete.svg
+oe_generate_legend.py -c onearth/src/colormaps/samples/ColorMap_v1.2_Sample.xml -o sample.svg
 ```
 
-Generate horizontal legend with continuous range as png:
+Generate horizontal PNG legend with discrete values
 ```
-oe_generate_legend.py -c sample_MODIS.xml -f png -r horizontal -o sample_MODIS.png
+oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_Discrete.xml -r horizontal -f png -o sample_discrete.png 
 ```
 
-Generate classifications with vertical data values:
+Generate vertical SVG (including tooltips) legend with continuous values
 ```
-oe_generate_legend.py -c sample_range_class.xml -r vertical -o sample_range_class.svg
-```	
+oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_ContinuousLinear.xml -r vertical -f svg -o sample_continuous.svg
+```
 
-**For more color maps and the GIBS color map schema, visit: https://map1.vis.earthdata.nasa.gov/colormaps/**
+Generate horizontal PNG legend with continuous values and classifications verbosely
+```
+oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_ContinuousAndClass.xml -r horizontal -f png -v -o sample_continuousclass.png
+```
+
+**For more color maps and the GIBS color map schema, visit: https://github.com/nasa-gibs/onearth/tree/master/src/colormaps**

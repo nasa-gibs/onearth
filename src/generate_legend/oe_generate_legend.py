@@ -98,7 +98,7 @@ class ColorMap:
 class ColorMapEntry:
     """ColorMapEntry values within a ColorMap"""
     
-    def __init__(self, red, green, blue, transparent, source_value, value, label, nodata):
+    def __init__(self, red, green, blue, transparent, source_value, value, label, nodata, ref):
         self.red = int(red)
         self.green = int(green)
         self.blue = int(blue)
@@ -107,13 +107,14 @@ class ColorMapEntry:
         self.value = value
         self.label = label
         self.nodata = nodata
+        self.ref = ref
         self.color = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
         
     def __repr__(self):
         if self.value != None:
-            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" value="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.value, self.label)
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" value="%s" label="%s" ref="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.value, self.label, self.ref)
         else:
-            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" label="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.label)
+            xml = '<ColorMapEntry rgb="%d,%d,%d" transparent="%s" nodata="%s" sourceValue="%s" label="%s" ref="%s"/>' % (self.red, self.green, self.blue, self.transparent, self.nodata, self.source_value, self.label, self.ref)
         return xml
     
     def __str__(self):
@@ -256,13 +257,17 @@ def parse_colormap(colormap_xml, verbose):
             nodata = True if colormapentry.attributes['nodata'].value.lower() == 'true' else False
         except KeyError:
             nodata = False
+        try:
+            ref = colormapentry.attributes['ref'].value
+        except KeyError:
+            ref = 0
         
-        colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label, nodata))
+        colormap_entries.append(ColorMapEntry(red, green , blue, transparent, source_value, value, label, nodata, ref))
     
     legend = None
     legend_elements = dom.getElementsByTagName("Legend")
     if len(legend_elements) > 0:
-        legend = parse_legend(colormap_xml) #should only have one legend per color map
+        legend = parse_legend(colormap_xml, colormap_entries) #should only have one legend per color map
         style = legend.legend_type
         
     colormap = ColorMap(units, colormap_entries, style, title, legend)
@@ -273,12 +278,15 @@ def parse_colormap(colormap_xml, verbose):
     
     return colormap
 
-def parse_legend(legend_xml):
+def parse_legend(legend_xml, colormap_entries):
     
     legend_entries = []
     legend_element = legend_xml.find('Legend')
     legend_entry_elements = legend_element.findall("LegendEntry")
-    for legend_entry in legend_entry_elements:    
+    for legend_entry in legend_entry_elements:   
+        entry_id = legend_entry.get("id")
+        if entry_id == None: 
+            entry_id = 0 
         red, green, blue = legend_entry.get("rgb").split(",")
         try:
             transparent = legend_entry.get('transparent')
@@ -324,9 +332,13 @@ def parse_legend(legend_xml):
                 showlabel = False
         except KeyError:
             showlabel = False
-        entry_id = legend_entry.get("id")
-        if entry_id == None: 
-            entry_id = 0
+
+        # link value to color map entry if none
+        if value == None:
+            for entry in colormap_entries:
+                if entry_id == entry.ref:
+                    value = entry.value
+
         legend_entry = LegendEntry(entry_id, red, green, blue, transparent, source_value, value, label, nodata, showtick, showlabel)
         legend_entries.append(legend_entry)
     
@@ -782,27 +794,26 @@ def generate_legend(colormaps, output, output_format, orientation):
         
     # Add tooltips to SVG    
     if output_format == 'svg' and has_values == True:
-            
-        ax = fig.get_axes()[0] # only supports one axis
-        if orientation == "horizontal":
-            ax_ticklabels = ax.get_xticklabels()
-        else:
-            ax_ticklabels = ax.get_yticklabels()
+        
+        ax = fig.get_axes()[0] # only supports one axis            
+        entries = colormaps[0].legend.legend_entries    
 
-        for i, ticklabel in enumerate(ax_ticklabels):
-            if i < len(colors):
-#                 text = ax_ticklabels[i].get_text()
-                text = labels[i]
-                ax.annotate(text, 
-                xy=ticklabel.get_position(),
-                textcoords='offset points', 
-                color='black', 
-                ha='center', 
-                fontsize=10,
-                gid='tooltip',
-                bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
-                )
-
+        for i, entry in enumerate(entries):
+            text = entry.value
+            if orientation == "horizontal":
+                position = (float(i)/float(len(entries)),1)
+            else:
+                position = (1,float(i)/float(len(entries)))
+            ax.annotate(text, 
+            xy=position,
+            textcoords='offset points', 
+            color='black', 
+            ha='center', 
+            fontsize=10,
+            gid='tooltip',
+            bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
+            )
+    
         # Set id for the annotations
         for i, t in enumerate(ax.texts):
             t.set_gid('tooltip_%d' % i)
@@ -827,9 +838,6 @@ def generate_legend(colormaps, output, output_format, orientation):
         el = xmlid['QuadMesh_1']
         elements = list(el)
         elements.pop(0) # remove definitions
-        for i, t in enumerate(elements):
-            if i not in label_index:
-                elements.pop(i)
         for i, t in enumerate(elements):
             el = elements[i]
             el.set('onmouseover', "ShowTooltip("+str(i)+")")
