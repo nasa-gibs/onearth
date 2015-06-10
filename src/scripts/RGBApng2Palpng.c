@@ -236,6 +236,7 @@ int return_code=0;
     			int c;
     			int j = 0;
     			char *buffer = (char *)malloc(size);
+    			const char *entry_key = "ColorMapEntry";
     			const char *rgb_key = "rgb=";
     			const char *transparent_key = "transparent=";
     			const char *true_str = "\"true\"";
@@ -252,11 +253,12 @@ int return_code=0;
 					} while(c != EOF && c != '\n');
 					buffer[pos] = 0;
 
+					char *entry = strstr(buffer,entry_key);
 					char *rgb = strstr(buffer,rgb_key);
 					char *transparent = strstr(buffer,transparent_key);
 					
 					// GIBS colormap RGB values
-					if (rgb != NULL) {
+					if (rgb != NULL && entry != NULL) {
 	        			char rgb_string[11];
 						int rgb_length = strlen(rgb);
 						int rgb_pos = pos - rgb_length;
