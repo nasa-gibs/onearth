@@ -76,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.4s'
+versionNumber = '0.6.4s-2'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -1256,11 +1256,11 @@ if len(modtiles) > 0:
             
             # Create the gdal_translate command for JPEG or PNG
             if compress == "COMPRESS=JPEG":
-                img_filename=str().join([output_dir, basename, '.jpg'])
+                img_filename=str().join([working_dir, basename, '.jpg'])
                 # Use JPEG quality of 80
                 gdal_translate_command_list=['gdal_translate', '-q', '-of', 'JPEG', '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, img_filename]
             else:          
-                img_filename=str().join([output_dir, basename, '.png']) 
+                img_filename=str().join([working_dir, basename, '.png']) 
                 gdal_translate_command_list=['gdal_translate', '-q', '-of', 'PNG', '-outsize', target_x, target_y, vrt_filename, img_filename]
             # Log the gdal_translate command.
             log_the_command(gdal_translate_command_list)
@@ -1293,6 +1293,9 @@ if len(modtiles) > 0:
             #-----------------------------------------------------------------------
             # Close stderr file.
             gdal_translate_stderr_file.close()
+            
+            # Clean up.
+            remove_file(img_filename)
                         
         else: # multiple input files
             # Create the gdal_translate command.
