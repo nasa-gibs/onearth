@@ -423,9 +423,13 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  } else
 					  break;
 			  }
-			  if (i==num_periods) return 0; // no data found within all periods
+			  if (i==num_periods) {
+				  // no data found within all periods
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
+				  fd=open(fn,O_RDONLY);
+			  }
 
-		  } else return 0;
+		  } else fd=open(fn,O_RDONLY);
 	  }
   }
 
@@ -1818,7 +1822,8 @@ static int mrf_handler(request_rec *r)
 
   if (!this_data) {
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-       "Data read error from file %s size %lld offset %lld",level->dfname,this_record->size, this_record->offset);
+       "Data read error from file %s size %ld offset %ld",level->dfname,this_record->size, this_record->offset);
+    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
     return DECLINED; // Can't read the data for some reason
   }
 
