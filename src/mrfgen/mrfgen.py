@@ -76,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.4'
+versionNumber = '0.6.4-2'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -1120,7 +1120,7 @@ if len(modtiles) > 0:
         if target_y == '':
             target_y = int(int(target_x)/2)
         gdal_warp_command_list = ['gdalwarp', '-of', 'GTiff' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', xmin, ymin, xmax, ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
-        gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-srcnodata', '0', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
+        gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
          
         log_the_command(gdal_warp_command_list)
         log_the_command(gdalbuildvrt_command_list2)
@@ -1128,14 +1128,15 @@ if len(modtiles) > 0:
         subprocess.call(gdalbuildvrt_command_list2, stderr=gdalbuildvrt_stderr_file)
         
         # add transparency
-        new_vrt = open(vrt_filename,"r+")
-        vrt_lines = new_vrt.readlines()
-        for idx in range(0, len(vrt_lines)):
-            vrt_lines[idx] = vrt_lines[idx].replace('c1="0" c2="0" c3="0" c4="255"', 'c1="0" c2="0" c3="0" c4="0"')
-        new_vrt.seek(0)
-        new_vrt.truncate()
-        new_vrt.writelines(vrt_lines)
-        new_vrt.close() 
+# let the color map handle this instead
+#         new_vrt = open(vrt_filename,"r+")
+#         vrt_lines = new_vrt.readlines()
+#         for idx in range(0, len(vrt_lines)):
+#             vrt_lines[idx] = vrt_lines[idx].replace('c1="0" c2="0" c3="0" c4="255"', 'c1="0" c2="0" c3="0" c4="0"')
+#         new_vrt.seek(0)
+#         new_vrt.truncate()
+#         new_vrt.writelines(vrt_lines)
+#         new_vrt.close() 
     
     # Close stderr file.
     gdalbuildvrt_stderr_file.close()
