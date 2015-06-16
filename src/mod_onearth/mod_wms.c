@@ -426,10 +426,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  if (i==num_periods) {
 				  // no data found within all periods
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
-				  fd=open(fn,O_RDONLY);
 			  }
 
-		  } else fd=open(fn,O_RDONLY);
+		  }
 	  }
   }
 
@@ -1898,7 +1897,8 @@ int rewrite_rest_uri(request_rec *r) {
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],ap_strcasecmp_match(params[7+d],"jpg") == 0 ? "jpeg" : params[7+d]);
 	if (length == 8)
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[8+d],"jpg") == 0 ? "jpeg" : params[8+d],params[3+d]);
-//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST rewrite %s",r->args);
+	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect %s",apr_psprintf(r->pool,"%s/%s",r->uri,r->args));
 	return 0;
 }
 
