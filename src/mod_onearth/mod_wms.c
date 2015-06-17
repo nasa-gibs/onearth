@@ -1870,11 +1870,13 @@ int rewrite_rest_uri(request_rec *r) {
 		p = apr_strtok(NULL, "/",&last);
 	}
 
+	r->uri = ""; // need to rebuild the URI
 	int d = -1; // directories before first REST param
 	int j = 0;
 	for(j = 0; j < i; j++) {
 		if(ap_strstr(cfg->dir, params[j]) != NULL) {
 			d++;
+			r->uri = apr_psprintf(r->pool,"%s/%s",r->uri,params[j]);
 			if ((ap_strstr(cfg->dir, params[j+1])) == '\0') {
 				break;
 			}
@@ -1898,7 +1900,7 @@ int rewrite_rest_uri(request_rec *r) {
 	if (length == 8)
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[8+d],"jpg") == 0 ? "jpeg" : params[8+d],params[3+d]);
 	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
-//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect %s",apr_psprintf(r->pool,"%s/%s",r->uri,r->args));
+	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
 	return 0;
 }
 
