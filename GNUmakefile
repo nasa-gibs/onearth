@@ -12,7 +12,7 @@ RPMBUILD_FLAGS=-ba
 NUMPY_ARTIFACT=numpy-1.5.1.tar.gz
 NUMPY_URL=https://pypi.python.org/packages/source/n/numpy/$(NUMPY_ARTIFACT)
 MPL_ARTIFACT=matplotlib-1.3.1.tar.gz
-MPL_URL=http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matplotlib-1.3.1/$(MPL_ARTIFACT)
+MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
 CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
 

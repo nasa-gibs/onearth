@@ -7,7 +7,7 @@ License:	ASL 2.0+
 URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	https://pypi.python.org/packages/source/n/numpy/numpy-1.5.1.tar.gz
-Source2:	http://hivelocity.dl.sourceforge.net/project/matplotlib/matplotlib/matplotlib-1.3.1/matplotlib-1.3.1.tar.gz
+Source2:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.3.1.tar.gz
 Source3:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 
 BuildRequires:	httpd-devel
