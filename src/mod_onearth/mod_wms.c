@@ -434,8 +434,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 
   readbytes=pread64(fd,buffer,nbytes,location);
   if (readbytes!=nbytes)
-    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-      "Error reading from %s, read %ld instead of %ld, from %ld",fn,readbytes,nbytes,location);
+//    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Error reading from %s, read %ld instead of %ld, from %ld",fn,readbytes,nbytes,location);
   close(fd);
   return (readbytes==nbytes)?buffer:0;
 }
