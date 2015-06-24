@@ -236,8 +236,8 @@ static void *r_file_pread(request_rec *r, char *fname,
   void *buffer;
   apr_size_t readbytes;
 
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-  //  "Pread file %s size %ld at %ld",fname,nbytes,location);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"r_file_pread file %s size %ld at %ld",fname,nbytes,location);
+
   // Duplicate the file name, in case we need to change it
   char *fn=apr_pstrdup(r->pool,fname);
   if (!(buffer=apr_pcalloc(r->pool,nbytes))) {
@@ -1551,6 +1551,7 @@ static int mrf_handler(request_rec *r)
   apr_off_t offset;
   index_s *this_record;
   void *this_data=0;
+  int default_idx;
 
   // Get the configuration
   cfg=(wms_cfg *) 
@@ -1711,11 +1712,13 @@ static int mrf_handler(request_rec *r)
   } else {
   	  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
   }
+  default_idx = 0;
   this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods);
 
 	if (!this_record) {
 		// try to read from 0,0 in static index
 		this_record = p_file_pread(r->pool, ifname, sizeof(index_s), 0);
+		default_idx = 1;
 	}
 	if (!this_record) {
 		// still no record
@@ -1787,8 +1790,7 @@ static int mrf_handler(request_rec *r)
 #endif
 
   // Check for tile not in the cache
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-  //   "Try to read tile from %ld, size %ld\n",this_record->offset,this_record->size);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Try to read tile from %ld, size %ld",this_record->offset,this_record->size);
 
   char *dfname;
   if (level->dfname[0] == '/') { // decide absolute or relative path from cachedir
@@ -1796,9 +1798,10 @@ static int mrf_handler(request_rec *r)
   } else {
 	  dfname = apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0);
   }
-  if (this_record->size) {
+  if (this_record->size && default_idx==0) {
 	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods);
-  } else { // get empty tile
+  }
+  if (!this_data) { // get empty tile
     int lc=level-GETLEVELS(cache);
     if ((cfg->meta[count].empties[lc].index.size)&& (cfg->meta[count].empties[lc].data)) {
         this_record->size=cfg->meta[count].empties[lc].index.size;
@@ -1827,8 +1830,7 @@ static int mrf_handler(request_rec *r)
   }
 
   // DEBUG
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-  // "Got data at %x",this_data);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
