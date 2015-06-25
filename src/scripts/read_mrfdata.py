@@ -25,6 +25,7 @@
 from optparse import OptionParser
 import os
 import sys
+import struct
 
 versionNumber = '0.6.4'
     
@@ -32,7 +33,7 @@ versionNumber = '0.6.4'
 
 print 'read_mrfdata.py v' + versionNumber
 
-usageText = 'read_mrfdata.py --input [mrf_data_file] --output [output_file] --offset INT --size INT'
+usageText = 'read_mrfdata.py --input [mrf_data_file] --output [output_file] (--offset INT --size INT) OR (--index [index_file] --tile INT)'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -42,12 +43,20 @@ parser.add_option('-i', '--input',
 parser.add_option('-f', '--offset',
                   action='store', type='int', dest='offset',
                   help='data offset')
+parser.add_option("-l", "--little_endian", action="store_true", dest="endian", 
+                  default=False, help="Use little endian instead of big endian (default)")
+parser.add_option('-n', '--index',
+                  action='store', type='string', dest='index',
+                  help='Full path of the MRF index file')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='Full path of output image file')
 parser.add_option('-s', '--size',
                   action='store', type='int', dest='size',
                   help='data size')
+parser.add_option('-t', '--tile',
+                  action='store', type='int', dest='tile',
+                  help='tile within index file')
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Verbose mode")
 
@@ -63,15 +72,46 @@ if not options.output:
     parser.error('output filename not provided. --output must be specified.')
 else:
     output = options.output
+
+if options.index:
+    index = options.index
+    if not options.tile:
+        parser.error('tile number not provided. --tile must be specified when using index file.')
+    else:
+        tile = options.tile-1
+else:
+    index=None
     
-if not options.offset:
-    parser.error('offset not provided. --offset must be specified.')
+if index == None:    
+    if not options.offset:
+        parser.error('offset not provided. --offset must be specified.')
+    else:
+        offset = options.offset
+    if not options.size:
+        parser.error('size not provided. --size must be specified.')
+    else:
+        size = options.size
+    
+if options.endian == True:
+    data_type = '<q'
 else:
-    offset = options.offset
-if not options.size:
-    parser.error('size not provided. --size must be specified.')
-else:
-    size = options.size
+    data_type = '>q'
+    
+if index != None:
+    if options.verbose:
+        print "Reading " + index
+    idx = open(index, 'r')
+    
+    idx.seek(16*tile)
+    byte = idx.read(16)
+    offset = struct.unpack(data_type, byte[0:8])[0]
+    size = struct.unpack(data_type, byte[8:16])[0]
+    idx.close() 
+    
+    if options.verbose: 
+        print "Read from index at offset " + str(16*tile) + " for 16 bytes"
+        print "Got data file offset " + str(offset) + ", size " + str(size)
+   
    
 out = open(output, 'w')
 mrf_data = open(input, 'r')
@@ -80,7 +120,6 @@ mrf_data.seek(offset)
 image = mrf_data.read(size)
 out.write(image)
 
-
 print "Wrote " + output
 mrf_data.close()
-out.close() 
+out.close()  
