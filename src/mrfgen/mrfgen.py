@@ -76,7 +76,7 @@ import string
 import shutil
 import imghdr
 
-versionNumber = '0.6.4-2'
+versionNumber = '0.6.4-9'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -318,7 +318,7 @@ def lookupEmptyTile(empty_tile):
     for line in empty_config_file:
         (key, val) = line.split()
         tiles[key] = val
-    
+    empty_config_file.close()
     try:
         if tiles[empty_tile][0] == '/':   
             return os.path.abspath(tiles[empty_tile])
@@ -1206,7 +1206,7 @@ if len(modtiles) > 0:
             print colormap2vrt_stderr
             if "Error" in colormap2vrt_stderr:
                 log_sig_exit('ERROR', "Error executing colormap2vrt.py with colormap:" + colormap, sigevent_url)
-
+            colormap2vrt_stderr_file.close()
             if os.path.isfile(new_vrt_filename):
                 remove_file(vrt_filename)
                 remove_file(colormap2vrt_stderr_filename)
