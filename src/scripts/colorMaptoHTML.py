@@ -258,6 +258,7 @@ def generateHTML() :
         print("<!doctype html>")
         print("<html>")
         print("<head>")
+        print("<meta charset=\"utf-8\" /> ")
         print('<link rel="stylesheet" type="text/css" href="resources/colormap.css">')
         print("</head>")
         print("<body>")
@@ -267,9 +268,9 @@ def generateHTML() :
         print("<p>Download Color Map file <a href=\"../" + colorMaps.product + "\">here</a><br><br>")
 
         for colorMap in colorMaps.colormaps :
-            print("<h2> ColorMap : Title '" + colorMap.title + "'  Units '" + colorMap.units + "'</h2>")
+            print("<h2> ColorMap : Title '" + colorMap.title.encode('utf8') + "'  Units '" + colorMap.units.encode('utf8') + "'</h2>")
             
-            print("<h3> Entries : MinLabel '" + colorMap.entries.minLabel + "'  MaxLabel '" + colorMap.entries.maxLabel + "'</h3>")
+            print("<h3> Entries : MinLabel '" + colorMap.entries.minLabel.encode('utf8') + "'  MaxLabel '" + colorMap.entries.maxLabel.encode('utf8') + "'</h3>")
 
             print("<table>")
         
@@ -302,7 +303,7 @@ def generateHTML() :
             if colorMap.legend == None:
                  print("<h3>No Legend</h3>")
             else:
-                print("<h3> Legend : Type '" + colorMap.legend.type + "'  MinLabel '" + colorMap.legend.minLabel + "'  MaxLabel '" + colorMap.legend.maxLabel + "'</h3>")
+                print("<h3> Legend : Type '" + colorMap.legend.type.encode('utf8') + "'  MinLabel '" + colorMap.legend.minLabel.encode('utf8') + "'  MaxLabel '" + colorMap.legend.maxLabel.encode('utf8') + "'</h3>")
 
                 print("<table>")
         
