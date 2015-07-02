@@ -304,7 +304,11 @@ static void *r_file_pread(request_rec *r, char *fname,
   if (0>(fd=open(fn,O_RDONLY))) 
   {
 	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%s is not available",fn);
-	  if (!fnloc) return 0; else {
+	  if (!fnloc) {
+		  close(fd);
+		  return 0;
+	  }
+	  else {
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
 			  apr_time_exp_t st; st.tm_year=0;st.tm_mon=0;st.tm_mday=1;st.tm_yday=1;st.tm_hour=0;st.tm_min=0;st.tm_sec=0;
@@ -433,8 +437,9 @@ static void *r_file_pread(request_rec *r, char *fname,
   }
 
   readbytes=pread64(fd,buffer,nbytes,location);
-  if (readbytes!=nbytes)
+  if (readbytes!=nbytes) {
 //    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Error reading from %s, read %ld instead of %ld, from %ld",fn,readbytes,nbytes,location);
+  }
   close(fd);
   return (readbytes==nbytes)?buffer:0;
 }
@@ -563,6 +568,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     		"MOD_WMS: Can't open cache config file\n file %s: %s",arg,strerror(errno));
     cfg->caches=(Caches *)apr_pcalloc(cfg->p,sizeof(Caches));
     cfg->caches->size=0 ; cfg->caches->count=0;
+    close(f);
     return 0;
   }
 
