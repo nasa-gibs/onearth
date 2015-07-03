@@ -28,7 +28,7 @@ import sys
 import struct
 import math
 
-versionNumber = '0.6.5'
+versionNumber = '0.7.0'
     
 #-------------------------------------------------------------------------------   
 
@@ -131,10 +131,30 @@ if options.endian == True:
     data_type = '<q'
 else:
     data_type = '>q'
+  
+if str(options.zlevel) == "None":
+    z = None
+    z_size = None
+    if "z=" in mrf_size:
+        print "Error: z-level must be specified for this input"
+        exit(1)
+else:
+    z = options.zlevel
+    z_size = sizes[2]
+    if options.verbose:
+        print "Using z-level:" + str(z) + " and MRF z-size:" + str(z_size)
+    if z >= z_size:
+        print "Error: Specified z-level is greater than the maximum size"
+        exit(1)
     
 w = int(math.ceil(float(mrf_x)/512))
 h = int(math.ceil(float(mrf_y)/512))
-len_base = w * h
+if z >= 0:
+    len_base = w * h * z_size
+    low = z_size
+else:
+    len_base = w * h
+    low = 1
 idx_size = os.path.getsize(index)
 len_tiles = idx_size/16
 
@@ -150,14 +170,21 @@ levels.append(0)
 rows.append(h)
 cols.append(w)
 
-while len_base > 1:
+while len_base > low:
     levels.append(len_base)
     w = int(math.ceil(w / 2.0))
     h = int(math.ceil(h / 2.0))
-    len_base = w * h
+    if z >= 0:
+        len_base = w * h * z_size
+    else:
+        len_base = w * h
     rows.append(h)
     cols.append(w)
-levels.append(1)
+    
+if z >= 0:
+    levels.append(1*z_size)
+else:
+    levels.append(1)
 
 if options.verbose:   
     for idx, val in enumerate(levels):
@@ -174,7 +201,10 @@ if options.tilematrix != None:
     col = cols[len(levels)-tilematrix]
     
     if options.verbose:
-        print "Looking up tilematrix level:" + str(options.tilematrix) + ", tile row:" + str(options.tilerow) + ", tile col:" + str(options.tilecol)
+        message = "Looking up tilematrix level:" + str(options.tilematrix) + ", tile row:" + str(options.tilerow) + ", tile col:" + str(options.tilecol)
+        if z >= 0:
+            message = message + ", z-level:" + str(z)
+        print message
         print "Level contains " + str(row) + " rows, " + str(col) + " columns"
     
     if (options.tilerow) > row-1:
@@ -184,15 +214,18 @@ if options.tilematrix != None:
         print "Tile col exceeds the maximum (" + str(col-1) + ") for this level"
         exit(1)
       
-    level_s = 0
+    level_start = 0
     for idx, val in enumerate(levels):
         if levels[idx-1]==level:
             break
-        level_s+=val
-    tile = ((options.tilerow) * col) + (options.tilecol) + level_s   
+        level_start+=val
+    tile = ((options.tilerow) * col) + options.tilecol + level_start
+    if z >= 0:
+        level_size = (levels[len(levels)-tilematrix+1]/z_size)
+        tile = tile + (z * level_size) 
     
     if options.verbose:
-        print "Tiles for level begin at: " + str(level_s+1)
+        print "Tiles for level begin at: " + str(level_start+1)
         print "Using tile: " + str(tile+1)
     
 if index != None and tile != None:
@@ -229,4 +262,4 @@ if size != None and offset !=None:
     out.close()  
 else:
     print "Error: Tile could not be located"
-    exit()
+    exit(1)
