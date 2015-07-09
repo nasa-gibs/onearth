@@ -543,14 +543,25 @@ else:
           
     # gdalwarp resampling method for reprojection
     try:
-        reprojection_resampling        =get_dom_tag_value(dom, 'reprojection_resampling')
+        reprojection_resampling = get_dom_tag_value(dom, 'reprojection_resampling')
     except:
         reprojection_resampling = 'cubic' # default to cubic  
     # colormap
     try:
-        colormap               =get_dom_tag_value(dom, 'colormap')
+        colormap = get_dom_tag_value(dom, 'colormap')
     except:
-        colormap = ''    
+        colormap = ''  
+    # z-levels
+    try:
+        zlevels = get_dom_tag_value(dom, 'mrf_z_levels')
+    except:
+        zlevels = ''      
+    # z key
+    zkey_type = "string" # default to only string for now
+    try:
+        zkey = get_dom_tag_value(dom, 'mrf_z_key')
+    except:
+        zkey = ''    
     # Close file.
     config_file.close()
 
@@ -633,6 +644,8 @@ log_info_mssg(str().join(['config overview resampling:     ', overview_resamplin
 log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resampling]))
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
+log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
+log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
