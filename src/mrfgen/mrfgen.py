@@ -53,7 +53,7 @@
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
 # NASA Jet Propulsion Laboratory
-# 2014
+# 2015
 # Jeffrey.R.Hall@jpl.nasa.gov
 # Joe.T.Roberts@jpl.nasa.gov
 
@@ -75,8 +75,9 @@ import xml.dom.minidom
 import string
 import shutil
 import imghdr
+import sqlite3
 
-versionNumber = '0.6.4-9'
+versionNumber = '0.7.0'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -226,6 +227,22 @@ def get_dom_tag_value(dom, tag_name):
     tag=dom.getElementsByTagName(tag_name)
     value=tag[0].firstChild.data.strip()
     return value
+
+def get_input_files(dom):
+    """
+    Returns comma-separated list of files from <input_files> element.
+    Arguments:
+        dom -- The XML dom in which to retrieve <input_files> element.
+    """
+    files = []
+    input_file_element = dom.getElementsByTagName("input_files")[0]
+    file_elements = input_file_element.getElementsByTagName("file")
+    if len(file_elements) > 0:
+        for element in file_elements:
+            files.append(element.firstChild.data.strip())
+    else:
+        files.append(input_file_element.firstChild.data.strip()) 
+    return ",".join(files)
 
 def remove_file(filename):
     """
@@ -498,7 +515,7 @@ else:
     target_xmin, target_ymin, target_xmax, target_ymax = target_extents.split(',')
     # Input files.
     try:
-        input_files        =get_dom_tag_value(dom, 'input_files')
+        input_files = get_input_files(dom)
     except:
         input_files = ''
     # overview levels
