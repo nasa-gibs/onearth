@@ -920,13 +920,13 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         print "Created directory " + link_dir   
     
     if os.path.isfile(mrf):
-        if os.path.isfile(mrf_link) or not os.path.isfile(os.readlink(mrf_link)):
+        if os.path.lexists(mrf_link):
             os.remove(mrf_link)
             print "Removed existing file " + mrf_link
         os.symlink(mrf, mrf_link)
         print "Created soft link " + mrf_link + " -> " + mrf
     if os.path.isfile(idx):
-        if os.path.isfile(idx_link) or not os.path.isfile(os.readlink(idx_link)):
+        if os.path.lexists(idx_link):
             os.remove(idx_link)
             print "Removed existing file " + idx_link
         os.symlink(idx, idx_link)
@@ -934,7 +934,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
     else:
         log_sig_warn("Default MRF index file " + idx + " does not exist", sigevent_url)
     if os.path.isfile(data):
-        if os.path.isfile(data_link) or not os.path.isfile(os.readlink(data_link)):
+        if os.path.lexists(data_link):
             os.remove(data_link)
             print "Removed existing file " + data_link
         os.symlink(data, data_link)

@@ -236,8 +236,8 @@ static void *r_file_pread(request_rec *r, char *fname,
   void *buffer;
   apr_size_t readbytes;
 
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-  //  "Pread file %s size %ld at %ld",fname,nbytes,location);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"r_file_pread file %s size %ld at %ld",fname,nbytes,location);
+
   // Duplicate the file name, in case we need to change it
   char *fn=apr_pstrdup(r->pool,fname);
   if (!(buffer=apr_pcalloc(r->pool,nbytes))) {
@@ -304,7 +304,11 @@ static void *r_file_pread(request_rec *r, char *fname,
   if (0>(fd=open(fn,O_RDONLY))) 
   {
 	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%s is not available",fn);
-	  if (!fnloc) return 0; else {
+	  if (!fnloc) {
+		  close(fd);
+		  return 0;
+	  }
+	  else {
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
 			  apr_time_exp_t st; st.tm_year=0;st.tm_mon=0;st.tm_mday=1;st.tm_yday=1;st.tm_hour=0;st.tm_min=0;st.tm_sec=0;
@@ -433,9 +437,9 @@ static void *r_file_pread(request_rec *r, char *fname,
   }
 
   readbytes=pread64(fd,buffer,nbytes,location);
-  if (readbytes!=nbytes)
-    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-      "Error reading from %s, read %ld instead of %ld, from %ld",fn,readbytes,nbytes,location);
+//  if (readbytes!=nbytes) {
+//	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Error reading from %s, read %ld instead of %ld, from %ld",fn,readbytes,nbytes,location);
+//  }
   close(fd);
   return (readbytes==nbytes)?buffer:0;
 }
@@ -564,6 +568,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     		"MOD_WMS: Can't open cache config file\n file %s: %s",arg,strerror(errno));
     cfg->caches=(Caches *)apr_pcalloc(cfg->p,sizeof(Caches));
     cfg->caches->size=0 ; cfg->caches->count=0;
+    close(f);
     return 0;
   }
 
@@ -1551,6 +1556,7 @@ static int mrf_handler(request_rec *r)
   apr_off_t offset;
   index_s *this_record;
   void *this_data=0;
+  int default_idx;
 
   // Get the configuration
   cfg=(wms_cfg *) 
@@ -1711,11 +1717,13 @@ static int mrf_handler(request_rec *r)
   } else {
   	  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
   }
+  default_idx = 0;
   this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods);
 
 	if (!this_record) {
 		// try to read from 0,0 in static index
 		this_record = p_file_pread(r->pool, ifname, sizeof(index_s), 0);
+		default_idx = 1;
 	}
 	if (!this_record) {
 		// still no record
@@ -1787,8 +1795,7 @@ static int mrf_handler(request_rec *r)
 #endif
 
   // Check for tile not in the cache
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-  //   "Try to read tile from %ld, size %ld\n",this_record->offset,this_record->size);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Try to read tile from %ld, size %ld",this_record->offset,this_record->size);
 
   char *dfname;
   if (level->dfname[0] == '/') { // decide absolute or relative path from cachedir
@@ -1796,9 +1803,10 @@ static int mrf_handler(request_rec *r)
   } else {
 	  dfname = apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0);
   }
-  if (this_record->size) {
+  if (this_record->size && default_idx==0) {
 	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods);
-  } else { // get empty tile
+  }
+  if (!this_data) { // get empty tile
     int lc=level-GETLEVELS(cache);
     if ((cfg->meta[count].empties[lc].index.size)&& (cfg->meta[count].empties[lc].data)) {
         this_record->size=cfg->meta[count].empties[lc].index.size;
@@ -1827,8 +1835,7 @@ static int mrf_handler(request_rec *r)
   }
 
   // DEBUG
-  // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
-  // "Got data at %x",this_data);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
@@ -1899,8 +1906,8 @@ int rewrite_rest_uri(request_rec *r) {
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],ap_strcasecmp_match(params[7+d],"jpg") == 0 ? "jpeg" : params[7+d]);
 	if (length == 8)
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[8+d],"jpg") == 0 ? "jpeg" : params[8+d],params[3+d]);
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
 	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
-	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
 	return 0;
 }
 
@@ -1912,7 +1919,7 @@ static int handler(request_rec *r) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else
-			  return mrf_handler(r);
+			  return OK;
 	  }
 	  else
 		  return DECLINED;
