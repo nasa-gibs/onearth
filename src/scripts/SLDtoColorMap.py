@@ -297,6 +297,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder) :
 
 def generateColorMap(gibsColorMaps, units):
 
+    print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
     print("<ColorMaps>")
     
     for colorMap in gibsColorMaps:
