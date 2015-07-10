@@ -1091,6 +1091,71 @@ if len(modtiles) > 0:
         # Exit here since we don't need to build an MRF from scratch
         mssg=str().join(['MRF created:  ', out_filename])
         log_sig_exit('INFO', mssg, sigevent_url)
+      
+        
+    # Check if z-dimension is consistent if it's being used
+    if zlevels != '':
+        mrf_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0]
+        try:
+            # Open file.
+            mrf_file=open(mrf_out, 'r')
+        except IOError:
+            mssg=str().join(['MRF not yet generated:  ', mrf_out])
+            log_info_mssg(mssg)
+        else:
+            dom=xml.dom.minidom.parse(mrf_file)           
+            size_elements = dom.getElementsByTagName('Size')
+            sizeZ=size_elements[0].getAttribute('z') #bands
+            if sizeZ == '':
+                mssg = "The output MRF does not contain z-levels: " + mrf_out
+                log_sig_exit('ERROR', mssg, sigevent_url)            
+            
+            # Send to log.
+            log_info_mssg(str().join(['size of existing MRF z-dimension:  ', str(sizeZ)]))
+            # Close file.
+            mrf_file.close()
+            # Validate
+            if zlevels != str(sizeZ):
+                mssg=str().join(['Z-level size does not match existing MRF: ', zlevels])
+                log_sig_warn(mssg, sigevent_url)
+    
+    # Get z-index from ZDB if using z-dimension
+    if zkey != '':
+        zdb_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0].replace('.mrf','.zdb')
+        try:
+            db_exists = os.path.isfile(zdb_out)
+            log_info_mssg("Connecting to " + zdb_out)
+            con = sqlite3.connect(zdb_out)
+            
+            if db_exists == False:
+                cur = con.cursor() 
+                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+                cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+                
+            else: 
+                cur = con.cursor()
+                cur.execute("SELECT COUNT(*) FROM ZINDEX")
+                lid = int(cur.fetchone()[0])
+                if lid >= int(zlevels)-1:
+                    mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                    log_sig_exit('ERROR', mssg, sigevent_url)
+                
+                cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+            
+            z = cur.lastrowid
+            log_info_mssg("Current z-level is " +str(z))
+            
+        except sqlite3.Error, e:
+            if con:
+                con.rollback()
+            mssg = "Error %s:" % e.args[0]
+            log_sig_exit('ERROR', mssg, sigevent_url)
+            
+        finally:
+            if con:
+                con.commit()
+                con.close()
+        
 
     # Create the gdalbuildvrt command.
     #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
@@ -1337,6 +1402,7 @@ if len(modtiles) > 0:
             sizeX=size_elements[0].getAttribute('x') #width
             sizeY=size_elements[0].getAttribute('y') #height
             sizeC=size_elements[0].getAttribute('c') #bands
+            sizeZ=size_elements[0].getAttribute('z') #bands
             # Send to log.
             log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
             # Close file.
