@@ -64,6 +64,7 @@ from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
+from lxml import etree
 
 versionNumber = '0.6.4'
 
@@ -308,6 +309,15 @@ def add_trailing_slash(directory_path):
         directory_path=str().join([directory_path, '/'])
     # Return directory_path with trailing slash.
     return directory_path
+
+def get_pretty_xml(xml_dom):
+    """
+    Formats an XML document into a string with nice-looking line-breaks (for get_mrf).
+    """
+    parser = etree.XMLParser(strip_cdata=False)
+    xml = etree.fromstring(xml_dom.toxml(), parser)
+    pretty_xml = etree.tostring(xml, pretty_print=True)
+    return pretty_xml
 
 def get_environment(environmentConfig):
     """
@@ -920,13 +930,13 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         print "Created directory " + link_dir   
     
     if os.path.isfile(mrf):
-        if os.path.lexists(mrf_link):
+        if os.path.isfile(mrf_link) or not os.path.isfile(os.readlink(mrf_link)):
             os.remove(mrf_link)
             print "Removed existing file " + mrf_link
         os.symlink(mrf, mrf_link)
         print "Created soft link " + mrf_link + " -> " + mrf
     if os.path.isfile(idx):
-        if os.path.lexists(idx_link):
+        if os.path.isfile(idx_link) or not os.path.isfile(os.readlink(idx_link)):
             os.remove(idx_link)
             print "Removed existing file " + idx_link
         os.symlink(idx, idx_link)
@@ -934,7 +944,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
     else:
         log_sig_warn("Default MRF index file " + idx + " does not exist", sigevent_url)
     if os.path.isfile(data):
-        if os.path.lexists(data_link):
+        if os.path.isfile(data_link) or not os.path.isfile(os.readlink(data_link)):
             os.remove(data_link)
             print "Removed existing file " + data_link
         os.symlink(data, data_link)
@@ -1399,49 +1409,158 @@ for conf in conf_files:
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
-        
-    log_info_mssg('MRF Archetype: ' + headerFileName)
+
+    # Open MRF header if one has been supplied
+    if os.path.isfile(headerFileName):
+        log_info_mssg('MRF Archetype: ' + headerFileName)
+        try:
+            mrf_file = open(headerFileName, 'r')
+        except IOError:
+            log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
+        else:
+            try:
+                header_dom = xml.dom.minidom.parse(mrf_file)
+            except:
+                log_sig_err(str().join(['Bad MRF header file: ', headerFileName]), sigevent_url)
+            else:
+                header_file_present = True
+    else:
+        header_file_present = False
+        log_info_mssg('No MRF Archetype supplied')    
+    
     mrf_base = os.path.basename(headerFileName)
     
-    # Modify MRF Archetype
+    # Create base MRF document
+    mrf_impl = xml.dom.minidom.getDOMImplementation()
+    mrf_dom = mrf_impl.createDocument(None, 'MRF_META', None)
+    mrf_meta = mrf_dom.documentElement
+
+    # Create <Raster> tag
+    raster_node = mrf_dom.createElement('Raster')
+
+    # Check if <Size> tag present and has all 3 required values (x,y,c)
     try:
-        # Open file.
-        mrf_file=open(headerFileName, 'r')
-    except IOError:
-        log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
-        continue
-    else:
-        mrf_dom = xml.dom.minidom.parse(mrf_file)
-    
-    mrf_meta = mrf_dom.getElementsByTagName('MRF_META')[0]
-    rasterElement = mrf_dom.getElementsByTagName('Raster')[0]
-    bands = rasterElement.getElementsByTagName('Size')[0].getAttribute('c')
+        size_node = dom.getElementsByTagName('Size')[0]
+    except:
+        try:
+            size_node = header_dom.getElementsByTagName('Size')[0]
+        except:
+            size_node = None
+            log_sig_err("<Size> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if size_node != None:
+            if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
+                log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
+            else:
+                raster_node.appendChild(size_node)
+                bands = size_node.getAttribute('c')
+
+    # Create compression node
+    compression_node = mrf_dom.createElement('Compression')
+    compression_text_node = mrf_dom.createTextNode(compression)
+    compression_node.appendChild(compression_text_node)
+    raster_node.appendChild(compression_node)
+
+    # Check if <DataValues> tag is present and the NoData attribute is present
     try:
-        change_dom_tag_value(mrf_dom, 'Compression', compression)
-    except IndexError: #Add Compression tag if it is missing
-        compressionElement = mrf_dom.createElement('Compression')
-        compressionElement.appendChild(mrf_dom.createTextNode(compression))
-        rasterElement.appendChild(compressionElement)
-    
-    rsets = mrf_dom.getElementsByTagName('Rsets')[0]
-    scale_attribute = rsets.getAttribute('scale')
+        datavalues_node = dom.getElementsByTagName('DataValues')[0]
+    except:
+        try:
+            datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
+        except:
+            datavalues_node = None
+    finally:
+        if datavalues_node is not None:    
+            raster_node.appendChild(datavalues_node)
+
+    # Check if the <Quality> tag is present and of a valid type
     try:
-        if scale_attribute:
-            if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
-                log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + headerFileName + ": " + scale_attribute, sigevent_url)
-                continue
-        if projection.tilematrixsets[tilematrixset].levels > 1:
-            rsets.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
-    except KeyError:
-        log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
-        continue
+        quality_node = dom.getElementsByTagName('Quality')[0]
+    except:
+        try:
+            quality_node = header_dom.getElementsByTagName('Quality')[0]
+        except:
+            quality_node = None
+            # log_sig_err("<Quality> tag not present in layer config or MRF header file.", sigevent_url)
+    finally:    
+        if quality_node is not None:    
+            if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
+                log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
+            else:
+                raster_node.appendChild(quality_node)
+
+    # Check if <PageSize> node is present and has c, x, and y attributes
+    try:
+        page_size_node = dom.getElementsByTagName('PageSize')[0]
+    except:
+        try:
+            page_size_node = header_dom.getElementsByTagName('PageSize')[0]
+        except:
+            page_size_node = None
+            log_sig_err("<PageSize> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if page_size_node is not None:
+            if all (attr in page_size_node.attributes.keys() for attr in ('c','x','y')):
+                raster_node.appendChild(page_size_node)
+            else:
+                log_sig_err("<PageSize> requires c, x, and y attributes", sigevent_url)
+
+    # Add <Raster> tag to MRF
+    mrf_meta.appendChild(raster_node)
+
+    # Create <Rsets> 
+    try:
+        rsets_node = dom.getElementsByTagName('Rsets')[0]
+    except:
+        try:
+            rsets_node = header_dom.getElementsByTagName('Rsets')[0]
+        except:
+            rsets_node = None
+            log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if rsets_node is not None:
+            try:
+                scale_attribute = rsets_node.getAttribute('scale')
+            except:
+                log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
+            else:
+                try:
+                    if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
+                        log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
+                    if projection.tilematrixsets[tilematrixset].levels > 1:
+                        rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+                except KeyError:
+                    log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+
+    # Add data file locations
     dataFileNameElement = mrf_dom.createElement('DataFileName')
     dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
     indexFileNameElement = mrf_dom.createElement('IndexFileName')
     indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
-    rsets.appendChild(dataFileNameElement)
-    rsets.appendChild(indexFileNameElement)
+    rsets_node.appendChild(dataFileNameElement)
+    rsets_node.appendChild(indexFileNameElement)
+    mrf_meta.appendChild(rsets_node)
     
+    # Create GeoTags 
+    geotag_node = mrf_dom.createElement('GeoTags')
+    # Check for bounding box
+    try:
+        bounding_box_node = dom.getElementsByTagName('BoundingBox')[0]
+    except:
+        try:
+            bounding_box_node = header_dom.getElementsByTagName('BoundingBox')[0]
+        except:
+            bounding_box_node = None
+            log_sig_err("<BoundingBox> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if bounding_box_node is not None:
+            if all (attr in bounding_box_node.attributes.keys() for attr in ('minx','miny','maxx','maxy')):
+                geotag_node.appendChild(bounding_box_node)
+            else:
+                log_sig_err("<BoundingBox> requires minx, miny, maxx, and maxy attributes", sigevent_url)
+
+    mrf_meta.appendChild(geotag_node)
+
     twms = mrf_dom.createElement('TWMS')
     levelsElement = mrf_dom.createElement('Levels')
     levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
@@ -1522,8 +1641,11 @@ for conf in conf_files:
         
     twms_mrf_filename = twmsEndPoint+'/'+mrf_base
     twms_mrf_file = open(twms_mrf_filename,'w+')
-    mrf_dom.writexml(twms_mrf_file)
-    
+
+    formatted_xml = get_pretty_xml(mrf_dom)
+    twms_mrf_file.write(formatted_xml)
+    twms_mrf_file.seek(0)
+
     wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
     # check if file already exists and has same TileMatrixSet, if not then create another file
     if os.path.isfile(wmts_mrf_filename):
@@ -1534,18 +1656,7 @@ for conf in conf_files:
         wmts_mrf_file.close()
         
     wmts_mrf_file = open(wmts_mrf_filename,'w+')
-    
-    twms_mrf_file.seek(0)
     lines = twms_mrf_file.readlines()
-    lines[0] = '<MRF_META>\n'
-    lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n\t').replace('</Levels>','</Levels>\n\t').replace('<Pattern>','\n\t<Pattern>'). \
-        replace('<Time>','\n\t<Time>').replace('<Metadata>','\n\t<Metadata>').replace('</TWMS>','\n</TWMS>\n'). \
-        replace('</MRF_META>','\n</MRF_META>\n') 
-    #get_mrfs is picky about line breaks
-    
-    twms_mrf_file.seek(0)
-    twms_mrf_file.truncate()
-    twms_mrf_file.writelines(lines)
     
     # change patterns for WMTS
     pattern_replaced = False
@@ -1564,8 +1675,12 @@ for conf in conf_files:
         wmts_mrf_file.write(line)
     
     twms_mrf_file.close()
+    wmts_mrf_file.seek(0)
     wmts_mrf_file.close()
-    mrf_file.close()
+    try:
+        mrf_file.close()
+    except:
+        pass
     
     print '\n'+ twms_mrf_filename + ' configured successfully\n'
     print '\n'+ wmts_mrf_filename + ' configured successfully\n'
@@ -2079,3 +2194,5 @@ if len(errors) > 0:
 else:
     sys.exit(0)
     
+
+
