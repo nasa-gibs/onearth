@@ -66,6 +66,8 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
 
+import pdb
+
 versionNumber = '0.6.4'
 
 class WMTSEndPoint:
@@ -1239,6 +1241,10 @@ for conf in conf_files:
         except:
             indexFileLocation = None
         try:
+            zIndexFileLocation = get_dom_tag_value(dom, 'ZIndexFileLocation')
+        except:
+            zIndexFileLocation = None
+        try:
             projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir, tilematrixset_configuration)
         except IndexError:
             log_sig_err('Required <Projection> element is missing in ' + conf, sigevent_url)
@@ -1327,6 +1333,8 @@ for conf in conf_files:
         log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
     if indexFileLocation:
         log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
+    if zIndexFileLocation:
+        log_info_mssg('config: ZIndexFileLocation: ' + zIndexFileLocation)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection.id))
     if getTileService:
@@ -1409,6 +1417,15 @@ for conf in conf_files:
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
+
+    if zIndexFileLocation == None:
+        if archiveLocation != None and archiveLocation[0] == '/':
+            # use absolute path of archive
+            zIndexFileLocation = mrf
+        else:
+            # use relative path to cache
+            zIndexFileLocation = mrf.replace(cacheConfig,'')
+        zIndexFileLocation = zIndexFileLocation.replace('.mrf','.zdb')
 
     # Open MRF header if one has been supplied
     if os.path.isfile(headerFileName):
@@ -1539,6 +1556,14 @@ for conf in conf_files:
     indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
     rsets_node.appendChild(dataFileNameElement)
     rsets_node.appendChild(indexFileNameElement)
+
+    # Add index file name
+    if size_node.hasAttribute('z'):
+        z_index_node = mrf_dom.createElement('ZIndexFileName')
+        z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
+        z_index_node.appendChild(z_index_text_node)
+        rsets_node.appendChild(z_index_node)
+
     mrf_meta.appendChild(rsets_node)
     
     # Create GeoTags 
