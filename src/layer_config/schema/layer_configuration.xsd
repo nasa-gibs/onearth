@@ -21,6 +21,11 @@
         <xs:element ref="ArchiveLocation" minOccurs="0"/>
         <xs:element ref="ColorMap" minOccurs="0"/>
         <xs:element ref="Time" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="Size" minOccurs="0"/>
+        <xs:element ref="DataValues" minOccurs="0"/>
+        <xs:element ref="PageSize" minOccurs="0"/>
+        <xs:element ref="Rsets" minOccurs="0"/>
+        <xs:element ref="BoundingBox" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -61,4 +66,38 @@
   <xs:element name="EnvironmentConfig" type="xs:string"/>
   <xs:element name="ColorMap" type="xs:string"/>
   <xs:element name="Time" type="xs:string" nillable="true"/>
+  <xs:element name="Size" nillable="true">
+    <xs:complexType>
+      <xs:attribute name="c" type="xs:integer" use="required"/>
+      <xs:attribute name="x" type="xs:integer" use="required"/>
+      <xs:attribute name="y" type="xs:integer" use="required"/>
+      <xs:attribute name="z" type="xs:integer" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DataValues" nillable="true">
+    <xs:complexType mixed="true">
+      <xs:attribute name="NoData" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PageSize" nillable="true"> 
+    <xs:complexType>
+      <xs:attribute name="c" type="xs:integer" use="required"/>
+      <xs:attribute name="x" type="xs:integer" use="required"/>
+      <xs:attribute name="y" type="xs:integer" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Rsets" nillable="true">
+    <xs:complexType>
+      <xs:attribute name="model" type="xs:string" use="required"/>
+      <xs:attribute name="scale" type="xs:integer" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="BoundingBox" nillable="true">
+    <xs:complexType>
+      <xs:attribute name="maxx" type="xs:decimal" use="required"/>
+      <xs:attribute name="maxy" type="xs:decimal" use="required"/>
+      <xs:attribute name="minx" type="xs:decimal" use="required"/>
+      <xs:attribute name="miny" type="xs:decimal" use="required"/>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>
