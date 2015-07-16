@@ -68,7 +68,7 @@ def hexToRGB(hexValue):
 
 
 ## START Parse SLD v1.0.0 ##
-def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor) :
+def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
     
     gibsColorMaps = []
     
@@ -120,14 +120,14 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor) :
                 prevOpacity = (sldCMapEntries[0].opacity == 0.0)
                 prevRGB     = sldCMapEntries[0].rgb
                         
-                gibsCMap.minLabel = "" + str(prevValue) + ("" if not units else (" " + units))
+                gibsCMap.minLabel = "" + format.format(prevValue) + ("" if not units else (" " + units))
                         
                 for sldCMapEntry in sldCMapEntries[1:-1]:
                     gibsCMapEntry             = GIBS_ColorMapEntry()
                     gibsCMapEntry.rgb         = prevRGB
-                    gibsCMapEntry.label       = str(prevValue) + " - " + str(sldCMapEntry.quantity) + ("" if not units else (" " + units))	
-                    gibsCMapEntry.value       = [str(prevValue), str(sldCMapEntry.quantity)]
-                    gibsCMapEntry.sourceValue = [str((prevValue - offset) / factor), str((sldCMapEntry.quantity - offset) / factor)]
+                    gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(sldCMapEntry.quantity) + ("" if not units else (" " + units))	
+                    gibsCMapEntry.value       = [prevValue, sldCMapEntry.quantity]
+                    gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((sldCMapEntry.quantity - offset) / factor)]
                     gibsCMapEntry.transparent = prevOpacity
                             
                     gibsCMap.cmEntries.append(gibsCMapEntry)
@@ -144,9 +144,9 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor) :
                 
                     gibsCMapEntry             = GIBS_ColorMapEntry()
                     gibsCMapEntry.rgb         = prevRGB
-                    gibsCMapEntry.label       = "&gt;= " + str(prevValue) + ("" if not units else (" " + units))	
+                    gibsCMapEntry.label       = "&gt;= " + format.format(prevValue) + ("" if not units else (" " + units))	
                     gibsCMapEntry.value       = [prevValue,sldCMapEntries[-1].quantity]
-                    gibsCMapEntry.sourceValue = [prevValue, str((sldCMapEntries[-1].quantity - offset) / factor)]
+                    gibsCMapEntry.sourceValue = [prevValue, ((sldCMapEntries[-1].quantity - offset) / factor)]
                     gibsCMapEntry.transparent = prevOpacity
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
@@ -154,17 +154,17 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor) :
                     # Add ColorMapEntry for [-1] entry
                     gibsCMapEntry             = GIBS_ColorMapEntry()
                     gibsCMapEntry.rgb         = prevRGB
-                    gibsCMapEntry.label       = str(prevValue) + " - " + str(sldCMapEntries[-1].quantity) + ("" if not units else (" " + units))	
-                    gibsCMapEntry.value       = [str(prevValue), str(sldCMapEntries[-1].quantity)]
-                    gibsCMapEntry.sourceValue = [str((prevValue - offset) / factor), str((sldCMapEntries[-1].quantity - offset) / factor)]
+                    gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(sldCMapEntries[-1].quantity) + ("" if not units else (" " + units))	
+                    gibsCMapEntry.value       = [prevValue, sldCMapEntries[-1].quantity]
+                    gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((sldCMapEntries[-1].quantity - offset) / factor)]
                     gibsCMapEntry.transparent = prevOpacity
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
                     gibsCMapEntry             = GIBS_ColorMapEntry()
                     gibsCMapEntry.rgb         = sldCMapEntries[-1].rgb
-                    gibsCMapEntry.label       = str(sldCMapEntries[-1].quantity) + ("" if not units else (" " + units))	
+                    gibsCMapEntry.label       = format.format(sldCMapEntries[-1].quantity) + ("" if not units else (" " + units))	
                     gibsCMapEntry.value       = [sldCMapEntries[-1].quantity]
-                    gibsCMapEntry.sourceValue = [str((sldCMapEntries[-1].quantity - offset) / factor), "+INF"]
+                    gibsCMapEntry.sourceValue = [((sldCMapEntries[-1].quantity - offset) / factor), "+INF"]
                     gibsCMapEntry.transparent = (sldCMapEntries[-1].opacity == 0.0)
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
@@ -181,7 +181,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor) :
 
 
 ## START Parse SLD v1.1.0 ##
-def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder) :
+def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, format) :
     
     gibsColorMaps = []
     
@@ -258,15 +258,14 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder) :
                         gibsCMapEntry.transparent = (defaultOpacity == 0.0)
                         
                         if prevValue == "-INF":
-                            gibsCMap.minLabel         = "&lt; " + str(currValue) + ("" if not units else (" " + units))
-                        
-                            gibsCMapEntry.label       = "&lt; " + str(currValue) + ("" if not units else (" " + units))
-                            gibsCMapEntry.value       = [prevValue, str(currValue)]
-                            gibsCMapEntry.sourceValue = [prevValue, str((currValue - offset) / factor)]
+                            gibsCMap.minLabel         = "&lt; " + format.format(currValue) + ("" if not units else (" " + units))
+                            gibsCMapEntry.label       = "&lt; " + format.format(currValue) + ("" if not units else (" " + units))
+                            gibsCMapEntry.value       = [prevValue, currValue]
+                            gibsCMapEntry.sourceValue = [prevValue, ((currValue - offset) / factor)]
                         else:
-                            gibsCMapEntry.label       = str(prevValue) + " - " + str(currValue) + ("" if not units else (" " + units))	
-                            gibsCMapEntry.value       = [str(prevValue), str(currValue)]
-                            gibsCMapEntry.sourceValue = [str((prevValue - offset) / factor), str((currValue - offset) / factor)]
+                            gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(currValue) + ("" if not units else (" " + units))	
+                            gibsCMapEntry.value       = [prevValue, currValue]
+                            gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((currValue - offset) / factor)]
                             
                         
                         gibsCMap.cmEntries.append(gibsCMapEntry)
@@ -277,12 +276,12 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder) :
                 gibsCMapEntry.rgb         = currRGB
                 gibsCMapEntry.transparent = (defaultOpacity == 0.0)
                         
-                gibsCMap.maxLabel         = "&gt;= " + str(prevValue) + ("" if not units else (" " + units))	
+                gibsCMap.maxLabel         = "&gt;= " + format.format(prevValue) + ("" if not units else (" " + units))	
                 gibsCMap.showUnits        = True	
                 gibsCMap.showLegend       = True
-                gibsCMapEntry.label       = "&gt;= " + str(prevValue) + ("" if not units else (" " + units))	
-                gibsCMapEntry.value       = [str(prevValue), "+INF"]
-                gibsCMapEntry.sourceValue = [str((prevValue - offset) / factor), "+INF"]
+                gibsCMapEntry.label       = "&gt;= " + format.format(prevValue) + ("" if not units else (" " + units))	
+                gibsCMapEntry.value       = [prevValue, "+INF"]
+                gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), "+INF"]
                             
                 gibsCMap.cmEntries.append(gibsCMapEntry)
                         
@@ -295,7 +294,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder) :
 
 
 
-def generateColorMap(gibsColorMaps, units):
+def generateColorMap(gibsColorMaps, units, format):
 
     print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
     print("<ColorMaps>")
@@ -319,16 +318,18 @@ def generateColorMap(gibsColorMaps, units):
             
             if cMapEntry.value: 
                 if len(cMapEntry.value) == 1:
-                    value = "[" + str(cMapEntry.value[0]) + "]"
+                    value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "]"
                 else:
-                    value = "[" + str(cMapEntry.value[0]) + "," + str(cMapEntry.value[1]) + ")"
+                    value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "," + \
+                                  (cMapEntry.value[1] if isinstance(cMapEntry.value[1], str) else format.format(cMapEntry.value[1])) + ")"
             
             if cMapEntry.sourceValue: 
                 if len(cMapEntry.sourceValue) == 1:
-                    sourceValue = "[" + str(cMapEntry.sourceValue[0]) + "]"
+                    sourceValue = "[" + (cMapEntry.sourceValue[0] if isinstance(cMapEntry.sourceValue[0], str) else format.format(cMapEntry.sourceValue[0])) + "]"
                 else:
-                    sourceValue = "[" + str(cMapEntry.sourceValue[0]) + "," + str(cMapEntry.sourceValue[1]) + ")"
-        
+                    sourceValue = "[" + (cMapEntry.sourceValue[0] if isinstance(cMapEntry.sourceValue[0], str) else format.format(cMapEntry.sourceValue[0])) + "," + \
+                                        (cMapEntry.sourceValue[1] if isinstance(cMapEntry.sourceValue[1], str) else format.format(cMapEntry.sourceValue[1])) + ")"
+
             print("      <ColorMapEntry rgb=\"" + rgb + "\" " + 
                "transparent=\"" + ("true" if cMapEntry.transparent else "false") + "\" " + 
                ("" if not cMapEntry.sourceValue else ("sourceValue=\"" + value + "\" ")) + 
@@ -356,9 +357,10 @@ def generateColorMap(gibsColorMaps, units):
             
                 if cMapEntry.value: 
                     if len(cMapEntry.value) == 1:
-                        value = "[" + str(cMapEntry.value[0]) + "]"
+                        value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "]"
                     else:
-                        value = "[" + str(cMapEntry.value[0]) + "," + str(cMapEntry.value[1]) + ")"
+                        value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "," + \
+                                      (cMapEntry.value[1] if isinstance(cMapEntry.value[1], str) else format.format(cMapEntry.value[1])) + ")"
         
                 print("      <LegendEntry rgb=\"" + rgb + "\" " + 
                    ("" if not cMapEntry.value else ("value=\"" + value + "\" ")) + 
@@ -384,10 +386,11 @@ def main(argv):
     offset    = 0.0
     factor    = 1.0
     rgbaOrder  = "RGBA"
+    format    = "{}"
 
 
     try:
-        opts, args = getopt.getopt(argv,"hs:l:u:o:f:r:",["sld=","layer=","units=","offset=","factor=","rgba_order="])
+        opts, args = getopt.getopt(argv,"hs:l:u:o:p:f:r:",["sld=","layer=","units=","offset=","precision=","factor=","rgba_order="])
     except getopt.GetoptError:
         print("Usage: SLDtoColorMap.py -s <sld> -l <layer> -u <units> -o <offset> -f <factor> -r <rgba_order>")
         print("\nOptions:")
@@ -405,6 +408,9 @@ def main(argv):
         print("  -r RGBA_ORDER , --rgba_order RGBA_ORDER")
         print("							The RGBA ordering to be used when parsing the SLD v1.1.0 fallbackValue.")
         print("							The alpha value is optional.  Sample values \"RGB\", \"ARGB\"")
+        print("  -p PRECISION, --precision PRECISION")
+        print("							The number of decimal places to round values to plus the format specifier for floating point (f) ")
+        print("							or exponential (e).  Example: '2f' or '3e'  (Optional)")
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -424,6 +430,9 @@ def main(argv):
             print("  -r RGBA_ORDER , --rgba_order RGBA_ORDER")
             print("							The RGBA ordering to be used when parsing the SLD v1.1.0 fallbackValue.")
             print("							The alpha value is optional.  Sample values \"RGB\", \"ARGB\"")
+            print("  -p PRECISION, --precision PRECISION")
+            print("							The number of decimal places to round values to plus the format specifier for floating point (f) ")
+            print("							or exponential (e).  Example: '2f' or '3e'  (Optional)")
             sys.exit()
         elif opt in ("-s", "--sld"):
             sldFile = arg
@@ -435,6 +444,8 @@ def main(argv):
             factor = float(arg)
         elif opt in ("-o", "--offset"):
             offset = float(arg)
+        elif opt in ("-p", "--precision"):
+            format = "{:." + arg + "}"
         elif opt in ("-r", "--rgba_order"):
             rgbaOrder = arg
 
@@ -445,12 +456,12 @@ def main(argv):
         if attrDict['version'] == "1.0.0":
             gibsColorMaps = parseSLD_v1_0_0(sldFile, layerName, units, offset, factor)
         elif attrDict['version'] == "1.1.0":
-            gibsColorMaps = parseSLD_v1_1_0(sldFile, layerName, units, offset, factor, rgbaOrder)
+            gibsColorMaps = parseSLD_v1_1_0(sldFile, layerName, units, offset, factor, rgbaOrder, format)
         else:
             print("Invalid version specified: " + attrDict['version'])
             exit(-1)
         
-        generateColorMap(gibsColorMaps, units)
+        generateColorMap(gibsColorMaps, units, format)
     else:
         print("Version not specified in the SLD")
         exit(-1)
