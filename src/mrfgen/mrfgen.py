@@ -1368,7 +1368,7 @@ if len(modtiles) > 0:
             # Use JPEG quality of 80
             gdal_translate_command_list.append('-co')
             gdal_translate_command_list.append('QUALITY=80')
-        if zlevels > 0:
+        if zlevels != '':
             gdal_translate_command_list.append('-co')
             gdal_translate_command_list.append('ZSIZE='+str(zlevels))
         # add ending parameters      
