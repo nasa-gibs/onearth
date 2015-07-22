@@ -557,6 +557,7 @@ else:
     except:
         zlevels = ''      
     # z key
+    z = None
     zkey_type = "string" # default to only string for now
     try:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
@@ -1121,7 +1122,11 @@ if len(modtiles) > 0:
     
     # Get z-index from ZDB if using z-dimension
     if zkey != '':
-        zdb_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0].replace('.mrf','.zdb')
+        mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
+        mrf_filename = output_dir + mrf_filename
+        idx_filename = output_dir + idx_filename
+        out_filename = output_dir + out_filename
+        zdb_out = mrf_filename.replace('.mrf','.zdb')
         try:
             db_exists = os.path.isfile(zdb_out)
             log_info_mssg("Connecting to " + zdb_out)
@@ -1136,7 +1141,7 @@ if len(modtiles) > 0:
                 cur = con.cursor()
                 cur.execute("SELECT COUNT(*) FROM ZINDEX")
                 lid = int(cur.fetchone()[0])
-                if lid >= int(zlevels)-1:
+                if lid >= int(zlevels):
                     mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
                     log_sig_exit('ERROR', mssg, sigevent_url)
                 
@@ -1156,7 +1161,13 @@ if len(modtiles) > 0:
                 con.commit()
                 con.close()
         
-
+    # Use specific z if appropriate
+    if z != None:
+        gdal_mrf_filename = mrf_filename + ":MRF:Z" + str(z)
+    else:
+        gdal_mrf_filename = mrf_filename
+        
+            
     # Create the gdalbuildvrt command.
     #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
     #CONSIDER DOING THIS FOR EVERY SOTO DATASET.
@@ -1340,31 +1351,40 @@ if len(modtiles) > 0:
 
         #-----------------------------------------------------------------------
         # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
-        if mrf_empty_tile_filename != '':
+        if mrf_empty_tile_filename != '' and (z == None or z == 0):
             log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
             log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
             shutil.copy(mrf_empty_tile_filename, out_filename)
         #-----------------------------------------------------------------------    
 
         # Create the gdal_translate command.
+#         if compress == "COMPRESS=JPEG":
+#             gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, gdal_mrf_filename]
+#         else:           
+#             gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, gdal_mrf_filename]
+          
+        gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
         if compress == "COMPRESS=JPEG":
             # Use JPEG quality of 80
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, mrf_filename]
-        else:           
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, mrf_filename]
+            gdal_translate_command_list.append('-co')
+            gdal_translate_command_list.append('QUALITY=80')
+        if zlevels > 0:
+            gdal_translate_command_list.append('-co')
+            gdal_translate_command_list.append('ZSIZE='+str(zlevels))
+        # add ending parameters      
+        gdal_translate_command_list.append(vrt_filename)
+        gdal_translate_command_list.append(gdal_mrf_filename)
             
         # Log the gdal_translate command.
         log_the_command(gdal_translate_command_list)
         # Capture stderr.
-        gdal_translate_stderr_filename=str().join([working_dir, basename,
-                                                  '_gdal_translate_stderr.txt'])
+        gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_stderr.txt'])
         # Open stderr file for write.
         gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
 
         #-----------------------------------------------------------------------
         # Execute gdal_translate.
-        subprocess.call(gdal_translate_command_list, 
-                        stderr=gdal_translate_stderr_file)
+        subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
         #-----------------------------------------------------------------------
 
         # Close stderr file.
@@ -1420,7 +1440,7 @@ if len(modtiles) > 0:
             if overview_levels == '' or int(overview_levels[0])>1:
                 # Create the gdaladdo command.
                 gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
-                                       str(mrf_filename)]
+                                       str(gdal_mrf_filename)]
                 # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
                 if overview_levels == '':
                     overview=2
@@ -1508,12 +1528,15 @@ if len(modtiles) > 0:
     # Rename MRFs
     if mrf_name != '':
         output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
-        log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
-        shutil.move(mrf_filename, output_dir+output_mrf)
-        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
-        shutil.move(idx_filename, output_dir+output_idx)
-        log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
-        shutil.move(out_filename, output_dir+output_data)
+        if (output_dir+output_mrf) != mrf_filename:
+            log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
+            shutil.move(mrf_filename, output_dir+output_mrf)
+        if (output_dir+output_idx) != idx_filename:
+            log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+            shutil.move(idx_filename, output_dir+output_idx)
+        if (output_dir+output_data) != out_filename:
+            log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
+            shutil.move(out_filename, output_dir+output_data)
         if data_only == False:
             if os.path.isfile(mrf_filename+".aux.xml"):
                 log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
