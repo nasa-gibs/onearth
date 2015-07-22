@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LayerConfiguration>
+ <Identifier>blue_marble</Identifier>
+ <Title>Blue Marble Demo Imagery</Title>
+ <FileNamePrefix>blue_marble</FileNamePrefix>
+ <TiledGroupName>Blue Marble tileset</TiledGroupName>
+ <Compression>JPG</Compression>
+ <TileMatrixSet>EPSG4326_1km</TileMatrixSet>
+ <EmptyTileSize offset="0">4723</EmptyTileSize>
+ <Projection>EPSG:4326</Projection> 
+ <EnvironmentConfig>/etc/onearth/config/conf/environment_geographic.xml</EnvironmentConfig>
+ <ArchiveLocation static="true" year="false" root="geographic">blue_marble</ArchiveLocation>
+ <Size c="3" x="40960" y="20480"></Size>
+ <DataValues NoData="0 0 0 "/>
+ <PageSize c="3" x="512" y="512"/>
+ <Rsets model="uniform" scale="2"/>
+ <BoundingBox maxx="180.00000000" maxy=" 90.00000000" minx="-180.00000000" miny="-90.00000000"/>
+</LayerConfiguration>
