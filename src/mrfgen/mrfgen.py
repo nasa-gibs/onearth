@@ -1121,6 +1121,7 @@ if len(modtiles) > 0:
                 log_sig_warn(mssg, sigevent_url)
     
     # Get z-index from ZDB if using z-dimension
+    con = None
     if zkey != '':
         mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
         mrf_filename = output_dir + mrf_filename
@@ -1130,36 +1131,41 @@ if len(modtiles) > 0:
         try:
             db_exists = os.path.isfile(zdb_out)
             log_info_mssg("Connecting to " + zdb_out)
-            con = sqlite3.connect(zdb_out)
+            con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
             
             if db_exists == False:
                 cur = con.cursor() 
                 cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
                 cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-                
+                z = cur.lastrowid
             else: 
                 cur = con.cursor()
-                cur.execute("SELECT COUNT(*) FROM ZINDEX")
-                lid = int(cur.fetchone()[0])
-                if lid >= int(zlevels):
-                    mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
-                    log_sig_exit('ERROR', mssg, sigevent_url)
                 
-                cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-            
-            z = cur.lastrowid
+                # Check for existing key
+                cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+                lid = int(cur.fetchone()[0])
+                if lid > 0:                
+                    mssg = zkey + " key already exists...overwriting"
+                    log_sig_warn(mssg, sigevent_url)
+                    cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
+                    z = int(cur.fetchone()[0]) 
+                else:              
+                    # Check z size
+                    cur.execute("SELECT COUNT(*) FROM ZINDEX;")
+                    lid = int(cur.fetchone()[0])
+                    if lid >= int(zlevels):
+                        mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                        log_sig_exit('ERROR', mssg, sigevent_url)
+                    # Insert values
+                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                    z = cur.lastrowid
             log_info_mssg("Current z-level is " +str(z))
             
         except sqlite3.Error, e:
             if con:
                 con.rollback()
-            mssg = "Error %s:" % e.args[0]
+            mssg = "%s:" % e.args[0]
             log_sig_exit('ERROR', mssg, sigevent_url)
-            
-        finally:
-            if con:
-                con.commit()
-                con.close()
         
     # Use specific z if appropriate
     if z != None:
@@ -1248,19 +1254,23 @@ if len(modtiles) > 0:
     gdalbuildvrt_stderr_file.close()
 
     # Open stderr file for read.
-    gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'r')
-    # Report skipped .png files that are not valid PNG+World.
-    gdalbuildvrt_stderr=gdalbuildvrt_stderr_file.readlines()
-    # Loop over all lines in file.
-    for ndx in range(len(gdalbuildvrt_stderr)):
-        # Get line number(s) where skipped files appear in the stderr file.
-        skipped=gdalbuildvrt_stderr[ndx].find('Warning')
-        # If a line (including line 0) was found.
-        if skipped >= 0:
-            mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
-            log_sig_warn(mssg, sigevent_url)
-    # Close file.
-    gdalbuildvrt_stderr_file.close()
+    try:
+        gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'r')
+        # Report skipped .png files that are not valid PNG+World.
+        gdalbuildvrt_stderr=gdalbuildvrt_stderr_file.readlines()
+        # Loop over all lines in file.
+        for ndx in range(len(gdalbuildvrt_stderr)):
+            # Get line number(s) where skipped files appear in the stderr file.
+            skipped=gdalbuildvrt_stderr[ndx].find('Warning')
+            # If a line (including line 0) was found.
+            if skipped >= 0:
+                mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
+                log_sig_warn(mssg, sigevent_url)
+        # Close file.
+        gdalbuildvrt_stderr_file.close()
+    except IOError:
+        mssg=str().join(['Cannot read:  ', gdalbuildvrt_stderr_filename])
+        log_sig_exit('ERROR', mssg, sigevent_url)
 
     # Clean up.
     remove_file(mod_tiles_filename)
@@ -1357,12 +1367,7 @@ if len(modtiles) > 0:
             shutil.copy(mrf_empty_tile_filename, out_filename)
         #-----------------------------------------------------------------------    
 
-        # Create the gdal_translate command.
-#         if compress == "COMPRESS=JPEG":
-#             gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, gdal_mrf_filename]
-#         else:           
-#             gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, gdal_mrf_filename]
-          
+        # Create the gdal_translate command.         
         gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
         if compress == "COMPRESS=JPEG":
             # Use JPEG quality of 80
@@ -1552,6 +1557,14 @@ if len(modtiles) > 0:
         remove_file(log_filename)
         remove_file(output_dir+"/"+basename+".mrf.aux.xml")
         remove_file(working_dir+"/"+basename+".configuration_file.xml")
+        
+    # Commit database if successful
+    if con:
+        con.commit()
+        con.close()
+        log_info_mssg("Successfully committed record to " + zdb_out)
+    else:
+        log_info_mssg("No ZDB record created")
 
 # Remove temp tiles
 for tilename in (alltiles):
