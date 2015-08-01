@@ -26,7 +26,6 @@
 //
 
 // For windows, this file should exist but be empty on Linux
-#include "stdafx.h"
 #include "cache.h"
 #include <algorithm>
 
@@ -176,6 +175,7 @@ void server_config::dump(ostream &ofname) {
         caches[i].pattern+=string_offset;
         caches[i].prefix+=string_offset;
         caches[i].time_period+=string_offset;
+        caches[i].zidxfname+=string_offset;
         // The levelt_offset is relative to each particular cache
         caches[i].levelt_offset+=sizeof(WMSCache)*(count-i);
         ofname.write((char *)&caches[i],sizeof(WMSCache));
@@ -185,7 +185,6 @@ void server_config::dump(ostream &ofname) {
     for (int i=0;i<levels.size();i++) {
         levels[i].dfname+=string_offset;
         levels[i].ifname+=string_offset;
-        levels[i].zidxfname+=string_offset;
         ofname.write((char *)&levels[i],sizeof(WMSlevel));
     }
 
@@ -223,6 +222,9 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
     // This is the offset within strings, will be adjusted later
     c.prefix += cfg.string_insert( h_format.append("\n\n") );
 
+    c.zlevels=zlevels;
+    c.zidxfname += cfg.string_insert(zidx_fname);
+
     c.orientation=orientation;
     c.signature=sig;
 
@@ -254,8 +256,6 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
         // These two are string pointers, will be adjusted later
         level.dfname+=cfg.string_insert(data_fname);
         level.ifname+=cfg.string_insert(idx_fname);
-
-        level.zidxfname+=cfg.string_insert(zidx_fname);
 
         cfg.levels.push_back(level);
         cfg.total_size+=sizeof(WMSlevel);
@@ -317,14 +317,13 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         if (data_fname==string(ifname)&&data_fname.size()>4)
             data_fname.replace(data_fname.size()-4,4,dat_ext);
 
-        zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
-        if (zidx_fname==string(ifname)&&idx_fname.size()>4) {
-            zidx_fname.replace(idx_fname.size()-4,4,".zdb");
-        }
+        // if (zlevels > 1 && zidx_fname=="-") {
+        //     throw (CPLString().Printf("Z-index specified but no index file specified in <Rsets><ZIndexFileName>"));
+        // }
 
-        if (zlevels > 1 && zidx_fname=="-") {
-            throw (CPLString().Printf("Z-index specified but no index file specified in <Rsets><ZIndexFileName>"));
-        }
+        zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
+        if (zidx_fname==string(ifname)&&zidx_fname.size()>4)
+            zidx_fname.replace(zidx_fname.size()-4,4,".zdb");
 
         if (idx_fname=="-" || data_fname=="-")
             throw (CPLString("Need data and index file names, under <Rsets><IndexFileName> or <Rsets><DataFileName>"));
@@ -402,9 +401,9 @@ void mrf_data::mrf2cache(ostream &out) {
     out << patt[patt.size()-1] << endl;
     out << levels << endl << h_format << endl << sig << endl << orientation << endl; 
     out << zlevels << endl;
-    // if (zlevels>1) { 
-    //     out << zidx_fname << endl;
-    // };
+    if (zlevels>1) { 
+        out << zidx_fname << endl;
+    };
 
     out << setprecision(16) ;
 
@@ -416,7 +415,6 @@ void mrf_data::mrf2cache(ostream &out) {
             (cov_uy - cov_ly) * (tile_size_y * pow(scale,i)) / whole_size_y << " // Tile size \n";
         out << data_fname << endl;
         out << idx_fname << " " << offset << endl;
-        out << zidx_fname << endl;
         offset+=static_cast<long long>(16)*((whole_size_x-1)/(tile_size_x * pow(scale,i)) +1) *
             ((whole_size_y-1)/(tile_size_y * pow(scale,i)) +1);
         out << empty_offset << "," << empty_size << endl;

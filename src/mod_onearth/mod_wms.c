@@ -628,6 +628,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     cache->pattern+=(apr_off_t)caches;
     cache->prefix+=(apr_off_t)caches;
     cache->time_period+=(apr_off_t)caches;
+    cache->zidxfname+=(apr_off_t)caches;
 
     ap_log_error(APLOG_MARK,APLOG_DEBUG,0,server,
       "Cache number %d at %llx, count %d, first string %s",count,(long long) cache,
@@ -673,8 +674,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	// pointers
 	levelt->dfname+=(apr_off_t)caches;
 	levelt->ifname+=(apr_off_t)caches;
-	levelt->zidxfname+=(apr_off_t)caches;
-	
+
 	cfg->meta[count].empties[lev_num].data=0;
 	cfg->meta[count].empties[lev_num].index.size   = 
 	    levelt->empty_record.size;
@@ -1810,12 +1810,6 @@ static int mrf_handler(request_rec *r)
 
   // Check for tile not in the cache
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Try to read tile from %ld, size %ld",this_record->offset,this_record->size);
-  char *zidxfname;
-	if (level->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
-	  zidxfname = apr_pstrcat(r->pool,level->zidxfname,0);
-	} else {
-	  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,level->zidxfname,0);
-	}
 
   char *dfname;
   if (level->dfname[0] == '/') { // decide absolute or relative path from cachedir
@@ -1823,7 +1817,6 @@ static int mrf_handler(request_rec *r)
   } else {
 	  dfname = apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0);
   }
-
   if (this_record->size && default_idx==0) {
 	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods, cache->zlevels);
   }
