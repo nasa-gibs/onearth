@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2014, California Institute of Technology.
+* Copyright (c) 2002-2015, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -34,7 +34,8 @@
  * request never make it to the error log.
  *  
  * Lucian Plesea
- *
+ * Joe Roberts
+ * Joshua Rodriguez
  */
 
 #include "httpd.h"
@@ -222,7 +223,7 @@ char *tstamp_fname(request_rec *r,char *fname)
 // Same, but uses a request, and does the time stamp part
 
 static void *r_file_pread(request_rec *r, char *fname, 
-                          apr_size_t nbytes, apr_off_t location, char *time_period, int num_periods)
+                          apr_size_t nbytes, apr_off_t location, char *time_period, int num_periods, int zlevels)
 {
   int fd;
   int leap=0;
@@ -258,7 +259,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		tm.tm_mon=apr_atoi64(targ);
 		targ+=3; // Skip the MM- part
 		tm.tm_mday=apr_atoi64(targ);
-		if (strlen(targ)==16) {
+		if (strlen(targ)==16 && zlevels==0) {
 			hastime=1;
 			targ+=3;
 			tm.tm_hour = apr_atoi64(targ);
@@ -444,6 +445,10 @@ static void *r_file_pread(request_rec *r, char *fname,
   return (readbytes==nbytes)?buffer:0;
 }
 
+// Lookup the z level from database file based on request
+char *get_zlevel(request_rec *r,char *fname, int zlevels) {
+	return 0;
+}
 
 static int withinbbox(WMSlevel *level, double x0, double y0, double x1, double y1) {
   return (!((level->X0>=x1)||(level->X1<=x0)||(level->Y0>=y1)||(level->Y1<=y0)));
@@ -669,7 +674,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	levelt->dfname+=(apr_off_t)caches;
 	levelt->ifname+=(apr_off_t)caches;
 	levelt->zidxfname+=(apr_off_t)caches;
-
+	
 	cfg->meta[count].empties[lev_num].data=0;
 	cfg->meta[count].empties[lev_num].index.size   = 
 	    levelt->empty_record.size;
@@ -1583,7 +1588,7 @@ static int mrf_handler(request_rec *r)
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
   r->args=order_args(r);
   // DEBUG
- // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
 
   // short-circuit if there is already a problem
   if (errors > 0) {
@@ -1719,7 +1724,7 @@ static int mrf_handler(request_rec *r)
   	  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
   }
   default_idx = 0;
-  this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods);
+  this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels);
 
 	if (!this_record) {
 		// try to read from 0,0 in static index
@@ -1772,6 +1777,14 @@ static int mrf_handler(request_rec *r)
 //		}
 	}
 
+	  if (!cache->zlevels) {
+		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no z levels %s",r->args);
+	  } else {
+		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z levels %d",cache->zlevels);
+		  // need to get the zlevel based on key and remove the time portion from the timestamp
+		  get_zlevel(r,tstamp_fname(r,ifname),cache->zlevels);
+	  }
+
 //
 // This is the only endian dependent part
 // Linux defines __LITTLE_ENDIAN
@@ -1812,7 +1825,7 @@ static int mrf_handler(request_rec *r)
   }
 
   if (this_record->size && default_idx==0) {
-	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods);
+	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods, cache->zlevels);
   }
   if (!this_data) { // get empty tile
     int lc=level-GETLEVELS(cache);

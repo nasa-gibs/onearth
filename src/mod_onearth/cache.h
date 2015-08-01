@@ -23,7 +23,7 @@ typedef struct {
   double levelx,levely;
 
   char *dfname; // These are pointers or offsets
-  char *ifname; //
+  char *ifname;
   char *zidxfname;
 } WMSlevel;
 
@@ -41,6 +41,7 @@ typedef struct {
   char *prefix;
   char *time_period;
   int num_periods;
+  int zlevels; // the max number of z levels
 } WMSCache;
 
 typedef struct { // One of these per cache pack
@@ -52,4 +53,3 @@ typedef struct { // One of these per cache pack
 #define GETCACHE(C,X) ((WMSCache *) ( ((char *) C) + sizeof(Caches) + X*sizeof(WMSCache) ))
 // Macro to get a pointer to the level table of a given cache C, relative to the cache itself
 #define GETLEVELS(C) ((WMSlevel *) ( ((char *) C) + C->levelt_offset ))
-
