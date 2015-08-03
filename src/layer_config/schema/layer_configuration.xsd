@@ -11,6 +11,7 @@
         <xs:element ref="HeaderFileName" minOccurs="0"/>
         <xs:element ref="DataFileLocation" minOccurs="0"/>
         <xs:element ref="IndexFileLocation" minOccurs="0"/>
+        <xs:element ref="ZIndexFileLocation" minOccurs="0"/>
         <xs:element ref="Compression"/>
         <xs:element ref="TileMatrixSet"/>
         <xs:element ref="EmptyTileSize" minOccurs="0"/>
@@ -45,6 +46,7 @@
   <xs:element name="HeaderFileName" type="xs:string" nillable="true"/>
   <xs:element name="DataFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="IndexFileLocation" type="xs:string" nillable="true"/>
+  <xs:element name="ZIndexFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="Compression" type="xs:NCName"/>
   <xs:element name="TileMatrixSet" type="xs:string"/>
   <xs:element name="EmptyTile" nillable="true">
