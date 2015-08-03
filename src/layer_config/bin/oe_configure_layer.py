@@ -1434,6 +1434,7 @@ for conf in conf_files:
             mrf_file = open(headerFileName, 'r')
         except IOError:
             log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
+            continue
         else:
             try:
                 header_dom = xml.dom.minidom.parse(mrf_file)
@@ -1534,21 +1535,22 @@ for conf in conf_files:
         except:
             rsets_node = None
             log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
-    finally:
-        if rsets_node is not None:
+    if rsets_node is not None:
+        try:
+            scale_attribute = rsets_node.getAttribute('scale')
+        except:
+            log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
+        else:
             try:
-                scale_attribute = rsets_node.getAttribute('scale')
-            except:
-                log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
-            else:
-                try:
+                if scale_attribute:
                     if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
                         log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
-                    if projection.tilematrixsets[tilematrixset].levels > 1:
-                        rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
-                except KeyError:
-                    log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
-
+                        continue
+                if projection.tilematrixsets[tilematrixset].levels > 1:
+                    rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+            except KeyError:
+                log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+                continue
     # Add data file locations
     dataFileNameElement = mrf_dom.createElement('DataFileName')
     dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
