@@ -628,6 +628,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     cache->pattern+=(apr_off_t)caches;
     cache->prefix+=(apr_off_t)caches;
     cache->time_period+=(apr_off_t)caches;
+    cache->zidxfname+=(apr_off_t)caches;
 
     ap_log_error(APLOG_MARK,APLOG_DEBUG,0,server,
       "Cache number %d at %llx, count %d, first string %s",count,(long long) cache,
@@ -673,7 +674,6 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	// pointers
 	levelt->dfname+=(apr_off_t)caches;
 	levelt->ifname+=(apr_off_t)caches;
-	levelt->zidxfname+=(apr_off_t)caches;
 
 	cfg->meta[count].empties[lev_num].data=0;
 	cfg->meta[count].empties[lev_num].index.size   = 
@@ -1781,8 +1781,19 @@ static int mrf_handler(request_rec *r)
 		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no z levels %s",r->args);
 	  } else {
 		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z levels %d",cache->zlevels);
-		  // need to get the zlevel based on key and remove the time portion from the timestamp
-		  get_zlevel(r,tstamp_fname(r,ifname),cache->zlevels);
+		  if (!cache->zidxfname) {
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No z-index filename");
+		  } else {
+			  char *zidxfname;
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
+			  if (cache->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
+				  zidxfname = apr_pstrcat(r->pool,cache->zidxfname,0);
+			  } else {
+				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
+			  }
+			  // need to get the zlevel based on key and remove the time portion from the timestamp
+			  get_zlevel(r,tstamp_fname(r,ifname),cache->zlevels);
+		  }
 	  }
 
 //
@@ -1810,12 +1821,6 @@ static int mrf_handler(request_rec *r)
 
   // Check for tile not in the cache
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Try to read tile from %ld, size %ld",this_record->offset,this_record->size);
-  char *zidxfname;
-	if (level->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
-	  zidxfname = apr_pstrcat(r->pool,level->zidxfname,0);
-	} else {
-	  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,level->zidxfname,0);
-	}
 	
   char *dfname;
   if (level->dfname[0] == '/') { // decide absolute or relative path from cachedir

@@ -26,6 +26,7 @@
 //
 
 // For windows, this file should exist but be empty on Linux
+#include "stdafx.h"
 #include "cache.h"
 #include <algorithm>
 
@@ -287,7 +288,7 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
 
         stringstream(CPLGetXMLValue(raster,"Size.x","1")) >> whole_size_x;
         stringstream(CPLGetXMLValue(raster,"Size.y","1")) >> whole_size_y;
-        stringstream(CPLGetXMLValue(raster,"Size.z","1")) >> zlevels;
+        stringstream(CPLGetXMLValue(raster,"Size.z","0")) >> zlevels;
         stringstream(CPLGetXMLValue(raster,"PageSize.x","512")) >> tile_size_x;
         stringstream(CPLGetXMLValue(raster,"PageSize.y","512")) >> tile_size_y;
         stringstream(CPLGetXMLValue(raster,"PageSize.c","1")) >> bands;
@@ -317,9 +318,9 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         if (data_fname==string(ifname)&&data_fname.size()>4)
             data_fname.replace(data_fname.size()-4,4,dat_ext);
 
-        // if (zlevels > 1 && zidx_fname=="-") {
-        //     throw (CPLString().Printf("Z-index specified but no index file specified in <Rsets><ZIndexFileName>"));
-        // }
+//        if (zlevels > 0 && zidx_fname=="-") {
+//        	throw (CPLString().Printf("Z-index specified but no index file specified in <Rsets><ZIndexFileName>"));
+//        }
 
         zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
         if (zidx_fname==string(ifname)&&zidx_fname.size()>4)
@@ -401,10 +402,9 @@ void mrf_data::mrf2cache(ostream &out) {
     out << patt[patt.size()-1] << endl;
     out << levels << endl << h_format << endl << sig << endl << orientation << endl; 
     out << zlevels << endl;
-    if (zlevels>1) { 
+    if (zlevels>0) {
         out << zidx_fname << endl;
     };
-
     out << setprecision(16) ;
 
     long long offset=0;
@@ -467,7 +467,7 @@ void mrf_data::mrf2cachex(ostream &out, CPLXMLNode &cache) {
     CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"ZLevels"),
         CXT_Text,CPLString().Printf("%d",zlevels));
 
-    if (zlevels > 1) {
+    if (zlevels > 0) {
         CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"ZIndexFileName"),CXT_Text,zidx_fname.c_str());
     }
 

@@ -68,7 +68,7 @@ from lxml import etree
 
 import pdb
 
-versionNumber = '0.6.4'
+versionNumber = '0.7.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
