@@ -92,15 +92,6 @@ class TWMSEndPoint:
         self.getTileService = getTileService
         self.projection = projection
 
-class MapServerEndPoint:
-    """End point data for MapServer"""
-
-    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, projection):
-        self.path = path
-        self.cacheConfigLocation = cacheConfigLocation
-        self.cacheConfigBasename = cacheConfigBasename
-        self.projection = projection
-
 class Environment:
     """Environment information for layer(s)"""
     
@@ -431,7 +422,6 @@ def get_environment(environmentConfig):
     serviceUrlElements = dom.getElementsByTagName('ServiceURL')
     wmtsServiceUrl = None
     twmsServiceUrl = None
-    mapserverServiceUrl = None
     for serviceUrl in serviceUrlElements:
         try:
             if str(serviceUrl.attributes['service'].value).lower() == "wmts":
@@ -444,7 +434,6 @@ def get_environment(environmentConfig):
     stagingLocationElements = dom.getElementsByTagName('StagingLocation')
     wmtsStagingLocation = None
     twmsStagingLocation = None
-    mapserverStagingLocation = None
     for stagingLocation in stagingLocationElements:
         try:
             if str(stagingLocation.attributes['service'].value).lower() == "wmts":
@@ -1182,7 +1171,6 @@ else:
 conf_files = []
 wmts_endpoints = {}
 twms_endpoints = {}
-mapserver_endpoints = {}
 
 if not options.layer_config_filename:
     conf = subprocess.Popen('ls ' + configuration_directory + '/*.xml',shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).stdout
@@ -1513,6 +1501,7 @@ for conf in conf_files:
             mrf_file = open(headerFileName, 'r')
         except IOError:
             log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
+            continue
         else:
             try:
                 header_dom = xml.dom.minidom.parse(mrf_file)
@@ -1613,20 +1602,22 @@ for conf in conf_files:
         except:
             rsets_node = None
             log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
-    finally:
-        if rsets_node is not None:
+    if rsets_node is not None:
+        try:
+            scale_attribute = rsets_node.getAttribute('scale')
+        except:
+            log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
+        else:
             try:
-                scale_attribute = rsets_node.getAttribute('scale')
-                try:
+                if scale_attribute:
                     if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
                         log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
-                    if projection.tilematrixsets[tilematrixset].levels > 1:
-                        rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
-                except KeyError:
-                    log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
-            except:
-                log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
-
+                        continue
+                if projection.tilematrixsets[tilematrixset].levels > 1:
+                    rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+            except KeyError:
+                log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+                continue
     # Add data file locations
     dataFileNameElement = mrf_dom.createElement('DataFileName')
     dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
