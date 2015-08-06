@@ -52,6 +52,8 @@ Options:
                         time varying layers.
   -z, --no_cache        Do not copy cache configuration files to cache
                         location.
+  --create_mapfile      Create mapfile or add layer to existing mapfile.
+                        Mapfile configuration options are set in the environment config files.
 ```
 
 The tool uses the following environment (recommended, but not required):
