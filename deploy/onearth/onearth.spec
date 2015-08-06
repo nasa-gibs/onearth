@@ -144,6 +144,7 @@ sudo make install
 %config(noreplace) %{_sysconfdir}/onearth/config/conf
 %config(noreplace) %{_sysconfdir}/onearth/config/layers
 %config(noreplace) %{_sysconfdir}/onearth/config/headers
+%config(noreplace) %{_sysconfdir}/onearth/config/mapserver
 %{_sysconfdir}/onearth/config/schema
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer

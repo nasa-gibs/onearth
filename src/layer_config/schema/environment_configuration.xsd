@@ -12,6 +12,8 @@
         <xs:element ref="LegendURL" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="ColorMapLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="ColorMapURL" maxOccurs="1" minOccurs="0"/>
+        <xs:element ref="Mapfile" maxOccurs="1" minOccurs="0"/>
+        <xs:element ref="MapfileConfigLocation" maxOccurs="1" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -45,4 +47,10 @@
   <xs:element name="LegendURL" type="xs:anyURI" nillable="true"/>
   <xs:element name="ColorMapLocation" type="xs:string" nillable="true"/>
   <xs:element name="ColorMapURL" type="xs:anyURI" nillable="true"/>
+  <xs:element name="Mapfile" type="xs:string" nillable="true"/>
+  <xs:element name="MapfileConfigLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="basename" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

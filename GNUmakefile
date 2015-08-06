@@ -138,6 +138,8 @@ onearth-install:
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/schema \
 		$(DESTDIR)/etc/onearth/config
+	cp -r src/layer_config/mapserver \
+		$(DESTDIR)/etc/onearth/config
 	install -m 755 -d $(DESTDIR)/etc/onearth/config/headers
 
 	install -m 755 -d $(DESTDIR)/etc/onearth/metrics
