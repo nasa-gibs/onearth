@@ -446,7 +446,8 @@ static void *r_file_pread(request_rec *r, char *fname,
 }
 
 // Lookup the z level from database file based on request
-static int get_zlevel(request_rec *r,char *fname, int zlevels) {
+static int get_zlevel(request_rec *r, char *zidxfname, int zlevels) {
+	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with max z %d", zidxfname, zlevels);
 	return 0;
 }
 
@@ -872,6 +873,60 @@ static apr_off_t wmts_get_index_offset(request_rec *r, WMSlevel *level)
  return level->index_add + sizeof(index_s) * (y*level->xcount+x);
  
 }
+
+static apr_off_t wmts_get_index_offset_z(request_rec *r, WMSlevel *level, int z, int zlevels)
+{
+ char *args;
+ char *pszx,*pszy;
+ // The tile indices are directly passed from the top-left
+ int x,y,i;
+
+ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "In wmts_get_index_offset_z");
+
+ // Convert the whole input string to uppercase
+ args=apr_pstrdup(r->pool,r->args);
+ for (i=0;args[i]!=0;i++) args[i]=apr_toupper(args[i]);
+
+ pszx=ap_strstr(args,"TILEROW=");
+ pszy=ap_strstr(args,"TILECOL=");
+
+ if ((0==pszx)||(0==pszy)) {
+    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Can't find TILEROW= or TILECOL= in %s",
+    	r->args);
+    return -1;
+ }
+
+ if (z >= zlevels) {
+    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Requested z %d is greater than max z-level %d", z, zlevels-1);
+    return 0;
+ }
+
+ y=apr_atoi64(pszx+8);
+ x=apr_atoi64(pszy+8);
+
+ if (x<0 || x>=level->xcount || y<0 || y>=level->ycount ) {
+    ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Col or Row overflow, max values are %d and %d, %s ",
+    	level->xcount-1, level->ycount-1, r->args);
+    if (x<0 || x>=level->xcount) {
+    	char *tilecol_mes = apr_psprintf(r->pool, "TILECOL is out of range, maximum value is %d",level->xcount-1);
+    	wmts_add_error(r,400,"TileOutOfRange","TILECOL", tilecol_mes);
+    }
+    if (y<0 || y>=level->ycount) {
+    	char *tilerow_mes = apr_psprintf(r->pool, "TILEROW is out of range, maximum value is %d",level->ycount-1);
+    	wmts_add_error(r,400,"TileOutOfRange","TILEROW", tilerow_mes);
+    }
+    return -1;
+ }
+
+ int level_int = level->index_add + sizeof(index_s) * (y*level->xcount+x);
+ int level_z = (level->xcount*level->ycount*zlevels)*sizeof(index_s)/zlevels*z;
+
+ ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d, max values are %d and %d, x: %d, y: %d, index_add: %d",
+		 level_int+level_z, level->xcount-1, level->ycount-1, x, y, level->index_add);
+ return level_int+level_z;
+
+}
+
 
 static apr_off_t get_index_offset(WMSlevel *level, wms_wmsbbox *bb,
                                   int ori,request_rec *r) 
@@ -1563,6 +1618,7 @@ static int mrf_handler(request_rec *r)
   index_s *this_record;
   void *this_data=0;
   int default_idx;
+  int z;
 
   // Get the configuration
   cfg=(wms_cfg *) 
@@ -1585,7 +1641,7 @@ static int mrf_handler(request_rec *r)
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "In WMS handler");
 
   // DEBUG
-//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
+  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
   r->args=order_args(r);
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
@@ -1709,7 +1765,28 @@ static int mrf_handler(request_rec *r)
     	return wmts_return_all_errors(r);
     }
 
-    offset=wmts_get_index_offset(r,level);
+	  if (!cache->zlevels) {
+		   offset=wmts_get_index_offset(r,level);
+		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no z levels %s",r->args);
+	  } else {
+		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z levels %d",cache->zlevels);
+		  if (!cache->zidxfname) {
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No z-index filename");
+		  } else {
+			  char *zidxfname;
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
+			  if (cache->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
+				  zidxfname = apr_pstrcat(r->pool,cache->zidxfname,0);
+			  } else {
+				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
+			  }
+			  // need to get the zlevel based on key and remove the time portion from the timestamp
+			  z = get_zlevel(r,tstamp_fname(r,zidxfname),cache->zlevels);
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z index %d",z);
+			  offset=wmts_get_index_offset_z(r,level,z,cache->zlevels);
+		  }
+	  }
+
     if (0>offset) 
     	return wmts_return_all_errors(r);
   }
@@ -1776,25 +1853,6 @@ static int mrf_handler(request_rec *r)
 //			return DECLINED;
 //		}
 	}
-
-	  if (!cache->zlevels) {
-		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no z levels %s",r->args);
-	  } else {
-		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z levels %d",cache->zlevels);
-		  if (!cache->zidxfname) {
-			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No z-index filename");
-		  } else {
-			  char *zidxfname;
-			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
-			  if (cache->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
-				  zidxfname = apr_pstrcat(r->pool,cache->zidxfname,0);
-			  } else {
-				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
-			  }
-			  // need to get the zlevel based on key and remove the time portion from the timestamp
-			  get_zlevel(r,tstamp_fname(r,ifname),cache->zlevels);
-		  }
-	  }
 
 //
 // This is the only endian dependent part
@@ -1974,6 +2032,7 @@ static const command_rec cmds[] =
   ),
   {NULL}
 };
+
 
 static void *create_dir_config(apr_pool_t *p, char *dummy)
 {
