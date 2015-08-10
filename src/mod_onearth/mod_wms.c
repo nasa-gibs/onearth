@@ -52,6 +52,7 @@
 #include "apr_lib.h"
 #include "apr_strings.h"
 #include "apr_file_io.h"
+#include <sqlite3.h>
 
 // Why does injest need extra headers?
 #include <unistd.h>
@@ -445,10 +446,48 @@ static void *r_file_pread(request_rec *r, char *fname,
   return (readbytes==nbytes)?buffer:0;
 }
 
-// Lookup the z level from database file based on request
-static int get_zlevel(request_rec *r, char *zidxfname, int zlevels) {
-	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with max z %d", zidxfname, zlevels);
-	return 0;
+static char *get_keyword(request_rec *r) {
+	static char keyword[] = "20150709002500"; // testing
+	return keyword;
+}
+
+// Lookup the z index from ZDB file based on keyword
+static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
+	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
+
+    sqlite3 *db;
+    sqlite3_stmt *res;
+
+    int z = -1;
+    int rc = sqlite3_open_v2(zidxfname, &db, SQLITE_OPEN_READONLY, NULL);
+
+    if (rc != SQLITE_OK) {
+        ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Cannot get z-index from %s", zidxfname);
+        sqlite3_close(db);
+        return -1;
+    }
+
+    char *sql = "SELECT z FROM ZINDEX WHERE key_str = ? LIMIT 1";
+    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+
+    if (rc == SQLITE_OK) {
+        sqlite3_bind_text(res, 1, keyword, 14, SQLITE_STATIC);
+    } else {
+    	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Failed to fetch data from %s", zidxfname);
+        sqlite3_close(db);
+        return -1;
+    }
+
+    rc = sqlite3_step(res);
+
+    if (rc == SQLITE_ROW) {
+    	z = apr_atoi64((char*)sqlite3_column_text(res, 0));
+    }
+
+    sqlite3_finalize(res);
+    sqlite3_close(db);
+
+	return z;
 }
 
 static int withinbbox(WMSlevel *level, double x0, double y0, double x1, double y1) {
@@ -880,8 +919,6 @@ static apr_off_t wmts_get_index_offset_z(request_rec *r, WMSlevel *level, int z,
  char *pszx,*pszy;
  // The tile indices are directly passed from the top-left
  int x,y,i;
-
-ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "In wmts_get_index_offset_z");
 
  // Convert the whole input string to uppercase
  args=apr_pstrdup(r->pool,r->args);
@@ -1641,7 +1678,7 @@ static int mrf_handler(request_rec *r)
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "In WMS handler");
 
   // DEBUG
-  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
   r->args=order_args(r);
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Ordered args: %s",r->args);
@@ -1766,7 +1803,7 @@ static int mrf_handler(request_rec *r)
     }
 
 	  if (!cache->zlevels) {
-		   offset=wmts_get_index_offset(r,level);
+		  offset=wmts_get_index_offset(r,level);
 		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no z levels %s",r->args);
 	  } else {
 		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z levels %d",cache->zlevels);
@@ -1780,8 +1817,9 @@ static int mrf_handler(request_rec *r)
 			  } else {
 				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
 			  }
-			  // need to get the zlevel based on key and remove the time portion from the timestamp
-			  z = get_zlevel(r,tstamp_fname(r,zidxfname),cache->zlevels);
+
+			  // Lookup the z index from the ZDB file based on keyword
+			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
 			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z index %d",z);
 			  offset=wmts_get_index_offset_z(r,level,z,cache->zlevels);
 		  }
@@ -2032,7 +2070,6 @@ static const command_rec cmds[] =
   ),
   {NULL}
 };
-
 
 static void *create_dir_config(apr_pool_t *p, char *dummy)
 {

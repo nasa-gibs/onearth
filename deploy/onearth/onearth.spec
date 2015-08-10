@@ -1,6 +1,6 @@
 Name:		onearth
-Version:	0.6.4
-Release:	9%{?dist}
+Version:	0.7.0
+Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -17,6 +17,7 @@ BuildRequires:	libpng-devel
 BuildRequires:	gcc-c++
 BuildRequires:	freetype-devel
 BuildRequires:	python-devel
+BuildRequires:  sqlite-devel
 %if 0%{?el6}
 BuildRequires:	postgresql92-devel
 %else
@@ -24,6 +25,7 @@ BuildRequires:	postgresql93-devel
 %endif
 Requires:	httpd
 Requires:	gibs-gdal
+Requires:   sqlite
 
 Obsoletes:	mod_twms mod_wms mod_onearth
 
@@ -182,6 +184,9 @@ sudo python setup.py install
 
 
 %changelog
+* Mon Aug 10 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.7.0-1
+- Added requires for sqlite
+
 * Tue Mar 24 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.6.3-2
 - Added installation of cgicc for kmlgen
 
