@@ -52,9 +52,8 @@
 #include "apr_lib.h"
 #include "apr_strings.h"
 #include "apr_file_io.h"
-#include <sqlite3.h>
 
-// Why does injest need extra headers?
+#include <sqlite3.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -446,14 +445,46 @@ static void *r_file_pread(request_rec *r, char *fname,
   return (readbytes==nbytes)?buffer:0;
 }
 
-static char *get_keyword(request_rec *r) {
-	static char keyword[] = "20150709002500"; // testing
-	return keyword;
+char *get_keyword(request_rec *r) {
+	  char *keyword = apr_pcalloc(r->pool,16);
+
+	  static char* timearg="time=";
+	  char *targ=0;
+	  apr_time_exp_t tm; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0; tm.tm_hour=0; tm.tm_min=0; tm.tm_sec=0;
+
+	  if ((targ=ap_strcasestr(r->args,timearg))) {
+	    targ+=5; // Skip the time= part
+	    if (strlen(targ)==24) { // Make sure time is in correct length
+			tm.tm_year=apr_atoi64(targ);
+			targ+=5; // Skip the YYYY- part
+			tm.tm_mon=apr_atoi64(targ);
+			targ+=3; // Skip the MM- part
+			tm.tm_mday=apr_atoi64(targ);
+			if (strlen(targ)==16) {
+				targ+=3;
+				tm.tm_hour = apr_atoi64(targ);
+				targ+=5;
+				tm.tm_min = apr_atoi64(targ);
+				targ+=5;
+				tm.tm_sec = apr_atoi64(targ);
+			}
+	    } else {
+	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
+	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
+	    	return 0;
+	    }
+
+		sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	  }
+
+//	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Keyword: %s",keyword);
+	  return keyword;
 }
 
 // Lookup the z index from ZDB file based on keyword
 static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
-	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
 
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -462,7 +493,7 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
     int rc = sqlite3_open_v2(zidxfname, &db, SQLITE_OPEN_READONLY, NULL);
 
     if (rc != SQLITE_OK) {
-        ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Cannot get z-index from %s", zidxfname);
+        ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Cannot get z-index from %s", zidxfname);
         sqlite3_close(db);
         return -1;
     }
@@ -958,10 +989,10 @@ static apr_off_t wmts_get_index_offset_z(request_rec *r, WMSlevel *level, int z,
  int level_int = level->index_add + sizeof(index_s) * (y*level->xcount+x);
  int level_z = (level->xcount*level->ycount*zlevels)*sizeof(index_s)/zlevels*z;
 
- ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d, max values are %d and %d, x: %d, y: %d, index_add: %d",
-		 level_int+level_z, level->xcount-1, level->ycount-1, x, y, level->index_add);
- return level_int+level_z;
+// ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d, max values are %d and %d, x: %d, y: %d, index_add: %d",
+//		 level_int+level_z, level->xcount-1, level->ycount-1, x, y, level->index_add);
 
+ return level_int+level_z;
 }
 
 
@@ -1804,14 +1835,13 @@ static int mrf_handler(request_rec *r)
 
 	  if (!cache->zlevels) {
 		  offset=wmts_get_index_offset(r,level);
-		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no z levels %s",r->args);
 	  } else {
-		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z levels %d",cache->zlevels);
 		  if (!cache->zidxfname) {
-			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No z-index filename");
+			  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No z-index filename %s",r->args);
+			  offset = -1;
 		  } else {
 			  char *zidxfname;
-			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
+//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
 			  if (cache->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
 				  zidxfname = apr_pstrcat(r->pool,cache->zidxfname,0);
 			  } else {
@@ -1820,7 +1850,10 @@ static int mrf_handler(request_rec *r)
 
 			  // Lookup the z index from the ZDB file based on keyword
 			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
-			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z index %d",z);
+//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z index %d",z);
+			  if (z >= cache->zlevels) {
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Retrieved z-index %d is greater than the maximum for the layer %d",z,cache->zlevels);
+			  }
 			  offset=wmts_get_index_offset_z(r,level,z,cache->zlevels);
 		  }
 	  }
