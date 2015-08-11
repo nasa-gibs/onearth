@@ -1351,13 +1351,15 @@ if len(modtiles) > 0:
             # Calculate output size of Y dimension and maintain aspect ratio.
             target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
             log_info_mssg('Calculating target_y ' + target_y)
+            if resize_resampling == '':
+                log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
         else: #don't bother calculating y
             #target_x=x_size
             target_y=y_size
             log_info_mssg('Setting target_y from VRT to ' + target_y)
             
-        if target_epsg == "EPSG:3857":
-            target_y = target_x
+        # if target_epsg == "EPSG:3857":
+        #     target_y = target_x
 
         #-----------------------------------------------------------------------
         # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
