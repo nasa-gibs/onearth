@@ -29,6 +29,7 @@ class GIBS_ColorMapEntry():
     sourceValue = None
     transparent = False
     nodata      = False
+    ref         = -1
     
     def __hash__(self):
         return hash(self.rgb)
@@ -50,7 +51,6 @@ class GIBS_ColorMap():
 
 def hexToRGB(hexValue):
 
-
     if re.match("#[0-9A-Fa-f]{6}", hexValue):
         r = int(hexValue[1:3], 16)
         g = int(hexValue[3:5], 16)
@@ -65,6 +65,103 @@ def hexToRGB(hexValue):
 
     return [r,g,b]
 
+
+def dataDensify(startValue, endValue, steps):
+
+    dataSteps = []
+    
+    stepsize = (endValue - startValue) / steps
+    
+    for step in range(1, steps):
+        dataSteps.append(startValue + (stepsize * step))
+
+    dataSteps.append(endValue)
+    
+    return dataSteps
+
+# eerock
+def rampDensify(startColor, endColor, steps):
+
+    colorSteps = []
+    
+    # color conversion utils
+    f2c = lambda f: int(f * 255.0) & 0xff
+    c2f = lambda c: float(c) / 255.0
+    
+    # start color...
+    #print(startColor)
+    r1 = c2f(startColor[0])
+    g1 = c2f(startColor[1])
+    b1 = c2f(startColor[2])
+    
+    # end color...
+    #print(endColor)
+    r2 = c2f(endColor[0])
+    g2 = c2f(endColor[1])
+    b2 = c2f(endColor[2])
+ 
+    # generate a gradient of one step from color to color:
+    delta = 1.0 / steps
+    for j in range(int(steps)):
+        t = j * delta
+        a = 1.0
+        r = (1.0 - t) * r1 + t * r2
+        g = (1.0 - t) * g1 + t * g2
+        b = (1.0 - t) * b1 + t * b2
+        
+        color = [f2c(r), f2c(g), f2c(b)]
+        #print(color)
+        colorSteps.append(color)
+
+    return colorSteps
+
+
+#def rampDensify_colour(startColor, endColor, steps):
+#
+#    colorSteps = []
+#    
+#    
+#    factor = 1.0/255.0
+#    start  = colour.Color(red=(startColor[0]*factor), green=(startColor[1]*factor), blue=(startColor[2]*factor))
+#    end    = colour.Color(red=(endColor[0]*factor), green=(endColor[1]*factor), blue=(endColor[2]*factor))
+#
+#    for color in list(start.range_to(end, steps)):
+#        colorSteps.append(hexToRGB(color.get_hex_l()))
+#
+#    return colorSteps
+
+
+def stepDensify(startColor, steps, direction):
+
+    colorSteps = []
+   
+   
+    colorSteps.append([startColor[0],startColor[1],startColor[2]])
+   
+    lastColor   = startColor
+    colorsAdded = 0
+    colorsAvail = [True,True,True]
+   
+    while colorsAdded < steps:
+        for index in range(0,3):
+       
+            newColor = lastColor[index] + (1 * direction)
+       
+            if newColor < 0 or newColor > 255: 
+                colorsAvail[index] = False
+                continue
+        
+            lastColor[index] = newColor
+            colorSteps.append([lastColor[0],lastColor[1],lastColor[2]])
+            
+            colorsAdded = colorsAdded + 1
+            
+            if colorsAdded >= steps: break
+            
+        if (not colorsAvail[0]) and (not colorsAvail[1]) and (not colorsAvail[2]):
+            exit("Step densification failed!")
+           
+    return colorSteps
 
 
 ## START Parse SLD v1.0.0 ##
@@ -181,7 +278,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
 
 
 ## START Parse SLD v1.1.0 ##
-def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, format) :
+def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, format, densify) :
     
     gibsColorMaps = []
     
@@ -215,6 +312,8 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 # <se:Categorize fallbackValue="#78c818">
                 attrDict = dict(categorizeNode.attributes.items())
                         
+                
+                # Add a colormap for the no data value based on the fallbackValue
                 if 'fallbackValue' in attrDict :
                     hexValue = ""
                     
@@ -229,6 +328,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                     gibsCMapEntry.transparent = True
                     gibsCMapEntry.label       = "No Data"
                     gibsCMapEntry.nodata      = True
+                    gibsCMapEntry.ref         = 1
                     
                     gibsCMap  = GIBS_ColorMap()
                     gibsCMap.cmEntries = []
@@ -240,9 +340,17 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 # Process the SLD entries into the XML ColorMap
                 gibsCMap  = GIBS_ColorMap()
                         
-                prevValue      = "-INF"
+                prevValue      = sys.maxint
+                prev2Value     = sys.maxint
+                currValue      = sys.maxint
+                firstValue     = sys.maxint
+                prevRGB        = [-1,-1,-1]
+                prev2RGB       = [-1,-1,-1]
                 currRGB        = [-1,-1,-1]
+                firstRGB       = [-1,-1,-1]
+                currRef        = 1
 
+                # Loop through the <Value> and <Threshold> elements
                 for catChildNode in [ n for n in categorizeNode.childNodes if n.nodeType == Node.ELEMENT_NODE ]:
                                    
                     # <se:Value>#00ff00</se:Value>
@@ -253,41 +361,207 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                     if catChildNode.nodeName == "se:Threshold":
                         currValue = float(catChildNode.firstChild.nodeValue)
                         
-                        gibsCMapEntry             = GIBS_ColorMapEntry()
-                        gibsCMapEntry.rgb         = currRGB
-                        gibsCMapEntry.transparent = (defaultOpacity == 0.0)
-                        
-                        if prevValue == "-INF":
-                            gibsCMap.minLabel         = "&lt; " + format.format(currValue) + ("" if not units else (" " + units))
+                        # If prevValue is sys.maxint, then this is the first Threshold. Add a colormap entry for (-INF,currValue)
+                        if prevValue == sys.maxint:
+                            gibsCMapEntry             = GIBS_ColorMapEntry()
+                            gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                            gibsCMapEntry.rgb         = currRGB
                             gibsCMapEntry.label       = "&lt; " + format.format(currValue) + ("" if not units else (" " + units))
-                            gibsCMapEntry.value       = [prevValue, currValue]
-                            gibsCMapEntry.sourceValue = [prevValue, ((currValue - offset) / factor)]
-                        else:
+                            gibsCMapEntry.value       = ["-INF", currValue]
+                            gibsCMapEntry.sourceValue = ["-INF", ((currValue - offset) / factor)]
+                            gibsCMapEntry.ref         = currRef
+                            
+                            gibsCMap.cmEntries.append(gibsCMapEntry)
+                            gibsCMap.minLabel         = "&lt; " + format.format(currValue) + ("" if not units else (" " + units))
+                            
+                            currRef = currRef + 1
+                            
+                        # If not densifying, then add a Colormap entry for [prevValue, currValue)
+                        elif not densify:
+                            gibsCMapEntry             = GIBS_ColorMapEntry()
+                            gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                            gibsCMapEntry.rgb         = currRGB
                             gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(currValue) + ("" if not units else (" " + units))	
                             gibsCMapEntry.value       = [prevValue, currValue]
                             gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((currValue - offset) / factor)]
+                            gibsCMapEntry.ref         = currRef
                             
+                            gibsCMap.cmEntries.append(gibsCMapEntry)
+                            
+                            currRef = currRef + 1
                         
-                        gibsCMap.cmEntries.append(gibsCMapEntry)
+                        # If densifying...
+                        else:
+                            m = re.match(r"([sro])([0-9]*)", densify)
+
+                            # "Step" Densification
+                            # Generate extra colormap entries for intermediate data values with visually
+                            # imperceptibly different colors from the previous data value and RGB to the 
+                            # current data value and RGB. 
+                            if m.group(1) == "s":
+                                #print("step data " + str(prevValue) + " - " + str(currValue))
+                                #print("step color " + str(prevRGB) + " - " + str(currRGB))
+                                
+                                colorSteps = stepDensify(currRGB, int(m.group(2)), 1)
+                                #print(colorSteps)
+
+                                dataSteps = dataDensify(prevValue, currValue, int(m.group(2)))
+                                #print(dataSteps)
+                            
+                                for step in range(0, int(m.group(2))):
+                                    #print(dataSteps[step])
+                                    #print(colorSteps[step])
+                                
+                                    gibsCMapEntry             = GIBS_ColorMapEntry()
+                                    gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                                    gibsCMapEntry.rgb         = colorSteps[step]
+                                    gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(dataSteps[step]) + ("" if not units else (" " + units))	
+                                    gibsCMapEntry.value       = [prevValue, dataSteps[step]]
+                                    gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((dataSteps[step] - offset) / factor)]
+                                    gibsCMapEntry.ref         = currRef
+
+                                    gibsCMap.cmEntries.append(gibsCMapEntry)
                         
-                        prevValue = currValue
+                                    prevValue = dataSteps[step]
+                            
+                                currRef = currRef + 1
+                            
+                            # "Ramp" Densification
+                            # Generate extra colormap entries for intermediate data values with visibly different colors
+                            # from the previous RGB to the current RGB, but using the previous data range.  This data
+                            # range lags behind the RGB range because we don't know which color to ramp to due to how the 
+                            # <Threshold> values are read in the XML parsing.
+                            elif m.group(1) == "r" and prev2Value != sys.maxint: 
+                                #print("ramp data " + str(prev2Value) + " - " + str(prevValue))
+                                #print("ramp color " + str(prevRGB) + " - " + str(currRGB))
+                                
+                                colorSteps = rampDensify(prevRGB, currRGB, int(m.group(2)) + 1)
+                                #print(colorSteps)
+
+                                dataSteps = dataDensify(prev2Value, prevValue, int(m.group(2)))
+                                #print(dataSteps)
+                            
+                                prevValue = prev2Value
+                                
+                                for step in range(0, int(m.group(2))):
+                                    #print(dataSteps[step])
+                                    #print(colorSteps[step])
+                                
+                                    gibsCMapEntry             = GIBS_ColorMapEntry()
+                                    gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                                    gibsCMapEntry.rgb         = colorSteps[step]
+                                    gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(dataSteps[step]) + ("" if not units else (" " + units))	
+                                    gibsCMapEntry.value       = [prevValue, dataSteps[step]]
+                                    gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((dataSteps[step] - offset) / factor)]
+                                    gibsCMapEntry.ref         = currRef
+
+                                    gibsCMap.cmEntries.append(gibsCMapEntry)
                         
+                                    prevValue = dataSteps[step]
+                                    
+                                currRef = currRef + 1
+
+                            # "Override" Densification
+                            # Capture the data value and RGB for the first entry for the first time through
+                            # and then just ignore it after that 
+                            elif m.group(1) == "o" and firstValue == sys.maxint: 
+                                firstValue = prevValue
+                                firstRGB   = currRGB
+                                
+                        prev2Value = prevValue
+                        prevValue  = currValue
+
+                        prev2RGB   = prevRGB
+                        prevRGB    = currRGB
+                
+                # End: Loop through the <Value> and <Threshold> elements
+                # Now process the final color entry
+                
+                if densify:
+                    m = re.match(r"([sro])([0-9]*)", densify)
+
+                    # "Ramp" Densification
+                    # Because of the lagging <Threshold> parsing, we now need to add the last ramped
+                    # section of the colormap.
+                    if m.group(1) == "r":
+                        #print("ramp data " + str(prev2Value) + " - " + str(prevValue))
+                        #print("ramp color " + str(prevRGB) + " - " + str(currRGB))
+                                
+                        colorSteps = rampDensify(prevRGB, currRGB, int(m.group(2)) + 1)
+                        #print(colorSteps)
+
+                        dataSteps = dataDensify(prev2Value, prevValue, int(m.group(2)))
+                        #print(dataSteps)
+                            
+                        prevValue = prev2Value
+                                
+                        for step in range(0, int(m.group(2))):
+                            #print(dataSteps[step])
+                            #print(colorSteps[step])
+                                
+                            gibsCMapEntry             = GIBS_ColorMapEntry()
+                            gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                            gibsCMapEntry.rgb         = colorSteps[step]
+                            gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(dataSteps[step]) + ("" if not units else (" " + units))	
+                            gibsCMapEntry.value       = [prevValue, dataSteps[step]]
+                            gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((dataSteps[step] - offset) / factor)]
+                            gibsCMapEntry.ref         = currRef
+
+                            gibsCMap.cmEntries.append(gibsCMapEntry)
+                        
+                            prevValue = dataSteps[step]
+                            
+                        currRef = currRef + 1
+                        
+                    # "Override" Densification
+                    # Create a ramp over the entire data range using the start and finish RGB values
+                    if m.group(1) == "o":
+                        #print("ramp data " + str(firstValue) + " - " + str(prevValue))
+                        #print("ramp color " + str(firstRGB) + " - " + str(currRGB))
+                                
+                        colorSteps = rampDensify(firstRGB, currRGB, int(m.group(2)) + 1)
+                        #print(colorSteps)
+
+                        dataSteps = dataDensify(firstValue, prevValue, int(m.group(2)))
+                        #print(dataSteps)
+                            
+                        prevValue = firstValue
+                                
+                        for step in range(0, int(m.group(2))):
+                            #print(dataSteps[step])
+                            #print(colorSteps[step])
+                                
+                            gibsCMapEntry             = GIBS_ColorMapEntry()
+                            gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                            gibsCMapEntry.rgb         = colorSteps[step]
+                            gibsCMapEntry.label       = format.format(prevValue) + " - " + format.format(dataSteps[step]) + ("" if not units else (" " + units))	
+                            gibsCMapEntry.value       = [prevValue, dataSteps[step]]
+                            gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((dataSteps[step] - offset) / factor)]
+                            gibsCMapEntry.ref         = currRef
+
+                            gibsCMap.cmEntries.append(gibsCMapEntry)
+                        
+                            prevValue = dataSteps[step]
+                            currRef   = currRef + 1
+                    
+
+                # Add the final Colormap Entry for the [currValue, +INF) data range
                 gibsCMapEntry             = GIBS_ColorMapEntry()
                 gibsCMapEntry.rgb         = currRGB
                 gibsCMapEntry.transparent = (defaultOpacity == 0.0)
+                gibsCMapEntry.label       = "&gt;= " + format.format(prevValue) + ("" if not units else (" " + units))	
+                gibsCMapEntry.value       = [prevValue, "+INF"]
+                gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), "+INF"]
+                gibsCMapEntry.ref         = currRef
+                            
+                gibsCMap.cmEntries.append(gibsCMapEntry)
                         
                 gibsCMap.maxLabel         = "&gt;= " + format.format(prevValue) + ("" if not units else (" " + units))	
                 gibsCMap.showUnits        = True	
                 gibsCMap.showLegend       = True
-                gibsCMapEntry.label       = "&gt;= " + format.format(prevValue) + ("" if not units else (" " + units))	
-                gibsCMapEntry.value       = [prevValue, "+INF"]
-                gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), "+INF"]
-                            
-                gibsCMap.cmEntries.append(gibsCMapEntry)
                         
             	gibsColorMaps.append(gibsCMap)
-
-
+           	
     return gibsColorMaps
 
 ## END Parse SLD v1.1.0 ##
@@ -310,7 +584,6 @@ def generateColorMap(gibsColorMaps, units, format):
             ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\" ")) + 
             ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">")
     
-        refNum = 1;
         for cMapEntry in colorMap.cmEntries:
             # <ColorMapEntry rgb="9,9,255" transparent="false" sourceValue="[9,10)" value="[9,10)" label="3.6 %" ref="1"/>
         
@@ -336,10 +609,8 @@ def generateColorMap(gibsColorMaps, units, format):
                ("" if not cMapEntry.value else ("value=\"" + value + "\" ")) + 
                "label=\"" + cMapEntry.label + "\" " + 
                ("" if not cMapEntry.nodata else ("nodata=\"true\" ")) +
-               ("" if not colorMap.showLegend else ("ref=\"" + str(refNum) + "\" ")) + 
+               ("" if not colorMap.showLegend else ("ref=\"" + str(cMapEntry.ref) + "\" ")) + 
                "/>")
-            
-            refNum = refNum + 1
 
         print("    </Entries>")
         
@@ -350,30 +621,33 @@ def generateColorMap(gibsColorMaps, units, format):
                 ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\" ")) + 
                 ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">")
     
-            refNum = 1;
+    
+            prevRef = -1
+            
             for cMapEntry in colorMap.cmEntries:
-        
-                rgb = str(cMapEntry.rgb[0]) + "," + str(cMapEntry.rgb[1]) + "," + str(cMapEntry.rgb[2])
+             
+                if cMapEntry.ref != prevRef:
+                    rgb = str(cMapEntry.rgb[0]) + "," + str(cMapEntry.rgb[1]) + "," + str(cMapEntry.rgb[2])
             
-                if cMapEntry.value: 
-                    if len(cMapEntry.value) == 1:
-                        value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "]"
-                    else:
-                        value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "," + \
-                                      (cMapEntry.value[1] if isinstance(cMapEntry.value[1], str) else format.format(cMapEntry.value[1])) + ")"
+                    if cMapEntry.value: 
+                        if len(cMapEntry.value) == 1:
+                            value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "]"
+                        else:
+                            value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "," + \
+                                           (cMapEntry.value[1] if isinstance(cMapEntry.value[1], str) else format.format(cMapEntry.value[1])) + ")"
         
-                print("      <LegendEntry rgb=\"" + rgb + "\" " + 
-                   ("" if not cMapEntry.value else ("value=\"" + value + "\" ")) + 
-                   ("" if not colorMap.showLegend else ("id=\"" + str(refNum) + "\" ")) + 
-                   "/>")
-            
-                refNum = refNum + 1
+                    print("      <LegendEntry rgb=\"" + rgb + "\" " + 
+                       ("" if not colorMap.showLegend else ("id=\"" + str(cMapEntry.ref) + "\" ")) + "/>")
+                       
+                    
+                prevRef    = cMapEntry.ref
 
             print("    </Legend>")
     
         print("  </ColorMap>")
         
     print("</ColorMaps>")
+
 
 
 def main(argv):
@@ -385,12 +659,13 @@ def main(argv):
     layerName = ""
     offset    = 0.0
     factor    = 1.0
-    rgbaOrder  = "RGBA"
+    rgbaOrder = "RGBA"
     format    = "{}"
+    densify   = None
 
 
     try:
-        opts, args = getopt.getopt(argv,"hs:l:u:o:p:f:r:",["sld=","layer=","units=","offset=","precision=","factor=","rgba_order="])
+        opts, args = getopt.getopt(argv,"hs:l:u:o:p:f:r:d:",["sld=","layer=","units=","offset=","precision=","factor=","rgba_order=","densify="])
     except getopt.GetoptError:
         print("Usage: SLDtoColorMap.py -s <sld> -l <layer> -u <units> -o <offset> -f <factor> -r <rgba_order>")
         print("\nOptions:")
@@ -411,6 +686,10 @@ def main(argv):
         print("  -p PRECISION, --precision PRECISION")
         print("							The number of decimal places to round values to plus the format specifier for floating point (f) ")
         print("							or exponential (e).  Example: '2f' or '3e'  (Optional)")
+        print("  -d DENSIFY, --densify DENSIFY")
+        print("							The algorithm used to densify an SLD into a GIBS colormap by adding additional colors and data steps.")
+        print("							Format: '[ors][0-9]*'. The first character specifies the algorithm (o = override / r = ramp / s = step).")
+        print("							An integer value follows the algorithm specifying how much to densify.  Example: 'r20' or 's5'   (Optional)")
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -433,6 +712,10 @@ def main(argv):
             print("  -p PRECISION, --precision PRECISION")
             print("							The number of decimal places to round values to plus the format specifier for floating point (f) ")
             print("							or exponential (e).  Example: '2f' or '3e'  (Optional)")
+            print("  -d DENSIFY, --densify DENSIFY")
+            print("							The algorithm used to densify an SLD into a GIBS colormap by adding additional colors and data steps.")
+            print("							Format: '[ors][0-9]*'. The first character specifies the algorithm (o = override / r = ramp / s = step).")
+            print("							An integer value follows the algorithm specifying how much to densify.  Example: 'r20' or 's5'   (Optional)")
             sys.exit()
         elif opt in ("-s", "--sld"):
             sldFile = arg
@@ -447,7 +730,14 @@ def main(argv):
         elif opt in ("-p", "--precision"):
             format = "{:." + arg + "}"
         elif opt in ("-r", "--rgba_order"):
-            rgbaOrder = arg
+            rgbaOrder = arg        
+        elif opt in ("-d", "--densify"):
+            if not re.match("[sro][0-9]*", arg):
+                print("Invalid densification.  Please try again.")
+                exit(-1)
+            else:
+                densify = arg
+
 
     sldXmldoc = minidom.parse(sldFile)
     attrDict = dict(sldXmldoc.documentElement.attributes.items())
@@ -456,7 +746,7 @@ def main(argv):
         if attrDict['version'] == "1.0.0":
             gibsColorMaps = parseSLD_v1_0_0(sldFile, layerName, units, offset, factor)
         elif attrDict['version'] == "1.1.0":
-            gibsColorMaps = parseSLD_v1_1_0(sldFile, layerName, units, offset, factor, rgbaOrder, format)
+            gibsColorMaps = parseSLD_v1_1_0(sldFile, layerName, units, offset, factor, rgbaOrder, format, densify)
         else:
             print("Invalid version specified: " + attrDict['version'])
             exit(-1)
