@@ -269,7 +269,7 @@ def generateHTML() :
         print("<p>Download Color Map file <a href=\"../" + colorMaps.product + "\">here</a><br><br>")
 
         for colorMap in colorMaps.colormaps :
-            print("<h2> ColorMap : Title '" + colorMap.title + "'  Units '" + colorMap.units.encode("utf-8") + "'</h2>")
+            print("<h2> ColorMap : Title '" + colorMap.title.encode("utf-8") + "'  Units '" + colorMap.units.encode("utf-8") + "'</h2>")
             print("<h3> Entries : MinLabel '" + colorMap.entries.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.entries.maxLabel.encode("utf-8") + "'</h3>")
 
             print("<table>")
