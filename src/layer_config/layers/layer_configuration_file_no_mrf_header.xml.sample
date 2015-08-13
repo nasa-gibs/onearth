@@ -13,6 +13,6 @@
  <Size c="3" x="40960" y="20480"></Size>
  <DataValues NoData="0 0 0 "/>
  <PageSize c="3" x="512" y="512"/>
- <Rsets model="uniform" scale="2"/>
+ <Rsets scale="2"/>
  <BoundingBox maxx="180.00000000" maxy=" 90.00000000" minx="-180.00000000" miny="-90.00000000"/>
 </LayerConfiguration>
