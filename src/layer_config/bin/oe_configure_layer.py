@@ -67,8 +67,6 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-import pdb
-
 versionNumber = '0.7.0'
 
 class WMTSEndPoint:
