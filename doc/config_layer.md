@@ -4,7 +4,7 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **Identifier** - A unique identifier used as the WMTS Layer/Identifier and TWMS TiledGroup/Name values in the service GetCapabilities document.  Ideally the identifier does not use any special characters as it is included in all WMTS and TWMS http requests.
 * **Title** - A human readable title used as the WMTS Layer/Title and TWMS TiledGroup/Title values in the service GetCapabilities document.
 * **FileNamePrefix** - An internal "short name" used as the prefix for MRF index, image, and metadata file names.
-* **HeaderFileName (optional)** - A file path to an existing MRF metadata file for the layer. If provided, this will also be used as the filename in the staging directories.
+* **HeaderFileName (optional)** - A file path to an existing MRF metadata file for the layer. If provided, this will also be used as the filename in the staging directories. If this file is not provided, see below for the additional tags required to complete the layer configuration.
 * **Compression** - The image file format.   Valid values are 'PNG', "JPG", "TIF".
 * **Projection** - The identifier of the layer's associated projection as contained within the [projection configuration](config_support.md#projection-configuration) and [TileMatrixSets](config_support.md#tilematrixsets) support files.
 * **TileMatrixSet** - The identifier of the layer's associated TileMatrixSet within the projection as contained within the [TileMatrixSets](config_support.md#tilematrixsets) support file.
@@ -26,7 +26,7 @@ Certain tags from MRF files can be also used in the layer config XML. In this ca
 * **BoundingBox (required if no MRF header)** Bounding box for imagery.
 * **Size (required if no MRF header)** Size of the image overview (at max resolution). The 'x' and 'y' sizes are indicated by attributes. A 'z' attribute of more than 1 requires a .zdb index file to be located in the MRF cache.
 * **PageSize (required if no MRF header)** Denotes the tile dimensions for the MRF with 'x' and 'y' attributes.
-* **DataValues (optional)**
+* **DataValues (optional)** The 'NoData' attribute indicates the default no data value.
 
 A sample layer configuration file is shown here:
 
