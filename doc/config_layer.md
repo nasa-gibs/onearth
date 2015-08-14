@@ -4,7 +4,7 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **Identifier** - A unique identifier used as the WMTS Layer/Identifier and TWMS TiledGroup/Name values in the service GetCapabilities document.  Ideally the identifier does not use any special characters as it is included in all WMTS and TWMS http requests.
 * **Title** - A human readable title used as the WMTS Layer/Title and TWMS TiledGroup/Title values in the service GetCapabilities document.
 * **FileNamePrefix** - An internal "short name" used as the prefix for MRF index, image, and metadata file names.
-* **HeaderFileName** - A file path to an existing MRF metadata file for the layer. If provided, this will also be used as the filename in the staging directories.
+* **HeaderFileName (optional)** - A file path to an existing MRF metadata file for the layer. If provided, this will also be used as the filename in the staging directories.
 * **Compression** - The image file format.   Valid values are 'PNG', "JPG", "TIF".
 * **Projection** - The identifier of the layer's associated projection as contained within the [projection configuration](config_support.md#projection-configuration) and [TileMatrixSets](config_support.md#tilematrixsets) support files.
 * **TileMatrixSet** - The identifier of the layer's associated TileMatrixSet within the projection as contained within the [TileMatrixSets](config_support.md#tilematrixsets) support file.
@@ -18,6 +18,15 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * The root attribute references the unique identifier of the layer's associated archive location as contained in the [archive configuration](config_support.md#archive-configuration) support file.
 * **ColorMap (Optional)** - The file name for layer's associated colormap, if one exists, to be included in the WMTS GetCapabilities service document. The path is specified with `<ColorMapLocation>` in the environment configuration. A URL may also be used instead of a file name (deprecated).
 * **Time** - The ISO 8601 time range for the layer.  The tool may be configured to scan the file system to detect the the time (e.g., `<Time>DETECT</Time>`).  See [Time Detection](time_detection.md) for details.
+
+##### Additional MRF fields
+Certain tags from MRF files can be also used in the layer config XML. In this case, they will override those tags that are present in the file specified by `<HeaderFileName>`. **It's not necessary to use an MRF header file if all the 'required' tags below are present in the layer config XML.**
+
+* **Rsets (required if no MRF header)** "scale" attribute indicates uniform scaling factor.
+* **BoundingBox (required if no MRF header)** Bounding box for imagery.
+* **Size (required if no MRF header)** Size of the image overview (at max resolution). The 'x' and 'y' sizes are indicated by attributes. A 'z' attribute of more than 1 requires a .zdb index file to be located in the MRF cache.
+* **PageSize (required if no MRF header)** Denotes the tile dimensions for the MRF with 'x' and 'y' attributes.
+* **DataValues (optional)**
 
 A sample layer configuration file is shown here:
 
