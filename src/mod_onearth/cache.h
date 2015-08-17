@@ -23,7 +23,7 @@ typedef struct {
   double levelx,levely;
 
   char *dfname; // These are pointers or offsets
-  char *ifname; //
+  char *ifname;
 } WMSlevel;
 
 typedef struct {
@@ -39,7 +39,9 @@ typedef struct {
   char *pattern; // patterns that cache matcheS
   char *prefix;
   char *time_period;
+  char *zidxfname;
   int num_periods;
+  int zlevels; // the max number of z levels
 } WMSCache;
 
 typedef struct { // One of these per cache pack

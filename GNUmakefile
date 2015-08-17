@@ -1,4 +1,4 @@
-ONEARTH_VERSION=0.6.5
+ONEARTH_VERSION=0.7.0
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -137,6 +137,8 @@ onearth-install:
 	cp -r src/layer_config/layers \
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/schema \
+		$(DESTDIR)/etc/onearth/config
+	cp -r src/layer_config/mapserver \
 		$(DESTDIR)/etc/onearth/config
 	install -m 755 -d $(DESTDIR)/etc/onearth/config/headers
 

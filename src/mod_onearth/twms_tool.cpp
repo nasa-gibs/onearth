@@ -120,10 +120,11 @@ public:
     int whole_size_x,whole_size_y,tile_size_x,tile_size_y;
     int orientation;
     int bands;
+    int zlevels;
     double cov_lx,cov_ly,cov_ux,cov_uy;
     long long int empty_size,empty_offset;
     string h_format;
-    string data_fname,idx_fname;
+    string data_fname,idx_fname,zidx_fname;
     vector<string> time_period;
     mrf_data(const char *ifname);
     void mrf2cache(ostream &out);
@@ -161,6 +162,9 @@ int server_config::string_insert(string &s) {
 void server_config::dump(ostream &ofname) {
     total_size+=sizeof(Caches)+strings_size;
     // size and count in the first two ints
+
+    //.write method requires pointer value.
+    //typecasting into char array pointer
     ofname.write((char *)&total_size,sizeof(total_size));
     ofname.write((char *)&count,sizeof(count));
 
@@ -172,6 +176,7 @@ void server_config::dump(ostream &ofname) {
         caches[i].pattern+=string_offset;
         caches[i].prefix+=string_offset;
         caches[i].time_period+=string_offset;
+        caches[i].zidxfname+=string_offset;
         // The levelt_offset is relative to each particular cache
         caches[i].levelt_offset+=sizeof(WMSCache)*(count-i);
         ofname.write((char *)&caches[i],sizeof(WMSCache));
@@ -218,6 +223,9 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
     // This is the offset within strings, will be adjusted later
     c.prefix += cfg.string_insert( h_format.append("\n\n") );
 
+    c.zlevels=zlevels;
+    c.zidxfname += cfg.string_insert(zidx_fname);
+
     c.orientation=orientation;
     c.signature=sig;
 
@@ -249,6 +257,7 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
         // These two are string pointers, will be adjusted later
         level.dfname+=cfg.string_insert(data_fname);
         level.ifname+=cfg.string_insert(idx_fname);
+
         cfg.levels.push_back(level);
         cfg.total_size+=sizeof(WMSlevel);
 
@@ -279,6 +288,7 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
 
         stringstream(CPLGetXMLValue(raster,"Size.x","1")) >> whole_size_x;
         stringstream(CPLGetXMLValue(raster,"Size.y","1")) >> whole_size_y;
+        stringstream(CPLGetXMLValue(raster,"Size.z","0")) >> zlevels;
         stringstream(CPLGetXMLValue(raster,"PageSize.x","512")) >> tile_size_x;
         stringstream(CPLGetXMLValue(raster,"PageSize.y","512")) >> tile_size_y;
         stringstream(CPLGetXMLValue(raster,"PageSize.c","1")) >> bands;
@@ -307,6 +317,15 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         data_fname=CPLGetXMLValue(input,"Rsets.DataFileName",ifname);
         if (data_fname==string(ifname)&&data_fname.size()>4)
             data_fname.replace(data_fname.size()-4,4,dat_ext);
+
+//        if (zlevels > 0 && zidx_fname=="-") {
+//        	throw (CPLString().Printf("Z-index specified but no index file specified in <Rsets><ZIndexFileName>"));
+//        }
+
+        zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
+        if (zidx_fname==string(ifname)&&zidx_fname.size()>4)
+            zidx_fname.replace(zidx_fname.size()-4,4,".zdb");
+
         if (idx_fname=="-" || data_fname=="-")
             throw (CPLString("Need data and index file names, under <Rsets><IndexFileName> or <Rsets><DataFileName>"));
         if (string::npos!=data_fname.find(".unknown_ext"))
@@ -381,7 +400,11 @@ void mrf_data::mrf2cache(ostream &out) {
         out << "+" << patt[i] << endl;
 
     out << patt[patt.size()-1] << endl;
-    out << levels << endl << h_format << endl << sig << endl << orientation << endl;
+    out << levels << endl << h_format << endl << sig << endl << orientation << endl; 
+    out << zlevels << endl;
+    if (zlevels>0) {
+        out << zidx_fname << endl;
+    };
     out << setprecision(16) ;
 
     long long offset=0;
@@ -440,6 +463,13 @@ void mrf_data::mrf2cachex(ostream &out, CPLXMLNode &cache) {
 
     CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"Levels"),
         CXT_Text,CPLString().Printf("%d",levels));
+
+    CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"ZLevels"),
+        CXT_Text,CPLString().Printf("%d",zlevels));
+
+    if (zlevels > 0) {
+        CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"ZIndexFileName"),CXT_Text,zidx_fname.c_str());
+    }
 
     long long int offset=0;
     for (int i=0;i<levels;i++) {
@@ -569,8 +599,10 @@ struct opts{
 void mrf2cache(vector<mrf_data> &in, opts &o) {
     ostream *out;
     ofstream of;
+    //If no output file, stdout
     if (EQUAL(o.ofname.c_str(),"-")) out=&cout;
     else {
+        //Open file
         of.open(o.ofname.c_str());
         if (!of.is_open()) {
             cerr << "Can't open output file " << o.ofname << endl;

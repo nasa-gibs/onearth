@@ -13,4 +13,6 @@
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
     <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
+    <Mapfile>/usr/share/onearth/demo/mapserver/epsg4326.map</Mapfile>
+    <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
 </EnvironmentConfiguration>

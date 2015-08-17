@@ -64,8 +64,10 @@ from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
+from lxml import etree
+from shutil import copyfile
 
-versionNumber = '0.6.4'
+versionNumber = '0.7.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -91,7 +93,8 @@ class TWMSEndPoint:
 class Environment:
     """Environment information for layer(s)"""
     
-    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dir, colormapUrl):
+    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dir, colormapUrl, mapfileConfigLocation, mapfileConfigBasename, mapfile):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -107,6 +110,9 @@ class Environment:
         self.legendUrl = legendUrl
         self.colormap_dir = colormap_dir
         self.colormapUrl = colormapUrl
+        self.mapfileConfigLocation = mapfileConfigLocation
+        self.mapfileConfigBasename = mapfileConfigBasename
+        self.mapfile = mapfile
         
 class Projection:
     """Projection information for layer"""
@@ -309,6 +315,49 @@ def add_trailing_slash(directory_path):
     # Return directory_path with trailing slash.
     return directory_path
 
+def get_pretty_xml(xml_dom):
+    """
+    Formats an XML document into a string with nice-looking line-breaks (for get_mrf).
+    """
+    parser = etree.XMLParser(strip_cdata=False)
+    xml = etree.fromstring(xml_dom.toxml(), parser)
+    pretty_xml = etree.tostring(xml, pretty_print=True)
+    return pretty_xml
+
+def delete_mapfile_layer(mapfile, layerName):
+    """
+    Deletes a LAYER entry from a Mapfile.
+    """
+    mapfile.seek(0)
+    endTagCount = None
+    bytePosition = 0
+    layerFound = False
+    for line in mapfile.readlines():
+        # Record byte position of LAYER tag in case we're about to find that it's a dupe
+        if 'layer' in line.lower():
+            layerStart = bytePosition
+        # If this is a duplicate tag, start counting END tags
+        if all(tag in line.lower() for tag in ('name',identifier)):
+            endTagCount = 1
+        # Increment the END count if additional tags that require an END appear
+        if endTagCount > 0 and any(keyword in line.lower() for keyword in ('validation','projection','metadata')):
+            endTagCount += 1
+        # Decrement the END count each time an END tag is found
+        if endTagCount > 0 and "end" in line.lower():
+            endTagCount -= 1
+        # Increment the overall file position
+        bytePosition += len(line)
+        # When last END tag is found, record the position of the final line and push LAYER start and end positions to list
+        if endTagCount == 0:
+            mapfile.seek(bytePosition)
+            remainder = mapfile.read()
+            mapfile.seek(layerStart)
+            mapfile.truncate()
+            mapfile.write(remainder)
+            layerFound = True
+            break
+    return layerFound
+
 def get_environment(environmentConfig):
     """
     Gets environment metadata from a environment configuration file.
@@ -345,7 +394,7 @@ def get_environment(environmentConfig):
                 cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
                 cacheBasename_wmts = "cache_all_wmts" 
                 cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
-                cacheBasename_twms = "cache_all_twms"
+                cacheBasename_twms = "cache_all_twms"                
                 log_sig_warn("'service' or 'basename' not defined in <CacheLocation>"+cacheLocation_wmts+"</CacheLocation> Using defaults TWMS:'cache_all_twms', WMTS:'cache_all_wmts'", sigevent_url)    
     except IndexError:
         raise Exception('Required <CacheLocation> element is missing in ' + environmentConfig)
@@ -399,7 +448,7 @@ def get_environment(environmentConfig):
     if wmtsStagingLocation != None:
         add_trailing_slash(wmtsStagingLocation)
         if not os.path.exists(wmtsStagingLocation):
-            os.makedirs(wmtsStagingLocation)           
+            os.makedirs(wmtsStagingLocation) 
     try:
         legendLocation = add_trailing_slash(get_dom_tag_value(dom, 'LegendLocation'))
     except IndexError:
@@ -417,10 +466,31 @@ def get_environment(environmentConfig):
         colormapUrl = add_trailing_slash(get_dom_tag_value(dom, 'ColorMapURL'))
     except IndexError:
         colormapUrl = None
+
+    if create_mapfile == True:
+        try:
+            mapfileConfigLocation = get_dom_tag_value(dom,'MapfileConfigLocation')
+        except IndexError:
+            mapfileConfigLocation = '/etc/onearth/config/mapserver/'
+            log_sig_warn('Mapfile configuration is missing in <MapfileConfigLocation>. Using /etc/onearth/config/mapserver/', sigevent_url)
+        try:
+            mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
+        except KeyError:
+            mapfileConfigBasename = None
+            log_sig_warn('No Mapfile configuration basename specified. Using EPSGXXXX.xxx format.', sigevent_url)
+        try:
+            mapfile = get_dom_tag_value(dom,'Mapfile')
+        except IndexError:
+            mapfile = None
+            raise Exception('Required <Mapfile> element is missing in: ' + environmentConfig)
+    else:
+        mapfileConfigLocation = None
+        mapfileConfigBasename = None
+        mapfile = None
         
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),
-                       cacheBasename_wmts, cacheBasename_twms, 
+                       cacheBasename_wmts, cacheBasename_twms,
                        add_trailing_slash(wmts_getCapabilities), 
                        add_trailing_slash(twms_getCapabilities), 
                        add_trailing_slash(getTileService),
@@ -428,7 +498,9 @@ def get_environment(environmentConfig):
                        add_trailing_slash(twmsServiceUrl),
                        wmtsStagingLocation, twmsStagingLocation,
                        legendLocation, legendUrl,
-                       colormapLocation, colormapUrl)
+                       colormapLocation, colormapUrl,
+                       mapfileConfigLocation, mapfileConfigBasename, mapfile
+                       )
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -954,7 +1026,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles --create_mapfile'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -1009,6 +1081,9 @@ parser.add_option("-y", "--generate_links",
 parser.add_option("-z", "--no_cache",
                   action="store_true", dest="no_cache", 
                   default=False, help="Do not copy cache configuration files to cache location.")
+parser.add_option("--create_mapfile",
+                  action="store_true", dest="create_mapfile", 
+                  default=False, help="Create MapServer configuration.")
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -1029,6 +1104,8 @@ no_cache = options.no_cache
 no_twms = options.no_twms
 # No WMTS configuration.
 no_wmts = options.no_wmts
+# No MapServer configuration.
+create_mapfile = options.create_mapfile
 # Do restart Apache.
 restart = options.restart
 # Time for conf file.
@@ -1229,6 +1306,10 @@ for conf in conf_files:
         except:
             indexFileLocation = None
         try:
+            zIndexFileLocation = get_dom_tag_value(dom, 'ZIndexFileLocation')
+        except:
+            zIndexFileLocation = None
+        try:
             projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir, tilematrixset_configuration)
         except IndexError:
             log_sig_err('Required <Projection> element is missing in ' + conf, sigevent_url)
@@ -1291,7 +1372,7 @@ for conf in conf_files:
         else:
             # default projection dir
             twmsEndPoint = lcdir + "/twms/" + projection.id.replace(":","")
-                
+
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
         
@@ -1317,6 +1398,8 @@ for conf in conf_files:
         log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
     if indexFileLocation:
         log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
+    if zIndexFileLocation:
+        log_info_mssg('config: ZIndexFileLocation: ' + zIndexFileLocation)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection.id))
     if getTileService:
@@ -1399,49 +1482,177 @@ for conf in conf_files:
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
-        
-    log_info_mssg('MRF Archetype: ' + headerFileName)
+
+    if zIndexFileLocation == None:
+        if archiveLocation != None and archiveLocation[0] == '/':
+            # use absolute path of archive
+            zIndexFileLocation = mrf
+        else:
+            # use relative path to cache
+            zIndexFileLocation = mrf.replace(cacheConfig,'')
+        zIndexFileLocation = zIndexFileLocation.replace('.mrf','.zdb')
+
+    # Open MRF header if one has been supplied
+    if os.path.isfile(headerFileName):
+        log_info_mssg('MRF Archetype: ' + headerFileName)
+        try:
+            mrf_file = open(headerFileName, 'r')
+        except IOError:
+            log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
+            continue
+        else:
+            try:
+                header_dom = xml.dom.minidom.parse(mrf_file)
+            except:
+                log_sig_err(str().join(['Bad MRF header file: ', headerFileName]), sigevent_url)
+            else:
+                header_file_present = True
+    else:
+        header_file_present = False
+        log_info_mssg('No MRF Archetype supplied')    
+    
     mrf_base = os.path.basename(headerFileName)
     
-    # Modify MRF Archetype
+    # Create base MRF document
+    mrf_impl = xml.dom.minidom.getDOMImplementation()
+    mrf_dom = mrf_impl.createDocument(None, 'MRF_META', None)
+    mrf_meta = mrf_dom.documentElement
+
+    # Create <Raster> tag
+    raster_node = mrf_dom.createElement('Raster')
+
+    # Check if <Size> tag present and has all 3 required values (x,y,c)
     try:
-        # Open file.
-        mrf_file=open(headerFileName, 'r')
-    except IOError:
-        log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
-        continue
-    else:
-        mrf_dom = xml.dom.minidom.parse(mrf_file)
-    
-    mrf_meta = mrf_dom.getElementsByTagName('MRF_META')[0]
-    rasterElement = mrf_dom.getElementsByTagName('Raster')[0]
-    bands = rasterElement.getElementsByTagName('Size')[0].getAttribute('c')
+        size_node = dom.getElementsByTagName('Size')[0]
+    except:
+        try:
+            size_node = header_dom.getElementsByTagName('Size')[0]
+        except:
+            size_node = None
+            log_sig_err("<Size> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if size_node != None:
+            if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
+                log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
+            else:
+                raster_node.appendChild(size_node)
+                bands = size_node.getAttribute('c')
+
+    # Create compression node
+    compression_node = mrf_dom.createElement('Compression')
+    compression_text_node = mrf_dom.createTextNode(compression)
+    compression_node.appendChild(compression_text_node)
+    raster_node.appendChild(compression_node)
+
+    # Check if <DataValues> tag is present and the NoData attribute is present
     try:
-        change_dom_tag_value(mrf_dom, 'Compression', compression)
-    except IndexError: #Add Compression tag if it is missing
-        compressionElement = mrf_dom.createElement('Compression')
-        compressionElement.appendChild(mrf_dom.createTextNode(compression))
-        rasterElement.appendChild(compressionElement)
-    
-    rsets = mrf_dom.getElementsByTagName('Rsets')[0]
-    scale_attribute = rsets.getAttribute('scale')
+        datavalues_node = dom.getElementsByTagName('DataValues')[0]
+    except:
+        try:
+            datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
+        except:
+            datavalues_node = None
+    finally:
+        if datavalues_node is not None:    
+            raster_node.appendChild(datavalues_node)
+
+    # Check if the <Quality> tag is present and of a valid type
     try:
-        if scale_attribute:
-            if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
-                log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + headerFileName + ": " + scale_attribute, sigevent_url)
+        quality_node = dom.getElementsByTagName('Quality')[0]
+    except:
+        try:
+            quality_node = header_dom.getElementsByTagName('Quality')[0]
+        except:
+            quality_node = None
+            # log_sig_err("<Quality> tag not present in layer config or MRF header file.", sigevent_url)
+    finally:    
+        if quality_node is not None:    
+            if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
+                log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
+            else:
+                raster_node.appendChild(quality_node)
+
+    # Check if <PageSize> node is present and has c, x, and y attributes
+    try:
+        page_size_node = dom.getElementsByTagName('PageSize')[0]
+    except:
+        try:
+            page_size_node = header_dom.getElementsByTagName('PageSize')[0]
+        except:
+            page_size_node = None
+            log_sig_err("<PageSize> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if page_size_node is not None:
+            if all (attr in page_size_node.attributes.keys() for attr in ('c','x','y')):
+                raster_node.appendChild(page_size_node)
+            else:
+                log_sig_err("<PageSize> requires c, x, and y attributes", sigevent_url)
+
+    # Add <Raster> tag to MRF
+    mrf_meta.appendChild(raster_node)
+
+    # Create <Rsets> 
+    try:
+        rsets_node = dom.getElementsByTagName('Rsets')[0]
+    except:
+        try:
+            rsets_node = header_dom.getElementsByTagName('Rsets')[0]
+        except:
+            rsets_node = None
+            log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
+    if rsets_node is not None:
+        try:
+            scale_attribute = rsets_node.getAttribute('scale')
+        except:
+            log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
+        else:
+            try:
+                if scale_attribute:
+                    if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
+                        log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
+                        continue
+                if projection.tilematrixsets[tilematrixset].levels > 1:
+                    rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+            except KeyError:
+                log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
                 continue
-        if projection.tilematrixsets[tilematrixset].levels > 1:
-            rsets.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
-    except KeyError:
-        log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
-        continue
+    # Add data file locations
     dataFileNameElement = mrf_dom.createElement('DataFileName')
     dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
     indexFileNameElement = mrf_dom.createElement('IndexFileName')
     indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
-    rsets.appendChild(dataFileNameElement)
-    rsets.appendChild(indexFileNameElement)
+    rsets_node.appendChild(dataFileNameElement)
+    rsets_node.appendChild(indexFileNameElement)
+
+    # Add index file name
+    if size_node.hasAttribute('z'):
+        z_index_node = mrf_dom.createElement('ZIndexFileName')
+        z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
+        z_index_node.appendChild(z_index_text_node)
+        rsets_node.appendChild(z_index_node)
+
+    mrf_meta.appendChild(rsets_node)
     
+    # Create GeoTags 
+    geotag_node = mrf_dom.createElement('GeoTags')
+    # Check for bounding box
+    try:
+        bounding_box_node = dom.getElementsByTagName('BoundingBox')[0]
+    except:
+        try:
+            bounding_box_node = header_dom.getElementsByTagName('BoundingBox')[0]
+        except:
+            bounding_box_node = None
+            log_sig_err("<BoundingBox> tag not present in layer config or MRF header file", sigevent_url)
+    finally:
+        if bounding_box_node is not None:
+            if all (attr in bounding_box_node.attributes.keys() for attr in ('minx','miny','maxx','maxy')):
+                geotag_node.appendChild(bounding_box_node)
+            else:
+                log_sig_err("<BoundingBox> requires minx, miny, maxx, and maxy attributes", sigevent_url)
+
+    mrf_meta.appendChild(geotag_node)
+
     twms = mrf_dom.createElement('TWMS')
     levelsElement = mrf_dom.createElement('Levels')
     levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
@@ -1522,8 +1733,11 @@ for conf in conf_files:
         
     twms_mrf_filename = twmsEndPoint+'/'+mrf_base
     twms_mrf_file = open(twms_mrf_filename,'w+')
-    mrf_dom.writexml(twms_mrf_file)
-    
+
+    formatted_xml = get_pretty_xml(mrf_dom)
+    twms_mrf_file.write(formatted_xml)
+    twms_mrf_file.seek(0)
+
     wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
     # check if file already exists and has same TileMatrixSet, if not then create another file
     if os.path.isfile(wmts_mrf_filename):
@@ -1534,18 +1748,7 @@ for conf in conf_files:
         wmts_mrf_file.close()
         
     wmts_mrf_file = open(wmts_mrf_filename,'w+')
-    
-    twms_mrf_file.seek(0)
     lines = twms_mrf_file.readlines()
-    lines[0] = '<MRF_META>\n'
-    lines[-1] = lines[-1].replace('<TWMS>','<TWMS>\n\t').replace('</Levels>','</Levels>\n\t').replace('<Pattern>','\n\t<Pattern>'). \
-        replace('<Time>','\n\t<Time>').replace('<Metadata>','\n\t<Metadata>').replace('</TWMS>','\n</TWMS>\n'). \
-        replace('</MRF_META>','\n</MRF_META>\n') 
-    #get_mrfs is picky about line breaks
-    
-    twms_mrf_file.seek(0)
-    twms_mrf_file.truncate()
-    twms_mrf_file.writelines(lines)
     
     # change patterns for WMTS
     pattern_replaced = False
@@ -1564,8 +1767,12 @@ for conf in conf_files:
         wmts_mrf_file.write(line)
     
     twms_mrf_file.close()
+    wmts_mrf_file.seek(0)
     wmts_mrf_file.close()
-    mrf_file.close()
+    try:
+        mrf_file.close()
+    except:
+        pass
     
     print '\n'+ twms_mrf_filename + ' configured successfully\n'
     print '\n'+ wmts_mrf_filename + ' configured successfully\n'
@@ -1813,8 +2020,7 @@ for conf in conf_files:
         
         # close new file        
         layer_xml.close()
-        
-        
+
     # create TWMS layer metadata for GetCapabilities
     if no_twms == False:
         try:
@@ -1919,9 +2125,97 @@ $Patterns</TiledGroup>"""
                 line = line.replace("$Patterns",patterns)
             layer_output = layer_output + line
         layer_xml.writelines(layer_output)
-        layer_xml.close()   
-             
+        layer_xml.close()                
         
+    # Create mapfile (if specified by user)
+    if create_mapfile == True:
+        if environment.mapfileConfigBasename != None:
+            mapfileConfigPrefix = environment.mapfileConfigLocation + environment.mapfileConfigBasename
+        else:
+            mapfileConfigPrefix = environment.mapfileConfigLocation + projection.id.replace(':','')
+        mapfileLocation = add_trailing_slash(os.path.dirname(environment.mapfile))
+        mapfileBasename = os.path.basename(environment.mapfile)
+
+        try:
+            os.makedirs(mapfileLocation)
+        except OSError:
+            if not os.path.isdir(mapfileLocation):
+                raise Exception("Can't create Mapserver file directory: " + mapfileLocation)
+                break
+        try:
+            with open(mapfileLocation + mapfileBasename,'a+') as mapfile:
+                if len(mapfile.read()) == 0:
+                    try:
+                        with open(mapfileConfigPrefix + '.header', 'r') as header:
+                            mapfile.write(header.read())
+                            print "\nCreating mapfile: " + mapfileLocation + mapfileBasename
+                    except IOError:
+                        raise log_sig_err("Mapfile doesn't exist and configuration header " + mapfileConfigPrefix + '.header' + " not found. Writing mapfile layers without header.")
+                else:
+                    print "\nUpdating mapfile: " + mapfileLocation + mapfileBasename
+
+                # Check for duplicates - run check over and over until current layer is wiped from existing mapfile
+                layerInMapfile = True
+                while layerInMapfile == True:
+                    layerInMapfile = delete_mapfile_layer(mapfile,identifier)
+
+                # Initialize validation values
+                timeDirPattern = "%TIME%"      
+                timeParamRegex = "'^[0-9]{7}$'" if not subdaily else "'^[0-9]{13}$'"
+                yearDirPattern = "%PRODUCTYEAR%"
+                yearDirRegex   = "'^[0-9]{4}$'"
+
+                minx = projection.lowercorner[0]
+                miny = projection.lowercorner[1]
+                maxx = projection.uppercorner[0]
+                maxy = projection.uppercorner[1]
+
+                # Start writing at the last END tag in the file
+                mapfile.seek(0)
+                readPosition = 0
+                for line in reversed(mapfile.readlines()):
+                    readPosition += len(line)
+                    if line.lower().strip() == "end":
+                        mapfile.seek(-readPosition,2)
+                        mapfile.truncate()
+                        break
+                    readPosition+=len(line)
+
+                # Write Mapfile layer fields
+                mapfile.write("\n")
+                mapfile.write("LAYER\n")
+                mapfile.write("\tNAME\t\"" + identifier + "\"\n")
+                mapfile.write("\tTYPE\tRASTER\n")
+                mapfile.write("\tSTATUS\tON\n")
+                mapfile.write("\tVALIDATION\n")
+                if not static:
+                    mapfile.write("\t\tTIME\t\t\t" + timeParamRegex + "\n")
+                if not static and year:
+                    mapfile.write("\t\tPRODUCTYEAR\t\t" + yearDirRegex + "\n")
+                mapfile.write("\tEND\n")
+                mapfile.write("\tMETADATA\n")
+                if not static:
+                    mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+                if not static and year:
+                    mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
+                mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
+                mapfile.write("\tEND\n")
+                if not static and year:
+                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+                elif not static and not year:
+                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+                else:
+                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + ".mrf\"\n")
+                mapfile.write("\tPROJECTION\n")
+                mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
+                mapfile.write("\tEND\n")
+                mapfile.write("END\n")
+                mapfile.write("END\n")
+
+        except IOError:
+            raise Exception("Can't open or create mapfile: " + mapfileLocation + mapfileBasename)
+
 # run scripts
 
 if no_twms == False:
@@ -2066,7 +2360,7 @@ if len(errors) > 0:
 if len(warnings) == 0 and len(errors) == 0:
     message = completion + "successully."
 print ""
-message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " " + ("Archive links not generated","Archive links generated")[links] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
+message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " " + ("Archive links not generated","Archive links generated")[links] + ". " + ("Mapfiles not configured","Mapfiles configured")[create_mapfile] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
 
 try:
     sigevent('INFO', asctime() + " " + message, sigevent_url)
@@ -2079,3 +2373,5 @@ if len(errors) > 0:
 else:
     sys.exit(0)
     
+
+

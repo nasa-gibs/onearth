@@ -53,7 +53,7 @@
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
 # NASA Jet Propulsion Laboratory
-# 2014
+# 2015
 # Jeffrey.R.Hall@jpl.nasa.gov
 # Joe.T.Roberts@jpl.nasa.gov
 
@@ -75,8 +75,9 @@ import xml.dom.minidom
 import string
 import shutil
 import imghdr
+import sqlite3
 
-versionNumber = '0.6.4-9'
+versionNumber = '0.7.0'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -226,6 +227,22 @@ def get_dom_tag_value(dom, tag_name):
     tag=dom.getElementsByTagName(tag_name)
     value=tag[0].firstChild.data.strip()
     return value
+
+def get_input_files(dom):
+    """
+    Returns comma-separated list of files from <input_files> element.
+    Arguments:
+        dom -- The XML dom in which to retrieve <input_files> element.
+    """
+    files = []
+    input_file_element = dom.getElementsByTagName("input_files")[0]
+    file_elements = input_file_element.getElementsByTagName("file")
+    if len(file_elements) > 0:
+        for element in file_elements:
+            files.append(element.firstChild.data.strip())
+    else:
+        files.append(input_file_element.firstChild.data.strip()) 
+    return ",".join(files)
 
 def remove_file(filename):
     """
@@ -498,7 +515,7 @@ else:
     target_xmin, target_ymin, target_xmax, target_ymax = target_extents.split(',')
     # Input files.
     try:
-        input_files        =get_dom_tag_value(dom, 'input_files')
+        input_files = get_input_files(dom)
     except:
         input_files = ''
     # overview levels
@@ -526,14 +543,26 @@ else:
           
     # gdalwarp resampling method for reprojection
     try:
-        reprojection_resampling        =get_dom_tag_value(dom, 'reprojection_resampling')
+        reprojection_resampling = get_dom_tag_value(dom, 'reprojection_resampling')
     except:
         reprojection_resampling = 'cubic' # default to cubic  
     # colormap
     try:
-        colormap               =get_dom_tag_value(dom, 'colormap')
+        colormap = get_dom_tag_value(dom, 'colormap')
     except:
-        colormap = ''    
+        colormap = ''  
+    # z-levels
+    try:
+        zlevels = get_dom_tag_value(dom, 'mrf_z_levels')
+    except:
+        zlevels = ''      
+    # z key
+    z = None
+    zkey_type = "string" # default to only string for now
+    try:
+        zkey = get_dom_tag_value(dom, 'mrf_z_key')
+    except:
+        zkey = ''    
     # Close file.
     config_file.close()
 
@@ -616,6 +645,8 @@ log_info_mssg(str().join(['config overview resampling:     ', overview_resamplin
 log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resampling]))
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
+log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
+log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
@@ -1061,7 +1092,88 @@ if len(modtiles) > 0:
         # Exit here since we don't need to build an MRF from scratch
         mssg=str().join(['MRF created:  ', out_filename])
         log_sig_exit('INFO', mssg, sigevent_url)
-
+      
+        
+    # Check if z-dimension is consistent if it's being used
+    if zlevels != '':
+        mrf_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0]
+        try:
+            # Open file.
+            mrf_file=open(mrf_out, 'r')
+        except IOError:
+            mssg=str().join(['MRF not yet generated:  ', mrf_out])
+            log_info_mssg(mssg)
+        else:
+            dom=xml.dom.minidom.parse(mrf_file)           
+            size_elements = dom.getElementsByTagName('Size')
+            sizeZ=size_elements[0].getAttribute('z') #bands
+            if sizeZ == '':
+                mssg = "The output MRF does not contain z-levels: " + mrf_out
+                log_sig_exit('ERROR', mssg, sigevent_url)            
+            
+            # Send to log.
+            log_info_mssg(str().join(['size of existing MRF z-dimension:  ', str(sizeZ)]))
+            # Close file.
+            mrf_file.close()
+            # Validate
+            if zlevels != str(sizeZ):
+                mssg=str().join(['Z-level size does not match existing MRF: ', zlevels])
+                log_sig_warn(mssg, sigevent_url)
+    
+    # Get z-index from ZDB if using z-dimension
+    con = None
+    if zkey != '':
+        mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
+        mrf_filename = output_dir + mrf_filename
+        idx_filename = output_dir + idx_filename
+        out_filename = output_dir + out_filename
+        zdb_out = mrf_filename.replace('.mrf','.zdb')
+        try:
+            db_exists = os.path.isfile(zdb_out)
+            log_info_mssg("Connecting to " + zdb_out)
+            con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
+            
+            if db_exists == False:
+                cur = con.cursor() 
+                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+                cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+                z = cur.lastrowid
+            else: 
+                cur = con.cursor()
+                
+                # Check for existing key
+                cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+                lid = int(cur.fetchone()[0])
+                if lid > 0:                
+                    mssg = zkey + " key already exists...overwriting"
+                    log_sig_warn(mssg, sigevent_url)
+                    cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
+                    z = int(cur.fetchone()[0]) 
+                else:              
+                    # Check z size
+                    cur.execute("SELECT COUNT(*) FROM ZINDEX;")
+                    lid = int(cur.fetchone()[0])
+                    if lid >= int(zlevels):
+                        mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                        log_sig_exit('ERROR', mssg, sigevent_url)
+                    # Insert values
+                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                    z = cur.lastrowid
+            log_info_mssg("Current z-level is " +str(z))
+            
+        except sqlite3.Error, e:
+            if con:
+                con.rollback()
+            mssg = "%s:" % e.args[0]
+            log_sig_exit('ERROR', mssg, sigevent_url)
+        
+    # Use specific z if appropriate
+    if z != None:
+        gdal_mrf_filename = mrf_filename + ":MRF:Z" + str(z)
+    else:
+        gdal_mrf_filename = mrf_filename
+        
+            
     # Create the gdalbuildvrt command.
     #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
     #CONSIDER DOING THIS FOR EVERY SOTO DATASET.
@@ -1142,19 +1254,23 @@ if len(modtiles) > 0:
     gdalbuildvrt_stderr_file.close()
 
     # Open stderr file for read.
-    gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'r')
-    # Report skipped .png files that are not valid PNG+World.
-    gdalbuildvrt_stderr=gdalbuildvrt_stderr_file.readlines()
-    # Loop over all lines in file.
-    for ndx in range(len(gdalbuildvrt_stderr)):
-        # Get line number(s) where skipped files appear in the stderr file.
-        skipped=gdalbuildvrt_stderr[ndx].find('Warning')
-        # If a line (including line 0) was found.
-        if skipped >= 0:
-            mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
-            log_sig_warn(mssg, sigevent_url)
-    # Close file.
-    gdalbuildvrt_stderr_file.close()
+    try:
+        gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'r')
+        # Report skipped .png files that are not valid PNG+World.
+        gdalbuildvrt_stderr=gdalbuildvrt_stderr_file.readlines()
+        # Loop over all lines in file.
+        for ndx in range(len(gdalbuildvrt_stderr)):
+            # Get line number(s) where skipped files appear in the stderr file.
+            skipped=gdalbuildvrt_stderr[ndx].find('Warning')
+            # If a line (including line 0) was found.
+            if skipped >= 0:
+                mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
+                log_sig_warn(mssg, sigevent_url)
+        # Close file.
+        gdalbuildvrt_stderr_file.close()
+    except IOError:
+        mssg=str().join(['Cannot read:  ', gdalbuildvrt_stderr_filename])
+        log_sig_exit('ERROR', mssg, sigevent_url)
 
     # Clean up.
     remove_file(mod_tiles_filename)
@@ -1235,41 +1351,47 @@ if len(modtiles) > 0:
             # Calculate output size of Y dimension and maintain aspect ratio.
             target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
             log_info_mssg('Calculating target_y ' + target_y)
+            if resize_resampling == '':
+                log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
         else: #don't bother calculating y
             #target_x=x_size
             target_y=y_size
             log_info_mssg('Setting target_y from VRT to ' + target_y)
             
-        if target_epsg == "EPSG:3857":
-            target_y = target_x
+        # if target_epsg == "EPSG:3857":
+        #     target_y = target_x
 
         #-----------------------------------------------------------------------
         # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
-        if mrf_empty_tile_filename != '':
+        if mrf_empty_tile_filename != '' and (z == None or z == 0):
             log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
             log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
             shutil.copy(mrf_empty_tile_filename, out_filename)
         #-----------------------------------------------------------------------    
 
-        # Create the gdal_translate command.
+        # Create the gdal_translate command.         
+        gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
         if compress == "COMPRESS=JPEG":
             # Use JPEG quality of 80
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize, '-co', 'QUALITY=80', '-outsize', target_x, target_y, vrt_filename, mrf_filename]
-        else:           
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y, vrt_filename, mrf_filename]
+            gdal_translate_command_list.append('-co')
+            gdal_translate_command_list.append('QUALITY=80')
+        if zlevels != '':
+            gdal_translate_command_list.append('-co')
+            gdal_translate_command_list.append('ZSIZE='+str(zlevels))
+        # add ending parameters      
+        gdal_translate_command_list.append(vrt_filename)
+        gdal_translate_command_list.append(gdal_mrf_filename)
             
         # Log the gdal_translate command.
         log_the_command(gdal_translate_command_list)
         # Capture stderr.
-        gdal_translate_stderr_filename=str().join([working_dir, basename,
-                                                  '_gdal_translate_stderr.txt'])
+        gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_stderr.txt'])
         # Open stderr file for write.
         gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
 
         #-----------------------------------------------------------------------
         # Execute gdal_translate.
-        subprocess.call(gdal_translate_command_list, 
-                        stderr=gdal_translate_stderr_file)
+        subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
         #-----------------------------------------------------------------------
 
         # Close stderr file.
@@ -1307,6 +1429,7 @@ if len(modtiles) > 0:
             sizeX=size_elements[0].getAttribute('x') #width
             sizeY=size_elements[0].getAttribute('y') #height
             sizeC=size_elements[0].getAttribute('c') #bands
+            sizeZ=size_elements[0].getAttribute('z') #bands
             # Send to log.
             log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
             # Close file.
@@ -1324,7 +1447,7 @@ if len(modtiles) > 0:
             if overview_levels == '' or int(overview_levels[0])>1:
                 # Create the gdaladdo command.
                 gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
-                                       str(mrf_filename)]
+                                       str(gdal_mrf_filename)]
                 # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
                 if overview_levels == '':
                     overview=2
@@ -1412,12 +1535,15 @@ if len(modtiles) > 0:
     # Rename MRFs
     if mrf_name != '':
         output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
-        log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
-        shutil.move(mrf_filename, output_dir+output_mrf)
-        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
-        shutil.move(idx_filename, output_dir+output_idx)
-        log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
-        shutil.move(out_filename, output_dir+output_data)
+        if (output_dir+output_mrf) != mrf_filename:
+            log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
+            shutil.move(mrf_filename, output_dir+output_mrf)
+        if (output_dir+output_idx) != idx_filename:
+            log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+            shutil.move(idx_filename, output_dir+output_idx)
+        if (output_dir+output_data) != out_filename:
+            log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
+            shutil.move(out_filename, output_dir+output_data)
         if data_only == False:
             if os.path.isfile(mrf_filename+".aux.xml"):
                 log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
@@ -1433,6 +1559,14 @@ if len(modtiles) > 0:
         remove_file(log_filename)
         remove_file(output_dir+"/"+basename+".mrf.aux.xml")
         remove_file(working_dir+"/"+basename+".configuration_file.xml")
+        
+    # Commit database if successful
+    if con:
+        con.commit()
+        con.close()
+        log_info_mssg("Successfully committed record to " + zdb_out)
+    else:
+        log_info_mssg("No ZDB record created")
 
 # Remove temp tiles
 for tilename in (alltiles):

@@ -4,7 +4,7 @@
  <Title>MODIS Aqua Aerosol</Title>
  <FileNamePrefix>MODIS_Aqua_Aerosol</FileNamePrefix>
  <TiledGroupName>MODIS_Aqua_Aerosol tileset</TiledGroupName>
- <HeaderFileName>MODIS_Aqua_AerosolTTTTTTT_.mrf</HeaderFileName>
+ <HeaderFileName>MODIS_Aqua_Aerosol2014364_.mrf</HeaderFileName>
  <Compression>PNG</Compression>
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
  <EmptyTile>empty_tile.png</EmptyTile>

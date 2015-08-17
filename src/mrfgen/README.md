@@ -70,7 +70,7 @@ Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may
 
 * date_of_data: (format: yyyymmdd) Denotes the actual date of the file, which will be appended to the resulting MRF filename.  ```<time_of_data>``` (format: HHMMSS) may be used for sub-daily imagery.
 * parameter_name: The layer name, which is also used as the suffix of the file name.
-* input_dir: The location of the input tiles. Individual tiles may be alternatively specified using ```<input_files>```
+* input_dir: The location of the input tiles. Individual tiles may be alternatively specified using ```<input_files>``` with each file specified within a ```<file>``` sub-element.
 * output_dir: The location of the resulting MRF.
 * working_dir: The staging directory for generating the MRF. This should NOT be the same as the input or output directory as files will be deleted.
 * logfile_dir: The location of the log files.
@@ -92,6 +92,8 @@ These parameters are available but not used in the example above nor necessarily
 * target_extents: The extents of the MRF after reprojection (only used when target_epsg is provided).
 * mrf_name: The output naming convention of the MRF file (e.g., ``` <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>```). Uses Python's [strftime formatting](https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior).
 * colormap: The GIBS color map to be used if the MRF contains paletted PNGs ([example colormaps](https://map1.vis.earthdata.nasa.gov/colormaps/)).
+* mrf_z_levels: The maximum number of z levels for the final MRF.
+* mrf_z_key: The string key (e.g., time [YYYYMMDDhhmmss], elevation, band, style) used to map to a z level.
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 
