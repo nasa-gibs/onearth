@@ -8,6 +8,7 @@ The OnEarth Layer Configuration Tool (oe_configure_layer.py) is a Python script 
 
 * The tool generates getCapabilities.xml and the server cache configuration file for WMTS.
 * The tool generates getCapabilities.xml, getTileService.xml, and server cache configuration file for Tiled-WMS.
+* The tool can optionally generate Mapserver mapfiles.
 
 ```
 Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles
@@ -67,6 +68,15 @@ The layer_config directory should contain the following directories:
 * twms - staging area for Tiled-WMS configurations
 * wmts - staging area for WMTS configurations
 * headers - location of MRF headers
+* mapserver - location of templates for generation of mapfiles
+
+### Creating layer configurations without source MRFs.
+By default, the layer config tool uses information from the MRF specified by `<HeaderFileName>` in the layer config XML.
+
+However, a header MRF is not necessary if certain fields are provided in the layer config XML. They are as follows:
+`<Size>`, `<DataValues>`, `<PageSize>`, `<Rsets>`, and `<BoundingBox>`. Additional, optional tags are specified on the [layer config XML page](https://github.com/nasa-gibs/onearth/blob/master/doc/config_layer.md).
+
+By default, the layer config tool will prefer tags in the layer config XML over those in the header MRF.
 
 ### Running oe_configure_layer.py
 
@@ -95,6 +105,10 @@ A SigEvent server URL, used for error reporting, may be specified using the -s o
 oe_configure_layer -s http://localhost:8100/sigevent/events/create
 ```
 
+The tool can also create/update mapfiles with the `--create-mapfile` option. The location of the mapfile is located in the enivironment config XML. When the mapfile specified by the environment config doesn't exist, a new one is created from a header template stored in the `$LCDIR/mapfiles` directory. Note that this option will overwrite previously existing layers in the mapfile if they have the same name as the layer that's being added.
+```
+oe_configure_layer -c layer_configuration_file.xml --create-mapfile
+```
 
 ####Please refer to the following documents on how to properly configure layers:
 * [OnEarth Configuration](../../doc/configuration.md)
@@ -127,7 +141,7 @@ twms_tool [MODE] [OPTION]... [INPUT] [OUTPUT]
 
   Options in the MRF header:
   <Raster>
-       <Size> - x, y [1,1]
+       <Size> - x, y, z [1,1]
        <PageSize> - x, y and c [512,512,1]
        <Orientation> - TL or BL, only TL works
        <Compression> - [PNG]
@@ -136,6 +150,7 @@ twms_tool [MODE] [OPTION]... [INPUT] [OUTPUT]
        checks scale=N attribute for powers of overviews
        <IndexFileName> Defaults to mrf basename + .idx
        <DataFileName>  Default to mrf basename + compression dependent extension
+       <ZIndexFileName> Defaults to mrf basename + .zdb (only included if 'z' attribute of <Size> is < 1)
   <GeoTags>
        <BoundingBox> minx,miny,maxx,maxy [-180,-90,180,90]
   <TWMS>
