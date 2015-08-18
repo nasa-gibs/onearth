@@ -1616,13 +1616,13 @@ for conf in conf_files:
             except KeyError:
                 log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
                 continue
-    # Add data file locations
-    dataFileNameElement = mrf_dom.createElement('DataFileName')
-    dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
-    indexFileNameElement = mrf_dom.createElement('IndexFileName')
-    indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
-    rsets_node.appendChild(dataFileNameElement)
-    rsets_node.appendChild(indexFileNameElement)
+        # Add data file locations
+        dataFileNameElement = mrf_dom.createElement('DataFileName')
+        dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
+        indexFileNameElement = mrf_dom.createElement('IndexFileName')
+        indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
+        rsets_node.appendChild(dataFileNameElement)
+        rsets_node.appendChild(indexFileNameElement)
 
     # Add index file name
     if size_node.hasAttribute('z'):
