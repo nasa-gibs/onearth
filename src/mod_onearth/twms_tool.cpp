@@ -262,7 +262,11 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
         cfg.total_size+=sizeof(WMSlevel);
 
         // Add the size of the index at this level to the next level offset
-        offset+=static_cast<long long>(16)* level.xcount * level.ycount;
+        if (zlevels > 0) {
+        	offset+=static_cast<long long>(16)* level.xcount * level.ycount * zlevels;
+        } else {
+        	offset+=static_cast<long long>(16)* level.xcount * level.ycount;
+        }
     }
 
     cfg.caches.push_back(c);
