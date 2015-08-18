@@ -322,13 +322,11 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         if (data_fname==string(ifname)&&data_fname.size()>4)
             data_fname.replace(data_fname.size()-4,4,dat_ext);
 
-//        if (zlevels > 0 && zidx_fname=="-") {
-//        	throw (CPLString().Printf("Z-index specified but no index file specified in <Rsets><ZIndexFileName>"));
-//        }
-
-        zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
-        if (zidx_fname==string(ifname)&&zidx_fname.size()>4)
-            zidx_fname.replace(zidx_fname.size()-4,4,".zdb");
+        if (zlevels > 0) {
+			zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
+			if (zidx_fname==string(ifname)&&zidx_fname.size()>4)
+				zidx_fname.replace(zidx_fname.size()-4,4,".zdb");
+        }
 
         if (idx_fname=="-" || data_fname=="-")
             throw (CPLString("Need data and index file names, under <Rsets><IndexFileName> or <Rsets><DataFileName>"));
