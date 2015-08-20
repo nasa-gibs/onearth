@@ -446,10 +446,6 @@ else:
         input_dir            =get_dom_tag_value(dom, 'output_dir')
     output_dir             =get_dom_tag_value(dom, 'output_dir')
     try:
-        cache_dir              =get_dom_tag_value(dom, 'cache_dir')
-    except: # use output dir if not provided
-        cache_dir              =get_dom_tag_value(dom, 'output_dir')
-    try:
         working_dir            =get_dom_tag_value(dom, 'working_dir')
     except: # use /tmp/ as default
         working_dir            ='/tmp/'
@@ -569,7 +565,6 @@ else:
 # Make certain each directory exists and has a trailing slash.
 input_dir  =add_trailing_slash(check_abs_path(input_dir))
 output_dir =add_trailing_slash(check_abs_path(output_dir))
-cache_dir  =add_trailing_slash(check_abs_path(cache_dir))
 working_dir=add_trailing_slash(check_abs_path(working_dir))
 logfile_dir=add_trailing_slash(check_abs_path(logfile_dir))
 
@@ -598,7 +593,6 @@ logging.basicConfig(filename=log_filename, level=logging.INFO)
 # Verify remaining directory paths.
 verify_directory_path_exists(input_dir, 'input_dir')
 verify_directory_path_exists(output_dir, 'output_dir')
-verify_directory_path_exists(cache_dir, 'cache_dir')
 verify_directory_path_exists(working_dir, 'working_dir')
 
 # Log all of the configuration information.
@@ -623,7 +617,6 @@ log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
 log_info_mssg(str().join(['config input_files:             ', input_files]))
 log_info_mssg(str().join(['config input_dir:               ', input_dir]))
 log_info_mssg(str().join(['config output_dir:              ', output_dir]))
-log_info_mssg(str().join(['config cache_dir:               ', cache_dir]))
 log_info_mssg(str().join(['config working_dir:             ', working_dir]))
 log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
 log_info_mssg(str().join(['config mrf_name:                ', mrf_name]))
@@ -1000,41 +993,23 @@ if len(modtiles) > 0:
     mrf_filename=str().join([output_dir, basename, '.mrf'])
     # The .idx file is the index compnent of the MRF format.
     idx_filename=str().join([output_dir, basename, '.idx'])
-    # Construct the linknames.  These "idx" links will make the data active.
-    cache_idx_linkname=str().join([cache_dir, parameter_name, doy, '_.idx'])
-    cache_idx_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.idx'])
 
     # The image component of MRF is .pjg or .ppg, depending on compression type.
     if mrf_compression_type == 'PNG':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.ppg'])
-        # Linknames.
-        cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.ppg'])
-        cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.ppg'])
     elif mrf_compression_type == 'PPNG':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.ppg'])
-        # Linknames.
-        cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.ppg'])
-        cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.ppg'])
     elif mrf_compression_type == 'JPG':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.pjg'])
-        # Linknames.
-        cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.pjg'])
-        cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.pjg'])
     elif mrf_compression_type == 'JPEG':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.pjg'])
-        # Linknames.
-        cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.pjg'])
-        cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.pjg'])
     elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
         # Output filename.
         out_filename=str().join([output_dir, basename, '.ptf'])
-        # Linknames.
-        cache_out_linkname=str().join([cache_dir, parameter_name, doy, '_.ptf'])
-        cache_out_ttttttt=str().join([cache_dir, parameter_name, 'TTTTTTT_.ptf'])
     else:
         mssg='Unrecognized compression type for MRF: ' + mrf_compression_type 
         log_sig_exit('ERROR', mssg, sigevent_url)
@@ -1581,34 +1556,3 @@ remove_file(ptime_filename)
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])
 log_sig_exit('INFO', mssg, sigevent_url)
-
-#-------------------------------------------------------------------------------
-# Activate the data by linking it into the Tiled-WMS cache directory.
-#-------------------------------------------------------------------------------
-'''
-# Link .pjg (or ppg) into Tiled-WMS cache.
-remove_file(cache_out_linkname)
-os.symlink(out_filename, cache_out_linkname)
-# Link .idx into Tiled-WMS cache.  This step activates the data.
-remove_file(cache_idx_linkname)
-os.symlink(idx_filename, cache_idx_linkname)
-# List of links omitting "TTTTTTT" links.
-# THIS WILL NOT WORK FOR DATA OLDER THAN YEAR 2000.
-list_of_links=glob.glob(str().join([cache_dir,'*2??????_.ppg']))
-list_of_links.sort(reverse=True)
-most_recent_link = ""
-if(len(list_of_links) > 0):
-    # NOT SURE WHY THIS IS BREAKING
-    most_recent_link=list_of_links[0]
-if cache_out_linkname == most_recent_link:
-    # Link .pjg (or .ppg) to the link of the most recent data.
-    remove_file(cache_out_ttttttt)
-    os.symlink(out_filename, cache_out_ttttttt)
-    # Link .idx to the link of the most recent data.
-    remove_file(cache_idx_ttttttt)
-    os.symlink(idx_filename, cache_idx_ttttttt)
-    
-# Send to log.
-log_info_mssg_with_timestamp(str().join(['MRF activated:  ', 
-                                         cache_out_linkname]))
-'''
