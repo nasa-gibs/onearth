@@ -17,14 +17,14 @@ Copy the module files into your Apache modules directory.
 
 ```Shell
 cp onearth/src/mod_onearth/.libs/mod_twms.so {APACHE_HOME}/modules/
-cp onearth/src/mod_onearth/.libs/mod_wms.so {APACHE_HOME}/modules/
+cp onearth/src/mod_onearth/.libs/mod_onearth.so {APACHE_HOME}/modules/
 ```
 
 Edit the Apache httpd.conf and include the following:
 
 ```Shell
 LoadModule twms_module modules/mod_twms.so
-LoadModule wms_module modules/mod_wms.so
+LoadModule onearth_module modules/mod_onearth.so
 ```
 
 ## Contact

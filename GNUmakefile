@@ -90,8 +90,8 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules
 	install -m 755 src/mod_onearth/.libs/mod_twms.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_twms.so
-	install -m 755 src/mod_onearth/.libs/mod_wms.so \
-		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_wms.so
+	install -m 755 src/mod_onearth/.libs/mod_onearth.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_onearth.so
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/mod_onearth/oe_create_cache_config \

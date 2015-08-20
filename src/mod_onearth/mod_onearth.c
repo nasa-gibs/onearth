@@ -109,7 +109,7 @@ static int moffset[12]={0,31,59,90,120,151,181,212,243,273,304,334};
 static char colon[] = "%3A";
 
 // This module
-module AP_MODULE_DECLARE_DATA wms_module;
+module AP_MODULE_DECLARE_DATA onearth_module;
 
 // Evaluate the time period for days or seconds
 static int evaluate_period(char *time_period, int hastime)
@@ -641,7 +641,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 
   if (0>(f=open(arg,O_RDONLY))) { 
     ap_log_error(APLOG_MARK,APLOG_ERR,0,server, 
-    		"MOD_WMS: Can't open cache config file\n file %s: %s",arg,strerror(errno));
+    		"MOD_ONEARTH: Can't open cache config file\n file %s: %s",arg,strerror(errno));
     cfg->caches=(Caches *)apr_pcalloc(cfg->p,sizeof(Caches));
     cfg->caches->size=0 ; cfg->caches->count=0;
     close(f);
@@ -1220,7 +1220,7 @@ static int kml_handler (request_rec *r)
 
   // Get the configuration
   cfg=(wms_cfg *) 
-    ap_get_module_config(r->per_dir_config,&wms_module);
+    ap_get_module_config(r->per_dir_config,&onearth_module);
 
   if ((0==cfg)||(0==cfg->caches)||(0==cfg->caches->count)) return DECLINED; // No caches
 
@@ -1508,7 +1508,7 @@ static void specify_error(request_rec *r)
 
 	// Get the configuration
 	cfg=(wms_cfg *)
-	ap_get_module_config(r->per_dir_config,&wms_module);
+	ap_get_module_config(r->per_dir_config,&onearth_module);
 
 	// url params
 	char *args = r->args;
@@ -1690,7 +1690,7 @@ static int mrf_handler(request_rec *r)
 
   // Get the configuration
   cfg=(wms_cfg *) 
-    ap_get_module_config(r->per_dir_config,&wms_module);
+    ap_get_module_config(r->per_dir_config,&onearth_module);
 
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got config");
 
@@ -2012,7 +2012,7 @@ static int mrf_handler(request_rec *r)
 int rewrite_rest_uri(request_rec *r) {
 
 	wms_cfg *cfg;
-	cfg = (wms_cfg *)ap_get_module_config(r->per_dir_config,&wms_module);
+	cfg = (wms_cfg *)ap_get_module_config(r->per_dir_config,&onearth_module);
 
 	if (cfg->dir == NULL)
 		return -1;
@@ -2129,7 +2129,7 @@ static void*merge_dir_config(apr_pool_t *p, void *basev, void *overlay)
   return (void *)c;
 }
 
-module AP_MODULE_DECLARE_DATA wms_module =
+module AP_MODULE_DECLARE_DATA onearth_module =
 {
   STANDARD20_MODULE_STUFF,
   create_dir_config, // Create per directory

@@ -42,7 +42,7 @@ These are the default install locations.
 mod_onearth
 ```
 /etc/httpd/modules/mod_twms.so
-/etc/httpd/modules/mod_wms.so
+/etc/httpd/modules/mod_onearth.so
 /usr/bin//oe_create_cache_config
 /usr/share/onearth/apache/*
 /usr/share/onearth/apache/kml/*

@@ -6,7 +6,7 @@ The following sections outline the configuration updates that are required in or
 The OnEarth utility installs two Apache modules into the apache `<lib dir>/httpd/modules/` directory.  Apache must be configured to include these modules.  To do so, the following lines must be added to the apache configuration file.
 
 ```bash
-LoadModule wms_module modules/mod_wms.so
+LoadModule onearth_module modules/mod_onearth.so
 LoadModule twms_module modules/mod_twms.so
 ```
 
