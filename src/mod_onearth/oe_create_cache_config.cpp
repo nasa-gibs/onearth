@@ -22,7 +22,7 @@
 
 
 
-// twms_tool.cpp : Defines the entry point for the console application.
+// oe_create_cache_config.cpp : Defines the entry point for the console application.
 //
 
 // For windows, this file should exist but be empty on Linux
@@ -31,14 +31,14 @@
 #include <algorithm>
 
 #if defined(LINUX)
-#include "twms_tool.h"
+#include "oe_create_cache_config.h"
 #endif
 
 using namespace std;
 
 void PrintUsage() {
-    fprintf(stdout,"TWMS configuration tool\n"
-        "twms_tool [MODE] [OPTION]... [INPUT] [OUTPUT]\n"
+    fprintf(stdout,"OnEarth cache configuration tool\n"
+        "oe_create_cache_config [MODE] [OPTION]... [INPUT] [OUTPUT]\n"
         "   MODE can be one of:\n"
         "       h : Help (default)\n"
         "       c : Configuration\n"

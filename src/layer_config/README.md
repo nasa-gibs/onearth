@@ -121,8 +121,8 @@ oe_configure_layer -c layer_configuration_file.xml --create-mapfile
 This tool generates server cache configuration files from a list of MRF headers. It is used by oe_configure_layer.py.
 
 ```
-TWMS configuration tool
-twms_tool [MODE] [OPTION]... [INPUT] [OUTPUT]
+OnEarth cache configuration tool
+oe_create_cache_config [MODE] [OPTION]... [INPUT] [OUTPUT]
    MODE can be one of:
        h : Help (default)
        c : Configuration
