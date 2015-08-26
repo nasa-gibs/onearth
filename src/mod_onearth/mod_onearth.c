@@ -252,7 +252,13 @@ static void *r_file_pread(request_rec *r, char *fname,
     // This part is not apr compatible, since mktime is not available easily
 //    apr_time_exp_t tm;
     char old_char=*(fnloc+7);
-    targ+=5; // Skip the time= part
+    targ+=5; // Skip the time= part    
+
+    // Treat "DEFAULT" time parameter same as empty
+    if (apr_strnatcasecmp(targ,"default")==0) {
+    	targ[0] = 0;
+    }
+
     if (strlen(targ)==24 || strlen(targ)==10 || strlen(targ)==0) { // Make sure time is in correct length
 		tm.tm_year=apr_atoi64(targ)-1900; // Convert to tm standard
 		targ+=5; // Skip the YYYY- part
