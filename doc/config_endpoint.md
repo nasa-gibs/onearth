@@ -29,21 +29,17 @@ cp -r /usr/share/onearth/apache/ /usr/share/onearth/demo/twms-geo
 
 ## KML
 
-The serving of KML files via kmlgen.cgi requires cgicc ( http://www.gnu.org/software/cgicc/ ).
+To create the KML endpoint, you'll need to compile the KML CGI script and specify the location of the KML endpoint.
 
-1) Change WEB_HOST inside Makefile. The sub-directory (e.g., "/twms-geo") is also needed.
+This step requires cgicc to be installed: [http://www.gnu.org/software/cgicc]( http://www.gnu.org/software/cgicc/ ).
 
-```Shell
+1) Compile the script. The WEB_HOST option must be set to the location of the KML endpoint. Default is 'localhost/twms'.
+
+```
 cd /usr/share/onearth/demo/twms-geo/kml/
-vi Makefile
-
-WEB_HOST='"<host>:<port>/twms-geo"'
+make WEB_HOST=<host>:<port>/kml_endpoint
 ```
 
-2) Run the make process, which will create a binary CGI script. Then move the CGI file to the endpoint directory.
+2) Copy the binary CGI script to the endpoint directory.
 
-```Shell
-make
-mv kmlgen.cgi ../
-```
-
+`mv kmlgen.cgi ../` 

@@ -5,7 +5,9 @@ default: kmlgen.cgi
 #PREFIX=$(HOME)
 # This should be the externaly visible host name, double quoted twice
 
-WEB_HOST='"localhost/twms-geo"'
+ifndef WEB_HOST
+	WEB_HOST='"localhost/twms"'
+endif
 
 kmlgen.cgi : kmlgen.cpp Makefile
-	$(CXX) -DHOST=$(WEB_HOST)  -o $@ $< -I $(PREFIX)/include -lcgicc
+	$(CXX) -DHOST='"$(WEB_HOST)"'  -o $@ $< -I $(PREFIX)/include -lcgicc
