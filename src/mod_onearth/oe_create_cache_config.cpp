@@ -29,6 +29,7 @@
 #include "stdafx.h"
 #include "cache.h"
 #include <algorithm>
+#include <dirent.h>
 
 #if defined(LINUX)
 #include "oe_create_cache_config.h"
@@ -596,6 +597,7 @@ struct opts{
     bool xml;
     bool binary;
     md mode;
+    bool directory;
 };
 
 void mrf2cache(vector<mrf_data> &in, opts &o) {
@@ -641,13 +643,16 @@ int main(int argc, char* argv[])
 
     int opt;
 
-    while ((opt=getopt(argc, argv,"pchxb")) != -1) {
+    while ((opt=getopt(argc, argv,"pchxbd")) != -1) {
         switch(opt) {
         case 'p' :
             o.mode=PATTERN;
             break;
         case 'c' :
             o.mode=CONF;
+            break;
+        case 'd' :
+            o.directory=true;
             break;
         case 'x' :
             o.binary=false;
@@ -672,11 +677,34 @@ int main(int argc, char* argv[])
     vector<mrf_data> input;
     if (optind==argc)
         input.push_back(mrf_data("-"));
-    // Single input is input file name
-    if (optind==argc-1)
-        input.push_back(mrf_data(argv[optind++]));
-    while (optind<argc-1)
-        input.push_back(mrf_data(argv[optind++]));
+    if (o.directory==true) {
+        DIR* dirFile = opendir(argv[optind]);
+        if (dirFile)
+        {
+           struct dirent* hFile;
+           while (( hFile = readdir(dirFile)) != NULL )
+           {
+              if ( !strcmp( hFile->d_name, "."  )) continue;
+              if ( !strcmp( hFile->d_name, ".." )) continue;
+              if ( strstr( hFile->d_name, ".mrf" )) {
+                 // printf( "Using: %s\n", hFile->d_name);
+                 char filepath[strlen(argv[optind])+strlen(hFile->d_name)+2];
+                 *filepath = '\0';
+                 strcpy(filepath,argv[optind]);
+                 strcat(filepath,"/");
+                 input.push_back(mrf_data(strcat(filepath,hFile->d_name)));
+              }
+           }
+           closedir(dirFile);
+        }
+        optind++;
+    } else {
+		// Single input is input file name
+		if (optind==argc-1)
+			input.push_back(mrf_data(argv[optind++]));
+		while (optind<argc-1)
+			input.push_back(mrf_data(argv[optind++]));
+    }
     if (optind<argc)
         o.ofname=argv[optind++];
 

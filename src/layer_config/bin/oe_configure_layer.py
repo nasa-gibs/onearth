@@ -2222,14 +2222,9 @@ if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
-        mrfs = ""
-        # get list of MRF files
-        for mrf_file in os.listdir(twms_endpoint.path):
-            if mrf_file.endswith(".mrf"):
-                mrfs = mrfs + twms_endpoint.path+'/'+mrf_file + ' '
-        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
+        cmd = depth + '/oe_create_cache_config -cbd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
         run_command(cmd, sigevent_url)
-        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'
+        cmd = depth + '/oe_create_cache_config -cxd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'
         run_command(cmd, sigevent_url)
         if no_cache == False:
             if twms_endpoint.cacheConfigLocation:
@@ -2283,14 +2278,9 @@ if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
         #wmts
         print "\nRunning commands for endpoint: " + wmts_endpoint.path
-        mrfs = ""
-        # get list of MRF files
-        for mrf_file in os.listdir(wmts_endpoint.path):
-            if mrf_file.endswith(".mrf"):
-                mrfs = mrfs + wmts_endpoint.path+'/'+mrf_file + ' '
-        cmd = depth + '/oe_create_cache_config -cb '+ mrfs + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config'
+        cmd = depth + '/oe_create_cache_config -cbd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config'
         run_command(cmd, sigevent_url)
-        cmd = depth + '/oe_create_cache_config -cx '+ mrfs + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
+        cmd = depth + '/oe_create_cache_config -cxd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
         run_command(cmd, sigevent_url)
         if no_cache == False:
             if wmts_endpoint.cacheConfigLocation:
