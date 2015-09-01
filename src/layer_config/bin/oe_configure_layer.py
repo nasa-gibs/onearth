@@ -655,7 +655,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         if time.startswith(detect+'/P'):
             period = time.split('/')[1]
         else:
-            if len(dates) >= 3: #check if the difference between first three dates are the same
+            if len(dates) > 3: #check if the difference between first three dates are the same
                 if subdaily == False:
                     diff1 = abs((dates[0] - dates[1]).days)
                     diff2 = abs((dates[1] - dates[2]).days)
