@@ -1036,7 +1036,7 @@ if len(modtiles) > 0:
         mrf = mrf_list[0]
         print "Inserting new tiles to", mrf
         
-        mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'average']
+        mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'avg']
         for tile in alltiles:
             mrf_insert_command_list.append(tile)
         mrf_insert_command_list.append(mrf)
