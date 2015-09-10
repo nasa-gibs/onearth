@@ -687,43 +687,6 @@ else:
     log_info_mssg(str().join(['Empty tile size is:             ',
                               str(mrf_empty_tile_bytes), ' bytes.']))
 
-# Read previous cycle time string value from disk file.  
-# Time format in txt file is "yyyymmdd.hhmmss" and will be treated as a double 
-# precision value for comparing time stamps.
-ptime_filename=str().join([input_dir, 'mrfgen_previous_cycle_time.txt'])
-ptime_preexisting=glob.glob(ptime_filename)
-# Default setting of zero will result in all tiles being procesed.
-pretime='0.0'
-if len(ptime_preexisting) > 0:
-    try:
-        # Open file.  Time format is "yyyymmdd.hhmmss".
-        ptime_file=open(ptime_filename, 'r')
-    except IOError:
-        # Use time zero if file unreadable or not found.
-        mssg=str().join(['All tiles will be processed because cannot open ', 
-                         ptime_filename])
-        # Send to log.
-        log_info_mssg(mssg)
-    else:
-        # Read file.
-        ptime_lines=ptime_file.readlines()
-        #INDEX [0] NEEDS TO BE UN-HARDWIRED AS PART OF FUTURE XML PARSING.
-        # Remove line termination.
-# Ignore previous cycle time
-#        pretime=ptime_lines[0].strip('\n')
-        # Close file.
-        ptime_file.close()
-
-if pretime == '0.0':
-    # Send to log.
-    log_info_mssg(str().join(['No previous cycle time.',
-                              ' All tiles will be processed.']))
-else:
-    # Send to log.
-    log_info_mssg(str().join(['mrfgen previous_cycle_time:     ', pretime]))
-    log_info_mssg(str().join(['mrfgen previous cycle from:     ',
-                              ptime_filename]))
-
 ##IS LOCK FILE NECESSARY?
 ## Lock file indicates tile generation in progress.
 #lock=glob.glob(str().join([input_dir, '*lock*']))
@@ -908,52 +871,6 @@ alltiles.sort()
 # check for different resolutions
 diff_res = diff_resolution(alltiles)
 
-# Initialize list of tile modification times.
-modtimes=[]
-# Initialize list of modified tiles.
-modtiles=[]
-
-#THIS TO BE USED WHEN MRF PARITAL UPDATE IS IMPLEMENTED.
-#MEANWHILE IF ANY NEW TILES ARE DETECTED THEN REPROCESS ENTIRE GLOBE.
-# Get modification time.  To be used for comparing to previous cycle time, so 
-# literal time accuracy is unimportant.  Specifically, time ranking will be 
-# used to check for tiles that have been created or updated since the last MRF 
-# processing cycle.
-log_info_mssg('List modification time for each input tile:')
-for ndx in range(len(alltiles)):
-    # Get modification time for each file.
-    modf=get_modification_time(alltiles[ndx])
-    # Append to list.
-    modtimes.append(modf)
-    # Add to modtiles list only if tile is updated since previous cycle time.
-    if modtimes[ndx] > pretime:
-        modtiles.append(alltiles[ndx])
-
-if len(modtiles) == 0:
-    mssg='No new tiles since previous cycle time.'
-    log_sig_exit('INFO', mssg, sigevent_url)
-
-# Send to log.
-log_info_mssg(str().join(['new tiles:  ', str(len(modtiles))]))
-
-# Write list of modified tiles to disk file.
-mod_tiles_filename=str().join([working_dir, basename, '_mod_tiles.txt'])
-try:
-    # Open file.
-    modtilesfile=open(mod_tiles_filename, 'w')
-except IOError:
-    mssg=str().join(['Cannot open for write:  ', mod_tiles_filename])
-    log_sig_exit('ERROR', mssg, sigevent_url)
-else:
-    # Write to file with line termination.
-    for ndx in range(len(modtiles)):
-        modtilesfile.write(str().join([modtiles[ndx], '\n']))
-    # Close file.
-    modtilesfile.close()
-
-# Send to log.
-log_info_mssg(mod_tiles_filename)
-
 #UNTIL MRF PARTIAL UPDATES ARE IMPLEMENTED, PROCESS ENTIRE GLOBE IF ANY NEW 
 #TILES ARE DETECTED.
 # Write all tiles list to a file on disk.
@@ -970,7 +887,6 @@ else:
         alltilesfile.write(str().join([alltiles[ndx], '\n']))
     # Close file.
     alltilesfile.close()
-#THIS SHOULD BE FOR MODIFIED TILES, ONCE MRF UPDATES ARE ENABLED.
 # Send to log.
 log_info_mssg(str().join(['all tiles:  ', str(len(alltiles))]))
 log_info_mssg(all_tiles_filename)
@@ -979,242 +895,237 @@ log_info_mssg(all_tiles_filename)
 # Begin GDAL processing.
 #-------------------------------------------------------------------------------
 
-#UNTIL MRF PARTIAL UPDATES ARE IMPLEMENTED, PROCESS ENTIRE GLOBE IF ANY NEW 
-#TILES HAVE BEEN DETECTED.
-if len(modtiles) > 0:
-    # Convert date of the data into day of the year.  Requred for TWMS server.
-    doy=get_doy_string(date_of_data)
-    # Combine year and doy to conform to TWMS convention (yyyydoy).
-    doy=str().join([date_of_data[0:4], str(doy)])
-    # Send to log.
-    log_info_mssg(str().join(['doy:  ', doy]))
+# Convert date of the data into day of the year.  Requred for TWMS server.
+doy=get_doy_string(date_of_data)
+# Combine year and doy to conform to TWMS convention (yyyydoy).
+doy=str().join([date_of_data[0:4], str(doy)])
+# Send to log.
+log_info_mssg(str().join(['doy:  ', doy]))
 
-    # The .mrf file is the XML component of the MRF format.
-    mrf_filename=str().join([output_dir, basename, '.mrf'])
-    # The .idx file is the index compnent of the MRF format.
-    idx_filename=str().join([output_dir, basename, '.idx'])
+# The .mrf file is the XML component of the MRF format.
+mrf_filename=str().join([output_dir, basename, '.mrf'])
+# The .idx file is the index compnent of the MRF format.
+idx_filename=str().join([output_dir, basename, '.idx'])
 
-    # The image component of MRF is .pjg or .ppg, depending on compression type.
-    if mrf_compression_type == 'PNG':
-        # Output filename.
-        out_filename=str().join([output_dir, basename, '.ppg'])
-    elif mrf_compression_type == 'PPNG':
-        # Output filename.
-        out_filename=str().join([output_dir, basename, '.ppg'])
-    elif mrf_compression_type == 'JPG':
-        # Output filename.
-        out_filename=str().join([output_dir, basename, '.pjg'])
-    elif mrf_compression_type == 'JPEG':
-        # Output filename.
-        out_filename=str().join([output_dir, basename, '.pjg'])
-    elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
-        # Output filename.
-        out_filename=str().join([output_dir, basename, '.ptf'])
-    else:
-        mssg='Unrecognized compression type for MRF: ' + mrf_compression_type 
-        log_sig_exit('ERROR', mssg, sigevent_url)
+# The image component of MRF is .pjg or .ppg, depending on compression type.
+if mrf_compression_type == 'PNG':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.ppg'])
+elif mrf_compression_type == 'PPNG':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.ppg'])
+elif mrf_compression_type == 'JPG':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.pjg'])
+elif mrf_compression_type == 'JPEG':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.pjg'])
+elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.ptf'])
+else:
+    mssg='Unrecognized compression type for MRF: ' + mrf_compression_type 
+    log_sig_exit('ERROR', mssg, sigevent_url)
 
-    # The .vrt file is the XML describing the virtual image mosaic layout.
-    vrt_filename=str().join([working_dir, basename, '.vrt'])
+# The .vrt file is the XML describing the virtual image mosaic layout.
+vrt_filename=str().join([working_dir, basename, '.vrt'])
 
-    # Make certain output files do not preexist.  GDAL has issues with that.
-    remove_file(mrf_filename)
-    remove_file(idx_filename)
-    remove_file(out_filename)
-    remove_file(vrt_filename)
+# Make certain output files do not preexist.  GDAL has issues with that.
+remove_file(mrf_filename)
+remove_file(idx_filename)
+remove_file(out_filename)
+remove_file(vrt_filename)
+
+# Check if this is an MRF insert update, if not then regenerate a new MRF
+mrf_list = []
+for tile in list(alltiles):
+    if '.mrf' in tile.lower():
+        mrf_list.append(tile)
+        alltiles.remove(tile)
+if len(mrf_list) == 0 and input_files == '':
+    mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
+# Should only be one MRF, so use that one
+if len(mrf_list) > 0:
+    mrf = mrf_list[0]
+    print "Inserting new tiles to", mrf
     
-    # Check if this is an MRF insert update, if not then regenerate a new MRF
-    mrf_list = []
-    for tile in list(alltiles):
-        if '.mrf' in tile.lower():
-            mrf_list.append(tile)
-            alltiles.remove(tile)
-    if len(mrf_list) == 0 and input_files == '':
-        mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
-    # Should only be one MRF, so use that one
-    if len(mrf_list) > 0:
-        mrf = mrf_list[0]
-        print "Inserting new tiles to", mrf
-        
-        mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'avg']
-        for tile in alltiles:
-            mrf_insert_command_list.append(tile)
-        mrf_insert_command_list.append(mrf)
-        log_the_command(mrf_insert_command_list)
-        try:
-            mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except OSError:
-            log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
-        insert_message = mrf_insert.stderr.readlines()
-        # Continue or break if there is an error?
-        for message in insert_message:
-            # Break on error
-            if 'ERROR' in message:
-                log_sig_exit('ERROR', message, sigevent_url)
-            else:
-                print message.strip()
-
-        # Copy MRF to output
-        shutil.copy(mrf, mrf_filename)
-        shutil.copy(mrf.replace('.mrf','.idx'), idx_filename)
-        shutil.copy(mrf.replace('.mrf',out_filename[-4:]), out_filename)
-        
-        # Clean up
-        remove_file(mod_tiles_filename)
-        remove_file(all_tiles_filename)
-        remove_file(ptime_filename)
-
-        # Exit here since we don't need to build an MRF from scratch
-        mssg=str().join(['MRF created:  ', out_filename])
-        log_sig_exit('INFO', mssg, sigevent_url)
-      
-        
-    # Check if z-dimension is consistent if it's being used
-    if zlevels != '':
-        mrf_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0]
-        try:
-            # Open file.
-            mrf_file=open(mrf_out, 'r')
-        except IOError:
-            mssg=str().join(['MRF not yet generated:  ', mrf_out])
-            log_info_mssg(mssg)
+    mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'avg']
+    for tile in alltiles:
+        mrf_insert_command_list.append(tile)
+    mrf_insert_command_list.append(mrf)
+    log_the_command(mrf_insert_command_list)
+    try:
+        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
+    insert_message = mrf_insert.stderr.readlines()
+    # Continue or break if there is an error?
+    for message in insert_message:
+        # Break on error
+        if 'ERROR' in message:
+            log_sig_exit('ERROR', message, sigevent_url)
         else:
-            dom=xml.dom.minidom.parse(mrf_file)           
-            size_elements = dom.getElementsByTagName('Size')
-            sizeZ=size_elements[0].getAttribute('z') #bands
-            if sizeZ == '':
-                mssg = "The output MRF does not contain z-levels: " + mrf_out
-                log_sig_exit('ERROR', mssg, sigevent_url)            
-            
-            # Send to log.
-            log_info_mssg(str().join(['size of existing MRF z-dimension:  ', str(sizeZ)]))
-            # Close file.
-            mrf_file.close()
-            # Validate
-            if zlevels != str(sizeZ):
-                mssg=str().join(['Z-level size does not match existing MRF: ', zlevels])
-                log_sig_warn(mssg, sigevent_url)
+            print message.strip()
+
+    # Copy MRF to output
+    shutil.copy(mrf, mrf_filename)
+    shutil.copy(mrf.replace('.mrf','.idx'), idx_filename)
+    shutil.copy(mrf.replace('.mrf',out_filename[-4:]), out_filename)
     
-    # Get z-index from ZDB if using z-dimension
-    con = None
-    if zkey != '':
-        mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
-        mrf_filename = output_dir + mrf_filename
-        idx_filename = output_dir + idx_filename
-        out_filename = output_dir + out_filename
-        zdb_out = mrf_filename.replace('.mrf','.zdb')
-        try:
-            db_exists = os.path.isfile(zdb_out)
-            log_info_mssg("Connecting to " + zdb_out)
-            con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
-            
-            if db_exists == False:
-                cur = con.cursor() 
-                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
-                cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-                z = cur.lastrowid
-            else: 
-                cur = con.cursor()
-                
-                # Check for existing key
-                cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
-                lid = int(cur.fetchone()[0])
-                if lid > 0:                
-                    mssg = zkey + " key already exists...overwriting"
-                    log_sig_warn(mssg, sigevent_url)
-                    cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
-                    z = int(cur.fetchone()[0]) 
-                else:              
-                    # Check z size
-                    cur.execute("SELECT COUNT(*) FROM ZINDEX;")
-                    lid = int(cur.fetchone()[0])
-                    if lid >= int(zlevels):
-                        mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
-                        log_sig_exit('ERROR', mssg, sigevent_url)
-                    # Insert values
-                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-                    z = cur.lastrowid
-            log_info_mssg("Current z-level is " +str(z))
-            
-        except sqlite3.Error, e:
-            if con:
-                con.rollback()
-            mssg = "%s:" % e.args[0]
-            log_sig_exit('ERROR', mssg, sigevent_url)
-        
-    # Use specific z if appropriate
-    if z != None:
-        gdal_mrf_filename = mrf_filename + ":MRF:Z" + str(z)
+    # Clean up
+    remove_file(all_tiles_filename)
+
+    # Exit here since we don't need to build an MRF from scratch
+    mssg=str().join(['MRF created:  ', out_filename])
+    log_sig_exit('INFO', mssg, sigevent_url)
+  
+    
+# Check if z-dimension is consistent if it's being used
+if zlevels != '':
+    mrf_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0]
+    try:
+        # Open file.
+        mrf_file=open(mrf_out, 'r')
+    except IOError:
+        mssg=str().join(['MRF not yet generated:  ', mrf_out])
+        log_info_mssg(mssg)
     else:
-        gdal_mrf_filename = mrf_filename
+        dom=xml.dom.minidom.parse(mrf_file)           
+        size_elements = dom.getElementsByTagName('Size')
+        sizeZ=size_elements[0].getAttribute('z') #bands
+        if sizeZ == '':
+            mssg = "The output MRF does not contain z-levels: " + mrf_out
+            log_sig_exit('ERROR', mssg, sigevent_url)            
         
+        # Send to log.
+        log_info_mssg(str().join(['size of existing MRF z-dimension:  ', str(sizeZ)]))
+        # Close file.
+        mrf_file.close()
+        # Validate
+        if zlevels != str(sizeZ):
+            mssg=str().join(['Z-level size does not match existing MRF: ', zlevels])
+            log_sig_warn(mssg, sigevent_url)
+
+# Get z-index from ZDB if using z-dimension
+con = None
+if zkey != '':
+    mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
+    mrf_filename = output_dir + mrf_filename
+    idx_filename = output_dir + idx_filename
+    out_filename = output_dir + out_filename
+    zdb_out = mrf_filename.replace('.mrf','.zdb')
+    try:
+        db_exists = os.path.isfile(zdb_out)
+        log_info_mssg("Connecting to " + zdb_out)
+        con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
+        
+        if db_exists == False:
+            cur = con.cursor() 
+            cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+            cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+            z = cur.lastrowid
+        else: 
+            cur = con.cursor()
             
-    # Create the gdalbuildvrt command.
-    #RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
-    #CONSIDER DOING THIS FOR EVERY SOTO DATASET.
-    #xres=str(360./65536)
-    #yres=xres
-    #              '-resolution', 'user', '-tr', xres, yres,
-    #              '-addalpha',
-    #target_x=str(360.0/int(target_x))
-    #target_y=target_x
-    
-    gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
-    # use resolution?
-    if diff_res == True:
-        xres = str(360.0/int(target_x))
-        yres = xres
-        log_sig_warn("Different tile resolutions detected, using: " + str(xres), sigevent_url)
-        gdalbuildvrt_command_list.append('-resolution')
-        gdalbuildvrt_command_list.append('user')
-        gdalbuildvrt_command_list.append('-tr')
-        gdalbuildvrt_command_list.append(xres)
-        gdalbuildvrt_command_list.append(yres)
-    if source_epsg != "":
-        gdalbuildvrt_command_list.append('-a_srs')
-        gdalbuildvrt_command_list.append(source_epsg)
-    if vrtnodata != "":
-        gdalbuildvrt_command_list.append('-vrtnodata')
-        gdalbuildvrt_command_list.append(vrtnodata)
-    # add VRT filename at the end        
-    gdalbuildvrt_command_list.append(vrt_filename)
-    
-    # USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
-    #'-tr', target_x, target_y, '-resolution', 'user'
-    # Log the gdalbuildvrt command.
-    log_the_command(gdalbuildvrt_command_list)
-    # Capture stderr to record skipped .png files that are not valid PNG+World.
-    gdalbuildvrt_stderr_filename=str().join([working_dir, basename,
-                                             '_gdalbuildvrt_stderr.txt'])
-    # Open stderr file for write.
-    gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'w')
-
-    #---------------------------------------------------------------------------
-    # Execute gdalbuildvrt.
-    subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
-    #---------------------------------------------------------------------------
-    
-    # Reproject to target EPSG
-    if target_epsg != source_epsg:
-        log_info_mssg("Converting tiles to " + target_epsg)
-        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', reprojection_resampling, '-s_srs', source_epsg, '-t_srs', target_epsg, '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-multi', vrt_filename, vrt_filename.replace('.vrt','_reproj.vrt')]
-        log_the_command(gdal_warp_command_list)
-        subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
-        vrt_filename = vrt_filename.replace('.vrt','_reproj.vrt')
-
-    # use gdalwarp if resize with resampling method is declared
-    if resize_resampling != '':
-        if target_y == '':
-            target_y = int(int(target_x)/2)
-        gdal_warp_command_list = ['gdalwarp', '-of', 'GTiff' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', xmin, ymin, xmax, ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
-        gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
-         
-        log_the_command(gdal_warp_command_list)
-        log_the_command(gdalbuildvrt_command_list2)
-        subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
-        subprocess.call(gdalbuildvrt_command_list2, stderr=gdalbuildvrt_stderr_file)
+            # Check for existing key
+            cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+            lid = int(cur.fetchone()[0])
+            if lid > 0:                
+                mssg = zkey + " key already exists...overwriting"
+                log_sig_warn(mssg, sigevent_url)
+                cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
+                z = int(cur.fetchone()[0]) 
+            else:              
+                # Check z size
+                cur.execute("SELECT COUNT(*) FROM ZINDEX;")
+                lid = int(cur.fetchone()[0])
+                if lid >= int(zlevels):
+                    mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                    log_sig_exit('ERROR', mssg, sigevent_url)
+                # Insert values
+                cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                z = cur.lastrowid
+        log_info_mssg("Current z-level is " +str(z))
         
-        # add transparency
+    except sqlite3.Error, e:
+        if con:
+            con.rollback()
+        mssg = "%s:" % e.args[0]
+        log_sig_exit('ERROR', mssg, sigevent_url)
+    
+# Use specific z if appropriate
+if z != None:
+    gdal_mrf_filename = mrf_filename + ":MRF:Z" + str(z)
+else:
+    gdal_mrf_filename = mrf_filename
+    
+        
+# Create the gdalbuildvrt command.
+#RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
+#CONSIDER DOING THIS FOR EVERY SOTO DATASET.
+#xres=str(360./65536)
+#yres=xres
+#              '-resolution', 'user', '-tr', xres, yres,
+#              '-addalpha',
+#target_x=str(360.0/int(target_x))
+#target_y=target_x
+
+gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
+# use resolution?
+if diff_res == True:
+    xres = str(360.0/int(target_x))
+    yres = xres
+    log_sig_warn("Different tile resolutions detected, using: " + str(xres), sigevent_url)
+    gdalbuildvrt_command_list.append('-resolution')
+    gdalbuildvrt_command_list.append('user')
+    gdalbuildvrt_command_list.append('-tr')
+    gdalbuildvrt_command_list.append(xres)
+    gdalbuildvrt_command_list.append(yres)
+if source_epsg != "":
+    gdalbuildvrt_command_list.append('-a_srs')
+    gdalbuildvrt_command_list.append(source_epsg)
+if vrtnodata != "":
+    gdalbuildvrt_command_list.append('-vrtnodata')
+    gdalbuildvrt_command_list.append(vrtnodata)
+# add VRT filename at the end        
+gdalbuildvrt_command_list.append(vrt_filename)
+
+# USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
+#'-tr', target_x, target_y, '-resolution', 'user'
+# Log the gdalbuildvrt command.
+log_the_command(gdalbuildvrt_command_list)
+# Capture stderr to record skipped .png files that are not valid PNG+World.
+gdalbuildvrt_stderr_filename=str().join([working_dir, basename,
+                                         '_gdalbuildvrt_stderr.txt'])
+# Open stderr file for write.
+gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'w')
+
+#---------------------------------------------------------------------------
+# Execute gdalbuildvrt.
+subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
+#---------------------------------------------------------------------------
+
+# Reproject to target EPSG
+if target_epsg != source_epsg:
+    log_info_mssg("Converting tiles to " + target_epsg)
+    gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', reprojection_resampling, '-s_srs', source_epsg, '-t_srs', target_epsg, '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-multi', vrt_filename, vrt_filename.replace('.vrt','_reproj.vrt')]
+    log_the_command(gdal_warp_command_list)
+    subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
+    vrt_filename = vrt_filename.replace('.vrt','_reproj.vrt')
+
+# use gdalwarp if resize with resampling method is declared
+if resize_resampling != '':
+    if target_y == '':
+        target_y = int(int(target_x)/2)
+    gdal_warp_command_list = ['gdalwarp', '-of', 'GTiff' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', xmin, ymin, xmax, ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
+    gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
+     
+    log_the_command(gdal_warp_command_list)
+    log_the_command(gdalbuildvrt_command_list2)
+    subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
+    subprocess.call(gdalbuildvrt_command_list2, stderr=gdalbuildvrt_stderr_file)
+    
+    # add transparency
 # let the color map handle this instead
 #         new_vrt = open(vrt_filename,"r+")
 #         vrt_lines = new_vrt.readlines()
@@ -1224,324 +1135,295 @@ if len(modtiles) > 0:
 #         new_vrt.truncate()
 #         new_vrt.writelines(vrt_lines)
 #         new_vrt.close() 
-    
-    # Close stderr file.
+
+# Close stderr file.
+gdalbuildvrt_stderr_file.close()
+
+# Open stderr file for read.
+try:
+    gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'r')
+    # Report skipped .png files that are not valid PNG+World.
+    gdalbuildvrt_stderr=gdalbuildvrt_stderr_file.readlines()
+    # Loop over all lines in file.
+    for ndx in range(len(gdalbuildvrt_stderr)):
+        # Get line number(s) where skipped files appear in the stderr file.
+        skipped=gdalbuildvrt_stderr[ndx].find('Warning')
+        # If a line (including line 0) was found.
+        if skipped >= 0:
+            mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
+            log_sig_warn(mssg, sigevent_url)
+    # Close file.
     gdalbuildvrt_stderr_file.close()
+except IOError:
+    mssg=str().join(['Cannot read:  ', gdalbuildvrt_stderr_filename])
+    log_sig_exit('ERROR', mssg, sigevent_url)
 
-    # Open stderr file for read.
-    try:
-        gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'r')
-        # Report skipped .png files that are not valid PNG+World.
-        gdalbuildvrt_stderr=gdalbuildvrt_stderr_file.readlines()
-        # Loop over all lines in file.
-        for ndx in range(len(gdalbuildvrt_stderr)):
-            # Get line number(s) where skipped files appear in the stderr file.
-            skipped=gdalbuildvrt_stderr[ndx].find('Warning')
-            # If a line (including line 0) was found.
-            if skipped >= 0:
-                mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
-                log_sig_warn(mssg, sigevent_url)
-        # Close file.
-        gdalbuildvrt_stderr_file.close()
-    except IOError:
-        mssg=str().join(['Cannot read:  ', gdalbuildvrt_stderr_filename])
-        log_sig_exit('ERROR', mssg, sigevent_url)
+# Clean up.
+remove_file(all_tiles_filename)
+# Check if vrt was created.
+vrt_output=glob.glob(vrt_filename)
+if len(vrt_output) == 0:
+    mssg=str().join(['Fail:  gdalbuildvrt',
+                     '  May indicate no georeferenced tiles found.',
+                     #'  May indicate unappropriate target_x.',
+                     '  Look at stderr file:  ', 
+                     gdalbuildvrt_stderr_filename])
+    log_sig_exit('ERROR', mssg, sigevent_url)
 
-    # Clean up.
-    remove_file(mod_tiles_filename)
-    remove_file(all_tiles_filename)
-    # Check if vrt was created.
-    vrt_output=glob.glob(vrt_filename)
-    if len(vrt_output) == 0:
-        mssg=str().join(['Fail:  gdalbuildvrt',
-                         '  May indicate no georeferenced tiles found.',
-                         #'  May indicate unappropriate target_x.',
-                         '  Look at stderr file:  ', 
-                         gdalbuildvrt_stderr_filename])
-        log_sig_exit('ERROR', mssg, sigevent_url)
+# Create mrf only if vrt was successful.
+vrtf=get_modification_time(vrt_filename)
+remove_file(gdalbuildvrt_stderr_filename)
+# Set the compression type for gdal_translate (-co NAME=VALUE).
+if mrf_compression_type == 'PNG':
+    # Unpaletted PNG.
+    compress=str('COMPRESS=PNG')
+elif mrf_compression_type == 'PPNG':
+    # Paletted PNG.
+    compress=str('COMPRESS=PPNG')
+elif mrf_compression_type == 'JPG':
+    compress=str('COMPRESS=JPEG')
+elif mrf_compression_type == 'JPEG':
+    compress=str('COMPRESS=JPEG')
+elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
+    compress=str('COMPRESS=TIF')
+else:
+    mssg='Unrecognized compression type for MRF.'
+    log_sig_exit('ERROR', mssg, sigevent_url)
+    
+# Insert color map into VRT if provided
+if colormap != '':
+    new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
+    if add_transparency == True:
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url, '--transparent']
+    else:
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url]
+    log_the_command(colormap2vrt_command_list)
+    colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
+    colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
+    subprocess.call(colormap2vrt_command_list, stderr=colormap2vrt_stderr_file)
+    colormap2vrt_stderr_file.seek(0)
+    colormap2vrt_stderr = colormap2vrt_stderr_file.read()
+    print colormap2vrt_stderr
+    if "Error" in colormap2vrt_stderr:
+        log_sig_exit('ERROR', "Error executing colormap2vrt.py with colormap:" + colormap, sigevent_url)
+    colormap2vrt_stderr_file.close()
+    if os.path.isfile(new_vrt_filename):
+        remove_file(vrt_filename)
+        remove_file(colormap2vrt_stderr_filename)
+        vrt_filename = new_vrt_filename
 
-    # Create mrf only if vrt was successful.
-    vrtf=get_modification_time(vrt_filename)
-    if vrtf > pretime:
-        remove_file(gdalbuildvrt_stderr_filename)
-        # Set the compression type for gdal_translate (-co NAME=VALUE).
-        if mrf_compression_type == 'PNG':
-            # Unpaletted PNG.
-            compress=str('COMPRESS=PNG')
-        elif mrf_compression_type == 'PPNG':
-            # Paletted PNG.
-            compress=str('COMPRESS=PPNG')
-        elif mrf_compression_type == 'JPG':
-            compress=str('COMPRESS=JPEG')
-        elif mrf_compression_type == 'JPEG':
-            compress=str('COMPRESS=JPEG')
-        elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
-            compress=str('COMPRESS=TIF')
+# Set the blocksize for gdal_translate (-co NAME=VALUE).
+blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
+
+# Get input size.
+dom=xml.dom.minidom.parse(vrt_filename)
+rastersize_elements=dom.getElementsByTagName('VRTDataset')
+x_size=rastersize_elements[0].getAttribute('rasterXSize') #width
+y_size=rastersize_elements[0].getAttribute('rasterYSize') #height
+
+if target_x == '':
+    log_info_mssg('x size and y size from VRT ' + x_size + "," + y_size)
+    exp=11 #minimum outsize 20480 for EPSG4326_2km
+    while int(10*(2**exp)) < int(x_size):
+        #print str(10*(2**exp)) + " is less than " + str(x_size)
+        exp+=1
+    target_x=str(10*(2**exp))            
+    log_info_mssg('Calculating target_x from VRT to ' + target_x)          
+
+# Only use new target size if different.
+if target_x != x_size:
+    # Calculate output size of Y dimension and maintain aspect ratio.
+    target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
+    log_info_mssg('Calculating target_y ' + target_y)
+    if resize_resampling == '':
+        log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
+else: #don't bother calculating y
+    #target_x=x_size
+    target_y=y_size
+    log_info_mssg('Setting target_y from VRT to ' + target_y)
+    
+# if target_epsg == "EPSG:3857":
+#     target_y = target_x
+
+#-----------------------------------------------------------------------
+# Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
+if mrf_empty_tile_filename != '' and (z == None or z == 0):
+    log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
+    log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
+    shutil.copy(mrf_empty_tile_filename, out_filename)
+#-----------------------------------------------------------------------    
+
+# Create the gdal_translate command.         
+gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
+if compress == "COMPRESS=JPEG":
+    # Use JPEG quality of 80
+    gdal_translate_command_list.append('-co')
+    gdal_translate_command_list.append('QUALITY=80')
+if zlevels != '':
+    gdal_translate_command_list.append('-co')
+    gdal_translate_command_list.append('ZSIZE='+str(zlevels))
+# add ending parameters      
+gdal_translate_command_list.append(vrt_filename)
+gdal_translate_command_list.append(gdal_mrf_filename)
+    
+# Log the gdal_translate command.
+log_the_command(gdal_translate_command_list)
+# Capture stderr.
+gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_stderr.txt'])
+# Open stderr file for write.
+gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
+
+#-----------------------------------------------------------------------
+# Execute gdal_translate.
+subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
+#-----------------------------------------------------------------------
+
+# Close stderr file.
+gdal_translate_stderr_file.close()
+
+# Copy vrt to output
+if data_only == False:
+    shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
+
+# Clean up.
+remove_file(vrt_filename)
+if resize_resampling != '':
+    remove_file(vrt_filename.replace('.vrt','.tif'))
+
+# Check if MRF was created.
+mrf_output=glob.glob(mrf_filename)
+if len(mrf_output) == 0:
+    mssg=str().join(['Fail:  gdal_translate',
+                     ' Check gdal mrf driver plugin.',
+                     ' Check stderr file:  ', 
+                     gdal_translate_stderr_filename])
+    log_sig_exit('ERROR', mssg, sigevent_url)
+
+# Get largest x,y dimension of MRF, usually x.
+try:
+    # Open file.
+    mrf_file=open(mrf_filename, 'r')
+except IOError:
+    mssg=str().join(['Cannot read:  ', mrf_filename])
+    log_sig_exit('ERROR', mssg, sigevent_url)
+else:
+    dom=xml.dom.minidom.parse(mrf_file)
+    # Raster
+    size_elements=dom.getElementsByTagName('Size')
+    sizeX=size_elements[0].getAttribute('x') #width
+    sizeY=size_elements[0].getAttribute('y') #height
+    sizeC=size_elements[0].getAttribute('c') #bands
+    sizeZ=size_elements[0].getAttribute('z') #bands
+    # Send to log.
+    log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
+    # Close file.
+    mrf_file.close()
+    # Get largest dimension, usually X.
+    actual_size=max([int(sizeX), int(sizeY)])
+
+# Create pyramid only if idx (MRF index file) was successfully created.
+idxf=get_modification_time(idx_filename)
+compare_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
+old_stats=os.stat(idx_filename)
+if idxf >= vrtf:
+    remove_file(gdal_translate_stderr_filename)
+
+    if overview_levels == '' or int(overview_levels[0])>1:
+        # Create the gdaladdo command.
+        gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
+                               str(gdal_mrf_filename)]
+        # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
+        if overview_levels == '':
+            overview=2
+            gdaladdo_command_list.append(str(overview))
+            exp=2
+            while (overview*long(mrf_blocksize)) < actual_size:
+                overview=2**exp
+                exp=exp+1
+                gdaladdo_command_list.append(str(overview))
         else:
-            mssg='Unrecognized compression type for MRF.'
-            log_sig_exit('ERROR', mssg, sigevent_url)
-            
-        # Insert color map into VRT if provided
-        if colormap != '':
-            new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
-            if add_transparency == True:
-                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url, '--transparent']
-            else:
-                colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url]
-            log_the_command(colormap2vrt_command_list)
-            colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
-            colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
-            subprocess.call(colormap2vrt_command_list, stderr=colormap2vrt_stderr_file)
-            colormap2vrt_stderr_file.seek(0)
-            colormap2vrt_stderr = colormap2vrt_stderr_file.read()
-            print colormap2vrt_stderr
-            if "Error" in colormap2vrt_stderr:
-                log_sig_exit('ERROR', "Error executing colormap2vrt.py with colormap:" + colormap, sigevent_url)
-            colormap2vrt_stderr_file.close()
-            if os.path.isfile(new_vrt_filename):
-                remove_file(vrt_filename)
-                remove_file(colormap2vrt_stderr_filename)
-                vrt_filename = new_vrt_filename
-
-        # Set the blocksize for gdal_translate (-co NAME=VALUE).
-        blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
-
-        # Get input size.
-        dom=xml.dom.minidom.parse(vrt_filename)
-        rastersize_elements=dom.getElementsByTagName('VRTDataset')
-        x_size=rastersize_elements[0].getAttribute('rasterXSize') #width
-        y_size=rastersize_elements[0].getAttribute('rasterYSize') #height
-        
-        if target_x == '':
-            log_info_mssg('x size and y size from VRT ' + x_size + "," + y_size)
-            exp=11 #minimum outsize 20480 for EPSG4326_2km
-            while int(10*(2**exp)) < int(x_size):
-                #print str(10*(2**exp)) + " is less than " + str(x_size)
-                exp+=1
-            target_x=str(10*(2**exp))            
-            log_info_mssg('Calculating target_x from VRT to ' + target_x)          
-
-        # Only use new target size if different.
-        if target_x != x_size:
-            # Calculate output size of Y dimension and maintain aspect ratio.
-            target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
-            log_info_mssg('Calculating target_y ' + target_y)
-            if resize_resampling == '':
-                log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
-        else: #don't bother calculating y
-            #target_x=x_size
-            target_y=y_size
-            log_info_mssg('Setting target_y from VRT to ' + target_y)
-            
-        # if target_epsg == "EPSG:3857":
-        #     target_y = target_x
-
-        #-----------------------------------------------------------------------
-        # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
-        if mrf_empty_tile_filename != '' and (z == None or z == 0):
-            log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
-            log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
-            shutil.copy(mrf_empty_tile_filename, out_filename)
-        #-----------------------------------------------------------------------    
-
-        # Create the gdal_translate command.         
-        gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
-        if compress == "COMPRESS=JPEG":
-            # Use JPEG quality of 80
-            gdal_translate_command_list.append('-co')
-            gdal_translate_command_list.append('QUALITY=80')
-        if zlevels != '':
-            gdal_translate_command_list.append('-co')
-            gdal_translate_command_list.append('ZSIZE='+str(zlevels))
-        # add ending parameters      
-        gdal_translate_command_list.append(vrt_filename)
-        gdal_translate_command_list.append(gdal_mrf_filename)
-            
-        # Log the gdal_translate command.
-        log_the_command(gdal_translate_command_list)
+            for overview in overview_levels:
+                gdaladdo_command_list.append(str(overview))
+        # Log the gdaladdo command.
+        log_the_command(gdaladdo_command_list)
         # Capture stderr.
-        gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_stderr.txt'])
+        gdaladdo_stderr_filename=str().join([working_dir, basename,
+                                             '_gdaladdo_stderr.txt'])
         # Open stderr file for write.
-        gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
+        gdaladdo_stderr_file=open(gdaladdo_stderr_filename, 'w')
 
-        #-----------------------------------------------------------------------
-        # Execute gdal_translate.
-        subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
-        #-----------------------------------------------------------------------
+        #-------------------------------------------------------------------
+        # Execute gdaladdo.
+        subprocess.call(gdaladdo_command_list, stderr=gdaladdo_stderr_file)
+        #-------------------------------------------------------------------
 
         # Close stderr file.
-        gdal_translate_stderr_file.close()
-       
-        # Copy vrt to output
-        if data_only == False:
-            shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
-       
-        # Clean up.
-        remove_file(vrt_filename)
-        if resize_resampling != '':
-            remove_file(vrt_filename.replace('.vrt','.tif'))
+        gdaladdo_stderr_file.close()
 
-        # Check if MRF was created.
-        mrf_output=glob.glob(mrf_filename)
-        if len(mrf_output) == 0:
-            mssg=str().join(['Fail:  gdal_translate',
-                             ' Check gdal mrf driver plugin.',
-                             ' Check stderr file:  ', 
-                             gdal_translate_stderr_filename])
-            log_sig_exit('ERROR', mssg, sigevent_url)
+        # Update previous cycle time only if gdaladdo was successful.
+        addf=get_modification_time(idx_filename)
+        new_stats=os.stat(idx_filename)
 
-        # Get largest x,y dimension of MRF, usually x.
-        try:
-            # Open file.
-            mrf_file=open(mrf_filename, 'r')
-        except IOError:
-            mssg=str().join(['Cannot read:  ', mrf_filename])
-            log_sig_exit('ERROR', mssg, sigevent_url)
+        # Check for gdaladdo success by checking time stamp and file size.
+        if (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
+            remove_file(gdaladdo_stderr_filename)
         else:
-            dom=xml.dom.minidom.parse(mrf_file)
-            # Raster
-            size_elements=dom.getElementsByTagName('Size')
-            sizeX=size_elements[0].getAttribute('x') #width
-            sizeY=size_elements[0].getAttribute('y') #height
-            sizeC=size_elements[0].getAttribute('c') #bands
-            sizeZ=size_elements[0].getAttribute('z') #bands
-            # Send to log.
-            log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
-            # Close file.
-            mrf_file.close()
-            # Get largest dimension, usually X.
-            actual_size=max([int(sizeX), int(sizeY)])
-
-        # Create pyramid only if idx (MRF index file) was successfully created.
-        idxf=get_modification_time(idx_filename)
-        compare_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
-        old_stats=os.stat(idx_filename)
-        if idxf >= vrtf:
-            remove_file(gdal_translate_stderr_filename)
-
-            if overview_levels == '' or int(overview_levels[0])>1:
-                # Create the gdaladdo command.
-                gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
-                                       str(gdal_mrf_filename)]
-                # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
-                if overview_levels == '':
-                    overview=2
-                    gdaladdo_command_list.append(str(overview))
-                    exp=2
-                    while (overview*long(mrf_blocksize)) < actual_size:
-                        overview=2**exp
-                        exp=exp+1
-                        gdaladdo_command_list.append(str(overview))
-                else:
-                    for overview in overview_levels:
-                        gdaladdo_command_list.append(str(overview))
-                # Log the gdaladdo command.
-                log_the_command(gdaladdo_command_list)
-                # Capture stderr.
-                gdaladdo_stderr_filename=str().join([working_dir, basename,
-                                                     '_gdaladdo_stderr.txt'])
-                # Open stderr file for write.
-                gdaladdo_stderr_file=open(gdaladdo_stderr_filename, 'w')
-    
-                #-------------------------------------------------------------------
-                # Execute gdaladdo.
-                subprocess.call(gdaladdo_command_list, stderr=gdaladdo_stderr_file)
-                #-------------------------------------------------------------------
-    
-                # Close stderr file.
-                gdaladdo_stderr_file.close()
-    
-                # Update previous cycle time only if gdaladdo was successful.
-                addf=get_modification_time(idx_filename)
-                new_stats=os.stat(idx_filename)
-    
-                # Check for gdaladdo success by checking time stamp and file size.
-                if (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
-                    remove_file(gdaladdo_stderr_filename)
-                    # If MRF sucessfully created, then store current cycle time.
-                    # Write string value of current cycle time to disk file, to be 
-                    # used in the next cycle as the previous cycle time.  Time 
-                    # format is "yyyymmdd.hhmmss"
-                    try:
-                        # GET FILENAME AND PATH FROM CONFIGURATION FILE.
-                        # Open file.
-                        ptime_file=open(ptime_filename, 'w')
-                    except IOError:
-                        mssg1='Cannot open for write:  '
-                        mssg2=ptime_filename
-                        mssg3='  On next cycle all tiles will be processed.'
-                        mssg=str().join([mssg1, mssg2, mssg3])
-                        log_sig_warn(mssg, sigevent_url)
-                    else:
-                        # Write to file with line termination.
-                        ptime_file.write(str().join([current_cycle_time, '\n']))
-                        # Close file.
-                        ptime_file.close()
-                else:
-                    log_info_mssg(str().join(['addf = ',str(addf)]))
-                    log_info_mssg(str().join(['compare_time = ',str(compare_time)]))
-                    log_info_mssg('addf should be >= compare_time')
-                    log_info_mssg(str().join(['new_stats.st_size = ',
-                                              str(new_stats.st_size)]))
-                    log_info_mssg(str().join(['old_stats.st_size = ',
-                                              str(old_stats.st_size)]))
-                    log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
-                    mssg=str().join(['Unsuccessful:  gdaladdo   Check stderr file: ',
-                                     gdaladdo_stderr_filename])
-                    log_sig_exit('ERROR', mssg, sigevent_url)
-        else:
-            log_info_mssg(str().join(['idxf = ',str(idxf)]))
-            log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
-            log_info_mssg('idxf should be >= vrtf')
-            mssg=str().join(['Unsuccessful:  gdal_translate   ',
-                             'Check the gdal mrf driver plugin.  ',
-                             'Check stderr file: ',
-                             gdal_translate_stderr_filename])
+            log_info_mssg(str().join(['addf = ',str(addf)]))
+            log_info_mssg(str().join(['compare_time = ',str(compare_time)]))
+            log_info_mssg('addf should be >= compare_time')
+            log_info_mssg(str().join(['new_stats.st_size = ',
+                                      str(new_stats.st_size)]))
+            log_info_mssg(str().join(['old_stats.st_size = ',
+                                      str(old_stats.st_size)]))
+            log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
+            mssg=str().join(['Unsuccessful:  gdaladdo   Check stderr file: ',
+                             gdaladdo_stderr_filename])
             log_sig_exit('ERROR', mssg, sigevent_url)
-    else:
-        log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
-        log_info_mssg(str().join(['pretime = ',str(pretime)]))
-        log_info_mssg('vrtf should be >= pretime')
-        mssg=str().join(['Unsuccessful:  gdalbuildvrt',
-                         '  Possible that input files not found.',
-                         '  Check stderr file: ',gdalbuildvrt_stderr_filename])
-        log_sig_warn(mssg, sigevent_url)
-        
-    # Rename MRFs
-    if mrf_name != '':
-        output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
-        if (output_dir+output_mrf) != mrf_filename:
-            log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
-            shutil.move(mrf_filename, output_dir+output_mrf)
-        if (output_dir+output_idx) != idx_filename:
-            log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
-            shutil.move(idx_filename, output_dir+output_idx)
-        if (output_dir+output_data) != out_filename:
-            log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
-            shutil.move(out_filename, output_dir+output_data)
-        if data_only == False:
-            if os.path.isfile(mrf_filename+".aux.xml"):
-                log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
-                shutil.move(mrf_filename+".aux.xml", working_dir+output_aux)
-            if os.path.isfile(str().join([output_dir, basename, '.vrt'])):
-                log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', working_dir+output_vrt]))
-                shutil.move(str().join([output_dir, basename, '.vrt']), working_dir+output_vrt)
-        mrf_filename = output_dir+output_mrf
-        out_filename = output_dir+output_data
-        
-    # Leave only MRF data, index, and header files
-    if data_only == True:
-        remove_file(log_filename)
-        remove_file(output_dir+"/"+basename+".mrf.aux.xml")
-        remove_file(working_dir+"/"+basename+".configuration_file.xml")
-        
-    # Commit database if successful
-    if con:
-        con.commit()
-        con.close()
-        log_info_mssg("Successfully committed record to " + zdb_out)
-    else:
-        log_info_mssg("No ZDB record created")
+else:
+    log_info_mssg(str().join(['idxf = ',str(idxf)]))
+    log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
+    log_info_mssg('idxf should be >= vrtf')
+    mssg=str().join(['Unsuccessful:  gdal_translate   ',
+                     'Check the gdal mrf driver plugin.  ',
+                     'Check stderr file: ',
+                     gdal_translate_stderr_filename])
+    log_sig_exit('ERROR', mssg, sigevent_url)
+    
+# Rename MRFs
+if mrf_name != '':
+    output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
+    if (output_dir+output_mrf) != mrf_filename:
+        log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
+        shutil.move(mrf_filename, output_dir+output_mrf)
+    if (output_dir+output_idx) != idx_filename:
+        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+        shutil.move(idx_filename, output_dir+output_idx)
+    if (output_dir+output_data) != out_filename:
+        log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
+        shutil.move(out_filename, output_dir+output_data)
+    if data_only == False:
+        if os.path.isfile(mrf_filename+".aux.xml"):
+            log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
+            shutil.move(mrf_filename+".aux.xml", working_dir+output_aux)
+        if os.path.isfile(str().join([output_dir, basename, '.vrt'])):
+            log_info_mssg(str().join(['Moving ',str().join([output_dir, basename, '.vrt']), ' to ', working_dir+output_vrt]))
+            shutil.move(str().join([output_dir, basename, '.vrt']), working_dir+output_vrt)
+    mrf_filename = output_dir+output_mrf
+    out_filename = output_dir+output_data
+    
+# Leave only MRF data, index, and header files
+if data_only == True:
+    remove_file(log_filename)
+    remove_file(output_dir+"/"+basename+".mrf.aux.xml")
+    remove_file(working_dir+"/"+basename+".configuration_file.xml")
+    
+# Commit database if successful
+if con:
+    con.commit()
+    con.close()
+    log_info_mssg("Successfully committed record to " + zdb_out)
+else:
+    log_info_mssg("No ZDB record created")
 
 # Remove temp tiles
 for tilename in (alltiles):
@@ -1551,7 +1433,6 @@ for tilename in (alltiles):
             remove_file(tilename+'.aux.xml')
         if '_indexed.' in tilename:
             remove_file(tilename.split('.')[0]+'.pgw')
-remove_file(ptime_filename)
 
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])
