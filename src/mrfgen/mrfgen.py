@@ -441,9 +441,9 @@ else:
         time_of_data = ''
     # Directories.
     try:
-        input_dir            =get_dom_tag_value(dom, 'input_dir')
-    except: #use output_dir if not specified (for previous cycle time)
-        input_dir            =get_dom_tag_value(dom, 'output_dir')
+        input_dir = get_dom_tag_value(dom, 'input_dir')
+    except: 
+        input_dir = None
     output_dir             =get_dom_tag_value(dom, 'output_dir')
     try:
         working_dir            =get_dom_tag_value(dom, 'working_dir')
@@ -513,7 +513,10 @@ else:
     try:
         input_files = get_input_files(dom)
     except:
-        input_files = ''
+        if input_dir == None:
+            log_sig_exit('ERROR', "<input_files> or <input_dir> is required", sigevent_url)
+        else:
+            input_files = ''
     # overview levels
     try:
         overview_levels       =get_dom_tag_value(dom, 'overview_levels').split(' ')
@@ -563,10 +566,11 @@ else:
     config_file.close()
 
 # Make certain each directory exists and has a trailing slash.
-input_dir  =add_trailing_slash(check_abs_path(input_dir))
-output_dir =add_trailing_slash(check_abs_path(output_dir))
-working_dir=add_trailing_slash(check_abs_path(working_dir))
-logfile_dir=add_trailing_slash(check_abs_path(logfile_dir))
+if input_dir != None:
+    input_dir = add_trailing_slash(check_abs_path(input_dir))
+output_dir = add_trailing_slash(check_abs_path(output_dir))
+working_dir = add_trailing_slash(check_abs_path(working_dir))
+logfile_dir = add_trailing_slash(check_abs_path(logfile_dir))
 
 # Save script_dir
 script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
@@ -591,7 +595,8 @@ log_filename=str().join([logfile_dir, basename, '.log'])
 logging.basicConfig(filename=log_filename, level=logging.INFO)
 
 # Verify remaining directory paths.
-verify_directory_path_exists(input_dir, 'input_dir')
+if input_dir != None:
+    verify_directory_path_exists(input_dir, 'input_dir')
 verify_directory_path_exists(output_dir, 'output_dir')
 verify_directory_path_exists(working_dir, 'working_dir')
 
@@ -614,8 +619,10 @@ if os.path.dirname(configuration_filename) != os.path.dirname(working_dir):
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
 log_info_mssg(str().join(['config date_of_data:            ', date_of_data]))
 log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
-log_info_mssg(str().join(['config input_files:             ', input_files]))
-log_info_mssg(str().join(['config input_dir:               ', input_dir]))
+if input_files != '':
+    log_info_mssg(str().join(['config input_files:             ', input_files]))
+if input_dir != None:
+    log_info_mssg(str().join(['config input_dir:               ', input_dir]))
 log_info_mssg(str().join(['config output_dir:              ', output_dir]))
 log_info_mssg(str().join(['config working_dir:             ', working_dir]))
 log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
