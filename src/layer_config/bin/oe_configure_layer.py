@@ -981,10 +981,12 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
     mrf = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".mrf"
     idx = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".idx"
     data = archiveLocation + ("",str(last_year)+"/")[year] + filename + data_ext
+    zdb = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".zdb"
     
     mrf_link = link_pre + ".mrf"
     idx_link = link_pre + ".idx"
     data_link = link_pre + data_ext
+    zdb_link = link_pre + ".zdb"
     
     # make sure link directory exists
     if not os.path.exists(link_dir):
@@ -1013,8 +1015,14 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         print "Created soft link " + data_link + " -> " + data
     else:
         log_sig_warn("Default MRF data file " + data + " does not exist", sigevent_url)
+    if os.path.isfile(zdb):
+        if os.path.lexists(zdb_link):
+            os.remove(zdb_link)
+            print "Removed existing file " + zdb_link
+        os.symlink(zdb, zdb_link)
+        print "Created soft link " + zdb_link + " -> " + zdb
     
-    return mrf_link, idx_link, data_link
+    return mrf_link, idx_link, data_link, zdb_link
     
 #-------------------------------------------------------------------------------   
 
