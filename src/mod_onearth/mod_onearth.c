@@ -1864,7 +1864,7 @@ static int mrf_handler(request_rec *r)
 		  }
 	  }
 
-    if (0>offset) 
+    if (0>offset || errors>0) 
     	return wmts_return_all_errors(r);
   }
 
