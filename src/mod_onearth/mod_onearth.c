@@ -1880,6 +1880,9 @@ static int mrf_handler(request_rec *r)
   default_idx = 0;
   this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels);
 
+  if (errors>0) 
+	return wmts_return_all_errors(r);
+
 	if (!this_record) {
 		// try to read from 0,0 in static index
 		this_record = p_file_pread(r->pool, ifname, sizeof(index_s), 0);
