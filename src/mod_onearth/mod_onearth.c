@@ -260,7 +260,7 @@ static void *r_file_pread(request_rec *r, char *fname,
     }
 
     if (strlen(targ)==24 || strlen(targ)==10 || strlen(targ)==0) { // Make sure time is in correct length
-		tm.tm_year=apr_atoi64(targ)-1900; // Convert to tm standard
+		tm.tm_year=apr_atoi64(targ);
 		targ+=5; // Skip the YYYY- part
 		tm.tm_mon=apr_atoi64(targ);
 		targ+=3; // Skip the MM- part
@@ -280,24 +280,24 @@ static void *r_file_pread(request_rec *r, char *fname,
 		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
     	return 0;
     }
-	if ((tm.tm_year>0)&&(tm.tm_year<1100)&&(tm.tm_mon>0)&&(tm.tm_mon<13)&&(tm.tm_mday>0)&&(tm.tm_mday<32)) { // We do have a time stamp
+	if ((tm.tm_year>0)&&(tm.tm_year<9999)&&(tm.tm_mon>0)&&(tm.tm_mon<13)&&(tm.tm_mday>0)&&(tm.tm_mday<32)) { // We do have a time stamp
 	  leap=(tm.tm_year%4)?0:((tm.tm_year%400)?((tm.tm_year%100)?1:0):1);
 	  tm.tm_yday=tm.tm_mday+moffset[tm.tm_mon-1]+((tm.tm_mon>2)?leap:0);
 
 	  if (hastime==1) {
 		  fnloc-=6;
 //		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-		  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year+1900,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+		  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 		  *(fnloc+13)=old_char;
 	  } else {
-		  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,tm.tm_yday);
+		  sprintf(fnloc,"%04d%03d",tm.tm_year,tm.tm_yday);
 		  *(fnloc+7)=old_char;
 	  }
 
 	  // Name change for Year
 	  if ((yearloc=ap_strstr(fn,year))) {
 		  old_char=*(yearloc+4);
-		  sprintf(yearloc,"%04d",tm.tm_year+1900); // replace YYYY with actual year
+		  sprintf(yearloc,"%04d",tm.tm_year); // replace YYYY with actual year
 		  *(yearloc+4)=old_char;
 	  }
 	} else if (tm.tm_year>0) { // Needs to know if there is at least a time value somehow
@@ -337,7 +337,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  }
 				  // check to see if there is a start time before the request time
 				  if (strlen(time_period)>=10) {
-					  st.tm_year=apr_atoi64(time_period)-1900;
+					  st.tm_year=apr_atoi64(time_period);
 					  if (tm.tm_year >= st.tm_year) {
 						  time_period+=5;
 						  st.tm_mon=apr_atoi64(time_period);
@@ -405,7 +405,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 						  }
 					  }
 					  char old_char=*(fnloc+7);
-					  sprintf(fnloc,"%04d%03d",tm.tm_year+1900,request_day);
+					  sprintf(fnloc,"%04d%03d",tm.tm_year,request_day);
 					  *(fnloc+7)=old_char;
 				  } else { // subdaily request
 					  //convert to seconds
@@ -426,7 +426,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 
 					  char old_char=*(fnloc+13);
 //					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-					  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year+1900,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+					  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 					  *(fnloc+13)=old_char;
 				  }
 
