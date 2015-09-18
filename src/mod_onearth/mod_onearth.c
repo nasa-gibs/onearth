@@ -327,6 +327,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
 				  // get the time interval period
 				  interval = evaluate_period(time_period, hastime);
+				  if (interval==0) {
+					  continue; // skip invalid intervals
+				  }
 				  // don't check periods of 1 day
 				  if ((interval <= 1) && (time_period[(strlen(time_period)-1)] == 'D')){
 					  time_period+=strlen(time_period)+1;
@@ -1856,7 +1859,9 @@ static int mrf_handler(request_rec *r)
 
 			  // Lookup the z index from the ZDB file based on keyword
 			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
-//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z index %d",z);
+			  if (z<0) {
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d",z);
+			  }
 			  if (z >= cache->zlevels) {
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Retrieved z-index %d is greater than the maximum for the layer %d",z,cache->zlevels);
 			  }
@@ -1864,7 +1869,7 @@ static int mrf_handler(request_rec *r)
 		  }
 	  }
 
-    if (0>offset || errors>0) 
+    if (0>offset || errors>0)
     	return wmts_return_all_errors(r);
   }
 
@@ -1879,9 +1884,6 @@ static int mrf_handler(request_rec *r)
   }
   default_idx = 0;
   this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels);
-
-  if (errors>0) 
-	return wmts_return_all_errors(r);
 
 	if (!this_record) {
 		// try to read from 0,0 in static index
@@ -1995,6 +1997,10 @@ static int mrf_handler(request_rec *r)
        "Data read error from file %s size %ld offset %ld",level->dfname,this_record->size, this_record->offset);
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
     return DECLINED; // Can't read the data for some reason
+  }
+
+  if (ap_strstr(r->args,WMTS_marker) && (errors > 0)) {
+  	return wmts_return_all_errors(r);
   }
 
   // DEBUG
