@@ -21,7 +21,7 @@ You don't have permission to access /wmts.cgi on this server.
 ```
 
 #### Suggestion:
-Make sure wmts.cgi is in the directory specified in httpd.conf.  If using a subdirectory below DocumentRoot, then be sure that that subdirectory is specified in the WMTS Directory block.  Make sure Apache has permission to access those directories.
+Make sure wmts.cgi is in the directory specified in httpd.conf.  If using a subdirectory below DocumentRoot, then be sure that that subdirectory is specified in the WMTS Directory block.  Make sure Apache has permission to access those directories. Check SELinux restrictions.
 
 ### Problem: "Bad or null KML" message in Google Earth client.
 
