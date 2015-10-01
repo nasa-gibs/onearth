@@ -60,6 +60,7 @@ import logging
 import shutil
 import re
 import distutils.spawn
+import sqlite3
 from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
@@ -67,7 +68,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '0.7.0'
+versionNumber = '0.8.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -598,7 +599,7 @@ def get_projection(projectionId, projectionConfig, lcdir, tilematrixset_configur
     
     return projection
 
-def detect_time(time, archiveLocation, fileNamePrefix, year):
+def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
     """
     Checks time element to see if start or end time must be detected on the file system.
     Arguments:
@@ -606,6 +607,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         archiveLocation -- the location of the archive data
         fileNamePrefix -- the prefix of the MRF files
         year -- whether or not the layer uses a year-based directory structure
+        has_zdb -- whether or not the layer contains a zdb file
     """
     times = []
     print "\nAssessing time", time
@@ -621,7 +623,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
         log_sig_err(message, sigevent_url)
         return times
     
-    if time == detect or time == '' or time.startswith(detect+'/P'):
+    if (time == detect or time == '' or time.startswith(detect+'/P')) and has_zdb==False:
     #detect everything including breaks in date
         dates = []
         for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
@@ -757,7 +759,9 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
             else:
                 intervals.remove(interval)
         if has_period == False:
-            message = "No period in time configuration for " + fileNamePrefix + " - using P1D"
+            message = "No period in time configuration for " + fileNamePrefix
+            if has_zdb == False:
+                message = message + " - using P1D"
             log_sig_warn(message, sigevent_url)
         print "Using period " + period
         if len(intervals) == 2:
@@ -821,6 +825,13 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                     log_sig_err(message, sigevent_url)
                     return times
                 startdate = min(dates)
+                if has_zdb==True:
+                    try:
+                        zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(startdate,"%Y%j")+'_.zdb'
+                        startdate = datetime.strptime(str(read_zkey(zdb, 'ASC')),"%Y%m%d%H%M%S")
+                        subdaily = True
+                    except ValueError:
+                        log_sig_err("No valid time found in " + zdb, sigevent_url)
                 if subdaily == False:
                     start = datetime.strftime(startdate,"%Y-%m-%d")
                 else:
@@ -848,16 +859,60 @@ def detect_time(time, archiveLocation, fileNamePrefix, year):
                     else:
                         print "Ignoring", filename
                 enddate = max(dates)
+                if has_zdb==True:
+                    try:
+                        zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
+                        enddate = datetime.strptime(str(read_zkey(zdb, 'DESC')),"%Y%m%d%H%M%S")
+                        subdaily = True
+                    except ValueError:
+                        log_sig_err("No valid time found in " + zdb, sigevent_url)
                 if subdaily == False:
                     end = datetime.strftime(enddate,"%Y-%m-%d")
                 else:
                     end = datetime.strftime(enddate,"%Y-%m-%dT%H:%M:%SZ")
         
-        print "Time: start="+start+" end="+end+" period="+period
-        time = start+'/'+end+'/'+period
+        if has_zdb == True and has_period == False:
+            time = start+'/'+end
+        else:
+            time = start+'/'+end+'/'+period
+        print str(time)
         times.append(time)
         
     return times
+
+def read_zkey(zdb, sort):
+    """
+    Reads z-index database file and returns the first or last key depending on sort order
+    Arguments:
+        zdb -- the z-index database file name
+        sort -- the sort order
+    """
+    try:
+        log_info_mssg("Connecting to " + zdb)
+        db_exists = os.path.isfile(zdb)
+        if db_exists == False:
+            log_sig_err(zdb + " does not exist", sigevent_url)
+            return "Error"
+        else:
+            con = sqlite3.connect(zdb, timeout=60) # 1 minute timeout
+            cur = con.cursor()
+            
+            # Check for existing key
+            cur.execute("SELECT key_str FROM ZINDEX ORDER BY key_str "+sort+" LIMIT 1;")
+            try:        
+                key = cur.fetchone()[0]
+                log_info_mssg("Retrieved key " + key)
+            except:
+                return "Error"
+            if con:
+                con.close()              
+            return key
+        
+    except sqlite3.Error, e:
+        if con:
+            con.rollback()
+        mssg = "%s:" % e.args[0]
+        log_sig_err(mssg, sigevent_url)
 
 def generate_legend(colormap, output, legend_url, orientation):
     """
@@ -954,7 +1009,7 @@ def generate_empty_tile(colormap, output, width, height):
     
     return empty_size
 
-def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation):
+def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb):
     """
     Generate a archive links for a layer based on the last provided time period
     Arguments:
@@ -963,12 +1018,16 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         fileNamePrefix -- the prefix of the MRF files
         year -- whether or not the layer uses a year-based directory structure
         dataFileLocation -- file location for the default data file
+        has_zdb -- whether or not the layer contains a zdb file
     """
     
     last_time = detected_times[-1].split("/")[1]
     if 'T' in last_time: # sub-daily files
         t = datetime.strptime(last_time,"%Y-%m-%dT%H:%M:%SZ")
-        filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
+        if has_zdb:
+            filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
+        else:
+            filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
         last_year = datetime.strftime(t,"%Y")
     else:
         t = datetime.strptime(last_time,"%Y-%m-%d")
@@ -1632,12 +1691,14 @@ for conf in conf_files:
         rsets_node.appendChild(dataFileNameElement)
         rsets_node.appendChild(indexFileNameElement)
 
-    # Add index file name
+    # Add zindex file name
+    has_zdb = False;
     if size_node.hasAttribute('z'):
         z_index_node = mrf_dom.createElement('ZIndexFileName')
         z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
         z_index_node.appendChild(z_index_text_node)
         rsets_node.appendChild(z_index_node)
+        has_zdb = True
 
     mrf_meta.appendChild(rsets_node)
     
@@ -1719,7 +1780,7 @@ for conf in conf_files:
     if static == False:
         timeElements = []
         for time in times:
-            detected_times = detect_time(time, archiveLocation, fileNamePrefix, year)
+            detected_times = detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb)
             for detected_time in detected_times:
                 timeElements.append(mrf_dom.createElement('Time'))
                 timeElements[-1].appendChild(mrf_dom.createTextNode(detected_time))
@@ -1789,7 +1850,7 @@ for conf in conf_files:
     if links == True:
         if len(detected_times) > 0:
             print "Generating archive links for " + fileNamePrefix
-            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation)
+            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
         else:
             print fileNamePrefix + " is not a time varying layer" 
 
