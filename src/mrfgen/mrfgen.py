@@ -77,7 +77,7 @@ import shutil
 import imghdr
 import sqlite3
 
-versionNumber = '0.7.0'
+versionNumber = '0.8.0'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
