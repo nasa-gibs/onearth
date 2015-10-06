@@ -522,6 +522,8 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
 
     if (rc == SQLITE_ROW) {
     	z = apr_atoi64((char*)sqlite3_column_text(res, 0));
+    } else {
+    	wmts_add_error(r,404,"ImageNotFound","TIME", "Image cannot be found for the requested date and time");
     }
 
     sqlite3_finalize(res);
