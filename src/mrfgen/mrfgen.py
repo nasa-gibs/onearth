@@ -398,7 +398,7 @@ def diff_resolution(tiles):
 #-------------------------------------------------------------------------------
 
 # Define command line options and args.
-parser=OptionParser()
+parser=OptionParser(version=versionNumber)
 parser.add_option('-c', '--configuration_filename',
                   action='store', type='string', dest='configuration_filename',
                   default='./mrfgen_configuration_file.xml',
