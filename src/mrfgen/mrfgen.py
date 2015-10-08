@@ -562,6 +562,14 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''    
+    # nocopy
+    try:
+        if get_dom_tag_value(dom, 'mrf_nocopy') == "true":
+            nocopy = True
+        else:
+            nocopy = False
+    except:
+        nocopy = False
     # Close file.
     config_file.close()
 
@@ -645,6 +653,7 @@ log_info_mssg(str().join(['config overview resampling:     ', overview_resamplin
 log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resampling]))
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
+log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
@@ -1269,6 +1278,10 @@ if compress == "COMPRESS=JPEG":
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
+if nocopy == True:
+    gdal_translate_command_list.append('-co')
+    gdal_translate_command_list.append('NOCOPY=true')
+        
 # add ending parameters      
 gdal_translate_command_list.append(vrt_filename)
 gdal_translate_command_list.append(gdal_mrf_filename)
@@ -1395,6 +1408,35 @@ else:
                      'Check stderr file: ',
                      gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
+    
+# Insert into nocopy
+if nocopy==True:
+    print "Inserting new tiles to", gdal_mrf_filename
+    mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'Avg']
+    for tile in alltiles:
+        if diff_resolution([tile, mrf_filename]):
+            # convert tile to matching resolution
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x)), tile, tile+".vrt"]
+            log_the_command(tile_vrt_command_list)
+            tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            tile_vrt.wait()
+            mrf_insert_command_list.append(tile+".vrt")
+        else:
+            mrf_insert_command_list.append(tile)
+    mrf_insert_command_list.append(gdal_mrf_filename)
+    log_the_command(mrf_insert_command_list)
+    try:
+        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
+    insert_message = mrf_insert.stderr.readlines()
+    for message in insert_message:
+        # Break on error
+        if 'ERROR' in message:
+            log_sig_exit('ERROR', message, sigevent_url)
+        else:
+            print message.strip()
+    remove_file(tile+".vrt")
     
 # Rename MRFs
 if mrf_name != '':
