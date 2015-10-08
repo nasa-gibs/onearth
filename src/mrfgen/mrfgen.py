@@ -1132,24 +1132,10 @@ if target_epsg != source_epsg:
 if resize_resampling != '':
     if target_y == '':
         target_y = int(int(target_x)/2)
-    gdal_warp_command_list = ['gdalwarp', '-of', 'GTiff' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
-    gdalbuildvrt_command_list2 = ['gdalbuildvrt', '-q', '-overwrite', vrt_filename, vrt_filename.replace('.vrt','.tif')]
-     
+    gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','_resample.vrt')]
     log_the_command(gdal_warp_command_list)
-    log_the_command(gdalbuildvrt_command_list2)
     subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
-    subprocess.call(gdalbuildvrt_command_list2, stderr=gdalbuildvrt_stderr_file)
-    
-    # add transparency
-# let the color map handle this instead
-#         new_vrt = open(vrt_filename,"r+")
-#         vrt_lines = new_vrt.readlines()
-#         for idx in range(0, len(vrt_lines)):
-#             vrt_lines[idx] = vrt_lines[idx].replace('c1="0" c2="0" c3="0" c4="255"', 'c1="0" c2="0" c3="0" c4="0"')
-#         new_vrt.seek(0)
-#         new_vrt.truncate()
-#         new_vrt.writelines(vrt_lines)
-#         new_vrt.close() 
+    vrt_filename = vrt_filename.replace('.vrt','_resample.vrt')
 
 # Close stderr file.
 gdalbuildvrt_stderr_file.close()
@@ -1223,7 +1209,6 @@ if colormap != '':
         log_sig_exit('ERROR', "Error executing colormap2vrt.py with colormap:" + colormap, sigevent_url)
     colormap2vrt_stderr_file.close()
     if os.path.isfile(new_vrt_filename):
-        remove_file(vrt_filename)
         remove_file(colormap2vrt_stderr_filename)
         vrt_filename = new_vrt_filename
 
@@ -1305,9 +1290,9 @@ if data_only == False:
     shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
 
 # Clean up.
-remove_file(vrt_filename)
-if resize_resampling != '':
-    remove_file(vrt_filename.replace('.vrt','.tif'))
+vrt_files = glob.glob(str().join([working_dir, basename, '*.vrt']))
+for vrt in vrt_files:
+    remove_file(vrt)
 
 # Check if MRF was created.
 mrf_output=glob.glob(mrf_filename)
