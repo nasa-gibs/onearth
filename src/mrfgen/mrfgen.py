@@ -788,27 +788,8 @@ if mrf_compression_type == 'PPNG' and colormap != '':
     for i, tile in enumerate(alltiles):
         temp_tile = None
         
-        # Check to see if tif files need to be converted
-        if '.tif' in tile.lower():
-            # Convert TIFF files
-            print "Converting TIFF file " + tile + " to " + tiff_compress
-               
-            # Create the gdal_translate command.
-            gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
-                                         tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
-            # Log the gdal_translate command.
-            log_the_command(gdal_translate_command_list)
-       
-            # Execute gdal_translate.
-            subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-               
-            # Replace with new tiles
-            tile = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
-            temp_tile = tile
-            
-        # Check input PNGs if RGBA, then convert        
-        if '.png' in tile.lower():
+        # Check input PNGs/TIFFs if RGBA, then convert        
+        if '.png' or '.tif' in tile.lower():
             
             # Run the gdal_info on PNG tile.
             gdalinfo_command_list=['gdalinfo', tile]
@@ -817,6 +798,24 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             
             # Read gdal_info output
             if "ColorInterp=Palette" not in gdalinfo.stdout.read():
+                if '.tif' in tile.lower():
+                    # Convert TIFF files to PNG
+                    print "Converting TIFF file " + tile + " to " + tiff_compress
+                       
+                    # Create the gdal_translate command.
+                    gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
+                                                 tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
+                    # Log the gdal_translate command.
+                    log_the_command(gdal_translate_command_list)
+               
+                    # Execute gdal_translate.
+                    subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+                       
+                    # Replace with new tiles
+                    tile = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
+                    temp_tile = tile
+                
                 print "Converting RGBA PNG to indexed paletted PNG"
                 
                 output_tile = working_dir + os.path.basename(tile).split('.')[0]+'_indexed.png'
@@ -873,7 +872,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 # add transparency flag for custom color map
                 add_transparency = True
             else:
-                print "Paletted PNG verified"
+                print "Paletted image verified"
                 
         # remove tif temp tiles
         if temp_tile != None:
