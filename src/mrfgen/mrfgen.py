@@ -398,20 +398,24 @@ def diff_resolution(tiles):
                         return True              
     return False
 
-def run_mrf_insert(mrf, tiles, insert_method, target_x):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
         mrf -- An existing MRF file
         tiles -- List of tiles to insert
         insert_method -- The resampling method to use {Avg, NearNb}
+        resize_resampling -- The resampling method to use for gdalwarp
+        target_x -- The target resolution for x
     """    
     print "Inserting new tiles to", mrf
     mrf_insert_command_list = ['mrf_insert', '-v', '-r', insert_method]
     for tile in alltiles:
         if diff_resolution([tile, mrf]):
             # convert tile to matching resolution
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x)), tile, tile+".vrt"]
+            if resize_resampling == '':
+                resize_resampling = "near" # use nearest neighbor as default
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x)), tile, tile+".vrt"]
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
@@ -1077,10 +1081,10 @@ remove_file(vrt_filename)
 
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
-if mrf_compression_type == 'JPG' or mrf_compression_type == 'JPEG':
-    insert_method = 'Avg'
-else:
+if overview_resampling.lower() == 'nearest':
     insert_method = 'NearNb'
+else:
+    insert_method = 'Avg'
 for tile in list(alltiles):
     if '.mrf' in tile.lower():
         mrf_list.append(tile)
@@ -1096,7 +1100,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, target_x)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1447,7 +1451,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, target_x)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x)
     
 # Rename MRFs
 if mrf_name != '':
