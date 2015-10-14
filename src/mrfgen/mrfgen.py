@@ -398,7 +398,7 @@ def diff_resolution(tiles):
                         return True              
     return False
 
-def run_mrf_insert(mrf, tiles, insert_method):
+def run_mrf_insert(mrf, tiles, insert_method, target_x):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
@@ -1006,13 +1006,13 @@ if len(mrf_list) == 0 and input_files == '':
 # Should only be one MRF, so use that one
 if len(mrf_list) > 0:
     mrf = mrf_list[0]
-    run_mrf_insert(mrf, alltiles, insert_method)
+    run_mrf_insert(mrf, alltiles, insert_method, target_x)
     
     # Clean up
     remove_file(all_tiles_filename)
 
     # Exit here since we don't need to build an MRF from scratch
-    mssg=str().join(['MRF created:  ', out_filename])
+    mssg=str().join(['MRF updated:  ', mrf])
     log_sig_exit('INFO', mssg, sigevent_url)
   
     
@@ -1419,7 +1419,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, target_x)
     
 # Rename MRFs
 if mrf_name != '':
