@@ -433,6 +433,90 @@ def run_mrf_insert(mrf, tiles, insert_method, target_x):
             print message.strip()
     remove_file(tile+".vrt")
 
+def insert_zdb(mrf, zlevels, zkey):
+    """
+    Inserts a list of tiles into an existing MRF
+    Argument:
+        mrf -- An MRF file
+        zlevels -- The number of z-levels expected
+        zkey -- The key to be used with the z-index
+    """  
+    # Check if z-dimension is consistent if it's being used
+    if zlevels != '':
+        try:
+            # Open file.
+            mrf_file=open(mrf, 'r')
+        except IOError:
+            mssg=str().join(['MRF not yet generated:  ', mrf])
+            log_info_mssg(mssg)
+        else:
+            dom=xml.dom.minidom.parse(mrf_file)           
+            size_elements = dom.getElementsByTagName('Size')
+            sizeZ=size_elements[0].getAttribute('z') #bands
+            if sizeZ == '':
+                mssg = "The output MRF does not contain z-levels: " + mrf
+                log_sig_exit('ERROR', mssg, sigevent_url)            
+            
+            # Send to log.
+            log_info_mssg(str().join(['size of existing MRF z-dimension:  ', str(sizeZ)]))
+            # Close file.
+            mrf_file.close()
+            # Validate
+            if zlevels != str(sizeZ):
+                mssg=str().join(['Z-level size does not match existing MRF: ', zlevels])
+                log_sig_warn(mssg, sigevent_url)
+    
+    # Get z-index from ZDB if using z-dimension
+    if zkey != '':
+        zdb_out = mrf.replace('.mrf','.zdb')
+        try:
+            db_exists = os.path.isfile(zdb_out)
+            log_info_mssg("Connecting to " + zdb_out)
+            con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
+            
+            if db_exists == False:
+                cur = con.cursor() 
+                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+                cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+                z = cur.lastrowid
+            else: 
+                cur = con.cursor()
+                
+                # Check for existing key
+                cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+                lid = int(cur.fetchone()[0])
+                if lid > 0:                
+                    mssg = zkey + " key already exists...overwriting"
+                    log_sig_warn(mssg, sigevent_url)
+                    cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
+                    z = int(cur.fetchone()[0]) 
+                else:              
+                    # Check z size
+                    cur.execute("SELECT COUNT(*) FROM ZINDEX;")
+                    lid = int(cur.fetchone()[0])
+                    if lid >= int(zlevels):
+                        mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                        log_sig_exit('ERROR', mssg, sigevent_url)
+                    # Insert values
+                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                    z = cur.lastrowid
+            log_info_mssg("Current z-level is " +str(z))
+            
+        except sqlite3.Error, e:
+            if con:
+                con.rollback()
+            mssg = "%s:" % e.args[0]
+            log_sig_exit('ERROR', mssg, sigevent_url)
+        
+    # Use specific z if appropriate
+    if z != None:
+        gdal_mrf_filename = mrf + ":MRF:Z" + str(z)
+    else:
+        gdal_mrf_filename = mrf
+        
+    return (gdal_mrf_filename, z, zdb_out, con)
+
+
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
 #-------------------------------------------------------------------------------
@@ -1006,93 +1090,37 @@ if len(mrf_list) == 0 and input_files == '':
 # Should only be one MRF, so use that one
 if len(mrf_list) > 0:
     mrf = mrf_list[0]
+    # Check if zdb is used
+    if zlevels != '' and zkey != '':
+        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey)
+    else:
+        con = None
+        
     run_mrf_insert(mrf, alltiles, insert_method, target_x)
     
     # Clean up
     remove_file(all_tiles_filename)
+    if con:
+        con.commit()
+        con.close()
+        log_info_mssg("Successfully committed record to " + zdb_out)
+    else:
+        log_info_mssg("No ZDB record created")
 
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
     log_sig_exit('INFO', mssg, sigevent_url)
-  
     
-# Check if z-dimension is consistent if it's being used
-if zlevels != '':
-    mrf_out = output_dir + get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)[0]
-    try:
-        # Open file.
-        mrf_file=open(mrf_out, 'r')
-    except IOError:
-        mssg=str().join(['MRF not yet generated:  ', mrf_out])
-        log_info_mssg(mssg)
-    else:
-        dom=xml.dom.minidom.parse(mrf_file)           
-        size_elements = dom.getElementsByTagName('Size')
-        sizeZ=size_elements[0].getAttribute('z') #bands
-        if sizeZ == '':
-            mssg = "The output MRF does not contain z-levels: " + mrf_out
-            log_sig_exit('ERROR', mssg, sigevent_url)            
-        
-        # Send to log.
-        log_info_mssg(str().join(['size of existing MRF z-dimension:  ', str(sizeZ)]))
-        # Close file.
-        mrf_file.close()
-        # Validate
-        if zlevels != str(sizeZ):
-            mssg=str().join(['Z-level size does not match existing MRF: ', zlevels])
-            log_sig_warn(mssg, sigevent_url)
-
-# Get z-index from ZDB if using z-dimension
-con = None
-if zkey != '':
+  
+# Use zdb index if z-levels are defined
+if zlevels != '' and zkey != '':
     mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
-    zdb_out = mrf_filename.replace('.mrf','.zdb')
-    try:
-        db_exists = os.path.isfile(zdb_out)
-        log_info_mssg("Connecting to " + zdb_out)
-        con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
-        
-        if db_exists == False:
-            cur = con.cursor() 
-            cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
-            cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-            z = cur.lastrowid
-        else: 
-            cur = con.cursor()
-            
-            # Check for existing key
-            cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
-            lid = int(cur.fetchone()[0])
-            if lid > 0:                
-                mssg = zkey + " key already exists...overwriting"
-                log_sig_warn(mssg, sigevent_url)
-                cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
-                z = int(cur.fetchone()[0]) 
-            else:              
-                # Check z size
-                cur.execute("SELECT COUNT(*) FROM ZINDEX;")
-                lid = int(cur.fetchone()[0])
-                if lid >= int(zlevels):
-                    mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
-                    log_sig_exit('ERROR', mssg, sigevent_url)
-                # Insert values
-                cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-                z = cur.lastrowid
-        log_info_mssg("Current z-level is " +str(z))
-        
-    except sqlite3.Error, e:
-        if con:
-            con.rollback()
-        mssg = "%s:" % e.args[0]
-        log_sig_exit('ERROR', mssg, sigevent_url)
-    
-# Use specific z if appropriate
-if z != None:
-    gdal_mrf_filename = mrf_filename + ":MRF:Z" + str(z)
+    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey)
 else:
+    con = None
     gdal_mrf_filename = mrf_filename
     
         
