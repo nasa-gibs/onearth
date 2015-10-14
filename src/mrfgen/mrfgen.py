@@ -373,6 +373,11 @@ def get_mrf_names(mrf_data, mrf_name, parameter_name, date_of_data, time_of_data
     return (mrf, index, data, aux, vrt)
 
 def diff_resolution(tiles):
+    """
+    Compares images within a list for different image resolutions
+    Arguments:
+        tiles -- List of images for comparison.
+    """
     if len(tiles) <= 1:
         print "Single tile detected"
         return False
@@ -392,6 +397,41 @@ def diff_resolution(tiles):
                         print "Different tile resolutions detected"
                         return True              
     return False
+
+def run_mrf_insert(mrf, tiles, insert_method):
+    """
+    Inserts a list of tiles into an existing MRF
+    Argument:
+        mrf -- An existing MRF file
+        tiles -- List of tiles to insert
+        insert_method -- The resampling method to use {Avg, NearNb}
+    """    
+    print "Inserting new tiles to", mrf
+    mrf_insert_command_list = ['mrf_insert', '-v', '-r', insert_method]
+    for tile in alltiles:
+        if diff_resolution([tile, mrf]):
+            # convert tile to matching resolution
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x)), tile, tile+".vrt"]
+            log_the_command(tile_vrt_command_list)
+            tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            tile_vrt.wait()
+            mrf_insert_command_list.append(tile+".vrt")
+        else:
+            mrf_insert_command_list.append(tile)
+    mrf_insert_command_list.append(mrf)
+    log_the_command(mrf_insert_command_list)
+    try:
+        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
+    insert_message = mrf_insert.stderr.readlines()
+    for message in insert_message:
+        # Break on error
+        if 'ERROR' in message:
+            log_sig_exit('ERROR', message, sigevent_url)
+        else:
+            print message.strip()
+    remove_file(tile+".vrt")
 
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
@@ -953,6 +993,10 @@ remove_file(vrt_filename)
 
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
+if mrf_compression_type == 'JPG' or mrf_compression_type == 'JPEG':
+    insert_method = 'Avg'
+else:
+    insert_method = 'NearNb'
 for tile in list(alltiles):
     if '.mrf' in tile.lower():
         mrf_list.append(tile)
@@ -962,30 +1006,7 @@ if len(mrf_list) == 0 and input_files == '':
 # Should only be one MRF, so use that one
 if len(mrf_list) > 0:
     mrf = mrf_list[0]
-    print "Inserting new tiles to", mrf
-    
-    mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'avg']
-    for tile in alltiles:
-        mrf_insert_command_list.append(tile)
-    mrf_insert_command_list.append(mrf)
-    log_the_command(mrf_insert_command_list)
-    try:
-        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError:
-        log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
-    insert_message = mrf_insert.stderr.readlines()
-    # Continue or break if there is an error?
-    for message in insert_message:
-        # Break on error
-        if 'ERROR' in message:
-            log_sig_exit('ERROR', message, sigevent_url)
-        else:
-            print message.strip()
-
-    # Copy MRF to output
-    shutil.copy(mrf, mrf_filename)
-    shutil.copy(mrf.replace('.mrf','.idx'), idx_filename)
-    shutil.copy(mrf.replace('.mrf',out_filename[-4:]), out_filename)
+    run_mrf_insert(mrf, alltiles, insert_method)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1387,40 +1408,18 @@ else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
     log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
     log_info_mssg('idxf should be >= vrtf')
-    mssg=str().join(['Unsuccessful:  gdal_translate   ',
-                     'Check the gdal mrf driver plugin.  ',
-                     'Check stderr file: ',
-                     gdal_translate_stderr_filename])
+    if nocopy==True:
+        mssg = mrf_filename + ' already exists'
+    else:
+        mssg=str().join(['Unsuccessful:  gdal_translate   ',
+                         'Check the gdal mrf driver plugin.  ',
+                         'Check stderr file: ',
+                         gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 # Insert into nocopy
 if nocopy==True:
-    print "Inserting new tiles to", gdal_mrf_filename
-    mrf_insert_command_list = ['mrf_insert', '-v', '-r', 'Avg']
-    for tile in alltiles:
-        if diff_resolution([tile, mrf_filename]):
-            # convert tile to matching resolution
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x)), tile, tile+".vrt"]
-            log_the_command(tile_vrt_command_list)
-            tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            tile_vrt.wait()
-            mrf_insert_command_list.append(tile+".vrt")
-        else:
-            mrf_insert_command_list.append(tile)
-    mrf_insert_command_list.append(gdal_mrf_filename)
-    log_the_command(mrf_insert_command_list)
-    try:
-        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError:
-        log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
-    insert_message = mrf_insert.stderr.readlines()
-    for message in insert_message:
-        # Break on error
-        if 'ERROR' in message:
-            log_sig_exit('ERROR', message, sigevent_url)
-        else:
-            print message.strip()
-    remove_file(tile+".vrt")
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method)
     
 # Rename MRFs
 if mrf_name != '':
