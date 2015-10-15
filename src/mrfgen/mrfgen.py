@@ -1359,7 +1359,7 @@ if len(mrf_output) == 0:
 # Get largest x,y dimension of MRF, usually x.
 try:
     # Open file.
-    mrf_file=open(mrf_filename, 'r')
+    mrf_file=open(mrf_filename, 'r+')
 except IOError:
     mssg=str().join(['Cannot read:  ', mrf_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
@@ -1373,6 +1373,18 @@ else:
     sizeZ=size_elements[0].getAttribute('z') #bands
     # Send to log.
     log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
+    
+    # Add mp_safe to Raster
+    mrf_file.seek(0)
+    lines = mrf_file.readlines()
+    for idx in range(0, len(lines)):
+        if '<Raster' in lines[idx]:
+            lines[idx] = lines[idx].replace('<Raster','<Raster mp_safe="on"')
+            log_info_mssg("Set MRF mp_safe on")
+    mrf_file.seek(0)
+    mrf_file.truncate()
+    mrf_file.writelines(lines)
+    
     # Close file.
     mrf_file.close()
     # Get largest dimension, usually X.
