@@ -916,10 +916,10 @@ if mrf_compression_type == 'PPNG' and colormap != '':
     for i, tile in enumerate(alltiles):
         temp_tile = None
         
-        # Check input PNGs/TIFFs if RGBA, then convert        
-        if '.png' or '.tif' in tile.lower():
+        # Check input PNGs/TIFFs if RGBA, then convert       
+        if tile.lower().endswith(('.png', '.tif', '.tiff')):
             
-            # Run the gdal_info on PNG tile.
+            # Run the gdal_info on tile.
             gdalinfo_command_list=['gdalinfo', tile]
             log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -1094,6 +1094,15 @@ if len(mrf_list) == 0 and input_files == '':
 # Should only be one MRF, so use that one
 if len(mrf_list) > 0:
     mrf = mrf_list[0]
+    timeout = time.time() + 30 # 30 second timeout if MRF is still being generated
+    while os.path.isfile(mrf) == False:
+        mssg=str().join([mrf, ' does not exist'])
+        if time.time() > timeout:
+            log_sig_exit('ERROR', mssg, sigevent_url)
+            break
+        log_sig_warn(mssg + ", waiting 5 seconds...", sigevent_url)
+        time.sleep(5)
+        
     # Check if zdb is used
     if zlevels != '' and zkey != '':
         mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey)
