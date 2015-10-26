@@ -690,14 +690,14 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''    
-    # nocopy
+    # nocopy, defaults to True
     try:
-        if get_dom_tag_value(dom, 'mrf_nocopy') == "true":
-            nocopy = True
-        else:
+        if get_dom_tag_value(dom, 'mrf_nocopy') == "false":
             nocopy = False
+        else:
+            nocopy = True
     except:
-        nocopy = False
+        nocopy = True
     # Close file.
     config_file.close()
 

@@ -119,7 +119,7 @@
   <xs:element name="target_extents" type="xs:string" nillable="true"/>
   <xs:element name="colormap" type="xs:string" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
-  <xs:element name="mrf_nocopy" type="xs:boolean" nillable="true" default="false"/>
+  <xs:element name="mrf_nocopy" type="xs:boolean" nillable="true" default="true"/>
   <xs:element name="mrf_z_levels" type="xs:integer" nillable="true"/>
   <xs:element name="mrf_z_key">
     <xs:complexType>
