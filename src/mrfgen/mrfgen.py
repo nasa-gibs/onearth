@@ -651,8 +651,13 @@ else:
         for level in overview_levels:
             if level.isdigit() == False:
                 log_sig_exit("ERROR", "'" + level + "' is not a valid overview value.", sigevent_url)
+        if len(overview_levels>1):
+            overview = overview_levels[1]/overview_levels[0]
+        else:
+            overview = 2
     except:
         overview_levels = ''
+        overview = 2
     # resampling method
     try:
         overview_resampling        =get_dom_tag_value(dom, 'overview_resampling')
@@ -1327,6 +1332,8 @@ if zlevels != '':
 if nocopy == True:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
+    gdal_translate_command_list.append('-co')
+    gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
         
 # add ending parameters      
 gdal_translate_command_list.append(vrt_filename)
@@ -1407,7 +1414,7 @@ old_stats=os.stat(idx_filename)
 if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
 
-    if overview_levels == '' or int(overview_levels[0])>1:
+    if nocopy == False and (overview_levels == '' or int(overview_levels[0])>1):
         # Create the gdaladdo command.
         gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
                                str(gdal_mrf_filename)]
