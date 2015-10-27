@@ -409,7 +409,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
         target_x -- The target resolution for x
     """    
     print "Inserting new tiles to", mrf
-    mrf_insert_command_list = ['mrf_insert', '-v', '-r', insert_method]
+    mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
     for tile in alltiles:
         if diff_resolution([tile, mrf]):
             # convert tile to matching resolution
@@ -422,20 +422,23 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
             mrf_insert_command_list.append(tile+".vrt")
         else:
             mrf_insert_command_list.append(tile)
-    mrf_insert_command_list.append(mrf)
-    log_the_command(mrf_insert_command_list)
-    try:
-        mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError:
-        log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
-    insert_message = mrf_insert.stderr.readlines()
-    for message in insert_message:
-        # Break on error
-        if 'ERROR' in message:
-            log_sig_exit('ERROR', message, sigevent_url)
-        else:
-            print message.strip()
-    remove_file(tile+".vrt")
+        mrf_insert_command_list.append(mrf)
+        log_the_command(mrf_insert_command_list)
+        try:
+            mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            mrf_insert_command_list.pop()
+            mrf_insert_command_list.pop()
+        except OSError:
+            log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
+        insert_message = mrf_insert.stderr.readlines()
+        for message in insert_message:
+            # Break on error
+            if 'ERROR' in message:
+                log_sig_exit('ERROR', message, sigevent_url)
+            else:
+                print message.strip()
+        remove_file(tile+".vrt")
+        
 
 def insert_zdb(mrf, zlevels, zkey):
     """
