@@ -477,21 +477,20 @@ def insert_zdb(mrf, zlevels, zkey):
                 log_sig_warn(mssg, sigevent_url)
     
     # Get z-index from ZDB if using z-dimension
-    if zkey != '':
-        zdb_out = mrf.replace('.mrf','.zdb')
-        try:
-            db_exists = os.path.isfile(zdb_out)
-            log_info_mssg("Connecting to " + zdb_out)
-            con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
-            
-            if db_exists == False:
-                cur = con.cursor() 
-                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
-                cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-                z = cur.lastrowid
-            else: 
+    zdb_out = mrf.replace('.mrf','.zdb')
+    z = None
+    try:
+        db_exists = os.path.isfile(zdb_out)
+        log_info_mssg("Connecting to " + zdb_out)
+        con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
+        
+        if db_exists == False:
+            cur = con.cursor() 
+            cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+            con.commit()
+        else:
+            if zkey != '':
                 cur = con.cursor()
-                
                 # Check for existing key
                 cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
                 lid = int(cur.fetchone()[0])
@@ -508,15 +507,22 @@ def insert_zdb(mrf, zlevels, zkey):
                         mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
                         log_sig_exit('ERROR', mssg, sigevent_url)
                     # Insert values
-                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                    if lid == 0:
+                        try:
+                            cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+                        except sqlite3.Error, e: # if 0 index has already been taken
+                            print "%s: trying new ID" % e.args[0]
+                            cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                    else:
+                        cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
                     z = cur.lastrowid
-            log_info_mssg("Current z-level is " +str(z))
-            
-        except sqlite3.Error, e:
-            if con:
-                con.rollback()
-            mssg = "%s:" % e.args[0]
-            log_sig_exit('ERROR', mssg, sigevent_url)
+                    log_info_mssg("Current z-level is " +str(z))
+        
+    except sqlite3.Error, e:
+        if con:
+            con.rollback()
+        mssg = "%s:" % e.args[0]
+        log_sig_exit('ERROR', mssg, sigevent_url)
         
     # Use specific z if appropriate
     if z != None:
@@ -1185,7 +1191,7 @@ if len(mrf_list) > 0:
         time.sleep(5)
         
     # Check if zdb is used
-    if zlevels != '' and zkey != '':
+    if zlevels != '':
         mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey)
     else:
         con = None
@@ -1207,7 +1213,7 @@ if len(mrf_list) > 0:
     
   
 # Use zdb index if z-levels are defined
-if zlevels != '' and zkey != '':
+if zlevels != '':
     mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
@@ -1468,7 +1474,7 @@ else:
     log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
     
     # Add mp_safe to Raster if using z levels
-    if zlevels != '' and zkey != '':
+    if zlevels != '':
         mrf_file.seek(0)
         lines = mrf_file.readlines()
         for idx in range(0, len(lines)):
