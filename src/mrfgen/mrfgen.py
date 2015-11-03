@@ -411,6 +411,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
     print "Inserting new tiles to", mrf
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
     for tile in alltiles:
+        if os.path.splitext(tile)[1] == ".vrt":
+            log_info_mssg("Skipping insert of " + tile)
+            continue
         if diff_resolution([tile, mrf]):
             # convert tile to matching resolution
             if resize_resampling == '':
@@ -524,6 +527,70 @@ def insert_zdb(mrf, zlevels, zkey):
     return (gdal_mrf_filename, z, zdb_out, con)
 
 
+def create_vrt(basename, empty_tile, epsg, xmin, ymin, xmax, ymax):
+    """
+    Generates an empty VRT for a blank MRF
+    Arguments:
+        basename -- The base filename
+        empty_tile -- The empty tile filename
+        epsg -- The projection EPSG code 
+        xmin -- Minimum x value
+        ymin -- Minimum y value
+        xmax -- Maximum x value
+        ymax -- Maximum y value
+    """  
+    # copy empty tile and generate world file
+    new_empty_tile = basename + "_empty" + os.path.splitext(empty_tile)[1]
+    shutil.copy(empty_tile, new_empty_tile)
+    try:
+        empty_world=open(basename + "_empty.wld", 'w+')
+    except IOError:
+        mssg=str().join(['Cannot open world file: ', basename + "_empty.wld"])
+        log_sig_exit('ERROR', mssg, sigevent_url)
+        
+    xres = (float(xmax) - float(xmin)) / 512
+    yres = ((float(ymax) - float(ymin)) / 512) * -1
+    xul = float(xmin) + (xres/2)
+    yul = float(ymax) + (yres/2)
+    world_lines = "%s\n0.000000000000\n0.000000000000\n%s\n%s\n%s" % (xres,yres,xul,yul)
+    empty_world.write(world_lines)
+    empty_world.close()
+    
+    # generate VRT with new empty tile
+    empty_vrt_filename = basename + "_empty.vrt"
+    log_info_mssg("Generating empty VRT as input " + empty_vrt_filename)
+    gdalbuildvrt_command_list=['gdalbuildvrt', '-te', xmin, ymin, xmax, ymax,'-a_srs', epsg, empty_vrt_filename, new_empty_tile]
+    log_the_command(gdalbuildvrt_command_list)
+    gdalbuildvrt_stderr_filename=str().join([basename, '_gdalbuildvrt_empty_stderr.txt'])
+    gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'w')
+    subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
+    
+    # remove empty tile from vrt
+    try:
+        empty_vrt=open(empty_vrt_filename, 'r+')
+    except IOError:
+        mssg=str().join(['Cannot open empty vrt: ', empty_vrt_filename])
+        log_sig_exit('ERROR', mssg, sigevent_url)
+        
+    dom = xml.dom.minidom.parse(empty_vrt)
+    bands = dom.getElementsByTagName("VRTRasterBand")
+    for band in bands:
+        for i, node in enumerate(band.childNodes):
+            if node.nodeName == "SimpleSource":
+                band.removeChild(band.childNodes[i])
+    empty_vrt.seek(0)
+    empty_vrt.truncate()
+    dom.writexml(empty_vrt)
+    empty_vrt.close()
+    
+    # cleanup
+    remove_file(new_empty_tile)
+    remove_file(basename + "_empty.wld")
+    remove_file(gdalbuildvrt_stderr_filename)
+
+    return empty_vrt_filename
+
+
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
 #-------------------------------------------------------------------------------
@@ -551,6 +618,11 @@ sigevent_url=options.sigevent_url
 # Data only.
 data_only = options.data_only
 
+# Get current time, which is written to a file as the previous cycle time.  
+# Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
+# may get passed over because they were created while this script is running.
+current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
+
 # Read XML configuration file.
 try:
     # Open file.
@@ -565,6 +637,12 @@ else:
     # Parameter name.
     parameter_name         =get_dom_tag_value(dom, 'parameter_name')
     date_of_data           =get_dom_tag_value(dom, 'date_of_data')
+
+    # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
+    # Files get date_of_date added, links do not.
+    basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', 
+                         current_cycle_time])    
+    
     # for sub-daily imagery
     try: 
         time_of_data = get_dom_tag_value(dom, 'time_of_data')
@@ -643,9 +721,14 @@ else:
     # Input files.
     try:
         input_files = get_input_files(dom)
+        if input_files == '':
+            raise ValueError('No input files provided')
     except:
         if input_dir == None:
-            log_sig_exit('ERROR', "<input_files> or <input_dir> is required", sigevent_url)
+            if mrf_empty_tile_filename != '':
+                input_files = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename, target_epsg, xmin, ymin, xmax, ymax)
+            else:
+                log_sig_exit('ERROR', "<input_files> or <input_dir> or <mrf_empty_tile_filename> is required", sigevent_url)
         else:
             input_files = ''
     # overview levels
@@ -721,16 +804,6 @@ script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
 
 # Ensure that mrf_compression_type is uppercase.
 mrf_compression_type=string.upper(mrf_compression_type)
-
-# Get current time, which is written to a file as the previous cycle time.  
-# Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
-# may get passed over because they were created while this script is running.
-current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
-
-# Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
-# Files get date_of_date added, links do not.
-basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', 
-                     current_cycle_time])
 
 # Verify logfile_dir first so that the log can be started.
 verify_directory_path_exists(logfile_dir, 'logfile_dir')
@@ -880,7 +953,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
     for i, tile in enumerate(alltiles):
         # Create the identify command.
         identify_command_list=['identify', tile]
-        if ".mrf" in tile: # ignore MRF inserts
+        if ".mrf" in tile or ".vrt" in tile: # ignore MRF and VRT
             goodtiles.append(tile)
         else:
             # Execute identify.
@@ -1303,8 +1376,9 @@ if target_x == '':
 # Only use new target size if different.
 if target_x != x_size:
     # Calculate output size of Y dimension and maintain aspect ratio.
-    target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
-    log_info_mssg('Calculating target_y ' + target_y)
+    if target_y == '':
+        target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
+        log_info_mssg('Calculating target_y ' + target_y)
     if resize_resampling == '':
         log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
 else: #don't bother calculating y
