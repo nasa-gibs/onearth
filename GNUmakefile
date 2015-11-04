@@ -77,9 +77,7 @@ build/cgicc/VERSION:
 		--strip-components=1 --exclude=.gitignore
 
 onearth-compile:
-	$(MAKE) -C src/mod_onearth \
-		LIBS=-L/usr/pgsql-$(POSTGRES_VERSION)/lib \
-		LDFLAGS=-lpq
+	$(MAKE) -C src/mod_onearth
 
 #-----------------------------------------------------------------------------
 # Install

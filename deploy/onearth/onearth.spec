@@ -18,11 +18,6 @@ BuildRequires:	gcc-c++
 BuildRequires:	freetype-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
-%if 0%{?el6}
-BuildRequires:	postgresql92-devel
-%else
-BuildRequires:	postgresql93-devel
-%endif
 Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
@@ -92,12 +87,7 @@ cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
 
 %build
-%if 0%{?el6}
-make onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.2
-%else
-make onearth PREFIX=%{_prefix} POSTGRES_VERSION=9.3
-%endif
-
+make onearth PREFIX=%{_prefix}
 
 %install
 rm -rf %{buildroot}
