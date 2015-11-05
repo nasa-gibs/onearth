@@ -19,10 +19,6 @@ Some build and runtime dependencies require access to the Extra Packages for Ent
 
 http://download.fedoraproject.org/pub/epel/6/i386/repoview/epel-release.html
 
-Some packages are built against PostgreSQL 9.2 and PostGIS 2. Install the latest repository definition using the RPM found at the following location:
-
-http://yum.postgresql.org/repopackages.php#pg92
-
 These packages are required or recommended for building:
 
 * ccache: Speeds up rebuilds

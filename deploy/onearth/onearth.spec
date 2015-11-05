@@ -174,6 +174,9 @@ sudo python setup.py install
 
 
 %changelog
+* Wed Nov 4 2015 Joshua Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 0.8.0-1
+- Remove Postgres dependencies
+
 * Mon Aug 10 2015 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.7.0-1
 - Added requires for sqlite
 
