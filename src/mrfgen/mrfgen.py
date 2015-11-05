@@ -398,7 +398,38 @@ def diff_resolution(tiles):
                         return True              
     return False
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
+def is_global_image(tile, xmin, ymin, xmax, ymax):
+    """
+    Test if input tile fills entire extent
+    Argument:
+        tile -- Tile to test
+        xmin -- Minimum x value
+        ymin -- Minimum y value
+        xmax -- Maximum x value
+        ymax -- Maximum y value
+    """
+    print "Checking for global image"
+    upper_left = False
+    lower_right = False
+    gdalinfo_command_list=['gdalinfo', tile]
+    gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    for line in gdalinfo.stdout.readlines():
+        if "Upper Left" in line:
+            in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
+            if float(in_xmin.strip()) == float(xmin) and float(in_ymax.strip()) == float(ymax):
+                upper_left = True
+        if "Lower Right" in line:
+            in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
+            if float(in_xmax.strip()) == float(xmax) and float(in_ymin.strip()) == float(ymin):
+                lower_right = True
+    if upper_left == True and lower_right == True:
+        log_info_mssg(tile + " is a global image")
+        return True
+    else:
+        return False
+    
+
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
@@ -407,6 +438,10 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
         insert_method -- The resampling method to use {Avg, NearNb}
         resize_resampling -- The resampling method to use for gdalwarp
         target_x -- The target resolution for x
+        xmin -- Minimum x value
+        ymin -- Minimum y value
+        xmax -- Maximum x value
+        ymax -- Maximum y value
     """    
     print "Inserting new tiles to", mrf
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
@@ -418,7 +453,15 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x)), tile, tile+".vrt"]
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x))]
+            if is_global_image(tile, xmin, ymin, xmax, ymax) == True:
+                tile_vrt_command_list.append('-te')
+                tile_vrt_command_list.append(xmin)
+                tile_vrt_command_list.append(ymin)
+                tile_vrt_command_list.append(xmax)
+                tile_vrt_command_list.append(ymax)
+            tile_vrt_command_list.append(tile)
+            tile_vrt_command_list.append(tile+".vrt")
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
@@ -435,9 +478,11 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x):
             log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
         insert_message = mrf_insert.stderr.readlines()
         for message in insert_message:
-            # Break on error
-            if 'ERROR' in message:
-                log_sig_exit('ERROR', message, sigevent_url)
+            if 'ERROR 5' in message:
+                log_sig_warn(message, sigevent_url)
+            elif 'ERROR' in message:
+                remove_file(tile+".vrt")
+                log_sig_warn(message, sigevent_url)
             else:
                 print message.strip()
         remove_file(tile+".vrt")
@@ -787,14 +832,20 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''    
-    # nocopy, defaults to True
+    # nocopy, defaults to True if not global
     try:
         if get_dom_tag_value(dom, 'mrf_nocopy') == "false":
             nocopy = False
         else:
             nocopy = True
     except:
-        nocopy = True
+        if len(input_files.split(',')) == 1:
+            if is_global_image(input_files.split(',')[0],target_xmin, target_ymin, target_xmax, target_ymax) == True:
+                nocopy = False
+            else:
+                nocopy = True
+        else:
+            nocopy = True
     # Close file.
     config_file.close()
 
@@ -1196,7 +1247,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1563,7 +1614,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax)
     
 # Rename MRFs
 if mrf_name != '':
