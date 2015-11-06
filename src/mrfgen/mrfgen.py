@@ -416,11 +416,11 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     for line in gdalinfo.stdout.readlines():
         if "Upper Left" in line:
             in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
-            if float(in_xmin.strip()) == float(xmin) and float(in_ymax.strip()) == float(ymax):
+            if float(in_xmin.strip()) == float(xmin) and float(in_ymax.strip().split(' ')[0]) == float(ymax):
                 upper_left = True
         if "Lower Right" in line:
             in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
-            if float(in_xmax.strip()) == float(xmax) and float(in_ymin.strip()) == float(ymin):
+            if float(in_xmax.strip()) == float(xmax) and float(in_ymin.strip().split(' ')[0]) == float(ymin):
                 lower_right = True
     if upper_left == True and lower_right == True:
         log_info_mssg(tile + " is a global image")
@@ -839,7 +839,7 @@ else:
         else:
             nocopy = True
     except:
-        if len(input_files.split(',')) == 1:
+        if len(input_files.split(',')) == 1 and input_files.split(',')[0].endswith('.vrt') == False:
             if is_global_image(input_files.split(',')[0],target_xmin, target_ymin, target_xmax, target_ymax) == True:
                 nocopy = False
             else:
@@ -987,14 +987,15 @@ os.chdir(working_dir)
 add_transparency = False
 
 # Get list of all tile filenames.
-if input_files == '':
-    if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
-        alltiles=glob.glob(str().join([input_dir, '*.jpg']))
-    else: #default to png
-        alltiles=glob.glob(str().join([input_dir, '*.png']))
-else:
+alltiles = []
+if input_files != '':
     input_files = input_files.strip()
     alltiles = input_files.split(',')
+if input_dir != None:
+    if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*.jpg']))
+    else: #default to png
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))    
 
 if len(alltiles) == 0: # No tiles, check for possible tiffs
     alltiles=glob.glob(str().join([input_dir, '*.tif*']))
