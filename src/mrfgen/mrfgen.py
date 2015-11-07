@@ -429,7 +429,7 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
         return False
     
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
@@ -453,7 +453,12 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str(360.0/int(target_x)), str(-360.0/int(target_x))]
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((float(xmax)-float(xmin))/int(target_x)), str((float(xmin)-float(xmax))/int(target_x))]
+            if target_epsg != source_epsg:
+                tile_vrt_command_list.append('-s_srs')
+                tile_vrt_command_list.append(source_epsg)
+                tile_vrt_command_list.append('-t_srs')
+                tile_vrt_command_list.append(target_epsg)
             if is_global_image(tile, xmin, ymin, xmax, ymax) == True:
                 tile_vrt_command_list.append('-te')
                 tile_vrt_command_list.append(xmin)
@@ -481,7 +486,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             if 'ERROR 5' in message:
                 log_sig_warn(message, sigevent_url)
             elif 'ERROR' in message:
-                remove_file(tile+".vrt")
                 log_sig_warn(message, sigevent_url)
             else:
                 print message.strip()
@@ -1248,7 +1252,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1615,7 +1619,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg)
     
 # Rename MRFs
 if mrf_name != '':
