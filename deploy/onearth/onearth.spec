@@ -172,8 +172,16 @@ sudo python setup.py install
 %{_datadir}/onearth/demo
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/on_earth-demo.conf
 
+%post demo
+cd %{_datadir}/onearth/apache/kml
+make WEB_HOST=localhost/onearth/demo-twms
+mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
+   %{_datadir}/onearth/demo/twms-geo
 
 %changelog
+* Wed Nov 11 2015 Joshua Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 0.8.0-1
+- Added creation of kml/twms endpoint
+
 * Wed Nov 4 2015 Joshua Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 0.8.0-1
 - Remove Postgres dependencies
 
