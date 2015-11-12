@@ -1555,7 +1555,7 @@ if idxf >= vrtf:
 
     if nocopy == False and (overview_levels == '' or int(overview_levels[0])>1):
         # Create the gdaladdo command.
-        gdaladdo_command_list=['gdaladdo', '-q', '-r', overview_resampling,
+        gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
                                str(gdal_mrf_filename)]
         # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
         if overview_levels == '':
@@ -1579,7 +1579,9 @@ if idxf >= vrtf:
 
         #-------------------------------------------------------------------
         # Execute gdaladdo.
-        subprocess.call(gdaladdo_command_list, stderr=gdaladdo_stderr_file)
+        gdaladdo_process = subprocess.Popen(gdaladdo_command_list, stdout=subprocess.PIPE, stderr=gdaladdo_stderr_file)
+        out, err = gdaladdo_process.communicate()
+        print out            
         #-------------------------------------------------------------------
 
         # Close stderr file.
@@ -1590,7 +1592,9 @@ if idxf >= vrtf:
         new_stats=os.stat(idx_filename)
 
         # Check for gdaladdo success by checking time stamp and file size.
-        if (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
+        if gdaladdo_process.returncode == -11:
+            log_sig_exit('ERROR', 'Unsuccessful:  gdaladdo   Segmentation fault', sigevent_url)
+        elif (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
             remove_file(gdaladdo_stderr_filename)
         else:
             log_info_mssg(str().join(['addf = ',str(addf)]))
@@ -1601,8 +1605,7 @@ if idxf >= vrtf:
             log_info_mssg(str().join(['old_stats.st_size = ',
                                       str(old_stats.st_size)]))
             log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
-            mssg=str().join(['Unsuccessful:  gdaladdo   Check stderr file: ',
-                             gdaladdo_stderr_filename])
+            mssg=str().join(['Unsuccessful:  gdaladdo   Errors: ', str(err)])
             log_sig_exit('ERROR', mssg, sigevent_url)
 else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
