@@ -25,6 +25,7 @@ For more information, visit https://earthdata.nasa.gov/gibs
 * [OnEarth Legend Generator](src/generate_legend/README.md)
 * [OnEarth Metrics](src/onearth_logs/README.md)
 * [OnEarth Scripts](src/scripts/README.md)
+* [OnEarth Demo](src/demo/README.md)
 
 ## Other Information
 
