@@ -416,11 +416,11 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     for line in gdalinfo.stdout.readlines():
         if "Upper Left" in line:
             in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
-            if float(in_xmin.strip()) == float(xmin) and float(in_ymax.strip().split(' ')[0]) == float(ymax):
+            if int(round(float(in_xmin.strip()))) == int(round(float(xmin))) and int(round(float(in_ymax.strip().split(' ')[0]))) == int(round(float(ymax))):
                 upper_left = True
         if "Lower Right" in line:
             in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
-            if float(in_xmax.strip()) == float(xmax) and float(in_ymin.strip().split(' ')[0]) == float(ymin):
+            if int(round(float(in_xmax.strip()))) == int(round(float(xmax))) and int(round(float(in_ymin.strip().split(' ')[0]))) == int(round(float(ymin))):
                 lower_right = True
     if upper_left == True and lower_right == True:
         log_info_mssg(tile + " is a global image")
@@ -453,7 +453,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((float(xmax)-float(xmin))/int(target_x)), str((float(xmin)-float(xmax))/int(target_x))]
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((float(xmax)-float(xmin))/float(target_x)), str((float(xmin)-float(xmax))/float(target_x))]
             if target_epsg != source_epsg:
                 tile_vrt_command_list.append('-s_srs')
                 tile_vrt_command_list.append(source_epsg)
@@ -483,13 +483,17 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
         insert_message = mrf_insert.stderr.readlines()
         for message in insert_message:
-            if 'ERROR 5' in message:
+            if 'Access window out of range' in message:
+                continue
                 log_sig_warn(message, sigevent_url)
             elif 'ERROR' in message:
-                log_sig_warn(message, sigevent_url)
+                try:
+                    sigevent('ERROR', 'mrf_insert ' + message, sigevent_url)
+                except urllib2.URLError:
+                    print 'sigevent service is unavailable'
             else:
                 print message.strip()
-        remove_file(tile+".vrt")
+         remove_file(tile+".vrt")
         
 
 def insert_zdb(mrf, zlevels, zkey):
@@ -843,13 +847,7 @@ else:
         else:
             nocopy = True
     except:
-        if len(input_files.split(',')) == 1 and input_files.split(',')[0].endswith('.vrt') == False:
-            if is_global_image(input_files.split(',')[0],target_xmin, target_ymin, target_xmax, target_ymax) == True:
-                nocopy = False
-            else:
-                nocopy = True
-        else:
-            nocopy = True
+        nocopy = None
     # Close file.
     config_file.close()
 
@@ -1153,6 +1151,17 @@ if mrf_compression_type == 'PPNG' and colormap != '':
         
 # sort
 alltiles.sort()
+
+# determine if nocopy should be used if not set
+if nocopy == None:
+    if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
+        if is_global_image(alltiles[0],xmin, ymin, xmax, ymax) == True:
+            nocopy = False
+        else:
+            nocopy = True
+    else:
+        nocopy = True
+    log_info_mssg("Setting MRF nocopy to " + str(nocopy)) 
 
 # check for different resolutions
 diff_res = diff_resolution(alltiles)
