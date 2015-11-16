@@ -493,7 +493,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
                     print 'sigevent service is unavailable'
             else:
                 print message.strip()
-         remove_file(tile+".vrt")
+        remove_file(tile+".vrt")
         
 
 def insert_zdb(mrf, zlevels, zkey):
