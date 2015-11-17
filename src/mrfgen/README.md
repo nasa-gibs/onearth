@@ -63,6 +63,7 @@ Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <target_x>4096</target_x>
+ <mrf_nocopy>false</mrf_nocopy>
 </mrfgen_configuration>
 ```
 
@@ -78,6 +79,7 @@ Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may
 * mrf_blocksize: The MRF tile size. All tiles are square.
 * mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), or PPNG (for 256 color paletted PNGs).
 * target_x: The full x output size of the MRF image. target_y is calculated to maintain native aspect ratio if not defined in ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
+* mrf_nocopy: (true/false) Whether the MRF should be generated without GDAL copy. mrf_insert will be used for improved performance if true. Defaults to "true" unless a single global image is used as input.
 
 These parameters are available but not used in the example above nor necessarily required.
 
@@ -110,6 +112,7 @@ Let's modify the previous sample configuration to reproject the imagery into Web
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <outsize>20480 20480</outsize>
+ <mrf_nocopy>false</mrf_nocopy>
  <overview_resampling>nearest</overview_resampling>
  <reprojection_resampling>near</reprojection_resampling> 
  <target_epsg>3857</target_epsg>

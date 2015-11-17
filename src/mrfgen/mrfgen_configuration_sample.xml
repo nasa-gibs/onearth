@@ -15,6 +15,7 @@
  <overview_resampling>nearest</overview_resampling>
  <target_epsg>4326</target_epsg>
  <extents>-180,-90,180,90</extents>
- <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <colormap></colormap>
+ <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
+ <mrf_nocopy>true</mrf_nocopy>
 </mrfgen_configuration>
