@@ -438,40 +438,40 @@ static void *r_file_pread(request_rec *r, char *fname,
   return (readbytes==nbytes)?buffer:0;
 }
 
-char *get_keyword(request_rec *r) {
+char *get_keyword(request_rec *r, WMSCache *cache) {
 	  char *keyword = apr_pcalloc(r->pool,16);
-
+	  
 	  static char* timearg="time=";
 	  char *targ=0;
-	  apr_time_exp_t tm; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0; tm.tm_hour=0; tm.tm_min=0; tm.tm_sec=0;
+	  char *datetime;
+	  apr_time_exp_t tm = {0};
 
 	  if ((targ=ap_strcasestr(r->args,timearg))) {
 	    targ+=5; // Skip the time= part
-	    if (strlen(targ)==24) { // Make sure time is in correct length
-			tm.tm_year=apr_atoi64(targ);
-			targ+=5; // Skip the YYYY- part
-			tm.tm_mon=apr_atoi64(targ);
-			targ+=3; // Skip the MM- part
-			tm.tm_mday=apr_atoi64(targ);
-			if (strlen(targ)==16) {
-				targ+=3;
-				tm.tm_hour = apr_atoi64(targ);
-				targ+=5;
-				tm.tm_min = apr_atoi64(targ);
-				targ+=5;
-				tm.tm_sec = apr_atoi64(targ);
-			}
+	  	if (strlen(targ)==0) {
+	  		datetime = cache->time_period; // If no TIME query, set to last time period
+	  	} else if (strlen(targ)==24) { 
+	    	datetime = targ; // If TIME query, make sure full date/time present
 	    } else {
 	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
 	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
 			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
-	    	return 0;
+			return 0;
 	    }
-
-		sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+		tm.tm_year=apr_atoi64(datetime);
+		datetime+=5; // Skip the YYYY- part
+		tm.tm_mon=apr_atoi64(datetime)-1;
+		datetime+=3; // Skip the MM- part
+		tm.tm_mday=apr_atoi64(datetime);
+		datetime+=3;
+		tm.tm_hour = apr_atoi64(datetime);
+		datetime+=5;
+		tm.tm_min = apr_atoi64(datetime);
+		datetime+=5;
+		tm.tm_sec = apr_atoi64(datetime);
+		sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 	  }
-
-//	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Keyword: %s",keyword);
+	  // ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Keyword: %s",keyword);
 	  return keyword;
 }
 
@@ -1844,7 +1844,7 @@ static int mrf_handler(request_rec *r)
 			  }
 
 			  // Lookup the z index from the ZDB file based on keyword
-			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
+			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r, cache));
 			  if (z<0) {
 				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d",z);
 			  }
