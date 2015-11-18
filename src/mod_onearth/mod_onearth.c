@@ -260,7 +260,7 @@ static void *r_file_pread(request_rec *r, char *fname,
     	targ[0] = 0;
     }
 
-    if (strlen(targ)==24 || strlen(targ)==10 || strlen(targ)==0) { // Make sure time is in correct length
+    if (strlen(targ)==24 || strlen(targ)==10) { // Make sure time is in correct length
 		tm.tm_year=apr_atoi64(targ)-1900; // Convert to tm standard
 		targ+=5; // Skip the YYYY- part
 		tm.tm_mon=apr_atoi64(targ)-1; // Months are 0-indexed
@@ -285,7 +285,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			targ+=5;
 			tm.tm_sec = apr_atoi64(targ);
 		}
-    } else {
+    } else if(strlen(targ)!=0) {
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
     	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
 		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
