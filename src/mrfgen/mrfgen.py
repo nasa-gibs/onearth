@@ -484,7 +484,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
         insert_message = mrf_insert.stderr.readlines()
         for message in insert_message:
             if 'Access window out of range' in message:
-                continue
                 log_sig_warn(message, sigevent_url)
             elif 'ERROR' in message:
                 try:
