@@ -1021,26 +1021,26 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         has_zdb -- whether or not the layer contains a zdb file
     """
     
-    last_time = detected_times[-1].split("/")[1]
-    if 'T' in last_time: # sub-daily files
-        t = datetime.strptime(last_time,"%Y-%m-%dT%H:%M:%SZ")
+    first_time = detected_times[-1].split("/")[0]
+    if 'T' in first_time: # sub-daily files
+        t = datetime.strptime(first_time,"%Y-%m-%dT%H:%M:%SZ")
         if has_zdb:
             filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
         else:
             filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
-        last_year = datetime.strftime(t,"%Y")
+        first_year = datetime.strftime(t,"%Y")
     else:
-        t = datetime.strptime(last_time,"%Y-%m-%d")
+        t = datetime.strptime(first_time,"%Y-%m-%d")
         filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
-        last_year = datetime.strftime(t,"%Y")
+        first_year = datetime.strftime(t,"%Y")
     
     link_pre, data_ext = os.path.splitext(dataFileLocation)
     link_dir = os.path.dirname(link_pre)
     
-    mrf = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".mrf"
-    idx = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".idx"
-    data = archiveLocation + ("",str(last_year)+"/")[year] + filename + data_ext
-    zdb = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".zdb"
+    mrf = archiveLocation + ("",str(first_year)+"/")[year] + filename + ".mrf"
+    idx = archiveLocation + ("",str(first_year)+"/")[year] + filename + ".idx"
+    data = archiveLocation + ("",str(first_year)+"/")[year] + filename + data_ext
+    zdb = archiveLocation + ("",str(first_year)+"/")[year] + filename + ".zdb"
     
     mrf_link = link_pre + ".mrf"
     idx_link = link_pre + ".idx"
