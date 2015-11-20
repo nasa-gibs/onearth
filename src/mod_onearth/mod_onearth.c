@@ -401,9 +401,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  // calculate the last date in the span of the time interval
 					  int span = start_offset % interval;
 					  int request_day = tm.tm_yday;
-					  if (start_offset <= interval)
+					  if (start_offset <= interval && start_offset >= 0) {
 						  request_day = st.tm_yday;
-					  else {
+					  } else {
 						  // check if month period
 						  if (time_period[(strlen(time_period)-1)] == 'M') {
 							  tm.tm_mday = st.tm_mday;
