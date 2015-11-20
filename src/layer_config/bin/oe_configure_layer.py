@@ -786,12 +786,14 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                 print "Year directories available: " + ",".join(years)
                 for idx in range(0, len(years)):
                     if len(os.listdir(archiveLocation+'/'+years[idx])) > 0:
-                        oldest_year = years[idx]
-                        break; 
+                        if years[idx].isdigit() == True:
+                            oldest_year = years[idx]
+                            break; 
                 for idx in reversed(range(0, len(years))):
                     if len(os.listdir(archiveLocation+'/'+years[idx])) > 0:
-                        newest_year = years[idx]
-                        break;
+                        if years[idx].isdigit() == True:
+                            newest_year = years[idx]
+                            break;
         
             print "Available range with data is %s to %s" % (oldest_year, newest_year)
             if newest_year == '' or oldest_year == '':
@@ -1021,26 +1023,32 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         has_zdb -- whether or not the layer contains a zdb file
     """
     
-    first_time = detected_times[-1].split("/")[0]
-    if 'T' in first_time: # sub-daily files
-        t = datetime.strptime(first_time,"%Y-%m-%dT%H:%M:%SZ")
+    # Find the latest file in the archive
+    if len(detected_times[-1].split("/")) == 3:
+        period = "/" + detected_times[-1].split("/")[2]
+    else:
+        period = ""
+    last_time = detect_time(detected_times[-1].split("/")[0]+"/DETECT"+period, archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
+    
+    if 'T' in last_time: # sub-daily files
+        t = datetime.strptime(last_time,"%Y-%m-%dT%H:%M:%SZ")
         if has_zdb:
             filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
         else:
             filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
-        first_year = datetime.strftime(t,"%Y")
+        last_year = datetime.strftime(t,"%Y")
     else:
-        t = datetime.strptime(first_time,"%Y-%m-%d")
+        t = datetime.strptime(last_time,"%Y-%m-%d")
         filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
-        first_year = datetime.strftime(t,"%Y")
+        last_year = datetime.strftime(t,"%Y")
     
     link_pre, data_ext = os.path.splitext(dataFileLocation)
     link_dir = os.path.dirname(link_pre)
     
-    mrf = archiveLocation + ("",str(first_year)+"/")[year] + filename + ".mrf"
-    idx = archiveLocation + ("",str(first_year)+"/")[year] + filename + ".idx"
-    data = archiveLocation + ("",str(first_year)+"/")[year] + filename + data_ext
-    zdb = archiveLocation + ("",str(first_year)+"/")[year] + filename + ".zdb"
+    mrf = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".mrf"
+    idx = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".idx"
+    data = archiveLocation + ("",str(last_year)+"/")[year] + filename + data_ext
+    zdb = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".zdb"
     
     mrf_link = link_pre + ".mrf"
     idx_link = link_pre + ".idx"
