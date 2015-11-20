@@ -491,14 +491,13 @@ char *get_keyword(request_rec *r) {
 				targ+=5;
 				tm.tm_sec = apr_atoi64(targ);
 			}
-	    } else {
+			sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);	
+	    } else if (strlen(targ)!=0) {
 	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
 	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
 			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
 	    	return 0;
 	    }
-
-		sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 	  }
 
 //	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Keyword: %s",keyword);
@@ -507,7 +506,7 @@ char *get_keyword(request_rec *r) {
 
 // Lookup the z index from ZDB file based on keyword
 static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
-//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
+	// ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
 
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -515,21 +514,25 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
     int z = -1;
     int rc = sqlite3_open_v2(zidxfname, &db, SQLITE_OPEN_READONLY, NULL);
 
+    if (keyword==0) { // Bail if keyword is an error code
+    	return -1; 
+    }
+
     if (rc != SQLITE_OK) {
         ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Cannot get z-index from %s", zidxfname);
         sqlite3_close(db);
         return -1;
     }
 
-    char *sql = "SELECT z FROM ZINDEX WHERE key_str = ? LIMIT 1";
+    char *sql = strlen(keyword)!=0 ? "SELECT z FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT z FROM ZINDEX order by key_str DESC LIMIT 1";
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
-    if (rc == SQLITE_OK) {
-        sqlite3_bind_text(res, 1, keyword, 14, SQLITE_STATIC);
-    } else {
+    if (rc != SQLITE_OK) {
     	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Failed to fetch data from %s", zidxfname);
         sqlite3_close(db);
         return -1;
+    } else if (strlen(keyword)!=0) {
+        sqlite3_bind_text(res, 1, keyword, 14, SQLITE_STATIC);
     }
 
     rc = sqlite3_step(res);
