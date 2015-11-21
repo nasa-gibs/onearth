@@ -318,12 +318,10 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  else {
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
-			  apr_time_exp_t st = {0};
-			  apr_time_exp_t end = {0};
+			  apr_time_exp_t st; st.tm_year=0;st.tm_mon=0;st.tm_mday=1;st.tm_yday=1;st.tm_hour=0;st.tm_min=0;st.tm_sec=0;
 			  int interval = 0;
 			  int start_offset = 0;
 			  int start_leap = 0;
-			  int end_leap = 0;
 			  int i;
 			  for (i=0;i<num_periods;i++) {
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
@@ -365,7 +363,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  	  // get the offset from starting date
 				  	  start_offset = tm.tm_yday-st.tm_yday;
 				  	  // add prior years if not monthly
-				  	  if (time_period[(strlen(time_period)-1)] != 'M') {
+				  	  if (time_period[(strlen(time_period)-1)] != 'M' && hastime==0) {
 				  		  while (tm.tm_year>st.tm_year) {
 							  if ((st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1)==1) {
 								  start_offset+=366;
@@ -376,8 +374,8 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  	  }
 				  }
 
-				  time_period+=2; // Advance to date or time separator
-				  if (*time_period=='T') { // if hhmmss are included in time period
+				  // if hhmmss are included in time period
+				  if (strlen(time_period)>11) {
 					  time_period+=3;
 					  st.tm_hour = apr_atoi64(time_period);
 					  time_period+=3;
@@ -385,15 +383,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  time_period+=3;
 					  st.tm_sec = apr_atoi64(time_period);
 				  }
-				  time_period+=1; // Advance to period end date
-
-				  end.tm_year = apr_atoi64(time_period);
-				  time_period+=5;
-				  end.tm_mon = apr_atoi64(time_period);
-				  time_period+=3;
-				  end.tm_mday = apr_atoi64(time_period);
-			  	  end_leap=(end.tm_year%4)?0:((end.tm_year%400)?((end.tm_year%100)?1:0):1);
-			  	  end.tm_yday=end.tm_mday+moffset[end.tm_mon-1]+((end.tm_mon>2)?end_leap:0);
 
 //				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"DEBUG Start time period: year %d month %d day %d hour %d minute %d second %d offset %d interval %d", st.tm_year, st.tm_mon, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, start_offset, interval);
 
@@ -410,12 +399,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 							  span = request_day; // store old value
 							  request_day=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
 							  span = span-request_day+1; // get actual span
-						  } else if (request_day <= end.tm_yday) {
+						  } else {
 //							  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
 							  request_day = request_day - span;
-						  } else {
-							time_period+=strlen(time_period)+1;
-						  	continue;
 						  }
 					  }
 					  char old_char=*(fnloc+7);
@@ -426,21 +412,21 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  int request_secs = (tm.tm_hour * 3600) + (tm.tm_min * 60) + tm.tm_sec;
 					  start_offset = ((tm.tm_yday * 86400) + request_secs) - ((start_offset * 86400) + (st.tm_hour * 3600) + (st.tm_min * 60) + st.tm_sec);
 
-					  // calculate the last date in the span of the time interval
+					  // calculate the last time in the span of the time interval
 					  int span = start_offset % interval;
 //					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request seconds] - (%d [seconds since start] %% %d [period in seconds]) = %d [granule time in seconds]", request_secs, start_offset, interval, (request_secs-span));
 					  request_secs = request_secs - span;
 
 					  // convert seconds to hhmmss
-					  tm.tm_hour = request_secs/3600;
+					  int tm_hour = request_secs/3600;
 					  request_secs = request_secs%3600;
-					  tm.tm_min = request_secs/60;
+					  int tm_min = request_secs/60;
 					  request_secs = request_secs%60;
-					  tm.tm_sec = request_secs;
+					  int tm_sec = request_secs;
 
 					  char old_char=*(fnloc+13);
-//					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-					  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year,tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+//					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm_hour, tm_min, tm_sec);
+					  sprintf(fnloc,"%04d%03d%02d%02d%02d",tm.tm_year,tm.tm_yday, tm_hour, tm_min, tm_sec);
 					  *(fnloc+13)=old_char;
 				  }
 
