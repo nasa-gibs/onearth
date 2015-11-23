@@ -28,12 +28,12 @@ sudo yum -y install onearth-*
 
 For manual installation or to install or another OS, please refer to the specific component:
 
-* [mod_onearth](src/mod_onearth/README.md)
-* [mrfgen](src/mrfgen/README.md)
-* [OnEarth Layer Configurator](src/layer_config/README.md)
-* [OnEarth Legend Generator](src/generate_legend/README.md)
-* [OnEarth Metrics](src/onearth_logs/README.md)
-* [OnEarth Scripts](src/scripts/README.md)
+* [mod_onearth](../src/mod_onearth/README.md)
+* [mrfgen](../src/mrfgen/README.md)
+* [OnEarth Layer Configurator](../src/layer_config/README.md)
+* [OnEarth Legend Generator](../src/generate_legend/README.md)
+* [OnEarth Metrics](../src/onearth_logs/README.md)
+* [OnEarth Scripts](../src/scripts/README.md)
 
 ## Install Locations
 
