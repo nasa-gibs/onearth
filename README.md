@@ -10,8 +10,8 @@ The source code contains the mod_onearth Apache Module (formerly Tiled WMS/KML s
 
 For more information, visit https://earthdata.nasa.gov/gibs
 
-#### OnEarth-Boxes
-[OnEarth-Boxes](https://github.com/nasa-gibs/onearth-boxes) is a tool that can build an OnEarth virtual machine with demo imagery and pre-configured endpoints for demos, development, and getting started with OnEarth. Multiple VM image formats are supported. For more information visit https://github.com/nasa-gibs/onearth-boxes.
+### OnEarth-Boxes
+[OnEarth-Boxes](https://github.com/nasa-gibs/onearth-boxes) is a tool that can build a virtual machine with demo imagery and pre-configured endpoints for demos, development, and getting started with MRF and OnEarth. Multiple VM image formats are supported. For more information visit https://github.com/nasa-gibs/onearth-boxes.
 
 ## Setup
 
