@@ -77,7 +77,7 @@ import shutil
 import imghdr
 import sqlite3
 
-versionNumber = '0.8.0'
+versionNumber = '0.9.0'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -428,6 +428,24 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     else:
         return False
     
+def is_granule_image(tile):
+    """
+    Test if input tile is a granule image
+    Argument:
+        tile -- Tile to test
+    """
+    print "Checking for granule image"
+    is_granule = False
+    gdalinfo_command_list=['gdalinfo', tile]
+    gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    for line in gdalinfo.stdout.readlines():
+        if "Size is " in line:
+            x, y = line.replace("Size is ","").split(",")[:2]
+            print "x " + str(int(x)) + " y " + str(int(y))
+            if int(x) != int(y):
+                is_granule = True
+                log_info_mssg(tile + " is a granule image")
+    return is_granule
 
 def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg):
     """
