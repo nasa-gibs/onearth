@@ -1016,6 +1016,11 @@ if input_dir != None:
     else: #default to png
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))    
 
+striptiles = []
+for tile in alltiles:
+    striptiles.append(tile.strip())
+alltiles = striptiles
+
 if len(alltiles) == 0: # No tiles, check for possible tiffs
     alltiles=glob.glob(str().join([input_dir, '*.tif*']))
 
@@ -1073,6 +1078,8 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 if mrf_compression_type == 'PPNG' and colormap != '':
     for i, tile in enumerate(alltiles):
         temp_tile = None
+        tile_path = os.path.dirname(tile)
+        tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
         
         # Check input PNGs/TIFFs if RGBA, then convert       
         if tile.lower().endswith(('.png', '.tif', '.tiff')):
@@ -1090,7 +1097,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                        
                     # Create the gdal_translate command.
                     gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
-                                                 tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
+                                                 tile, working_dir+tile_basename+'.'+str(tiff_compress).lower()]
                     # Log the gdal_translate command.
                     log_the_command(gdal_translate_command_list)
                
@@ -1099,12 +1106,14 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                                     stderr=subprocess.PIPE)
                        
                     # Replace with new tiles
-                    tile = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
+                    tile = working_dir+tile_basename+'.'+str(tiff_compress).lower()
                     temp_tile = tile
                 
                 print "Converting RGBA PNG to indexed paletted PNG"
                 
-                output_tile = working_dir + os.path.basename(tile).split('.')[0]+'_indexed.png'
+                output_tile = working_dir + tile_basename+'_indexed.png'
+                output_tile_path = os.path.dirname(output_tile)
+                output_tile_basename, output_tile_extension = os.path.splitext(os.path.basename(output_tile))
                 
                 # Create the RGBApng2Palpng command.
                 if vrtnodata == "":
@@ -1148,10 +1157,10 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                         print 'sigevent service is unavailable'
                 
                 # Make a copy of world file
-                if os.path.isfile(tile.split('.')[0]+'.pgw'):
-                    shutil.copy(tile.split('.')[0]+'.pgw', output_tile.split('.')[0]+'.pgw')
-                elif os.path.isfile(tile.split('.')[0]+'.wld'):
-                    shutil.copy(tile.split('.')[0]+'.wld', output_tile.split('.')[0]+'.pgw')
+                if os.path.isfile(tile_path+'/'+tile_basename+'.pgw'):
+                    shutil.copy(tile_path+'/'+tile_basename+'.pgw', output_tile_path+'/'+output_tile_basename+'.pgw')
+                elif os.path.isfile(tile_basename+'.wld'):
+                    shutil.copy(tile_path+'/'+tile_basename+'.wld', output_tile_path+'/'+output_tile_basename+'.pgw')
                 else:
                     print "World file does not exist for tile: " + tile
                     
