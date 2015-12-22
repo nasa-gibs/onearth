@@ -833,7 +833,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 else:
                     fill = vrtnodata
                 RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + colormap,
-                                             '-fill='+fill, '-of='+output_tile, tile]
+                                             '-fill='+str(fill), '-of='+output_tile, tile]
                 # Log the RGBApng2Palpng command.
                 log_the_command(RGBApng2Palpng_command_list)
          
