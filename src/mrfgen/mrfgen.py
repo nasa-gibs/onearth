@@ -441,13 +441,52 @@ def is_granule_image(tile):
     for line in gdalinfo.stdout.readlines():
         if "Size is " in line:
             x, y = line.replace("Size is ","").split(",")[:2]
-            print "x " + str(int(x)) + " y " + str(int(y))
             if int(x) != int(y):
                 is_granule = True
                 log_info_mssg(tile + " is a granule image")
-    return is_granule
+        if "Upper Left" in line:
+            in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
+            ulx = in_xmin.strip()
+            uly = in_ymax.strip().split(' ')[0]
+        if "Lower Right" in line:
+            in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
+            lrx = in_xmax.strip()
+            lry = in_ymin.strip().split(' ')[0]
+    return (is_granule, [ulx, uly, lrx, lry])
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg):
+def granule_align(extents, xmin, ymin, xmax, ymax):
+    """
+    Aligns granule image to fit in a square
+    Argument:
+        extents -- spatial extents as ulx, uly, lrx, lry
+        xmin -- Minimum x value
+        ymin -- Minimum y value
+        xmax -- Maximum x value
+        ymax -- Maximum y value
+    """
+    edge_buffer = 0.1
+    extents = [float(x) for x in extents]
+    ulx, uly, lrx, lry = extents
+    x_len = abs(lrx-ulx) * (1+edge_buffer)
+    y_len = abs(lry-uly) * (1+edge_buffer)
+    if x_len > y_len:
+        lrx = ulx + x_len
+        lry = uly - x_len
+    else:
+        lrx = ulx + y_len
+        lry = uly - y_len
+    if ulx < float(xmin):
+        ulx = xmin
+    if uly > float(ymax):
+        uly = ymax
+    if lrx > float(xmax):
+        lrx = xmax
+    if lry < float(ymin):
+        lry = ymin
+        
+    return (str(ulx), str(uly), str(lrx), str(lry))
+
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
@@ -460,6 +499,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
         ymin -- Minimum y value
         xmax -- Maximum x value
         ymax -- Maximum y value
+        source_epsg -- The source EPSG code
+        target_epsg -- The target EPSG code
+        nodata -- nodata value
     """    
     print "Inserting new tiles to", mrf
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
@@ -467,6 +509,17 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
         if os.path.splitext(tile)[1] == ".vrt":
             log_info_mssg("Skipping insert of " + tile)
             continue
+        granule, extents = is_granule_image(tile)
+        if granule == True: # blend tile with existing imagery if true
+            print "Granule extents " + str(extents)
+            if nodata == "":
+                nodata = "0"
+            ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax)
+            gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-tap', '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
+            log_the_command(gdal_merge_command_list)
+            gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            gdal_merge.wait()
+            tile = tile+".blend.tif"
         if diff_resolution([tile, mrf]):
             # convert tile to matching resolution
             if resize_resampling == '':
@@ -510,7 +563,10 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
                     print 'sigevent service is unavailable'
             else:
                 print message.strip()
+        # clean up        
         remove_file(tile+".vrt")
+        if granule == True and ".blend." in tile:
+            remove_file(tile)
         
 
 def insert_zdb(mrf, zlevels, zkey):
@@ -1287,7 +1343,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1657,7 +1713,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
     
 # Rename MRFs
 if mrf_name != '':
