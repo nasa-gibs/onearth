@@ -1400,6 +1400,8 @@ if source_epsg != "":
 if vrtnodata != "":
     gdalbuildvrt_command_list.append('-vrtnodata')
     gdalbuildvrt_command_list.append(vrtnodata)
+    gdalbuildvrt_command_list.append('-srcnodata')
+    gdalbuildvrt_command_list.append(vrtnodata)
 # add VRT filename at the end        
 gdalbuildvrt_command_list.append(vrt_filename)
 
