@@ -454,7 +454,7 @@ def is_granule_image(tile):
             lry = in_ymin.strip().split(' ')[0]
     return (is_granule, [ulx, uly, lrx, lry])
 
-def granule_align(extents, xmin, ymin, xmax, ymax):
+def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
     """
     Aligns granule image to fit in a square
     Argument:
@@ -464,6 +464,8 @@ def granule_align(extents, xmin, ymin, xmax, ymax):
         xmax -- Maximum x value
         ymax -- Maximum y value
     """
+    xsize = (float(xmax)-float(xmin))/float(target_x)
+    ysize = (float(xmin)-float(xmax))/float(target_x)
     edge_buffer = 0.1
     extents = [float(x) for x in extents]
     ulx, uly, lrx, lry = extents
@@ -480,9 +482,9 @@ def granule_align(extents, xmin, ymin, xmax, ymax):
     if uly > float(ymax):
         uly = ymax
     if lrx > float(xmax):
-        lrx = xmax
+        lrx = str(float(xmax) + xsize)
     if lry < float(ymin):
-        lry = ymin
+        lry = str(float(ymin) - ysize)
         
     return (str(ulx), str(uly), str(lrx), str(lry))
 
@@ -514,8 +516,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             print "Granule extents " + str(extents)
             if nodata == "":
                 nodata = "0"
-            ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax)
-            gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-tap', '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
+            ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x)
+            gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(xmin)-float(xmax))/float(target_x)), '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
             log_the_command(gdal_merge_command_list)
             gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             gdal_merge.wait()
