@@ -457,12 +457,13 @@ def is_granule_image(tile):
 def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
     """
     Aligns granule image to fit in a square
-    Argument:
+    Arguments:
         extents -- spatial extents as ulx, uly, lrx, lry
         xmin -- Minimum x value
         ymin -- Minimum y value
         xmax -- Maximum x value
         ymax -- Maximum y value
+        target_x -- The target resolution for x
     """
     xsize = (float(xmax)-float(xmin))/float(target_x)
     ysize = (float(xmin)-float(xmax))/float(target_x)
@@ -482,16 +483,39 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
     if uly > float(ymax):
         uly = ymax
     if lrx > float(xmax):
-        lrx = str(float(xmax) + xsize)
+        lrx = str(float(xmax) - xsize)
     if lry < float(ymin):
         lry = str(float(ymin) - ysize)
         
     return (str(ulx), str(uly), str(lrx), str(lry))
 
+def gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata):
+    """
+    Runs gdaltransform and returns new x and y values
+    Arguments:
+        mrf -- An existing MRF file
+        tile -- Tile to insert
+        extents -- spatial extents as ulx, uly, lrx, lry
+        target_x -- The target resolution for x
+        xmin -- Minimum x value
+        ymin -- Minimum y value
+        xmax -- Maximum x value
+        ymax -- Maximum y value
+        nodata -- nodata value
+    """
+    if nodata == "":
+        nodata = "0"
+    ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x)
+    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(xmin)-float(xmax))/float(target_x)), '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
+    log_the_command(gdal_merge_command_list)
+    gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdal_merge.wait()
+    return tile+".blend.tif"
+
 def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata):
     """
     Inserts a list of tiles into an existing MRF
-    Argument:
+    Arguments:
         mrf -- An existing MRF file
         tiles -- List of tiles to insert
         insert_method -- The resampling method to use {Avg, NearNb}
@@ -512,16 +536,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             log_info_mssg("Skipping insert of " + tile)
             continue
         granule, extents = is_granule_image(tile)
-        if granule == True: # blend tile with existing imagery if true
+        if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
-            if nodata == "":
-                nodata = "0"
-            ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x)
-            gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(xmin)-float(xmax))/float(target_x)), '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
-            log_the_command(gdal_merge_command_list)
-            gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            gdal_merge.wait()
-            tile = tile+".blend.tif"
+            tile = gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata)
         if diff_resolution([tile, mrf]):
             # convert tile to matching resolution
             if resize_resampling == '':
@@ -543,7 +560,11 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
-            mrf_insert_command_list.append(tile+".vrt")
+            if granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
+                granule, extents = is_granule_image(tile+".vrt") # get new extents
+                mrf_insert_command_list.append(gdalmerge(mrf, tile+".vrt", extents, target_x, xmin, ymin, xmax, ymax, nodata))
+            else:
+                mrf_insert_command_list.append(tile+".vrt")
         else:
             mrf_insert_command_list.append(tile)
         mrf_insert_command_list.append(mrf)
