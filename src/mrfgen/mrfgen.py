@@ -452,7 +452,10 @@ def is_granule_image(tile):
             in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
             lrx = in_xmax.strip()
             lry = in_ymin.strip().split(' ')[0]
-    return (is_granule, [ulx, uly, lrx, lry])
+    try:
+        return (is_granule, [ulx, uly, lrx, lry])
+    except:
+        log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)    
 
 def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
     """
@@ -491,7 +494,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
 
 def gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata):
     """
-    Runs gdaltransform and returns new x and y values
+    Runs gdalmerge and returns merged tile
     Arguments:
         mrf -- An existing MRF file
         tile -- Tile to insert
@@ -512,6 +515,62 @@ def gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata):
     gdal_merge.wait()
     return tile+".blend.tif"
 
+def split_across_antimeridian(tile, extents, antimeridian):
+    """
+    Splits up a tile that crosses the antimeridian
+    Arguments:
+        tile -- Tile to insert
+        extents -- spatial extents as ulx, uly, lrx, lry
+        antimeridian -- The antimeridian for the projection
+    """
+
+    ulx, uly, lrx, lry = extents
+    new_lrx = str(float(lrx)+float(antimeridian)*2)
+    cutline_template = """
+    {
+      "type": "Polygon",
+      "coordinates": [
+        $values
+      ]
+    }
+    """
+    cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
+    cutline_left = cutline_template.replace('$values',cutline_values.format(ulx, uly, antimeridian, lry))
+    cutline_right = cutline_template.replace('$values',cutline_values.format(antimeridian, uly, new_lrx, lry))
+    
+    # Create VRT of input tile
+    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', tile, tile+'.temp.vrt']
+    log_the_command(gdalbuildvrt_command_list)
+    gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdalbuildvrt.wait()
+    tile = tile+'.temp.vrt'
+    tile_left = tile+".left_cut.vrt"
+    tile_right = tile+".right_cut.vrt" 
+    
+    # modify input into >180 space
+    gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', ulx, uly, new_lrx, lry]
+    log_the_command(gdal_edit_command_list)
+    gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdal_edit.wait()  
+    
+    # cut the input at the antimeridian into left and right halves
+    left_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+    right_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+    log_the_command(left_cut_command_list)
+    left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    left_cut.wait()
+    log_the_command(right_cut_command_list)
+    right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    right_cut.wait()
+    
+    # flip the origin longitude of the right half
+    gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(float(antimeridian)*-1), uly, lrx, lry]
+    log_the_command(gdal_edit_command_list)
+    gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdal_edit.wait()  
+
+    return (tile_left,  tile_right)
+
 def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata):
     """
     Inserts a list of tiles into an existing MRF
@@ -531,11 +590,18 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
     """    
     print "Inserting new tiles to", mrf
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
-    for tile in alltiles:
-        if os.path.splitext(tile)[1] == ".vrt":
+    for tile in tiles:
+        if os.path.splitext(tile)[1] == ".vrt" and "_cut." not in tile: #ignore temp VRTs unless it's an antimeridian cut
             log_info_mssg("Skipping insert of " + tile)
             continue
         granule, extents = is_granule_image(tile)
+        # check if granule crosses antimeridian
+        if granule == True and ((float(extents[0])-float(xmax)) > float(extents[2])):
+            print tile + " crosses antimeridian"
+            left_half, right_half = split_across_antimeridian(tile, extents, xmax)
+            tiles.append(left_half)
+            tiles.append(right_half)
+            continue
         if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
             tile = gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata)
@@ -562,6 +628,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             tile_vrt.wait()
             if granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(tile+".vrt") # get new extents
+                print "Granule extents " + str(extents)
                 mrf_insert_command_list.append(gdalmerge(mrf, tile+".vrt", extents, target_x, xmin, ymin, xmax, ymax, nodata))
             else:
                 mrf_insert_command_list.append(tile+".vrt")
@@ -590,6 +657,10 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
         remove_file(tile+".vrt")
         if granule == True and ".blend." in tile:
             remove_file(tile)
+    for tile in tiles:
+        temp_vrt_files = glob.glob(str().join([tile.split('.temp.vrt')[0], '.temp.vrt*']))
+        for vrt in temp_vrt_files:
+            remove_file(vrt)
         
 
 def insert_zdb(mrf, zlevels, zkey):
