@@ -570,7 +570,7 @@ def split_across_antimeridian(tile, extents, antimeridian):
     tile_right = tile+".right_cut.vrt" 
     
     # modify input into >180 space
-    gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', ulx, uly, new_lrx, lry]
+    gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
     log_the_command(gdal_edit_command_list)
     gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdal_edit.wait()  
