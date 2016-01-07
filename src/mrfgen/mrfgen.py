@@ -76,6 +76,7 @@ import string
 import shutil
 import imghdr
 import sqlite3
+import math
 
 versionNumber = '0.9.0'
 
@@ -457,9 +458,9 @@ def is_granule_image(tile):
     except:
         log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)    
 
-def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
+def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
     """
-    Aligns granule image to fit in a square
+    Aligns granule image to fit in a MRF block
     Arguments:
         extents -- spatial extents as ulx, uly, lrx, lry
         xmin -- Minimum x value
@@ -467,32 +468,50 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x):
         xmax -- Maximum x value
         ymax -- Maximum y value
         target_x -- The target resolution for x
+        target_y -- The target resolution for y
+        mrf_blocksize -- The block size of MRF tiles
     """
-    xsize = (float(xmax)-float(xmin))/float(target_x)
-    ysize = (float(xmin)-float(xmax))/float(target_x)
-    edge_buffer = 0.1
     extents = [float(x) for x in extents]
     ulx, uly, lrx, lry = extents
-    x_len = abs(lrx-ulx) * (1+edge_buffer)
-    y_len = abs(lry-uly) * (1+edge_buffer)
-    if x_len > y_len:
-        lrx = ulx + x_len
-        lry = uly - x_len
-    else:
-        lrx = ulx + y_len
-        lry = uly - y_len
+    x_len = abs(float(xmax)-float(xmin))
+    y_len = abs(float(ymax)-float(ymin))
+    x_res = float(target_x)/x_len
+    y_res = float(target_y)/y_len
+    x_size = abs(lrx-ulx) * x_res
+    y_size = abs(lry-uly) * y_res
+    x_pixelsize = (float(xmax)-float(xmin))/float(target_x)
+    y_pixelsize = (float(ymin)-float(ymax))/float(target_y)
+#     print "x res: " + str(x_res) + " y res: " + str(y_res) + " x pixel: " + str(x_pixelsize) + " y pixel: " + str(y_pixelsize)
+    
+    # figure out appropriate block size that covers extent of granule
+    block_x = float(target_x)
+    while block_x > x_size:
+        block_x = block_x/2
+    block_y = float(target_y)
+    while block_y > y_size:
+        block_y = block_y/2
+    block = max([block_x,block_y])    
+    print "Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y))
+    
+    # calculate new extents that align with MRF blocks
+    ulx = float((math.floor((ulx*x_res) / block)) * block) / x_res
+    uly = float((math.ceil((uly*y_res) / block)) * block) / y_res
+    lrx = float((math.ceil((lrx*x_res) / block)) * block) / x_res
+    lry = float((math.floor((lry*y_res) / block)) * block) / y_res
+
+    # snap to min/max extents if on the edge
     if ulx < float(xmin):
         ulx = xmin
     if uly > float(ymax):
         uly = ymax
     if lrx > float(xmax):
-        lrx = str(float(xmax) - xsize)
+        lrx = str(float(xmax) - x_pixelsize)
     if lry < float(ymin):
-        lry = str(float(ymin) - ysize)
-        
+        lry = str(float(ymin) - y_pixelsize)
+            
     return (str(ulx), str(uly), str(lrx), str(lry))
 
-def gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata):
+def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata):
     """
     Runs gdalmerge and returns merged tile
     Arguments:
@@ -500,16 +519,20 @@ def gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata):
         tile -- Tile to insert
         extents -- spatial extents as ulx, uly, lrx, lry
         target_x -- The target resolution for x
+        target_y -- The target resolution for y
+        mrf_blocksize -- The block size of MRF tiles
         xmin -- Minimum x value
         ymin -- Minimum y value
         xmax -- Maximum x value
         ymax -- Maximum y value
         nodata -- nodata value
     """
+    if target_y == '':
+        target_y = float(int(target_x)/2)
     if nodata == "":
         nodata = "0"
-    ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x)
-    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(xmin)-float(xmax))/float(target_x)), '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
+    ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
+    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y)), '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdal_merge.wait()
@@ -523,7 +546,6 @@ def split_across_antimeridian(tile, extents, antimeridian):
         extents -- spatial extents as ulx, uly, lrx, lry
         antimeridian -- The antimeridian for the projection
     """
-
     ulx, uly, lrx, lry = extents
     new_lrx = str(float(lrx)+float(antimeridian)*2)
     cutline_template = """
@@ -571,7 +593,7 @@ def split_across_antimeridian(tile, extents, antimeridian):
 
     return (tile_left,  tile_right)
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata):
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -580,6 +602,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
         insert_method -- The resampling method to use {Avg, NearNb}
         resize_resampling -- The resampling method to use for gdalwarp
         target_x -- The target resolution for x
+        target_y -- The target resolution for y
+        mrf_blocksize -- The block size of MRF tiles
         xmin -- Minimum x value
         ymin -- Minimum y value
         xmax -- Maximum x value
@@ -604,7 +628,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             continue
         if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
-            tile = gdalmerge(mrf, tile, extents, target_x, xmin, ymin, xmax, ymax, nodata)
+            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
         if diff_resolution([tile, mrf]):
             # convert tile to matching resolution
             if resize_resampling == '':
@@ -629,7 +653,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, xmin,
             if granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(tile+".vrt") # get new extents
                 print "Granule extents " + str(extents)
-                mrf_insert_command_list.append(gdalmerge(mrf, tile+".vrt", extents, target_x, xmin, ymin, xmax, ymax, nodata))
+                mrf_insert_command_list.append(gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata))
             else:
                 mrf_insert_command_list.append(tile+".vrt")
         else:
@@ -1437,7 +1461,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1809,7 +1833,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
     
 # Rename MRFs
 if mrf_name != '':
