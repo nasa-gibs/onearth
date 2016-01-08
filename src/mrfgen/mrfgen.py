@@ -623,8 +623,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if granule == True and ((float(extents[0])-float(xmax)) > float(extents[2])):
             print tile + " crosses antimeridian"
             left_half, right_half = split_across_antimeridian(tile, extents, xmax)
-            tiles.append(left_half)
-            tiles.append(right_half)
+            run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata)
             continue
         if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
