@@ -651,8 +651,11 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                 else:
                     print "Ignoring", filename
         dates = sorted(list(set(dates)))
-        for testdate in dates:
-            print datetime.strftime(testdate,"%Y-%m-%dT%H:%M:%SZ")
+        
+        # DEBUG: Print the entire list of dates found for the product
+        #for testdate in dates:
+        #    print datetime.strftime(testdate,"%Y-%m-%dT%H:%M:%SZ")
+            
         # Get period, attempt to figure out period (in days) if none
         if time.startswith(detect+'/P'):
             period = time.split('/')[1]
