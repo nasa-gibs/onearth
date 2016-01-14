@@ -127,8 +127,8 @@ rm -rf %{buildroot}
 
 %post
 cd %{_datadir}/cgicc/
-sudo %{_datadir}/cgicc/configure --prefix=/usr
-sudo make install
+%{_datadir}/cgicc/configure --prefix=/usr
+make install
 
 %files config
 %defattr(664,gibs,gibs,775)
@@ -147,11 +147,11 @@ sudo make install
 
 %post config
 cd %{_datadir}/numpy/
-sudo python setup.py build
-sudo python setup.py install
+python setup.py build
+python setup.py install
 cd %{_datadir}/mpl/
-sudo python setup.py build
-sudo python setup.py install
+python setup.py build
+python setup.py install
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)

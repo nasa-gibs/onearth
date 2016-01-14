@@ -8,7 +8,7 @@ import os
 import unittest
 import subprocess
 import filecmp
-from shutil import copyfile
+from shutil import copyfile, rmtree
 
 def run_command(cmd):
     """
@@ -161,7 +161,7 @@ class TestLayerConfig(unittest.TestCase):
         
     def tearDown(self):
         os.remove(self.cachedir + "MODIS_Aqua_Aerosol/MODIS_Aqua_Aerosol2014364_.mrf")
-        os.rmdir(self.cachedir + "MODIS_Aqua_Aerosol/")
+        rmtree(self.cachedir + "MODIS_Aqua_Aerosol/")
         os.remove("/usr/share/onearth/layer_config/wmts/EPSG4326/MODIS_Aqua_Aerosol2014364_.xml")
         os.remove("/usr/share/onearth/layer_config/wmts/EPSG4326/MODIS_Aqua_Aerosol2014364_.mrf")
         os.remove("/usr/share/onearth/layer_config/twms/EPSG4326/MODIS_Aqua_Aerosol2014364__gc.xml")
