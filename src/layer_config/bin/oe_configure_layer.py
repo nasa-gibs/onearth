@@ -68,7 +68,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '0.8.0'
+versionNumber = '0.9.0'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -95,7 +95,7 @@ class Environment:
     """Environment information for layer(s)"""
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dir, colormapUrl, mapfileConfigLocation, mapfileConfigBasename, mapfile):
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileConfigLocation, mapfileConfigBasename, mapfile):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -109,8 +109,8 @@ class Environment:
         self.twms_dir = projection_twms_dir
         self.legend_dir = legend_dir
         self.legendUrl = legendUrl
-        self.colormap_dir = colormap_dir
-        self.colormapUrl = colormapUrl
+        self.colormap_dirs = colormap_dirs
+        self.colormapUrls = colormapUrls
         self.mapfileConfigLocation = mapfileConfigLocation
         self.mapfileConfigBasename = mapfileConfigBasename
         self.mapfile = mapfile
@@ -458,15 +458,29 @@ def get_environment(environmentConfig):
         legendUrl = add_trailing_slash(get_dom_tag_value(dom, 'LegendURL'))
     except IndexError:
         legendUrl = None
-        
+
+    # Modified in 0.9 to allow for multiple versioned colormap locations and URLs
     try:
-        colormapLocation = add_trailing_slash(get_dom_tag_value(dom, 'ColorMapLocation'))
-    except IndexError:
-        colormapLocation = None
+        colormapLocations = dom.getElementsByTagName('ColorMapLocation')
+        for location in colormapLocations:
+            if 'version' not in location.attributes.keys():
+                if len(colormapLocations) > 1:
+                    log_sig_err('Multiple <ColorMapLocation> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    location.attributes['version'] = ''
+    except KeyError:
+        colormapLocations = None
+
     try:
-        colormapUrl = add_trailing_slash(get_dom_tag_value(dom, 'ColorMapURL'))
-    except IndexError:
-        colormapUrl = None
+        colormapUrls = dom.getElementsByTagName('ColorMapURL')
+        for url in colormapUrls:
+            if 'version' not in url.attributes.keys():
+                if len(colormapUrls) > 1:
+                    log_sig_err('Multiple <ColorMapURL> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    url.attributes['version'] = ''
+    except KeyError:
+        colormapUrls = None
 
     if create_mapfile == True:
         try:
@@ -499,7 +513,7 @@ def get_environment(environmentConfig):
                        add_trailing_slash(twmsServiceUrl),
                        wmtsStagingLocation, twmsStagingLocation,
                        legendLocation, legendUrl,
-                       colormapLocation, colormapUrl,
+                       colormapLocations, colormapUrls,
                        mapfileConfigLocation, mapfileConfigBasename, mapfile
                        )
 
@@ -1395,10 +1409,51 @@ for conf in conf_files:
         except Exception, e:
             log_sig_err(str(e), sigevent_url)
             continue
+
+        # Modified in 0.9 to allow for multiple versioned colormaps
+
+        # Find default colormap (if designated)
         try:
-            colormap = get_dom_tag_value(dom, 'ColorMap')
-        except:
-            colormap = None
+            default_colormap = None
+            colormaps = dom.getElementsByTagName('ColorMap')
+            for colormap in colormaps:
+                if len(colormaps) == 1:
+                    default_colormap = colormaps[0]
+                elif 'default' in colormap.attributes.keys() and colormap.attributes['default'].value == 'true':
+                    if default_colormap is not None:
+                        log_sig_err('Multiple <ColorMap> elements have "default=true" attribute but only one is allowed, using first indicated', sigevent_url)
+                    else:
+                        default_colormap = colormap
+            if default_colormap is None:
+                log_sig_err('Multiple <ColorMap> elements but none have "default=true" attribute', sigevent_url)
+        except KeyError:
+            colormaps = None
+
+        # Make sure that a ColorMapLocation and ColorMapURL exists for each version indicated by the ColorMap elements
+        # Then add the appropriate ColorMapLocation and ColorMapURL as attributes to each ColorMap element
+        if colormaps:
+            for colormap in colormaps:
+                if 'version' not in colormap.attributes.keys():
+                    if len(colormaps) > 1:
+                        log_sig_err('Multiple <ColorMap> elements but not all have a "version" attribute', sigevent_url)
+                    else:
+                        default_colormap.attributes['location'] = environment.colormap_dirs[0].firstChild.nodeValue
+                        default_colormap.attributes['url'] = environment.colormapUrls[0].firstChild.nodeValue
+                        default_colormap.attributes['version'] = ''
+                else:
+                    version = colormap.attributes['version'].value
+                    location = next((location.firstChild.nodeValue for location in environment.colormap_dirs if location.attributes['version'].value == version), None)
+                    url = next((url.firstChild.nodeValue for url in environment.colormapUrls if url.attributes['version'].value == version), None)
+                    if location is None:
+                        log_sig_err('Environment <ColorMapLocation> not found for <ColorMap> version ' + version, sigevent_url)
+                        colormap.attributes['location'] = ''
+                    else:
+                        colormap.attributes['location'] = location
+                    if url is None:
+                        log_sig_err('Environment <ColorMapURL> not found for <ColorMap> version ' + version, sigevent_url)
+                        colormap.attributes['url'] = ''
+                    else:
+                        colormap.attributes['url'] = url
         try:
             emptyTile = get_dom_tag_value(dom, 'EmptyTile')
         except:
@@ -1498,8 +1553,10 @@ for conf in conf_files:
         log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     if twmsEndPoint:
         log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
-    if colormap:
-        log_info_mssg('config: ColorMap: ' + str(colormap))
+    if colormaps:
+        for colormap in colormaps:
+            map_value = colormap.firstChild.nodeValue.strip()
+            log_info_mssg('config: ColorMap: ' + str(map_value))
     log_info_mssg('config: Patterns: ' + str(patterns))
     if len(rest_patterns) > 0:
         log_info_mssg('config: WMTS-REST Patterns: ' + str(rest_patterns))
@@ -1868,19 +1925,17 @@ for conf in conf_files:
     # generate color map if requested
     legendUrl_vertical = ''
     legendUrl_horizontal = '' 
-    if legend == True and colormap != None:
+    if legend == True and default_colormap != None:
         legend_output = ''
         try:
             legend_output = environment.legend_dir + identifier
         except:
             message = "Legend directory has not been defined for environment with cache location: " + environment.cache
             log_sig_err(message, sigevent_url)
-        if environment.colormap_dir != None:
-            colormap_path = environment.colormap_dir + colormap
+        if default_colormap.attributes['location'].value != '':
+            colormap_path = add_trailing_slash(default_colormap.attributes['location'].value) + default_colormap.firstChild.nodeValue
         else:
-            colormap_path = colormap
-            message = "ColorMapLocation not defined for environment " + environmentConfig + " - Trying colormap path " + colormap_path
-            log_sig_warn(message, sigevent_url)
+            colormap_path = default_colormap.firstChild.nodeValue
         try:
             if environment.legendUrl != None:
                 if legend_output != '':
@@ -2001,7 +2056,7 @@ for conf in conf_files:
             <ows:Title xml:lang=\"en\">$Title</ows:Title>
             $BoundingBox
             <ows:Identifier>$Identifier</ows:Identifier>
-            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap$MapVersion" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
             <Style isDefault="true">
                 <ows:Title xml:lang=\"en\">default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
@@ -2041,16 +2096,29 @@ for conf in conf_files:
             if '$LegendURL_horizontal' in line:
                 line = line.replace("$LegendURL_horizontal",legendUrl_horizontal)
             if '$ColorMap' in line:
-                if colormap == None:
+                if colormaps == None or default_colormap == None:
                     line = ''
                 else:
-                    if environment.colormapUrl != None:
-                        colormapUrl = environment.colormapUrl + colormap
+                    line_template = line
+                    # First create line for default colormap
+                    if default_colormap.attributes['url'].value != '':
+                        default_colormap_url = add_trailing_slash(default_colormap.attributes['url'].value) + default_colormap.firstChild.nodeValue
                     else:
-                        colormapUrl = colormap
-                        message = "ColorMapURL not defined for environment " + environmentConfig + " - Trying colormap URL " + colormapUrl
-                        log_sig_warn(message, sigevent_url)
-                    line = line.replace("$ColorMap",str(colormapUrl))
+                        default_colormap_url = default_colormap.firstChild.nodeValue
+                    line = line.replace("$MapVersion", '')   
+                    line = line.replace("$ColorMap", default_colormap_url)    
+                    # Add rest of tags
+                    if default_colormap.attributes['version'].value != '':
+                        for colormap in colormaps:
+                            if colormap.attributes['url'].value != '':
+                                colormap_url = add_trailing_slash(colormap.attributes['url'].value) + colormap.firstChild.nodeValue
+                            else:
+                                colormap_url = colormap.firstChild.nodeValue
+                                message = "ColorMapURL not defined for environment " + environmentConfig + " - Trying colormap URL " + colormap_url
+                                log_sig_warn(message, sigevent_url)
+                            newline = line_template.replace("$MapVersion", '/' + colormap.attributes['version'].value)
+                            newline = newline.replace("$ColorMap", colormap_url)
+                            line += newline[3:]
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
             if '$FileType' in line:

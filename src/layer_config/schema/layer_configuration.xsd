@@ -20,7 +20,7 @@
         <xs:element ref="Pattern" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="EnvironmentConfig"/>
         <xs:element ref="ArchiveLocation" minOccurs="0"/>
-        <xs:element ref="ColorMap" minOccurs="0"/>
+        <xs:element ref="ColorMap" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="Time" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="Size" minOccurs="0"/>
         <xs:element ref="DataValues" minOccurs="0"/>
@@ -66,7 +66,12 @@
   <xs:element name="Projection" type="xs:string"> </xs:element>
   <xs:element name="Pattern" type="xs:string"/>
   <xs:element name="EnvironmentConfig" type="xs:string"/>
-  <xs:element name="ColorMap" type="xs:string"/>
+  <xs:element name="ColorMap">
+    <xs:complexType mixed="true">
+      <xs:attribute name="version" use="optional" type="xs:string"/>
+      <xs:attribute name="default" use="optional" type="xs:boolean"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="Time" type="xs:string" nillable="true"/>
   <xs:element name="Size" nillable="true">
     <xs:complexType>

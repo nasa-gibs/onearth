@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
   <xs:element name="EnvironmentConfiguration">
-    <xs:complexType>
+    <xs:complexType mixed="true">
       <xs:sequence>
         <xs:element maxOccurs="unbounded" ref="GetCapabilitiesLocation"/>
         <xs:element ref="GetTileServiceLocation"/>
@@ -10,8 +10,7 @@
         <xs:element maxOccurs="unbounded" ref="ServiceURL"/>
         <xs:element ref="LegendLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="LegendURL" maxOccurs="1" minOccurs="0"/>
-        <xs:element ref="ColorMapLocation" maxOccurs="1" minOccurs="0"/>
-        <xs:element ref="ColorMapURL" maxOccurs="1" minOccurs="0"/>
+        <xs:group ref="ColorMaps" maxOccurs="unbounded" minOccurs="0" />
         <xs:element ref="Mapfile" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileConfigLocation" maxOccurs="1" minOccurs="0"/>
       </xs:sequence>
@@ -45,8 +44,28 @@
   </xs:element>
   <xs:element name="LegendLocation" type="xs:string" nillable="true"/>
   <xs:element name="LegendURL" type="xs:anyURI" nillable="true"/>
-  <xs:element name="ColorMapLocation" type="xs:string" nillable="true"/>
-  <xs:element name="ColorMapURL" type="xs:anyURI" nillable="true"/>
+  <xs:group name="ColorMaps">
+    <xs:sequence>
+      <xs:element name="ColorMapLocation" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ColorMapURL" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:anyURI">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
   <xs:element name="Mapfile" type="xs:string" nillable="true"/>
   <xs:element name="MapfileConfigLocation">
     <xs:complexType mixed="true">
