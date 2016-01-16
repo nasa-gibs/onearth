@@ -1800,10 +1800,10 @@ for conf in conf_files:
             pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
             tileX = int(pageSize.getAttribute('x'))
             tileY = int(pageSize.getAttribute('y'))
-            if environment.colormap_dir != None:
-                colormap_path = environment.colormap_dir + colormap
+            if default_colormap.attributes['location'].value != '':
+                colormap_path = default_colormap.attributes['location'].value + default_colormap.firstChild.nodeValue
             else:
-                colormap_path = colormap
+                colormap_path = default_colormap.firstChild.nodeValue
                 message = "ColorMapLocation not defined for environment " + environmentConfig + " - Trying colormap path " + colormap_path
                 log_sig_warn(message, sigevent_url)
             emptyTileSize = generate_empty_tile(colormap_path, emptyTile, tileX, tileY)
