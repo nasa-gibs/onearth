@@ -1424,7 +1424,7 @@ for conf in conf_files:
                         log_sig_err('Multiple <ColorMap> elements have "default=true" attribute but only one is allowed, using first indicated', sigevent_url)
                     else:
                         default_colormap = colormap
-            if default_colormap is None:
+            if colormaps and default_colormap is None:
                 log_sig_err('Multiple <ColorMap> elements but none have "default=true" attribute', sigevent_url)
         except KeyError:
             colormaps = None
