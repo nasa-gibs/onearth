@@ -42,6 +42,8 @@ class TestMRFGeneration(unittest.TestCase):
         self.working_dir = self.dirpath + "/test/working_dir"
         self.logfile_dir = self.dirpath + "/test/logfile_dir"
         self.output_mrf = self.output_dir+ "/MYR4ODLOLLDY2014277_.mrf"
+        self.output_ppg = self.output_dir+ "/MYR4ODLOLLDY2014277_.ppg"
+        self.output_idx = self.output_dir+ "/MYR4ODLOLLDY2014277_.idx"
         self.output_img = self.output_dir+ "/MYR4ODLOLLDY2014277_.png"
         self.compare_img = self.dirpath + "/test/test_comp1.png"
         if not os.path.exists(self.input_dir):
@@ -78,8 +80,10 @@ class TestMRFGeneration(unittest.TestCase):
         print 'Driver:', str(driver.LongName)
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
-        print 'Files:', ' '.join(dataset.GetFileList())
-        self.assertEqual(len(dataset.GetFileList()),3,"MRF does not contain triplet")
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
+        print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         print 'Projection:', str(dataset.GetProjection())
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
@@ -146,6 +150,8 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.working_dir = self.dirpath + "/test/working_dir"
         self.logfile_dir = self.dirpath + "/test/logfile_dir"
         self.output_mrf = self.output_dir+ "/MORCR143ARDY2014203_.mrf"
+        self.output_pjg = self.output_dir+ "/MORCR143ARDY2014203_.pjg"
+        self.output_idx = self.output_dir+ "/MORCR143ARDY2014203_.idx"
         self.output_img = self.output_dir+ "/MORCR143ARDY2014203_.jpg"
         self.compare_img = self.dirpath + "/test/test_comp2.jpg"
         if not os.path.exists(self.input_dir):
@@ -186,9 +192,11 @@ class TestMRFGeneration_polar(unittest.TestCase):
         driver = dataset.GetDriver()
         print 'Driver:', str(driver.LongName)
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
-        
-        print 'Files:', ' '.join(dataset.GetFileList())
-        self.assertEqual(len(dataset.GetFileList()),3,"MRF does not contain triplet")
+
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
+        print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         print 'Projection:', str(dataset.GetProjection())
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
@@ -245,6 +253,8 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         self.working_dir = self.dirpath + "/test/working_dir"
         self.logfile_dir = self.dirpath + "/test/logfile_dir"
         self.output_mrf = self.output_dir+ "/BlueMarbleSmall2014237_.mrf"
+        self.output_pjg = self.output_dir+ "/BlueMarbleSmall2014237_.pjg"
+        self.output_idx = self.output_dir+ "/BlueMarbleSmall2014237_.idx"
         self.output_img = self.output_dir+ "/BlueMarbleSmall2014237_.png"
         self.compare_img = self.dirpath + "/test/test_comp3.png"
         if not os.path.exists(self.output_dir):
@@ -267,8 +277,10 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         print 'Driver:', str(driver.LongName)
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
-        print 'Files:', ' '.join(dataset.GetFileList())
-        self.assertEqual(len(dataset.GetFileList()),3,"MRF does not contain triplet")
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
+        print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         print 'Projection:', str(dataset.GetProjection())
         self.assertEqual(str(dataset.GetProjection()),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]')
