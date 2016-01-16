@@ -490,6 +490,9 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     block_y = float(target_y)
     while block_y > y_size:
         block_y = block_y/2
+    if float(lrx) >= float(xmax) or float(ulx) <= float(xmin):
+        # prevents extra line appearing along edges
+        block_y = block_y * 2
     block = max([block_x,block_y])    
     print "Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y))
     
@@ -527,8 +530,6 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         ymax -- Maximum y value
         nodata -- nodata value
     """
-    if target_y == '':
-        target_y = float(int(target_x)/2)
     if nodata == "":
         nodata = "0"
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
@@ -538,13 +539,15 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge.wait()
     return tile+".blend.tif"
 
-def split_across_antimeridian(tile, extents, antimeridian):
+def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
     """
     Splits up a tile that crosses the antimeridian
     Arguments:
         tile -- Tile to insert
         extents -- spatial extents as ulx, uly, lrx, lry
         antimeridian -- The antimeridian for the projection
+        xres -- output x resolution
+        yres -- output y resolution
     """
     ulx, uly, lrx, lry = extents
     new_lrx = str(float(lrx)+float(antimeridian)*2)
@@ -557,11 +560,11 @@ def split_across_antimeridian(tile, extents, antimeridian):
     }
     """
     cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
-    cutline_left = cutline_template.replace('$values',cutline_values.format(ulx, uly, antimeridian, lry))
-    cutline_right = cutline_template.replace('$values',cutline_values.format(antimeridian, uly, new_lrx, lry))
+    cutline_left = cutline_template.replace('$values',cutline_values.format(float(ulx), float(uly), float(antimeridian), float(lry)))
+    cutline_right = cutline_template.replace('$values',cutline_values.format(float(antimeridian), float(uly), float(new_lrx), float(lry)))
     
     # Create VRT of input tile
-    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', tile, tile+'.temp.vrt']
+    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', xres, yres, tile, tile+'.temp.vrt']
     log_the_command(gdalbuildvrt_command_list)
     gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdalbuildvrt.wait()
@@ -611,7 +614,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         source_epsg -- The source EPSG code
         target_epsg -- The target EPSG code
         nodata -- nodata value
-    """    
+    """
+    if target_y == '':
+        target_y = float(int(target_x)/2)
     print "Inserting new tiles to", mrf
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
     for tile in tiles:
@@ -622,7 +627,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         # check if granule crosses antimeridian
         if granule == True and ((float(extents[0])-float(xmax)) > float(extents[2])):
             print tile + " crosses antimeridian"
-            left_half, right_half = split_across_antimeridian(tile, extents, xmax)
+            left_half, right_half = split_across_antimeridian(tile, extents, xmax, str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y)))
             run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata)
             continue
         if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
@@ -632,7 +637,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((float(xmax)-float(xmin))/float(target_x)), str((float(xmin)-float(xmax))/float(target_x))]
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y))]
             if target_epsg != source_epsg:
                 tile_vrt_command_list.append('-s_srs')
                 tile_vrt_command_list.append(source_epsg)
