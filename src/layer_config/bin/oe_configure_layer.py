@@ -1277,7 +1277,7 @@ if conf_files==[]:
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 for conf in conf_files:
-    
+
     try:
         # Open file.
         config_file=open(conf, 'r')
@@ -1796,14 +1796,14 @@ for conf in conf_files:
     
     if emptyTile != None:
         # Generate empty tile and override size if colormap is used
-        if colormap != None and skip_empty_tiles == False:
+        if default_colormap != None and skip_empty_tiles == False:
             pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
             tileX = int(pageSize.getAttribute('x'))
             tileY = int(pageSize.getAttribute('y'))
             if default_colormap.attributes['location'].value != '':
-                colormap_path = default_colormap.attributes['location'].value + default_colormap.firstChild.nodeValue
+                colormap_path = add_trailing_slash(default_colormap.attributes['location'].value) + default_colormap.firstChild.nodeValue
             else:
-                colormap_path = default_colormap.firstChild.nodeValue
+                colormap_path = colormap.firstChild.nodeValue
                 message = "ColorMapLocation not defined for environment " + environmentConfig + " - Trying colormap path " + colormap_path
                 log_sig_warn(message, sigevent_url)
             emptyTileSize = generate_empty_tile(colormap_path, emptyTile, tileX, tileY)
