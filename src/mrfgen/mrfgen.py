@@ -393,8 +393,13 @@ def diff_resolution(tiles):
                 if res == "":
                     res = line.split("=")[1].strip()
                     print "Input tile pixel size is: " + res
+                    res_x = float(res.split(',')[0].replace('(',''))
+                    res_y = float(res.split(',')[1].replace(')',''))
                 else:
-                    if line.split("=")[1].strip() != res:
+                    next_res = line.split("=")[1].strip()
+                    next_x = float(next_res.split(',')[0].replace('(',''))
+                    next_y = float(next_res.split(',')[1].replace(')',''))
+                    if res_x != next_x and res_y != next_y:
                         print "Different tile resolutions detected"
                         return True              
     return False
@@ -596,7 +601,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
 
     return (tile_left,  tile_right)
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata):
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -607,14 +612,14 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         target_x -- The target resolution for x
         target_y -- The target resolution for y
         mrf_blocksize -- The block size of MRF tiles
-        xmin -- Minimum x value
-        ymin -- Minimum y value
-        xmax -- Maximum x value
-        ymax -- Maximum y value
+        source_extents -- Full extents of the source imagery
+        target_extents -- Full extents of the target imagery
         source_epsg -- The source EPSG code
         target_epsg -- The target EPSG code
         nodata -- nodata value
     """
+    xmin, ymin, xmax, ymax = target_extents
+    s_xmin, s_ymin, s_xmax, s_ymax = source_extents
     if target_y == '':
         target_y = float(int(target_x)/2)
     print "Inserting new tiles to", mrf
@@ -625,10 +630,10 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             continue
         granule, extents = is_granule_image(tile)
         # check if granule crosses antimeridian
-        if granule == True and ((float(extents[0])-float(xmax)) > float(extents[2])):
+        if granule == True and ((float(extents[0])-float(s_xmax)) > float(extents[2])):
             print tile + " crosses antimeridian"
-            left_half, right_half = split_across_antimeridian(tile, extents, xmax, str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y)))
-            run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, source_epsg, target_epsg, nodata)
+            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((float(s_xmax)-float(s_xmin))/float(target_x)), str((float(s_ymin)-float(s_ymax))/float(target_y)))
+            run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata)
             continue
         if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
@@ -683,7 +688,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 print message.strip()
         # clean up        
         remove_file(tile+".vrt")
-        if granule == True and ".blend." in tile:
+        if ".blend." in tile:
             remove_file(tile)
     for tile in tiles:
         temp_vrt_files = glob.glob(str().join([tile.split('.temp.vrt')[0], '.temp.vrt*']))
@@ -1465,7 +1470,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1837,7 +1842,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, target_xmin, target_ymin, target_xmax, target_ymax, source_epsg, target_epsg, vrtnodata)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata)
     
 # Rename MRFs
 if mrf_name != '':
