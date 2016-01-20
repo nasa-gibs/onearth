@@ -662,7 +662,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             if granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(tile+".vrt") # get new extents
                 print "Granule extents " + str(extents)
-                mrf_insert_command_list.append(gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata))
+                tile = gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
+                mrf_insert_command_list.append(tile)
             else:
                 mrf_insert_command_list.append(tile+".vrt")
         else:
@@ -687,9 +688,10 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             else:
                 print message.strip()
         # clean up        
-        remove_file(tile+".vrt")
         if ".blend." in tile:
             remove_file(tile)
+            tile = tile.split('.vrt.blend.')[0]
+        remove_file(tile+".vrt")
     for tile in tiles:
         temp_vrt_files = glob.glob(str().join([tile.split('.temp.vrt')[0], '.temp.vrt*']))
         for vrt in temp_vrt_files:
