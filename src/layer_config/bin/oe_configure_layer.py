@@ -1412,48 +1412,53 @@ for conf in conf_files:
 
         # Modified in 0.9 to allow for multiple versioned colormaps
 
-        # Find default colormap (if designated)
-        try:
-            default_colormap = None
-            colormaps = dom.getElementsByTagName('ColorMap')
-            for colormap in colormaps:
-                if len(colormaps) == 1:
-                    default_colormap = colormaps[0]
-                elif 'default' in colormap.attributes.keys() and colormap.attributes['default'].value == 'true':
-                    if default_colormap is not None:
-                        log_sig_err('Multiple <ColorMap> elements have "default=true" attribute but only one is allowed, using first indicated', sigevent_url)
-                    else:
-                        default_colormap = colormap
-            if colormaps and default_colormap is None:
-                log_sig_err('Multiple <ColorMap> elements but none have "default=true" attribute', sigevent_url)
-        except KeyError:
-            colormaps = None
+        # Sort out any empty ColorMap tags
+        colormaps = []
+        for colormap in dom.getElementsByTagName('ColorMap'):
+            if colormap.firstChild:
+                colormaps.append(colormap)
 
-        # Make sure that a ColorMapLocation and ColorMapURL exists for each version indicated by the ColorMap elements
-        # Then add the appropriate ColorMapLocation and ColorMapURL as attributes to each ColorMap element
+        # Set default colormap (if none indicated, picks the last colormap found)
+        default_colormap = None
+        if colormaps:
+            if len(colormaps) == 1:
+                default_colormap = colormaps[0]
+            else:
+                for colormap in colormaps:                
+                    if 'default' in colormap.attributes.keys() and colormap.attributes['default'].value == 'true':
+                        if default_colormap is not None:
+                            err_msg = 'Multiple <ColorMap> elements have "default=true" attribute but only one is allowed, using ' + colormap.toxml()
+                            log_sig_err(err_msg, sigevent_url)
+                        default_colormap = colormap
+            if len(colormaps) > 1 and default_colormap is None:
+                default_colormap = colormaps[-1]
+                err_msg = 'Multiple <ColorMap> elements but none have "default=true" attribute, using ' + default_colormap.toxml()
+                log_sig_err(err_msg, sigevent_url)
+
+        # Match <ColorMapLocation> and <ColorMapURL> to colormaps with the same version and set them as attributes of the <ColorMap>
         if colormaps:
             for colormap in colormaps:
                 if 'version' not in colormap.attributes.keys():
-                    if len(colormaps) > 1:
-                        log_sig_err('Multiple <ColorMap> elements but not all have a "version" attribute', sigevent_url)
-                    else:
-                        default_colormap.attributes['location'] = environment.colormap_dirs[0].firstChild.nodeValue
-                        default_colormap.attributes['url'] = environment.colormapUrls[0].firstChild.nodeValue
-                        default_colormap.attributes['version'] = ''
-                else:
-                    version = colormap.attributes['version'].value
-                    location = next((location.firstChild.nodeValue for location in environment.colormap_dirs if location.attributes['version'].value == version), None)
-                    url = next((url.firstChild.nodeValue for url in environment.colormapUrls if url.attributes['version'].value == version), None)
-                    if location is None:
-                        log_sig_err('Environment <ColorMapLocation> not found for <ColorMap> version ' + version, sigevent_url)
-                        colormap.attributes['location'] = ''
-                    else:
-                        colormap.attributes['location'] = location
-                    if url is None:
-                        log_sig_err('Environment <ColorMapURL> not found for <ColorMap> version ' + version, sigevent_url)
-                        colormap.attributes['url'] = ''
-                    else:
-                        colormap.attributes['url'] = url
+                    colormap.attributes['version'] = ''
+
+                colormap_value = colormap.firstChild.nodeValue
+                version = colormap.attributes['version'].value
+                location = next((location.firstChild.nodeValue for location in environment.colormap_dirs if location.attributes['version'].value == version), None)
+                url = next((url.firstChild.nodeValue for url in environment.colormapUrls if url.attributes['version'].value == version), None)
+
+                if not location:
+                    location = ''
+                    err_msg = "ColorMapLocation for version '{0}' not defined for environment {1} - Trying colormap path {2}".format(version, environmentConfig, colormap_value)
+                    log_sig_warn(err_msg, sigevent_url)
+
+                if not url:
+                    url = ''
+                    err_msg = "ColorMapURL for version '{0}' not defined for environment {1} - Trying colormap path {2}".format(version, environmentConfig, colormap_value)
+                    log_sig_warn(err_msg, sigevent_url)
+
+                colormap.attributes['url'] = url
+                colormap.attributes['location'] = location
+
         try:
             emptyTile = get_dom_tag_value(dom, 'EmptyTile')
         except:
@@ -1800,12 +1805,14 @@ for conf in conf_files:
             pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
             tileX = int(pageSize.getAttribute('x'))
             tileY = int(pageSize.getAttribute('y'))
-            if default_colormap.attributes['location'].value != '':
-                colormap_path = add_trailing_slash(default_colormap.attributes['location'].value) + default_colormap.firstChild.nodeValue
+
+            colormap_value = default_colormap.firstChild.nodeValue
+            colormap_location = default_colormap.attributes['location'].value
+            if colormap_location == '':
+                colormap_path = colormap_value
             else:
-                colormap_path = colormap.firstChild.nodeValue
-                message = "ColorMapLocation not defined for environment " + environmentConfig + " - Trying colormap path " + colormap_path
-                log_sig_warn(message, sigevent_url)
+                colormap_path = add_trailing_slash(colormap_location) + colormap_value
+            
             emptyTileSize = generate_empty_tile(colormap_path, emptyTile, tileX, tileY)
         else: # Override size if there is no colormap
             try:
@@ -1932,10 +1939,14 @@ for conf in conf_files:
         except:
             message = "Legend directory has not been defined for environment with cache location: " + environment.cache
             log_sig_err(message, sigevent_url)
-        if default_colormap.attributes['location'].value != '':
-            colormap_path = add_trailing_slash(default_colormap.attributes['location'].value) + default_colormap.firstChild.nodeValue
+
+        colormap_value = default_colormap.firstChild.nodeValue
+        colormap_location = default_colormap.attributes['location'].value
+        if colormap_location == '':
+            colormap_path = colormap_value
         else:
-            colormap_path = default_colormap.firstChild.nodeValue
+            colormap_path = add_trailing_slash(colormap_location) + colormap_value
+
         try:
             if environment.legendUrl != None:
                 if legend_output != '':
@@ -2114,8 +2125,6 @@ for conf in conf_files:
                                 colormap_url = add_trailing_slash(colormap.attributes['url'].value) + colormap.firstChild.nodeValue
                             else:
                                 colormap_url = colormap.firstChild.nodeValue
-                                message = "ColorMapURL not defined for environment " + environmentConfig + " - Trying colormap URL " + colormap_url
-                                log_sig_warn(message, sigevent_url)
                             newline = line_template.replace("$MapVersion", '/' + colormap.attributes['version'].value)
                             newline = newline.replace("$ColorMap", colormap_url)
                             line += newline[3:]
