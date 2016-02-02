@@ -1,18 +1,10 @@
 MAP
-  Name                  "NASA GIBS OnEarth Mapserver/WMS Demo (Antarctic - EPSG:3031)"
+  Name                  "OnEarth Mapserver/WMS (Antarctic - EPSG:3031)"
   UNITS                 meters
   MAXSIZE               20000
   SIZE                  1600 1200
   Extent                -4194300.000 -4194200.000 4194200.000 4194300.000
   ImageColor            0 0 0
-
-  CONFIG "PROJ_LIB" "/usr/share/proj/"
-
-  ##Debug Params##
-  CONFIG "MS_ERRORFILE" error.log
-  Debug 3
-  CONFIG "CPL_DEBUG" "ON"
-  CONFIG "PROJ_DEBUG" "ON"
 
   OUTPUTFORMAT
     NAME                "png"
@@ -38,7 +30,7 @@ MAP
 
   WEB
     METADATA
-      "wms-title"               "NASA GIBS OnEarth Mapserver/WMS Demo (Geographic - EPSG:3031)"
+      "wms-title"               "OnEarth Mapserver/WMS (Geographic - EPSG:3031)"
       "wms-onlineresource"      "http://localhost/onearth/demo/mapserver/mapserver.cgi?map=epsg3031.map"
       "wms_enable_request" "GetMap GetCapabilities"
     END

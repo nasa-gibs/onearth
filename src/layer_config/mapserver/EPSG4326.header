@@ -1,18 +1,10 @@
 MAP
-  Name                  "NASA GIBS OnEarth Mapserver/WMS Demo (Geographic - EPSG:4326)"
+  Name                  "OnEarth Mapserver/WMS (Geographic - EPSG:4326)"
   UNITS                         dd
   MAXSIZE               20000
   SIZE                  1600 1200
   Extent                        -180 -90 180 90
   ImageColor            0 0 0
-
-  CONFIG "PROJ_LIB" "/usr/share/proj/"
-
-  ##Debug Params##
-  CONFIG "MS_ERRORFILE" error.log
-  Debug 3
-  CONFIG "CPL_DEBUG" "ON"
-  CONFIG "PROJ_DEBUG" "ON"
 
   OUTPUTFORMAT
     NAME                "png"
@@ -38,7 +30,7 @@ MAP
 
   WEB
     METADATA
-      "wms-title"               "NASA GIBS OnEarth Mapserver/WMS Demo (Geographic - EPSG:4326)"
+      "wms-title"               "OnEarth Mapserver/WMS (Geographic - EPSG:4326)"
       "wms-onlineresource"      "http://localhost/onearth/demo/mapserver/mapserver.cgi?map=epsg4326.map"
       "wms_enable_request" "GetMap GetCapabilities"
     END

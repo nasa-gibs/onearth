@@ -105,7 +105,13 @@ A SigEvent server URL, used for error reporting, may be specified using the -s o
 oe_configure_layer -s http://localhost:8100/sigevent/events/create
 ```
 
+#### Mapserver Config
 The tool can also create/update mapfiles with the `--create-mapfile` option. The location of the mapfile is located in the enivironment config XML. When the mapfile specified by the environment config doesn't exist, a new one is created from a header template stored in the `$LCDIR/mapfiles` directory. Note that this option will overwrite previously existing layers in the mapfile if they have the same name as the layer that's being added.
+
+When creating a new mapfile, the tool will look for `.header` and `.footer` files, and append them to the start and end of the mapfile if found. The location of these files is set by the `<MapfileConfigLocation>` element in the environment config file. The `"basename"` attribute of this element refers to the file prefix before the `.header` and `.footer` extension.
+
+Note that the header/footers are only added when a new mapfile is created, not when an existing one is update.
+
 ```
 oe_configure_layer -c layer_configuration_file.xml --create-mapfile
 ```

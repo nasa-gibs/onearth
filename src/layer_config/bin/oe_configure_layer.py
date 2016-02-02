@@ -2304,7 +2304,7 @@ $Patterns</TiledGroup>"""
             mapfileConfigPrefix = environment.mapfileConfigLocation + projection.id.replace(':','')
         mapfileLocation = add_trailing_slash(os.path.dirname(environment.mapfile))
         mapfileBasename = os.path.basename(environment.mapfile)
-
+        mapfile_footer = None
         try:
             os.makedirs(mapfileLocation)
         except OSError:
@@ -2319,7 +2319,13 @@ $Patterns</TiledGroup>"""
                             mapfile.write(header.read())
                             print "\nCreating mapfile: " + mapfileLocation + mapfileBasename
                     except IOError:
-                        raise log_sig_err("Mapfile doesn't exist and configuration header " + mapfileConfigPrefix + '.header' + " not found. Writing mapfile layers without header.")
+                        print "\nMapfile doesn't exist and configuration header " + mapfileConfigPrefix + '.header ' + \
+                            " not found. Writing mapfile layers without header."
+                    try:
+                        mapfile_footer = open(mapfileConfigPrefix + '.footer', 'r')
+                    except IOError:
+                        print "\nMapfile doesn't exist and configuration footer " + mapfileConfigPrefix + '.footer ' + \
+                            "not found. Writing mapfile layers without footer."
                 else:
                     print "\nUpdating mapfile: " + mapfileLocation + mapfileBasename
 
@@ -2380,6 +2386,12 @@ $Patterns</TiledGroup>"""
                 mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
                 mapfile.write("\tEND\n")
                 mapfile.write("END\n")
+
+                # Insert footer if we have one
+                if mapfile_footer is not None:
+                    mapfile.write(mapfile_footer.read())
+                    mapfile_footer.close()
+                
                 mapfile.write("END\n")
 
         except IOError:
