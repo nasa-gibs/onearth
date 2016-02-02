@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2015, California Institute of Technology.
+# Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -44,9 +44,9 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2015
 
 from optparse import OptionParser
+import os
 import logging
 import sys
 import time
@@ -55,7 +55,7 @@ import urllib
 import urllib2
 import xml.dom.minidom
 
-versionNumber = '0.6.3'
+versionNumber = '0.9.0'
     
 class ColorEntry:
     """RGBA values for VRT color table"""
@@ -192,6 +192,17 @@ def log_the_command(command_list):
     # Send to log.
     log_info_mssg_with_timestamp(spaced_command)
 
+def check_abs_path(directory_path):
+    """
+    Check if directory is absolute path.
+    If not, prepend current working directory.
+        Argument:
+            directory_path -- path to check if absolute
+    """
+    if directory_path[0] != '/':
+        directory_path = os.getcwd() +'/' + directory_path
+    
+    return directory_path
     
 #-------------------------------------------------------------------------------   
 
@@ -224,7 +235,7 @@ parser.add_option('-u', '--sigevent_url',
 if not options.colormap_filename:
     parser.error('ColorMap filename not provided. --colormap must be specified.')
 else:
-    colormap_filename = options.colormap_filename
+    colormap_filename = check_abs_path(options.colormap_filename)
 # output VRT.
 if not options.output_vrt:
     parser.error('Output filename not provided. --output must be specified.')
