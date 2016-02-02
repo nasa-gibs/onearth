@@ -1,8 +1,8 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2014, California Institute of Technology.
+# Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 #   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 #   2. Redistributions in binary form must reproduce the above copyright notice,
@@ -10,7 +10,7 @@
 #   3. Neither the name of the California Institute of Technology (Caltech), its operating division the Jet Propulsion Laboratory (JPL),
 #      the National Aeronautics and Space Administration (NASA), nor the names of its contributors may be used to
 #      endorse or promote products derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
 # INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 # IN NO EVENT SHALL THE CALIFORNIA INSTITUTE OF TECHNOLOGY BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
@@ -18,6 +18,18 @@
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 #
 # Pipeline for converting georeferenced tiles to MRF for Tiled-WMS.
@@ -53,7 +65,7 @@
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
 # NASA Jet Propulsion Laboratory
-# 2015
+# 2016
 # Jeffrey.R.Hall@jpl.nasa.gov
 # Joe.T.Roberts@jpl.nasa.gov
 
@@ -538,11 +550,12 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     if nodata == "":
         nodata = "0"
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
-    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y)), '-o', tile+".blend.tif", '-of', 'GTiff', '-pct', mrf, tile]
+    new_tile = tile+".blend.tif"
+    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct', mrf, tile]
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdal_merge.wait()
-    return tile+".blend.tif"
+    return new_tile
 
 def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
     """
@@ -601,7 +614,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
 
     return (tile_left,  tile_right)
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend):
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -617,6 +630,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         source_epsg -- The source EPSG code
         target_epsg -- The target EPSG code
         nodata -- nodata value
+        blend -- Blend over transparent regions of imagery
     """
     xmin, ymin, xmax, ymax = target_extents
     s_xmin, s_ymin, s_xmax, s_ymax = source_extents
@@ -633,9 +647,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if granule == True and ((float(extents[0])-float(s_xmax)) > float(extents[2])):
             print tile + " crosses antimeridian"
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((float(s_xmax)-float(s_xmin))/float(target_x)), str((float(s_ymin)-float(s_ymax))/float(target_y)))
-            run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata)
+            run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
             continue
-        if granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
+        if blend == True and granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
         if diff_resolution([tile, mrf]):
@@ -659,7 +673,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
-            if granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
+            if blend == True and granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(tile+".vrt") # get new extents
                 print "Granule extents " + str(extents)
                 tile = gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
@@ -743,35 +757,35 @@ def insert_zdb(mrf, zlevels, zkey):
             cur = con.cursor() 
             cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
             con.commit()
-        else:
-            if zkey != '':
-                cur = con.cursor()
-                # Check for existing key
-                cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+
+        if zkey != '':
+            cur = con.cursor()
+            # Check for existing key
+            cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+            lid = int(cur.fetchone()[0])
+            if lid > 0:                
+                mssg = zkey + " key already exists...overwriting"
+                log_sig_warn(mssg, sigevent_url)
+                cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
+                z = int(cur.fetchone()[0]) 
+            else:              
+                # Check z size
+                cur.execute("SELECT COUNT(*) FROM ZINDEX;")
                 lid = int(cur.fetchone()[0])
-                if lid > 0:                
-                    mssg = zkey + " key already exists...overwriting"
-                    log_sig_warn(mssg, sigevent_url)
-                    cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
-                    z = int(cur.fetchone()[0]) 
-                else:              
-                    # Check z size
-                    cur.execute("SELECT COUNT(*) FROM ZINDEX;")
-                    lid = int(cur.fetchone()[0])
-                    if lid >= int(zlevels):
-                        mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
-                        log_sig_exit('ERROR', mssg, sigevent_url)
-                    # Insert values
-                    if lid == 0:
-                        try:
-                            cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-                        except sqlite3.Error, e: # if 0 index has already been taken
-                            print "%s: trying new ID" % e.args[0]
-                            cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-                    else:
+                if lid >= int(zlevels):
+                    mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                    log_sig_exit('ERROR', mssg, sigevent_url)
+                # Insert values
+                if lid == 0:
+                    try:
+                        cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+                    except sqlite3.Error, e: # if 0 index has already been taken
+                        print "%s: trying new ID" % e.args[0]
                         cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-                    z = cur.lastrowid
-                    log_info_mssg("Current z-level is " +str(z))
+                else:
+                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                z = cur.lastrowid
+                log_info_mssg("Current z-level is " +str(z))
         
     except sqlite3.Error, e:
         if con:
@@ -1050,6 +1064,14 @@ else:
             nocopy = True
     except:
         nocopy = None
+    # blend, defaults to True
+    try:
+        if get_dom_tag_value(dom, 'mrf_blend') == "false":
+            blend = False
+        else:
+            blend = True
+    except:
+        blend = True
     # Close file.
     config_file.close()
 
@@ -1124,6 +1146,7 @@ log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resam
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
+log_info_mssg(str().join(['config mrf_blend:               ', str(blend)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
@@ -1472,7 +1495,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata)
+    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1844,7 +1867,7 @@ else:
     
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata)
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
     
 # Rename MRFs
 if mrf_name != '':
