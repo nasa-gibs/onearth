@@ -322,6 +322,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  int interval = 0;
 			  int start_offset = 0;
 			  int start_leap = 0;
+			  int start_year = 0;
 			  int i;
 			  for (i=0;i<num_periods;i++) {
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
@@ -338,6 +339,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  // check to see if there is a start time before the request time
 				  if (strlen(time_period)>=10) {
 					  st.tm_year=apr_atoi64(time_period);
+					  start_year=st.tm_year;
 					  if (tm.tm_year >= st.tm_year) {
 						  time_period+=5;
 						  st.tm_mon=apr_atoi64(time_period);
@@ -390,21 +392,80 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  // calculate the last date in the span of the time interval
 					  int span = start_offset % interval;
 					  int request_day = tm.tm_yday;
-					  if (start_offset <= interval && start_offset >= 0) {
-						  request_day = st.tm_yday;
+					  // Evaluate monthly period
+					  if (time_period[(strlen(time_period)-1)] == 'M') {
+					  	  st.tm_yday = start_leap ? st.tm_yday-1 : st.tm_yday;
+					  	  // Get closest month to request date
+					  	  int month_count = 13-st.tm_mon + (12*(tm.tm_year-st.tm_year-1)) + tm.tm_mon;
+					  	  int i;
+					  	  for(i=1; i<month_count; i+=interval) {
+					  	  	st.tm_mon += interval;
+					  	  	if(st.tm_mon > 12) {
+					  	  		st.tm_year+=(st.tm_mon/12);
+					  	  		st.tm_mon = st.tm_mon % 12;
+					  	  	}
+					  	  }
+					  	  // Step back to get the previous interval if this one is ahead of the req date
+					  	  if (st.tm_year > tm.tm_year || (st.tm_mon > tm.tm_mon || (st.tm_mon == tm.tm_mon && st.tm_mday > tm.tm_mday))) {
+					  	  	// Month subtraction routine
+					  	  	while(interval!=0) {
+					  	  		st.tm_mon--;
+					  	  		if (st.tm_mon==0)
+					  	  		{
+					  	  			st.tm_mon=12;
+					  	  			st.tm_year--;
+					  	  		}
+					  	  		interval--;
+					  	  	}
+					  	  }
+					  	  // Using APR time functions to get yday (converting date struct to epoch and back gets us accurate yday)
+					  	  // Zero out any info we don't need (otherwise messes up the epoch/time struct conversion)
+					  	  st.tm_yday = 0;
+					  	  st.tm_hour = 0;
+					  	  st.tm_min = 0;
+					  	  st.tm_gmtoff = 0;
+						  // Normally tm_mon is zero-indexed
+					  	  st.tm_mon--;
+					  	  // Date to epoch and then back
+					  	  apr_time_t start_epoch;
+					  	  apr_time_exp_get(&start_epoch, &st);
+					  	  apr_time_exp_gmt(&st, start_epoch);
+					  	  // tm_yday and tm_mon comes out zero-indexed, set it back
+					  	  st.tm_yday++;
+					  	  st.tm_mon++;
+					  	  request_day = st.tm_yday;
+				  	  // Evaluate yearly period
+					  } else if (time_period[(strlen(time_period)-1)] == 'Y') {
+					  	  int year_interval = apr_atoi64(time_period+6);
+					  	  // Strip off the extra day that's added if the start was a leap year
+					  	  st.tm_yday = start_leap ? st.tm_yday-1 : st.tm_yday;
+					  	  // Count up years to get the closest interval to requested date
+					  	  while ( start_year < tm.tm_year ) {
+					  	  	start_year += year_interval;
+					  	  }
+					  	  // Go back one interval if this date is later than the requested one
+					  	  if(start_year > tm.tm_year || (st.tm_mon > tm.tm_mon || (st.tm_mon == tm.tm_mon && st.tm_mday > tm.tm_mday))) {
+					  	  	start_year -= year_interval;
+					  	  }
+					  	  // Add a yday if the snapped date is a leap year
+					  	  st.tm_year = start_year;
+				  	  	  leap = (st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
+				  	  	  st.tm_yday = leap ? st.tm_yday+1 : st.tm_yday;
+				  	  	  request_day = st.tm_yday;
 					  } else {
-						  // check if month period
-						  if (time_period[(strlen(time_period)-1)] == 'M') {
-							  tm.tm_mday = st.tm_mday;
-							  span = request_day; // store old value
-							  request_day=tm.tm_mday+moffset[tm.tm_mon-interval]+((tm.tm_mon>2)?leap:0);
-							  span = span-request_day+1; // get actual span
-						  } else {
-//							  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%d [request day] - (%d [days since start] %% %d [period interval]) = %d [date]", request_day, start_offset, interval, (request_day-span));
-							  request_day = request_day - span;
-						  }
+						  request_day = request_day - span;
 					  }
-					  char old_char=*(fnloc+7);
+					  char old_char;
+					  // Correct year name in path if it's changed
+					  if (st.tm_year!=tm.tm_year) {
+					  	old_char=*(yearloc+4);
+					  	sprintf(yearloc, "%04d", st.tm_year);
+					  	*(yearloc+4)=old_char;
+					  }
+					  // Change request date to the date we're snapping to
+					  tm = st;
+					  // Assemble filename
+					  old_char=*(fnloc+7);
 					  sprintf(fnloc,"%04d%03d",tm.tm_year,request_day);
 					  *(fnloc+7)=old_char;
 				  } else { // subdaily request
