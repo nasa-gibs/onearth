@@ -241,29 +241,12 @@ def get_dom_tag_value(dom, tag_name):
     value=tag[0].firstChild.data.strip()
     return value
 
-def get_input_files(dom):
-    """
-    Returns comma-separated list of files from <input_files> element.
-    Arguments:
-        dom -- The XML dom in which to retrieve <input_files> element.
-    """
-    files = []
-    input_file_element = dom.getElementsByTagName("input_files")[0]
-    file_elements = input_file_element.getElementsByTagName("file")
-    if len(file_elements) > 0:
-        for element in file_elements:
-            files.append(element.firstChild.data.strip())
-    else:
-        files.append(input_file_element.firstChild.data.strip()) 
-    return ",".join(files)
-
 def remove_file(filename):
     """
     Delete a file or link, and report this action to the log.
     Arguments:
         filename -- file to remove.
     """
-    #preexisting=glob.glob(str().join([input_dir, filename]))
     preexisting=glob.glob(filename)
     if len(preexisting) > 0:
         # Send to log.
@@ -272,14 +255,6 @@ def remove_file(filename):
         else:
             log_info_mssg(str().join(['Removing file:  ', filename]))
         os.remove(filename)
-    #THE "CORRECT" TECHNIQUE:
-    #dirname = '/some/path/'
-    #filename = 'somefile.txt'
-    #pathname = os.path.abspath(os.path.join(dirname, filename))
-    #if pathname.startswith(dirname):
-    #   os.remove(pathname)
-    #Normalizing the path with abspath and comparing it against the target 
-    #directory avoids file names like "../../../etc/passwd" or similar.
 
 def check_abs_path(directory_path):
     """
@@ -293,7 +268,6 @@ def check_abs_path(directory_path):
     
     return directory_path
     
-
 def add_trailing_slash(directory_path):
     """
     Add trailing slash if one is not already present.
@@ -316,6 +290,22 @@ def verify_directory_path_exists(directory_path, variable_name):
         mssg=str().join([variable_name, ' ', directory_path, 
                          ' does not exist.'])
         log_sig_exit('ERROR', mssg, sigevent_url)
+
+def get_input_files(dom):
+    """
+    Returns comma-separated list of files from <input_files> element.
+    Arguments:
+        dom -- The XML dom in which to retrieve <input_files> element.
+    """
+    files = []
+    input_file_element = dom.getElementsByTagName("input_files")[0]
+    file_elements = input_file_element.getElementsByTagName("file")
+    if len(file_elements) > 0:
+        for element in file_elements:
+            files.append(check_abs_path(element.firstChild.data.strip()))
+    else:
+        files.append(check_abs_path(input_file_element.firstChild.data.strip())) 
+    return ",".join(files)
 
 def get_doy_string(date_of_data):
     """
@@ -1221,8 +1211,11 @@ if input_files != '':
 if input_dir != None:
     if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.jpg']))
-    else: #default to png
-        alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))    
+    else:
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))
+    # check for tiffs
+    alltiles = alltiles + glob.glob(str().join([input_dir, '*.tif']))
+    alltiles = alltiles + glob.glob(str().join([input_dir, '*.tiff']))
 
 striptiles = []
 for tile in alltiles:
