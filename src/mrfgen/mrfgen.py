@@ -757,35 +757,35 @@ def insert_zdb(mrf, zlevels, zkey):
             cur = con.cursor() 
             cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
             con.commit()
-        else:
-            if zkey != '':
-                cur = con.cursor()
-                # Check for existing key
-                cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+
+        if zkey != '':
+            cur = con.cursor()
+            # Check for existing key
+            cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
+            lid = int(cur.fetchone()[0])
+            if lid > 0:                
+                mssg = zkey + " key already exists...overwriting"
+                log_sig_warn(mssg, sigevent_url)
+                cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
+                z = int(cur.fetchone()[0]) 
+            else:              
+                # Check z size
+                cur.execute("SELECT COUNT(*) FROM ZINDEX;")
                 lid = int(cur.fetchone()[0])
-                if lid > 0:                
-                    mssg = zkey + " key already exists...overwriting"
-                    log_sig_warn(mssg, sigevent_url)
-                    cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
-                    z = int(cur.fetchone()[0]) 
-                else:              
-                    # Check z size
-                    cur.execute("SELECT COUNT(*) FROM ZINDEX;")
-                    lid = int(cur.fetchone()[0])
-                    if lid >= int(zlevels):
-                        mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
-                        log_sig_exit('ERROR', mssg, sigevent_url)
-                    # Insert values
-                    if lid == 0:
-                        try:
-                            cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-                        except sqlite3.Error, e: # if 0 index has already been taken
-                            print "%s: trying new ID" % e.args[0]
-                            cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-                    else:
+                if lid >= int(zlevels):
+                    mssg = str(lid+1) + " z-levels is more than the maximum allowed: " + str(zlevels)
+                    log_sig_exit('ERROR', mssg, sigevent_url)
+                # Insert values
+                if lid == 0:
+                    try:
+                        cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
+                    except sqlite3.Error, e: # if 0 index has already been taken
+                        print "%s: trying new ID" % e.args[0]
                         cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
-                    z = cur.lastrowid
-                    log_info_mssg("Current z-level is " +str(z))
+                else:
+                    cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
+                z = cur.lastrowid
+                log_info_mssg("Current z-level is " +str(z))
         
     except sqlite3.Error, e:
         if con:
