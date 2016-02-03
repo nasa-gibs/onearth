@@ -42,6 +42,7 @@ import filecmp
 import urllib
 import shutil
 import datetime
+import sqlite3
 from osgeo import gdal
 
 year = datetime.datetime.now().strftime('%Y')
@@ -53,11 +54,9 @@ def run_command(cmd):
     Arguments:
         cmd -- the command to be executed.
     """
-    print '\nRunning command: ' + cmd
-    process = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    print '\nRunning command: ' + str(cmd)
+    process = subprocess.Popen(cmd,shell=True,stderr=subprocess.PIPE)
     process.wait()
-    for output in process.stdout:
-        print output.strip()
     for error in process.stderr:
         print error.strip()
         raise Exception(error.strip())
@@ -349,6 +348,217 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         
         img = None
         mrf = None
+        
+        print "\n***Test Case Passed***\n"
+        
+    def tearDown(self):
+        shutil.rmtree(self.working_dir)
+        shutil.rmtree(self.logfile_dir)
+        shutil.rmtree(self.output_dir)
+        
+class TestMRFGeneration_OBPG(unittest.TestCase):
+    
+    def setUp(self):
+        self.dirpath = os.path.dirname(__file__)
+        self.test_config4a = self.dirpath + "/test/mrfgen_test_config4a.xml"
+        self.test_config4b = self.dirpath + "/test/mrfgen_test_config4b.xml"
+        self.test_config4c = self.dirpath + "/test/mrfgen_test_config4c.xml"
+        self.input_dir = self.dirpath + "/test/obpg/"
+        self.output_dir = self.dirpath + "/test/output_dir"
+        self.working_dir = self.dirpath + "/test/working_dir"
+        self.logfile_dir = self.dirpath + "/test/logfile_dir"
+        self.output_mrf = self.output_dir+ "/OBPG2015336_.mrf"
+        self.output_ppg = self.output_dir+ "/OBPG2015336_.ppg"
+        self.output_idx = self.output_dir+ "/OBPG2015336_.idx"
+        self.output_zdb = self.output_dir+ "/OBPG2015336_.zdb"
+        self.output_img_a = self.output_dir+ "/OBPG2015336_.png"
+        self.output_img_b = self.output_dir+ "/OBPG2015336_Z0.png"
+        self.output_img_c = self.output_dir+ "/OBPG2015336_Z1.png"
+        self.compare_img_b = self.dirpath + "/test/test_comp4b.png"
+        self.compare_img_c = self.dirpath + "/test/test_comp4c.png"
+        if not os.path.exists(self.input_dir):
+            os.makedirs(self.input_dir)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        if not os.path.exists(self.working_dir):
+            os.makedirs(self.working_dir)
+        if not os.path.exists(self.logfile_dir):
+            os.makedirs(self.logfile_dir)
+        
+        # download tiles
+        run_command('wget -r --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -q -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/')
+            
+        # create copy of colormap
+        shutil.copy2(self.dirpath + "/test/colormaps/MODIS_Aqua_Chlorophyll_A.xml", self.working_dir)
+        
+        print "Generating empty MRF with No Copy option"
+        run_command("python mrfgen.py -c " + self.test_config4a)
+        print "Generating global composite using granules with existing NoCopy MRF at z=0"
+        run_command("python mrfgen.py -c " + self.test_config4b)
+        run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf+':MRF:Z0 ' + self.output_img_b)
+        print "Generating global image with single granules with existing NoCopy MRF at z=1"
+        run_command("python mrfgen.py -c " + self.test_config4c)
+        run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf+':MRF:Z1 ' + self.output_img_c)
+           
+    def test_generate_mrf_obpg(self):
+        '''
+        This portion the following test cases:
+            Test using empty MRF with No Copy option
+            Test composite MRF with No Copy option
+        '''
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
+        print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
+        self.assertTrue(os.path.isfile(self.output_zdb), "MRF ZDB generation failed")
+        
+        print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+        
+        print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+        print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
+        self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+        
+        # Convert and compare MRF
+        mrf = gdal.Open(self.output_mrf)
+        driver = gdal.GetDriverByName("PNG")       
+        img = driver.CreateCopy(self.output_img_a, mrf, 0 )
+        
+        print 'Generated: ' + ' '.join(img.GetFileList())
+        print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+        self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
+        self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
+        self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
+        
+        '''
+        This portion covers the following test cases:
+            Test using granule images
+            Test using existing MRF
+            Test using granule images with Z-level
+            Test input images that cross antimeridian
+            Test blending of input images with transparency
+            Test adding image to existing Z-level
+        '''
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf+":MRF:Z0")
+        driver = dataset.GetDriver()
+        print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+        
+        print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+        
+        print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+        print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
+        self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+        
+        # Compare MRF
+        img = gdal.Open(self.output_img_b)
+        print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
+        print "Comparing: " + self.output_img_b + " to " + self.compare_img_b
+        self.assertTrue(filecmp.cmp(self.output_img_b, self.compare_img_b), "Output composite image does not match")
+
+        '''
+        This portion covers the following test cases:        
+            Test adding image to new Z-level
+            Test using single image with Z-level
+        
+        Test using tiled images with Z-level
+        Test adding image to multiple Z-levels
+        Test using existing MRF with reprojection
+        Test using existing MRF with reprojection in z-level
+        '''
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf+":MRF:Z1")
+        driver = dataset.GetDriver()
+        print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+        
+        print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+        
+        print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+        print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
+        self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+        
+        # Convert and compare MRF
+        img = gdal.Open(self.output_img_c)
+        print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
+        print "Comparing: " + self.output_img_c + " to " + self.compare_img_c
+        self.assertTrue(filecmp.cmp(self.output_img_c, self.compare_img_c), "Output granule image does not match")
+        
+        img = None
+        
+        # Test ZDB
+        print "Checking " + self.output_zdb
+        con = sqlite3.connect(self.output_zdb)
+        cur = con.cursor()
+        # Check for existing key
+        cur.execute("SELECT COUNT(*) FROM ZINDEX;")
+        lid = int(cur.fetchone()[0])
+        print "Number of records: " + str(lid)
+        self.assertEqual(lid, 2, "Number of records not matching in ZDB")
+        # Check for matching keys
+        cur.execute("SELECT key_str FROM ZINDEX where z=0;")
+        key_str = cur.fetchone()[0]
+        print key_str
+        self.assertEqual(key_str, '20151202', "Time for Z=0 does not match in ZDB")
+        cur.execute("SELECT key_str FROM ZINDEX where z=1;")
+        key_str = cur.fetchone()[0]
+        print key_str
+        self.assertEqual(key_str, '20151202000000', "Time for Z=1 does not match in ZDB")
+        if con:
+            con.close()
         
         print "\n***Test Case Passed***\n"
         
