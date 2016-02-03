@@ -921,6 +921,7 @@ else:
     output_dir             =get_dom_tag_value(dom, 'output_dir')
     try:
         working_dir            =get_dom_tag_value(dom, 'working_dir')
+        working_dir = add_trailing_slash(check_abs_path(working_dir))
     except: # use /tmp/ as default
         working_dir            ='/tmp/'
     try:
@@ -1069,7 +1070,6 @@ else:
 if input_dir != None:
     input_dir = add_trailing_slash(check_abs_path(input_dir))
 output_dir = add_trailing_slash(check_abs_path(output_dir))
-working_dir = add_trailing_slash(check_abs_path(working_dir))
 logfile_dir = add_trailing_slash(check_abs_path(logfile_dir))
 
 # Save script_dir
