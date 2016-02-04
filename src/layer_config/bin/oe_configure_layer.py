@@ -1580,8 +1580,6 @@ for conf in conf_files:
     if len(times) > 0:
         log_info_mssg('config: Time: ' + str(times))
     
-    # get MRF archetype
-
     if archiveLocation != None:
         archiveLocation = add_trailing_slash(archiveLocation)
         # check if absolute path or else use relative to cache location
@@ -1600,15 +1598,11 @@ for conf in conf_files:
     
     if static == True:
         mrf = mrfLocation + fileNamePrefix + '.mrf'
-        if headerFileName == None:
-            headerFileName = mrf
     else:
         if subdaily == True:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTTTTTTTT_.mrf'
         else:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
-        if headerFileName == None:
-            headerFileName = mrf
     
     if indexFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
@@ -1644,28 +1638,35 @@ for conf in conf_files:
             zIndexFileLocation = mrf.replace(cacheConfig,'')
         zIndexFileLocation = zIndexFileLocation.replace('.mrf','.zdb')
 
-    # Open MRF header if one has been supplied
-    if os.path.isfile(headerFileName):
-        log_info_mssg('MRF Archetype: ' + headerFileName)
+    # Parse header filename. Default is to use the 'mrf' filename.
+    header_type = None
+    header_file_name = mrf
+    try:
+        headerFileName = dom.getElementsByTagName('HeaderFileName')[0]
+        header_file_name = get_dom_tag_value(dom, 'HeaderFileName')
+    except (AttributeError, IndexError):
+        pass
+    try:
+        header_type = headerFileName.getAttribute('type')
+    except AttributeError:
+        pass
+
+    # Open MRF header if one has been supplied (except if "type" attr is "prefix")
+    header_dom = None
+    if header_type != 'prefix':
         try:
-            mrf_file = open(headerFileName, 'r')
+            with open(header_file_name, 'r') as mrf_file:
+                try:
+                    header_dom = xml.dom.minidom.parse(mrf_file)
+                except:
+                    log_sig_err('Badly-formatted MRF header file: {0}'.format(mrf_file), sigevent_url)
+                    continue
         except IOError:
-            log_sig_err(str().join(['Cannot read MRF header file: ', headerFileName]), sigevent_url)
+            log_sig_err("Can't open MRF file: {0}".format(header_file_name), sigevent_url)
             continue
-        else:
-            try:
-                header_dom = xml.dom.minidom.parse(mrf_file)
-            except:
-                log_sig_err(str().join(['Bad MRF header file: ', headerFileName]), sigevent_url)
-            else:
-                header_file_present = True
-    else:
-        header_file_present = False
-        log_info_mssg('No MRF Archetype supplied')    
     
-    mrf_base = os.path.basename(headerFileName)
-    
-    # Create base MRF document
+    # Create base MRF document. We'll be adding stuff from either the header MRF or the 
+    # layer config file to this.
     mrf_impl = xml.dom.minidom.getDOMImplementation()
     mrf_dom = mrf_impl.createDocument(None, 'MRF_META', None)
     mrf_meta = mrf_dom.documentElement
@@ -1673,139 +1674,135 @@ for conf in conf_files:
     # Create <Raster> tag
     raster_node = mrf_dom.createElement('Raster')
 
-    # Check if <Size> tag present and has all 3 required values (x,y,c)
-    try:
-        size_node = dom.getElementsByTagName('Size')[0]
-    except:
+    # If the "prefix" attribute of <HeaderFileName> is present, we grab MRF stuff from the 
+    # layer config file. Otherwise, use the header file specified.
+    if header_type == 'prefix':
+        mrf_base = header_file_name + '.mrf'
+        header_dom = dom
+        log_info_mssg('Using MRF data within layer config file')
+    else:
+        log_info_mssg('Using MRF Archetype: ' + header_file_name)
+        mrf_base = os.path.basename(header_file_name)
+
+    if header_dom != None:
+        # Check if <Size> tag present and has all 3 required values (x,y,c)
         try:
             size_node = header_dom.getElementsByTagName('Size')[0]
-        except:
-            size_node = None
-            log_sig_err("<Size> tag not present in layer config or MRF header file", sigevent_url)
-    finally:
+        except IndexError:
+            log_sig_err("<Size> tag not present in MRF header file or layer config", sigevent_url)
+            continue
         if size_node != None:
             if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
                 log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
+                continue
             else:
                 raster_node.appendChild(size_node)
-                bands = size_node.getAttribute('c')
+                bands = size_node.getAttribute('c')     
 
-    # Create compression node
-    compression_node = mrf_dom.createElement('Compression')
-    compression_text_node = mrf_dom.createTextNode(compression)
-    compression_node.appendChild(compression_text_node)
-    raster_node.appendChild(compression_node)
+        # Create <Compression> node
+        compression_node = mrf_dom.createElement('Compression')
+        compression_text_node = mrf_dom.createTextNode(compression)
+        compression_node.appendChild(compression_text_node)
+        raster_node.appendChild(compression_node)
 
-    # Check if <DataValues> tag is present and the NoData attribute is present
-    try:
-        datavalues_node = dom.getElementsByTagName('DataValues')[0]
-    except:
+        # Check if <DataValues> tag is present and the NoData attribute is present
         try:
             datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
-        except:
+        except IndexError:
             datavalues_node = None
-    finally:
-        if datavalues_node is not None:    
-            raster_node.appendChild(datavalues_node)
+        finally:
+            if datavalues_node is not None:    
+                raster_node.appendChild(datavalues_node)
 
-    # Check if the <Quality> tag is present and of a valid type
-    try:
-        quality_node = dom.getElementsByTagName('Quality')[0]
-    except:
+        # Check if the <Quality> tag is present and of a valid type
         try:
             quality_node = header_dom.getElementsByTagName('Quality')[0]
-        except:
+        except IndexError:
             quality_node = None
-            # log_sig_err("<Quality> tag not present in layer config or MRF header file.", sigevent_url)
-    finally:    
         if quality_node is not None:    
             if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
                 log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
+                continue
             else:
                 raster_node.appendChild(quality_node)
 
-    # Check if <PageSize> node is present and has c, x, and y attributes
-    try:
-        page_size_node = dom.getElementsByTagName('PageSize')[0]
-    except:
+        # Check if <PageSize> node is present and has c, x, and y attributes
         try:
             page_size_node = header_dom.getElementsByTagName('PageSize')[0]
-        except:
+        except IndexError:
             page_size_node = None
-            log_sig_err("<PageSize> tag not present in layer config or MRF header file", sigevent_url)
-    finally:
+            log_sig_err("<PageSize> tag not present in MRF header file or layer config", sigevent_url)
+            continue
         if page_size_node is not None:
             if all (attr in page_size_node.attributes.keys() for attr in ('c','x','y')):
                 raster_node.appendChild(page_size_node)
             else:
                 log_sig_err("<PageSize> requires c, x, and y attributes", sigevent_url)
+                continue
 
-    # Add <Raster> tag to MRF
-    mrf_meta.appendChild(raster_node)
+        # Add <Raster> tag to MRF
+        mrf_meta.appendChild(raster_node)
 
-    # Create <Rsets> 
-    try:
-        rsets_node = dom.getElementsByTagName('Rsets')[0]
-    except:
+        # Create <Rsets> 
         try:
             rsets_node = header_dom.getElementsByTagName('Rsets')[0]
-        except:
+        except IndexError:
             rsets_node = None
             log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
-    if rsets_node is not None:
-        try:
-            scale_attribute = rsets_node.getAttribute('scale')
-        except:
-            log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)    
-        else:
+            continue
+        if rsets_node is not None:
             try:
-                if scale_attribute:
-                    if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
-                        log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
-                        continue
-                if projection.tilematrixsets[tilematrixset].levels > 1:
-                    rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
-            except KeyError:
-                log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+                scale_attribute = rsets_node.getAttribute('scale')
+            except:
+                log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)
                 continue
-        # Add data file locations
-        dataFileNameElement = mrf_dom.createElement('DataFileName')
-        dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
-        indexFileNameElement = mrf_dom.createElement('IndexFileName')
-        indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
-        rsets_node.appendChild(dataFileNameElement)
-        rsets_node.appendChild(indexFileNameElement)
+            else:
+                try:
+                    if scale_attribute:
+                        if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
+                            log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
+                            continue
+                    if projection.tilematrixsets[tilematrixset].levels > 1:
+                        rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+                except KeyError:
+                    log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+                    continue
+            # Add data file locations
+            dataFileNameElement = mrf_dom.createElement('DataFileName')
+            dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
+            indexFileNameElement = mrf_dom.createElement('IndexFileName')
+            indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
+            rsets_node.appendChild(dataFileNameElement)
+            rsets_node.appendChild(indexFileNameElement)
 
-    # Add zindex file name
-    has_zdb = False;
-    if size_node.hasAttribute('z'):
-        z_index_node = mrf_dom.createElement('ZIndexFileName')
-        z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
-        z_index_node.appendChild(z_index_text_node)
-        rsets_node.appendChild(z_index_node)
-        has_zdb = True
+        # Add zindex file name
+        has_zdb = False;
+        if size_node.hasAttribute('z'):
+            z_index_node = mrf_dom.createElement('ZIndexFileName')
+            z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
+            z_index_node.appendChild(z_index_text_node)
+            rsets_node.appendChild(z_index_node)
+            has_zdb = True
 
-    mrf_meta.appendChild(rsets_node)
-    
-    # Create GeoTags 
-    geotag_node = mrf_dom.createElement('GeoTags')
-    # Check for bounding box
-    try:
-        bounding_box_node = dom.getElementsByTagName('BoundingBox')[0]
-    except:
+        mrf_meta.appendChild(rsets_node)
+        
+        # Create GeoTags 
+        geotag_node = mrf_dom.createElement('GeoTags')
+        # Check for bounding box
         try:
             bounding_box_node = header_dom.getElementsByTagName('BoundingBox')[0]
-        except:
+        except IndexError:
             bounding_box_node = None
             log_sig_err("<BoundingBox> tag not present in layer config or MRF header file", sigevent_url)
-    finally:
+            continue
         if bounding_box_node is not None:
             if all (attr in bounding_box_node.attributes.keys() for attr in ('minx','miny','maxx','maxy')):
                 geotag_node.appendChild(bounding_box_node)
             else:
                 log_sig_err("<BoundingBox> requires minx, miny, maxx, and maxy attributes", sigevent_url)
+                continue
 
-    mrf_meta.appendChild(geotag_node)
+        mrf_meta.appendChild(geotag_node)
 
     twms = mrf_dom.createElement('TWMS')
     levelsElement = mrf_dom.createElement('Levels')

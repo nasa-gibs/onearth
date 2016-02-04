@@ -56,7 +56,11 @@ limitations under the License.
       <xs:attribute name="root" use="optional" type="xs:string"/>
     </xs:complexType>
   </xs:element>
-  <xs:element name="HeaderFileName" type="xs:string" nillable="true"/>
+  <xs:element name="HeaderFileName">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" use="optional" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="DataFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="IndexFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="ZIndexFileLocation" type="xs:string" nillable="true"/>
@@ -109,6 +113,7 @@ limitations under the License.
   <xs:element name="Rsets" nillable="true">
     <xs:complexType>
       <xs:attribute name="scale" type="xs:integer" use="required"/>
+      <xs:attribute name="model" type="xs:string" use="required"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="BoundingBox" nillable="true">
