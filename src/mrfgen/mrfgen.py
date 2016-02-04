@@ -1254,6 +1254,8 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
                 if i==0:
                     log_sig_warn('identify command not found, unable to detect bad JPEG tiles', sigevent_url)
                 goodtiles.append(tile)
+            except IndexError:
+                log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
     alltiles = goodtiles
     
 # Convert TIFF files
