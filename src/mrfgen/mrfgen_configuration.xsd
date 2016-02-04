@@ -56,7 +56,7 @@ limitations under the License.
   <xs:element name="input_files">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="file" minOccurs="0"/>
+        <xs:element maxOccurs="unbounded" ref="file" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
