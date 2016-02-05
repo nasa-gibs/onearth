@@ -824,15 +824,16 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                             newest_year = years[idx]
                             break;
         
-            print "Available range with data is %s to %s" % (oldest_year, newest_year)
-            if newest_year == '' or oldest_year == '':
+            if (newest_year == '' or oldest_year == '') and year==True:
                 mssg = "No data files found in year directories in " + archiveLocation 
-                log_sig_err(mssg, sigevent_url)
+                log_sig_warn(mssg, sigevent_url)
                 return times
+            elif year==True:
+                print "Available range with data is %s to %s" % (oldest_year, newest_year)
                             
         if start==detect:
+            dates = []
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
-                dates = []
                 for filename in filenames:
                     if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                         try:
@@ -851,26 +852,26 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                             print "Skipping", filename
                     else:
                         print "Ignoring", filename
-                if len(dates) == 0:
-                    message = "No valid files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation +"/"+oldest_year + "' - please check if data exists."
-                    log_sig_err(message, sigevent_url)
-                    return times
-                startdate = min(dates)
-                if has_zdb==True:
-                    try:
-                        zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(startdate,"%Y%j")+'_.zdb'
-                        startdate = datetime.strptime(str(read_zkey(zdb, 'ASC')),"%Y%m%d%H%M%S")
-                        subdaily = True
-                    except ValueError:
-                        log_sig_err("No valid time found in " + zdb, sigevent_url)
-                if subdaily == False:
-                    start = datetime.strftime(startdate,"%Y-%m-%d")
-                else:
-                    start = datetime.strftime(startdate,"%Y-%m-%dT%H:%M:%SZ")
+            if len(dates) == 0:
+                message = "No valid files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation +"/"+oldest_year + "' - please check if data exists."
+                log_sig_err(message, sigevent_url)
+                return times
+            startdate = min(dates)
+            if has_zdb==True:
+                try:
+                    zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(startdate,"%Y%j")+'_.zdb'
+                    startdate = datetime.strptime(str(read_zkey(zdb, 'ASC')),"%Y%m%d%H%M%S")
+                    subdaily = True
+                except ValueError:
+                    log_sig_err("No valid time found in " + zdb, sigevent_url)
+            if subdaily == False:
+                start = datetime.strftime(startdate,"%Y-%m-%d")
+            else:
+                start = datetime.strftime(startdate,"%Y-%m-%dT%H:%M:%SZ")
         
         if end==detect:
+            dates = []
             for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
-                dates = []
                 for filename in filenames:
                     if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                         try:
@@ -889,18 +890,18 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                             print "Skipping", filename
                     else:
                         print "Ignoring", filename
-                enddate = max(dates)
-                if has_zdb==True:
-                    try:
-                        zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
-                        enddate = datetime.strptime(str(read_zkey(zdb, 'DESC')),"%Y%m%d%H%M%S")
-                        subdaily = True
-                    except ValueError:
-                        log_sig_err("No valid time found in " + zdb, sigevent_url)
-                if subdaily == False:
-                    end = datetime.strftime(enddate,"%Y-%m-%d")
-                else:
-                    end = datetime.strftime(enddate,"%Y-%m-%dT%H:%M:%SZ")
+            enddate = max(dates)
+            if has_zdb==True:
+                try:
+                    zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
+                    enddate = datetime.strptime(str(read_zkey(zdb, 'DESC')),"%Y%m%d%H%M%S")
+                    subdaily = True
+                except ValueError:
+                    log_sig_err("No valid time found in " + zdb, sigevent_url)
+            if subdaily == False:
+                end = datetime.strftime(enddate,"%Y-%m-%d")
+            else:
+                end = datetime.strftime(enddate,"%Y-%m-%dT%H:%M:%SZ")
         
         if has_zdb == True and has_period == False:
             time = start+'/'+end
