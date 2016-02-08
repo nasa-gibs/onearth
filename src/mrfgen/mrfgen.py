@@ -1711,8 +1711,9 @@ if zlevels != '':
 if nocopy == True:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
-    gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
+    if len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF or single input
+        gdal_translate_command_list.append('-co')
+        gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
         
 # add ending parameters      
 gdal_translate_command_list.append(vrt_filename)
@@ -1786,14 +1787,23 @@ else:
     # Get largest dimension, usually X.
     actual_size=max([int(sizeX), int(sizeY)])
 
+# Run gdaladdo by default
+run_addo = True
+
+# Insert into nocopy
+if nocopy==True:
+    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
+    if len(alltiles) <= 1:
+        run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
+
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
 compare_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
 old_stats=os.stat(idx_filename)
 if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
-
-    if nocopy == False and (overview_levels == '' or int(overview_levels[0])>1):
+    
+    if run_addo == True and (overview_levels == '' or int(overview_levels[0])>1):
         # Create the gdaladdo command.
         gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
                                str(gdal_mrf_filename)]
@@ -1859,10 +1869,6 @@ else:
                          'Check stderr file: ',
                          gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
-    
-# Insert into nocopy
-if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
     
 # Rename MRFs
 if mrf_name != '':
