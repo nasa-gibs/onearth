@@ -708,7 +708,7 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
         run_command("python mrfgen.py -c " + self.test_config)
         run_command('gdal_translate -of JPEG -outsize 1024 512 -projwin -10018754.1713946 5621521.48619207 -8015003.3371157 4300621.37204427 ' + self.output_mrf+':MRF:Z0 ' + self.output_img)
         
-    def test_generate_mrf(self):
+    def test_generate_mrf_tiled_z(self):
         # Check MRF generation succeeded
         self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
         
