@@ -381,9 +381,10 @@ def diff_resolution(tiles):
     Arguments:
         tiles -- List of images for comparison.
     """
+    next_x = 0
     if len(tiles) <= 1:
         print "Single tile detected"
-        return False
+        return (False, next_x)
     
     print "Checking for different resolutions in tiles"
     res = ""
@@ -403,8 +404,8 @@ def diff_resolution(tiles):
                     next_y = float(next_res.split(',')[1].replace(')',''))
                     if res_x != next_x and res_y != next_y:
                         print "Different tile resolutions detected"
-                        return True              
-    return False
+                        return (True, next_x)              
+    return (False, next_x)
 
 def is_global_image(tile, xmin, ymin, xmax, ymax):
     """
@@ -541,7 +542,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         nodata = "0"
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = tile+".blend.tif"
-    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct', mrf, tile]
+    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct', mrf, tile]
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdal_merge.wait()
@@ -633,20 +634,22 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             log_info_mssg("Skipping insert of " + tile)
             continue
         granule, extents = is_granule_image(tile)
+        diff_res, ps = diff_resolution([tile, mrf])
+        print "Pixel size " + repr(ps)
         # check if granule crosses antimeridian
         if granule == True and ((float(extents[0])-float(s_xmax)) > float(extents[2])):
             print tile + " crosses antimeridian"
-            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((float(s_xmax)-float(s_xmin))/float(target_x)), str((float(s_ymin)-float(s_ymax))/float(target_y)))
+            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)))
             run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
             continue
         if blend == True and granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
-        if diff_resolution([tile, mrf]):
+        if diff_res:
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((float(xmax)-float(xmin))/float(target_x)), str((float(ymin)-float(ymax))/float(target_y))]
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y))]
             if target_epsg != source_epsg:
                 tile_vrt_command_list.append('-s_srs')
                 tile_vrt_command_list.append(source_epsg)
@@ -663,7 +666,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
-            if blend == True and granule == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
+            if blend == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(tile+".vrt") # get new extents
                 print "Granule extents " + str(extents)
                 tile = gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
@@ -1381,19 +1384,24 @@ if mrf_compression_type == 'PPNG' and colormap != '':
 # sort
 alltiles.sort()
 
+# check for different resolutions
+diff_res, res = diff_resolution(alltiles)
+
 # determine if nocopy should be used if not set
 if nocopy == None:
     if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
         if is_global_image(alltiles[0],xmin, ymin, xmax, ymax) == True:
+            # Don't do inserts if we have a single global image
             nocopy = False
         else:
             nocopy = True
     else:
-        nocopy = True
+        if (res*8) < (float(mrf_blocksize)/float(target_x)):
+            # Don't do inserts if the target MRF resolution is too low
+            nocopy = False
+        else:
+            nocopy = True
     log_info_mssg("Setting MRF nocopy to " + str(nocopy)) 
-
-# check for different resolutions
-diff_res = diff_resolution(alltiles)
 
 #UNTIL MRF PARTIAL UPDATES ARE IMPLEMENTED, PROCESS ENTIRE GLOBE IF ANY NEW 
 #TILES ARE DETECTED.
