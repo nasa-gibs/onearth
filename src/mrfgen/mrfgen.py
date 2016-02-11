@@ -1397,7 +1397,10 @@ if nocopy == None:
             nocopy = True
     else:
         if (res*8) < (float(mrf_blocksize)/float(target_x)):
-            # Don't do inserts if the target MRF resolution is too low
+            # Avoid inserts if the target MRF resolution is too low
+            nocopy = False
+        elif source_epsg != target_epsg:
+            # Avoid inserts if reprojecting
             nocopy = False
         else:
             nocopy = True
