@@ -95,6 +95,11 @@ class TestLayerConfig(unittest.TestCase):
                 self.gettileservice = child.text
             if child.tag == "CacheLocation":
                 self.cachedir = child.text
+            if child.tag == "StagingLocation":
+                if child.attrib['service'] == 'wmts':
+                    self.wmts_staginglocation = child.text
+                if child.attrib['service'] == 'twms':
+                    self.twms_staginglocation = child.text
         config_file.close()
 
         # Set up dummy data files
@@ -107,7 +112,7 @@ class TestLayerConfig(unittest.TestCase):
         if not os.path.isfile(self.cachedir + 'MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.mrf'):
             copyfile('MODIS_Aqua_AerosolTTTTTTT_.mrf', self.cachedir + 'MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.mrf')
         if not os.path.isfile(self.cachedir + 'MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.zdb'):
-            copyfile('MODIS_Aqua_AerosolTTTTTTT_.zdb', self.cachedir + 'MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.zdb')
+            copyfile('MODIS_Aqua_AerosolTTTTTTT_.zdb', self.cachedir + 'MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.zdb')          
 
     def test_layer_config_default(self):
         #Run layer config
@@ -119,14 +124,14 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.cachedir + "cache_all_wmts.config"), "cache_all_wmts.config does not exist")
         self.assertTrue(os.path.isfile(self.wmts_getcapabilities + "getCapabilities.xml"), "WMTS getCapabilities.xml does not exist")
         self.assertTrue(os.path.isfile(self.cachedir + "MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.mrf"), "MODIS_Aqua_Aerosol2014364_.mrf does not exist")
-        self.assertTrue(os.path.isfile(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.xml"), "MODIS_Aqua_AerosolTTTTTTT_.xml does not exist in WMTS staging area")
+        self.assertTrue(os.path.isfile(self.wmts_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT_.xml"), "MODIS_Aqua_AerosolTTTTTTT_.xml does not exist in WMTS staging area")
 
         self.assertTrue(os.path.isfile(self.cachedir + "cache_all_twms.config"), "cache_all_twms.config does not exist")
         self.assertTrue(os.path.isfile(self.twms_getcapabilities + "getCapabilities.xml"), "TWMS getCapabilities.xml does not exist")
         self.assertTrue(os.path.isfile(self.gettileservice + "getTileService.xml"), "TWMS getTileService.xml does not exist")
         self.assertTrue(os.path.isfile(self.cachedir + "MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.mrf"), "MODIS_Aqua_Aerosol2014364_.mrf does not exist")
-        self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/MODIS_Aqua_AerosolTTTTTTT__gc.xml"), "MODIS_Aqua_AerosolTTTTTTT_gc.xml does not exist in TWMS staging area")
-        self.assertTrue(os.path.isfile(self.lcdir + "/twms/EPSG4326/MODIS_Aqua_AerosolTTTTTTT__gts.xml"), "MODIS_Aqua_AerosolTTTTTTT_gts.mrf does not exist in TWMS staging area")
+        self.assertTrue(os.path.isfile(self.twms_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT__gc.xml"), "MODIS_Aqua_AerosolTTTTTTT_gc.xml does not exist in TWMS staging area")
+        self.assertTrue(os.path.isfile(self.twms_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT__gts.xml"), "MODIS_Aqua_AerosolTTTTTTT_gts.mrf does not exist in TWMS staging area")
 
         
         contains_layer = False
@@ -232,10 +237,10 @@ class TestLayerConfig(unittest.TestCase):
     def tearDown(self):
         os.remove(self.cachedir + "MODIS_Aqua_Aerosol/2014/MODIS_Aqua_Aerosol2014364_.mrf")
         rmtree(self.cachedir + "MODIS_Aqua_Aerosol/")
-        os.remove(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.xml")
-        os.remove(self.lcdir + "/wmts/EPSG4326/MODIS_Aqua_AerosolTTTTTTT_.mrf")
-        os.remove(self.lcdir + "/twms/EPSG4326/MODIS_Aqua_AerosolTTTTTTT__gc.xml")
-        os.remove(self.lcdir + "/twms/EPSG4326/MODIS_Aqua_AerosolTTTTTTT__gts.xml")
+        os.remove(self.wmts_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT_.xml")
+        os.remove(self.wmts_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT_.mrf")
+        os.remove(self.twms_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT__gc.xml")
+        os.remove(self.twms_staginglocation + "/MODIS_Aqua_AerosolTTTTTTT__gts.xml")
         os.remove(self.lcdir + "/test/empty_tile.png")
 
 if __name__ == '__main__':
