@@ -545,6 +545,15 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct', mrf, tile]
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    insert_message = gdal_merge.stderr.readlines()
+    for message in insert_message:
+        if 'ERROR' in message.upper():
+            try:
+                sigevent('ERROR', message + ' in gdal_merge.py while processing ' + tile, sigevent_url)
+            except urllib2.URLError:
+                print 'sigevent service is unavailable'
+        else:
+            print message.strip()
     gdal_merge.wait()
     return new_tile
 
