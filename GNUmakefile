@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=0.9.0
+ONEARTH_VERSION=0.9.1
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -21,8 +21,6 @@ LIB_DIR=$(shell \
 )
 RPMBUILD_FLAGS=-ba
 
-NUMPY_ARTIFACT=numpy-1.5.1.tar.gz
-NUMPY_URL=https://pypi.python.org/packages/source/n/numpy/$(NUMPY_ARTIFACT)
 MPL_ARTIFACT=matplotlib-1.3.1.tar.gz
 MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
@@ -31,21 +29,13 @@ CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: numpy-unpack mpl-unpack cgicc-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: numpy-download mpl-download cgicc-download
-
-numpy-download: upstream/$(NUMPY_ARTIFACT).downloaded
-
-upstream/$(NUMPY_ARTIFACT).downloaded: 
-	mkdir -p upstream
-	rm -f upstream/$(NUMPY_ARTIFACT)
-	( cd upstream ; wget $(NUMPY_URL) )
-	touch upstream/$(NUMPY_ARTIFACT).downloaded
+download: mpl-download cgicc-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -66,13 +56,6 @@ upstream/$(CGICC_ARTIFACT).downloaded:
 #-----------------------------------------------------------------------------
 # Compile
 #-----------------------------------------------------------------------------
-
-numpy-unpack: build/numpy/VERSION
-
-build/numpy/VERSION:
-	mkdir -p build/numpy
-	tar xf upstream/$(NUMPY_ARTIFACT) -C build/numpy \
-		--strip-components=1 --exclude=.gitignore
 		
 mpl-unpack: build/mpl/VERSION
 
@@ -161,8 +144,6 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
 
-	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/numpy
-	cp -r build/numpy/* $(DESTDIR)/$(PREFIX)/share/numpy
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mpl
 	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
@@ -202,7 +183,6 @@ onearth-rpm: onearth-artifact
 	mkdir -p build/rpmbuild/BUILDROOT
 	rm -f dist/onearth*.rpm
 	cp \
-		upstream/$(NUMPY_ARTIFACT) \
 		upstream/$(MPL_ARTIFACT) \
 		upstream/$(CGICC_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \

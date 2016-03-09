@@ -1,14 +1,13 @@
 Name:		onearth
-Version:	0.9.0
+Version:	0.9.1
 Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
 URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
-Source1:	https://pypi.python.org/packages/source/n/numpy/numpy-1.5.1.tar.gz
-Source2:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.3.1.tar.gz
-Source3:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
+Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.3.1.tar.gz
+Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -70,8 +69,8 @@ Requires:	python-pypng
 Requires:	python-lxml
 Requires:	python-nose
 Requires:	freetype-devel
+Requires:	gibs-gdal > 0.9.0
 BuildArch:	noarch
-Conflicts:  numpy < 1.5.1
 Provides:	python-matplotlib = 1.3.1
 Obsoletes:	python-matplotlib < 1.3.1
 
@@ -84,7 +83,6 @@ Layer configuration tools for OnEarth including Legend Generator
 mkdir upstream
 cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
-cp %{SOURCE3} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -142,16 +140,7 @@ make install
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_generate_legend.py
 %{_bindir}/oe_generate_empty_tile.py
-%{_datadir}/numpy
 %{_datadir}/mpl
-
-%post config
-cd %{_datadir}/numpy/
-python setup.py build
-python setup.py install
-cd %{_datadir}/mpl/
-python setup.py build
-python setup.py install
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
@@ -179,6 +168,9 @@ mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 
 %changelog
+* Tue Mar 8 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.9.1-1
+- Removed numpy as it is included in gibs-gdal
+
 * Wed Nov 11 2015 Joshua Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 0.8.0-1
 - Added creation of kml/twms endpoint
 

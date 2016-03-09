@@ -51,7 +51,7 @@ sudo yum-builddep deploy/gibs-gdal/gibs-gdal.spec
 Download the GDAL source and build the RPM:
 
 ```Shell
-make gdal-download gdal-rpm
+make download gdal-rpm
 ```
 
 Install the RPM:
