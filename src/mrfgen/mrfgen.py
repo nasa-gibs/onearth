@@ -1067,14 +1067,14 @@ else:
             nocopy = True
     except:
         nocopy = None
-    # blend, defaults to True
+    # blend, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_blend') == "false":
             blend = False
         else:
             blend = True
     except:
-        blend = True
+        blend = False
     # Close file.
     config_file.close()
 
