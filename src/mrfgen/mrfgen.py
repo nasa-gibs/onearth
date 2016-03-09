@@ -1704,9 +1704,11 @@ if target_x != x_size:
     if resize_resampling == '':
         log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
 else: #don't bother calculating y
-    #target_x=x_size
-    target_y=y_size
-    log_info_mssg('Setting target_y from VRT to ' + target_y)
+    if target_y == '':
+        target_y=y_size
+        log_info_mssg('Setting target_y from VRT to ' + target_y)
+    elif target_y != y_size:
+        log_sig_warn('Target y size (' + target_y +') differs from raster y size (' + y_size + ')', sigevent_url)
     
 # if target_epsg == "EPSG:3857":
 #     target_y = target_x
