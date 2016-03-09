@@ -32,6 +32,7 @@ limitations under the License.
  <colormap>MODIS_Aqua_Chlorophyll_A.xml</colormap>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
+ <mrf_blend>true</mrf_blend>
  <mrf_z_levels>2</mrf_z_levels>
  <mrf_z_key type="string">20151202</mrf_z_key>
 </mrfgen_configuration>

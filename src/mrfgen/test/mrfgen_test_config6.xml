@@ -34,6 +34,7 @@ limitations under the License.
  <extents>-180,-90,180,90</extents>
  <mrf_name>{$parameter_name}%Y%j%H%M%S_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
+ <mrf_blend>true</mrf_blend>
  <mrf_z_levels>1</mrf_z_levels>
  <mrf_z_key type="string">test</mrf_z_key>
 </mrfgen_configuration>
