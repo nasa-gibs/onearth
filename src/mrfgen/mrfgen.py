@@ -542,7 +542,11 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         nodata = "0"
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = tile+".blend.tif"
-    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct', mrf, tile]
+    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff']
+    if tile.lower().endswith(('.tif', '.tiff','.tif.vrt', '.tiff.vrt')) == False:
+        gdal_merge_command_list.append('-pct')
+    gdal_merge_command_list.append(mrf)
+    gdal_merge_command_list.append(tile)
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     insert_message = gdal_merge.stderr.readlines()
