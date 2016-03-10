@@ -80,6 +80,8 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
+import pdb 
+
 versionNumber = '0.9.0'
 
 class WMTSEndPoint:
@@ -107,7 +109,7 @@ class Environment:
     """Environment information for layer(s)"""
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileConfigLocation, mapfileConfigBasename, mapfile):
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileConfigLocation, mapfileConfigBasename):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -123,9 +125,10 @@ class Environment:
         self.legendUrl = legendUrl
         self.colormap_dirs = colormap_dirs
         self.colormapUrls = colormapUrls
+        self.mapfileStagingLocation = mapfileStagingLocation
+        self.mapfileLocation = mapfileLocation
         self.mapfileConfigLocation = mapfileConfigLocation
         self.mapfileConfigBasename = mapfileConfigBasename
-        self.mapfile = mapfile
         
 class Projection:
     """Projection information for layer"""
@@ -494,26 +497,44 @@ def get_environment(environmentConfig):
     except KeyError:
         colormapUrls = None
 
-    if create_mapfile == True:
+    # Get mapfile parameters from environment config file (if mapfile generation chosen)
+    if create_mapfile is True:
+        # Get/create mapfile staging location
         try:
-            mapfileConfigLocation = get_dom_tag_value(dom,'MapfileConfigLocation')
+            mapfileStagingLocation = add_trailing_slash(get_dom_tag_value(dom, 'MapfileStagingLocation'))
+        except IndexError:
+            log_sig_err('Mapfile creation chosen but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
+        try:
+            os.makedirs(mapfileStagingLocation)
+        except OSError:
+            if not os.path.exists(mapfileStagingLocation):
+                log_sig_err('Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
+            pass
+
+        # Get output mapfile location
+        try:
+            mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
+        except IndexError:
+            log_sig_err('Mapfile creation chosen but no <MapfileLocation> present in environment config file.', sigevent_url)
+        mapfileLocation = mapfileLocationElement.firstChild.nodeValue
+
+        # Get output mapfile config location
+        try:
+            mapfileConfigLocation = get_dom_tag_value(dom, 'MapfileConfigLocation')
         except IndexError:
             mapfileConfigLocation = '/etc/onearth/config/mapserver/'
-            log_sig_warn('Mapfile configuration is missing in <MapfileConfigLocation>. Using /etc/onearth/config/mapserver/', sigevent_url)
+            log_sig_err('Mapfile creation chosen but no <MapfileConfigLocation> present in environment config file.', sigevent_url)
         try:
             mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
         except KeyError:
             mapfileConfigBasename = None
-            log_sig_warn('No Mapfile configuration basename specified. Using EPSGXXXX.xxx format.', sigevent_url)
-        try:
-            mapfile = get_dom_tag_value(dom,'Mapfile')
-        except IndexError:
-            mapfile = None
-            raise Exception('Required <Mapfile> element is missing in: ' + environmentConfig)
+            log_sig_err('Mapfile creation chosen but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
     else:
+        mapfileStagingLocation = None
+        mapfileLocation = None
+        mapfileLocationBasename = None
         mapfileConfigLocation = None
         mapfileConfigBasename = None
-        mapfile = None
         
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),
@@ -526,8 +547,8 @@ def get_environment(environmentConfig):
                        wmtsStagingLocation, twmsStagingLocation,
                        legendLocation, legendUrl,
                        colormapLocations, colormapUrls,
-                       mapfileConfigLocation, mapfileConfigBasename, mapfile
-                       )
+                       mapfileStagingLocation, mapfileLocation,
+                       mapfileConfigLocation, mapfileConfigBasename)
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -1247,11 +1268,11 @@ if no_xml:
 if no_cache:
     print "no_cache specified, cache configuration files will not be generated"
     restart = False
-if no_xml and no_cache:
-    print "no_xml and no_cache specified, nothing to do...exiting"
+if no_xml and no_cache and not create_mapfile:
+    print "no_xml, no_cache, and create_mapfiles specified, nothing to do...exiting"
     exit()
-if no_twms and no_wmts:
-    print "no_twms and no_wmts specified, nothing to do...exiting"
+if no_twms and no_wmts and not create_mapfile:
+    print "no_twms and no_wmts and create_mapfile not specified, nothing to do...exiting"
     exit()
     
 if configuration_time:
@@ -2292,111 +2313,55 @@ $Patterns</TiledGroup>"""
                 line = line.replace("$Patterns",patterns)
             layer_output = layer_output + line
         layer_xml.writelines(layer_output)
-        layer_xml.close()                
+        layer_xml.close()
         
     # Create mapfile (if specified by user)
-    if create_mapfile == True:
-        if environment.mapfileConfigBasename != None:
-            mapfileConfigPrefix = environment.mapfileConfigLocation + environment.mapfileConfigBasename
-        else:
-            mapfileConfigPrefix = environment.mapfileConfigLocation + projection.id.replace(':','')
-        mapfileLocation = add_trailing_slash(os.path.dirname(environment.mapfile))
-        mapfileBasename = os.path.basename(environment.mapfile)
-        mapfile_footer = None
-        try:
-            os.makedirs(mapfileLocation)
-        except OSError:
-            if not os.path.isdir(mapfileLocation):
-                raise Exception("Can't create Mapserver file directory: " + mapfileLocation)
-                break
-        try:
-            with open(mapfileLocation + mapfileBasename,'a+') as mapfile:
-                if len(mapfile.read()) == 0:
-                    try:
-                        with open(mapfileConfigPrefix + '.header', 'r') as header:
-                            mapfile.write(header.read())
-                            print "\nCreating mapfile: " + mapfileLocation + mapfileBasename
-                    except IOError:
-                        print "\nMapfile doesn't exist and configuration header " + mapfileConfigPrefix + '.header ' + \
-                            " not found. Writing mapfile layers without header."
-                    try:
-                        mapfile_footer = open(mapfileConfigPrefix + '.footer', 'r')
-                    except IOError:
-                        print "\nMapfile doesn't exist and configuration footer " + mapfileConfigPrefix + '.footer ' + \
-                            "not found. Writing mapfile layers without footer."
-                else:
-                    print "\nUpdating mapfile: " + mapfileLocation + mapfileBasename
+    if create_mapfile is True:
+        # Write mapfile info for layer
+        mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
+        with open(mapfile_name, 'w+') as mapfile:
+            # Initialize validation values
+            timeDirPattern = "%TIME%"
+            timeParamRegex = "'^[0-9]{7}$'" if not subdaily else "'^[0-9]{13}$'"
+            yearDirPattern = "%PRODUCTYEAR%"
+            yearDirRegex = "'^[0-9]{4}$'"
 
-                # Check for duplicates - run check over and over until current layer is wiped from existing mapfile
-                layerInMapfile = True
-                while layerInMapfile == True:
-                    layerInMapfile = delete_mapfile_layer(mapfile,identifier)
+            minx = projection.lowercorner[0]
+            miny = projection.lowercorner[1]
+            maxx = projection.uppercorner[0]
+            maxy = projection.uppercorner[1]
 
-                # Initialize validation values
-                timeDirPattern = "%TIME%"      
-                timeParamRegex = "'^[0-9]{7}$'" if not subdaily else "'^[0-9]{13}$'"
-                yearDirPattern = "%PRODUCTYEAR%"
-                yearDirRegex   = "'^[0-9]{4}$'"
-
-                minx = projection.lowercorner[0]
-                miny = projection.lowercorner[1]
-                maxx = projection.uppercorner[0]
-                maxy = projection.uppercorner[1]
-
-                # Start writing at the last END tag in the file
-                mapfile.seek(0)
-                readPosition = 0
-                for line in reversed(mapfile.readlines()):
-                    readPosition += len(line)
-                    if line.lower().strip() == "end":
-                        mapfile.seek(-readPosition,2)
-                        mapfile.truncate()
-                        break
-                    readPosition+=len(line)
-
-                # Write Mapfile layer fields
-                mapfile.write("\n")
-                mapfile.write("LAYER\n")
-                mapfile.write("\tNAME\t\"" + identifier + "\"\n")
-                mapfile.write("\tTYPE\tRASTER\n")
-                mapfile.write("\tSTATUS\tON\n")
-                mapfile.write("\tVALIDATION\n")
-                if not static:
-                    mapfile.write("\t\tTIME\t\t\t" + timeParamRegex + "\n")
-                if not static and year:
-                    mapfile.write("\t\tPRODUCTYEAR\t\t" + yearDirRegex + "\n")
-                mapfile.write("\tEND\n")
-                mapfile.write("\tMETADATA\n")
-                if not static:
-                    mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
-                if not static and year:
-                    mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
-                mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
-                mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
-                mapfile.write("\tEND\n")
-                if not static and year:
-                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
-                elif not static and not year:
-                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
-                else:
-                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + ".mrf\"\n")
-                mapfile.write("\tPROJECTION\n")
-                mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
-                mapfile.write("\tEND\n")
-                mapfile.write("END\n")
-
-                # Insert footer if we have one
-                if mapfile_footer is not None:
-                    mapfile.write(mapfile_footer.read())
-                    mapfile_footer.close()
-                
-                mapfile.write("END\n")
-
-        except IOError:
-            raise Exception("Can't open or create mapfile: " + mapfileLocation + mapfileBasename)
+            # Write mapfile lines
+            mapfile.write("LAYER\n")
+            mapfile.write("\tNAME\t\"" + identifier + "\"\n")
+            mapfile.write("\tTYPE\tRASTER\n")
+            mapfile.write("\tSTATUS\tON\n")
+            mapfile.write("\tVALIDATION\n")
+            if not static:
+                mapfile.write("\t\tTIME\t\t\t" + timeParamRegex + "\n")
+            if not static and year:
+                mapfile.write("\t\tPRODUCTYEAR\t\t" + yearDirRegex + "\n")
+            mapfile.write("\tEND\n")
+            mapfile.write("\tMETADATA\n")
+            if not static:
+                mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+            if not static and year:
+                mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
+            mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
+            mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
+            mapfile.write("\tEND\n")
+            if not static and year:
+                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+            elif not static and not year:
+                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+            else:
+                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + ".mrf\"\n")
+            mapfile.write("\tPROJECTION\n")
+            mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
+            mapfile.write("\tEND\n")
+            mapfile.write("END\n")
 
 # run scripts
-
 if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
@@ -2495,6 +2460,37 @@ if no_wmts == False:
                     os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
                 shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
+
+if create_mapfile is True:
+    # Create a new staging mapfile and add header, layers, and footer
+    staging_mapfile = os.path.join(environment.mapfileStagingLocation, environment.mapfileConfigBasename + '.map')
+    with open(staging_mapfile, 'w+') as mapfile:
+        # Append header to mapfile if there is one
+        mapfile_config_prefix = os.path.join(environment.mapfileConfigLocation, environment.mapfileConfigBasename)
+        try:
+            with open(mapfile_config_prefix + '.header', 'r') as header:
+                mapfile.write(header.read())
+                print "\nUsing mapfile header: " + header.name
+        except IOError:
+            pass
+        # Iterate through layer mapfile snippets
+        layers = [os.path.join(environment.mapfileStagingLocation, file) for file in sorted(os.listdir(environment.mapfileStagingLocation), key=unicode.lower) if file.endswith('.map') and not file.startswith(environment.mapfileConfigBasename)]
+        for layer in layers:
+            with open(layer, 'r') as f:
+                mapfile.write('\n')
+                mapfile.write(f.read())
+        # Append footer to mapfile if there is one
+        try:
+            with open(mapfile_config_prefix + '.footer', 'r') as footer:
+                mapfile.write('\n')
+                mapfile.write(footer.read())
+                print "\nUsing mapfile footer: " + footer.name
+        except IOError:
+            mapfile.write('\nEND')
+            pass
+    print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, environment.mapfileLocation)
+    shutil.copyfile(staging_mapfile, environment.mapfileLocation)
+    
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
