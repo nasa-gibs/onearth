@@ -1600,7 +1600,7 @@ if target_epsg != source_epsg:
 # use gdalwarp if resize with resampling method is declared
 if resize_resampling != '':
     if target_y == '':
-        target_y = int(int(target_x)/2)
+        target_y = str(int(target_x)/2)
     gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','_resample.vrt')]
     log_the_command(gdal_warp_command_list)
     subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
