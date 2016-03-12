@@ -90,7 +90,7 @@ import imghdr
 import sqlite3
 import math
 
-versionNumber = '0.9.0'
+versionNumber = '0.9.1'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -904,6 +904,8 @@ data_only = options.data_only
 # may get passed over because they were created while this script is running.
 current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
 
+errors = 0
+
 # Read XML configuration file.
 try:
     # Open file.
@@ -1263,6 +1265,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
                     goodtiles.append(tile)
                 else:
                     try:
+                        errors += 1
                         sigevent('ERROR', 'Bad JPEG tile detected: ' + tile, sigevent_url)
                     except urllib2.URLError:
                         print 'sigevent service is unavailable'
@@ -1360,6 +1363,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                             mssg = sigevent('ERROR', "RGBApng2Palpng: " + str(RGBApng2Palpng.stderr.readlines()[-1]), sigevent_url)
                         except urllib2.URLError:
                             print 'sigevent service is unavailable'
+                    errors += RGBApng2Palpng.returncode
                 
                 if os.path.isfile(output_tile):
                     mssg = output_tile + " created"
@@ -1371,6 +1375,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     alltiles[i] = output_tile
                 else:
                     try:
+                        errors += 1
                         sigevent('ERROR', "RGBApng2Palpng failed to create " + output_tile, sigevent_url)
                     except urllib2.URLError:
                         print 'sigevent service is unavailable'
@@ -1943,4 +1948,8 @@ for tilename in (alltiles):
 
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])
-log_sig_exit('INFO', mssg, sigevent_url)
+try:
+    sigevent('INFO', mssg, sigevent_url)
+except urllib2.URLError:
+    None
+sys.exit(errors)
