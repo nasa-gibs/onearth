@@ -636,6 +636,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         nodata -- nodata value
         blend -- Blend over transparent regions of imagery
     """
+    errors = 0
     xmin, ymin, xmax, ymax = target_extents
     s_xmin, s_ymin, s_xmax, s_ymax = source_extents
     if target_y == '':
@@ -653,7 +654,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if granule == True and ((float(extents[0])-float(s_xmax)) > float(extents[2])):
             print tile + " crosses antimeridian"
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)))
-            run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
+            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
             continue
         if blend == True and granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             print "Granule extents " + str(extents)
@@ -702,6 +703,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 log_sig_warn(message, sigevent_url)
             elif 'ERROR' in message:
                 try:
+                    errors += 1
                     sigevent('ERROR', 'mrf_insert ' + message, sigevent_url)
                 except urllib2.URLError:
                     print 'sigevent service is unavailable'
@@ -716,7 +718,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         temp_vrt_files = glob.glob(str().join([tile.split('.temp.vrt')[0], '.temp.vrt*']))
         for vrt in temp_vrt_files:
             remove_file(vrt)
-        
+    return errors
+
 
 def insert_zdb(mrf, zlevels, zkey):
     """
@@ -1519,7 +1522,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
+    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1532,7 +1535,11 @@ if len(mrf_list) > 0:
 
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
-    log_sig_exit('INFO', mssg, sigevent_url)
+    try:
+        sigevent('INFO', mssg, sigevent_url)
+    except urllib2.URLError:
+        None
+    sys.exit(errors)
     
   
 # Use zdb index if z-levels are defined
@@ -1559,7 +1566,7 @@ else:
 
 gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
 # use resolution?
-if diff_res == True:
+if diff_res == True and target_x != '':
     xres = str(360.0/int(target_x))
     yres = xres
     log_sig_warn("Different tile resolutions detected, using: " + str(xres), sigevent_url)
@@ -1823,7 +1830,7 @@ run_addo = True
 
 # Insert into nocopy
 if nocopy==True:
-    run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
+    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
     if len(alltiles) <= 1:
         run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
 
