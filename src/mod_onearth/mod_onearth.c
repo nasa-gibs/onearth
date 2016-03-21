@@ -437,6 +437,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  	  st.tm_gmtoff = 0;
 						  // Normally tm_mon is zero-indexed
 					  	  st.tm_mon--;
+					  	  // Normally tm_year is years since 1900
+					  	  st.tm_year -= 1900;
+
 					  	  // Date to epoch and then back
 					  	  apr_time_t start_epoch;
 					  	  apr_time_exp_get(&start_epoch, &st);
@@ -444,6 +447,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  	  // tm_yday and tm_mon comes out zero-indexed, set it back
 					  	  st.tm_yday++;
 					  	  st.tm_mon++;
+					  	  // Set year back to normal (this is confusing. at some point all uses of apr_time_exp should be set to follow the spec)
+					  	  st.tm_year += 1900;
+					  	  
 					  	  request_day = st.tm_yday;
 				  	  // Evaluate yearly period
 					  } else if (time_period[(strlen(time_period)-1)] == 'Y') {
