@@ -1,0 +1,16 @@
+##OnEarth CI Test Scripts
+
+This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
+
+`test_mod_onearth.py` -- tests the OnEarth Apache module
+`test_layer_config.py` -- tests the Layer Config tool
+
+###Setup
+The contents of this directory need to be copied to the `LCDIR` location, typically `/etc/onearth/config`. You'll need to make sure that the `LCDIR` environment variable is properly set.
+
+To install the Python dependencies required by the test scripts, run `sudo pip install -r requirements.txt`.
+
+###Running the tests
+Each test script will output a JUnit XML results file. By default, this file is named `test_mod_onearth_results.xml`. A different output filename can be specified after the script command, i.e. `sudo python test_mod_onearth.py output_file.xml`.
+
+Note that the tests need to be run with root privileges.

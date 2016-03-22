@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+	<testsuite errors="0" failures="0" name="TestModOnEarth-20160322022926" tests="20" time="0.508">
+		<testcase classname="TestModOnEarth" name="test_REST_API" time="0.032"/>
+		<testcase classname="TestModOnEarth" name="test_request_current_png_wmts" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_date_kml" time="0.010"/>
+		<testcase classname="TestModOnEarth" name="test_request_legacy_subdaily_snapping" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_multi_day_date_snapping" time="0.007"/>
+		<testcase classname="TestModOnEarth" name="test_request_static_notime" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_twms_current_jpg" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_twms_current_png" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_twms_date_png" time="0.011"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_date_from_noyear_layer" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_date_from_year_layer" time="0.007"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_default_time_jpg" time="0.007"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_default_time_png" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_legacy_datetime_from_year_layer" time="0.007"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_no_time_jpg" time="0.007"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_no_time_png" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_request_wmts_year_zlevel" time="0.008"/>
+		<testcase classname="TestModOnEarth" name="test_url_parameter_case_insensitivity" time="0.068"/>
+		<testcase classname="TestModOnEarth" name="test_url_parameter_reordering" time="0.128"/>
+		<testcase classname="TestModOnEarth" name="test_wmts_error_handling" time="0.154"/>
+		<system-out>
+<![CDATA[]]>		</system-out>
+		<system-err>
+<![CDATA[]]>		</system-err>
+	</testsuite>
+</testsuites>

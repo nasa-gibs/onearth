@@ -1,0 +1,353 @@
+<Cache>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_weekly_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="2560" y="1280" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2012-02-22/2012-02-29/P7D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="72" y="72" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="144" y="144" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>335</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="288" y="288" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>460</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_static_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="2560" y="1280" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>1970-01-01/2099-12-31/P1D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="72" y="72" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_static_jpg/test_static_jpg.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_static_jpg/test_static_jpg.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="144" y="144" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_static_jpg/test_static_jpg.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_static_jpg/test_static_jpg.idx</IndexFileName>
+      <IndexOffset>335</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="288" y="288" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_static_jpg/test_static_jpg.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_static_jpg/test_static_jpg.idx</IndexFileName>
+      <IndexOffset>460</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_daily_png&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fpng]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/png</HTMLFormat>
+    <Signature>-1991255785</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="2560" y="1280" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2012-02-29/2012-02-29/P1D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="72" y="72" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_daily_png/YYYY/test_daily_pngTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_daily_png/YYYY/test_daily_pngTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="144" y="144" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_daily_png/YYYY/test_daily_pngTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_daily_png/YYYY/test_daily_pngTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>335</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="288" y="288" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_daily_png/YYYY/test_daily_pngTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_daily_png/YYYY/test_daily_pngTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>460</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_zindex_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_2km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fpng]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>6</HTMLHeader>
+    <HTMLFormat>Content-type: image/png</HTMLFormat>
+    <Signature>-1991255785</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="40960" y="20480" />
+    <Bands>1</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2015-12-02T00:00:00Z/2015-12-02T00:00:00Z/P1H</TimePeriod>
+    </TimePeriods>
+    <Levels>6</Levels>
+    <ZLevels>6</ZLevels>
+    <ZIndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.zdb</ZIndexFileName>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="4.5" y="4.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="9" y="9" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>53132</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="18" y="18" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>66907</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="36" y="36" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>70602</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="72" y="72" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>71657</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="144" y="144" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.ppg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>71992</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_legacy_subdaily_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="2560" y="1280" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="72" y="72" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_legacy_subdaily_jpg/YYYY/test_legacy_subdaily_jpgTTTTTTTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_legacy_subdaily_jpg/YYYY/test_legacy_subdaily_jpgTTTTTTTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="144" y="144" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_legacy_subdaily_jpg/YYYY/test_legacy_subdaily_jpgTTTTTTTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_legacy_subdaily_jpg/YYYY/test_legacy_subdaily_jpgTTTTTTTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>335</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="288" y="288" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_legacy_subdaily_jpg/YYYY/test_legacy_subdaily_jpgTTTTTTTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_legacy_subdaily_jpg/YYYY/test_legacy_subdaily_jpgTTTTTTTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>460</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_nonyear_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="2560" y="1280" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2012-02-29/2012-02-29/P1D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="72" y="72" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="144" y="144" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>335</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="288" y="288" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>460</IndexOffset>
+      <EmptyInfo size="4723" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_zindex_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2012-02-29T12:00:00Z/2012-02-29T16:00:00Z/P1H</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>3</ZLevels>
+    <ZIndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.zdb</ZIndexFileName>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/test_zindex_jpg/YYYY/test_zindex_jpgTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="1397" offset="0" />
+    </Level>
+  </Layer>
+</Cache>
