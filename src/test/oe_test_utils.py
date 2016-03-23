@@ -62,6 +62,7 @@ def add_trailing_slash(directory_path):
 def restart_apache():
     apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     apache.communicate()
+    subprocess.call(['sleep', '3'])
 
 def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     """
@@ -429,3 +430,20 @@ def check_response_code(url, code, code_value=''):
     if r_code == code and code_value in response.read():
         return True
     return False
+
+
+def test_snap_request(hash_table, req_url, layer, date):
+    """
+    Requests the first tile for a given layer and date, then compares the result against a dict w/ dates
+    and hashes.
+    Arguments:
+        hash_table -- a dict with date keys and hash values.
+        layer -- a string with the layer name to request
+        date -- a string with the date to request
+    """
+    tile = get_url(req_url)
+    tile_hash = get_file_hash(tile)
+
+    # Get the date that the particular hash is associated with
+    tile_date = hash_table.get(tile_hash, '')
+    return tile_date
