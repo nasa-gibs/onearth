@@ -2,6 +2,105 @@
   <Layer>
     <Patterns>
       <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2010-01-01/2012-03-11/P8D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3d/snap_test_3dTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3d/snap_test_3dTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3d/snap_test_3dTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3d/snap_test_3dTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3d/snap_test_3dTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3d/snap_test_3dTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2015-01-01/2015-01-10/P1D</TimePeriod>
+      <TimePeriod>2015-01-12/2015-01-31/P1D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_2a/snap_test_2aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_2a/snap_test_2aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_2a/snap_test_2aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_2a/snap_test_2aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_2a/snap_test_2aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_2a/snap_test_2aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
         <![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
       </Pattern>
       <Pattern>
@@ -46,6 +145,55 @@
       <IndexFileName>/etc/onearth/config/test/test_data/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.idx</IndexFileName>
       <IndexOffset>460</IndexOffset>
       <EmptyInfo size="4723" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2015-01-01/2016-01-01/P1M</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3a/snap_test_3aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3a/snap_test_3aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3a/snap_test_3aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3a/snap_test_3aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3a/snap_test_3aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3a/snap_test_3aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
     </Level>
   </Layer>
   <Layer>
@@ -149,6 +297,104 @@
   <Layer>
     <Patterns>
       <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2015-01-01/2016-12-31/P1D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_1a/snap_test_1aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_1a/snap_test_1aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_1a/snap_test_1aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_1a/snap_test_1aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_1a/snap_test_1aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_1a/snap_test_1aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2015-01-01/2016-01-01/P3M</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3b/snap_test_3bTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3b/snap_test_3bTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3b/snap_test_3bTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3b/snap_test_3bTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3b/snap_test_3bTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3b/snap_test_3bTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
         <![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
       </Pattern>
       <Pattern>
@@ -198,6 +444,56 @@
   <Layer>
     <Patterns>
       <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2001-01-01/2001-12-27/P8D</TimePeriod>
+      <TimePeriod>2002-01-01/2002-12-27/P8D</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_4b/snap_test_4bTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_4b/snap_test_4bTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_4b/snap_test_4bTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_4b/snap_test_4bTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_4b/snap_test_4bTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_4b/snap_test_4bTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
         <![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
       </Pattern>
       <Pattern>
@@ -242,6 +538,106 @@
       <IndexFileName>/etc/onearth/config/test/test_data/test_nonyear_jpg/test_nonyear_jpgTTTTTTT_.idx</IndexFileName>
       <IndexOffset>460</IndexOffset>
       <EmptyInfo size="4723" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>1990-01-01/2016-01-01/P1Y</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3c/snap_test_3cTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3c/snap_test_3cTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3c/snap_test_3cTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3c/snap_test_3cTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_3c/snap_test_3cTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_3c/snap_test_3cTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+  </Layer>
+  <Layer>
+    <Patterns>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+      <Pattern>
+        <![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]>
+      </Pattern>
+    </Patterns>
+    <HTMLHeader>3</HTMLHeader>
+    <HTMLFormat>Content-type: image/jpeg</HTMLFormat>
+    <Signature>-2555936</Signature>
+    <BinaryOrientation>0</BinaryOrientation>
+    <LayerSize x="8192" y="4096" />
+    <Bands>3</Bands>
+    <Scale>2</Scale>
+    <TimePeriods>
+      <TimePeriod>2000-01-01/2000-06-01/P1M</TimePeriod>
+      <TimePeriod>2000-07-03/2000-07-03/P1M</TimePeriod>
+      <TimePeriod>2000-08-01/2000-12-01/P1M</TimePeriod>
+    </TimePeriods>
+    <Levels>3</Levels>
+    <ZLevels>0</ZLevels>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="22.5" y="22.5" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_4a/snap_test_4aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_4a/snap_test_4aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>0</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="45" y="45" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_4a/snap_test_4aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_4a/snap_test_4aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>2447</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
+    </Level>
+    <Level>
+      <TileSize x="512" y="512" />
+      <BoundingBox xmin="-180" ymin="-90" xmax="180" ymax="90" />
+      <TileResolution x="90" y="90" />
+      <DataFileName>/etc/onearth/config/test/test_data/snap_test_4a/snap_test_4aTTTTTTT_.pjg</DataFileName>
+      <IndexFileName>/etc/onearth/config/test/test_data/snap_test_4a/snap_test_4aTTTTTTT_.idx</IndexFileName>
+      <IndexOffset>3166</IndexOffset>
+      <EmptyInfo size="4273" offset="0" />
     </Level>
   </Layer>
   <Layer>

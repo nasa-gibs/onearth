@@ -6,13 +6,16 @@ import unittest2 as unittest
 import random
 import xmlrunner
 import shutil
+from optparse import OptionParser
 
 import pdb
 
-from oe_test_utils import check_tile_request, restart_apache, check_response_code
+from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request
 
 
 class TestModOnEarth(unittest.TestCase):
+
+    # SETUP
 
     @classmethod
     def setUpClass(self):
@@ -28,6 +31,36 @@ class TestModOnEarth(unittest.TestCase):
         self.test_apache_config = os.path.join('/etc/httpd/conf.d/', 'oe_test.conf')
         shutil.copy(os.path.join(self.lcdir, 'test/oe_test.conf'), self.test_apache_config)
         restart_apache()
+
+        # Set some handy constant values
+        self.tile_hashes = {'210964547845bbeb357f62c214128215': '1990-01-01',
+                            '403705d851af424b3bf9cafbbf869d0c': '2000-01-01',
+                            '4832d6edeed31fad0bd59bbc26d92275': '2000-06-01',
+                            '7ea2038a74af2988dc432a614ec94187': '2000-07-03',
+                            '03b3cc7adc929dd605d617b7066b30ae': '2000-08-01',
+                            'fd9e3aa7c12fbf823bd339b92920784e': '2000-12-01',
+                            '24f90bd216f6b7ee25501155fcc8ece4': '2001-01-01',
+                            '3d12e06c60b379efc41f4b8021ce1e29': '2001-05-09',
+                            'e16d97b41cbb408d2a285788dfc9e3b8': '2002-01-01',
+                            'b64066bafe897f0d2c0fc4a41ae7e052': '2002-12-27',
+                            'f4426ab405ce748b57b34859b3811bf6': '2005-01-01',
+                            '9a3cf29a5df271c41eefc5c989fd690d': '2008-01-01',
+                            '84eba8cdbb26444dbc97e119c0b76728': '2010-01-01',
+                            '91206f8c5a4f6fcdcab366ea00a1f53c': '2010-01-09',
+                            '5346e958989b57c45919604ecf909f43': '2012-03-11',
+                            '92e5d5eef4dc6866b636a49bfae3e463': '2015-01-01',
+                            '5d91fa0c5273b2b58c486a15c91b2e78': '2015-01-02',
+                            '81b8d855e38e6783f14899ff89a2c878': '2015-10-01',
+                            '7f2992ac0986784c28d93840b1e984c4': '2016-02-29',
+                            '1571c4d601dfd871e7680e279e6fd39c': '2015-01-12',
+                            'b69307895d6cb654b98d247d710dd806': '2015-12-01',
+                            'ba366ccd45a8f1ae0ed2b65cf67b9787': '2016-01-01',
+                            '5e11f1220da2bb6f92d3e1c998f20bcf': 'black'}
+
+        # URL that will be used to create the snap test requests
+        self.snap_test_url_template = 'http://localhost/onearth/test/wmts/wmts.cgi?layer={0}&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME={1}'
+
+    # DEFAULT TIME AND CURRENT TIME TESTS
 
     def test_request_wmts_no_time_jpg(self):
         """
@@ -61,6 +94,26 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(request_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS PNG Tile Request does not match what\'s expected. URL: ' + request_url)
 
+    def test_request_twms_current_jpg(self):
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        request_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        check_result = check_tile_request(request_url, ref_hash)
+        self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + request_url)
+
+    def test_request_current_png_wmts(self):
+        ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
+        request_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        check_result = check_tile_request(request_url, ref_hash)
+        self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
+
+    def test_request_twms_current_png(self):
+        ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
+        request_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        check_result = check_tile_request(request_url, ref_hash)
+        self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
+
+    # REQUEST WITH DATE/TIME AND STATIC TESTS
+
     def test_request_wmts_date_from_year_layer(self):
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
         request_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
@@ -84,12 +137,6 @@ class TestModOnEarth(unittest.TestCase):
         request_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_static_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         check_result = check_tile_request(request_url, ref_hash)
         self.assertTrue(check_result, 'WMTS static notime request does not match what\'s expected. URL: ' + request_url)
-        
-    def test_request_twms_current_png(self):
-        ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
-        request_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
-        check_result = check_tile_request(request_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
 
     def test_request_twms_date_png(self):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
@@ -97,17 +144,11 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(request_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
 
-    def test_request_twms_current_jpg(self):
-        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        request_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+    def test_request_date_kml(self):
+        ref_hash = '69481cbae48db6f2e3603d1c16afc307'
+        request_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29'
         check_result = check_tile_request(request_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + request_url)
-
-    def test_request_current_png_wmts(self):
-        ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
-        request_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
-        check_result = check_tile_request(request_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
+        self.assertTrue(check_result, 'KML date request does not match what\'s expected. URL: ' + request_url)
 
     def test_request_wmts_year_zlevel(self):
         ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
@@ -121,6 +162,132 @@ class TestModOnEarth(unittest.TestCase):
     #     check_result = check_tile_request(request_url, ref_hash)
     #     self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
 
+
+    # DATE/TIME SNAPPING REQUESTS (should this be its own thing?)
+
+    def test_snapping_1a(self):
+        # This is the layer name that will be used in the WMTS request
+        layer_name = 'snap_test_1a'
+
+        # Tests are tuples with order of (request date, expected date)
+        # Note that date/hash pairs must exist in self.tile_hashes dict
+        tests = (('2015-01-01', '2015-01-01'),
+                 ('2015-01-02', '2015-01-02'),
+                 ('2016-02-29', '2016-02-29'),
+                 ('2017-01-01', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 1a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_2a(self):
+        layer_name = 'snap_test_2a'
+        tests = (('2015-01-01', '2015-01-01'),
+                 ('2015-01-11', 'black'),
+                 ('2015-01-12', '2015-01-12'),
+                 ('2015-02-01', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 2a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_3a(self):
+        layer_name = 'snap_test_3a'
+        tests = (('2015-01-01', '2015-01-01'),
+                 ('2015-01-20', '2015-01-01'),
+                 ('2015-12-31', '2015-12-01'),
+                 ('2016-01-01', '2016-01-01'),
+                 ('2016-01-20', '2016-01-01'),
+                 ('2016-02-01', 'black'),
+                 ('2014-12-31', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 3a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_3b(self):
+        layer_name = 'snap_test_3b'
+        tests = (('2015-01-01', '2015-01-01'),
+                 ('2015-01-20', '2015-01-01'),
+                 ('2015-12-31', '2015-10-01'),
+                 ('2016-01-01', '2016-01-01'),
+                 ('2016-01-20', '2016-01-01'),
+                 ('2016-04-01', 'black'),
+                 ('2014-12-31', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 3b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_3c(self):
+        layer_name = 'snap_test_3c'
+        tests = (('1990-01-01', '1990-01-01'),
+                 ('1990-05-20', '1990-01-01'),
+                 ('2000-01-01', '2000-01-01'),
+                 ('2000-05-20', '2000-01-01'),
+                 ('2005-12-31', '2005-01-01'),
+                 ('2017-01-01', 'black'),
+                 ('1989-12-31', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 3c requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_3d(self):
+        layer_name = 'snap_test_3d'
+        tests = (('2010-01-01', '2010-01-01'),
+                 ('2010-01-04', '2010-01-01'),
+                 ('2010-01-10', '2010-01-09'),
+                 ('2012-03-11', '2012-03-11'),
+                 ('2012-03-14', '2012-03-11'),
+                 ('2012-03-19', 'black'),
+                 ('2009-12-31', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 3d requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_4a(self):
+        layer_name = 'snap_test_4a'
+        tests = (('2000-01-01', '2000-01-01'),
+                 ('2000-01-20', '2000-01-01'),
+                 ('2000-06-10', '2000-06-01'),
+                 ('2000-07-01', 'black'),
+                 ('2000-07-02', 'black'),
+                 ('2000-07-03', '2000-07-03'),
+                 ('2000-07-20', '2000-07-03'),
+                 ('2000-08-01', '2000-08-01'),
+                 ('2000-08-10', '2000-08-01'),
+                 ('2000-12-31', '2000-12-01'),
+                 ('1999-12-31', 'black'),
+                 ('2001-01-01', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 4a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_4b(self):
+        layer_name = 'snap_test_4b'
+        tests = (('2001-01-01', '2001-01-01'),
+                 ('2001-01-05', '2001-01-01'),
+                 ('2001-05-14', '2001-05-09'),
+                 ('2002-01-01', '2002-01-01'),
+                 ('2000-12-31', 'black'),
+                 ('2003-01-01', '2000-07-03'),
+                 ('2003-01-04', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            error = 'Snapping test 4b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
     def test_request_multi_day_date_snapping(self):
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
         request_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-28'
@@ -133,11 +300,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(request_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + request_url)
 
-    def test_request_date_kml(self):
-        ref_hash = '69481cbae48db6f2e3603d1c16afc307'
-        request_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29'
-        check_result = check_tile_request(request_url, ref_hash)
-        self.assertTrue(check_result, 'KML date request does not match what\'s expected. URL: ' + request_url)
+    # REQUEST SYNTAX TESTS (capitalization, parameter ordering, error handling, REST)
 
     def test_url_parameter_case_insensitivity(self):
         # Randomly capitalizes and lower-cases parameters and checks the tile resulting from the request. Tries 10 different combinations.
@@ -264,22 +427,50 @@ class TestModOnEarth(unittest.TestCase):
             check_result = check_tile_request(param['url'], param['hash'])
             self.assertTrue(check_result, 'REST API request does not match what\'s expected: ' + param['url'])
 
+    # GETCAPABILITIES AND GETTILESERVICE REQUEST TESTS
+
+    def test_wmts_get_capabilities(self):
+        ref_hash = '74553d1c7ee662de1baa6a0788b42599'
+        request_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
+        check_result = check_tile_request(request_url, ref_hash)
+        self.assertTrue(check_result, 'WTMTS Get GetCapabilities Request does not match what\'s expected. URL: ' + request_url)
+
+    def test_twms_get_capabilities(self):
+        ref_hash = '982d923b04448f444d6efc769e71c9f2'
+        request_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
+        check_result = check_tile_request(request_url, ref_hash)
+        self.assertTrue(check_result, 'TWMS Get GetCapabilities Request does not match what\'s expected. URL: ' + request_url)     
+
+    def test_twms_get_tile_service(self):
+        ref_hash = 'dc758b15305c273eb2c65b0ab0262317'
+        request_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetTileService'
+        check_result = check_tile_request(request_url, ref_hash)
+        self.assertTrue(check_result, 'TWMS Get GetTileService Request does not match what\'s expected. URL: ' + request_url)
+
+    # TEARDOWN
+
     @classmethod
     def tearDownClass(self):
         # Delete Apache test config
         os.remove(self.test_apache_config)
         restart_apache()
 
-
 if __name__ == '__main__':
-    try:
-        outfile = sys.argv[1]
-        # Unittest reads command-line arguments, which confuses things, so we delete them after reading them.
-        del sys.argv[1:]
-    except IndexError:
-        outfile = 'test_mod_onearth_results.xml'
-    with open(outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(outfile)
+    # Parse options before running tests
+    parser = OptionParser()
+    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mod_onearth_results.xml',
+                      help='Specify XML output file (default is test_mod_onearth_results.xml')
+    parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Load test configuration into Apache and quit (for debugging)')
+    (options, args) = parser.parse_args()
+    if options.debug:
+        TestModOnEarth.setUpClass()
+        sys.exit('Apache has been loaded with the test configuration. No tests run.')
+    
+    # Have to delete the arguments as they confuse unittest
+    del sys.argv[1:]
+
+    with open(options.outfile, 'wb') as f:
+        print '\nStoring test results in "{0}"'.format(options.outfile)
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )
