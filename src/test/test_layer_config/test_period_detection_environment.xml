@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EnvironmentConfiguration>
+    <GetCapabilitiesLocation service="wmts">/etc/onearth/config/test/test_layer_config/gc/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/etc/onearth/config/test/test_layer_config/gc/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/etc/onearth/config/test/test_layer_config/gc/.lib/</GetTileServiceLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">/etc/onearth/config/test/test_layer_config/data</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">/etc/onearth/config/test/test_layer_config/data</CacheLocation>
+    <StagingLocation service="wmts">/etc/onearth/config/test/test_layer_config/wmts/staging</StagingLocation>
+    <StagingLocation service="twms">/etc/onearth/config/test/test_layer_config/twms/staging</StagingLocation>
+    <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
+    <LegendLocation>/etc/onearth/config/test/test_layer_config/legends</LegendLocation>
+    <LegendURL>http://localhost/legends/</LegendURL>
+    <ColorMapLocation>/etc/onearth/config/test/test_layer_config/colormaps</ColorMapLocation>
+    <ColorMapURL>http://localhost/colormaps</ColorMapURL>
+</EnvironmentConfiguration>

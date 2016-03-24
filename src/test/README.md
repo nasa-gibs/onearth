@@ -18,5 +18,6 @@ Each test script will output a JUnit XML results file. By default, this file is 
 
 **Note that the tests need to be run with root privileges.**
 
-*`test_mod_onearth.py` also offers a `-d` option. This will load the test Apache 
+*`test_mod_onearth.py` also offers a `-d` option. This will load the test Apache configuration for manual testing purposes (normally the script deletes it when the tests are over.)*
 
+*`test_layer_config.py` also offers a `-d` option. This will display verbose messages about the files the script is creating and text it's searching for.)*

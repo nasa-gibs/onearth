@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LayerConfiguration>
+ <Identifier>test_legend_generation</Identifier>
+ <Title>Test Empty Tile</Title>
+ <FileNamePrefix>test_legend_generation</FileNamePrefix>
+ <TiledGroupName>test tileset</TiledGroupName>
+ <Compression>JPG</Compression>
+ <EmptyTileSize offset="0">4723</EmptyTileSize>
+ <TileMatrixSet>EPSG3413_500m</TileMatrixSet>
+ <Projection>EPSG:3413</Projection> 
+ <EnvironmentConfig>/etc/onearth/config/test/test_layer_config/test_legend_generation_environment.xml</EnvironmentConfig>
+ <ArchiveLocation static="true" year="false" root="test">test_legend_generation</ArchiveLocation>
+ <Time>P1D</Time>
+ <ColorMap>MODIS_Aqua_Aerosol-GIBS_colormap.xml</ColorMap>
+  <Raster>
+    <Size x="20480" y="10240" c="1"/>
+    <Compression>PPNG</Compression>
+    <DataValues NoData="0" />
+    <Quality>85</Quality>
+    <PageSize x="512" y="512" c="1" />
+  </Raster>
+  <Rsets model="uniform" />
+  <GeoTags>
+    <BoundingBox minx="-180.00000000" miny="-90.00000000" maxx="180.00000000" maxy=" 90.00000000" />
+  </GeoTags>
+</LayerConfiguration>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ArchiveConfiguration>
+    <Archive id="test">
+        <Location>/etc/onearth/config/test/test_layer_config/data/</Location>
+    </Archive>
+</ArchiveConfiguration>
