@@ -36,7 +36,6 @@ This file contains various utilities for the OnEarth test routines.
 import os
 import subprocess
 from shutil import copyfile, copy
-
 import xml.dom.minidom
 import hashlib
 from dateutil.relativedelta import relativedelta
@@ -73,15 +72,22 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
             will be ignored (defaults to False)
     """
     # print '\nRunning command: ' + cmd
-    process = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if wait:
         process.wait()
     if not ignore_warnings:
         for error in process.stderr:
             if not ignore_warnings or "WARNING" not in error:
-                print 'Error: ' + error.strip()
+                raise ValueError(error.strip())
     return None
 
+def find_string(file_path, string):
+    try:
+        with open(file_path, 'r') as f:
+            result = any(line for line in f if string in line)
+    except OSError:
+        result = False
+    return result
 
 def search_for_strings(string_list, file_path):
     """
@@ -110,7 +116,7 @@ def get_file_hash(file):
     Creates an MD5 hash for a given file.
     Returns True if it matches the given reference hash, False otherwise.
     Arguments:
-        file -- file to be hashed
+        file -- file object to be hashed
         ref_hash -- comparison hash string
     """
     hasher = hashlib.md5()
@@ -119,23 +125,26 @@ def get_file_hash(file):
     return hash_value
 
 
-def create_continuous_period_test_files(path, period_units, period_length, num_periods, start_datetime, prefix='', suffix='_.mrf', prototype_file=None, make_year_dirs=False):
+def create_continuous_period_test_files(path, period_units, period_length, num_periods, start_datetime, prefix='',
+                                        suffix='_.mrf', prototype_file=None, make_year_dirs=False, no_files=False):
     """
     Fills a directory structure with files that have a continuous period interval between them
     using the specified parameters.
     Arguments:
         path -- base directory tree to populate.
         period_units -- unit size of each period in 'days', 'months', or 'years'.
-        period_length -- the length of each period in the aforementioned units
+        period_length -- the length of each period in the aforementioned units.
         num_periods -- the number of period files to create.
-        start_date -- a datetime.datetime object with the desired start date
+        start_date -- a datetime.datetime object with the desired start date.
         prefix -- (optional) a string to append to the beginning of each filename.
         suffix -- (optional) a string to append to the end of each filename.
         prototype_file -- (optional) a prototype file to create each copy from (otherwise creates just empty files).
         make_year_dirs -- (optional) choose to create separate year dirs for the created files instead of dumping them all
-            in the same dir. Defaults to False.
+            in one dir.
+        no_files -- (optional) returns a list of dates but creates no files.
     """
-    make_dir_tree(path)
+    if not no_files:
+        make_dir_tree(path)
     # Keep track of each date so we can evaluate if a new year directory needs to be created.
     test_dates = []
     date = start_datetime
@@ -148,31 +157,33 @@ def create_continuous_period_test_files(path, period_units, period_length, num_p
         else:
             subdaily = False
         
-        # Create year directory if requested
-        if make_year_dirs and (not x or test_dates[-1].year != date.year):
-            year_dir = str(date.year)
-            make_dir_tree(os.path.join(path, year_dir))
+        if not no_files:
+            # Create year directory if requested
+            if make_year_dirs and (not x or test_dates[-1].year != date.year):
+                year_dir = str(date.year)
+                make_dir_tree(os.path.join(path, year_dir))
 
-        # Assemble new filename and create file, using prototype if specified
-        if subdaily is True:
-            time_string = str(date.hour).zfill(2) + str(date.minute).zfill(2) + str(date.second).zfill(2)
-        else:
-            time_string = ''
-        filename = prefix + str(date.year) + str(date.timetuple().tm_yday).zfill(3) + time_string + suffix
-        output_path = os.path.join(path, year_dir)
-        output_file = os.path.join(output_path, filename)
-        if prototype_file:
-            try:
-                copyfile(prototype_file, output_file)
-            except OSError:
-                pass
-        else:
-            open(output_file, 'a').close()
+            # Assemble new filename and create file, using prototype if specified
+            if subdaily is True:
+                time_string = str(date.hour).zfill(2) + str(date.minute).zfill(2) + str(date.second).zfill(2)
+            else:
+                time_string = ''
+            filename = prefix + str(date.year) + str(date.timetuple().tm_yday).zfill(3) + time_string + suffix
+            output_path = os.path.join(path, year_dir)
+            output_file = os.path.join(output_path, filename)
+            if prototype_file:
+                try:
+                    copyfile(prototype_file, output_file)
+                except OSError:
+                    pass
+            else:
+                open(output_file, 'a').close()
         date += relativedelta(**{period_units: period_length})
     return test_dates
 
 
-def create_intermittent_period_test_files(path, period_units, period_length, num_periods, start_datetime, prefix='', suffix='_.mrf', prototype_file=None, make_year_dirs=False):
+def create_intermittent_period_test_files(path, period_units, period_length, num_periods, start_datetime, prefix='',
+                                          suffix='_.mrf', prototype_file=None, make_year_dirs=False, no_files=False):
     """
     Fills a directory structure with files that have an intermittent period
     using the specified parameters. Returns a list of all the date intervals
@@ -187,9 +198,11 @@ def create_intermittent_period_test_files(path, period_units, period_length, num
         suffix -- (optional) a string to append to the end of each filename.
         prototype_file -- (optional) a prototype file to create each copy from (otherwise creates just empty files).
         make_year_dirs -- (optional) choose to create separate year dirs for the created files instead of dumping them all
-            in the same dir. Defaults to False.
+            in one dir.
+        no_files -- (optional) returns a list of dates but creates no files.
     """
-    make_dir_tree(path)
+    if not no_files:
+        make_dir_tree(path)
     # Create a list of date intervals, each separated by the specified period length
     test_dates = []
     year_dir = ''
@@ -204,31 +217,32 @@ def create_intermittent_period_test_files(path, period_units, period_length, num
         # Push the start time of the next interval to twice the period distance from the end of the last interval
         start_datetime = interval_set[-1] + relativedelta(**{period_units: period_length * 2})
 
-        if any(unit in period_units for unit in ('hours', 'minutes', 'seconds')):
-            subdaily = True
-        else:
-            subdaily = False
-
-        # If this is the first date or it has a different year than the previous, create that dir
-        if make_year_dirs and (not x or test_dates[-1][-1].year != date.year):
-            year_dir = str(date.year)
-            make_dir_tree(os.path.join(path, year_dir))
-        for interval in interval_set:
-            if subdaily is True:
-                time_string = str(interval.hour).zfill(2) + str(interval.minute).zfill(2) + str(interval.second).zfill(2)
+        if not no_files:
+            if any(unit in period_units for unit in ('hours', 'minutes', 'seconds')):
+                subdaily = True
             else:
-                time_string = ''
-            filename = prefix + str(interval.year) + str(interval.timetuple().tm_yday).zfill(3) + time_string + suffix
-            output_path = os.path.join(path, year_dir)
-            output_file = os.path.join(output_path, filename)
+                subdaily = False
 
-            if prototype_file:
-                try:
-                    copyfile(prototype_file, output_file)
-                except OSError:
-                    pass
-            else:
-                open(output_file, 'a').close()
+            # If this is the first date or it has a different year than the previous, create that dir
+            if make_year_dirs and (not x or test_dates[-1][-1].year != date.year):
+                year_dir = str(date.year)
+                make_dir_tree(os.path.join(path, year_dir))
+            for interval in interval_set:
+                if subdaily is True:
+                    time_string = str(interval.hour).zfill(2) + str(interval.minute).zfill(2) + str(interval.second).zfill(2)
+                else:
+                    time_string = ''
+                filename = prefix + str(interval.year) + str(interval.timetuple().tm_yday).zfill(3) + time_string + suffix
+                output_path = os.path.join(path, year_dir)
+                output_file = os.path.join(output_path, filename)
+
+                if prototype_file:
+                    try:
+                        copyfile(prototype_file, output_file)
+                    except OSError:
+                        pass
+                else:
+                    open(output_file, 'a').close()
     return test_dates
 
 
@@ -244,7 +258,7 @@ def read_zkey(zdb, sort):
         if db_exists is False:
             return None
         else:
-            con = sqlite3.connect(zdb, timeout=60) # 1 minute timeout
+            con = sqlite3.connect(zdb, timeout=60)  # 1 minute timeout
             cur = con.cursor()
             
             # Check for existing key
@@ -274,43 +288,56 @@ def get_file_list(path):
     return files
 
 
-def get_config(filepath):
+def get_layer_config(filepath, archive_config):
     """
     Parses a layer config XML file and its associated environment config file
-    and returns a dict with relevant values.
+    and returns a dict with relevant values. Generally, <TagName> turns into config['tag_name'].
     Arguments:
         filepath -- path to the layer config file
+        archive config -- path to the archive config file
     """
     config = {}
-    # Get layer filename prefix
-    with open(filepath, "r") as layer_config:
-        lc_dom = xml.dom.minidom.parse(layer_config)
-    config['prefix'] = lc_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
-
-    # Get layer identifier
-    config['identifier'] = lc_dom.getElementsByTagName("Identifier")[0].firstChild.nodeValue
-
-    # Get the 'Time' value
-    config['time'] = lc_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
-
-    archive_location = lc_dom.getElementsByTagName("ArchiveLocation")[0]
-
-    # Get the location of the archive from the environment and layer configs
-    env_config = lc_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
+    
+    # Get the layer, environment, and archive config DOMs
+    with open(filepath, "r") as lc:
+        config_dom = xml.dom.minidom.parse(lc)
+        env_config = config_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
     with open(env_config, "r") as env:
         env_dom = xml.dom.minidom.parse(env)
-    config['cache_location'] = next((loc for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None).firstChild.nodeValue
-    config['archive_path'] = os.path.join(config['cache_location'], archive_location.firstChild.nodeValue)
+    with open(archive_config, "r") as archive:
+        archive_dom = xml.dom.minidom.parse(archive)
+
+    # Get archive root path and the archive location
+    archive_root = config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value
+    config['archive_basepath'] = next(loc.getElementsByTagName('Location')[0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
+    config['archive_location'] = os.path.join(config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
+
+    # Add everything we need from the environment config
+    staging_locations = env_dom.getElementsByTagName('StagingLocation')
+    config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
+    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "tmws"), None)
+    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
+    config['colormap_locations'] = [loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("ColorMapLocation")]
+    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
+
+    # Add everything we need from the layer config
+    config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
+    config['identifier'] = config_dom.getElementsByTagName("Identifier")[0].firstChild.nodeValue
+    config['time'] = config_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
+    config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[0].firstChild.nodeValue
+
+    try:
+        config['empty_tile'] = config_dom.getElementsByTagName('EmptyTile')[0].firstChild.nodeValue
+    except IndexError:
+        config['empty_tile_size'] = config_dom.getElementsByTagName('EmptyTileSize')[0].firstChild.nodeValue
     config['year_dir'] = False
     try:
-        if archive_location.attributes['year'].value == 'true':
+        if config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['year'].value == 'true':
             config['year_dir'] = True
     except KeyError:
         pass
-
-    # Get the location of the GetCapabilities file
-    wmts_gc_path = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['gc_path'] = os.path.join(wmts_gc_path + "getCapabilities.xml")
 
     return config
 
@@ -432,14 +459,13 @@ def check_response_code(url, code, code_value=''):
     return False
 
 
-def test_snap_request(hash_table, req_url, layer, date):
+def test_snap_request(hash_table, req_url):
     """
     Requests the first tile for a given layer and date, then compares the result against a dict w/ dates
     and hashes.
     Arguments:
         hash_table -- a dict with date keys and hash values.
-        layer -- a string with the layer name to request
-        date -- a string with the date to request
+        req_url -- a string with the url that's to be used for the request
     """
     tile = get_url(req_url)
     tile_hash = get_file_hash(tile)
@@ -447,3 +473,14 @@ def test_snap_request(hash_table, req_url, layer, date):
     # Get the date that the particular hash is associated with
     tile_date = hash_table.get(tile_hash, '')
     return tile_date
+
+
+def get_xml(file):
+    """
+    Opens an XML file, parses it, and returns a DOM object.
+    Arguments:
+        file -- file to be opened.
+    """
+    with open(file, 'r') as f:
+        dom = xml.dom.minidom.parse(f)
+    return dom

@@ -24,7 +24,7 @@ class TestModOnEarth(unittest.TestCase):
         try:
             self.lcdir = os.environ['LCDIR']
         except KeyError:
-            self.lcdir = os.path.abspath(os.pdbath.dirname(__file__) + '/..')
+            self.lcdir = os.path.abspath(os.path.dirname(__file__) + '/..')
 
         # Add test endpoint/cache config to Apache
         os.path.join(self.lcdir, 'test/onearth_test.conf')
@@ -177,7 +177,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2017-01-01', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 1a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -189,7 +189,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2015-02-01', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 2a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -204,7 +204,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2014-12-31', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -219,7 +219,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2014-12-31', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -234,7 +234,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('1989-12-31', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3c requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -249,7 +249,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2009-12-31', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3d requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -269,7 +269,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2001-01-01', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 4a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -284,7 +284,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2003-01-04', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
-            response_date = test_snap_request(self.tile_hashes, req_url, layer_name, request_date)
+            response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 4b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
@@ -462,6 +462,8 @@ if __name__ == '__main__':
                       help='Specify XML output file (default is test_mod_onearth_results.xml')
     parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Load test configuration into Apache and quit (for debugging)')
     (options, args) = parser.parse_args()
+
+    # Debug option runs the test Apache setup, then quits.
     if options.debug:
         TestModOnEarth.setUpClass()
         sys.exit('Apache has been loaded with the test configuration. No tests run.')
