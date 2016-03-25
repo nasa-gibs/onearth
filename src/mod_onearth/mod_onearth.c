@@ -330,6 +330,7 @@ static void *r_file_pread(request_rec *r, char *fname,
     	// check to see if there is a period
 		  if (sizeof(time_period) > 0) {
 			  apr_time_exp_t st; st.tm_year=0;st.tm_mon=0;st.tm_mday=1;st.tm_yday=1;st.tm_hour=0;st.tm_min=0;st.tm_sec=0;
+			  apr_time_exp_t end = {0};
 			  int interval = 0;
 			  int start_offset = 0;
 			  int start_leap = 0;
@@ -387,14 +388,40 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  	  }
 				  }
 
-				  // if hhmmss are included in time period
-				  if (strlen(time_period)>11) {
-					  time_period+=3;
-					  st.tm_hour = apr_atoi64(time_period);
-					  time_period+=3;
-					  st.tm_min = apr_atoi64(time_period);
-					  time_period+=3;
-					  st.tm_sec = apr_atoi64(time_period);
+				  // Check to see if the end time is before the request time
+				  // If next character is a slash, assume non-subdaily period
+				  if(time_period[2] == '/')
+				  {
+				  	// Get end time
+				  	time_period += 3;
+				  	end.tm_year = apr_atoi64(time_period);
+				  	time_period += 5;
+				  	end.tm_mon = apr_atoi64(time_period);
+				  	time_period += 3;
+				  	end.tm_mday = apr_atoi64(time_period);
+				  }
+				  else
+				  {
+				  	// Get start time
+					time_period+=3;
+					st.tm_hour = apr_atoi64(time_period);
+					time_period+=3;
+					st.tm_min = apr_atoi64(time_period);
+					time_period+=3;
+					st.tm_sec = apr_atoi64(time_period);				  	
+
+					// Get end time
+					time_period += 2;
+				  	time_period += 5;
+				  	end.tm_mon = apr_atoi64(time_period);
+				  	time_period += 3;
+				  	end.tm_mday = apr_atoi64(time_period);
+				  	time_period += 2;
+					end.tm_hour = apr_atoi64(time_period);
+					time_period+=3;
+					end.tm_min = apr_atoi64(time_period);
+					time_period+=3;
+					end.tm_sec = apr_atoi64(time_period);	
 				  }
 
 //				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"DEBUG Start time period: year %d month %d day %d hour %d minute %d second %d offset %d interval %d", st.tm_year, st.tm_mon, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec, start_offset, interval);
@@ -406,40 +433,58 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  // Evaluate monthly period
 					  if (time_period[(strlen(time_period)-1)] == 'M') {
 					  	  st.tm_yday = start_leap ? st.tm_yday-1 : st.tm_yday;
-					  	  // Get closest month to request date
-					  	  int month_count = 13-st.tm_mon + (12*(tm.tm_year-st.tm_year-1)) + tm.tm_mon;
-					  	  int i;
-					  	  for(i=1; i<month_count; i+=interval) {
-					  	  	st.tm_mon += interval;
-					  	  	if(st.tm_mon > 12) {
-					  	  		st.tm_year+=(st.tm_mon/12);
-					  	  		st.tm_mon = st.tm_mon % 12;
+
+					  	  // If request date is past end date, check whether it's within one interval of end date
+					  	  if(tm.tm_year > end.tm_year || (tm.tm_year == end.tm_year && tm.tm_mon > end.tm_mon) 
+					  	  		|| (tm.tm_year == end.tm_year && tm.tm_mon == end.tm_mon && tm.tm_mday > end.tm_mday)) {
+		   				    // Add one interval to end date
+		   				    apr_time_exp_t old_end = end;
+					  	  	end.tm_mon += interval;
+					  	  	end.tm_mon--;
+					  	  	if(end.tm_mon > 12) {
+					  	  		end.tm_year+=(st.tm_mon/12);
+					  	  		end.tm_mon = st.tm_mon % 12;
 					  	  	}
-					  	  }
-					  	  // Step back to get the previous interval if this one is ahead of the req date
-					  	  if (st.tm_year > tm.tm_year || (st.tm_mon > tm.tm_mon || (st.tm_mon == tm.tm_mon && st.tm_mday > tm.tm_mday))) {
-					  	  	// Month subtraction routine
-					  	  	while(interval!=0) {
-					  	  		st.tm_mon--;
-					  	  		if (st.tm_mon==0)
-					  	  		{
-					  	  			st.tm_mon=12;
-					  	  			st.tm_year--;
-					  	  		}
-					  	  		interval--;
+					  	  	// Check if request date is within that interval, bail otherwise
+					  	  	if(tm.tm_year > end.tm_year || (tm.tm_year == end.tm_year && tm.tm_mon > end.tm_mon)) {
+  							    time_period+=strlen(time_period)+1;
+								continue;
 					  	  	}
-					  	  }
+					  	  	st = old_end;
+					  	  } else {
+						  	  // Get closest month to request date
+						  	  int month_count = 13-st.tm_mon + (12*(tm.tm_year-st.tm_year-1)) + tm.tm_mon;
+						  	  int i;
+						  	  for(i=1; i<month_count; i+=interval) {
+						  	  	st.tm_mon += interval;
+						  	  	if(st.tm_mon > 12) {
+						  	  		st.tm_year+=(st.tm_mon/12);
+						  	  		st.tm_mon = st.tm_mon % 12;
+						  	  	}
+						  	  }
+						  	  // Step back to get the previous interval if this one is ahead of the req date
+						  	  if (st.tm_year > tm.tm_year || (st.tm_mon > tm.tm_mon || (st.tm_mon == tm.tm_mon && st.tm_mday > tm.tm_mday))) {
+						  	  	// Month subtraction routine
+						  	  	while(interval!=0) {
+						  	  		st.tm_mon--;
+						  	  		if (st.tm_mon==0)
+						  	  		{
+						  	  			st.tm_mon=12;
+						  	  			st.tm_year--;
+						  	  		}
+						  	  		interval--;
+						  	  	}
+						  	  }
+						  	}
 					  	  // Using APR time functions to get yday (converting date struct to epoch and back gets us accurate yday)
 					  	  // Zero out any info we don't need (otherwise messes up the epoch/time struct conversion)
 					  	  st.tm_yday = 0;
 					  	  st.tm_hour = 0;
 					  	  st.tm_min = 0;
 					  	  st.tm_gmtoff = 0;
-						  // Normally tm_mon is zero-indexed
+						  // Normally tm_mon is zero-indexed and tm_year is years from 1900
 					  	  st.tm_mon--;
-					  	  // Normally tm_year is years since 1900
 					  	  st.tm_year -= 1900;
-
 					  	  // Date to epoch and then back
 					  	  apr_time_t start_epoch;
 					  	  apr_time_exp_get(&start_epoch, &st);
@@ -447,15 +492,33 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  	  // tm_yday and tm_mon comes out zero-indexed, set it back
 					  	  st.tm_yday++;
 					  	  st.tm_mon++;
-					  	  // Set year back to normal (this is confusing. at some point all uses of apr_time_exp should be set to follow the spec)
 					  	  st.tm_year += 1900;
-					  	  
 					  	  request_day = st.tm_yday;
+
 				  	  // Evaluate yearly period
 					  } else if (time_period[(strlen(time_period)-1)] == 'Y') {
-					  	  int year_interval = apr_atoi64(time_period+6);
+					  	  int year_interval = apr_atoi64(time_period+4);
 					  	  // Strip off the extra day that's added if the start was a leap year
 					  	  st.tm_yday = start_leap ? st.tm_yday-1 : st.tm_yday;
+
+					  	  // If request date is past end date, check whether it's within one interval of end date
+					  	  if(tm.tm_year > end.tm_year || (tm.tm_year == end.tm_year && tm.tm_mon > end.tm_mon) 
+					  	  		|| (tm.tm_year == end.tm_year && tm.tm_mon == end.tm_mon && tm.tm_mday > end.tm_mday)) {
+		   				    // Add one interval to end date
+		   				    apr_time_exp_t old_end = end;
+					  	  	end.tm_mon += interval;
+					  	  	end.tm_mon--;
+					  	  	if(end.tm_mon > 12) {
+					  	  		end.tm_year+=(st.tm_mon/12);
+					  	  		end.tm_mon = st.tm_mon % 12;
+					  	  	}
+					  	  	// Check if request date is within that interval, bail otherwise
+					  	  	if(tm.tm_year > end.tm_year || (tm.tm_year == end.tm_year && tm.tm_mon > end.tm_mon)) {
+  							    time_period+=strlen(time_period)+1;
+								continue;
+					  	  	}
+					  	  	st = old_end;
+					  	  } else {
 					  	  // Count up years to get the closest interval to requested date
 					  	  while ( start_year < tm.tm_year ) {
 					  	  	start_year += year_interval;
@@ -464,20 +527,25 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  	  if(start_year > tm.tm_year || (st.tm_mon > tm.tm_mon || (st.tm_mon == tm.tm_mon && st.tm_mday > tm.tm_mday))) {
 					  	  	start_year -= year_interval;
 					  	  }
-					  	  // Add a yday if the snapped date is a leap year
 					  	  st.tm_year = start_year;
-				  	  	  leap = (st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
-				  	  	  st.tm_yday = leap ? st.tm_yday+1 : st.tm_yday;
 				  	  	  request_day = st.tm_yday;
+				  	  	}
 					  } else {
-						  request_day = request_day - span;
+					  	  // Process day period. Check to see if we have to roll back to a previous year.
+						  if(request_day - span < 0) {
+					  	  	int day_count = start_leap ? 366 : 365;
+					  	  	st.tm_year--;
+					  	  	request_day = day_count + (request_day - span);
+						  } else {
+						  	request_day -= span;
+						  }
 					  }
 					  char old_char;
 					  // Correct year name in path if it's changed
 					  if (st.tm_year!=tm.tm_year) {
-					  	old_char=*(yearloc+4);
-					  	sprintf(yearloc, "%04d", st.tm_year);
-					  	*(yearloc+4)=old_char;
+					  	old_char=*(fnloc+4);
+					  	sprintf(fnloc, "%04d", st.tm_year);
+					  	*(fnloc+4)=old_char;
 					  }
 					  // Change request date to the date we're snapping to
 					  tm = st;
