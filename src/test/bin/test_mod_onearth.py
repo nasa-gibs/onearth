@@ -214,7 +214,8 @@ class TestModOnEarth(unittest.TestCase):
                  ('2016-02-29', '2016-02-29'),
                  ('2017-01-01', 'black'))
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Daily date (P1D) -- 2015-01-01/2016-12-31/P1D'
+            print '\nTesting Date Snapping: Regular Daily date (P1D)'
+            print 'Time Period 1a: 2015-01-01/2016-12-31/P1D'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -232,7 +233,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2015-02-01', 'black'))
         if DEBUG:
             print '\nTesting Date Snapping: Irregular Daily date (PID with gaps)'
-            print 'Time Period: 2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D'
+            print 'Time Period 2a: 2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -253,7 +254,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2014-12-31', 'black'))
         if DEBUG:
             print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period: 2015-01-01/2016-01-01/P1M'
+            print 'Time Period 3a: 2015-01-01/2016-01-01/P1M'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -274,7 +275,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2014-12-31', 'black'))
         if DEBUG:
             print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period: 2015-01-01/2016-01-01/P3M'
+            print 'Time Period 3b: 2015-01-01/2016-01-01/P3M'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -297,7 +298,7 @@ class TestModOnEarth(unittest.TestCase):
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
             print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period: 1990-01-01/2016-01-01/P1Y'
+            print 'Time Period 3c: 1990-01-01/2016-01-01/P1Y'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -320,7 +321,7 @@ class TestModOnEarth(unittest.TestCase):
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
             print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period: 1990-01-01/2016-01-01/P1Y'
+            print 'Time Period 3d: 1990-01-01/2016-01-01/P1Y'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -347,8 +348,8 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Daily date (P1D) -- 2015-01-01/2016-12-31/P1D'
-            print 'Time Period: 1990-01-01/2016-01-01/P1Y'
+            print '\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods'
+            print 'Time Period 4a: 2000-01-01/2000-06-01/P1M,2000-07-03/2000-07-03/P1M,2000-08-01/2000-12-01/P1M'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -365,13 +366,13 @@ class TestModOnEarth(unittest.TestCase):
                  ('2001-05-14', '2001-05-09'),
                  ('2002-01-01', '2002-01-01'),
                  ('2000-12-31', 'black'),
-                 ('2003-01-01', '2000-07-03'),
+                 ('2003-01-01', '2002-12-27'),
                  ('2003-01-04', 'black'))
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Daily date (P1D) -- 2015-01-01/2016-12-31/P1D'
-            print 'Time Period: 1990-01-01/2016-01-01/P1Y'
+            print '\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods'
+            print 'Time Period 4b: 2001-01-01/2001-12-27/P8D, 2002-01-01/2002-12-27/P8D'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
@@ -584,7 +585,7 @@ if __name__ == '__main__':
         sys.exit('Apache has been loaded with the test configuration. No tests run.')
     
     DEBUG = options.debug
-    
+
     # Have to delete the arguments as they confuse unittest
     del sys.argv[1:]
 

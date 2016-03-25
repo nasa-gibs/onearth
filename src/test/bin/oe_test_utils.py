@@ -59,7 +59,11 @@ def add_trailing_slash(directory_path):
 
 
 def restart_apache():
-    apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    try:
+        check_apache_running()
+        apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    except ValueError:
+        apache = subprocess.Popen(['apachectl', 'start'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     apache.communicate()
     subprocess.call(['sleep', '3'])
 
