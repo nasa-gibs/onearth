@@ -1,4 +1,4 @@
-    #!/bin/env python
+#!/bin/env python
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -48,8 +48,6 @@ from optparse import OptionParser
 import oe_test_utils as testutils
 from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, get_file_hash
 
-import pdb
-
 DEBUG = False
 
 class TestLayerConfig(unittest.TestCase):
@@ -63,85 +61,93 @@ class TestLayerConfig(unittest.TestCase):
         self.testfiles_path = os.path.join(self.lcdir, "test/test_layer_config")
         self.archive_config = os.path.join(self.testfiles_path, 'test_archive_config.xml')
 
-        # self.legend_v = self.lcdir + "/test/MODIS_Aqua_Aerosol_V.svg"
-        # self.legend_h = self.lcdir + "/test/MODIS_Aqua_Aerosol_H.svg"
-        # self.cachedir = '/usr/share/onearth/demo/data/EPSG4326/'
-        # # Set up dummy data files
-        # if not os.path.exists(self.cachedir + "MODIS_Aqua_Aerosol"):
-        #     os.makedirs(self.cachedir + "MODIS_Aqua_Aerosol")
-        # if not os.path.exists(self.cachedir + 'MODIS_Aqua_Aerosol/MODIS_Aqua_Aerosol2014364_.mrf'):
-        #     copyfile('MODIS_Aqua_Aerosol2014364_.mrf', self.cachedir + 'MODIS_Aqua_Aerosol/MODIS_Aqua_Aerosol2014364_.mrf')
+    def test_layer_config_default(self):
+        # Set config files and reference hash for checking empty tile
+        layer_config = os.path.join(self.testfiles_path, 'test_default_behavior.xml')
 
-    # def test_layer_config_default(self):
-    #     # Set config files and reference hash for checking empty tile
-    #     layer_config = os.path.join(self.testfiles_path, 'test_legend_generation.xml')
+        config = get_layer_config(layer_config, self.archive_config)
 
-    #     config = get_layer_config(layer_config, self.archive_config)
+        # Make test dirs
+        make_dir_tree(config['archive_location'])
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['legend_location'])
 
-    #     # Make test dirs
-    #     make_dir_tree(config['archive_location'])
-    #     make_dir_tree(config['wmts_gc_path'])
-    #     make_dir_tree(config['twms_gc_path'])
+        # Copy colormaps
+        colormap_location = config['colormap_locations'][0].firstChild.nodeValue
+        colormap = config['colormaps'][0].firstChild.nodeValue
+        make_dir_tree(colormap_location)
+        copy(os.path.join(self.testfiles_path, colormap), colormap_location)
 
-    #     # Run layer config tool
-    #     cmd = 'oe_configure_layer -g -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
-    #     run_command(cmd)
+        # Run layer config tool
+        cmd = 'oe_configure_layer -g -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
+        run_command(cmd)
    
-    #     # Get all the test results. We do this because a failure ends the test and makes it impossible to clean up
-    #     wmts_cache_file = os.path.join(config['archive_location'], 'cache_all_wmts.config')
-    #     wmts_cache = os.path.isfile(wmts_cache_file)
-    #     wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
-    #     wmts_gc = os.path.isfile(os.path.join(config['wmts_gc_path'], 'getCapabilities.xml'))
-    #     wmts_staging_file = os.path.join(config['wmts_staging_location'], config['prefix'] + '_.xml')
-    #     wmts_staging = os.path.isfile(wmts_staging_file)
-    #     twms_cache_file = os.path.join(config['archive_location'], 'cache_all_twms.config')
-    #     twms_cache = os.path.isfile(twms_cache_file)
-    #     twms_gc_file = os.path.join(config['twms_gc_path'], 'getCapabilities.xml')
-    #     twms_gc = os.path.isfile(twms_gc_file)
-    #     twms_ts_file = os.path.join(config['twms_gc_path'], 'getTileService.xml')
-    #     twms_ts = os.path.isfile(twms_ts_file)
-    #     twms_staging_file = os.path.isfile(os.path.join(config['twms_staging_location'], config['prefix'] + '__gc.xml'))
-    #     twms_staging = os.path.isfile(twms_staging_file)
-    #     twms_staging_gts_file = os.path.join(config['twms_staging_location'], config['prefix'] + '__gts.xml')
-    #     twms_staging_gts = os.path.exists(twms_staging_gts_file)
+        # Get all the test results. We do this because a failure ends the test and makes it impossible to clean up
+        wmts_cache_file = os.path.join(config['archive_basepath'], 'cache_all_wmts.config')
+        wmts_cache = os.path.isfile(wmts_cache_file)
+        wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
+        wmts_gc = os.path.isfile(os.path.join(config['wmts_gc_path'], 'getCapabilities.xml'))
+        wmts_staging_file = os.path.join(config['wmts_staging_location'], config['prefix'] + '.xml')
+        wmts_staging = os.path.isfile(wmts_staging_file)
+        twms_cache_file = os.path.join(config['archive_basepath'], 'cache_all_twms.config')
+        twms_cache = os.path.isfile(twms_cache_file)
+        twms_gc_file = os.path.join(config['twms_gc_path'], 'getCapabilities.xml')
+        twms_gc = os.path.isfile(twms_gc_file)
+        twms_ts_file = os.path.join(config['twms_gc_path'], 'getTileService.xml')
+        twms_ts = os.path.isfile(twms_ts_file)
+        twms_staging_file = os.path.join(config['twms_staging_location'], config['prefix'] + '_gc.xml')
+        twms_staging = os.path.isfile(twms_staging_file)
+        twms_staging_gts_file = os.path.join(config['twms_staging_location'], config['prefix'] + '_gts.xml')
+        twms_staging_gts = os.path.exists(twms_staging_gts_file)
+        twms_staging_mrf_file = os.path.join(config['twms_staging_location'], config['prefix'] + '.mrf')
+        twms_staging_mrf = os.path.exists(twms_staging_mrf_file)
 
-    #     self.assertTrue(wmts_cache, "Default layer config test -- cache_all_wmts.config not created")
-    #     self.assertTrue(wmts_gc, 'Default layer config test -- WMTS getCapabilities.xml does not exist')
-    #     self.assertTrue(wmts_staging, 'Default layer config test -- staging file ' + wmts_staging_file + ' does not exist in WMTS staging area')
-    #     self.assertTrue(twms_cache, 'Default layer config test -- cache_all_twms.config does not exist')
-    #     self.assertTrue(twms_gc, 'Default layer config test -- TWMS getCapabilities.xml does not exist')
-    #     self.assertTrue(twms_ts, 'Default layer config test -- TWMS getTileService.xml does not exist')
-    #     self.assertTrue(twms_staging, 'Default layer config test -- staging file ' + twms_staging_file + ' does not exist in TWMS staging area')
-    #     self.assertTrue(twms_staging_gts, 'Default layer config test -- staging file ' + twms_staging_gts_file + ' does not exist in TWMS staging area')
+        self.assertTrue(wmts_cache, "Default layer config test -- cache_all_wmts.config not created")
+        self.assertTrue(wmts_gc, 'Default layer config test -- WMTS getCapabilities.xml does not exist')
+        self.assertTrue(wmts_staging, 'Default layer config test -- staging file ' + wmts_staging_file + ' does not exist in WMTS staging area')
+        self.assertTrue(twms_cache, 'Default layer config test -- cache_all_twms.config does not exist')
+        self.assertTrue(twms_gc, 'Default layer config test -- TWMS getCapabilities.xml does not exist')
+        self.assertTrue(twms_ts, 'Default layer config test -- TWMS getTileService.xml does not exist')
+        self.assertTrue(twms_staging, 'Default layer config test -- staging file ' + twms_staging_file + ' does not exist in TWMS staging area')
+        self.assertTrue(twms_staging_gts, 'Default layer config test -- staging file ' + twms_staging_gts_file + ' does not exist in TWMS staging area')
+        self.assertTrue(twms_staging_mrf, 'Default layer config test -- staging file ' + twms_staging_mrf_file + ' does not exist in TWMS staging area')
 
-    #     search_string = '<ows:Identifier>' + config['identifier'] + '</ows:Identifier>'
-    #     contains_layer = find_string(wmts_gc_file, search_string)
-    #     self.assertTrue(contains_layer, 'Default layer config test -- WMTS GetCapabilities does not contain layer')
+        rmtree(config['legend_location'])
+        rmtree(colormap_location)
 
-    #     search_string = 'SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=' + config['identifier'] + '&STYLE=(default)?&TILEMATRIXSET=EPSG4326_2km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fpng'
-    #     contains_layer = find_string(wmts_cache_file, search_string)
-    #     self.assertTrue(contains_layer, 'Default layer config test -- WMTS cache configuration does not contain layer')
+        search_string = '<ows:Identifier>' + config['identifier'] + '</ows:Identifier>'
+        contains_layer = find_string(wmts_gc_file, search_string)
+        os.remove(wmts_gc_file)
+        self.assertTrue(contains_layer, 'Default layer config test -- WMTS GetCapabilities does not contain layer')
 
-    #     search_string = '<Name>' + config['identifier'] + '</Name>'
-    #     contains_layer = find_string(twms_gc_file, search_string)
-    #     self.assertTrue(contains_layer, 'Default layer config test -- TWMS GetCapabilities does not contain layer')
+        # Unicode weirdness in the binary configs necessitates running str() on the search strings
+        search_string = str('SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=' + config['identifier'] + '&STYLE=(default)?&TILEMATRIXSET=EPSG3413_500m&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg')
+        contains_layer = find_string(wmts_cache_file, search_string)
+        os.remove(wmts_cache_file)
+        self.assertTrue(contains_layer, 'Default layer config test -- WMTS cache configuration does not contain layer')
 
-    #     search_string = '<Name>' + config['tiled_group_name'] + '</Name>'
-    #     contains_layer = find_string(twms_ts_file, search_string)
-    #     self.assertTrue(contains_layer, 'Default layer config test -- GetTileService does not contain layer')
+        search_string = '<Name>' + config['identifier'] + '</Name>'
+        contains_layer = find_string(twms_gc_file, search_string)
+        os.remove(twms_gc_file)
+        self.assertTrue(contains_layer, 'Default layer config test -- TWMS GetCapabilities does not contain layer')
 
-    #     search_string = '{0}/YYYY/{0}TTTTTTT_.ppg'.format(config['prefix'])
-    #     contains_layer = find_string(twms_cache_file, search_string)
-    #     self.assertTrue(contains_layer, 'Default layer config test -- TWMS cache configuration does not contain layer')
+        search_string = '<Name>' + config['tiled_group_name'] + '</Name>'
+        contains_layer = find_string(twms_ts_file, search_string)
+        os.remove(twms_ts_file)
+        self.assertTrue(contains_layer, 'Default layer config test -- GetTileService does not contain layer')
 
-    #     # check empty tile
-    #     empty_tile = os.path.getsize(self.lcdir + "/test/empty_tile.png")
-    #     self.assertEqual(empty_tile, 1382, "Empty tile does not match expected")
-        
+        search_string = str('request=GetMap&layers=' + config['prefix'] + '&srs=EPSG:3413&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]')
+        contains_layer = find_string(twms_cache_file, search_string)
+        os.remove(twms_cache_file)
+        self.assertTrue(contains_layer, 'Default layer config test -- TWMS cache configuration does not contain layer')
+
+        rmtree(config['archive_location'])
+        rmtree(config['wmts_gc_path'])
+
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'test_legend_generation.xml')
-        test_colormap = os.path.join(self.testfiles_path, 'MODIS_Aqua_Aerosol-GIBS_colormap.xml')
         h_legend_ref_hash = '1f4bca87509a8fd82c416fdd5f3eff87'
         v_legend_ref_hash = '4fdb03600a8e5c8b15321dd2505d6838'
 
@@ -149,13 +155,13 @@ class TestLayerConfig(unittest.TestCase):
 
         # Create legend, archive, and colormap dirs
         make_dir_tree(config['legend_location'])
-        make_dir_tree(config['colormap_locations'][0])
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
         make_dir_tree(config['archive_location'])
         make_dir_tree(config['wmts_gc_path'])
         make_dir_tree(config['twms_gc_path'])
 
         # Copy colormap to colormaps dir
-        copy(test_colormap, config['colormap_locations'][0])
+        copy(os.path.join(self.testfiles_path, config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
         cmd = 'oe_configure_layer -x -g -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
@@ -174,7 +180,7 @@ class TestLayerConfig(unittest.TestCase):
             raise OSError('Vertical legend not generated')
 
         # Cleanup
-        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['colormap_locations'][0], config['legend_location'])]
+        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['colormap_locations'][0].firstChild.nodeValue, config['legend_location'])]
 
         # Check if hashes are kosher
         self.assertEqual(h_legend_ref_hash, h_legend_hash, 'Horizontal legend generated does not match expected.')
@@ -183,7 +189,6 @@ class TestLayerConfig(unittest.TestCase):
     def test_versioned_colormaps(self):
         # Set locations of the config files we're using for this test
         layer_config = os.path.join(self.testfiles_path, 'test_versioned_colormaps.xml')
-        test_colormap = os.path.join(self.testfiles_path, 'MODIS_Aqua_Aerosol-GIBS_colormap.xml')
 
         test_metadata = ('<ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" xlink:href="http://localhost/colormaps/2.0/MODIS_Aqua_Aerosol-GIBS_2.0.xml" xlink:title="GIBS Color Map: Data - RGB Mapping"/>',
                          '<ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0" xlink:href="http://localhost/colormaps/1.0//MODIS_Aqua_Aerosol-GIBS_1.0.xml" xlink:title="GIBS Color Map: Data - RGB Mapping"/>'
@@ -192,10 +197,10 @@ class TestLayerConfig(unittest.TestCase):
         config = get_layer_config(layer_config, self.archive_config)
 
         # Create colormap locations and copy colormap test file
-        
         for location in config['colormap_locations']:
-            make_dir_tree(location)
-            copy(test_colormap, location)
+            make_dir_tree(location.firstChild.nodeValue)
+            colormap = next(colormap.firstChild.nodeValue for colormap in config['colormaps'] if colormap.attributes['version'].value == location.attributes['version'].value)
+            copy(os.path.join(self.testfiles_path, colormap), location.firstChild.nodeValue)
             
         # Create paths for data and GC
         make_dir_tree(config['wmts_gc_path'])
@@ -211,13 +216,12 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(metadata_pass, "Can't find all the proper versioned colormap metadata in the WMTS GetCapabilities file or GC file was not created.")
 
         # Cleanup -- make sure to get rid of staging files
-        [rmtree(path) for path in [path for path in config['colormap_locations']]]
+        [rmtree(path) for path in [path.firstChild.nodeValue for path in config['colormap_locations']]]
         [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['wmts_staging_location'])]
 
     def test_empty_tile_generation(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'test_empty_tile_generation.xml')
-        test_colormap = os.path.join(self.testfiles_path, 'MODIS_Aqua_Aerosol-GIBS_colormap.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -226,8 +230,8 @@ class TestLayerConfig(unittest.TestCase):
         make_dir_tree(config['archive_location'])
 
         # Copy the demo colormap
-        make_dir_tree(config['colormap_locations'][0])
-        copy(test_colormap, config['colormap_locations'][0])
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
         cmd = 'oe_configure_layer -x -a {0} -l {1} -c {2} -n'.format(self.archive_config, self.lcdir, layer_config)
@@ -238,8 +242,7 @@ class TestLayerConfig(unittest.TestCase):
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
-        [rmtree(path) for path in [path for path in config['colormap_locations']]]
-        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['wmts_staging_location'])]
+        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['wmts_staging_location'], config['colormap_locations'][0].firstChild.nodeValue)]
         os.remove(config['empty_tile'])
 
         # Check result

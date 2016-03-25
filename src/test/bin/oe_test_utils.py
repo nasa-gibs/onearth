@@ -315,11 +315,11 @@ def get_layer_config(filepath, archive_config):
     # Add everything we need from the environment config
     staging_locations = env_dom.getElementsByTagName('StagingLocation')
     config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
-    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "tmws"), None)
+    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
     config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
     config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
     config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
-    config['colormap_locations'] = [loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("ColorMapLocation")]
+    config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
     config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
 
     # Add everything we need from the layer config
@@ -327,6 +327,7 @@ def get_layer_config(filepath, archive_config):
     config['identifier'] = config_dom.getElementsByTagName("Identifier")[0].firstChild.nodeValue
     config['time'] = config_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
     config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[0].firstChild.nodeValue
+    config['colormaps'] = config_dom.getElementsByTagName("ColorMap")
 
     try:
         config['empty_tile'] = config_dom.getElementsByTagName('EmptyTile')[0].firstChild.nodeValue
