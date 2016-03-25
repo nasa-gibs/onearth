@@ -1,1 +1,1 @@
-/usr/share/onearth/apache/twms.cgi
+../../../cgi/twms.cgi
