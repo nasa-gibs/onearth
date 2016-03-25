@@ -1,1 +1,1 @@
-/usr/share/onearth/apache/wmts.cgi
+../../../cgi/wmts.cgi
