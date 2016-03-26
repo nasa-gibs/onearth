@@ -527,10 +527,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 					  	  if(start_year > tm.tm_year || (st.tm_mon > tm.tm_mon || (st.tm_mon == tm.tm_mon && st.tm_mday > tm.tm_mday))) {
 					  	  	start_year -= year_interval;
 					  	  }
-					  	  // Add a yday if the snapped date is a leap year
 					  	  st.tm_year = start_year;
-				  	  	  leap = (st.tm_year%4)?0:((st.tm_year%400)?((st.tm_year%100)?1:0):1);
-				  	  	  st.tm_yday = leap ? st.tm_yday : st.tm_yday;
 				  	  	  request_day = st.tm_yday;
 				  	  	}
 					  } else {
