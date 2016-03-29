@@ -1,0 +1,28 @@
+<WMS_Tile_Service version="0.1.0">
+  <Service>
+    <Name>GIBS:WMS:Tile</Name>
+    <Title>WMS Tile Service</Title>
+    <Abstract>Tiled WMS service, tiled in a global grid</Abstract>
+    <KeywordList>
+      <Keyword>WMS</Keyword>
+      <Keyword>Tile</Keyword>
+      <Keyword>GIBS</Keyword>
+      <Keyword>Global</Keyword>
+      <Keyword>Earth</Keyword>
+    </KeywordList>
+    <OnlineResource xmlns:xlink="http://www.w3.orf/1999/xlink" xlink:type="simple" xlink:href="http://earthdata.nasa.gov"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson></ContactPerson>
+        <ContactOrganization></ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactElectronicMailAddress></ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>none</AccessConstraints>
+  </Service>
+  <TiledPatterns>
+    <OnlineResource xlink:href="{ServiceURL}" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
+    <BoundingBox minx="{minx}" miny="{miny}" maxx="{maxx}" maxy="{maxy}" />
+  </TiledPatterns>
+</WMS_Tile_Service>

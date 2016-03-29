@@ -50,7 +50,6 @@ from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_comm
 
 DEBUG = False
 
-import pdb
 
 class TestLayerConfig(unittest.TestCase):
     
@@ -62,19 +61,19 @@ class TestLayerConfig(unittest.TestCase):
         self.testfiles_path = os.path.join(os.getcwd(), 'config_tool_test_data')
 
         # Make dir for the test config XML files and text-replace the templates with the proper location
-        make_dir_tree(os.path.join(self.testfiles_path, 'config'))
+        make_dir_tree(os.path.join(self.testfiles_path, 'conf'))
         for file in [f for f in os.listdir(config_template_path) if os.path.isfile(os.path.join(config_template_path, f))]:
-            file_text_replace(os.path.join(config_template_path, file), os.path.join(self.testfiles_path, 'config/' + file),
+            file_text_replace(os.path.join(config_template_path, file), os.path.join(self.testfiles_path, 'conf/' + file),
                               '{testfile_dir}', self.testfiles_path)
 
         # Set the location of the archive XML config file used by all tests
-        self.archive_config = os.path.join(self.testfiles_path, 'config/test_archive_config.xml')
-        self.projection_config = os.path.join(self.testfiles_path, 'config/projection.xml')
-        self.tilematrixset_config = os.path.join(self.testfiles_path, 'config/tilematrixsets.xml')
+        self.archive_config = os.path.join(self.testfiles_path, 'conf/test_archive_config.xml')
+        self.projection_config = os.path.join(self.testfiles_path, 'conf/projection.xml')
+        self.tilematrixset_config = os.path.join(self.testfiles_path, 'conf/tilematrixsets.xml')
 
     def test_layer_config_default(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'config/test_default_behavior.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_default_behavior.xml')
 
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -88,10 +87,10 @@ class TestLayerConfig(unittest.TestCase):
         colormap_location = config['colormap_locations'][0].firstChild.nodeValue
         colormap = config['colormaps'][0].firstChild.nodeValue
         make_dir_tree(colormap_location)
-        copy(os.path.join(self.testfiles_path, 'config/' + colormap), colormap_location)
+        copy(os.path.join(self.testfiles_path, 'conf/' + colormap), colormap_location)
 
         # Run layer config tool
-        cmd = 'oe_configure_layer -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
    
         # Get all the test results before running the assertions. We do this because a failure ends the test and makes it impossible to clean up
@@ -165,7 +164,7 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'config/test_legend_generation.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_legend_generation.xml')
         h_legend_ref_hash = '1f4bca87509a8fd82c416fdd5f3eff87'
         v_legend_ref_hash = '4fdb03600a8e5c8b15321dd2505d6838'
 
@@ -179,10 +178,10 @@ class TestLayerConfig(unittest.TestCase):
         make_dir_tree(config['twms_gc_path'])
 
         # Copy colormap to colormaps dir
-        copy(os.path.join(self.testfiles_path, 'config/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
-        cmd = 'oe_configure_layer --skip_empty_tiles -g -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l{0} --skip_empty_tiles -g -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Get hashes of generated legends
@@ -210,7 +209,7 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_versioned_colormaps(self):
         # Set locations of the config files we're using for this test
-        layer_config = os.path.join(self.testfiles_path, 'config/test_versioned_colormaps.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_versioned_colormaps.xml')
 
         test_metadata = ('<ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" xlink:href="http://localhost/colormaps/2.0/MODIS_Aqua_Aerosol-GIBS_2.0.xml" xlink:title="GIBS Color Map: Data - RGB Mapping"/>',
                          '<ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0" xlink:href="http://localhost/colormaps/1.0//MODIS_Aqua_Aerosol-GIBS_1.0.xml" xlink:title="GIBS Color Map: Data - RGB Mapping"/>'
@@ -222,7 +221,7 @@ class TestLayerConfig(unittest.TestCase):
         for location in config['colormap_locations']:
             make_dir_tree(location.firstChild.nodeValue)
             colormap = next(colormap.firstChild.nodeValue for colormap in config['colormaps'] if colormap.attributes['version'].value == location.attributes['version'].value)
-            copy(os.path.join(self.testfiles_path, 'config/' + colormap), location.firstChild.nodeValue)
+            copy(os.path.join(self.testfiles_path, 'conf/' + colormap), location.firstChild.nodeValue)
             
         # Create paths for data and GC
         make_dir_tree(config['wmts_gc_path'])
@@ -230,7 +229,7 @@ class TestLayerConfig(unittest.TestCase):
         make_dir_tree(config['archive_location'])
 
         # Run layer config tool
-        cmd = 'oe_configure_layer --skip_empty_tiles -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l {0} --skip_empty_tiles -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Check to see if all required metadata lines are in the getCapabilities
@@ -246,7 +245,7 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_empty_tile_generation(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'config/test_empty_tile_generation.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -257,10 +256,10 @@ class TestLayerConfig(unittest.TestCase):
 
         # Copy the demo colormap
         make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
-        copy(os.path.join(self.testfiles_path, 'config/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
-        cmd = 'oe_configure_layer -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Verify hash
@@ -282,7 +281,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING CONTINUOUS PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'config/test_period_detection.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_period_detection.xml')
 
         # Pick the start time for the dates that will be generated
         start_datetime = datetime.datetime(2014, 6, 1)
@@ -305,7 +304,7 @@ class TestLayerConfig(unittest.TestCase):
                     config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
 
                 # Run layer config command for daily test days
-                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+                cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
                 run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
@@ -342,7 +341,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING INTERMITTENT PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'config/test_period_detection.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_period_detection.xml')
 
         # Pick the start time for the dates that will be generated
         start_datetime = datetime.datetime(2014, 6, 1)
@@ -365,7 +364,7 @@ class TestLayerConfig(unittest.TestCase):
                     config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
 
                 # Run layer config command for daily test days
-                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+                cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
                 run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
@@ -412,7 +411,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING CONTINUOUS Z-LEVEL PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'config/test_zindex_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_zindex_detect.xml')
         test_periods = (('minutes', 1), ('minutes', 5), ('hours', 1))
         start_datetime = datetime.datetime(2014, 6, 1, 12, 0, 0)
         start_datestring = str(start_datetime.year) + str(start_datetime.timetuple().tm_yday).zfill(3)
@@ -457,7 +456,7 @@ class TestLayerConfig(unittest.TestCase):
 
             # Close ZDB and run layer config
             conn.close()
-            cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+            cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
             run_command(cmd, ignore_warnings=True)
 
             # Check to see if proper period in GetCapabilities
@@ -490,7 +489,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING INTERMITTENT Z-LEVEL PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'config/test_zindex_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_zindex_detect.xml')
         test_periods = (('minutes', 1), ('minutes', 5), ('hours', 1))
         start_datetime = datetime.datetime(2014, 6, 1, 12, 0, 0)
         start_datestring = str(start_datetime.year) + str(start_datetime.timetuple().tm_yday).zfill(3)
@@ -537,7 +536,7 @@ class TestLayerConfig(unittest.TestCase):
             conn.close()
 
             # Run layer config command
-            cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+            cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
             run_command(cmd, ignore_warnings=True)
 
             # Check to see if proper period in GetCapabilities
@@ -578,7 +577,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING LEGACY SUBDAILY CONTINUOUS PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'config/test_subdaily_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_subdaily_detect.xml')
         start_datetime = datetime.datetime(2014, 6, 1, 12)
         config = get_layer_config(layer_config, self.archive_config)
         
@@ -606,7 +605,7 @@ class TestLayerConfig(unittest.TestCase):
                         print date.isoformat()
 
                 # Run layer config command
-                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+                cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
                 run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
@@ -640,7 +639,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING LEGACY SUBDAILY INTERMITTENT PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'config/test_subdaily_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_subdaily_detect.xml')
         start_datetime = datetime.datetime(2014, 6, 1, 12)
         config = get_layer_config(layer_config, self.archive_config)
         
@@ -667,7 +666,7 @@ class TestLayerConfig(unittest.TestCase):
                         print date.isoformat()
 
                 # Run layer config command
-                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+                cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
                 run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities

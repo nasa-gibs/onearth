@@ -58,7 +58,7 @@ class TestModOnEarth(unittest.TestCase):
         testdata_path = os.path.join(os.getcwd(), 'mod_onearth_test_data')
         wmts_configs = ('wmts_cache_configs', 'wmts_cache_staging', 'test_imagery/cache_all_wmts.config')
         twms_configs = ('twms_cache_configs', 'twms_cache_staging', 'test_imagery/cache_all_twms.config')
-        image_files_path = os.path.join(testdata_path, 'test_imagery')
+        self.image_files_path = os.path.join(testdata_path, 'test_imagery')
         self.test_apache_config = os.path.join(testdata_path, 'oe_test.conf')
         
         for template_dir, staging_dir, cache_config in (wmts_configs, twms_configs):
@@ -71,7 +71,7 @@ class TestModOnEarth(unittest.TestCase):
             # Copy XML/MRF files to staging cache files dir, swapping in the location of the imagery files
             for file in [f for f in os.listdir(template_path) if os.path.isfile(os.path.join(template_path, f))]:
                 file_text_replace(os.path.join(template_path, file), os.path.join(staging_path, file),
-                                  '{cache_path}', image_files_path)
+                                  '{cache_path}', self.image_files_path)
 
             # Run oe_create_cache_config to make the cache config files
             cmd = 'oe_create_cache_config -cbd {0} {1}'.format(staging_path, cache_path)
@@ -619,6 +619,8 @@ class TestModOnEarth(unittest.TestCase):
         # Delete Apache test config
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
         restart_apache()
+        os.remove(os.path.join(self.image_files_path, 'cache_all_wmts.config'))
+        os.remove(os.path.join(self.image_files_path, 'cache_all_twms.config'))
 
 if __name__ == '__main__':
     # Parse options before running tests

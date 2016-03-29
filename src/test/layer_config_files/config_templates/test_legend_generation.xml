@@ -8,7 +8,7 @@
  <EmptyTileSize offset="0">4723</EmptyTileSize>
  <TileMatrixSet>EPSG3413_500m</TileMatrixSet>
  <Projection>EPSG:3413</Projection> 
- <EnvironmentConfig>{testfile_dir}/config/test_legend_generation_environment.xml</EnvironmentConfig>
+ <EnvironmentConfig>{testfile_dir}/conf/test_legend_generation_environment.xml</EnvironmentConfig>
  <ArchiveLocation static="true" year="false" root="test">test_legend_generation</ArchiveLocation>
  <Time>P1D</Time>
  <HeaderFileName type="prefix">test_legend_generation</HeaderFileName>

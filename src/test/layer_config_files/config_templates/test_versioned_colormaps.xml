@@ -21,7 +21,7 @@ limitations under the License.
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
  <EmptyTile>/usr/share/onearth/apache/black.jpg</EmptyTile>
  <Projection>EPSG:4326</Projection> 
- <EnvironmentConfig>{testfile_dir}/config/test_versioned_colormaps_environment.xml</EnvironmentConfig>
+ <EnvironmentConfig>{testfile_dir}/conf/test_versioned_colormaps_environment.xml</EnvironmentConfig>
  <ArchiveLocation static="true" root="test">MODIS_Aqua_Aerosol</ArchiveLocation>
  <ColorMap version="1.0">MODIS_Aqua_Aerosol-GIBS_1.0.xml</ColorMap>
  <ColorMap version="2.0" default="true">MODIS_Aqua_Aerosol-GIBS_2.0.xml</ColorMap>

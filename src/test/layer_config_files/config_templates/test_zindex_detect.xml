@@ -21,7 +21,7 @@ limitations under the License.
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
  <EmptyTileSize offset="0">4327</EmptyTileSize>
  <Projection>EPSG:4326</Projection> 
- <EnvironmentConfig>{testfile_dir}/config/test_period_detection_environment.xml</EnvironmentConfig> 
+ <EnvironmentConfig>{testfile_dir}/conf/test_period_detection_environment.xml</EnvironmentConfig> 
  <ArchiveLocation static="false" year="true" root="test">test_zdb</ArchiveLocation>
  <HeaderFileName type="prefix">test_zdb_layer</HeaderFileName>
  <Time>DETECT</Time>

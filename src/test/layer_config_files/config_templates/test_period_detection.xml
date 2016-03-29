@@ -8,7 +8,7 @@
  <EmptyTileSize offset="0">4723</EmptyTileSize>
  <TileMatrixSet>EPSG4326_1km</TileMatrixSet>
  <Projection>EPSG:4326</Projection> 
- <EnvironmentConfig>{testfile_dir}/config/test_period_detection_environment.xml</EnvironmentConfig>
+ <EnvironmentConfig>{testfile_dir}/conf/test_period_detection_environment.xml</EnvironmentConfig>
  <HeaderFileName type="prefix">test_period_detection</HeaderFileName>
  <ArchiveLocation static="false" year="true" root="test">test_period_detection</ArchiveLocation>
  <Time>DETECT</Time>
