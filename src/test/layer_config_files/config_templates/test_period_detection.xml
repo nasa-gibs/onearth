@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LayerConfiguration>
- <Identifier>test_legacy_subdaily</Identifier>
- <Title>Test Legacy Subdaily</Title>
- <FileNamePrefix>test_legacy_subdaily</FileNamePrefix>
+ <Identifier>test_period_detection</Identifier>
+ <Title>Test Period Detection</Title>
+ <FileNamePrefix>test_period_detection</FileNamePrefix>
  <TiledGroupName>Test tileset</TiledGroupName>
  <Compression>PNG</Compression>
  <EmptyTileSize offset="0">4723</EmptyTileSize>
  <TileMatrixSet>EPSG4326_1km</TileMatrixSet>
- <Projection>EPSG:4326</Projection>
- <EnvironmentConfig>/etc/onearth/config/test/test_layer_config/test_period_detection_environment.xml</EnvironmentConfig>
+ <Projection>EPSG:4326</Projection> 
+ <EnvironmentConfig>{testfile_dir}/config/test_period_detection_environment.xml</EnvironmentConfig>
+ <HeaderFileName type="prefix">test_period_detection</HeaderFileName>
  <ArchiveLocation static="false" year="true" root="test">test_period_detection</ArchiveLocation>
  <Time>DETECT</Time>
   <Raster>

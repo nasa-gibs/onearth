@@ -46,24 +46,35 @@ import itertools
 from optparse import OptionParser
 
 import oe_test_utils as testutils
-from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, get_file_hash
+from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, get_file_hash, file_text_replace
 
 DEBUG = False
+
+import pdb
 
 class TestLayerConfig(unittest.TestCase):
     
     def setUp(self):
-        if os.environ.has_key('LCDIR') == False:
-            self.lcdir = os.path.abspath(os.path.dirname(__file__) + '/..')
-        else:
-            self.lcdir = os.environ['LCDIR']
+        # Get the path of the test data -- we assume that the script is in the parent dir of the data dir
+        config_template_path = os.path.join(os.getcwd(), 'layer_config_files/config_templates')
 
-        self.testfiles_path = os.path.join(self.lcdir, "test/test_layer_config")
-        self.archive_config = os.path.join(self.testfiles_path, 'test_archive_config.xml')
+        # This is that path that will be created to hold all our dummy files
+        self.testfiles_path = os.path.join(os.getcwd(), 'config_tool_test_data')
+
+        # Make dir for the test config XML files and text-replace the templates with the proper location
+        make_dir_tree(os.path.join(self.testfiles_path, 'config'))
+        for file in [f for f in os.listdir(config_template_path) if os.path.isfile(os.path.join(config_template_path, f))]:
+            file_text_replace(os.path.join(config_template_path, file), os.path.join(self.testfiles_path, 'config/' + file),
+                              '{testfile_dir}', self.testfiles_path)
+
+        # Set the location of the archive XML config file used by all tests
+        self.archive_config = os.path.join(self.testfiles_path, 'config/test_archive_config.xml')
+        self.projection_config = os.path.join(self.testfiles_path, 'config/projection.xml')
+        self.tilematrixset_config = os.path.join(self.testfiles_path, 'config/tilematrixsets.xml')
 
     def test_layer_config_default(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'test_default_behavior.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_default_behavior.xml')
 
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -77,19 +88,21 @@ class TestLayerConfig(unittest.TestCase):
         colormap_location = config['colormap_locations'][0].firstChild.nodeValue
         colormap = config['colormaps'][0].firstChild.nodeValue
         make_dir_tree(colormap_location)
-        copy(os.path.join(self.testfiles_path, colormap), colormap_location)
+        copy(os.path.join(self.testfiles_path, 'config/' + colormap), colormap_location)
 
         # Run layer config tool
-        cmd = 'oe_configure_layer -g -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
+        cmd = 'oe_configure_layer -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
    
-        # Get all the test results. We do this because a failure ends the test and makes it impossible to clean up
+        # Get all the test results before running the assertions. We do this because a failure ends the test and makes it impossible to clean up
+        wmts_cache_xml = os.path.join(config['archive_basepath'], 'cache_all_wmts.xml')
         wmts_cache_file = os.path.join(config['archive_basepath'], 'cache_all_wmts.config')
         wmts_cache = os.path.isfile(wmts_cache_file)
         wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
         wmts_gc = os.path.isfile(os.path.join(config['wmts_gc_path'], 'getCapabilities.xml'))
         wmts_staging_file = os.path.join(config['wmts_staging_location'], config['prefix'] + '.xml')
         wmts_staging = os.path.isfile(wmts_staging_file)
+        twms_cache_xml = os.path.join(config['archive_basepath'], 'cache_all_twms.xml')
         twms_cache_file = os.path.join(config['archive_basepath'], 'cache_all_twms.config')
         twms_cache = os.path.isfile(twms_cache_file)
         twms_gc_file = os.path.join(config['twms_gc_path'], 'getCapabilities.xml')
@@ -116,15 +129,18 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['legend_location'])
         rmtree(colormap_location)
 
+        # String searches in the GC and config filenames
         search_string = '<ows:Identifier>' + config['identifier'] + '</ows:Identifier>'
         contains_layer = find_string(wmts_gc_file, search_string)
         os.remove(wmts_gc_file)
+        os.remove(wmts_cache_xml)
         self.assertTrue(contains_layer, 'Default layer config test -- WMTS GetCapabilities does not contain layer')
 
         # Unicode weirdness in the binary configs necessitates running str() on the search strings
         search_string = str('SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=' + config['identifier'] + '&STYLE=(default)?&TILEMATRIXSET=EPSG3413_500m&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg')
         contains_layer = find_string(wmts_cache_file, search_string)
         os.remove(wmts_cache_file)
+        os.remove(twms_cache_xml)
         self.assertTrue(contains_layer, 'Default layer config test -- WMTS cache configuration does not contain layer')
 
         search_string = '<Name>' + config['identifier'] + '</Name>'
@@ -144,10 +160,12 @@ class TestLayerConfig(unittest.TestCase):
 
         rmtree(config['archive_location'])
         rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
 
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'test_legend_generation.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_legend_generation.xml')
         h_legend_ref_hash = '1f4bca87509a8fd82c416fdd5f3eff87'
         v_legend_ref_hash = '4fdb03600a8e5c8b15321dd2505d6838'
 
@@ -161,10 +179,10 @@ class TestLayerConfig(unittest.TestCase):
         make_dir_tree(config['twms_gc_path'])
 
         # Copy colormap to colormaps dir
-        copy(os.path.join(self.testfiles_path, config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'config/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
-        cmd = 'oe_configure_layer -x -g -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
+        cmd = 'oe_configure_layer --skip_empty_tiles -g -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Get hashes of generated legends
@@ -172,15 +190,19 @@ class TestLayerConfig(unittest.TestCase):
             with open(os.path.join(config['legend_location'], config['prefix'] + '_H.svg'), 'r') as f:
                 h_legend_hash = get_file_hash(f)
         except OSError:
-            raise OSError('Horizontal legend not generated')
+            raise ValueError('Horizontal legend not generated')
         try:
             with open(os.path.join(config['legend_location'], config['prefix'] + '_V.svg'), 'r') as f:
                 v_legend_hash = get_file_hash(f)
         except OSError:
-            raise OSError('Vertical legend not generated')
+            raise ValueError('Vertical legend not generated')
 
         # Cleanup
-        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['colormap_locations'][0].firstChild.nodeValue, config['legend_location'])]
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['legend_location'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
 
         # Check if hashes are kosher
         self.assertEqual(h_legend_ref_hash, h_legend_hash, 'Horizontal legend generated does not match expected.')
@@ -188,7 +210,7 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_versioned_colormaps(self):
         # Set locations of the config files we're using for this test
-        layer_config = os.path.join(self.testfiles_path, 'test_versioned_colormaps.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_versioned_colormaps.xml')
 
         test_metadata = ('<ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap" xlink:href="http://localhost/colormaps/2.0/MODIS_Aqua_Aerosol-GIBS_2.0.xml" xlink:title="GIBS Color Map: Data - RGB Mapping"/>',
                          '<ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0" xlink:href="http://localhost/colormaps/1.0//MODIS_Aqua_Aerosol-GIBS_1.0.xml" xlink:title="GIBS Color Map: Data - RGB Mapping"/>'
@@ -200,41 +222,45 @@ class TestLayerConfig(unittest.TestCase):
         for location in config['colormap_locations']:
             make_dir_tree(location.firstChild.nodeValue)
             colormap = next(colormap.firstChild.nodeValue for colormap in config['colormaps'] if colormap.attributes['version'].value == location.attributes['version'].value)
-            copy(os.path.join(self.testfiles_path, colormap), location.firstChild.nodeValue)
+            copy(os.path.join(self.testfiles_path, 'config/' + colormap), location.firstChild.nodeValue)
             
         # Create paths for data and GC
         make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
         make_dir_tree(config['archive_location'])
 
-        # Run layer config tool with test data
-        cmd = 'oe_configure_layer -a {0} -l {1} -c {2} -e -n'.format(self.archive_config, self.lcdir, layer_config)
-        testutils.run_command(cmd)
+        # Run layer config tool
+        cmd = 'oe_configure_layer --skip_empty_tiles -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
 
         # Check to see if all required metadata lines are in the getCapabilities
         gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
         metadata_pass = all(line for line in test_metadata if find_string(gc_file, line))
         self.assertTrue(metadata_pass, "Can't find all the proper versioned colormap metadata in the WMTS GetCapabilities file or GC file was not created.")
 
-        # Cleanup -- make sure to get rid of staging files
+        # Cleanup
         [rmtree(path) for path in [path.firstChild.nodeValue for path in config['colormap_locations']]]
-        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['wmts_staging_location'])]
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
 
     def test_empty_tile_generation(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'test_empty_tile_generation.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_empty_tile_generation.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
         # Create paths for data and GC
         make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
         make_dir_tree(config['archive_location'])
 
         # Copy the demo colormap
         make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
-        copy(os.path.join(self.testfiles_path, config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'config/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
-        cmd = 'oe_configure_layer -x -a {0} -l {1} -c {2} -n'.format(self.archive_config, self.lcdir, layer_config)
+        cmd = 'oe_configure_layer -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Verify hash
@@ -242,7 +268,11 @@ class TestLayerConfig(unittest.TestCase):
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
-        [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'], config['wmts_staging_location'], config['colormap_locations'][0].firstChild.nodeValue)]
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
         os.remove(config['empty_tile'])
 
         # Check result
@@ -252,14 +282,14 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING CONTINUOUS PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'test_period_detection.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_period_detection.xml')
 
         # Pick the start time for the dates that will be generated
         start_datetime = datetime.datetime(2014, 6, 1)
 
         # Set the various period units and lengths we'll be testing
         test_periods = (('days', 1), ('days', 5), ('months', 1), ('years', 1))
-        
+
         config = get_layer_config(layer_config, self.archive_config)
 
         for period_unit, period_length in test_periods:
@@ -267,14 +297,16 @@ class TestLayerConfig(unittest.TestCase):
             for year_dir in (True, False):
                 make_dir_tree(config['wmts_gc_path'])
                 make_dir_tree(config['twms_gc_path'])
+                make_dir_tree(config['wmts_staging_location'])
+                make_dir_tree(config['twms_staging_location'])
 
                 # Generate the empty test files
                 test_dates = testutils.create_continuous_period_test_files(
                     config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
 
                 # Run layer config command for daily test days
-                cmd = 'oe_configure_layer -e -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
-                testutils.run_command(cmd, ignore_warnings=True)
+                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+                run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
                 wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
@@ -297,8 +329,11 @@ class TestLayerConfig(unittest.TestCase):
                 # twms_error = "{0} {1} period detection failed -- not found in TMWS GetCapabilities".format(period_length, period_unit)
                 # self.assertTrue(find_string(twms_gc_file, search_string), twms_error)
 
-                # Cleanup
-                [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'])]
+                # Cleanup -- make sure to get rid of staging files
+                rmtree(config['wmts_gc_path'])
+                rmtree(config['wmts_staging_location'])
+                rmtree(config['twms_staging_location'])
+                rmtree(config['archive_location'])
 
                 # Check result
                 self.assertTrue(test_result, wmts_error)
@@ -307,7 +342,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING INTERMITTENT PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'test_period_detection.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_period_detection.xml')
 
         # Pick the start time for the dates that will be generated
         start_datetime = datetime.datetime(2014, 6, 1)
@@ -322,14 +357,16 @@ class TestLayerConfig(unittest.TestCase):
             for year_dir in (True, False):
                 make_dir_tree(config['wmts_gc_path'])
                 make_dir_tree(config['twms_gc_path'])
+                make_dir_tree(config['wmts_staging_location'])
+                make_dir_tree(config['twms_staging_location'])
 
                 # Generate the empty test files
                 test_intervals = testutils.create_intermittent_period_test_files(
                     config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
 
                 # Run layer config command for daily test days
-                cmd = 'oe_configure_layer -e -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
-                testutils.run_command(cmd, ignore_warnings=True)
+                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+                run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
                 wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
@@ -359,8 +396,11 @@ class TestLayerConfig(unittest.TestCase):
 
                 search_result = all(string for string in search_strings if find_string(wmts_gc_file, string))
                 
-                # Cleanup
-                [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'])]
+                # Cleanup -- make sure to get rid of staging files
+                rmtree(config['wmts_gc_path'])
+                rmtree(config['wmts_staging_location'])
+                rmtree(config['twms_staging_location'])
+                rmtree(config['archive_location'])
 
                 # Check result
                 self.assertTrue(search_result, wmts_error)
@@ -372,7 +412,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING CONTINUOUS Z-LEVEL PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'test_zindex_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_zindex_detect.xml')
         test_periods = (('minutes', 1), ('minutes', 5), ('hours', 1))
         start_datetime = datetime.datetime(2014, 6, 1, 12, 0, 0)
         start_datestring = str(start_datetime.year) + str(start_datetime.timetuple().tm_yday).zfill(3)
@@ -387,6 +427,8 @@ class TestLayerConfig(unittest.TestCase):
             # Make temp GC and archive directories and dummy MRF
             make_dir_tree(config['wmts_gc_path'])
             make_dir_tree(config['twms_gc_path'])
+            make_dir_tree(config['wmts_staging_location'])
+            make_dir_tree(config['twms_staging_location'])
             dummy_mrf = os.path.join(archive_location, config['prefix'] + start_datestring + '_.mrf')
             open(dummy_mrf, 'a').close()
 
@@ -415,9 +457,8 @@ class TestLayerConfig(unittest.TestCase):
 
             # Close ZDB and run layer config
             conn.close()
-
-            cmd = 'oe_configure_layer -e -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
-            testutils.run_command(cmd, ignore_warnings=True)
+            cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+            run_command(cmd, ignore_warnings=True)
 
             # Check to see if proper period in GetCapabilities
             wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
@@ -434,8 +475,11 @@ class TestLayerConfig(unittest.TestCase):
 
             # Cleanup
             conn.close()
-            [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'])]
-
+            rmtree(config['wmts_gc_path'])
+            rmtree(config['wmts_staging_location'])
+            rmtree(config['twms_staging_location'])
+            rmtree(config['archive_location'])
+            
             # Check result
             self.assertTrue(check_result, error)
 
@@ -446,7 +490,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING INTERMITTENT Z-LEVEL PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'test_zindex_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_zindex_detect.xml')
         test_periods = (('minutes', 1), ('minutes', 5), ('hours', 1))
         start_datetime = datetime.datetime(2014, 6, 1, 12, 0, 0)
         start_datestring = str(start_datetime.year) + str(start_datetime.timetuple().tm_yday).zfill(3)
@@ -461,6 +505,8 @@ class TestLayerConfig(unittest.TestCase):
             # Make temp GC and archive directories and dummy MRF
             make_dir_tree(config['wmts_gc_path'])
             make_dir_tree(config['twms_gc_path'])
+            make_dir_tree(config['wmts_staging_location'])
+            make_dir_tree(config['twms_staging_location'])
             dummy_mrf = os.path.join(archive_location, config['prefix'] + start_datestring + '_.mrf')
             open(dummy_mrf, 'a').close()
 
@@ -490,8 +536,9 @@ class TestLayerConfig(unittest.TestCase):
             # Close ZDB and run layer config
             conn.close()
 
-            cmd = 'oe_configure_layer -e -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
-            testutils.run_command(cmd, ignore_warnings=True)
+            # Run layer config command
+            cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+            run_command(cmd, ignore_warnings=True)
 
             # Check to see if proper period in GetCapabilities
             wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
@@ -514,7 +561,10 @@ class TestLayerConfig(unittest.TestCase):
 
             # Cleanup
             conn.close()
-            [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'])]
+            rmtree(config['wmts_gc_path'])
+            rmtree(config['wmts_staging_location'])
+            rmtree(config['twms_staging_location'])
+            rmtree(config['archive_location'])
 
             # Check result
             self.assertTrue(check_result, error)
@@ -528,7 +578,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING LEGACY SUBDAILY CONTINUOUS PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'test_subdaily_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_subdaily_detect.xml')
         start_datetime = datetime.datetime(2014, 6, 1, 12)
         config = get_layer_config(layer_config, self.archive_config)
         
@@ -542,6 +592,8 @@ class TestLayerConfig(unittest.TestCase):
                 # Make the GC dirs
                 make_dir_tree(config['wmts_gc_path'])
                 make_dir_tree(config['twms_gc_path'])
+                make_dir_tree(config['wmts_staging_location'])
+                make_dir_tree(config['twms_staging_location'])
 
                 # Create a continuous set of period files for each time interval
                 test_dates = testutils.create_continuous_period_test_files(config['archive_location'], period_unit, period_length, 4, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
@@ -553,8 +605,8 @@ class TestLayerConfig(unittest.TestCase):
                     for date in test_dates:
                         print date.isoformat()
 
-                # Run layer config tool for this test config
-                cmd = 'oe_configure_layer -e -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
+                # Run layer config command
+                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
                 run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
@@ -570,7 +622,10 @@ class TestLayerConfig(unittest.TestCase):
                     print '\n' + 'Searching for string in GetCapabilities: ' + search_string
 
                 # Cleanup
-                [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'])]
+                rmtree(config['wmts_gc_path'])
+                rmtree(config['wmts_staging_location'])
+                rmtree(config['twms_staging_location'])
+                rmtree(config['archive_location'])
 
                 # Check result
                 error = "{0} {1} continuous subdaily legacy period detection failed -- not found in WMTS GetCapabilities".format(period_length, period_unit)
@@ -585,7 +640,7 @@ class TestLayerConfig(unittest.TestCase):
         if DEBUG:
             print '\nTESTING LEGACY SUBDAILY INTERMITTENT PERIOD DETECTION...'
 
-        layer_config = os.path.join(self.testfiles_path, 'test_subdaily_detect.xml')
+        layer_config = os.path.join(self.testfiles_path, 'config/test_subdaily_detect.xml')
         start_datetime = datetime.datetime(2014, 6, 1, 12)
         config = get_layer_config(layer_config, self.archive_config)
         
@@ -598,6 +653,9 @@ class TestLayerConfig(unittest.TestCase):
                 # Make the GC dirs
                 make_dir_tree(config['wmts_gc_path'])
                 make_dir_tree(config['twms_gc_path'])
+                make_dir_tree(config['wmts_staging_location'])
+                make_dir_tree(config['twms_staging_location'])
+
 
                 test_intervals = testutils.create_intermittent_period_test_files(config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
 
@@ -608,8 +666,8 @@ class TestLayerConfig(unittest.TestCase):
                     for date in itertools.chain.from_iterable(test_intervals):
                         print date.isoformat()
 
-                # Run layer config tool for this test config
-                cmd = 'oe_configure_layer -e -a {0} -l {1} -c {2}'.format(self.archive_config, self.lcdir, layer_config)
+                # Run layer config command
+                cmd = 'oe_configure_layer -z -e -a {0} -c {1} -p {2} -m {3}'.format(self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
                 run_command(cmd, ignore_warnings=True)
 
                 # Check to see if proper period in GetCapabilities
@@ -632,25 +690,16 @@ class TestLayerConfig(unittest.TestCase):
                 check_result = all(string for string in search_strings if find_string(wmts_gc_file, string))
 
                 # Cleanup
-                [rmtree(path) for path in (config['wmts_gc_path'], config['archive_basepath'])]
+                rmtree(config['wmts_gc_path'])
+                rmtree(config['wmts_staging_location'])
+                rmtree(config['twms_staging_location'])
+                rmtree(config['archive_location'])
 
                 # Check result
                 self.assertTrue(check_result, error)
 
-    # def tearDown(self):
-    #     # os.remove(self.cachedir + "MODIS_Aqua_Aerosol/MODIS_Aqua_Aerosol2014364_.mrf")
-    #     # rmtree(self.cachedir + "MODIS_Aqua_Aerosol/")
-    #     # os.remove("/usr/share/onearth/layer_config/wmts/EPSG4326/MODIS_Aqua_Aerosol2014364_.xml")
-    #     # os.remove("/usr/share/onearth/layer_config/wmts/EPSG4326/MODIS_Aqua_Aerosol2014364_.mrf")
-    #     # os.remove("/usr/share/onearth/layer_config/twms/EPSG4326/MODIS_Aqua_Aerosol2014364__gc.xml")
-    #     # os.remove("/usr/share/onearth/layer_config/twms/EPSG4326/MODIS_Aqua_Aerosol2014364__gts.xml")
-    #     # os.remove(self.lcdir + "/test/empty_tile.png")
-        
-    #     # Clean up the dummy files in case of failed period tests
-    #     try:
-    #         os.rmtree(self.period_test_artifacts)
-    #     except OSError:
-    #         pass
+    def tearDown(self):
+        rmtree(self.testfiles_path)
 
 if __name__ == '__main__':
     # Parse options before running tests

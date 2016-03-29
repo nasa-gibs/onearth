@@ -5,12 +5,13 @@
  <FileNamePrefix>test_empty</FileNamePrefix>
  <TiledGroupName>test tileset</TiledGroupName>
  <Compression>JPG</Compression>
- <EmptyTile>/etc/onearth/config/test/test_layer_config/empty.jpg</EmptyTile>
+ <EmptyTile>{testfile_dir}/empty.jpg</EmptyTile>
  <TileMatrixSet>EPSG3413_500m</TileMatrixSet>
  <Projection>EPSG:3413</Projection> 
- <EnvironmentConfig>/etc/onearth/config/test/test_layer_config/test_empty_environment.xml</EnvironmentConfig>
+ <EnvironmentConfig>{testfile_dir}/config/test_empty_environment.xml</EnvironmentConfig>
  <ArchiveLocation static="true" year="false" root="test">test_empty</ArchiveLocation>
  <Time>P1D</Time>
+ <HeaderFileName type="prefix">test_empty</HeaderFileName>
  <ColorMap>MODIS_Aqua_Aerosol-GIBS_colormap.xml</ColorMap>
   <Raster>
     <Size x="20480" y="10240" c="1"/>

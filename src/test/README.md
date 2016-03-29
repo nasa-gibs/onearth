@@ -2,13 +2,11 @@
 
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
-* `test_mod_onearth.py` -- tests the OnEarth Apache module
+* `test_mod_onearth.py` -- tests the OnEarth Apache module (requires `sudo`)
 * `test_layer_config.py` -- tests the Layer Config tool
 
 ##Setup
-These tests assume that OnEarth and its associated utilities are installed. Test files must be copied to a directory that Apache has permissions to access.
-
-The contents of this directory need to be copied to `/etc/onearth/config`. You'll need to make sure that the `LCDIR` environment variable is properly set.
+These tests assume that OnEarth and its associated utilities are installed. Test files for **mod_onearth** tests must be copied to a directory that Apache has permission to access.
 
 The tests have additional dependencies from the rest of OnEarth. To install the Python dependencies required by the test scripts, run `sudo pip install -r requirements.txt`.
 

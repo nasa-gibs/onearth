@@ -42,9 +42,6 @@ from dateutil.relativedelta import relativedelta
 import sqlite3
 import urllib2
 
-import pdb
-
-
 def add_trailing_slash(directory_path):
     """
     Add trailing slash if one is not already present.
