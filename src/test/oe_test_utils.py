@@ -42,6 +42,7 @@ from dateutil.relativedelta import relativedelta
 import sqlite3
 import urllib2
 
+
 def add_trailing_slash(directory_path):
     """
     Add trailing slash if one is not already present.
@@ -64,6 +65,7 @@ def restart_apache():
     apache.communicate()
     subprocess.call(['sleep', '3'])
 
+
 def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     """
     Runs the provided command on the terminal and prints any stderr output.
@@ -82,6 +84,7 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
                 raise ValueError(error.strip())
     return None
 
+
 def find_string(file_path, string):
     try:
         with open(file_path, 'r') as f:
@@ -89,6 +92,7 @@ def find_string(file_path, string):
     except OSError:
         result = False
     return result
+
 
 def search_for_strings(string_list, file_path):
     """
@@ -412,7 +416,7 @@ def get_url(url):
     try:
         response = urllib2.urlopen(url)
     except urllib2.URLError:
-        raise urllib2.URLError('Cannot access test image at URL: ' + url)
+        raise urllib2.URLError('Cannot access URL: ' + url)
     return response
 
 
@@ -480,11 +484,15 @@ def test_snap_request(hash_table, req_url):
 def get_xml(file):
     """
     Opens an XML file, parses it, and returns a DOM object.
+    Returns 'None' if not valid XML.
     Arguments:
         file -- file to be opened.
     """
     with open(file, 'r') as f:
-        dom = xml.dom.minidom.parse(f)
+        try:
+            dom = xml.dom.minidom.parse(f)
+        except xml.parsers.expat.ExpatError:
+            return None
     return dom
 
 

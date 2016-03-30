@@ -6,12 +6,14 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_layer_config.py` -- tests the Layer Config tool
 
 ##Setup
-These tests assume that OnEarth and its associated utilities are installed. Test files for **mod_onearth** tests must be copied to a directory that Apache has permission to access.
+These tests assume that OnEarth and its associated utilities are installed. *Test files for **mod_onearth** tests must be copied to a directory that Apache has permission to access.*
 
 The tests have additional dependencies from the rest of OnEarth. To install the Python dependencies required by the test scripts, run `sudo pip install -r requirements.txt`.
 
 ##Running the Tests
 Each test script will output a JUnit XML results file. By default, these files are named `test_layer_config_results.xml` and `test_mod_onearth_results.xml`. A different output filename can be specified with the `-o` option, i.e. `sudo python test_mod_onearth.py -o output_file.xml`.
+
+**Note that the included `mod_onearth_test_data/twms_endpoint/kmlgen.cgi` has been compiled for use in CentOS 6. It may need to be recompiled for other systems. For more information, see [OnEarth Endpoint Configuration](doc/config_endpoint.md).**
 
 
 ###Additional Test Options
@@ -63,26 +65,27 @@ Each test script will output a JUnit XML results file. By default, these files a
 37. Support for versioned color maps
 
 ##List of mod_onearth tests:
-* Request current (no time) PNG tile via WMTS
-* Request current (no time) JPEG tile via WMTS
-* Request current (time=default) PNG tile via WMTS
-* Request current (time=default) JPEG tile via WMTS
-* Request tile with date from “year” layer via WMTS
-* Request tile with date  from “non-year” layer via WMTS
-* Request tile with date and time (sub-daily) from “year” layer via WMTS 
-* Request tile with date and time (z-level) from “year” layer via WMTS
-* Request tile from static layer with no time via WMTS
-* Request current (no time) PNG tile via TWMS
-* Request current (no time) JPEG tile via TWMS
-* Request tile with date via TWMS
-* Request tile with date via KML
-* Request WMTS GetCapabilities
-* Request TWMS GetCapabilities
-* Request TWMS GetTileService
-* WMTS Error handling
-* URL Parameter Case Insensitivity
-* URL Parameter Reordering
-* WMTS REST requests
+1. Request current (no time) JPEG tile via WMTS
+2. Request current (no time) PNG tile via WMTS
+3. Request current (time=default) JPEG tile via WMTS
+4. Request current (time=default) PNG tile via WMTS
+5. Request current (no time) JPEG tile via TWMS
+6. Request current (no time) PNG tile via TWMS
+7. Request tile with date from “year” layer via WMTS
+8. Request tile with date  from “non-year” layer via WMTS
+9. Request tile with date and time (sub-daily) from “year” layer via WMTS 
+10. Request tile with date and time (z-level) from “year” layer via WMTS
+11. Request tile with date and time (z-level) from “year” layer via TWMS
+11. Request tile from static layer with no time via WMTS
+12. Request tile with date via TWMS
+13. Request tile with date via KML
+14. Request WMTS GetCapabilities
+15. Request TWMS GetCapabilities
+16. Request TWMS GetTileService
+17. URL Parameter Case Insensitivity
+18. URL Parameter Reordering
+19. WMTS Error handling
+20. WMTS REST requests
 
 ####Date Snapping Tests
 
