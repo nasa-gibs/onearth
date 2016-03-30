@@ -19,7 +19,7 @@ limitations under the License.
  <TiledGroupName>MODIS_Aqua_Aerosol tileset</TiledGroupName>
  <Compression>PNG</Compression>
  <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
- <EmptyTile>/usr/share/onearth/apache/black.jpg</EmptyTile>
+ <EmptyTileSize offset="0">4723</EmptyTileSize>
  <Projection>EPSG:4326</Projection> 
  <EnvironmentConfig>{testfile_dir}/conf/test_versioned_colormaps_environment.xml</EnvironmentConfig>
  <ArchiveLocation static="true" root="test">MODIS_Aqua_Aerosol</ArchiveLocation>
