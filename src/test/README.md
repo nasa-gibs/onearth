@@ -13,7 +13,6 @@ The tests have additional dependencies from the rest of OnEarth. To install the 
 ##Running the Tests
 Each test script will output a JUnit XML results file. By default, these files are named `test_layer_config_results.xml` and `test_mod_onearth_results.xml`. A different output filename can be specified with the `-o` option, i.e. `sudo python test_mod_onearth.py -o output_file.xml`.
 
-**Note that the tests need to be run with root privileges.**
 
 ###Additional Test Options
 ####test_mod_onearth.py
