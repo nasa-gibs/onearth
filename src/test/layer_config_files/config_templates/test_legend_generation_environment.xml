@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EnvironmentConfiguration>
+    <GetCapabilitiesLocation service="wmts">{testfile_dir}/gc</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">{testfile_dir}/gc/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>{testfile_dir}/gc/.lib/</GetTileServiceLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">{testfile_dir}/</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">{testfile_dir}/</CacheLocation>
+    <StagingLocation service="wmts">{testfile_dir}/wmts/staging/</StagingLocation>
+    <StagingLocation service="twms">{testfile_dir}/twms/staging/</StagingLocation>
+    <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
+    <LegendLocation>{testfile_dir}/legends/</LegendLocation>
+    <LegendURL>http://localhost/legends/</LegendURL>
+    <ColorMapLocation>{testfile_dir}/colormaps/</ColorMapLocation>
+    <ColorMapURL>http://localhost/colormaps</ColorMapURL>
+</EnvironmentConfiguration>

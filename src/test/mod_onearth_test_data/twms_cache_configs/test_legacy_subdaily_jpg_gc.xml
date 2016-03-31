@@ -1,0 +1,10 @@
+    <Layer queryable="0">
+      <Name>test_legacy_subdaily_jpg</Name>
+      <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+      <Abstract xml:lang="en">test_legacy_subdaily_jpg abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>

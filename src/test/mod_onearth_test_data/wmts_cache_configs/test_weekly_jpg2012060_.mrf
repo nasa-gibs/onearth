@@ -1,0 +1,23 @@
+<MRF_META>
+  <Raster>
+    <Size c="3" x="2560" y="1280"/>
+    <Compression>JPEG</Compression>
+    <DataValues NoData="0"/>
+    <Quality>80</Quality>
+    <PageSize c="3" x="512" y="512"/>
+  </Raster>
+  <Rsets model="uniform" scale="2">
+    <DataFileName>{cache_path}/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.pjg</DataFileName>
+    <IndexFileName>{cache_path}/test_weekly_jpg/YYYY/test_weekly_jpgTTTTTTT_.idx</IndexFileName>
+  </Rsets>
+  <GeoTags>
+    <BoundingBox maxx="180.00000000" maxy=" 90.00000000" minx="-180.00000000" miny="-90.00000000"/>
+  </GeoTags>
+  <TWMS>
+    <Levels>3</Levels>
+    <EmptyInfo offset="0" size="4723"/>
+    <Pattern><![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=test_weekly_jpg&STYLE=(default)?&TILEMATRIXSET=EPSG4326_16km&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg]]></Pattern>
+    <Time>2012-02-22/2012-02-29/P7D</Time>
+  </TWMS>
+  <Projection><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]]]></Projection>
+</MRF_META>
