@@ -170,6 +170,22 @@ def log_sig_warn(mssg, sigevent_url):
         sent=sigevent('WARN', mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
+        
+def log_sig_err(mssg, sigevent_url):
+    """
+    Send an error to the log and to sigevent.
+    Arguments:
+        mssg -- 'message for operations'
+        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
+    """
+    # Send to log.
+    logging.warning(time.asctime())
+    logging.warning(mssg)
+    # Send to sigevent.
+    try:
+        sent=sigevent('ERROR', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
 
 def log_sig_exit(type, mssg, sigevent_url):
     """
@@ -552,10 +568,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     insert_message = gdal_merge.stderr.readlines()
     for message in insert_message:
         if 'ERROR' in message.upper():
-            try:
-                sigevent('ERROR', message + ' in gdal_merge.py while processing ' + tile, sigevent_url)
-            except urllib2.URLError:
-                print 'sigevent service is unavailable'
+            log_sig_err(message + ' in gdal_merge.py while processing ' + tile, sigevent_url)
         else:
             print message.strip()
     gdal_merge.wait()
@@ -702,11 +715,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             if 'Access window out of range' in message:
                 log_sig_warn(message, sigevent_url)
             elif 'ERROR' in message:
-                try:
-                    errors += 1
-                    sigevent('ERROR', 'mrf_insert ' + message, sigevent_url)
-                except urllib2.URLError:
-                    print 'sigevent service is unavailable'
+                errors += 1
+                log_sig_err('mrf_insert ' + message, sigevent_url)
             else:
                 print message.strip()
         # clean up        
@@ -1267,11 +1277,8 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
                 if 'DirectClass' in identify_process.stdout.readlines()[0]:
                     goodtiles.append(tile)
                 else:
-                    try:
-                        errors += 1
-                        sigevent('ERROR', 'Bad JPEG tile detected: ' + tile, sigevent_url)
-                    except urllib2.URLError:
-                        print 'sigevent service is unavailable'
+                    errors += 1
+                    log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
             except OSError:
                 if i==0:
                     log_sig_warn('identify command not found, unable to detect bad JPEG tiles', sigevent_url)
@@ -1362,26 +1369,22 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                         mssg = "RGBApng2Palpng: " + str(RGBApng2Palpng.returncode) + " colors in image not found in color table"
                         log_sig_warn(mssg, sigevent_url)
                     if RGBApng2Palpng.returncode == 255:
-                        try:
-                            mssg = sigevent('ERROR', "RGBApng2Palpng: " + str(RGBApng2Palpng.stderr.readlines()[-1]), sigevent_url)
-                        except urllib2.URLError:
-                            print 'sigevent service is unavailable'
+                        mssg = str(RGBApng2Palpng.stderr.readlines()[-1])
+                        log_sig_err("RGBApng2Palpng: " + mssg, sigevent_url)
                     errors += RGBApng2Palpng.returncode
                 
                 if os.path.isfile(output_tile):
                     mssg = output_tile + " created"
                     try:
+                        log_info_mssg(mssg)
                         sigevent('INFO', mssg, sigevent_url)
                     except urllib2.URLError:
                         print 'sigevent service is unavailable'
                     # Replace with new tiles
                     alltiles[i] = output_tile
                 else:
-                    try:
-                        errors += 1
-                        sigevent('ERROR', "RGBApng2Palpng failed to create " + output_tile, sigevent_url)
-                    except urllib2.URLError:
-                        print 'sigevent service is unavailable'
+                    errors += 1
+                    log_sig_err("RGBApng2Palpng failed to create " + output_tile, sigevent_url)
                 
                 # Make a copy of world file
                 if os.path.isfile(tile_path+'/'+tile_basename+'.pgw'):
@@ -1536,6 +1539,7 @@ if len(mrf_list) > 0:
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
     try:
+        log_info_mssg(mssg)
         sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
@@ -1956,6 +1960,7 @@ for tilename in (alltiles):
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])
 try:
+    log_info_mssg(mssg)
     sigevent('INFO', mssg, sigevent_url)
 except urllib2.URLError:
     None
