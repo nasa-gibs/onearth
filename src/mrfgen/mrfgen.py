@@ -399,10 +399,10 @@ def diff_resolution(tiles):
     """
     next_x = 0
     if len(tiles) <= 1:
-        print "Single tile detected"
+        log_info_mssg("Single tile detected")
         return (False, next_x)
     
-    print "Checking for different resolutions in tiles"
+    log_info_mssg("Checking for different resolutions in tiles")
     res = ""
     for tile in tiles:
         gdalinfo_command_list=['gdalinfo', tile]
@@ -411,7 +411,7 @@ def diff_resolution(tiles):
             if "Pixel Size =" in line:
                 if res == "":
                     res = line.split("=")[1].strip()
-                    print "Input tile pixel size is: " + res
+                    log_info_mssg("Input tile pixel size is: " + res)
                     res_x = float(res.split(',')[0].replace('(',''))
                     res_y = float(res.split(',')[1].replace(')',''))
                 else:
@@ -419,7 +419,7 @@ def diff_resolution(tiles):
                     next_x = float(next_res.split(',')[0].replace('(',''))
                     next_y = float(next_res.split(',')[1].replace(')',''))
                     if res_x != next_x and res_y != next_y:
-                        print "Different tile resolutions detected"
+                        log_info_mssg("Different tile resolutions detected")
                         return (True, next_x)              
     return (False, next_x)
 
@@ -433,7 +433,7 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
         xmax -- Maximum x value
         ymax -- Maximum y value
     """
-    print "Checking for global image"
+    log_info_mssg("Checking for global image")
     upper_left = False
     lower_right = False
     gdalinfo_command_list=['gdalinfo', tile]
@@ -459,7 +459,7 @@ def is_granule_image(tile):
     Argument:
         tile -- Tile to test
     """
-    print "Checking for granule image"
+    log_info_mssg("Checking for granule image")
     is_granule = False
     gdalinfo_command_list=['gdalinfo', tile]
     gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -518,7 +518,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
         # prevents extra line appearing along edges
         block_y = block_y * 2
     block = max([block_x,block_y])    
-    print "Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y))
+    log_info_mssg("Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y)))
     
     # calculate new extents that align with MRF blocks
     ulx = float((math.floor((ulx*x_res) / block)) * block) / x_res
@@ -570,7 +570,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         if 'ERROR' in message.upper():
             log_sig_err(message + ' in gdal_merge.py while processing ' + tile, sigevent_url)
         else:
-            print message.strip()
+            log_info_mssg(message.strip())
     gdal_merge.wait()
     return new_tile
 
@@ -654,7 +654,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
     s_xmin, s_ymin, s_xmax, s_ymax = source_extents
     if target_y == '':
         target_y = float(int(target_x)/2)
-    print "Inserting new tiles to", mrf
+    log_info_mssg("Inserting new tiles to " + mrf)
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
     for tile in tiles:
         if os.path.splitext(tile)[1] == ".vrt" and "_cut." not in tile: #ignore temp VRTs unless it's an antimeridian cut
@@ -662,15 +662,15 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             continue
         granule, extents = is_granule_image(tile)
         diff_res, ps = diff_resolution([tile, mrf])
-        print "Pixel size " + repr(ps)
+        log_info_mssg("Pixel size " + repr(ps))
         # check if granule crosses antimeridian
         if granule == True and ((float(extents[0])-float(s_xmax)) > float(extents[2])):
-            print tile + " crosses antimeridian"
+            log_info_mssg(tile + " crosses antimeridian")
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)))
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
             continue
         if blend == True and granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
-            print "Granule extents " + str(extents)
+            log_info_mssg("Granule extents " + str(extents))
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
         if diff_res:
             # convert tile to matching resolution
@@ -695,7 +695,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             tile_vrt.wait()
             if blend == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(tile+".vrt") # get new extents
-                print "Granule extents " + str(extents)
+                log_info_mssg("Granule extents " + str(extents))
                 tile = gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
                 mrf_insert_command_list.append(tile)
             else:
@@ -718,7 +718,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 errors += 1
                 log_sig_err('mrf_insert ' + message, sigevent_url)
             else:
-                print message.strip()
+                log_info_mssg(message.strip())
         # clean up        
         if ".blend." in tile:
             remove_file(tile)
@@ -799,7 +799,7 @@ def insert_zdb(mrf, zlevels, zkey):
                     try:
                         cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
                     except sqlite3.Error, e: # if 0 index has already been taken
-                        print "%s: trying new ID" % e.args[0]
+                        log_info_mssg("%s: trying new ID" % e.args[0])
                         cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
                 else:
                     cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
@@ -1285,26 +1285,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
                 goodtiles.append(tile)
             except IndexError:
                 log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
-    alltiles = goodtiles
-    
-# Convert TIFF files
-# for i, tile in enumerate(alltiles):
-#     if '.tif' in tile:
-#         print "Converting TIFF file " + tile + " to " + tiff_compress
-#           
-#         # Create the gdal_translate command.
-#         gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
-#                                      tile, working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()]
-#         # Log the gdal_translate command.
-#         log_the_command(gdal_translate_command_list)
-#   
-#         # Execute gdal_translate.
-#         subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
-#                         stderr=subprocess.PIPE)
-#           
-#         # Replace with new tiles
-#         alltiles[i] = working_dir+os.path.basename(tile).split('.')[0]+'.'+str(tiff_compress).lower()
-        
+    alltiles = goodtiles       
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
 if mrf_compression_type == 'PPNG' and colormap != '':
@@ -1325,7 +1306,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             if "ColorInterp=Palette" not in gdalinfo.stdout.read():
                 if '.tif' in tile.lower():
                     # Convert TIFF files to PNG
-                    print "Converting TIFF file " + tile + " to " + tiff_compress
+                    log_info_mssg("Converting TIFF file " + tile + " to " + tiff_compress)
                        
                     # Create the gdal_translate command.
                     gdal_translate_command_list=['gdal_translate', '-q', '-of', tiff_compress, '-co', 'WORLDFILE=YES',
@@ -1341,7 +1322,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     tile = working_dir+tile_basename+'.'+str(tiff_compress).lower()
                     temp_tile = tile
                 
-                print "Converting RGBA PNG to indexed paletted PNG"
+                log_info_mssg("Converting RGBA PNG to indexed paletted PNG")
                 
                 output_tile = working_dir + tile_basename+'_indexed.png'
                 output_tile_path = os.path.dirname(output_tile)
@@ -1392,12 +1373,12 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 elif os.path.isfile(tile_basename+'.wld'):
                     shutil.copy(tile_path+'/'+tile_basename+'.wld', output_tile_path+'/'+output_tile_basename+'.pgw')
                 else:
-                    print "World file does not exist for tile: " + tile
+                    log_info_mssg("World file does not exist for tile: " + tile)
                     
                 # add transparency flag for custom color map
                 add_transparency = True
             else:
-                print "Paletted image verified"
+                log_info_mssg("Paletted image verified")
                 
         # remove tif temp tiles
         if temp_tile != None:
@@ -1689,7 +1670,7 @@ if colormap != '':
     subprocess.call(colormap2vrt_command_list, stderr=colormap2vrt_stderr_file)
     colormap2vrt_stderr_file.seek(0)
     colormap2vrt_stderr = colormap2vrt_stderr_file.read()
-    print colormap2vrt_stderr
+    log_info_mssg(colormap2vrt_stderr)
     if "Error" in colormap2vrt_stderr:
         log_sig_exit('ERROR', "Error executing colormap2vrt.py with colormap:" + colormap, sigevent_url)
     colormap2vrt_stderr_file.close()
@@ -1873,7 +1854,7 @@ if idxf >= vrtf:
         # Execute gdaladdo.
         gdaladdo_process = subprocess.Popen(gdaladdo_command_list, stdout=subprocess.PIPE, stderr=gdaladdo_stderr_file)
         out, err = gdaladdo_process.communicate()
-        print out            
+        log_info_mssg(out)            
         #-------------------------------------------------------------------
 
         # Close stderr file.
