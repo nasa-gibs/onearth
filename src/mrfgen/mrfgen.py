@@ -128,6 +128,8 @@ def sigevent(type, mssg, sigevent_url):
     data['format']='TEXT'
     data['category']='MRFGEN'
     data['provider']='GIBS'
+    if basename != None:
+        data['data']=basename
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
