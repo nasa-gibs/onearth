@@ -1,5 +1,5 @@
 Name:		onearth
-Version:	0.9.1
+Version:	0.9.2
 Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
