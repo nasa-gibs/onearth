@@ -90,7 +90,7 @@ import imghdr
 import sqlite3
 import math
 
-versionNumber = '0.9.1'
+versionNumber = '0.9.2'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -441,11 +441,11 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     for line in gdalinfo.stdout.readlines():
         if "Upper Left" in line:
             in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
-            if int(round(float(in_xmin.strip()))) == int(round(float(xmin))) and int(round(float(in_ymax.strip().split(' ')[0]))) == int(round(float(ymax))):
+            if int(round(float(in_xmin.strip()))) <= int(round(float(xmin))) and int(round(float(in_ymax.strip().split(' ')[0]))) >= int(round(float(ymax))):
                 upper_left = True
         if "Lower Right" in line:
             in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
-            if int(round(float(in_xmax.strip()))) == int(round(float(xmax))) and int(round(float(in_ymin.strip().split(' ')[0]))) == int(round(float(ymin))):
+            if int(round(float(in_xmax.strip()))) >= int(round(float(xmax))) and int(round(float(in_ymin.strip().split(' ')[0]))) <= int(round(float(ymin))):
                 lower_right = True
     if upper_left == True and lower_right == True:
         log_info_mssg(tile + " is a global image")
@@ -682,7 +682,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 tile_vrt_command_list.append(source_epsg)
                 tile_vrt_command_list.append('-t_srs')
                 tile_vrt_command_list.append(target_epsg)
-            if is_global_image(tile, xmin, ymin, xmax, ymax) == True:
+            if is_global_image(tile, xmin, ymin, xmax, ymax) == True and len(tiles) == 1:
                 tile_vrt_command_list.append('-te')
                 tile_vrt_command_list.append(xmin)
                 tile_vrt_command_list.append(ymin)
