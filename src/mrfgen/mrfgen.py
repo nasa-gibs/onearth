@@ -90,7 +90,7 @@ import imghdr
 import sqlite3
 import math
 
-versionNumber = '0.9.2'
+versionNumber = '0.9.3'
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -671,7 +671,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)))
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
             continue
-        if blend == True and granule == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
+        if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             log_info_mssg("Granule extents " + str(extents))
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
         if diff_res:
