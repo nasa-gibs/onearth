@@ -43,6 +43,7 @@ import xmlrunner
 import xml.dom.minidom
 from shutil import rmtree
 from optparse import OptionParser
+import datetime
 
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url
 
@@ -95,10 +96,20 @@ class TestModOnEarth(unittest.TestCase):
                             '3d12e06c60b379efc41f4b8021ce1e29': '2001-05-09',
                             'e16d97b41cbb408d2a285788dfc9e3b8': '2002-01-01',
                             'b64066bafe897f0d2c0fc4a41ae7e052': '2002-12-27',
+                            '21634316da8d6e0af3ee4f24643bd72c': '2002-12-01',
+                            'b3639da9334ca5c13072012f9422a03c': '2003-12-01',
+                            '172ba954906b3d4f5d6583b3ad88460f': '2004-12-01',
                             'f4426ab405ce748b57b34859b3811bf6': '2005-01-01',
+                            '65e2446b2f779b963d0127f374a36fba': '2005-12-01',
+                            'faf5788ab8e006bbcfe18be80d472840': '2006-12-01',
+                            'd834056e48a95e39f55401eb61f710cd': '2007-12-01',
                             '9a3cf29a5df271c41eefc5c989fd690d': '2008-01-01',
+                            'd03e3e3cdfef2b6e3d1870f26a88fe53': '2008-12-01',
+                            '59692a541429c929117c854fe9e423c9': '2009-12-01',
                             '84eba8cdbb26444dbc97e119c0b76728': '2010-01-01',
                             '91206f8c5a4f6fcdcab366ea00a1f53c': '2010-01-09',
+                            '9aa3115cde41a8b9c68433741d98a8b4': '2010-12-01',
+                            'dae12a917a5d672c4cce4fdaf4788bf3': '2011-12-01',
                             '5346e958989b57c45919604ecf909f43': '2012-03-11',
                             '92e5d5eef4dc6866b636a49bfae3e463': '2015-01-01',
                             '5d91fa0c5273b2b58c486a15c91b2e78': '2015-01-02',
@@ -311,7 +322,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         14. Request WMTS GetCapabilities
         """
-        ref_hash = '74553d1c7ee662de1baa6a0788b42599'
+        ref_hash = 'c60c6dd540a40a8deba037bcb70ea3ce'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
@@ -323,7 +334,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         15. Request TWMS GetCapabilities
         """
-        ref_hash = '982d923b04448f444d6efc769e71c9f2'
+        ref_hash = '8c40cc837b6ad1f27209f2243241fba6'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting TWMS GetCapablities'
@@ -335,7 +346,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16. Request TWMS GetTileService
         """
-        ref_hash = 'dc758b15305c273eb2c65b0ab0262317'
+        ref_hash = 'da3cb2220b89418ed78f04ce610d9703'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetTileService'
         if DEBUG:
             print '\nTesting WMTS GetTileService'
@@ -686,6 +697,21 @@ class TestModOnEarth(unittest.TestCase):
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 4b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_5a(self):
+        layer_name = 'snap_test_5a'
+        expected_date = datetime.date(2002, 12, 01)
+        while (expected_date.year < 2012):
+            end_date = expected_date.replace(year=expected_date.year + 1) + datetime.timedelta(days=-1)
+            req_date = expected_date
+            while (req_date < end_date):
+                req_url = self.snap_test_url_template.format(layer_name, req_date)
+                response_date = test_snap_request(self.tile_hashes, req_url)
+                error = 'Snapping test 5a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(req_date.isoformat(), expected_date.isoformat(), response_date, req_url)
+                self.assertEqual(expected_date.isoformat(), response_date, error)
+                req_date += datetime.timedelta(days=+1)
+            # pdb.set_trace()
+            expected_date = expected_date.replace(expected_date.year + 1)
 
     # TEARDOWN
 

@@ -1,9 +1,11 @@
+
 #OnEarth CI Test Scripts
 
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
 * `test_mod_onearth.py` -- tests the OnEarth Apache module (requires `sudo`)
 * `test_layer_config.py` -- tests the Layer Config tool
+* `test_mrfgen.py` -- tests MRFgen
 
 ##Setup
 These tests assume that OnEarth and its associated utilities are installed. *Test files for **mod_onearth** tests must be copied to a directory that Apache has permission to access.*
@@ -15,6 +17,8 @@ Each test script will output a JUnit XML results file. By default, these files a
 
 **Note that the included `mod_onearth_test_data/twms_endpoint/kmlgen.cgi` has been compiled for use in CentOS 6. It may need to be recompiled for other systems. For more information, see [OnEarth Endpoint Configuration](doc/config_endpoint.md).**
 
+**Note that the mrfgen tests involve the downloading and processing of imagery, so they may take a while to complete.**
+
 
 ###Additional Test Options
 ####test_mod_onearth.py
@@ -22,6 +26,9 @@ Each test script will output a JUnit XML results file. By default, these files a
 * `-s, --start_server` -- This will load the test Apache configuration for manual testing purposes (normally the script deletes it when the tests are over.)
 
 ####test_layer_config.py
+* `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
+
+####test_mrfgen.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
 --------
@@ -93,134 +100,134 @@ Each test script will output a JUnit XML results file. By default, these files a
 
     a.  **2015-01-01/2016-12-31/P1D**
 
-        i.  **2015-01-01 -&gt; 2015-01-01**
+        i.  2015-01-01 -> 2015-01-01
 
-        ii. **2015-01-02 -&gt; 2015-01-02**
+        ii. 2015-01-02 -> 2015-01-02
 
-        iii. **2016-02-29 -&gt; 2016-02-29**
+        iii. 2016-02-29 -> 2016-02-29
 
-        iv. **2017-01-01 -&gt; Blank Tile**
+        iv. 2017-01-01 -> Blank Tile
 
     b.  **2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D**
 
-        i.  **2015-01-01 -&gt; 2015-01-01**
+        i.  2015-01-01 -> 2015-01-01
 
-        ii. **2015-01-11 -&gt; Blank Tile**
+        ii. 2015-01-11 -> Blank Tile
 
-        iii. **2015-01-12 -&gt; 2015-01-12 **
+        iii. 2015-01-12 -> 2015-01-12 
 
-        iv. **2015-02-01 -&gt; Blank Tile**
+        iv. 2015-02-01 -> Blank Tile
 
 2.  **Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)**
 
     a.  **2015-01-01/2016-01-01/P1M**
 
-        i.  **2015-01-01 -&gt; 2015-01-01**
+        i.  2015-01-01 -> 2015-01-01
 
-        ii. **2015-01-20 -&gt; 2015-01-01**
+        ii. 2015-01-20 -> 2015-01-01
 
-        iii. **2015-12-31 -&gt; 2015-12-01**
+        iii. 2015-12-31 -> 2015-12-01
 
-        iv. **2016-01-01 -&gt; 2016-01-01**
+        iv. 2016-01-01 -> 2016-01-01
 
-        v.  **2016-01-20 -&gt; 2016-01-01**
+        v.  2016-01-20 -> 2016-01-01
 
-        vi. **2016-02-01 -&gt; Blank Tile**
+        vi. 2016-02-01 -> Blank Tile
 
-        vii. **2014-12-31 -&gt; Blank Tile**
+        vii. 2014-12-31 -> Blank Tile
 
     b.  **2015-01-01/2016-01-01/P3M**
 
-        i.  **2015-01-01 -&gt; 2015-01-01**
+        i.  2015-01-01 -> 2015-01-01
 
-        ii. **2015-01-20 -&gt; 2015-01-01**
+        ii. 2015-01-20 -> 2015-01-01
 
-        iii. **2015-12-31 -&gt; 2015-10-01**
+        iii. 2015-12-31 -> 2015-10-01
 
-        iv. **2016-01-01 -&gt; 2016-01-01**
+        iv. 2016-01-01 -> 2016-01-01
 
-        v.  **2016-01-20 -&gt; 2016-01-01**
+        v.  2016-01-20 -> 2016-01-01
 
-        vi. **2016-04-01 -&gt; Blank Tile**
+        vi. 2016-04-01 -> Blank Tile
 
-        vii. **2014-12-31 -&gt; Blank Tile**
+        vii. 2014-12-31 -> Blank Tile
 
     c.  **1990-01-01/2016-01-01/P1Y**
 
-        i.  **1990-01-01 -&gt; 2000-01-01**
+        i.  1990-01-01 -> 2000-01-01
 
-        ii. **1990-05-20 -&gt; 2000-01-01**
+        ii. 1990-05-20 -> 2000-01-01
 
-        iii. **2000-01-01 -&gt; 2000-01-01**
+        iii. 2000-01-01 -> 2000-01-01
 
-        iv. **2000-05-20 -&gt; 2000-01-01**
+        iv. 2000-05-20 -> 2000-01-01
 
-        v.  **2005-12-31 -&gt; 2005-01-01**
+        v.  2005-12-31 -> 2005-01-01
 
-        vi. **2008-10-01 -&gt; 2008-01-01**
+        vi. 2008-10-01 -> 2008-01-01
 
-        vii. **2016-11-20 -&gt; 2016-01-01**
+        vii. 2016-11-20 -> 2016-01-01
 
-        viii. **2017-01-01 -&gt; Blank Tile**
+        viii. 2017-01-01 -> Blank Tile
 
-        ix. **1989-12-31 -&gt; Blank Tile**
+        ix. 1989-12-31 -> Blank Tile
 
     d.  **2010-01-01/2012-03-11/P8D**
 
-        i.  **2010-01-01 -&gt; 2010-01-01**
+        i.  2010-01-01 -> 2010-01-01
 
-        ii. **2010-01-04 -&gt; 2010-01-01**
+        ii. 2010-01-04 -> 2010-01-01
 
-        iii. **2010-01-10 -&gt; 2010-01-09**
+        iii. 2010-01-10 -> 2010-01-09
 
-        iv. **2012-03-11 -&gt; 2012-03-11**
+        iv. 2012-03-11 -> 2012-03-11
 
-        v.  **2012-03-14 -&gt; 2012-03-11**
+        v.  2012-03-14 -> 2012-03-11
 
-        vi. **2012-03-19 -&gt; Blank Tile**
+        vi. 2012-03-19 -> Blank Tile
 
-        vii. **2009-12-31 -&gt; Blank Tile**
+        vii. 2009-12-31 -> Blank Tile
 
 3.  **Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods)**
 
     a.  **2000-01-01/2000-06-01/P1M,2000-07-03/2000-07-03/P1M,2000-08-01/2000-12-01/P1M**
 
-        i.  **2000-01-01 -&gt; 2000-01-01**
+        i.  2000-01-01 -> 2000-01-01
 
-        ii. **2000-01-20 -&gt; 2000-01-01**
+        ii. 2000-01-20 -> 2000-01-01
 
-        iii. **2000-06-10 -&gt; 2000-06-01**
+        iii. 2000-06-10 -> 2000-06-01
 
-        iv. **2000-07-01 -&gt; Blank Tile**
+        iv. 2000-07-01 -> Blank Tile
 
-        v.  **2000-07-02 -&gt; Blank Tile**
+        v.  2000-07-02 -> Blank Tile
 
-        vi. **2000-07-03 -&gt; 2000-07-03**
+        vi. 2000-07-03 -> 2000-07-03
 
-        vii. **2000-07-20 -&gt; 2000-07-03**
+        vii. 2000-07-20 -> 2000-07-03
 
-        viii. **2000-08-01 -&gt; 2000-08-01**
+        viii. 2000-08-01 -> 2000-08-01
 
-        ix. **2000-08-10 -&gt; 2000-08-01**
+        ix. 2000-08-10 -> 2000-08-01
 
-        x.  **2000-12-31 -&gt; 2000-12-01**
+        x.  2000-12-31 -> 2000-12-01
 
-        xi. **1999-12-31 -&gt; Blank Tile**
+        xi. 1999-12-31 -> Blank Tile
 
-        xii. **2001-01-01 -&gt; Blank Tile**
+        xii. 2001-01-01 -> Blank Tile
 
     b.  **2001-01-01/2001-12-27/P8D, 2002-01-01/2002-12-27/P8D**
 
-        i.  **2001-01-01 -&gt; 2001-01-01**
+        i.  2001-01-01 -> 2001-01-01
 
-        ii. **2001-01-05 -&gt; 2001-01-1**
+        ii. 2001-01-05 -> 2001-01-1
 
-        iii. **2001-05-14 -&gt; 2001-05-09**
+        iii. 2001-05-14 -> 2001-05-09
 
-        iv. **2002-01-01 -&gt; 2002-01-01**
+        iv. 2002-01-01 -> 2002-01-01
 
-        v.  **2000-12-31 -&gt; Blank Tile**
+        v.  2000-12-31 -> Blank Tile
 
-        vi. **2003-01-01 -&gt; 2002-12-27**
+        vi. 2003-01-01 -> 2002-12-27
 
-        vii. **2003-01-04 -&gt; Blank Tile**
+        vii. 2003-01-04 -> Blank Tile

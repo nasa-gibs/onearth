@@ -83,30 +83,242 @@
     </ows:OperationsMetadata>
     <Contents>
       <Layer>
-         <ows:Title xml:lang="en">Blue Marble Z-Index Test Imagery</ows:Title>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 1a</ows:Title>
          <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
             <ows:LowerCorner>-180 -90</ows:LowerCorner>
             <ows:UpperCorner>180 90</ows:UpperCorner>
         </ows:WGS84BoundingBox>
-         <ows:Identifier>test_zindex_jpg</ows:Identifier>
+         <ows:Identifier>snap_test_1a</ows:Identifier>
          <Style isDefault="true">
              <ows:Title xml:lang="en">default</ows:Title>
              <ows:Identifier>default</ows:Identifier>
              
              
          </Style>
-         <Format>image/png</Format>
+         <Format>image/jpeg</Format>
          <Dimension>
              <ows:Identifier>time</ows:Identifier>
              <UOM>ISO8601</UOM>
-             <Default>2015-12-02T00:00:00Z</Default>
+             <Default>2016-12-31</Default>
              <Current>false</Current>
-             <Value>2015-12-02T00:00:00Z/2015-12-02T00:00:00Z/P1H</Value>
+             <Value>2015-01-01/2016-12-31/P1D</Value>
          </Dimension>
          <TileMatrixSetLink>
-             <TileMatrixSet>EPSG4326_2km</TileMatrixSet>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
          </TileMatrixSetLink>
-         <ResourceURL format="image/png" resourceType="tile" template="http://localhost/onearth/test/wmts/test_zindex_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png"/>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_1a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 2a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_2a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2015-01-31</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2015-01-10/P1D</Value>
+             <Value>2015-01-12/2015-01-31/P1D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_2a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-01-01</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2016-01-01/P1M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3b</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3b</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-01-01</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2016-01-01/P3M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3c</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3c</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-01-01</Default>
+             <Current>false</Current>
+             <Value>1990-01-01/2016-01-01/P1Y</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3c/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3d</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3d</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-03-11</Default>
+             <Current>false</Current>
+             <Value>2010-01-01/2012-03-11/P8D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3d/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 4a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_4a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2000-12-01</Default>
+             <Current>false</Current>
+             <Value>2000-01-01/2000-06-01/P1M</Value>
+             <Value>2000-07-03/2000-07-03/P1M</Value>
+             <Value>2000-08-01/2000-12-01/P1M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_4a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 4b</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_4b</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2002-12-27</Default>
+             <Current>false</Current>
+             <Value>2001-01-01/2001-12-27/P8D</Value>
+             <Value>2002-01-01/2002-12-27/P8D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_4b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 5a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_5a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2011-12-01</Default>
+             <Current>false</Current>
+             <Value>2002-12-01/2011-12-01/P1Y</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_5a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
       </Layer>
       <Layer>
          <ows:Title xml:lang="en">Blue Marble Demo Imagery - Daily PNG</ows:Title>
