@@ -470,7 +470,6 @@ def is_granule_image(tile):
             x, y = line.replace("Size is ","").split(",")[:2]
             if int(x) != int(y):
                 is_granule = True
-                log_info_mssg(tile + " is a granule image")
         if "Upper Left" in line:
             in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
             ulx = in_xmin.strip()
@@ -480,9 +479,26 @@ def is_granule_image(tile):
             lrx = in_xmax.strip()
             lry = in_ymin.strip().split(' ')[0]
     try:
+        log_info_mssg((tile + " is NOT a granule image", tile + " is a granule image")[is_granule])
         return (is_granule, [ulx, uly, lrx, lry])
     except:
-        log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)    
+        log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)
+        
+def has_color_table(tile):
+    """
+    Test if input tile has a color table
+    Argument:
+        tile -- Tile to test
+    """
+    log_info_mssg("Checking for color table in " + tile)
+    has_color_table = False
+    gdalinfo_command_list=['gdalinfo', tile]
+    gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    for line in gdalinfo.stdout.readlines():
+        if "Color Table" in line:
+            has_color_table = True
+    log_info_mssg(("No color table found","Color table found in image")[has_color_table])
+    return has_color_table
 
 def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
     """
@@ -562,7 +578,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = working_dir + os.path.basename(tile)+".blend.tif"
     gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff']
-    if tile.lower().endswith(('.tif', '.tiff','.tif.vrt', '.tiff.vrt')) == False:
+    if has_color_table(tile) == True:
         gdal_merge_command_list.append('-pct')
     gdal_merge_command_list.append(mrf)
     gdal_merge_command_list.append(tile)
