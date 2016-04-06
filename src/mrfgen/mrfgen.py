@@ -540,7 +540,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
-def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata):
+def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, working_dir):
     """
     Runs gdalmerge and returns merged tile
     Arguments:
@@ -555,11 +555,12 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         xmax -- Maximum x value
         ymax -- Maximum y value
         nodata -- nodata value
+        working_dir -- Directory to use for temporary files
     """
     if nodata == "":
         nodata = "0"
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
-    new_tile = tile+".blend.tif"
+    new_tile = working_dir + os.path.basename(tile)+".blend.tif"
     gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff']
     if tile.lower().endswith(('.tif', '.tiff','.tif.vrt', '.tiff.vrt')) == False:
         gdal_merge_command_list.append('-pct')
@@ -576,7 +577,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge.wait()
     return new_tile
 
-def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
+def split_across_antimeridian(tile, extents, antimeridian, xres, yres, working_dir):
     """
     Splits up a tile that crosses the antimeridian
     Arguments:
@@ -585,7 +586,9 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
         antimeridian -- The antimeridian for the projection
         xres -- output x resolution
         yres -- output y resolution
+        working_dir -- Directory to use for temporary files
     """
+    temp_tile = working_dir + os.path.basename(tile) + '.temp.vrt'
     ulx, uly, lrx, lry = extents
     new_lrx = str(float(lrx)+float(antimeridian)*2)
     cutline_template = """
@@ -601,11 +604,11 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
     cutline_right = cutline_template.replace('$values',cutline_values.format(float(antimeridian), float(uly), float(new_lrx), float(lry)))
     
     # Create VRT of input tile
-    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', xres, yres, tile, tile+'.temp.vrt']
+    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
     log_the_command(gdalbuildvrt_command_list)
     gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdalbuildvrt.wait()
-    tile = tile+'.temp.vrt'
+    tile = temp_tile
     tile_left = tile+".left_cut.vrt"
     tile_right = tile+".right_cut.vrt" 
     
@@ -633,7 +636,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres):
 
     return (tile_left,  tile_right)
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir):
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -650,6 +653,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         target_epsg -- The target EPSG code
         nodata -- nodata value
         blend -- Blend over transparent regions of imagery
+        working_dir -- Directory to use for temporary files
     """
     errors = 0
     xmin, ymin, xmax, ymax = target_extents
@@ -668,12 +672,13 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         # check if granule crosses antimeridian
         if granule == True and ((float(extents[0])-float(s_xmax)) > float(extents[2])):
             log_info_mssg(tile + " crosses antimeridian")
-            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)))
-            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend)
+            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)), working_dir)
+            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir)
             continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             log_info_mssg("Granule extents " + str(extents))
-            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
+            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, working_dir)
+        vrt_tile = working_dir + os.path.basename(tile)+".vrt"
         if diff_res:
             # convert tile to matching resolution
             if resize_resampling == '':
@@ -691,17 +696,17 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 tile_vrt_command_list.append(xmax)
                 tile_vrt_command_list.append(ymax)
             tile_vrt_command_list.append(tile)
-            tile_vrt_command_list.append(tile+".vrt")
+            tile_vrt_command_list.append(vrt_tile)
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
             if blend == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
-                granule, extents = is_granule_image(tile+".vrt") # get new extents
+                granule, extents = is_granule_image(vrt_tile) # get new extents
                 log_info_mssg("Granule extents " + str(extents))
-                tile = gdalmerge(mrf, tile+".vrt", extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata)
+                tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, working_dir)
                 mrf_insert_command_list.append(tile)
             else:
-                mrf_insert_command_list.append(tile+".vrt")
+                mrf_insert_command_list.append(vrt_tile)
         else:
             mrf_insert_command_list.append(tile)
         mrf_insert_command_list.append(mrf)
@@ -725,9 +730,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if ".blend." in tile:
             remove_file(tile)
             tile = tile.split('.vrt.blend.')[0]
-        remove_file(tile+".vrt")
+        remove_file(vrt_tile)
     for tile in tiles:
-        temp_vrt_files = glob.glob(str().join([tile.split('.temp.vrt')[0], '.temp.vrt*']))
+        temp_vrt_files = glob.glob(str().join([(working_dir + os.path.basename(tile)).split('.temp.vrt')[0], '.temp.vrt*']))
         for vrt in temp_vrt_files:
             remove_file(vrt)
     return errors
@@ -1508,7 +1513,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
+    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend, working_dir)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1817,7 +1822,7 @@ run_addo = True
 
 # Insert into nocopy
 if nocopy==True:
-    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend)
+    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend, working_dir)
     if len(alltiles) <= 1:
         run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
 
