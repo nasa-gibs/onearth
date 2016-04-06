@@ -1375,12 +1375,16 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     log_sig_err("RGBApng2Palpng failed to create " + output_tile, sigevent_url)
                 
                 # Make a copy of world file
-                if os.path.isfile(tile_path+'/'+tile_basename+'.pgw'):
-                    shutil.copy(tile_path+'/'+tile_basename+'.pgw', output_tile_path+'/'+output_tile_basename+'.pgw')
-                elif os.path.isfile(tile_basename+'.wld'):
-                    shutil.copy(tile_path+'/'+tile_basename+'.wld', output_tile_path+'/'+output_tile_basename+'.pgw')
-                else:
-                    log_info_mssg("World file does not exist for tile: " + tile)
+                try:
+                    if os.path.isfile(tile_path+'/'+tile_basename+'.pgw'):
+                        shutil.copy(tile_path+'/'+tile_basename+'.pgw', output_tile_path+'/'+output_tile_basename+'.pgw')
+                    elif os.path.isfile(working_dir+'/'+tile_basename+'.wld'):
+                        shutil.copy(working_dir+'/'+tile_basename+'.wld', output_tile_path+'/'+output_tile_basename+'.pgw')
+                    else:
+                        log_info_mssg("World file does not exist for tile: " + tile)
+                except:
+                    errors += 1
+                    log_sig_err("ERROR: " + mssg, sigevent_url)
                     
                 # add transparency flag for custom color map
                 add_transparency = True
