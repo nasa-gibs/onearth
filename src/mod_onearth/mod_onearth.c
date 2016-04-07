@@ -1073,8 +1073,8 @@ static apr_off_t wmts_get_index_offset_z(request_rec *r, WMSlevel *level, int z,
     return -1;
  }
 
- int level_int = level->index_add + sizeof(index_s) * (y*level->xcount+x);
- int level_z = (level->xcount*level->ycount*zlevels)*sizeof(index_s)/zlevels*z;
+ long long level_int = level->index_add + sizeof(index_s) * (y*level->xcount+x);
+ long long level_z = (level->xcount*level->ycount*zlevels)*sizeof(index_s)/zlevels*z;
 
 // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d, max values are %d and %d, x: %d, y: %d, index_add: %d",
 //		 level_int+level_z, level->xcount-1, level->ycount-1, x, y, level->index_add);
