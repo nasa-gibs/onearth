@@ -55,7 +55,8 @@ import urllib
 import urllib2
 import xml.dom.minidom
 
-versionNumber = '0.9.0'
+versionNumber = '0.9.3'
+colormap_filename = None
     
 class ColorEntry:
     """RGBA values for VRT color table"""
@@ -109,6 +110,8 @@ def sigevent(type, mssg, sigevent_url):
     data['format']='TEXT'
     data['category']='MRFGEN'
     data['provider']='GIBS'
+    if colormap_filename != None:
+        data['data']=colormap_filename
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -251,18 +254,18 @@ else:
 # Sigevent URL.
 sigevent_url = options.sigevent_url
 
-print 'colormap:', colormap_filename
-print 'output VRT:', output_vrt
-print 'merge VRT:', merge_vrt
+log_info_mssg('colormap: ' + colormap_filename)
+log_info_mssg('output VRT: ' + output_vrt)
+log_info_mssg('merge VRT: ' + merge_vrt)
 
 try:
     # Open colormap file.
     colormap_file=open(colormap_filename, 'r')
     dom = xml.dom.minidom.parse(colormap_file)
-    print "Opening file", colormap_filename
+    log_info_mssg("Opening file " + colormap_filename)
     colormap_file.close()
 except IOError: # try http URL
-    print "Accessing URL", colormap_filename
+    log_info_mssg("Accessing URL " + colormap_filename)
     dom = xml.dom.minidom.parse(urllib.urlopen(colormap_filename))
 
 # ColorMap parameters
