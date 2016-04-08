@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '0.9.2'
+versionNumber = '0.9.3'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -1018,7 +1018,7 @@ def generate_legend(colormap, output, legend_url, orientation):
         svg=open(output, 'r')
     except IOError:
         mssg=str().join(['Cannot read SVG legend file:  ', output])
-        sigevent('ERROR', mssg, sigevent_url)
+        log_sig_err(mssg, sigevent_url)
         
     # get width and height
     dom = xml.dom.minidom.parse(svg)
@@ -1522,10 +1522,6 @@ for conf in conf_files:
                     patterns.append(pattern.firstChild.data.strip())
             except KeyError: # append if type does not exist
                 patterns.append(pattern.firstChild.data.strip())
-
-#         if len(patterns) == 0:
-#             log_sig_err('No <Pattern> elements for TWMS found in ' + conf, sigevent_url)
-#             continue
             
         # Time
         if configuration_time:
@@ -2534,10 +2530,11 @@ print ""
 message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " " + ("Archive links not generated","Archive links generated")[links] + ". " + ("Mapfiles not configured","Mapfiles configured")[create_mapfile] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
 
 try:
+    log_info_mssg(asctime() + " " + message)
     sigevent('INFO', asctime() + " " + message, sigevent_url)
 except urllib2.URLError:
-    print 'sigevent service is unavailable'
-print 'Exiting oe_configure_layer.'
+    None
+log_info_mssg('Exiting oe_configure_layer.')
 
 if len(errors) > 0:
     sys.exit(len(errors))
