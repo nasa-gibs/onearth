@@ -38,6 +38,7 @@ import subprocess
 from shutil import copyfile, copy
 import xml.dom.minidom
 import hashlib
+import shlex
 from dateutil.relativedelta import relativedelta
 import sqlite3
 import urllib2
@@ -83,6 +84,22 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
             if not ignore_warnings or "WARNING" not in error:
                 raise ValueError(error.strip())
     return None
+
+def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
+    """
+    Runs the provided command on the terminal and prints any stderr output.
+    Arguments:
+        cmd -- the command to be executed.
+        ignore_warnings -- if set to True, warnings
+            will be ignored (defaults to False)
+    """
+    # print '\nRunning command: ' + cmd
+    process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in process.communicate():
+        if line:
+            if show_output is True or 'error' in line.lower() or ignore_warnings and 'warning' in line.lower():
+                print line
+
 
 
 def find_string(file_path, string):
@@ -365,7 +382,7 @@ def get_time_string(start_datetime, end_datetime, config):
     return time_string
 
 
-def make_dir_tree(path):
+def make_dir_tree(path, ignore_existing=False):
     """
     Creates the specified directory tree. Throws an error
     and doesn't do anything if there are already files in that dir.
@@ -377,7 +394,10 @@ def make_dir_tree(path):
         os.makedirs(path)
     except OSError:
         if os.listdir(path):
-            raise OSError("Target directory {0} is not empty.".format(path))
+            if not ignore_existing:
+                raise OSError("Target directory {0} is not empty.".format(path))
+            else:
+                pass
         else:
             pass
     return
