@@ -107,7 +107,7 @@ class Environment:
     """Environment information for layer(s)"""
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileConfigLocation, mapfileConfigBasename):
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -125,6 +125,7 @@ class Environment:
         self.colormapUrls = colormapUrls
         self.mapfileStagingLocation = mapfileStagingLocation
         self.mapfileLocation = mapfileLocation
+        self.mapfileLocationBasename = mapfileLocationBasename
         self.mapfileConfigLocation = mapfileConfigLocation
         self.mapfileConfigBasename = mapfileConfigBasename
         
@@ -499,22 +500,28 @@ def get_environment(environmentConfig):
     if create_mapfile is True:
         # Get/create mapfile staging location
         try:
-            mapfileStagingLocation = add_trailing_slash(get_dom_tag_value(dom, 'MapfileStagingLocation'))
+            mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
         except IndexError:
-            log_sig_err('Mapfile creation chosen but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
+            log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
         try:
             os.makedirs(mapfileStagingLocation)
         except OSError:
             if not os.path.exists(mapfileStagingLocation):
-                log_sig_err('Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
+                log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
             pass
 
         # Get output mapfile location
         try:
             mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
+            mapfileLocation = mapfileLocationElement.firstChild.nodeValue
         except IndexError:
-            log_sig_err('Mapfile creation chosen but no <MapfileLocation> present in environment config file.', sigevent_url)
-        mapfileLocation = mapfileLocationElement.firstChild.nodeValue
+            log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileLocation> present in environment config file.', sigevent_url)
+
+        try:
+            mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
+        except KeyError:
+            log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
+            mapfileLocationBasename = None
 
         # Get output mapfile config location
         try:
@@ -525,8 +532,7 @@ def get_environment(environmentConfig):
         try:
             mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
         except KeyError:
-            mapfileConfigBasename = None
-            log_sig_err('Mapfile creation chosen but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
+            log_sig_exit('ERROR', 'Mapfile creation chosen but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
     else:
         mapfileStagingLocation = None
         mapfileLocation = None
@@ -546,7 +552,8 @@ def get_environment(environmentConfig):
                        legendLocation, legendUrl,
                        colormapLocations, colormapUrls,
                        mapfileStagingLocation, mapfileLocation,
-                       mapfileConfigLocation, mapfileConfigBasename)
+                       mapfileLocationBasename, mapfileConfigLocation, 
+                       mapfileConfigBasename)
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -2461,7 +2468,8 @@ if no_wmts == False:
 
 if create_mapfile is True:
     # Create a new staging mapfile and add header, layers, and footer
-    staging_mapfile = os.path.join(environment.mapfileStagingLocation, environment.mapfileConfigBasename + '.map')
+    staging_mapfile = os.path.join(environment.mapfileStagingLocation, environment.mapfileLocationBasename)
+    output_mapfile = os.path.join(environment.mapfileLocation, environment.mapfileLocationBasename)
     with open(staging_mapfile, 'w+') as mapfile:
         # Append header to mapfile if there is one
         mapfile_config_prefix = os.path.join(environment.mapfileConfigLocation, environment.mapfileConfigBasename)
@@ -2486,8 +2494,8 @@ if create_mapfile is True:
         except IOError:
             mapfile.write('\nEND')
             pass
-    print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, environment.mapfileLocation)
-    shutil.copyfile(staging_mapfile, environment.mapfileLocation)
+    print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, output_mapfile)
+    shutil.copyfile(staging_mapfile, output_mapfile)
     
 
 print '\n*** Layers have been configured successfully ***'

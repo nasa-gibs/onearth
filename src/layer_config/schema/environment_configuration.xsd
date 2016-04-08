@@ -80,7 +80,11 @@ limitations under the License.
       </xs:element>
     </xs:sequence>
   </xs:group>
-  <xs:element name="MapfileLocation" type="xs:string" nillable="true"/>
+  <xs:element name="MapfileLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="basename" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="MapfileStagingLocation" type="xs:string" nillable="true"/>
   <xs:element name="MapfileConfigLocation">
     <xs:complexType mixed="true">
