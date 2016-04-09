@@ -529,12 +529,9 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     # figure out appropriate block size that covers extent of granule    
     block_x = float(mrf_blocksize)
     block_y = float(mrf_blocksize)
-    while block_x < x_size:
+    while (block_x*2) < x_size:
         block_x = block_x * 2
-    while block_y < y_size:
-        block_y = block_y * 2
-    if float(lrx) >= float(xmax) or float(ulx) <= float(xmin):
-        # prevents extra line appearing along edges
+    while (block_y*2) < y_size:
         block_y = block_y * 2
     block = max([block_x,block_y])
     
