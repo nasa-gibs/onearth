@@ -8,7 +8,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mrfgen.py` -- tests MRFgen
 
 ##Setup
-These tests assume that OnEarth and its associated utilities are installed. *Test files for **mod_onearth** tests must be copied to a directory that Apache has permission to access.*
+These tests assume that OnEarth and its associated utilities are installed. **Test files for mod_onearth tests must be copied to a directory that Apache has permission to access.**
 
 The tests have additional dependencies from the rest of OnEarth. To install the Python dependencies required by the test scripts, run `sudo pip install -r requirements.txt`.
 
@@ -17,7 +17,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 
 **Note that the included `mod_onearth_test_data/twms_endpoint/kmlgen.cgi` has been compiled for use in CentOS 6. It may need to be recompiled for other systems. For more information, see [OnEarth Endpoint Configuration](doc/config_endpoint.md).**
 
-**Note that the mrfgen tests involve the downloading and processing of imagery, so they may take a while to complete.**
+**Note also that the mrfgen tests involve the downloading and processing of imagery, so they may take a while to complete. You may experience 'out of memory' errors if running these tests in a VM without enough memory configured.**
 
 
 ###Additional Test Options
