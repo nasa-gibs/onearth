@@ -123,55 +123,6 @@ static char colon[] = "%3A";
 // This module
 module AP_MODULE_DECLARE_DATA onearth_module;
 
-// Evaluate the time period for days or seconds
-static int evaluate_period(char *time_period, int hastime)
-{
-	if (hastime == 0) {
-		if (time_period[22] != 'P') return 0;
-		int days;
-		// currently only supports periods of single type
-		char interval = time_period[(strlen(time_period)-1)];
-		switch(interval) // uses max days for each period, allows for fallback
-		{
-		   case 'Y' :
-			   days = apr_atoi64(time_period+23) * 366;
-			   break;
-		   case 'M' :
-			   days = apr_atoi64(time_period+23); // special case for months
-			   break;
-		   case 'W' :
-			   days = apr_atoi64(time_period+23) * 7;
-			   break;
-		   case 'D' :
-			   days = apr_atoi64(time_period+23);
-			  break;
-		   default :
-			   days = 0;
-		}
-		return days;
-	} else {
-		if (time_period[43] != 'T') return 0;
-		int seconds;
-		// currently only supports periods of single type
-		char interval = time_period[(strlen(time_period)-1)];
-		switch(interval) // uses max days for each period, allows for fallback
-		{
-		   case 'H' :
-			   seconds = apr_atoi64(time_period+44) * 3600; // special case for months
-			   break;
-		   case 'M' :
-			   seconds = apr_atoi64(time_period+44) * 60;
-			   break;
-		   case 'S' :
-			   seconds = apr_atoi64(time_period+44);
-			  break;
-		   default :
-			   seconds = 0;
-		}
-		return seconds;
-	}
-}
-
 static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
 	apr_time_exp_t date;
 	// Convert start date to apr_time_exp_t
