@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2015, California Institute of Technology.
+* Copyright (c) 2002-2016, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,8 @@
 */
 
 /* 
- * WMS cache module for Apache 2.0
+ * OnEarth module for Apache 2.0
+ * Version 1.0.0
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache

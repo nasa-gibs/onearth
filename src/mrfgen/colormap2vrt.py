@@ -55,7 +55,7 @@ import urllib
 import urllib2
 import xml.dom.minidom
 
-versionNumber = '0.9.3'
+versionNumber = '1.0.0'
 colormap_filename = None
     
 class ColorEntry:
