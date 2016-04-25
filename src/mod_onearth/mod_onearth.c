@@ -1124,10 +1124,56 @@ static apr_off_t get_index_offset(WMSlevel *level, wms_wmsbbox *bb,
 //  int level_int = level->index_add+sizeof(index_s)*(iy*level->xcount+ix);
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d",
 // 		 level_int);
+
   return 
     level->index_add+sizeof(index_s)*(iy*level->xcount+ix);
 }
 
+static apr_off_t twms_get_index_offset_z(WMSlevel *level, wms_wmsbbox *bb,
+                                  int ori, int z, int zlevels, request_rec *r) 
+{
+  apr_off_t ix,iy;
+  double x,y;
+
+  if (ori &0x2) 
+    ix=0.5+(x=((level->X1-bb->x1)/level->levelx));
+  else
+    ix=0.5+(x=((bb->x0-level->X0)/level->levelx));
+
+  if (ori & 0x1)
+    iy=0.5+(y=((bb->y0-level->Y0)/level->levely));
+  else
+    iy=0.5+(y=((level->Y1-bb->y1)/level->levely));
+
+  // Alignment too far, more than +-1% off
+  if ((x-ix)>0.01 || (ix-x)>0.01 || (y-iy)>0.01 || (iy-y)>0.01) {
+    ap_log_error(APLOG_MARK,APLOG_DEBUG,0,r->server, "Slightly off : "
+      "ix %d ,x %f ,iy %d,y %f, Level x %f y %f, page count x %d y %d\n",
+      (int) ix,x,(int) iy,y,
+      level->levelx,level->levely,level->xcount,level->ycount );
+    return -2;
+  }
+
+  // Non existing level
+
+  if ( (ix<0) || (ix>=level->xcount) ||
+       (iy<0) || (iy>=level->ycount) )
+    return -1;
+
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
+//    "ix %d ,x %d ,iy %d,y %d, Level x %d y %d, page count x %d y %d\n",
+//    ix,x,iy,y,
+//    level->levelx,level->levely,level->xcount,level->ycount );
+
+//  int level_int = level->index_add+sizeof(index_s)*(iy*level->xcount+ix);
+//  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "offset: %d",
+// 		 level_int);
+ long long level_int = level->index_add + sizeof(index_s) * (iy*level->xcount+ix);
+ long long level_z = (level->xcount*level->ycount*zlevels)*sizeof(index_s)/zlevels*z;
+ return level_int+level_z;
+  // return 
+  //   level->index_add+sizeof(index_s)*(iy*level->xcount+ix);
+}
 
 // Escapes the ampersand as ampersand command
 // Returns pointer to EOS
@@ -1873,7 +1919,32 @@ static int mrf_handler(request_rec *r)
       }
 
       // got a matching level and cache
-      offset=get_index_offset(level,&bbox,cache->orientation,r);
+      	  if (!cache->zlevels) {
+		  	offset=get_index_offset(level,&bbox,cache->orientation,r);
+	  } else {
+		  if (!cache->zidxfname) {
+			  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"No z-index filename %s",r->args);
+			  offset = -1;
+		  } else {
+			  char *zidxfname;
+//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
+			  if (cache->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
+				  zidxfname = apr_pstrcat(r->pool,cache->zidxfname,0);
+			  } else {
+				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
+			  }
+
+			  // Lookup the z index from the ZDB file based on keyword
+			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
+			  if (z<0) {
+				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d",z);
+			  }
+			  if (z >= cache->zlevels) {
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Retrieved z-index %d is greater than the maximum for the layer %d",z,cache->zlevels);
+			  }
+			  offset=twms_get_index_offset_z(level,&bbox,cache->orientation,z,cache->zlevels,r);
+		  }
+	  }
 
       // DEBUG
       // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
@@ -1900,6 +1971,7 @@ static int mrf_handler(request_rec *r)
 		    "Bogus alignment %s",r->args);
 	return DECLINED;
       }
+
 
   } else { // WMTS branch
     if (!(level=wmts_get_matching_level(r, cache))) {
