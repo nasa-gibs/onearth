@@ -844,8 +844,8 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_layer_config_results.xml',
-                      help='Specify XML output file (default is test_mod_onearth_results.xml')
+    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mrfgen_results.xml',
+                      help='Specify XML output file (default is test_mrfgen_results.xml')
     parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Display verbose debugging messages')
     (options, args) = parser.parse_args()
     DEBUG = options.debug
