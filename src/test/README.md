@@ -231,3 +231,42 @@ Each test script will output a JUnit XML results file. By default, these files a
         vi. 2003-01-01 -> 2002-12-27
 
         vii. 2003-01-04 -> Blank Tile
+
+##List of mrfgen tests:
+1. Global geographic PNG-MRF
+	* Global input image
+	* Geographic projection
+	* Paletted PNG input image
+	* Paletted MRF-PNG output image	
+2. Tiled polar north JPEG-MRF
+	* Tiled input images
+	* Stereographic Polar North projection
+	* JPEG input images
+	* MRF-JPEG output image	
+3. Global web mercator JPEG-MRF
+	* Global input image in geographic projection
+	* Reprojection to web mercator	
+4. Geographic PNG-MRF using granule input files
+ 	* Granule input images with global coverage
+ 	* Input images cross antimeridian
+	* Native geographic projection
+	* Generate initial empty MRF with nocopy option
+	* Insert into existing MRF
+	* Create MRF with single granule
+	* Create MRF composite image with multiple granules
+	* Blend input images
+	* Use z-levels
+		* Add image to new z-level
+		* Add image to existing z-level
+		* Add image to multiple z-levels
+5. Web Mercator PNG-MRF using granule input files
+	* Granule input images with partial coverage
+	* Reprojection to web mercator
+	* No blending of input images
+	* Automatic creation of empty MRF
+6. Tiled geographic JPEG-MRF using tiled input files with z-level and time
+	* Tiled input images
+	* RGBA TIFF input images
+	* Use single z-level
+	* Use time (hh:mm:ss)
+	* Use zdb lookup
