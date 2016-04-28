@@ -1143,6 +1143,10 @@ if input_dir != None:
 verify_directory_path_exists(output_dir, 'output_dir')
 verify_directory_path_exists(working_dir, 'working_dir')
 
+# Make certain color map can be found
+if colormap != '':
+     colormap = check_abs_path(colormap)
+
 # Log all of the configuration information.
 log_info_mssg_with_timestamp(str().join(['config XML file:  ', 
                                           configuration_filename]))
@@ -1323,7 +1327,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             gdalinfo_command_list=['gdalinfo', tile]
             log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            
+
             # Read gdal_info output
             if "ColorInterp=Palette" not in gdalinfo.stdout.read():
                 if '.tif' in tile.lower():
@@ -1411,7 +1415,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             remove_file(temp_tile)
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')     
-        
+
 # sort
 alltiles.sort()
 

@@ -32,7 +32,7 @@ limitations under the License.
  <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
  <extents>-180,-90,180,90</extents>
- <colormap>MODIS_Aqua_Chlorophyll_A.xml</colormap>
+ <colormap>mrfgen_test_data/working_dir/MODIS_Aqua_Chlorophyll_A.xml</colormap>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_blend>false</mrf_blend>
