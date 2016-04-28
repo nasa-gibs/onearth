@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2015, California Institute of Technology.
+# Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -59,7 +59,6 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2015
 
 import os
 import subprocess
@@ -2172,6 +2171,8 @@ for conf in conf_files:
             if static == True or len(timeElements)==0:
                 if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
                     line = ''
+                if '/{Time}' in line:
+                    line = line.replace('/{Time}', '')
             else:
                 if '$DefaultDate' in line:
                     defaultDate = ''
