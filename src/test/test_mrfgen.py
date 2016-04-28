@@ -402,7 +402,7 @@ class TestMRFGeneration_OBPG(unittest.TestCase):
         # Note that there are weird hang-up issues running these processes in shell mode.
         #pdb.set_trace()
         quiet = '' if DEBUG else '-q'
-        cmd = 'wget -r' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
+        cmd = 'wget -r ' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
         run_command(cmd, show_output=DEBUG)
 
         # create copy of colormap
