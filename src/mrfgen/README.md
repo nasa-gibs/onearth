@@ -98,7 +98,7 @@ These parameters are available but not used in the example above nor necessarily
 * mrf_name: The output naming convention of the MRF file (e.g., ``` <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>```). Uses Python's [strftime formatting](https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior).
 * colormap: The GIBS color map to be used if the MRF contains paletted PNGs ([example colormaps](https://map1.vis.earthdata.nasa.gov/colormaps/)).
 * mrf_z_levels: The maximum number of z levels for the final MRF.
-* mrf_z_key: The string key (e.g., time [YYYYMMDDhhmmss], elevation, band, style) used to map to a z level.
+* mrf_z_key: The string key (e.g., time [YYYYMMDDhhmmss], elevation, band, style) used to map to a z level. See sample [here](../test/mrfgen_files/mrfgen_test_config4c.xml).
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 
