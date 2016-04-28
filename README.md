@@ -33,6 +33,7 @@ For more information, visit https://earthdata.nasa.gov/gibs
 ## Other Information
 
 * [Meta Raster Format](https://github.com/nasa-gibs/mrf/blob/master/README.md)
+* [Tests](src/test/README.md)
 * [Troubleshooting](doc/troubleshooting.md)
 
 ## Contact

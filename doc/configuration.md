@@ -57,7 +57,7 @@ The MRF metadata file may simply be copied from an existing [image archive](arch
 
 The following example shows how to generate an MRF file to be used as an archetype for the layer.
 
-1) Run the mrfgen tool to generate an MRF image.  Source imagery may be found [here](../src/mrfgen/test/MYR4ODLOLLDY).  The test configuration may be found [here](../src/mrfgen/test/mrfgen_test_config.xml).
+1) Run the mrfgen tool to generate an MRF image.  Source imagery may be found [here](..src/test/mrfgen_files/MYR4ODLOLLDY/).  The test configuration may be found [here](../src/test/mrfgen_files/mrfgen_test_config.xml).
 ```Shell
 mrfgen -c mrfgen_test_config.xml
 ```
@@ -73,7 +73,7 @@ This can be used as the `<HeaderFileName>` in the layer configuration file (upco
 
 ### Generate Color Map (Optional)
 
-OnEarth supports the used of a color map within MRF imagery.  Typically, the MRF will be generated using paletted PNG files as input, however, RGBA PNG files may be converted if a color map is provided.  OnEarth uses the GIBS color map XML format ([samples here](../src/generate_legend/samples)).  OnEarth also uses the color map for the generation of color legends (see the [OnEarth Legend Generator](../src/generate_legend/README.md) for more details).
+OnEarth supports the used of a color map within MRF imagery.  Typically, the MRF will be generated using paletted PNG files as input, however, RGBA PNG files may be converted if a color map is provided.  OnEarth uses the GIBS color map XML format ([samples here](../src/colormaps/samples)).  OnEarth also uses the color map for the generation of color legends (see the [OnEarth Legend Generator](../src/generate_legend/README.md) for more details).
 
 The OnEarth source currently does not include tools to generate a GIBS color map.
 
@@ -85,7 +85,7 @@ Two [empty tiles](../src/mrfgen/empty_tiles) are available in the source code.  
 
 The oe_generate_empty_tile.py tool was designed to create a custom empty tile that is fitting for a given layer. The OnEarth Layer Configuration tool will automatically generate empty tiles by leveraging this tool if a colormap is specified (unless `--skip_empty_tiles` is used). But this can also be done manually by the following steps:
 
-1) Generate or choose a color map that matches the imagery.  This [sample](../src/layer_config/test/MODIS_Aqua_Aerosol-GIBS.xml) can be used.
+1) Generate or choose a color map that matches the imagery.  This [sample](../src/test/layer_config_files/config_templates/MODIS_Aqua_Aerosol-GIBS_colormap.xml) can be used.
 
 2) Choose the desired color to be used as the nodata value for the empty tile.  Simply set the nodata value to "true" for the chosen color.
 
@@ -108,7 +108,7 @@ Note that mod_onearth uses a CGI script at each endpoint that will reference an 
 
 ### Update/Create OnEarth Layer Configuration file
 
-A [layer configuration file](config_layer.md) must be created to be used as input for the OnEarth Layer Configuration tool.  For this example, we will use the layer configuration file found [here](../src/layer_config/test/layer_configuration_test1.xml). Please review this documentation for more detailed information: [Layer Configuration File](config_layer.md)
+A [layer configuration file](config_layer.md) must be created to be used as input for the OnEarth Layer Configuration tool.  An example is presented below.  Please review this documentation for more detailed information: [Layer Configuration File](config_layer.md)
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -161,7 +161,9 @@ oe_configure_layer --layer_dir /etc/onearth/config/layers
 
 If no configuration file or directory is specified, the tool will look for files files in a default directory relative to the layer configuration directory `--lcdir`.
 
-There is also a `--generate_links` option that will automatically create soft links to files designated as the "default" for time varying layers (read this [documentation](archive.md#default-files) for more information on "Default Files"). 
+There is a `--generate_links` option that will automatically create soft links to files designated as the "default" for time varying layers (read this [documentation](archive.md#default-files) for more information on "Default Files"). 
+
+Additionally, there is an option to generate mapfile configurations for MapServer: `--create_mapfile`
 
 ### Restart Apache
 

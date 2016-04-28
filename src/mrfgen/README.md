@@ -36,7 +36,7 @@ Options:
 
 ## Instructions
 
-Sample imagery and configurations may be found [here](test/).
+Sample imagery and configurations may be found [here](../test/mrfgen_files/).
 
 ### Prepare Imagery
 
@@ -48,7 +48,7 @@ Sample imagery and configurations may be found [here](test/).
 
 ### Create Configuration File
 
-Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may be used as an example:
+Prepare an MRF configuration file.  This [file](../test/mrfgen_files/mrfgen_test_config.xml) may be used as an example:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -66,6 +66,8 @@ Prepare an MRF configuration file.  This [file](test/mrfgen_test_config.xml) may
  <mrf_nocopy>false</mrf_nocopy>
 </mrfgen_configuration>
 ```
+
+Directory paths may be different than the example. Directories that do not exist must be created before running the tool.
 
 #### Parameters
 
@@ -125,21 +127,21 @@ Let's modify the previous sample configuration to reproject the imagery into Web
 
 Run mrfgen by calling the tool and passing in the configuration file:
 ```Shell
-mrfgen.py -c test/mrfgen_test_config.xml
+mrfgen.py -c mrfgen_test_config.xml
 ```
 
 The MRF will be generated.  If successful, an "MRF created" message will be displayed at the end.
 
 You can also use the -d, --data_only option to output only the MRF data, index, and header files:
 ```Shell
-mrfgen.py -d -c test/mrfgen_test_config.xml
+mrfgen.py -d -c mrfgen_test_config.xml
 ```
 
 ### SigEvent
 
 mrfgen is compatible with the SigEvent reporting server. This is helpful for sending logs and error messages to an automated system. Use the -s, --sigevent_url to enable SigEvent services:
 ```Shell
-mrfgen.py -c test/mrfgen_test_config.xml -s http://localhost:8100/sigevent/events/create
+mrfgen.py -c mrfgen_test_config.xml -s http://localhost:8100/sigevent/events/create
 ```
 
 ## mrfgen Processes
@@ -189,10 +191,10 @@ Another example would be for an input data layer with a custom overall size, suc
 
 ## mrfgen Tests
 
-The test_mrfgen.py script may be used to test basic functionalities of mrfgen. It must be run from the mrfgen/ directory and the mrfgen/test/ directory must exist.
+The [test_mrfgen.py](../test/test_mrfgen.py) script may be used to test basic functionalities of mrfgen.
 
 ```Shell
-cd mrfgen/
+cd test/
 ./test_mrfgen.py
 ```
 
