@@ -2,7 +2,7 @@
 
 **This software was originally developed at the Jet Propulsion Laboratory as Tiled WMS (https://github.com/nasajpl/tiledwms).  OnEarth is now the latest actively developed version.**
 
-## OnEarth
+# OnEarth
 
 OnEarth is a software package consisting of image formatting and serving modules which facilitate the deployment of a web service capable of efficiently serving standards-based requests for georeferenced raster imagery at multiple spatial resolutions including, but not limited to, full spatial resolution.  The software was originally developed at the Jet Propulsion Laboratory ([JPL](http://www.jpl.nasa.gov/)) to serve global daily composites of MODIS imagery.  Since then, it has been deployed and repurposed in other installations, including at the Physical Oceanography Distributed Active Archive Center ([PO.DAAC](http://podaac.jpl.nasa.gov/)) in support of the State of the Oceans ([SOTO](http://podaac-tools.jpl.nasa.gov/soto-2d/)) visualization tool, the Lunar Mapping and Modeling Project ([LMMP](http://pub.lmmp.nasa.gov/LMMPUI/LMMP_CLIENT/LMMP.html)), and [Worldview](https://earthdata.nasa.gov/labs/worldview/).
 
@@ -35,6 +35,7 @@ For more information, visit https://earthdata.nasa.gov/gibs
 * [Meta Raster Format](https://github.com/nasa-gibs/mrf/blob/master/README.md)
 * [Tests](src/test/README.md)
 * [Troubleshooting](doc/troubleshooting.md)
+* [Contributing](doc/contributing.md)
 
 ## Contact
 
