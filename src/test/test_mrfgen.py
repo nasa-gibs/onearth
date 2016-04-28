@@ -843,18 +843,35 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
 
 if __name__ == '__main__':
     # Parse options before running tests
+    available_tests = {'mrf_generation': TestMRFGeneration,
+                       'polar_mrf': TestMRFGeneration_polar,
+                       'mercator_mrf': TestMRFGeneration_mercator,
+                       'obpg': TestMRFGeneration_OBPG,
+                       'webmerc': TestMRFGeneration_OBPG_webmerc,
+                       'tiled_z': TestMRFGeneration_tiled_z
+                       }
+    test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(available_tests.keys())
     parser = OptionParser()
     parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mrfgen_results.xml',
                       help='Specify XML output file (default is test_mrfgen_results.xml')
     parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Display verbose debugging messages')
+    parser.add_option('-t', '--test', action='append', type='choice', dest='test', choices=available_tests.keys(), help=test_help_text)
     (options, args) = parser.parse_args()
     DEBUG = options.debug
 
     # Have to delete the arguments as they confuse unittest
     del sys.argv[1:]
 
+    # If the user has selected individual tests to run, add them to the main suite.
+    main_test_suite = unittest.TestSuite()
+    test_loader = unittest.TestLoader()
+    if options.test:
+        [main_test_suite.addTests(test_loader.loadTestsFromTestCase(available_tests[test])) for test in options.test]
+    else:
+        # Run all tests if none specified
+        [main_test_suite.addTests(test_loader.loadTestsFromTestCase(test_case)) for test_case in available_tests.values()]
+
     with open(options.outfile, 'wb') as f:
         print '\nStoring test results in "{0}"'.format(options.outfile)
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output=f)
-        )
+        test_runner = xmlrunner.XMLTestRunner(output=f)
+        test_runner.run(main_test_suite)
