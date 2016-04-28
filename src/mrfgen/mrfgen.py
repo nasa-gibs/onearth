@@ -1144,7 +1144,7 @@ verify_directory_path_exists(output_dir, 'output_dir')
 verify_directory_path_exists(working_dir, 'working_dir')
 
 # Make certain color map can be found
-if colormap != '':
+if colormap != '' and '://' not in colormap:
      colormap = check_abs_path(colormap)
 
 # Log all of the configuration information.

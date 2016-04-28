@@ -238,7 +238,10 @@ parser.add_option('-u', '--sigevent_url',
 if not options.colormap_filename:
     parser.error('ColorMap filename not provided. --colormap must be specified.')
 else:
-    colormap_filename = check_abs_path(options.colormap_filename)
+    if '://' not in options.colormap_filename:
+        colormap_filename = check_abs_path(options.colormap_filename)
+    else:
+        colormap_filename = options.colormap_filename
 # output VRT.
 if not options.output_vrt:
     parser.error('Output filename not provided. --output must be specified.')
