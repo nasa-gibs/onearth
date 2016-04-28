@@ -31,4 +31,5 @@ limitations under the License.
  <colormap></colormap>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
+ <mrf_merge>false</mrf_merge>
 </mrfgen_configuration>

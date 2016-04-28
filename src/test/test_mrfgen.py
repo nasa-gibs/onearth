@@ -488,7 +488,7 @@ class TestMRFGeneration_OBPG(unittest.TestCase):
             Test using existing MRF
             Test using granule images with Z-level
             Test input images that cross antimeridian
-            Test blending of input images with transparency
+            Test merging of input images with transparency
             Test adding image to existing Z-level
         '''
         
@@ -650,7 +650,7 @@ class TestMRFGeneration_OBPG_webmerc(unittest.TestCase):
         This covers the following test cases:        
             Test auto creation of empty MRF
             Test using existing MRF with reprojection with z-level
-            Test non-blending of input images with transparency
+            Test non-merging of input images with transparency
         '''
         # Check MRF generation succeeded
         self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")

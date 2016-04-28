@@ -51,16 +51,18 @@
 #  <cache_dir>/mrfgen/cache_dir</cache_dir>
 #  <working_dir>/mrfgen/working_dir</working_dir>
 #  <logfile_dir>/mrfgen/working_dir</logfile_dir>
-#  <empty_tile>black</empty_tile>
+#  <mrf_empty_tile_filename>/mrfgen/empty_tiles/black.jpg</mrf_empty_tile_filename>
 #  <mrf_blocksize>512</mrf_blocksize>
 #  <mrf_compression_type>JPEG</mrf_compression_type>
 #  <outsize>327680 163840</outsize>
 #  <overview_levels>2 4 8 16 32 64 128 256 512 1024</overview_levels>
 #  <overview_resampling>nearest</overview_resampling>
-#  <epsg>4326</epsg>
+#  <target_epsg>4326</target_epsg>
 #  <extents>-180,-90,180,90</extents>
-#  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
 #  <colormap></colormap>
+#  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
+#  <mrf_nocopy>true</mrf_nocopy>
+#  <mrf_merge>false</mrf_merge>
 # </mrfgen_configuration>
 #
 # Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
@@ -1110,7 +1112,7 @@ else:
         nocopy = None
     # blend, defaults to False
     try:
-        if get_dom_tag_value(dom, 'mrf_blend') == "false":
+        if get_dom_tag_value(dom, 'mrf_merge') == "false":
             blend = False
         else:
             blend = True
@@ -1193,7 +1195,7 @@ log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resam
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
-log_info_mssg(str().join(['config mrf_blend:               ', str(blend)]))
+log_info_mssg(str().join(['config mrf_merge:               ', str(blend)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))

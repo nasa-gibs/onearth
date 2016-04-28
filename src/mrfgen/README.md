@@ -82,6 +82,7 @@ Directory paths may be different than the example. Directories that do not exist
 * mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), or PPNG (for 256 color paletted PNGs).
 * target_x: The full x output size of the MRF image. target_y is calculated to maintain native aspect ratio if not defined in ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
 * mrf_nocopy: (true/false) Whether the MRF should be generated without GDAL copy. mrf_insert will be used for improved performance if true. Defaults to "true" unless a single global image is used as input.
+* mrf_merge: (true/false) Whether overlapping input images should be merged on a last-in basis when performing inserts. Defaults to "false" for faster performance.
 
 These parameters are available but not used in the example above nor necessarily required.
 
