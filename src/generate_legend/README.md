@@ -45,4 +45,4 @@ Generate horizontal PNG legend with continuous values and classifications verbos
 oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_ContinuousAndClass.xml -r horizontal -f png -v -o sample_continuousclass.png
 ```
 
-**For more color maps and the GIBS color map schema, visit: https://github.com/nasa-gibs/onearth/tree/master/src/colormaps**
+**For more color maps and the GIBS color map schema, checkout [colormaps](../colormaps/).**

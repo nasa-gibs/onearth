@@ -29,7 +29,7 @@ LoadModule onearth_module modules/mod_onearth.so
 
 ## Time Snapping
 
-`mod_onearth` has some special features for imagery layers that take place across specific time periods. For more information, look at [Time Snapping](https://github.com/nasa-gibs/onearth/tree/master/src/mod_onearth/TIME_SNAPPING.md)
+`mod_onearth` has some special features for imagery layers that take place across specific time periods. For more information, look at [Time Snapping](TIME_SNAPPING.md).
 
 ## Contact
 
