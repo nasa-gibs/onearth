@@ -26,6 +26,7 @@ limitations under the License.
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
     <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
-    <Mapfile>/usr/share/onearth/demo/mapserver/epsg4326.map</Mapfile>
+    <MapfileLocation basename="epsg4326">/usr/share/onearth/demo/mapserver/</MapfileLocation>
+    <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG4326/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
 </EnvironmentConfiguration>
