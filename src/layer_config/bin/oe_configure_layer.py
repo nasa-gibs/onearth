@@ -2014,7 +2014,7 @@ for conf in conf_files:
                 if 'OnlineResource' in lines[idx]:
                     spaces = lines[idx].index('<')
                     onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                    onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                    onlineResource.attributes['xlink:href'] = twmsServiceUrl + "twms.cgi?"
                     lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
             getCapabilities_base.seek(0)
             getCapabilities_base.truncate()
@@ -2036,11 +2036,11 @@ for conf in conf_files:
             lines = getTileService_base.readlines()
             for idx in range(0, len(lines)):
                 if 'BoundingBox' in lines[idx]:
-                    lines[idx] = lines[idx].replace("{minx}",projection.lowercorner[0]).replace("{miny}",projection.lowercorner[1]).replace("{maxx}",projection.uppercorner[0]).replace("{maxy}",projection.uppercorner[1])
+                    lines[idx] = lines[idx].replace("BoundingBox","LatLonBoundingBox").replace("{minx}",projection.lowercorner[0]).replace("{miny}",projection.lowercorner[1]).replace("{maxx}",projection.uppercorner[0]).replace("{maxy}",projection.uppercorner[1])
                 if 'OnlineResource' in lines[idx]:
                     spaces = lines[idx].index('<')
                     onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                    onlineResource.attributes['xlink:href'] = twmsServiceUrl
+                    onlineResource.attributes['xlink:href'] = twmsServiceUrl + "twms.cgi?"
                     lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
             getTileService_base.seek(0)
             getTileService_base.truncate()
@@ -2274,7 +2274,7 @@ for conf in conf_files:
     <Pad>0</Pad>
     <Bands>$Bands</Bands>
     <BoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
-    <Key>\${time}</Key>
+    <Key>${time}</Key>
 $Patterns</TiledGroup>"""
     
         layer_output = ""
@@ -2292,7 +2292,10 @@ $Patterns</TiledGroup>"""
             if '$Projection' in line:
                 line = line.replace("$Projection",projection.wkt)
             if '$Bands' in line:
-                line = line.replace("$Bands",bands)
+                if mrf_format == 'image/png':
+                    line = line.replace("$Bands","4") # GDAL wants 4 for PNGs
+                else:
+                    line = line.replace("$Bands",bands)
             if '$minx' in line:
                 line = line.replace("$minx",projection.lowercorner[0])
             if '$miny' in line:
