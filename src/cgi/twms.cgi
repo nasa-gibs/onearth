@@ -55,8 +55,7 @@ else
   if [[ $QUERY_STRING == *GetCapabilities* ]]
   then
     echo -e "Content-type: text/xml\n"
-#    cat getCapabilities.xml
-    IFS= ct <.lib/getCapabilities.xml
+    cat .lib/getCapabilities.xml
     exit
   else
     # Don't believe this works as the file is located in .lib
