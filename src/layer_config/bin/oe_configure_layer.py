@@ -2273,7 +2273,7 @@ for conf in conf_files:
     <Projection>$Projection</Projection>
     <Pad>0</Pad>
     <Bands>$Bands</Bands>
-    <BoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
+    <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
     <Key>${time}</Key>
 $Patterns</TiledGroup>"""
     
