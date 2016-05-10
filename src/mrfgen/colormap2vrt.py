@@ -331,7 +331,6 @@ else: # merge SLD into VRT
         for line in merge_file: # go to end of ColorTable
             if "</ColorTable>" in line:
                 output_file.writelines(line);
-                output_file.writelines("    <NoDataValue>0</NoDataValue>\n") #necessary?
                 break
         for line in merge_file:
             output_file.writelines(line);
