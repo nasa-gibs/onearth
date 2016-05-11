@@ -123,6 +123,22 @@ static char colon[] = "%3A";
 // This module
 module AP_MODULE_DECLARE_DATA onearth_module;
 
+// Evaluate the time period for days or seconds
+static int evaluate_period(char *time_period, int hastime)
+{
+	int period = 0;
+	if (hastime == 0) {
+		if (time_period[22] == 'P') {
+			period = apr_atoi64(time_period+23);
+		}
+	} else {
+		if (time_period[43] == 'T') {
+			period = apr_atoi64(time_period+44);
+		}
+	}
+	return period;
+}
+
 static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
 	apr_time_exp_t date;
 	// Convert start date to apr_time_exp_t
@@ -338,6 +354,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		  	int i;
    		    for (i=0;i<num_periods;i++) {
 	   		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
+			  	apr_time_t interval = evaluate_period(time_period, hastime);
 
 			  	// START OF DATE SNAPPING ROUTINE 
 			  	// First, parse the period start and end time strings, as well as the request.
@@ -369,7 +386,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	// Now we find the closest time before the requested time
 			  	// We do this by counting up intervals from the start date.
 			  	// Years and months aren't a fixed time interval so we process separately
-			  	apr_time_t interval = apr_atoi64(time_period + strlen(time_period) - 2);
 			  	apr_time_t snap_epoch;
 			  	apr_time_t date_epoch;
 			  	apr_time_t prev_epoch = start_epoch;
@@ -462,11 +478,11 @@ static void *r_file_pread(request_rec *r, char *fname,
 				} else {
 					break;
 				}
-				  if (i==num_periods) {
-					  // no data found within all periods
-					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
-				  }
-			  }
+   		    }
+			if (i==num_periods) {
+				  // no data found within all periods
+				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
+			}
 		}
 	  }
   }
