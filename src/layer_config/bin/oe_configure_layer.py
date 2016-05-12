@@ -2014,7 +2014,10 @@ for conf in conf_files:
                 if 'OnlineResource' in lines[idx]:
                     spaces = lines[idx].index('<')
                     onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                    onlineResource.attributes['xlink:href'] = twmsServiceUrl + "twms.cgi?"
+                    if 'KeywordList' in lines[idx-1]:
+                        onlineResource.attributes['xlink:href'] = twmsServiceUrl # don't include the cgi portion
+                    else:
+                        onlineResource.attributes['xlink:href'] = twmsServiceUrl + "twms.cgi?"
                     lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
             getCapabilities_base.seek(0)
             getCapabilities_base.truncate()
@@ -2040,7 +2043,10 @@ for conf in conf_files:
                 if 'OnlineResource' in lines[idx]:
                     spaces = lines[idx].index('<')
                     onlineResource = xml.dom.minidom.parseString(lines[idx]).getElementsByTagName('OnlineResource')[0]
-                    onlineResource.attributes['xlink:href'] = twmsServiceUrl + "twms.cgi?"
+                    if 'KeywordList' in lines[idx-1]:
+                        onlineResource.attributes['xlink:href'] = twmsServiceUrl # don't include the cgi portion
+                    else:
+                        onlineResource.attributes['xlink:href'] = twmsServiceUrl + "twms.cgi?"
                     lines[idx] = (' '*spaces) + onlineResource.toprettyxml(indent=" ")
             getTileService_base.seek(0)
             getTileService_base.truncate()
