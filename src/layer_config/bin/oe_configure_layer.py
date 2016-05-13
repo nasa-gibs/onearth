@@ -1994,7 +1994,7 @@ for conf in conf_files:
     
 
     #getCapabilities TWMS
-    if no_twms == False and no_xml == False:
+    if no_twms == False:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = twmsEndPoint+'/getCapabilities.xml'
@@ -2025,7 +2025,7 @@ for conf in conf_files:
             getCapabilities_base.close()
     
         #getTileService
-    if no_twms == False and no_xml == False:
+    if no_twms == False:
         try:
             # Copy and open base GetTileService.
             getTileService_file = twmsEndPoint+'/getTileService.xml'
@@ -2054,7 +2054,7 @@ for conf in conf_files:
             getTileService_base.close()
     
     #getCapabilities WMTS modify Service URL
-    if no_wmts == False and no_xml == False:
+    if no_wmts == False:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
@@ -2387,47 +2387,46 @@ if no_twms == False:
                 shutil.copyfile(twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config', twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.config')
                 print '\nCopying: ' + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml' + ' -> ' + twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.xml'
                 shutil.copyfile(twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml', twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.xml')
-        if no_xml == False:
-            if twms_endpoint.getCapabilities:
-                # Add layer metadata to getCapabilities
-                layer_xml = ""
-                for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
-                    if xml_file.endswith("_gc.xml") and xml_file != "getCapabilities.xml":
-                        layer_xml = layer_xml + open(twms_endpoint.path+'/'+str(xml_file), 'r').read()
-                getCapabilities_file = twms_endpoint.path+'/getCapabilities.xml'
-                getCapabilities_base = open(getCapabilities_file, 'r+')
-                gc_lines = getCapabilities_base.readlines()
-                for idx in range(0, len(gc_lines)):
-                    if "</Layer>" in gc_lines[idx]:
-                        gc_lines[idx] = layer_xml + gc_lines[idx]
-                        print '\nAdding layers to TWMS GetCapabilities'
-                    getCapabilities_base.seek(0)
-                    getCapabilities_base.truncate()
-                    getCapabilities_base.writelines(gc_lines)        
-                getCapabilities_base.close()
-                
-                print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities+'/getCapabilities.xml'
-                shutil.copyfile(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities+'/getCapabilities.xml')
-                
-            if twms_endpoint.getTileService:
-                # Add layer metadata to getTileService
-                layer_xml = ""
-                for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
-                    if xml_file.endswith("_gts.xml") and xml_file != "getTileService.xml":
-                        layer_xml = layer_xml + open(twms_endpoint.path+'/'+str(xml_file), 'r').read()
-                getTileService_file = twms_endpoint.path+'/getTileService.xml'
-                getTileService_base = open(getTileService_file, 'r+')
-                gc_lines = getTileService_base.readlines()
-                for idx in range(0, len(gc_lines)):
-                    if "</TiledPatterns>" in gc_lines[idx]:
-                        gc_lines[idx] = layer_xml + gc_lines[idx]
-                        print '\nAdding layers to TWMS GetTileService'
-                    getTileService_base.seek(0)
-                    getTileService_base.truncate()
-                    getTileService_base.writelines(gc_lines)        
-                getTileService_base.close()                
-                print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService+'/getTileService.xml'
-                shutil.copyfile(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService+'/getTileService.xml')
+        if twms_endpoint.getCapabilities:
+            # Add layer metadata to getCapabilities
+            layer_xml = ""
+            for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
+                if xml_file.endswith("_gc.xml") and xml_file != "getCapabilities.xml":
+                    layer_xml = layer_xml + open(twms_endpoint.path+'/'+str(xml_file), 'r').read()
+            getCapabilities_file = twms_endpoint.path+'/getCapabilities.xml'
+            getCapabilities_base = open(getCapabilities_file, 'r+')
+            gc_lines = getCapabilities_base.readlines()
+            for idx in range(0, len(gc_lines)):
+                if "</Layer>" in gc_lines[idx]:
+                    gc_lines[idx] = layer_xml + gc_lines[idx]
+                    print '\nAdding layers to TWMS GetCapabilities'
+                getCapabilities_base.seek(0)
+                getCapabilities_base.truncate()
+                getCapabilities_base.writelines(gc_lines)        
+            getCapabilities_base.close()
+            if no_xml == False:                
+                    print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities+'/getCapabilities.xml'
+                    shutil.copyfile(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities+'/getCapabilities.xml')
+        if twms_endpoint.getTileService:
+            # Add layer metadata to getTileService
+            layer_xml = ""
+            for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
+                if xml_file.endswith("_gts.xml") and xml_file != "getTileService.xml":
+                    layer_xml = layer_xml + open(twms_endpoint.path+'/'+str(xml_file), 'r').read()
+            getTileService_file = twms_endpoint.path+'/getTileService.xml'
+            getTileService_base = open(getTileService_file, 'r+')
+            gc_lines = getTileService_base.readlines()
+            for idx in range(0, len(gc_lines)):
+                if "</TiledPatterns>" in gc_lines[idx]:
+                    gc_lines[idx] = layer_xml + gc_lines[idx]
+                    print '\nAdding layers to TWMS GetTileService'
+                getTileService_base.seek(0)
+                getTileService_base.truncate()
+                getTileService_base.writelines(gc_lines)        
+            getTileService_base.close()
+            if no_xml == False:          
+                    print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService+'/getTileService.xml'
+                    shutil.copyfile(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService+'/getTileService.xml')
 
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -2443,28 +2442,27 @@ if no_wmts == False:
                 shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config')
                 print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
                 shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml')
-        if no_xml == False:
-            if wmts_endpoint.getCapabilities:
-                # Add layer metadata to getCapabilities
-                layer_xml = ""
-                for xml_file in sorted(os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
-                    if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml" and (xml_file.startswith("cache")==False):
-                        layer_xml = layer_xml + open(wmts_endpoint.path+'/'+str(xml_file), 'r').read()
-                getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
-                getCapabilities_base = open(getCapabilities_file, 'r+')
-                gc_lines = getCapabilities_base.readlines()
-                for idx in range(0, len(gc_lines)):
-                    if "<Contents>" in gc_lines[idx]:
-                        gc_lines[idx] = gc_lines[idx] + layer_xml
-                        print '\nAdding layers to WMTS GetCapabilities'
-                    if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
-                        gc_lines[idx] = wmts_endpoint.projection.tilematrixset_xml[2:] + '\n' + gc_lines[idx]
-                        print "\nAdding TileMatrixSet to WMTS GetCapabilities"
-                    getCapabilities_base.seek(0)
-                    getCapabilities_base.truncate()
-                    getCapabilities_base.writelines(gc_lines)        
-                getCapabilities_base.close()
-                
+        if wmts_endpoint.getCapabilities:
+            # Add layer metadata to getCapabilities
+            layer_xml = ""
+            for xml_file in sorted(os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
+                if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml" and (xml_file.startswith("cache")==False):
+                    layer_xml = layer_xml + open(wmts_endpoint.path+'/'+str(xml_file), 'r').read()
+            getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
+            getCapabilities_base = open(getCapabilities_file, 'r+')
+            gc_lines = getCapabilities_base.readlines()
+            for idx in range(0, len(gc_lines)):
+                if "<Contents>" in gc_lines[idx]:
+                    gc_lines[idx] = gc_lines[idx] + layer_xml
+                    print '\nAdding layers to WMTS GetCapabilities'
+                if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
+                    gc_lines[idx] = wmts_endpoint.projection.tilematrixset_xml[2:] + '\n' + gc_lines[idx]
+                    print "\nAdding TileMatrixSet to WMTS GetCapabilities"
+                getCapabilities_base.seek(0)
+                getCapabilities_base.truncate()
+                getCapabilities_base.writelines(gc_lines)        
+            getCapabilities_base.close()
+            if no_xml == False:            
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities+'/getCapabilities.xml'
                 shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities+'/getCapabilities.xml')
                 if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
