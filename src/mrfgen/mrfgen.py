@@ -594,7 +594,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge.wait()
     return new_tile
 
-def split_across_antimeridian(tile, extents, antimeridian, xres, yres, working_dir):
+def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_epsg, target_epsg, working_dir):
     """
     Splits up a tile that crosses the antimeridian
     Arguments:
@@ -607,7 +607,11 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, working_d
     """
     temp_tile = working_dir + os.path.basename(tile) + '.temp.vrt'
     ulx, uly, lrx, lry = extents
-    new_lrx = str(float(lrx)+float(antimeridian)*2)
+    if float(lrx) <= float(antimeridian):
+        new_lrx = str(float(lrx)+float(antimeridian)*2)
+    else:
+        new_lrx = lrx
+        lrx = str(float(antimeridian)*-1 - (float(antimeridian)-float(lrx)))
     cutline_template = """
     {
       "type": "Polygon",
@@ -629,21 +633,28 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, working_d
     tile_left = tile+".left_cut.vrt"
     tile_right = tile+".right_cut.vrt" 
     
-    # modify input into >180 space
-    gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
-    log_the_command(gdal_edit_command_list)
-    gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdal_edit.wait()  
+    if float(extents[2]) <= float(antimeridian):
+        # modify input into >180 space if not already
+        gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
+        log_the_command(gdal_edit_command_list)
+        gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        gdal_edit.wait()  
     
     # cut the input at the antimeridian into left and right halves
-    left_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    right_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+    left_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+    right_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
     log_the_command(left_cut_command_list)
     left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     left_cut.wait()
+    left_cut_stderr = left_cut.stderr.read()
+    if len(left_cut_stderr) > 0:
+        log_sig_err(left_cut_stderr, sigevent_url)
     log_the_command(right_cut_command_list)
     right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     right_cut.wait()
+    right_cut_stderr = right_cut.stderr.read()
+    if len(right_cut_stderr) > 0:
+        log_sig_err(right_cut_stderr, sigevent_url)
     
     # flip the origin longitude of the right half
     gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(float(antimeridian)*-1), uly, lrx, lry]
@@ -687,9 +698,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         diff_res, ps = diff_resolution([tile, mrf])
         log_info_mssg("Pixel size " + repr(ps))
         # check if granule crosses antimeridian
-        if ((float(extents[0])-float(s_xmax)) > float(extents[2])):
+        if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
             log_info_mssg(tile + " crosses antimeridian")
-            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)), working_dir)
+            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)), source_epsg, target_epsg, working_dir)
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir)
             continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
@@ -1970,7 +1981,7 @@ for tilename in (alltiles):
         if tiff_compress != None:
             remove_file(tilename+'.aux.xml')
         if '_indexed.' in tilename:
-            remove_file(tilename.split('.')[0]+'.pgw')
+            remove_file(tilename.rsplit('.',1)[0]+'.pgw')
 
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])
