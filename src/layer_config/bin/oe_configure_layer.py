@@ -2484,7 +2484,7 @@ if create_mapfile is True:
         except IOError:
             pass
         # Iterate through layer mapfile snippets
-        layers = [os.path.join(environment.mapfileStagingLocation, file) for file in sorted(os.listdir(environment.mapfileStagingLocation), key=unicode.lower) if file.endswith('.map') and not file.startswith(environment.mapfileConfigBasename)]
+        layers = [os.path.join(environment.mapfileStagingLocation, file) for file in sorted(os.listdir(environment.mapfileStagingLocation), key=unicode.lower) if file.endswith('.map') and not file.startswith(environment.mapfileLocationBasename)]
         for layer in layers:
             with open(layer, 'r') as f:
                 mapfile.write('\n')
