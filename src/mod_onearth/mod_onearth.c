@@ -124,16 +124,16 @@ static char colon[] = "%3A";
 module AP_MODULE_DECLARE_DATA onearth_module;
 
 // Evaluate the time period for days or seconds
-static int evaluate_period(char *time_period, int hastime)
+static int evaluate_period(char *time_period)
 {
-	int period = 0;
-	if (hastime == 0) {
-		if (time_period[22] == 'P') {
-			period = apr_atoi64(time_period+23);
-		}
-	} else {
+	int period = 1;
+	if (strlen(time_period) > 43) {
 		if (time_period[43] == 'T') {
 			period = apr_atoi64(time_period+44);
+		}
+	} else {
+		if (time_period[22] == 'P') {
+			period = apr_atoi64(time_period+23);
 		}
 	}
 	return period;
@@ -354,7 +354,11 @@ static void *r_file_pread(request_rec *r, char *fname,
 		  	int i;
    		    for (i=0;i<num_periods;i++) {
 	   		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
-			  	apr_time_t interval = evaluate_period(time_period, hastime);
+	   		    if (!ap_strstr(time_period,"P")) {
+	   		    	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No duration detected in %s", time_period);
+	   		    	continue;
+	   		    }
+			  	apr_time_t interval = evaluate_period(time_period);
 
 			  	// START OF DATE SNAPPING ROUTINE 
 			  	// First, parse the period start and end time strings, as well as the request.
@@ -438,6 +442,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  				case 'M':
 			  					interval = interval * 60 * 1000 * 1000;
 			  					break;
+			  				case 'S':
+			  					interval = interval * 1000 * 1000;
+			  					break;
 			  			}
 			  			apr_time_t closest_interval =  (((req_epoch - start_epoch) / interval) * interval) + start_epoch;
 			  			if (closest_interval <= end_epoch) {
@@ -466,7 +473,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  	*(fnloc+7)=old_char;
 			  	} else {
 					char old_char=*(fnloc+13);
-	//				ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"period time is %04d-%02d-%02dT%02d:%02d:%02d", tm.tm_year, tm.tm_mon, tm.tm_mday, tm_hour, tm_min, tm_sec);
 					sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
 					*(fnloc+13)=old_char;
 			  	}
@@ -1787,7 +1793,7 @@ static int mrf_handler(request_rec *r)
   index_s *this_record;
   void *this_data=0;
   int default_idx;
-  int z;
+  int z = -1;
 
   // Get the configuration
   cfg=(wms_cfg *) 
@@ -1804,6 +1810,13 @@ static int mrf_handler(request_rec *r)
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
       "No prepared regexps");
     return DECLINED;
+  }
+
+  if (ap_strcasestr(r->args,"zindex=")) {
+	  char *zchar = apr_pcalloc(r->pool,strlen(r->args) + 1);
+	  getParam(r->args,"zindex",zchar);
+	  z = apr_atoi64(zchar);
+	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"ZINDEX override: %d, %s", z, r->args);
   }
 
   // DEBUG
@@ -1902,10 +1915,12 @@ static int mrf_handler(request_rec *r)
 				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
 			  }
 
-			  // Lookup the z index from the ZDB file based on keyword
-			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
 			  if (z<0) {
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d",z);
+				  // Lookup the z index from the ZDB file based on keyword
+				  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
+				  if (z<0) {
+					  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d, %s", z, r->args);
+				  }
 			  }
 			  if (z >= cache->zlevels) {
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Retrieved z-index %d is greater than the maximum for the layer %d",z,cache->zlevels);
@@ -1976,9 +1991,11 @@ static int mrf_handler(request_rec *r)
 			  }
 
 			  // Lookup the z index from the ZDB file based on keyword
-			  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
 			  if (z<0) {
-				  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d",z);
+			  	z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
+			  	if (z<0) {
+				  	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d, %s", z, r->args);
+			  	}
 			  }
 			  if (z >= cache->zlevels) {
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Retrieved z-index %d is greater than the maximum for the layer %d",z,cache->zlevels);
