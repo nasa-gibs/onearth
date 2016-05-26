@@ -79,7 +79,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '1.0.0'
+versionNumber = '1.0.1'
 
 class WMTSEndPoint:
     """End point data for WMTS"""

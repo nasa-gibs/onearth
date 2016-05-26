@@ -120,6 +120,7 @@ rm -rf %{buildroot}
 %dir %{_datadir}/onearth
 %defattr(775,gibs,gibs,775)
 %{_datadir}/onearth/apache
+%{_datadir}/onearth/empty_tiles
 %defattr(755,root,root,-)
 %{_bindir}/oe_create_cache_config
 %{_datadir}/cgicc

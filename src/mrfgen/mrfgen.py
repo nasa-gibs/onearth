@@ -92,7 +92,7 @@ import imghdr
 import sqlite3
 import math
 
-versionNumber = '1.0.0'
+versionNumber = '1.0.1'
 basename = None
 
 #-------------------------------------------------------------------------------
