@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.0.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -95,18 +95,18 @@ install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
 ln -s %{_datadir}/onearth/apache/wmts.cgi \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
 ln -s %{_datadir}/onearth/apache/twms.cgi \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+   %{buildroot}/%{_datadir}/onearth/demo/twms-geo/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+   %{buildroot}/%{_datadir}/onearth/demo/twms-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/on_earth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d

@@ -44,10 +44,10 @@ then
   if [[ $QUERY_STRING == *jpeg* ]]
   then
     echo -e "Content-type: image/jpeg\n"
-    cat Blank_RGB_512.jpg
+    cat black.jpg
   else
     echo -e "Content-type: image/png\n"
-    cat Blank_RGBA_512.png
+    cat transparent.png
   fi
   exit
 else
