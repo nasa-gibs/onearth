@@ -1268,15 +1268,14 @@ sigevent_url = options.sigevent_url
 print 'Using ' + lcdir + ' as $LCDIR.'
 
 if no_xml:
-    print "no_xml specified, getCapabilities and getTileService files will not be generated"
+    log_info_mssg("no_xml specified, getCapabilities and getTileService files will be staged only")
 if no_cache:
-    print "no_cache specified, cache configuration files will not be generated"
+    log_info_mssg("no_cache specified, cache configuration files will be staged only")
     restart = False
-if no_xml and no_cache and not create_mapfile:
-    print "no_xml, no_cache, and create_mapfiles specified, nothing to do...exiting"
-    exit()
+if not create_mapfile:
+    log_info_mssg("create_mapfile not specified, no mapfiles will be created")
 if no_twms and no_wmts and not create_mapfile:
-    print "no_twms and no_wmts and create_mapfile not specified, nothing to do...exiting"
+    log_info_mssg("no_twms and no_wmts and create_mapfile not specified, nothing to do...exiting")
     exit()
     
 if configuration_time:
@@ -2484,7 +2483,7 @@ if create_mapfile is True:
         except IOError:
             pass
         # Iterate through layer mapfile snippets
-        layers = [os.path.join(environment.mapfileStagingLocation, file) for file in sorted(os.listdir(environment.mapfileStagingLocation), key=unicode.lower) if file.endswith('.map') and not file.startswith(environment.mapfileLocationBasename)]
+        layers = [os.path.join(environment.mapfileStagingLocation, file) for file in sorted(os.listdir(environment.mapfileStagingLocation), key=unicode.lower) if file.endswith('.map') and not file.startswith(environment.mapfileConfigBasename)]
         for layer in layers:
             with open(layer, 'r') as f:
                 mapfile.write('\n')
@@ -2535,7 +2534,7 @@ if len(errors) > 0:
 if len(warnings) == 0 and len(errors) == 0:
     message = completion + "successully."
 print ""
-message = message + " " + ("Cache configurations created.", "No cache configurations.")[no_cache] + " " + ("Server XML created","No server XML")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " " + ("Archive links not generated","Archive links generated")[links] + ". " + ("Mapfiles not configured","Mapfiles configured")[create_mapfile] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
+message = message + " " + ("Cache configurations created.", "Cache configurations staged.")[no_cache] + " " + ("Server XML created","Server XML staged")[no_xml] + "." + " " + ("Apache not restarted","Apache restarted")[restart] + "." + " " + ("Legends not generated","Legends generated")[legend] + "." + " " + ("Archive links not generated","Archive links generated")[links] + ". " + ("Mapfiles not configured","Mapfiles configured")[create_mapfile] + "." + " Warnings: " + str(len(warnings)) + ". Errors: " + str(len(errors)) + "." 
 
 try:
     log_info_mssg(asctime() + " " + message)
