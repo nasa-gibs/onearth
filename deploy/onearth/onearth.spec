@@ -1,5 +1,5 @@
 Name:		onearth
-Version:	1.0.0
+Version:	1.0.1
 Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
@@ -94,18 +94,18 @@ make onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
 ln -s %{_datadir}/onearth/apache/wmts.cgi \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
-ln -s %{_datadir}/onearth/apache/black.jpg \
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
-ln -s %{_datadir}/onearth/apache/transparent.png \
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
 ln -s %{_datadir}/onearth/apache/twms.cgi \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo
-ln -s %{_datadir}/onearth/apache/black.jpg \
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo
-ln -s %{_datadir}/onearth/apache/transparent.png \
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/on_earth-demo.conf \
@@ -169,6 +169,9 @@ mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 
 %changelog
+* Wed May 25 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.0.1-1
+- Modified empty tiles
+
 * Tue Mar 8 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.9.1-1
 - Removed numpy as it is included in gibs-gdal
 
@@ -223,8 +226,8 @@ mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
 * Tue Feb 18 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.2.4-1
 - Changed the version to 0.2.4 to be consistent with project release
 
-* Thu Feb 13 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.0.0-2
+* Thu Feb 13 2014 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 0.0.0-2
 - Changed to release 0.2
 
-* Wed Sep 4 2013 Mike McGann <mike.mcgann@nasa.gov> - 1.0.0-1
+* Wed Sep 4 2013 Mike McGann <mike.mcgann@nasa.gov> - 0.0.0-1
 - Initial package

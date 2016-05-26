@@ -59,7 +59,7 @@ Prepare an MRF configuration file.  This [file](../test/mrfgen_files/mrfgen_test
  <output_dir>test/output_dir</output_dir>
  <working_dir>test/working_dir</working_dir>
  <logfile_dir>test/logfile_dir</logfile_dir>
- <mrf_empty_tile_filename>empty_tiles/transparent.png</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <target_x>4096</target_x>
@@ -111,7 +111,7 @@ Let's modify the previous sample configuration to reproject the imagery into Web
  <output_dir>test/output_dir</output_dir>
  <working_dir>test/working_dir</working_dir>
  <logfile_dir>test/logfile_dir</logfile_dir>
- <mrf_empty_tile_filename>empty_tiles/transparent.png</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <outsize>20480 20480</outsize>

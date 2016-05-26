@@ -10,11 +10,13 @@ These steps demonstrate how to create a new endpoint on the file system.  Repeat
 mkdir -p /usr/share/onearth/demo/wmts-geo
 
 cp -p /usr/share/onearth/apache/wmts.cgi /usr/share/onearth/demo/wmts-geo
-cp -p /usr/share/onearth/apache/black.jpg /usr/share/onearth/demo/wmts-geo
-cp -p /usr/share/onearth/apache/transparent.png /usr/share/onearth/demo/wmts-geo
 cp -p /usr/share/onearth/apache/index.html /usr/share/onearth/demo/wmts-geo
+cp -p /usr/share/onearth/empty_tiles/Blank_RGB_512.jpg /usr/share/onearth/demo/wmts-geo
+cp -p /usr/share/onearth/empty_tiles/Blank_RGBA_512.png /usr/share/onearth/demo/wmts-geo
 ```
+
 2) Check permissions
+
 
 ## Tiled-WMS
 
@@ -43,3 +45,7 @@ make WEB_HOST=<host>:<port>/kml_endpoint
 2) Copy the binary CGI script to the endpoint directory.
 
 `mv kmlgen.cgi ../` 
+
+## Empty Tiles
+
+Copy the appropriate empty tiles to endpoint directories. An empty tile refers to the image that will be displayed when a tile cannot be retrieved from the image archive. Use Blank\_RGB\_\*.png for JPEG imagery, and Blank\_RGBA\_\*.png for PNG imagery. Choose between 512 or 256 depending on the tile size of the imagery. Custom empty tiles may be created if none of the provided ones are suitable. The *.cgi file may need to be modified to reference the correct empty tiles.

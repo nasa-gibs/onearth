@@ -23,7 +23,7 @@ limitations under the License.
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
  <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
- <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/black.jpg</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGB_256.jpg</mrf_empty_tile_filename>
  <mrf_blocksize>256</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
  <outsize>163840 163840</outsize>

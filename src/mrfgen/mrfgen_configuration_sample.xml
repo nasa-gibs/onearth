@@ -20,7 +20,7 @@ limitations under the License.
  <cache_dir>/mrfgen/cache_dir</cache_dir>
  <working_dir>/mrfgen/working_dir</working_dir>
  <logfile_dir>/mrfgen/working_dir</logfile_dir>
- <mrf_empty_tile_filename>/mrfgen/empty_tiles/black.jpg</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>/mrfgen/empty_tiles/Blank_RGB_512.jpg</mrf_empty_tile_filename>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
  <outsize>327680 163840</outsize>

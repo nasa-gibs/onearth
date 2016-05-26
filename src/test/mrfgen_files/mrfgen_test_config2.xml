@@ -6,7 +6,7 @@
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
  <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
- <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/black.jpg</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGB_512.jpg</mrf_empty_tile_filename>
  <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>

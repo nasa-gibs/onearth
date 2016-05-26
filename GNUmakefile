@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.0.0
+ONEARTH_VERSION=1.0.1
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -105,6 +105,7 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
 	install -m 755 src/cgi/twms.cgi \
@@ -115,10 +116,8 @@ onearth-install:
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
 	cp src/cgi/index.html \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
-	cp src/mrfgen/empty_tiles/black.jpg \
-		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
-	cp src/mrfgen/empty_tiles/transparent.png \
-		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	cp src/mrfgen/empty_tiles/* \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/mrfgen
 	cp src/mrfgen/empty_tiles/* \
