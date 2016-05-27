@@ -11,8 +11,6 @@ mkdir -p /usr/share/onearth/demo/wmts-geo
 
 cp -p /usr/share/onearth/apache/wmts.cgi /usr/share/onearth/demo/wmts-geo
 cp -p /usr/share/onearth/apache/index.html /usr/share/onearth/demo/wmts-geo
-cp -p /usr/share/onearth/empty_tiles/Blank_RGB_512.jpg /usr/share/onearth/demo/wmts-geo
-cp -p /usr/share/onearth/empty_tiles/Blank_RGBA_512.png /usr/share/onearth/demo/wmts-geo
 ```
 
 2) Check permissions
@@ -48,4 +46,23 @@ make WEB_HOST=<host>:<port>/kml_endpoint
 
 ## Empty Tiles
 
-Copy the appropriate empty tiles to endpoint directories. An empty tile refers to the image that will be displayed when a tile cannot be retrieved from the image archive. Use Blank\_RGB\_\*.png for JPEG imagery, and Blank\_RGBA\_\*.png for PNG imagery. Choose between 512 or 256 depending on the tile size of the imagery. Custom empty tiles may be created if none of the provided ones are suitable. The *.cgi file may need to be modified to reference the correct empty tiles.
+The WMTS and TWMS CGI scripts will "fall through" to an empty tile image in the event that an invalid request is received.  To support the following files should exist in the endpoint directory:
+* black.jpg
+* transparent.png
+
+OnEarth installs the following files in the /usr/share/onearth/empty_tiles/ directory for you to choose from. Custom empty tiles may be created if none of the provided ones are suitable. 
+* Blank_RGB_512.jpg - A 512x512 pixel black JPEG.
+* Blank_RGB_256.jpg - A 256x256 pixel black JPEG.
+* Blank_RGBA_512.jpg - A 512x512 pixel transparent (0,0,0,0) PNG.
+* Blank_RGBA_256.jpg - A 256x256 pixel transparent (0,0,0,0) PNG.
+
+To complete configuration of the a WMTS endpoint, you would copy or link these empty tiles as shown below:
+```
+cp -p /usr/share/onearth/empty_tiles/Blank_RGB_512.jpg /usr/share/onearth/demo/wmts-geo/black.jpg
+cp -p /usr/share/onearth/empty_tiles/Blank_RGBA_512.png /usr/share/onearth/demo/wmts-geo/transparent.png
+
+- or -
+
+ln -s /usr/share/onearth/empty_tiles/Blank_RGB_512.jpg /usr/share/onearth/demo/wmts-geo/black.jpg
+cp -p /usr/share/onearth/empty_tiles/Blank_RGBA_512.png /usr/share/onearth/demo/wmts-geo/transparent.png
+```
