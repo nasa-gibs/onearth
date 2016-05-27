@@ -2176,7 +2176,7 @@ int rewrite_rest_uri(request_rec *r) {
 
 	i = 0;
 	p = apr_strtok(r->uri,"/",&last);
-	while (p != NULL && i < 10) {
+	while (p != NULL && i < 11) {
 		params[i++] = p;
 		p = apr_strtok(NULL, "/",&last);
 	}
