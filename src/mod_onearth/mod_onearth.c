@@ -2141,6 +2141,7 @@ static int mrf_handler(request_rec *r)
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
+  apr_table_setn(r->headers_out, "Source-Data", "http://localhost/data/test.hdf");
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
