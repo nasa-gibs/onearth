@@ -557,7 +557,7 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
         return -1;
     }
 
-    char *sql = strlen(keyword)!=0 ? "SELECT z FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT z FROM ZINDEX order by key_str DESC LIMIT 1";
+    char *sql = strlen(keyword)!=0 ? "SELECT * FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT * FROM ZINDEX order by key_str DESC LIMIT 1";
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
     if (rc != SQLITE_OK) {
@@ -572,6 +572,20 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
 
     if (rc == SQLITE_ROW) {
     	z = apr_atoi64((char*)sqlite3_column_text(res, 0));
+    	if (sqlite3_column_count(res) > 1) { // Check if there is a key_str column
+    		if (strcmp(sqlite3_column_name(res, 1), "key_str") == 0) {
+				char *key = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 1))+1);
+				apr_cpystrn(key, (char*)sqlite3_column_text(res, 1), strlen(sqlite3_column_text(res, 1))+1);
+				apr_table_setn(r->headers_out, "Source-Key", key);
+    		}
+    	}
+    	if (sqlite3_column_count(res) > 2) { // Check if there is a source_url column
+    		if (strcmp(sqlite3_column_name(res, 2), "source_url") == 0) {
+				char *source_data = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 2))+1);
+				apr_cpystrn(source_data, (char*)sqlite3_column_text(res, 2), strlen(sqlite3_column_text(res, 2))+1);
+				apr_table_setn(r->headers_out, "Source-Data", source_data);
+    		}
+    	}
     } else {
     	wmts_add_error(r,404,"ImageNotFound","TIME", "Image cannot be found for the requested date and time");
     }
@@ -792,6 +806,8 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/png");
       else if (ap_find_token(cfg->p,cache->prefix,"tiff"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
+       else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf");
       else {
 	ap_log_error(APLOG_MARK,APLOG_ERR,0,server,
 	  "Type not found, using text/html for cache %s", cache->pattern);
@@ -1510,8 +1526,9 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Fjpeg");
 	} else if (ap_strcasecmp_match(format, "image/tiff") == 0) {
 		strcpy(format,"image%2Ftiff");
+	} else if (ap_strcasecmp_match(format, "application/x-protobuf") == 0) {
+		strcpy(format,"application%2Fx-protobuf");
 	}
-
 	// handle colons
 	if (ap_strchr(time, ':') != 0) {
 		int i; i= 0;
@@ -2141,7 +2158,10 @@ static int mrf_handler(request_rec *r)
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
-  apr_table_setn(r->headers_out, "Source-Data", "http://localhost/data/test.hdf");
+  // Set gzip encoding if output is pbf
+  if (apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf") == 0) {
+  	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
+  }
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
