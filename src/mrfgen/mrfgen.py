@@ -754,7 +754,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 log_sig_err('mrf_insert ' + message, sigevent_url)
             else:
                 log_info_mssg(message.strip())
-        # clean up        
+        # clean up      
         if ".blend." in tile:
             remove_file(tile)
             tile = tile.split('.vrt.blend.')[0]
@@ -766,7 +766,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
     return errors
 
 
-def insert_zdb(mrf, zlevels, zkey):
+def insert_zdb(mrf, zlevels, zkey, source_url):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
@@ -808,8 +808,11 @@ def insert_zdb(mrf, zlevels, zkey):
         con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
         
         if db_exists == False:
-            cur = con.cursor() 
-            cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+            cur = con.cursor()
+            if source_url == "": 
+                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+            else:
+                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT);")
             con.commit()
 
         if zkey != '':
@@ -840,6 +843,9 @@ def insert_zdb(mrf, zlevels, zkey):
                     cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
                 z = cur.lastrowid
                 log_info_mssg("Current z-level is " +str(z))
+            if source_url != "" and source_url != "NONE":
+                log_info_mssg("Adding Source URL " + source_url + " to z=" +str(z))
+                cur.execute("UPDATE ZINDEX SET source_url=('"+source_url+"') WHERE z="+str(z))
         
     except sqlite3.Error, e:
         if con:
@@ -1129,6 +1135,13 @@ else:
             blend = True
     except:
         blend = False
+    try:
+        source_url = get_dom_tag_value(dom, 'source_url')
+    except:
+        if len(dom.getElementsByTagName('source_url')) > 0:
+            source_url = "NONE"
+        else:
+            source_url = ''    
     # Close file.
     config_file.close()
 
@@ -1209,6 +1222,7 @@ log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(blend)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
+log_info_mssg(str().join(['config source_url:              ', source_url]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
@@ -1422,7 +1436,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 add_transparency = True
             else:
                 log_info_mssg("Paletted image verified")
-                
+
         # remove tif temp tiles
         if temp_tile != None:
             remove_file(temp_tile)
@@ -1547,7 +1561,7 @@ if len(mrf_list) > 0:
         
     # Check if zdb is used
     if zlevels != '':
-        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey)
+        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey, source_url)
     else:
         con = None
         
@@ -1578,7 +1592,7 @@ if zlevels != '':
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
-    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey)
+    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url)
 else:
     con = None
     gdal_mrf_filename = mrf_filename
