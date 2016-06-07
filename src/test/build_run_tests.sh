@@ -37,6 +37,6 @@ echo "export LCDIR=/etc/onearth/config" >> /home/onearth/.bashrc
 chkconfig --level 234 httpd on
 
 # RUN TESTS
-python /home/onearth/src/test/test_configure_layer.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
-python /home/onearth/src/test/test_mod_onearth.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
-python /home/onearth/src/test/test_mrfgen.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
+sudo python /home/onearth/src/test/test_configure_layer.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
+sudo python /home/onearth/src/test/test_mod_onearth.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
+sudo python /home/onearth/src/test/test_mrfgen.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
