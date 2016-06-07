@@ -1248,8 +1248,8 @@ else:
 
     # Verify that the empty tile image format is either PNG or JPEG.
     mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
-    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff':
-        mssg='Empty tile image format must be either png, jpeg, or tiff.'
+    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff' and mrf_empty_tile_what != 'lerc':
+        mssg='Empty tile image format must be either png, jpeg, tiff, or lerc.'
         log_sig_exit('ERROR', mssg, sigevent_url)
     
     # Verify that the empty tile matches MRF compression type.
@@ -1506,7 +1506,7 @@ mrf_filename=str().join([output_dir, basename, '.mrf'])
 # The .idx file is the index compnent of the MRF format.
 idx_filename=str().join([output_dir, basename, '.idx'])
 
-# The image component of MRF is .pjg or .ppg, depending on compression type.
+# The image component of MRF is .pjg, .ppg, .ptf, or lrc depending on compression type.
 if mrf_compression_type == 'PNG':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ppg'])
@@ -1522,6 +1522,9 @@ elif mrf_compression_type == 'JPEG':
 elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ptf'])
+elif mrf_compression_type == 'LERC':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.lrc'])
 else:
     mssg='Unrecognized compression type for MRF: ' + mrf_compression_type 
     log_sig_exit('ERROR', mssg, sigevent_url)
@@ -1712,6 +1715,8 @@ elif mrf_compression_type == 'JPEG':
     compress=str('COMPRESS=JPEG')
 elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
     compress=str('COMPRESS=TIF')
+elif mrf_compression_type == 'LERC':
+    compress=str('COMPRESS=LERC')
 else:
     mssg='Unrecognized compression type for MRF.'
     log_sig_exit('ERROR', mssg, sigevent_url)
