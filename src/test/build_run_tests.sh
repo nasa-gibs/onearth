@@ -36,6 +36,9 @@ echo "export LCDIR=/etc/onearth/config" >> /home/onearth/.bashrc
 #Set Apache to start when machine is restarted
 chkconfig --level 234 httpd on
 
+# INSTALL TEST DEPENDENCIES
+sudo pip install -r requirements.txt
+
 # RUN TESTS
 sudo python /home/onearth/src/test/test_configure_layer.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
 sudo python /home/onearth/src/test/test_mod_onearth.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
