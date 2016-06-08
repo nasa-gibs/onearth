@@ -806,6 +806,8 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/png");
       else if (ap_find_token(cfg->p,cache->prefix,"tiff"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
+      else if (ap_find_token(cfg->p,cache->prefix,"lerc"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/lerc");
        else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf");
       else {
@@ -1526,6 +1528,8 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Fjpeg");
 	} else if (ap_strcasecmp_match(format, "image/tiff") == 0) {
 		strcpy(format,"image%2Ftiff");
+	} else if (ap_strcasecmp_match(format, "image/lerc") == 0) {
+		strcpy(format,"image%2Flerc");
 	} else if (ap_strcasecmp_match(format, "application/x-protobuf") == 0) {
 		strcpy(format,"application%2Fx-protobuf");
 	}
@@ -2242,7 +2246,7 @@ static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
   if (!(r->args)) {
-	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") )) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") )) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else
