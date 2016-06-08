@@ -1345,8 +1345,8 @@ for conf in conf_files:
                 compression = "PNG"
             if compression == "TIFF":
                 compression = "TIF"
-            if compression not in ["JPEG", "PNG", "TIF"]:
-                log_sig_err('<Compression> must be either JPEG, PNG, or TIF in ' + conf, sigevent_url)
+            if compression not in ["JPEG", "PNG", "TIF", "LERC", "PBF"]:
+                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or PBF in ' + conf, sigevent_url)
                 continue
         except IndexError:
             log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
@@ -1646,6 +1646,12 @@ for conf in conf_files:
         elif compression.lower() in ['tif', 'tiff']:
             dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
             mrf_format = 'image/tiff'
+        elif compression.lower() in ['lerc']:
+            dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
+            mrf_format = 'image/lerc'
+        elif compression.lower() in ['pbf']:
+            dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
+            mrf_format = 'application/x-protobuf'
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
