@@ -78,6 +78,7 @@ limitations under the License.
         <xs:enumeration value="JPEG"/>
         <xs:enumeration value="PNG"/>
         <xs:enumeration value="PPNG"/>
+        <xs:enumeration value="EPNG"/>
         <xs:enumeration value="TIF"/>
         <xs:enumeration value="TIFF"/>
       </xs:restriction>

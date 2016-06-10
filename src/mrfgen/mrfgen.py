@@ -766,13 +766,16 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
     return errors
 
 
-def insert_zdb(mrf, zlevels, zkey, source_url):
+def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
         mrf -- An MRF file
         zlevels -- The number of z-levels expected
         zkey -- The key to be used with the z-index
+        source_url -- The URL of the source dataset
+        scale -- Scale factor for encoded data values
+        offset -- Offset of encoded data values
     """  
     # Check if z-dimension is consistent if it's being used
     if zlevels != '':
@@ -809,10 +812,12 @@ def insert_zdb(mrf, zlevels, zkey, source_url):
         
         if db_exists == False:
             cur = con.cursor()
-            if source_url == "": 
-                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
-            else:
-                cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT);")
+            create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);"
+            if source_url != "": 
+                create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT);"
+            if scale != None:
+                create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT, scale INTEGER, offset INTEGER);"
+            cur.executescript(create_script)
             con.commit()
 
         if zkey != '':
@@ -846,6 +851,9 @@ def insert_zdb(mrf, zlevels, zkey, source_url):
             if source_url != "" and source_url != "NONE":
                 log_info_mssg("Adding Source URL " + source_url + " to z=" +str(z))
                 cur.execute("UPDATE ZINDEX SET source_url=('"+source_url+"') WHERE z="+str(z))
+            if scale != None and offset != None:
+                log_info_mssg("Adding Scale:" + str(scale) + " and Offset:" + str(offset) + " to z=" +str(z))
+                cur.execute("UPDATE ZINDEX SET scale=("+str(scale)+"), offset=("+str(offset)+") WHERE z="+str(z))
         
     except sqlite3.Error, e:
         if con:
@@ -1287,6 +1295,10 @@ os.chdir(working_dir)
 # transparency flag for custom color maps; default to False
 add_transparency = False
 
+# Declare scale and offset
+scale = None
+offset = None
+
 # Get list of all tile filenames.
 alltiles = []
 if input_files != '':
@@ -1443,6 +1455,40 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')     
 
+# Create an encoded PNG from GeoTIFF
+if mrf_compression_type == 'EPNG':
+    scale = 0
+    offset = 0
+    for i, tile in enumerate(alltiles):
+        tile_path = os.path.dirname(tile)
+        tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
+        output_tile = working_dir+tile_basename+'.png'
+        # Check if input is TIFF      
+        if tile.lower().endswith(('.tif', '.tiff')):
+            # Get Scale and Offset from gdalinfo
+            gdalinfo_command_list = ['gdalinfo', tile]    
+            log_the_command(gdalinfo_command_list)
+            log_info_mssg("Reading scale and offset from bands")
+            gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            for line in gdalinfo.stdout.readlines():
+                if "Offset:" in line and "Scale:" in line:
+                    offset,scale = line.strip().replace("Offset: ","").replace("Scale:","").split(",")
+                    log_info_mssg("Offset: " + offset + ", Scale: " + scale)
+                    scale = int(scale)
+                    offset = int(offset)
+            gdalinfo_stderr = gdalinfo.stderr.read()
+            if len(gdalinfo_stderr) > 0:
+                log_sig_err(gdalinfo_stderr, sigevent_url)
+                        
+            # Convert the tile to PNG
+            gdal_translate_command_list = ['gdal_translate', '-of', 'PNG', tile, output_tile]    
+            log_the_command(gdal_translate_command_list)
+            gdal_translate = subprocess.Popen(gdal_translate_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            gdal_translate_stderr = gdal_translate.stderr.read()
+            if len(gdal_translate_stderr) > 0:
+                log_sig_err(gdal_translate_stderr, sigevent_url)
+            alltiles[i] = output_tile  
+
 # sort
 alltiles.sort()
 
@@ -1507,16 +1553,10 @@ mrf_filename=str().join([output_dir, basename, '.mrf'])
 idx_filename=str().join([output_dir, basename, '.idx'])
 
 # The image component of MRF is .pjg, .ppg, .ptf, or lrc depending on compression type.
-if mrf_compression_type == 'PNG':
+if mrf_compression_type == 'PNG' or mrf_compression_type == 'PPNG' or mrf_compression_type == 'EPNG':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ppg'])
-elif mrf_compression_type == 'PPNG':
-    # Output filename.
-    out_filename=str().join([output_dir, basename, '.ppg'])
-elif mrf_compression_type == 'JPG':
-    # Output filename.
-    out_filename=str().join([output_dir, basename, '.pjg'])
-elif mrf_compression_type == 'JPEG':
+elif mrf_compression_type == 'JPG' or mrf_compression_type == 'JPEG':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.pjg'])
 elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
@@ -1564,7 +1604,7 @@ if len(mrf_list) > 0:
         
     # Check if zdb is used
     if zlevels != '':
-        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey, source_url)
+        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey, source_url, scale, offset)
     else:
         con = None
         
@@ -1595,7 +1635,7 @@ if zlevels != '':
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
-    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url)
+    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url, scale, offset)
 else:
     con = None
     gdal_mrf_filename = mrf_filename
@@ -1703,7 +1743,7 @@ if len(vrt_output) == 0:
 vrtf=get_modification_time(vrt_filename)
 remove_file(gdalbuildvrt_stderr_filename)
 # Set the compression type for gdal_translate (-co NAME=VALUE).
-if mrf_compression_type == 'PNG':
+if mrf_compression_type == 'PNG' or mrf_compression_type == 'EPNG':
     # Unpaletted PNG.
     compress=str('COMPRESS=PNG')
 elif mrf_compression_type == 'PPNG':
