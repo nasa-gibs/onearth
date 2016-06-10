@@ -586,6 +586,18 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
 				apr_table_setn(r->headers_out, "Source-Data", source_data);
     		}
     	}
+    	if (sqlite3_column_count(res) > 4) { // Check if there are scale and offset columns
+    		if (strcmp(sqlite3_column_name(res, 3), "scale") == 0) {
+				char *scale = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 3))+1);
+				apr_cpystrn(scale, (char*)sqlite3_column_text(res, 3), strlen(sqlite3_column_text(res, 3))+1);
+				apr_table_setn(r->headers_out, "Scale", scale);
+    		}
+    		if (strcmp(sqlite3_column_name(res, 4), "offset") == 0) {
+				char *offset = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 4))+1);
+				apr_cpystrn(offset, (char*)sqlite3_column_text(res, 4), strlen(sqlite3_column_text(res, 4))+1);
+				apr_table_setn(r->headers_out, "Offset", offset);
+    		}
+    	}
     } else {
     	wmts_add_error(r,404,"ImageNotFound","TIME", "Image cannot be found for the requested date and time");
     }
