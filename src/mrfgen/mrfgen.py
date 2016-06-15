@@ -91,6 +91,7 @@ import shutil
 import imghdr
 import sqlite3
 import math
+from overtiffpacker import pack
 
 versionNumber = '1.0.1'
 basename = None
@@ -1468,9 +1469,21 @@ if mrf_compression_type == 'EPNG':
             # Get Scale and Offset from gdalinfo
             gdalinfo_command_list = ['gdalinfo', tile]    
             log_the_command(gdalinfo_command_list)
-            log_info_mssg("Reading scale and offset from bands")
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            for line in gdalinfo.stdout.readlines():
+            gdalinfo_out = gdalinfo.stdout.readlines()
+            if "Offset:" in ''.join(gdalinfo_out) and "Scale:" in ''.join(gdalinfo_out):
+                log_info_mssg(tile + " is already an encoded TIFF")
+            else: # Encode the TIFF file
+                encoded_tile = working_dir+tile_basename+'_encoded.tif'
+                log_info_mssg(tile + " will be encoded as " + encoded_tile) 
+                pack(tile, encoded_tile, False, True, None, None, None, False)
+                tile = encoded_tile
+                gdalinfo_command_list = ['gdalinfo', tile]    
+                log_the_command(gdalinfo_command_list)
+                gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                gdalinfo_out = gdalinfo.stdout.readlines()
+            log_info_mssg("Reading scale and offset from bands")
+            for line in gdalinfo_out:
                 if "Offset:" in line and "Scale:" in line:
                     offset,scale = line.strip().replace("Offset: ","").replace("Scale:","").split(",")
                     log_info_mssg("Offset: " + offset + ", Scale: " + scale)
