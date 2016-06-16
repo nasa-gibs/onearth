@@ -505,9 +505,11 @@ char *get_keyword(request_rec *r) {
 	  char *keyword = apr_pcalloc(r->pool,16);
 
 	  static char* timearg="time=";
+	  static char* stylearg="style=";
 	  char *targ=0;
 	  apr_time_exp_t tm; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0; tm.tm_hour=0; tm.tm_min=0; tm.tm_sec=0;
 
+	  // Assume keyword is time for granules
 	  if ((targ=ap_strcasestr(r->args,timearg))) {
 	    targ+=5; // Skip the time= part
 	    if (strlen(targ)==24) { // Make sure time is in correct length
@@ -525,21 +527,30 @@ char *get_keyword(request_rec *r) {
 				tm.tm_sec = apr_atoi64(targ);
 			}
 			sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);	
-	    } else if (strlen(targ)!=0) {
-	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
-	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
-			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
-	    	return 0;
+	    } else {
+	    	// Check if keyword should be style
+	    	if ((targ=ap_strcasestr(r->args,stylearg))) {
+	    		targ+=6; // Skip the style= part
+	    		apr_cpystrn(keyword, targ, 8);
+	    		if (ap_strstr(keyword,"&TILEMA")) { // handle default styling
+	    			sprintf(keyword,"default");
+	    		}
+	    	}
+//	    	else if (strlen(targ)!=0) {
+//				ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
+//				ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+//				wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
+//				return 0;
+//	    	}
 	    }
 	  }
 
-//	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Keyword: %s",keyword);
 	  return keyword;
 }
 
 // Lookup the z index from ZDB file based on keyword
 static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
-	// ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
 
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -565,7 +576,7 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
         sqlite3_close(db);
         return -1;
     } else if (strlen(keyword)!=0) {
-        sqlite3_bind_text(res, 1, keyword, 14, SQLITE_STATIC);
+        sqlite3_bind_text(res, 1, keyword, strlen(keyword), SQLITE_STATIC);
     }
 
     rc = sqlite3_step(res);
@@ -588,14 +599,18 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
     	}
     	if (sqlite3_column_count(res) > 4) { // Check if there are scale and offset columns
     		if (strcmp(sqlite3_column_name(res, 3), "scale") == 0) {
-				char *scale = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 3))+1);
-				apr_cpystrn(scale, (char*)sqlite3_column_text(res, 3), strlen(sqlite3_column_text(res, 3))+1);
-				apr_table_setn(r->headers_out, "Scale", scale);
+    			if (sqlite3_column_text(res, 3) != NULL) {
+					char *scale = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 3))+1);
+					apr_cpystrn(scale, (char*)sqlite3_column_text(res, 3), strlen(sqlite3_column_text(res, 3))+1);
+					apr_table_setn(r->headers_out, "Scale", scale);
+    			}
     		}
     		if (strcmp(sqlite3_column_name(res, 4), "offset") == 0) {
-				char *offset = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 4))+1);
-				apr_cpystrn(offset, (char*)sqlite3_column_text(res, 4), strlen(sqlite3_column_text(res, 4))+1);
-				apr_table_setn(r->headers_out, "Offset", offset);
+    			if (sqlite3_column_text(res, 4) != NULL) {
+    				char *offset = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 4))+1);
+					apr_cpystrn(offset, (char*)sqlite3_column_text(res, 4), strlen(sqlite3_column_text(res, 4))+1);
+					apr_table_setn(r->headers_out, "Offset", offset);
+    			}
     		}
     	}
     } else {

@@ -1337,6 +1337,7 @@ for conf in conf_files:
             log_sig_err('Required <Title> element is missing in ' + conf, sigevent_url)
             continue
         try:
+            is_encoded = False
             compression = get_dom_tag_value(dom, 'Compression')
             compression = compression.upper()
             if compression == "JPG":
@@ -1345,7 +1346,10 @@ for conf in conf_files:
                 compression = "PNG"
             if compression == "TIFF":
                 compression = "TIF"
-            if compression not in ["JPEG", "PNG", "TIF", "LERC", "PBF"]:
+            if compression == "EPNG":
+                compression = "PNG"
+                is_encoded = True
+            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF"]:
                 log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or PBF in ' + conf, sigevent_url)
                 continue
         except IndexError:
@@ -1933,7 +1937,10 @@ for conf in conf_files:
     # change patterns for WMTS
     pattern_replaced = False
     try:
-        wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+        if is_encoded:
+            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default|encoded)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+        else:
+            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
     except KeyError:
         log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
     for line in lines:
