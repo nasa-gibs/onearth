@@ -2206,6 +2206,19 @@ for conf in conf_files:
             # remove extra white space from lines
             line = line[3:]
             layer_output = layer_output + line
+        # Replace extra lines before </Style>
+        blanks = """             
+             
+"""
+        layer_output = layer_output.replace(blanks, "")
+        # Check if additional encoded style is needed
+        if is_encoded == True:
+            style_encoded = """</Style>
+         <Style isDefault="false">
+            <ows:Title xml:lang=\"en\">encoded</ows:Title>
+            <ows:Identifier>encoded</ows:Identifier>
+         </Style>"""
+            layer_output = layer_output.replace("</Style>", style_encoded)
         layer_xml.writelines(layer_output)
         
         # special case, add additional tilematrixsets from existing file and then remove
