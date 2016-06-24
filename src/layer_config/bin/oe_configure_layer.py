@@ -885,10 +885,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             if has_zdb==True:
                 try:
                     zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(startdate,"%Y%j")+'_.zdb'
-                    startdate = datetime.strptime(str(read_zkey(zdb, 'ASC')),"%Y%m%d%H%M%S")
+                    zkey = read_zkey(zdb, 'ASC')
+                    startdate = datetime.strptime(str(zkey),"%Y%m%d%H%M%S")
                     subdaily = True
                 except ValueError:
-                    log_sig_err("No valid time found in " + zdb, sigevent_url)
+                    if zkey.lower() != "default":
+                        log_sig_warn("No valid time found in " + zdb, sigevent_url)
             if subdaily == False:
                 start = datetime.strftime(startdate,"%Y-%m-%d")
             else:
@@ -919,10 +921,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             if has_zdb==True:
                 try:
                     zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
-                    enddate = datetime.strptime(str(read_zkey(zdb, 'DESC')),"%Y%m%d%H%M%S")
+                    zkey = read_zkey(zdb, 'DESC')
+                    enddate = datetime.strptime(str(zkey),"%Y%m%d%H%M%S")
                     subdaily = True
                 except ValueError:
-                    log_sig_err("No valid time found in " + zdb, sigevent_url)
+                    if zkey.lower() != "encoded":
+                        log_sig_warn("No valid time found in " + zdb, sigevent_url)
             if subdaily == False:
                 end = datetime.strftime(enddate,"%Y-%m-%d")
             else:
@@ -957,7 +961,7 @@ def read_zkey(zdb, sort):
             # Check for existing key
             cur.execute("SELECT key_str FROM ZINDEX ORDER BY key_str "+sort+" LIMIT 1;")
             try:        
-                key = cur.fetchone()[0]
+                key = cur.fetchone()[0].split("|")[0]
                 log_info_mssg("Retrieved key " + key)
             except:
                 return "Error"
@@ -1337,6 +1341,7 @@ for conf in conf_files:
             log_sig_err('Required <Title> element is missing in ' + conf, sigevent_url)
             continue
         try:
+            is_encoded = False
             compression = get_dom_tag_value(dom, 'Compression')
             compression = compression.upper()
             if compression == "JPG":
@@ -1345,8 +1350,11 @@ for conf in conf_files:
                 compression = "PNG"
             if compression == "TIFF":
                 compression = "TIF"
-            if compression not in ["JPEG", "PNG", "TIF"]:
-                log_sig_err('<Compression> must be either JPEG, PNG, or TIF in ' + conf, sigevent_url)
+            if compression == "EPNG":
+                compression = "PNG"
+                is_encoded = True
+            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF"]:
+                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or PBF in ' + conf, sigevent_url)
                 continue
         except IndexError:
             log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
@@ -1646,6 +1654,12 @@ for conf in conf_files:
         elif compression.lower() in ['tif', 'tiff']:
             dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
             mrf_format = 'image/tiff'
+        elif compression.lower() in ['lerc']:
+            dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
+            mrf_format = 'image/lerc'
+        elif compression.lower() in ['pbf']:
+            dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
+            mrf_format = 'application/x-protobuf'
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
@@ -1927,7 +1941,10 @@ for conf in conf_files:
     # change patterns for WMTS
     pattern_replaced = False
     try:
-        wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+        if is_encoded:
+            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default|encoded)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+        else:
+            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
     except KeyError:
         log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
     for line in lines:
@@ -2193,6 +2210,19 @@ for conf in conf_files:
             # remove extra white space from lines
             line = line[3:]
             layer_output = layer_output + line
+        # Replace extra lines before </Style>
+        blanks = """             
+             
+"""
+        layer_output = layer_output.replace(blanks, "")
+        # Check if additional encoded style is needed
+        if is_encoded == True:
+            style_encoded = """</Style>
+         <Style isDefault="false">
+            <ows:Title xml:lang=\"en\">encoded</ows:Title>
+            <ows:Identifier>encoded</ows:Identifier>
+         </Style>"""
+            layer_output = layer_output.replace("</Style>", style_encoded)
         layer_xml.writelines(layer_output)
         
         # special case, add additional tilematrixsets from existing file and then remove
