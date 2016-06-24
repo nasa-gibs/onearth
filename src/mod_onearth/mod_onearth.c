@@ -2240,6 +2240,7 @@ int rewrite_rest_uri(request_rec *r) {
 	char *p;
 	char *params[16];
 	char *last;
+	char *format = apr_pcalloc(r->pool,26);
 
 	i = 0;
 	p = apr_strtok(r->uri,"/",&last);
@@ -2273,12 +2274,20 @@ int rewrite_rest_uri(request_rec *r) {
 		p = apr_strtok(NULL, ".",&last);
 	}
 
+	if (ap_strcasecmp_match(params[length+d],"pbf") == 0) {
+		sprintf(format,"application%%2Fx-protobuf");
+	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
+		sprintf(format,"image%%2F%sjpeg");
+	} else {
+		sprintf(format,"image%%2F%s", params[length+d]);
+	}
+
 	if (length == 7)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],ap_strcasecmp_match(params[7+d],"jpg") == 0 ? "jpeg" : params[7+d]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],format);
 	if (length == 8)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[8+d],"jpg") == 0 ? "jpeg" : params[8+d],params[3+d]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d]);
 	if (length == 9)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[9+d],"jpg") == 0 ? "jpeg" : params[9+d],params[3+d],params[8+d]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d],params[8+d]);
 //	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
 	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
 	return 0;
