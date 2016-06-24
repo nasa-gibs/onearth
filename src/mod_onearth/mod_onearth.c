@@ -390,7 +390,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	// Now we find the closest time before the requested time
 			  	// We do this by counting up intervals from the start date.
 			  	// Years and months aren't a fixed time interval so we process separately
-			  	apr_time_t snap_epoch;
+			  	apr_time_t snap_epoch = 0;
 			  	apr_time_t date_epoch;
 			  	apr_time_t prev_epoch = start_epoch;
 			  	char interval_char = time_period[(strlen(time_period) - 1)];
@@ -455,7 +455,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 
 			  	// Go to next time period if we still don't have a snap date
-			  	if (!snap_epoch) {
+			  	if (snap_epoch == 0) {
 			  		if (i == num_periods) {
 			  			break;
 			  		} else {
