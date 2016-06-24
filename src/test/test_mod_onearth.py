@@ -91,6 +91,7 @@ class TestModOnEarth(unittest.TestCase):
                             '4832d6edeed31fad0bd59bbc26d92275': '2000-06-01',
                             '7ea2038a74af2988dc432a614ec94187': '2000-07-03',
                             '03b3cc7adc929dd605d617b7066b30ae': '2000-08-01',
+                            '4f24774e71560e15b5ed43fcace2cb29': '2000-09-03',
                             'fd9e3aa7c12fbf823bd339b92920784e': '2000-12-01',
                             '24f90bd216f6b7ee25501155fcc8ece4': '2001-01-01',
                             '3d12e06c60b379efc41f4b8021ce1e29': '2001-05-09',
@@ -322,7 +323,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         14. Request WMTS GetCapabilities
         """
-        ref_hash = 'c60c6dd540a40a8deba037bcb70ea3ce'
+        ref_hash = '89c72f00e64a9b29e51d968c2b62f0c2'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
@@ -334,7 +335,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         15. Request TWMS GetCapabilities
         """
-        ref_hash = '8c40cc837b6ad1f27209f2243241fba6'
+        ref_hash = '43080318f8270d0213574527a74ad058'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting TWMS GetCapablities'
@@ -346,7 +347,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16. Request TWMS GetTileService
         """
-        ref_hash = 'da3cb2220b89418ed78f04ce610d9703'
+        ref_hash = '5bc5886911453bd334aeb1417fd79853'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetTileService'
         if DEBUG:
             print '\nTesting WMTS GetTileService'
@@ -710,8 +711,26 @@ class TestModOnEarth(unittest.TestCase):
                 error = 'Snapping test 5a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(req_date.isoformat(), expected_date.isoformat(), response_date, req_url)
                 self.assertEqual(expected_date.isoformat(), response_date, error)
                 req_date += datetime.timedelta(days=+1)
-            # pdb.set_trace()
             expected_date = expected_date.replace(expected_date.year + 1)
+
+    def test_year_boundary_snapping(self):
+        layer_name = 'snap_test_year_boundary'
+        tests = (('2000-09-03', '2000-09-03'),
+                 ('2001-01-24', '2000-09-03'),
+                 ('2000-01-25', 'black'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across a year boundary'
+            print 'Time Period year boundary: 2000-09-03/2000-09-03/P144D'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods stretching across a year boundary requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
 
     # TEARDOWN
 
