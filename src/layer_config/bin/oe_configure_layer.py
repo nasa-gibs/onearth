@@ -885,10 +885,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             if has_zdb==True:
                 try:
                     zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(startdate,"%Y%j")+'_.zdb'
-                    startdate = datetime.strptime(str(read_zkey(zdb, 'ASC')),"%Y%m%d%H%M%S")
+                    zkey = read_zkey(zdb, 'ASC')
+                    startdate = datetime.strptime(str(zkey),"%Y%m%d%H%M%S")
                     subdaily = True
                 except ValueError:
-                    log_sig_err("No valid time found in " + zdb, sigevent_url)
+                    if zkey.lower() != "default":
+                        log_sig_warn("No valid time found in " + zdb, sigevent_url)
             if subdaily == False:
                 start = datetime.strftime(startdate,"%Y-%m-%d")
             else:
@@ -919,10 +921,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             if has_zdb==True:
                 try:
                     zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
-                    enddate = datetime.strptime(str(read_zkey(zdb, 'DESC')),"%Y%m%d%H%M%S")
+                    zkey = read_zkey(zdb, 'DESC')
+                    enddate = datetime.strptime(str(zkey),"%Y%m%d%H%M%S")
                     subdaily = True
                 except ValueError:
-                    log_sig_err("No valid time found in " + zdb, sigevent_url)
+                    if zkey.lower() != "encoded":
+                        log_sig_warn("No valid time found in " + zdb, sigevent_url)
             if subdaily == False:
                 end = datetime.strftime(enddate,"%Y-%m-%d")
             else:
@@ -957,7 +961,7 @@ def read_zkey(zdb, sort):
             # Check for existing key
             cur.execute("SELECT key_str FROM ZINDEX ORDER BY key_str "+sort+" LIMIT 1;")
             try:        
-                key = cur.fetchone()[0]
+                key = cur.fetchone()[0].split("|")[0]
                 log_info_mssg("Retrieved key " + key)
             except:
                 return "Error"

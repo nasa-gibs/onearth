@@ -502,11 +502,12 @@ static void *r_file_pread(request_rec *r, char *fname,
 }
 
 char *get_keyword(request_rec *r) {
-	  char *keyword = apr_pcalloc(r->pool,16);
+	  char *keyword = apr_pcalloc(r->pool,24);
 
 	  static char* timearg="time=";
 	  static char* stylearg="style=";
 	  char *targ=0;
+	  char *sarg=0;
 	  apr_time_exp_t tm; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0; tm.tm_hour=0; tm.tm_min=0; tm.tm_sec=0;
 
 	  // Assume keyword is time for granules
@@ -526,14 +527,26 @@ char *get_keyword(request_rec *r) {
 				targ+=5;
 				tm.tm_sec = apr_atoi64(targ);
 			}
-			sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);	
+			// Check if keyword should also include style
+	    	if ((sarg=ap_strcasestr(r->args,stylearg))) {
+	    		sarg+=6; // Skip the style= part
+	    		apr_cpystrn(keyword, sarg, 8);
+	    		if (ap_strstr(keyword,"encoded")) {
+	    			sprintf(keyword,"%04d%02d%02d%02d%02d%02d|encoded",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	    		} else {
+	    			sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	    		}
+	    	}
+	    	else {
+	    		sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	    	}
 	    } else {
 	    	// Check if keyword should be style
-	    	if ((targ=ap_strcasestr(r->args,stylearg))) {
-	    		targ+=6; // Skip the style= part
-	    		apr_cpystrn(keyword, targ, 8);
+	    	if ((sarg=ap_strcasestr(r->args,stylearg))) {
+	    		sarg+=6; // Skip the style= part
+	    		apr_cpystrn(keyword, sarg, 8);
 	    		if (ap_strstr(keyword,"&TILEMA")) { // handle default styling
-	    			sprintf(keyword,"default");
+	    			sprintf(keyword,"");
 	    		}
 	    	}
 //	    	else if (strlen(targ)!=0) {
@@ -568,7 +581,7 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
         return -1;
     }
 
-    char *sql = strlen(keyword)!=0 ? "SELECT * FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT * FROM ZINDEX order by key_str DESC LIMIT 1";
+    char *sql = strlen(keyword)!=0 ? "SELECT * FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT * FROM ZINDEX WHERE key_str NOT LIKE '%encoded%' ORDER BY key_str DESC LIMIT 1";
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
     if (rc != SQLITE_OK) {
@@ -592,9 +605,11 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
     	}
     	if (sqlite3_column_count(res) > 2) { // Check if there is a source_url column
     		if (strcmp(sqlite3_column_name(res, 2), "source_url") == 0) {
-				char *source_data = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 2))+1);
-				apr_cpystrn(source_data, (char*)sqlite3_column_text(res, 2), strlen(sqlite3_column_text(res, 2))+1);
-				apr_table_setn(r->headers_out, "Source-Data", source_data);
+    			if (sqlite3_column_text(res, 2) != NULL) {
+					char *source_data = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 2))+1);
+					apr_cpystrn(source_data, (char*)sqlite3_column_text(res, 2), strlen(sqlite3_column_text(res, 2))+1);
+					apr_table_setn(r->headers_out, "Source-Data", source_data);
+    			}
     		}
     	}
     	if (sqlite3_column_count(res) > 4) { // Check if there are scale and offset columns

@@ -1756,10 +1756,10 @@ if len(vrt_output) == 0:
 vrtf=get_modification_time(vrt_filename)
 remove_file(gdalbuildvrt_stderr_filename)
 # Set the compression type for gdal_translate (-co NAME=VALUE).
-if mrf_compression_type == 'PNG' or mrf_compression_type == 'EPNG':
+if mrf_compression_type == 'PNG':
     # Unpaletted PNG.
     compress=str('COMPRESS=PNG')
-elif mrf_compression_type == 'PPNG':
+elif mrf_compression_type == 'PPNG'  or mrf_compression_type == 'EPNG':
     # Paletted PNG.
     compress=str('COMPRESS=PPNG')
 elif mrf_compression_type == 'JPG':
