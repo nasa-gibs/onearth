@@ -116,10 +116,8 @@ if __name__ == '__main__':
         parameter_name = get_dom_tag_value(dom, 'parameter_name')
         date_of_data = get_dom_tag_value(dom, 'date_of_data')
     
-        # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
-        # Files get date_of_date added, links do not.
-        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', 
-                             current_cycle_time])    
+        # Define output basename
+        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time])    
         
         # for sub-daily imagery
         try: 
@@ -271,13 +269,10 @@ if __name__ == '__main__':
         input_files = input_files.strip()
         alltiles = input_files.split(',')
     if input_dir != None:
-        if output_format == 'jpeg' or output_format == 'jpg':
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*.jpg']))
+        if output_format == 'geojson' or output_format == 'json':
+            alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
         else:
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))
-        # check for tiffs
-        alltiles = alltiles + glob.glob(str().join([input_dir, '*.tif']))
-        alltiles = alltiles + glob.glob(str().join([input_dir, '*.tiff']))
+            alltiles = alltiles + glob.glob(str().join([input_dir, '*']))
     
     striptiles = []
     for tile in alltiles:
@@ -296,10 +291,14 @@ if __name__ == '__main__':
     for time_param in time_params:
         out_filename = out_filename.replace(time_param,datetime.datetime.strftime(mrf_date,time_param))
     
+    out_basename = output_dir + basename
     out_filename = output_dir + out_filename
             
     if len(alltiles) > 0 and output_format == "geojson":
-        shp2geojson(alltiles[0], out_filename, sigevent_url)
+        out_basename = out_basename + ".json"
+        shp2geojson(alltiles[0], out_basename, sigevent_url)
+        log_info_mssg(str().join(['Moving ', out_basename, ' to ', out_filename]))
+        shutil.move(out_basename, out_filename)
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
     

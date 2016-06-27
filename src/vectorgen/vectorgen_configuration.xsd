@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-  <xs:element name="mrfgen_configuration">
+  <xs:element name="vectorgen_configuration">
     <xs:complexType>
       <xs:sequence>
         <xs:element ref="date_of_data"/>
