@@ -1,9 +1,9 @@
 MAP
   Name                  "OnEarth Mapserver/WMS (Geographic - EPSG:4326)"
-  UNITS                         dd
+  UNITS                 dd
   MAXSIZE               20000
   SIZE                  1600 1200
-  Extent                        -180 -90 180 90
+  Extent                -180 -90 180 90
   ImageColor            0 0 0
 
   OUTPUTFORMAT
@@ -23,6 +23,22 @@ MAP
     EXTENSION "jpg"
     FORMATOPTION "GAMMA=0.75"
   END
+  
+  OUTPUTFORMAT
+    NAME        "kml"
+    DRIVER      KML
+    MIMETYPE    "application/vnd.google-earth.kml.xml"
+    IMAGEMODE   RGB
+    EXTENSION   "kml"
+  END
+
+  OUTPUTFORMAT
+    NAME        "kmz"
+    DRIVER      KMZ
+    MIMETYPE    "application/vnd.google-earth.kmz"
+    IMAGEMODE   RGB
+    EXTENSION   "kmz"
+  END
 
   Projection  #Output Projection
     "init=epsg:4326"
@@ -32,6 +48,19 @@ MAP
     METADATA
       "wms-title"               "OnEarth Mapserver/WMS (Geographic - EPSG:4326)"
       "wms-onlineresource"      "http://localhost/onearth/demo/mapserver/mapserver.cgi?map=epsg4326.map"
-      "wms_enable_request" "GetMap GetCapabilities"
+      "wms_enable_request"      "GetMap GetCapabilities"
+      "wms_srs"                 "epsg:4326"
+      "wms_connectiontimeout"   "180"
     END
+    VALIDATION
+      "default_TIME"            "TTTTTTT"
+      "default_PRODUCTYEAR"     "YYYY"
+      "default_PRODUCTMONTH"    "MM"
+      "default_PRODUCTDAY"      "DD"
+      "TIME"                    "^[0-9]{7}$"
+      "PRODUCTYEAR"             "^[0-9]{4}$"
+      "PRODUCTMONTH"            "^[0-9]{2}$"
+      "PRODUCTDAY"              "^[0-9]{2}$"
+     END
   END
+  

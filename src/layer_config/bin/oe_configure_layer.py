@@ -2349,9 +2349,9 @@ $Patterns</TiledGroup>"""
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
             timeDirPattern = "%TIME%"
-            timeParamRegex = "'^[0-9]{7}$'" if not subdaily else "'^[0-9]{13}$'"
+            timeParamRegex = '"^[0-9]{7}$"' if not subdaily else '"^[0-9]{13}$"'
             yearDirPattern = "%PRODUCTYEAR%"
-            yearDirRegex = "'^[0-9]{4}$'"
+            yearDirRegex = '"^[0-9]{4}$"'
 
             minx = projection.lowercorner[0]
             miny = projection.lowercorner[1]
@@ -2365,24 +2365,22 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tSTATUS\tON\n")
             mapfile.write("\tVALIDATION\n")
             if not static:
-                mapfile.write("\t\tTIME\t\t\t" + timeParamRegex + "\n")
-            if not static and year:
-                mapfile.write("\t\tPRODUCTYEAR\t\t" + yearDirRegex + "\n")
-            mapfile.write("\tEND\n")
-            mapfile.write("\tMETADATA\n")
-            if not static:
                 mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+                mapfile.write("\t\t\"TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
                 mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"PRODUCTYEAR\"\t\t" + yearDirRegex + "\n")
+            mapfile.write("\tEND\n")
+            mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
             mapfile.write("\tEND\n")
             if not static and year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+                mapfile.write("\tDATA\t\"" + archiveLocation + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
             elif not static and not year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+                mapfile.write("\tDATA\t\"" + archiveLocation + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
             else:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + ".mrf\"\n")
+                mapfile.write("\tDATA\t\"" + archiveLocation + fileNamePrefix + ".mrf\"\n")
             mapfile.write("\tPROJECTION\n")
             mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
             mapfile.write("\tEND\n")
