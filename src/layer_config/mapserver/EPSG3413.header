@@ -35,4 +35,3 @@ MAP
       "wms_enable_request" "GetMap GetCapabilities"
     END
   END
-END
