@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="vectorgen_configuration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="date_of_data"/>
+        <xs:element ref="time_of_data" minOccurs="0"/>
+        <xs:element ref="parameter_name"/>
+        <xs:element ref="input_files" minOccurs="0"/>
+        <xs:element ref="input_dir" minOccurs="0"/>
+        <xs:element ref="output_dir"/>
+        <xs:element ref="working_dir"/>
+        <xs:element ref="logfile_dir" minOccurs="0"/>
+        <xs:element ref="output_name"/>
+        <xs:element ref="output_format"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="date_of_data" type="xs:integer"/>
+  <xs:element name="time_of_data" type="xs:integer"/>
+  <xs:element name="parameter_name" type="xs:NCName"/>
+  <xs:element name="input_files">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="file" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="file" type="xs:string"/>
+  <xs:element name="input_dir" type="xs:string" nillable="true"/>
+  <xs:element name="output_dir" type="xs:string"/>
+  <xs:element name="working_dir" type="xs:string"/>
+  <xs:element name="logfile_dir" type="xs:string" nillable="true"/>
+  <xs:element name="output_name" type="xs:string"/>
+  <xs:element name="output_format">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="GeoJSON"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+</xs:schema>
