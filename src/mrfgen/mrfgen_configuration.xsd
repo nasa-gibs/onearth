@@ -47,6 +47,9 @@ limitations under the License.
         <xs:element ref="mrf_merge" minOccurs="0"/>
         <xs:element ref="mrf_z_levels" minOccurs="0"/>
         <xs:element ref="mrf_z_key" minOccurs="0"/>
+        <xs:element ref="mrf_data_scale" minOccurs="0"/>
+        <xs:element ref="mrf_data_offset" minOccurs="0"/>
+        <xs:element ref="mrf_data_units" minOccurs="0"/>
         <xs:element ref="source_url" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
@@ -148,5 +151,8 @@ limitations under the License.
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
+  <xs:element name="mrf_data_scale" type="xs:integer" nillable="true"/>
+  <xs:element name="mrf_data_offset" type="xs:integer" nillable="true"/>
+  <xs:element name="mrf_data_units" type="xs:string" nillable="true"/>
   <xs:element name="source_url" type="xs:string" nillable="true"/>
 </xs:schema>

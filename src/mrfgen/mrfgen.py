@@ -767,7 +767,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
     return errors
 
 
-def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset):
+def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
@@ -777,6 +777,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset):
         source_url -- The URL of the source dataset
         scale -- Scale factor for encoded data values
         offset -- Offset of encoded data values
+        units -- Units for encoded data values
     """  
     # Check if z-dimension is consistent if it's being used
     if zlevels != '':
@@ -817,7 +818,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset):
             if source_url != "": 
                 create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT);"
             if scale != None:
-                create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT, scale INTEGER, offset INTEGER);"
+                create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT, scale INTEGER, offset INTEGER, uom TEXT);"
             cur.executescript(create_script)
             con.commit()
 
@@ -855,6 +856,9 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset):
             if scale != None and offset != None:
                 log_info_mssg("Adding Scale:" + str(scale) + " and Offset:" + str(offset) + " to z=" +str(z))
                 cur.execute("UPDATE ZINDEX SET scale=("+str(scale)+"), offset=("+str(offset)+") WHERE z="+str(z))
+            if scale != None:
+                log_info_mssg("Adding Units:" + units + " to z=" +str(z))
+                cur.execute("UPDATE ZINDEX SET uom=('"+units+"') WHERE z="+str(z))                
         
     except sqlite3.Error, e:
         if con:
@@ -1144,6 +1148,23 @@ else:
             blend = True
     except:
         blend = False
+    # mrf data
+    try:
+        mrf_data_scale = get_dom_tag_value(dom, 'mrf_data_scale')
+    except:
+        mrf_data_scale = '' 
+    try:
+        mrf_data_offset = get_dom_tag_value(dom, 'mrf_data_offset')
+    except:
+        mrf_data_offset = '' 
+    if mrf_data_scale != '' and mrf_data_offset == '':
+        log_sig_exit('ERROR', "<mrf_data_offset> is required if <mrf_data_scale> is set", sigevent_url)
+    if (mrf_data_scale == '' and mrf_data_offset != ''):
+        log_sig_exit('ERROR', "<mrf_data_scale> is required if <mrf_data_offset> is set", sigevent_url)
+    try:
+        mrf_data_units = get_dom_tag_value(dom, 'mrf_data_units')
+    except:
+        mrf_data_units = ''
     try:
         source_url = get_dom_tag_value(dom, 'source_url')
     except:
@@ -1231,6 +1252,9 @@ log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(blend)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
+log_info_mssg(str().join(['config mrf_data_scale:          ', mrf_data_scale]))
+log_info_mssg(str().join(['config mrf_data_offset:         ', mrf_data_offset]))
+log_info_mssg(str().join(['config mrf_data_units:          ', mrf_data_units]))
 log_info_mssg(str().join(['config source_url:              ', source_url]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
@@ -1296,9 +1320,10 @@ os.chdir(working_dir)
 # transparency flag for custom color maps; default to False
 add_transparency = False
 
-# Declare scale and offset
+# Declare scale, offset, and units
 scale = None
 offset = None
+units = None
 
 # Get list of all tile filenames.
 alltiles = []
@@ -1460,6 +1485,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
 if mrf_compression_type == 'EPNG':
     scale = 0
     offset = 0
+    units = mrf_data_units
     for i, tile in enumerate(alltiles):
         tile_path = os.path.dirname(tile)
         tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
@@ -1471,12 +1497,19 @@ if mrf_compression_type == 'EPNG':
             log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             gdalinfo_out = gdalinfo.stdout.readlines()
+            if "Color Table" in ''.join(gdalinfo_out):
+                log_sig_warn(tile + " contains a palette", sigevent_url)
+                mrf_compression_type = 'PPNG'
             if "Offset:" in ''.join(gdalinfo_out) and "Scale:" in ''.join(gdalinfo_out):
                 log_info_mssg(tile + " is already an encoded TIFF")
             else: # Encode the TIFF file
                 encoded_tile = working_dir+tile_basename+'_encoded.tif'
-                log_info_mssg(tile + " will be encoded as " + encoded_tile) 
-                pack(tile, encoded_tile, False, True, None, None, None, False)
+                log_info_mssg(tile + " will be encoded as " + encoded_tile)
+                if mrf_data_scale != '' and mrf_data_offset != '':
+                    scale_offset = [float(mrf_data_scale), float(mrf_data_offset)]
+                else:
+                    scale_offset = None
+                pack(tile, encoded_tile, False, True, None, None, scale_offset, False)
                 tile = encoded_tile
                 gdalinfo_command_list = ['gdalinfo', tile]    
                 log_the_command(gdalinfo_command_list)
@@ -1617,7 +1650,7 @@ if len(mrf_list) > 0:
         
     # Check if zdb is used
     if zlevels != '':
-        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey, source_url, scale, offset)
+        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units)
     else:
         con = None
         
@@ -1648,7 +1681,7 @@ if zlevels != '':
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
-    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url, scale, offset)
+    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url, scale, offset, units)
 else:
     con = None
     gdal_mrf_filename = mrf_filename
@@ -1756,10 +1789,10 @@ if len(vrt_output) == 0:
 vrtf=get_modification_time(vrt_filename)
 remove_file(gdalbuildvrt_stderr_filename)
 # Set the compression type for gdal_translate (-co NAME=VALUE).
-if mrf_compression_type == 'PNG':
+if mrf_compression_type == 'PNG' or mrf_compression_type == 'EPNG':
     # Unpaletted PNG.
     compress=str('COMPRESS=PNG')
-elif mrf_compression_type == 'PPNG'  or mrf_compression_type == 'EPNG':
+elif mrf_compression_type == 'PPNG':
     # Paletted PNG.
     compress=str('COMPRESS=PPNG')
 elif mrf_compression_type == 'JPG':
