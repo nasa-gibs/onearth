@@ -1878,6 +1878,10 @@ if compress == "COMPRESS=JPEG":
     # Use JPEG quality of 80
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('QUALITY=80')
+if compress == "COMPRESS=LERC":
+    # Default to V1 for Javascript decoding
+    gdal_translate_command_list.append('-co')
+    gdal_translate_command_list.append('OPTIONS="LERC_PREC=0.01 V1=ON"')    
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
