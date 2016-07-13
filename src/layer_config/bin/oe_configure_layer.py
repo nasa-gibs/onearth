@@ -495,50 +495,47 @@ def get_environment(environmentConfig):
     except KeyError:
         colormapUrls = None
 
-    # Get mapfile parameters from environment config file (if mapfile generation chosen)
-    if create_mapfile is True:
-        # Get/create mapfile staging location
-        try:
-            mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
-        except IndexError:
-            log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
-        try:
-            os.makedirs(mapfileStagingLocation)
-        except OSError:
-            if not os.path.exists(mapfileStagingLocation):
-                log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
-            pass
-
-        # Get output mapfile location
-        try:
-            mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
-            mapfileLocation = mapfileLocationElement.firstChild.nodeValue
-        except IndexError:
-            log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileLocation> present in environment config file.', sigevent_url)
-
-        try:
-            mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
-        except KeyError:
-            log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
-            mapfileLocationBasename = None
-
-        # Get output mapfile config location
-        try:
-            mapfileConfigLocation = get_dom_tag_value(dom, 'MapfileConfigLocation')
-        except IndexError:
-            mapfileConfigLocation = '/etc/onearth/config/mapserver/'
-            log_sig_err('Mapfile creation chosen but no <MapfileConfigLocation> present in environment config file.', sigevent_url)
-        try:
-            mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
-        except KeyError:
-            log_sig_exit('ERROR', 'Mapfile creation chosen but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
-    else:
+    # Get mapfile parameters from environment config file
+    # Get/create mapfile staging location
+    try:
+        mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
+    except IndexError:
+        # log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
         mapfileStagingLocation = None
-        mapfileLocation = None
+    try:
+        os.makedirs(mapfileStagingLocation)
+    except OSError:
+        if not os.path.exists(mapfileStagingLocation):
+            # log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
+            mapfileStagingLocation = None
+        pass
+
+    # Get output mapfile location
+    try:
+        mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
+        mapfileLocation = mapfileLocationElement.firstChild.nodeValue
+    except IndexError:
+        # log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileLocation> present in environment config file.', sigevent_url)
+        mapfileStagingLocation = None
+
+    try:
+        mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
+    except KeyError:
+        log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
         mapfileLocationBasename = None
-        mapfileConfigLocation = None
+
+    # Get output mapfile config location
+    try:
+        mapfileConfigLocation = get_dom_tag_value(dom, 'MapfileConfigLocation')
+    except IndexError:
+        mapfileConfigLocation = '/etc/onearth/config/mapserver/'
+        log_sig_warn('Mapfile creation chosen but no <MapfileConfigLocation> present in environment config file.', sigevent_url)
+    try:
+        mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
+    except KeyError:
+        # log_sig_exit('ERROR', 'Mapfile creation chosen but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
         mapfileConfigBasename = None
-        
+
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),
                        cacheBasename_wmts, cacheBasename_twms,
@@ -1554,6 +1551,23 @@ for conf in conf_files:
 
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
+
+        try:
+            vectorType = dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
+            try:
+                vectorStyleFile = dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
+            except IndexError:
+                vectorStyleFile = None
+        except IndexError:
+            vectorType = None
+            vectorStyleFile = None
+
+        # Since we are only serving Vector layers w/ Mapserver for now, we don't configure OnEarth stuff for those layers
+        if vectorType:
+            no_twms = True
+            no_wmts = True
+            create_mapfile = True
+            log_sig_warn('WARNING: Layers from vector sources are only served through Mapserver. Only building Mapserver configuration.', sigevent_url)
         
         # Close file.
         config_file.close()
@@ -1686,169 +1700,307 @@ for conf in conf_files:
     except AttributeError:
         pass
 
-    # Open MRF header if one has been supplied (except if "type" attr is "prefix")
-    header_dom = None
-    if header_type != 'prefix':
-        try:
-            with open(header_file_name, 'r') as mrf_file:
-                try:
-                    header_dom = xml.dom.minidom.parse(mrf_file)
-                except:
-                    log_sig_err('Badly-formatted MRF header file: {0}'.format(mrf_file), sigevent_url)
-                    continue
-        except IOError:
-            log_sig_err("Can't open MRF file: {0}".format(header_file_name), sigevent_url)
-            continue
-    
-    # Create base MRF document. We'll be adding stuff from either the header MRF or the 
-    # layer config file to this.
-    mrf_impl = xml.dom.minidom.getDOMImplementation()
-    mrf_dom = mrf_impl.createDocument(None, 'MRF_META', None)
-    mrf_meta = mrf_dom.documentElement
-
-    # Create <Raster> tag
-    raster_node = mrf_dom.createElement('Raster')
-
-    # If the "prefix" attribute of <HeaderFileName> is present, we grab MRF stuff from the 
-    # layer config file. Otherwise, use the header file specified.
-    if header_type == 'prefix':
-        mrf_base = header_file_name + '.mrf'
-        header_dom = dom
-        log_info_mssg('Using MRF data within layer config file')
-    else:
-        log_info_mssg('Using MRF Archetype: ' + header_file_name)
-        mrf_base = os.path.basename(header_file_name)
-
-    if header_dom != None:
-        # Check if <Size> tag present and has all 3 required values (x,y,c)
-        try:
-            size_node = header_dom.getElementsByTagName('Size')[0]
-        except IndexError:
-            log_sig_err("<Size> tag not present in MRF header file or layer config", sigevent_url)
-            continue
-        if size_node != None:
-            if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
-                log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
-                continue
-            else:
-                raster_node.appendChild(size_node)
-                bands = size_node.getAttribute('c')     
-
-        # Create <Compression> node
-        compression_node = mrf_dom.createElement('Compression')
-        compression_text_node = mrf_dom.createTextNode(compression)
-        compression_node.appendChild(compression_text_node)
-        raster_node.appendChild(compression_node)
-
-        # Check if <DataValues> tag is present and the NoData attribute is present
-        try:
-            datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
-        except IndexError:
-            datavalues_node = None
-        finally:
-            if datavalues_node is not None:    
-                raster_node.appendChild(datavalues_node)
-
-        # Check if the <Quality> tag is present and of a valid type
-        try:
-            quality_node = header_dom.getElementsByTagName('Quality')[0]
-        except IndexError:
-            quality_node = None
-        if quality_node is not None:    
-            if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
-                log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
-                continue
-            else:
-                raster_node.appendChild(quality_node)
-
-        # Check if <PageSize> node is present and has c, x, and y attributes
-        try:
-            page_size_node = header_dom.getElementsByTagName('PageSize')[0]
-        except IndexError:
-            page_size_node = None
-            log_sig_err("<PageSize> tag not present in MRF header file or layer config", sigevent_url)
-            continue
-        if page_size_node is not None:
-            if all (attr in page_size_node.attributes.keys() for attr in ('c','x','y')):
-                raster_node.appendChild(page_size_node)
-            else:
-                log_sig_err("<PageSize> requires c, x, and y attributes", sigevent_url)
-                continue
-
-        # Add <Raster> tag to MRF
-        mrf_meta.appendChild(raster_node)
-
-        # Create <Rsets> 
-        try:
-            rsets_node = header_dom.getElementsByTagName('Rsets')[0]
-        except IndexError:
-            rsets_node = None
-            log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
-            continue
-        if rsets_node is not None:
+    if not vectorType:
+        # Open MRF header if one has been supplied (except if "type" attr is "prefix")
+        header_dom = None
+        if header_type != 'prefix':
             try:
-                scale_attribute = rsets_node.getAttribute('scale')
-            except:
-                log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)
+                with open(header_file_name, 'r') as mrf_file:
+                    try:
+                        header_dom = xml.dom.minidom.parse(mrf_file)
+                    except:
+                        log_sig_err('Badly-formatted MRF header file: {0}'.format(mrf_file), sigevent_url)
+                        continue
+            except IOError:
+                log_sig_err("Can't open MRF file: {0}".format(header_file_name), sigevent_url)
                 continue
-            else:
-                try:
-                    if scale_attribute:
-                        if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
-                            log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
-                            continue
-                    if projection.tilematrixsets[tilematrixset].levels > 1:
-                        rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
-                except KeyError:
-                    log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+
+        # Create base MRF document. We'll be adding stuff from either the header MRF or the 
+        # layer config file to this.
+        mrf_impl = xml.dom.minidom.getDOMImplementation()
+        mrf_dom = mrf_impl.createDocument(None, 'MRF_META', None)
+        mrf_meta = mrf_dom.documentElement
+
+        # Create <Raster> tag
+        raster_node = mrf_dom.createElement('Raster')
+
+        # If the "prefix" attribute of <HeaderFileName> is present, we grab MRF stuff from the 
+        # layer config file. Otherwise, use the header file specified.
+        if header_type == 'prefix':
+            mrf_base = header_file_name + '.mrf'
+            header_dom = dom
+            log_info_mssg('Using MRF data within layer config file')
+        else:
+            log_info_mssg('Using MRF Archetype: ' + header_file_name)
+            mrf_base = os.path.basename(header_file_name)
+
+        if header_dom != None:
+            # Check if <Size> tag present and has all 3 required values (x,y,c)
+            try:
+                size_node = header_dom.getElementsByTagName('Size')[0]
+            except IndexError:
+                log_sig_err("<Size> tag not present in MRF header file or layer config", sigevent_url)
+                continue
+            if size_node != None:
+                if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
+                    log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
                     continue
-            # Add data file locations
-            dataFileNameElement = mrf_dom.createElement('DataFileName')
-            dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
-            indexFileNameElement = mrf_dom.createElement('IndexFileName')
-            indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
-            rsets_node.appendChild(dataFileNameElement)
-            rsets_node.appendChild(indexFileNameElement)
+                else:
+                    raster_node.appendChild(size_node)
+                    bands = size_node.getAttribute('c')     
 
-        # Add zindex file name
-        has_zdb = False;
-        if size_node.hasAttribute('z'):
-            z_index_node = mrf_dom.createElement('ZIndexFileName')
-            z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
-            z_index_node.appendChild(z_index_text_node)
-            rsets_node.appendChild(z_index_node)
-            has_zdb = True
+            # Create <Compression> node
+            compression_node = mrf_dom.createElement('Compression')
+            compression_text_node = mrf_dom.createTextNode(compression)
+            compression_node.appendChild(compression_text_node)
+            raster_node.appendChild(compression_node)
 
-        mrf_meta.appendChild(rsets_node)
-        
-        # Create GeoTags 
-        geotag_node = mrf_dom.createElement('GeoTags')
-        # Check for bounding box
-        try:
-            bounding_box_node = header_dom.getElementsByTagName('BoundingBox')[0]
-        except IndexError:
-            bounding_box_node = None
-            log_sig_err("<BoundingBox> tag not present in layer config or MRF header file", sigevent_url)
-            continue
-        if bounding_box_node is not None:
-            if all (attr in bounding_box_node.attributes.keys() for attr in ('minx','miny','maxx','maxy')):
-                geotag_node.appendChild(bounding_box_node)
-            else:
-                log_sig_err("<BoundingBox> requires minx, miny, maxx, and maxy attributes", sigevent_url)
+            # Check if <DataValues> tag is present and the NoData attribute is present
+            try:
+                datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
+            except IndexError:
+                datavalues_node = None
+            finally:
+                if datavalues_node is not None:    
+                    raster_node.appendChild(datavalues_node)
+
+            # Check if the <Quality> tag is present and of a valid type
+            try:
+                quality_node = header_dom.getElementsByTagName('Quality')[0]
+            except IndexError:
+                quality_node = None
+            if quality_node is not None:    
+                if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
+                    log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
+                    continue
+                else:
+                    raster_node.appendChild(quality_node)
+
+            # Check if <PageSize> node is present and has c, x, and y attributes
+            try:
+                page_size_node = header_dom.getElementsByTagName('PageSize')[0]
+            except IndexError:
+                page_size_node = None
+                log_sig_err("<PageSize> tag not present in MRF header file or layer config", sigevent_url)
                 continue
+            if page_size_node is not None:
+                if all (attr in page_size_node.attributes.keys() for attr in ('c','x','y')):
+                    raster_node.appendChild(page_size_node)
+                else:
+                    log_sig_err("<PageSize> requires c, x, and y attributes", sigevent_url)
+                    continue
 
-        mrf_meta.appendChild(geotag_node)
+            # Add <Raster> tag to MRF
+            mrf_meta.appendChild(raster_node)
 
-    twms = mrf_dom.createElement('TWMS')
-    levelsElement = mrf_dom.createElement('Levels')
-    levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
-    
-    if emptyTile != None:
-        # Generate empty tile and override size if colormap is used
-        if default_colormap != None and skip_empty_tiles == False:
-            pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
-            tileX = int(pageSize.getAttribute('x'))
-            tileY = int(pageSize.getAttribute('y'))
+            # Create <Rsets> 
+            try:
+                rsets_node = header_dom.getElementsByTagName('Rsets')[0]
+            except IndexError:
+                rsets_node = None
+                log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
+                continue
+            if rsets_node is not None:
+                try:
+                    scale_attribute = rsets_node.getAttribute('scale')
+                except:
+                    log_sig_err("Attribute 'scale' not present in <Rsets> tag", sigevent_url)
+                    continue
+                else:
+                    try:
+                        if scale_attribute:
+                            if int(scale_attribute) != projection.tilematrixsets[tilematrixset].scale:
+                                log_sig_err("Overview scales do not match - " + tilematrixset + ": " + str(str(projection.tilematrixsets[tilematrixset].scale)) + ", " + "Provided: " + scale_attribute, sigevent_url)
+                                continue
+                        if projection.tilematrixsets[tilematrixset].levels > 1:
+                            rsets_node.setAttribute('scale', str(projection.tilematrixsets[tilematrixset].scale))
+                    except KeyError:
+                        log_sig_err("Invalid TileMatrixSet " + tilematrixset + " for projection " + projection.id, sigevent_url)
+                        continue
+                # Add data file locations
+                dataFileNameElement = mrf_dom.createElement('DataFileName')
+                dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
+                indexFileNameElement = mrf_dom.createElement('IndexFileName')
+                indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
+                rsets_node.appendChild(dataFileNameElement)
+                rsets_node.appendChild(indexFileNameElement)
+
+            # Add zindex file name
+            has_zdb = False;
+            if size_node.hasAttribute('z'):
+                z_index_node = mrf_dom.createElement('ZIndexFileName')
+                z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
+                z_index_node.appendChild(z_index_text_node)
+                rsets_node.appendChild(z_index_node)
+                has_zdb = True
+
+            mrf_meta.appendChild(rsets_node)
+            
+            # Create GeoTags 
+            geotag_node = mrf_dom.createElement('GeoTags')
+            # Check for bounding box
+            try:
+                bounding_box_node = header_dom.getElementsByTagName('BoundingBox')[0]
+            except IndexError:
+                bounding_box_node = None
+                log_sig_err("<BoundingBox> tag not present in layer config or MRF header file", sigevent_url)
+                continue
+            if bounding_box_node is not None:
+                if all (attr in bounding_box_node.attributes.keys() for attr in ('minx','miny','maxx','maxy')):
+                    geotag_node.appendChild(bounding_box_node)
+                else:
+                    log_sig_err("<BoundingBox> requires minx, miny, maxx, and maxy attributes", sigevent_url)
+                    continue
+
+            mrf_meta.appendChild(geotag_node)
+
+        twms = mrf_dom.createElement('TWMS')
+        levelsElement = mrf_dom.createElement('Levels')
+        levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
+
+        if emptyTile != None:
+            # Generate empty tile and override size if colormap is used
+            if default_colormap != None and skip_empty_tiles == False:
+                pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
+                tileX = int(pageSize.getAttribute('x'))
+                tileY = int(pageSize.getAttribute('y'))
+
+                colormap_value = default_colormap.firstChild.nodeValue
+                colormap_location = default_colormap.attributes['location'].value
+                if colormap_location == '':
+                    colormap_path = colormap_value
+                else:
+                    colormap_path = add_trailing_slash(colormap_location) + colormap_value
+                
+                emptyTileSize = generate_empty_tile(colormap_path, emptyTile, tileX, tileY)
+            else: # Override size if there is no colormap
+                try:
+                    # Get file size
+                    print "\nReading empty tile file: " + emptyTile
+                    emptyTileSize = os.path.getsize(emptyTile)
+                    print "Empty tile size: " + str(emptyTileSize)
+                except:
+                    mssg=str().join(['Cannot read empty tile:  ', emptyTile])
+                    log_sig_err(mssg, sigevent_url)
+
+        emptyInfoElement = mrf_dom.createElement('EmptyInfo')
+        emptyInfoElement.setAttribute('size', str(emptyTileSize))
+        emptyInfoElement.setAttribute('offset', str(emptyTileOffset))
+        twms.appendChild(levelsElement)
+        twms.appendChild(emptyInfoElement)
+
+        # No longer used
+        #     if colormap:
+        #         metadataElement = mrf_dom.createElement('Metadata')
+        #         metadataElement.appendChild(mrf_dom.createTextNode(colormap))
+        #         twms.appendChild(twms.appendChild(metadataElement))
+
+        # add default TWMS patterns
+        twms_time_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
+        twms_notime_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
+        patterns.append(twms_time_pattern)
+        patterns.append(twms_notime_pattern)
+
+        patternElements = []
+        for pattern in patterns:
+            patternElements.append(mrf_dom.createElement('Pattern'))
+            patternElements[-1].appendChild(mrf_dom.createCDATASection(pattern))
+
+        for patternElement in patternElements:
+            twms.appendChild(patternElement)
+
+        # Time elements
+        detected_times = []
+        if static == False:
+            timeElements = []
+            for time in times:
+                detected_times = detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb)
+                for detected_time in detected_times:
+                    timeElements.append(mrf_dom.createElement('Time'))
+                    timeElements[-1].appendChild(mrf_dom.createTextNode(detected_time))
+
+            for timeElement in timeElements:
+                twms.appendChild(timeElement)
+                    
+        mrf_meta.appendChild(twms)
+            
+        if projection:
+            projectionElement = mrf_dom.createElement('Projection')
+            projectionElement.appendChild(mrf_dom.createCDATASection(projection.wkt))
+            mrf_meta.appendChild(projectionElement)
+
+        if not os.path.exists(twmsEndPoint):
+            os.makedirs(twmsEndPoint)
+        if not os.path.exists(wmtsEndPoint):
+            os.makedirs(wmtsEndPoint)
+            
+        twms_mrf_filename = twmsEndPoint+'/'+mrf_base
+        twms_mrf_file = open(twms_mrf_filename,'w+')
+
+        formatted_xml = get_pretty_xml(mrf_dom)
+        twms_mrf_file.write(formatted_xml)
+        twms_mrf_file.seek(0)
+
+        wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
+        # check if file already exists and has same TileMatrixSet, if not then create another file
+        if os.path.isfile(wmts_mrf_filename):
+            wmts_mrf_file = open(wmts_mrf_filename,'r')
+            if tilematrixset not in wmts_mrf_file.read():
+                log_sig_warn(tilematrixset + " not found in existing " + wmts_mrf_filename + ". Creating new file for TileMatrixSet.", sigevent_url)
+                wmts_mrf_filename = wmts_mrf_filename.split(".mrf")[0] + "_" + tilematrixset + ".mrf"
+            wmts_mrf_file.close()
+            
+        wmts_mrf_file = open(wmts_mrf_filename,'w+')
+        lines = twms_mrf_file.readlines()
+
+        # change patterns for WMTS
+        pattern_replaced = False
+        try:
+            if is_encoded:
+                wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default|encoded)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+            else:
+                wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+        except KeyError:
+            log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
+        for line in lines:
+            if '<Pattern>' in line:
+                if pattern_replaced == False:
+                    patternline = line.split('Pattern')
+                    line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]               
+                    pattern_replaced = True
+                else:
+                    line = ''
+            wmts_mrf_file.write(line)
+
+        twms_mrf_file.close()
+        wmts_mrf_file.seek(0)
+        wmts_mrf_file.close()
+        try:
+            mrf_file.close()
+        except:
+            pass
+
+        print '\n'+ twms_mrf_filename + ' configured successfully\n'
+        print '\n'+ wmts_mrf_filename + ' configured successfully\n'
+
+        # generate archive links if requested
+        if links == True:
+            if len(detected_times) > 0:
+                print "Generating archive links for " + fileNamePrefix
+                generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
+            else:
+                print fileNamePrefix + " is not a time varying layer" 
+
+        # generate color map if requested
+        legendUrl_vertical = ''
+        legendUrl_horizontal = '' 
+        if legend == True and default_colormap != None:
+            legend_output = ''
+            try:
+                legend_output = environment.legend_dir + identifier
+            except:
+                message = "Legend directory has not been defined for environment with cache location: " + environment.cache
+                log_sig_err(message, sigevent_url)
 
             colormap_value = default_colormap.firstChild.nodeValue
             colormap_location = default_colormap.attributes['location'].value
@@ -1856,155 +2008,18 @@ for conf in conf_files:
                 colormap_path = colormap_value
             else:
                 colormap_path = add_trailing_slash(colormap_location) + colormap_value
-            
-            emptyTileSize = generate_empty_tile(colormap_path, emptyTile, tileX, tileY)
-        else: # Override size if there is no colormap
+
             try:
-                # Get file size
-                print "\nReading empty tile file: " + emptyTile
-                emptyTileSize = os.path.getsize(emptyTile)
-                print "Empty tile size: " + str(emptyTileSize)
+                if environment.legendUrl != None:
+                    if legend_output != '':
+                        legendUrl_vertical = generate_legend(colormap_path, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
+                        legendUrl_horizontal = generate_legend(colormap_path, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
+                else:
+                    message = "Legend URL has not been defined for environment with cache location: " + environment.cache
+                    log_sig_err(message, sigevent_url)
             except:
-                mssg=str().join(['Cannot read empty tile:  ', emptyTile])
-                log_sig_err(mssg, sigevent_url)
-    
-    emptyInfoElement = mrf_dom.createElement('EmptyInfo')
-    emptyInfoElement.setAttribute('size', str(emptyTileSize))
-    emptyInfoElement.setAttribute('offset', str(emptyTileOffset))
-    twms.appendChild(levelsElement)
-    twms.appendChild(emptyInfoElement)
-
-# No longer used
-#     if colormap:
-#         metadataElement = mrf_dom.createElement('Metadata')
-#         metadataElement.appendChild(mrf_dom.createTextNode(colormap))
-#         twms.appendChild(twms.appendChild(metadataElement))
-    
-    # add default TWMS patterns
-    twms_time_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
-    twms_notime_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
-    patterns.append(twms_time_pattern)
-    patterns.append(twms_notime_pattern)
-
-    patternElements = []
-    for pattern in patterns:
-        patternElements.append(mrf_dom.createElement('Pattern'))
-        patternElements[-1].appendChild(mrf_dom.createCDATASection(pattern))
-    
-    for patternElement in patternElements:
-        twms.appendChild(patternElement)
-    
-    # Time elements
-    detected_times = []
-    if static == False:
-        timeElements = []
-        for time in times:
-            detected_times = detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb)
-            for detected_time in detected_times:
-                timeElements.append(mrf_dom.createElement('Time'))
-                timeElements[-1].appendChild(mrf_dom.createTextNode(detected_time))
-
-        for timeElement in timeElements:
-            twms.appendChild(timeElement)
-                
-    mrf_meta.appendChild(twms)
-        
-    if projection:
-        projectionElement = mrf_dom.createElement('Projection')
-        projectionElement.appendChild(mrf_dom.createCDATASection(projection.wkt))
-        mrf_meta.appendChild(projectionElement)
-    
-    if not os.path.exists(twmsEndPoint):
-        os.makedirs(twmsEndPoint)
-    if not os.path.exists(wmtsEndPoint):
-        os.makedirs(wmtsEndPoint)
-        
-    twms_mrf_filename = twmsEndPoint+'/'+mrf_base
-    twms_mrf_file = open(twms_mrf_filename,'w+')
-
-    formatted_xml = get_pretty_xml(mrf_dom)
-    twms_mrf_file.write(formatted_xml)
-    twms_mrf_file.seek(0)
-
-    wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
-    # check if file already exists and has same TileMatrixSet, if not then create another file
-    if os.path.isfile(wmts_mrf_filename):
-        wmts_mrf_file = open(wmts_mrf_filename,'r')
-        if tilematrixset not in wmts_mrf_file.read():
-            log_sig_warn(tilematrixset + " not found in existing " + wmts_mrf_filename + ". Creating new file for TileMatrixSet.", sigevent_url)
-            wmts_mrf_filename = wmts_mrf_filename.split(".mrf")[0] + "_" + tilematrixset + ".mrf"
-        wmts_mrf_file.close()
-        
-    wmts_mrf_file = open(wmts_mrf_filename,'w+')
-    lines = twms_mrf_file.readlines()
-    
-    # change patterns for WMTS
-    pattern_replaced = False
-    try:
-        if is_encoded:
-            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default|encoded)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
-        else:
-            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
-    except KeyError:
-        log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
-    for line in lines:
-        if '<Pattern>' in line:
-            if pattern_replaced == False:
-                patternline = line.split('Pattern')
-                line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]               
-                pattern_replaced = True
-            else:
-                line = ''
-        wmts_mrf_file.write(line)
-    
-    twms_mrf_file.close()
-    wmts_mrf_file.seek(0)
-    wmts_mrf_file.close()
-    try:
-        mrf_file.close()
-    except:
-        pass
-    
-    print '\n'+ twms_mrf_filename + ' configured successfully\n'
-    print '\n'+ wmts_mrf_filename + ' configured successfully\n'
-    
-    # generate archive links if requested
-    if links == True:
-        if len(detected_times) > 0:
-            print "Generating archive links for " + fileNamePrefix
-            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
-        else:
-            print fileNamePrefix + " is not a time varying layer" 
-
-    # generate color map if requested
-    legendUrl_vertical = ''
-    legendUrl_horizontal = '' 
-    if legend == True and default_colormap != None:
-        legend_output = ''
-        try:
-            legend_output = environment.legend_dir + identifier
-        except:
-            message = "Legend directory has not been defined for environment with cache location: " + environment.cache
-            log_sig_err(message, sigevent_url)
-
-        colormap_value = default_colormap.firstChild.nodeValue
-        colormap_location = default_colormap.attributes['location'].value
-        if colormap_location == '':
-            colormap_path = colormap_value
-        else:
-            colormap_path = add_trailing_slash(colormap_location) + colormap_value
-
-        try:
-            if environment.legendUrl != None:
-                if legend_output != '':
-                    legendUrl_vertical = generate_legend(colormap_path, legend_output + '_V.svg', environment.legendUrl + identifier + '_V.svg', 'vertical')
-                    legendUrl_horizontal = generate_legend(colormap_path, legend_output + '_H.svg', environment.legendUrl + identifier + '_H.svg', 'horizontal')
-            else:
-                message = "Legend URL has not been defined for environment with cache location: " + environment.cache
+                message = "Error generating legend for " + identifier
                 log_sig_err(message, sigevent_url)
-        except:
-            message = "Error generating legend for " + identifier
-            log_sig_err(message, sigevent_url)
             
 # Modify service files
     
@@ -2374,31 +2389,48 @@ $Patterns</TiledGroup>"""
             # Write mapfile lines
             mapfile.write("LAYER\n")
             mapfile.write("\tNAME\t\"" + identifier + "\"\n")
-            mapfile.write("\tTYPE\tRASTER\n")
+            if vectorType:
+                layer_type = vectorType.upper()
+            else:
+                layer_type = 'RASTER'
+            mapfile.write("\tTYPE\t" + layer_type + "\n")
             mapfile.write("\tSTATUS\tON\n")
             mapfile.write("\tVALIDATION\n")
             if not static:
                 mapfile.write("\t\tTIME\t\t\t" + timeParamRegex + "\n")
             if not static and year:
                 mapfile.write("\t\tPRODUCTYEAR\t\t" + yearDirRegex + "\n")
-            mapfile.write("\tEND\n")
-            mapfile.write("\tMETADATA\n")
+            # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
             if not static:
                 mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
             if not static and year:
                 mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
+            mapfile.write("\tEND\n")
+            mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
+            if vectorType:
+                mapfile.write('\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
             mapfile.write("\tEND\n")
-            if not static and year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
-            elif not static and not year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+            if vectorType:
+                extension = ''
             else:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + ".mrf\"\n")
+                extension = '_.mrf'
+            if not static and year:
+                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + extension + "\"\n")
+            elif not static and not year:
+                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + timeDirPattern + extension + "\"\n")
+            else:
+                mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + extension + "\"\n")
             mapfile.write("\tPROJECTION\n")
             mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
             mapfile.write("\tEND\n")
+            if vectorType and vectorStyleFile:
+                try:
+                    with open(vectorStyleFile, 'r') as f:
+                        mapfile.write(f.read())
+                except:
+                    log_sig_err("Couldn't read mapfile STYLE file: " + vectorStyleFile)
             mapfile.write("END\n")
 
 # run scripts
