@@ -24,15 +24,48 @@ MAP
     FORMATOPTION "GAMMA=0.75"
   END
 
+  OUTPUTFORMAT
+    NAME "csv"
+    DRIVER "OGR/CSV"
+    MIMETYPE "text/csv"
+    FORMATOPTION "LCO:GEOMETRY=AS_WKT"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "FILENAME=result.csv"
+  END
+
+  OUTPUTFORMAT
+    NAME "geojson"
+    DRIVER "OGR/GEOJSON"
+    FORMATOPTION "STORAGE=stream"
+    FORMATOPTION "FORM=stream"
+    FORMATOPTION "LCO:COORDINATE_PRECISION=3"
+    FORMATOPTION "LCO:WRITE_BBOX=YES"
+    MIMETYPE "application/json; subtype=geojson"
+  END
+
   Projection  #Output Projection
     "init=epsg:3857"
   End
 
   WEB
     METADATA
+      "wfs_title"          "OnEarth Mapserver/WFS (WebMercator - EPSG:3857)"
+      ## "wfs_onlineresource" "http://localhost/onearth/demo/mapserver/mapserver.cgi?map=epsg3857.map" ## Recommended
+      "wfs_srs"            "EPSG:3857"
+      "wfs_abstract"       "OnEarth Mapserver/WMS (WebMercator - EPSG:3857)"
+      "wfs_enable_request" "*"
       "wms-title"               "OnEarth Mapserver/WMS (WebMercator - EPSG:3857)"
       "wms-onlineresource"      "http://localhost/onearth/demo/mapserver/mapserver.cgi?map=epsg3857.map"
       "wms_enable_request" "GetMap GetCapabilities"
     END
   END
-END
+  
+  SYMBOL
+        NAME "circle"
+        TYPE ellipse
+        FILLED true
+        POINTS
+                1 1
+        END
+  END
