@@ -23,6 +23,22 @@ MAP
     EXTENSION "jpg"
     FORMATOPTION "GAMMA=0.75"
   END
+  
+  OUTPUTFORMAT
+    NAME        "kml"
+    DRIVER      KML
+    MIMETYPE    "application/vnd.google-earth.kml.xml"
+    IMAGEMODE   RGB
+    EXTENSION   "kml"
+  END
+
+  OUTPUTFORMAT
+    NAME        "kmz"
+    DRIVER      KMZ
+    MIMETYPE    "application/vnd.google-earth.kmz"
+    IMAGEMODE   RGB
+    EXTENSION   "kmz"
+  END
 
   OUTPUTFORMAT
     NAME "csv"
@@ -57,8 +73,20 @@ MAP
       "wfs_enable_request" "*"
       "wms-title"               "OnEarth Mapserver/WMS (WebMercator - EPSG:3857)"
       "wms-onlineresource"      "http://localhost/onearth/demo/mapserver/mapserver.cgi?map=epsg3857.map"
-      "wms_enable_request" "GetMap GetCapabilities"
+      "wms_enable_request"      "GetMap GetCapabilities"
+      "wms_srs"                 "epsg:3857"
+      "wms_connectiontimeout"   "180"
     END
+    VALIDATION
+      "default_TIME"            "TTTTTTT"
+      "default_PRODUCTYEAR"     "YYYY"
+      "default_PRODUCTMONTH"    "MM"
+      "default_PRODUCTDAY"      "DD"
+      "TIME"                    "^[0-9]{7}$"
+      "PRODUCTYEAR"             "^[0-9]{4}$"
+      "PRODUCTMONTH"            "^[0-9]{2}$"
+      "PRODUCTDAY"              "^[0-9]{2}$"
+     END
   END
   
   SYMBOL

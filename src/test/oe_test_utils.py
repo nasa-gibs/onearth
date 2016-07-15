@@ -82,7 +82,7 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     if not ignore_warnings:
         for error in process.stderr:
             if not ignore_warnings or "WARNING" not in error:
-                raise ValueError(error.strip())
+                print error
     return None
 
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):

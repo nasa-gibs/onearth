@@ -818,6 +818,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                 position = (1,float(i)/float(len(entries)))
             ax.annotate(text, 
             xy=position,
+    	    xytext=position,
             textcoords='offset points', 
             color='black', 
             ha='center', 

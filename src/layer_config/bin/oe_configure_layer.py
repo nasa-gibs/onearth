@@ -101,6 +101,16 @@ class TWMSEndPoint:
         self.getCapabilities = getCapabilities
         self.getTileService = getTileService
         self.projection = projection
+                
+class WMSEndPoint:
+    """End point data for WMS"""
+    
+    def __init__(self, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename):
+        self.mapfileStagingLocation = mapfileStagingLocation
+        self.mapfileLocation = mapfileLocation
+        self.mapfileLocationBasename = mapfileLocationBasename
+        self.mapfileConfigLocation = mapfileConfigLocation
+        self.mapfileConfigBasename = mapfileConfigBasename
 
 class Environment:
     """Environment information for layer(s)"""
@@ -1299,6 +1309,7 @@ else:
 conf_files = []
 wmts_endpoints = {}
 twms_endpoints = {}
+wms_endpoints = {}
 
 if not options.layer_config_filename:
     conf = subprocess.Popen('ls ' + configuration_directory + '/*.xml',shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).stdout
@@ -1551,6 +1562,7 @@ for conf in conf_files:
 
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
+        wms_endpoints[environment.mapfileStagingLocation] = WMSEndPoint(environment.mapfileStagingLocation, environment.mapfileLocation, environment.mapfileLocationBasename, environment.mapfileConfigLocation, environment.mapfileConfigBasename)
 
         try:
             vectorType = dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
@@ -2377,9 +2389,9 @@ $Patterns</TiledGroup>"""
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
             timeDirPattern = "%TIME%"
-            timeParamRegex = "'^[0-9]{7}$'" if not subdaily else "'^[0-9]{13}$'"
+            timeParamRegex = '"^[0-9]{7}$"' if not subdaily else '"^[0-9]{13}$"'
             yearDirPattern = "%PRODUCTYEAR%"
-            yearDirRegex = "'^[0-9]{4}$'"
+            yearDirRegex = '"^[0-9]{4}$"'
 
             minx = projection.lowercorner[0]
             miny = projection.lowercorner[1]
@@ -2403,8 +2415,10 @@ $Patterns</TiledGroup>"""
             # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
             if not static:
                 mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+                mapfile.write("\t\t\"TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
                 mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"PRODUCTYEAR\"\t\t" + yearDirRegex + "\n")
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
@@ -2532,35 +2546,36 @@ if no_wmts == False:
                 shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
 
 if create_mapfile is True:
-    # Create a new staging mapfile and add header, layers, and footer
-    staging_mapfile = os.path.join(environment.mapfileStagingLocation, environment.mapfileLocationBasename)
-    output_mapfile = os.path.join(environment.mapfileLocation, environment.mapfileLocationBasename)
-    with open(staging_mapfile, 'w+') as mapfile:
-        # Append header to mapfile if there is one
-        mapfile_config_prefix = os.path.join(environment.mapfileConfigLocation, environment.mapfileConfigBasename)
-        try:
-            with open(mapfile_config_prefix + '.header', 'r') as header:
-                mapfile.write(header.read())
-                print "\nUsing mapfile header: " + header.name
-        except IOError:
-            pass
-        # Iterate through layer mapfile snippets
-        layers = [os.path.join(environment.mapfileStagingLocation, file) for file in sorted(os.listdir(environment.mapfileStagingLocation), key=unicode.lower) if file.endswith('.map') and not file.startswith(environment.mapfileConfigBasename)]
-        for layer in layers:
-            with open(layer, 'r') as f:
-                mapfile.write('\n')
-                mapfile.write(f.read())
-        # Append footer to mapfile if there is one
-        try:
-            with open(mapfile_config_prefix + '.footer', 'r') as footer:
-                mapfile.write('\n')
-                mapfile.write(footer.read())
-                print "\nUsing mapfile footer: " + footer.name
-        except IOError:
-            mapfile.write('\nEND')
-            pass
-    print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, output_mapfile)
-    shutil.copyfile(staging_mapfile, output_mapfile)
+    for key, wms_endpoint in wms_endpoints.iteritems():
+        # Create a new staging mapfile and add header, layers, and footer
+        staging_mapfile = os.path.join(wms_endpoint.mapfileStagingLocation, wms_endpoint.mapfileLocationBasename)
+        output_mapfile = os.path.join(wms_endpoint.mapfileLocation, wms_endpoint.mapfileLocationBasename + ".map")
+        with open(staging_mapfile, 'w+') as mapfile:
+            # Append header to mapfile if there is one
+            mapfile_config_prefix = os.path.join(wms_endpoint.mapfileConfigLocation, wms_endpoint.mapfileConfigBasename)
+            try:
+                with open(mapfile_config_prefix + '.header', 'r') as header:
+                    mapfile.write(header.read())
+                    print "\nUsing mapfile header: " + header.name
+            except IOError:
+                pass
+            # Iterate through layer mapfile snippets
+            layers = [os.path.join(wms_endpoint.mapfileStagingLocation, sfile) for sfile in sorted(os.listdir(wms_endpoint.mapfileStagingLocation), key=unicode.lower) if sfile.endswith('.map') and not sfile.startswith(wms_endpoint.mapfileLocationBasename)]
+            for layer in layers:
+                with open(layer, 'r') as f:
+                    mapfile.write('\n')
+                    mapfile.write(f.read())
+            # Append footer to mapfile if there is one
+            try:
+                with open(mapfile_config_prefix + '.footer', 'r') as footer:
+                    mapfile.write('\n')
+                    mapfile.write(footer.read())
+                    print "\nUsing mapfile footer: " + footer.name
+            except IOError:
+                mapfile.write('\nEND')
+                pass
+        print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, output_mapfile)
+        shutil.copyfile(staging_mapfile, output_mapfile)
     
 
 print '\n*** Layers have been configured successfully ***'
