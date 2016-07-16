@@ -2408,10 +2408,6 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tTYPE\t" + layer_type + "\n")
             mapfile.write("\tSTATUS\tON\n")
             mapfile.write("\tVALIDATION\n")
-            if not static:
-                mapfile.write("\t\tTIME\t\t\t" + timeParamRegex + "\n")
-            if not static and year:
-                mapfile.write("\t\tPRODUCTYEAR\t\t" + yearDirRegex + "\n")
             # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
             if not static:
                 mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
