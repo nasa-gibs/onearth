@@ -44,6 +44,8 @@ import xmlrunner
 import sqlite3
 import itertools
 from optparse import OptionParser
+import re
+import hashlib
 
 import oe_test_utils as testutils
 from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, get_file_hash, file_text_replace
@@ -58,7 +60,7 @@ class TestLayerConfig(unittest.TestCase):
         config_template_path = os.path.join(os.getcwd(), 'layer_config_files/config_templates')
 
         # This is that path that will be created to hold all our dummy files
-        self.testfiles_path = os.path.join(os.getcwd(), 'config_tool_test_data')
+        self.testfiles_path = os.path.join(os.getcwd(), 'oe_configure_layer_test_artifacts')
 
         # Make dir for the test config XML files and text-replace the templates with the proper location
         make_dir_tree(os.path.join(self.testfiles_path, 'conf'))
@@ -165,8 +167,8 @@ class TestLayerConfig(unittest.TestCase):
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_legend_generation.xml')
-        h_legend_ref_hash = '1f4bca87509a8fd82c416fdd5f3eff87'
-        v_legend_ref_hash = '4fdb03600a8e5c8b15321dd2505d6838'
+        h_legend_ref_hash = '5b618677e22f79063580ca5edb2a0db5'
+        v_legend_ref_hash = '1d73b1a60326437c4b839c74683853aa'
 
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -184,15 +186,30 @@ class TestLayerConfig(unittest.TestCase):
         cmd = 'oe_configure_layer -l{0} --skip_empty_tiles -g -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
-        # Get hashes of generated legends
+        """Get hashes of generated legends
+        Note that matplotlib 1.5.1 generates unique ID values for style references, making each new file different.
+        We strip these unique references before hashing the file so we can have a baseline for testing.
+        """
+        hasher = hashlib.md5()
+        stripped_file = ''
         try:
             with open(os.path.join(config['legend_location'], config['prefix'] + '_H.svg'), 'r') as f:
-                h_legend_hash = get_file_hash(f)
+                file_str = f.read()
+                stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
+                stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
+                stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
+                hasher.update(stripped_file)
+                h_legend_hash = hasher.hexdigest()
         except OSError:
             raise ValueError('Horizontal legend not generated')
         try:
             with open(os.path.join(config['legend_location'], config['prefix'] + '_V.svg'), 'r') as f:
-                v_legend_hash = get_file_hash(f)
+                file_str = f.read()
+                stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
+                stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
+                stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
+                hasher.update(stripped_file)
+                v_legend_hash = hasher.hexdigest()
         except OSError:
             raise ValueError('Vertical legend not generated')
 
