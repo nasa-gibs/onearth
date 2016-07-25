@@ -2425,6 +2425,7 @@ $Patterns</TiledGroup>"""
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
             if vectorType:
                 mapfile.write('\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
+                mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
             mapfile.write("\tEND\n")
             if vectorType:
                 extension = '_'
