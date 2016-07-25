@@ -1337,6 +1337,20 @@ for conf in conf_files:
     else:
         dom = xml.dom.minidom.parse(config_file)
         
+        #Vector parameters
+        try:
+            vectorType = dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
+            if create_mapfile == False:
+                log_sig_warn('create_mapfile set to False but vector config file found. Setting create_mapfile to True.', sigevent_url)
+                create_mapfile = True
+            try:
+                vectorStyleFile = dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
+            except IndexError:
+                vectorStyleFile = None
+        except IndexError:
+            vectorType = None
+            vectorStyleFile = None
+        
         #Required parameters
         try:
             identifier = get_dom_tag_value(dom, 'Identifier')
@@ -1365,13 +1379,19 @@ for conf in conf_files:
                 log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or PBF in ' + conf, sigevent_url)
                 continue
         except IndexError:
-            log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
-            continue
+            if vectorType is None:
+                log_sig_err('Required <Compression> element is missing in ' + conf, sigevent_url)
+                continue
+            else:
+                compression = "None"
         try:
             tilematrixset = get_dom_tag_value(dom, 'TileMatrixSet')
         except:
-            log_sig_err('Required <TileMatrixSet> element is missing in ' + conf, sigevent_url)
-            continue
+            if vectorType is None:
+                log_sig_err('Required <TileMatrixSet> element is missing in ' + conf, sigevent_url)
+                continue
+            else:
+                tilematrixset = "None"
         try:
             emptyTileSize = int(get_dom_tag_value(dom, 'EmptyTileSize'))
         except IndexError:
@@ -1379,8 +1399,9 @@ for conf in conf_files:
                 emptyTileSize = ""
                 emptyTile = get_dom_tag_value(dom, 'EmptyTile')
             except IndexError: # Required if EmptyTile is not specified
-                log_sig_err('Required <EmptyTileSize> or <EmptyTile> element is missing in ' + conf, sigevent_url)
-                continue
+                if vectorType is None:
+                    log_sig_err('Required <EmptyTileSize> or <EmptyTile> element is missing in ' + conf, sigevent_url)
+                    continue
         try:
             fileNamePrefix = get_dom_tag_value(dom, 'FileNamePrefix')
         except IndexError:
@@ -1563,23 +1584,6 @@ for conf in conf_files:
         wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
         wms_endpoints[environment.mapfileStagingLocation] = WMSEndPoint(environment.mapfileStagingLocation, environment.mapfileLocation, environment.mapfileLocationBasename, environment.mapfileConfigLocation, environment.mapfileConfigBasename)
-
-        try:
-            vectorType = dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
-            try:
-                vectorStyleFile = dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
-            except IndexError:
-                vectorStyleFile = None
-        except IndexError:
-            vectorType = None
-            vectorStyleFile = None
-
-        # Since we are only serving Vector layers w/ Mapserver for now, we don't configure OnEarth stuff for those layers
-        if vectorType:
-            no_twms = True
-            no_wmts = True
-            create_mapfile = True
-            log_sig_warn('WARNING: Layers from vector sources are only served through Mapserver. Only building Mapserver configuration.', sigevent_url)
         
         # Close file.
         config_file.close()
@@ -2037,7 +2041,7 @@ for conf in conf_files:
     
 
     #getCapabilities TWMS
-    if no_twms == False:
+    if no_twms == False and vectorType is None:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = twmsEndPoint+'/getCapabilities.xml'
@@ -2068,7 +2072,7 @@ for conf in conf_files:
             getCapabilities_base.close()
     
         #getTileService
-    if no_twms == False:
+    if no_twms == False and vectorType is None:
         try:
             # Copy and open base GetTileService.
             getTileService_file = twmsEndPoint+'/getTileService.xml'
@@ -2097,7 +2101,7 @@ for conf in conf_files:
             getTileService_base.close()
     
     #getCapabilities WMTS modify Service URL
-    if no_wmts == False:
+    if no_wmts == False and vectorType is None:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
@@ -2134,7 +2138,7 @@ for conf in conf_files:
             
         
     # create WMTS layer metadata for GetCapabilities
-    if no_wmts == False:
+    if no_wmts == False and vectorType is None:
         try:
             # Open layer XML file
             layer_xml=open(wmts_mrf_filename.replace('.mrf','.xml'), 'w+')
@@ -2274,7 +2278,7 @@ for conf in conf_files:
         layer_xml.close()
 
     # create TWMS layer metadata for GetCapabilities
-    if no_twms == False:
+    if no_twms == False and vectorType is None:
         try:
             # Open layer XML file
             layer_xml=open(twms_mrf_filename.replace('.mrf','_gc.xml'), 'w+')
@@ -2319,7 +2323,7 @@ for conf in conf_files:
         layer_xml.close()
         
     # create TWMS layer metadata for GetTileService
-    if no_twms == False:
+    if no_twms == False and vectorType is None:
         try:
             # Open layer XML file
             layer_xml=open(twms_mrf_filename.replace('.mrf','_gts.xml'), 'w+')
@@ -2423,7 +2427,7 @@ $Patterns</TiledGroup>"""
                 mapfile.write('\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
             mapfile.write("\tEND\n")
             if vectorType:
-                extension = ''
+                extension = '_'
             else:
                 extension = '_.mrf'
             if not static and year:
