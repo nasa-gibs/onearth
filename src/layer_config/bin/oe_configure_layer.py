@@ -2387,7 +2387,7 @@ $Patterns</TiledGroup>"""
         layer_xml.close()
         
     # Create mapfile (if specified by user)
-    if create_mapfile is True:
+    if create_mapfile is True and compression != "PBF": # don't create mapfiles for protocol buffers (i.e,. vector tiles)
         # Write mapfile info for layer
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:
