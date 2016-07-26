@@ -72,6 +72,7 @@ import shutil
 import re
 import distutils.spawn
 import sqlite3
+import glob
 from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
@@ -1139,7 +1140,8 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         os.symlink(idx, idx_link)
         print "Created soft link " + idx_link + " -> " + idx
     else:
-        log_sig_warn("Default MRF index file " + idx + " does not exist", sigevent_url)
+        if data_ext != ".shp":
+            log_sig_warn("Default MRF index file " + idx + " does not exist", sigevent_url)
     if os.path.isfile(data):
         if os.path.lexists(data_link):
             os.remove(data_link)
@@ -1154,6 +1156,17 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
             print "Removed existing file " + zdb_link
         os.symlink(zdb, zdb_link)
         print "Created soft link " + zdb_link + " -> " + zdb
+        
+    # special handling for shapefiles
+    if data_ext == ".shp":
+        files = glob.glob(archiveLocation + ("",str(last_year)+"/")[year] + filename+"*")
+        for sfile in files:
+            ext = os.path.splitext(os.path.basename(sfile))[1]
+            if os.path.lexists(link_pre + ext):
+                os.remove(link_pre + ext)
+                print "Removed existing file " + link_pre + ext
+            os.symlink(sfile, link_pre + ext)
+            print "Created soft link " + link_pre + ext + " -> " + sfile
     
     return mrf_link, idx_link, data_link, zdb_link
     
@@ -1690,6 +1703,8 @@ for conf in conf_files:
         elif compression.lower() in ['pbf']:
             dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
             mrf_format = 'application/x-protobuf'
+        elif vectorType is not None:
+            dataFileLocation = dataFileLocation.replace('.mrf','.shp')
         else:
             dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
             mrf_format = 'image/png'
@@ -1999,14 +2014,6 @@ for conf in conf_files:
         print '\n'+ twms_mrf_filename + ' configured successfully\n'
         print '\n'+ wmts_mrf_filename + ' configured successfully\n'
 
-        # generate archive links if requested
-        if links == True:
-            if len(detected_times) > 0:
-                print "Generating archive links for " + fileNamePrefix
-                generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
-            else:
-                print fileNamePrefix + " is not a time varying layer" 
-
         # generate color map if requested
         legendUrl_vertical = ''
         legendUrl_horizontal = '' 
@@ -2036,12 +2043,27 @@ for conf in conf_files:
             except:
                 message = "Error generating legend for " + identifier
                 log_sig_err(message, sigevent_url)
+                
+    else: # Vectors
+        has_zdb = False
+        detected_times = []
+        if static == False:
+            for time in times:
+                detected_times = detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb)        
+    
+    # generate archive links if requested
+    if links == True:
+        if len(detected_times) > 0:
+            print "Generating archive links for " + fileNamePrefix
+            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
+        else:
+            print fileNamePrefix + " is not a time varying layer"     
             
 # Modify service files
     
 
     #getCapabilities TWMS
-    if no_twms == False and vectorType is None:
+    if no_twms == False:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = twmsEndPoint+'/getCapabilities.xml'
@@ -2072,7 +2094,7 @@ for conf in conf_files:
             getCapabilities_base.close()
     
         #getTileService
-    if no_twms == False and vectorType is None:
+    if no_twms == False:
         try:
             # Copy and open base GetTileService.
             getTileService_file = twmsEndPoint+'/getTileService.xml'
@@ -2101,7 +2123,7 @@ for conf in conf_files:
             getTileService_base.close()
     
     #getCapabilities WMTS modify Service URL
-    if no_wmts == False and vectorType is None:
+    if no_wmts == False:
         try:
             # Copy and open base GetCapabilities.
             getCapabilities_file = wmtsEndPoint+'/getCapabilities.xml'
@@ -2473,7 +2495,7 @@ if no_twms == False:
             getCapabilities_base = open(getCapabilities_file, 'r+')
             gc_lines = getCapabilities_base.readlines()
             for idx in range(0, len(gc_lines)):
-                if "</Layer>" in gc_lines[idx]:
+                if "\t</Layer>" in gc_lines[idx]:
                     gc_lines[idx] = layer_xml + gc_lines[idx]
                     print '\nAdding layers to TWMS GetCapabilities'
                 getCapabilities_base.seek(0)
