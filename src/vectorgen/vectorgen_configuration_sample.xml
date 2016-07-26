@@ -21,7 +21,8 @@ limitations under the License.
  <output_dir>output_dir/</output_dir>
  <working_dir>working_dir/</working_dir>
  <output_name>{$parameter_name}%Y%j_</output_name>
- <output_format>ESRI Shapefile</output_format>
+ <output_format>MRF</output_format>
+ <overview_levels>3</overview_levels>
+ <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
- <target_epsg>4326</target_epsg>
 </vectorgen_configuration>

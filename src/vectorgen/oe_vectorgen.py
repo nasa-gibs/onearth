@@ -42,6 +42,7 @@
 
 from optparse import OptionParser
 from oe_utils import *
+from oe_create_mvt_mrf import *
 import glob
 import logging
 import os
@@ -154,11 +155,20 @@ if __name__ == '__main__':
         except: #use working_dir if not specified
             logfile_dir = working_dir
         try:
-            output_name=get_dom_tag_value(dom, 'output_name')
+            output_name = get_dom_tag_value(dom, 'output_name')
         except:
             # default to GIBS naming convention
-            output_name='{$parameter_name}%Y%j_'
+            output_name = '{$parameter_name}%Y%j_'
         output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
+        # overview levels
+        try:
+            levels = int(get_dom_tag_value(dom, 'overview_levels'))
+            if levels.isdigit() == False:
+                log_sig_exit("ERROR", "'" + levels + "' is not a valid integer value.", sigevent_url)
+            if levels < 1:
+                log_sig_exit("ERROR", "'" + levels + "' must be greater than 0.", sigevent_url)
+        except:
+            levels = 3 # default to 3
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -228,6 +238,7 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
+    log_info_mssg(str().join(['config overview_levels:         ', str(levels)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
     log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
     log_info_mssg(str().join(['vectorgen current_cycle_time:   ', current_cycle_time]))
@@ -251,7 +262,7 @@ if __name__ == '__main__':
         input_files = input_files.strip()
         alltiles = input_files.split(',')
     if input_dir != None:
-        if output_format == 'ESRI Shapefile':
+        if output_format == 'esri shapefile':
             alltiles = alltiles + glob.glob(str().join([input_dir, '*shp']))
             alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
         else:
@@ -274,23 +285,39 @@ if __name__ == '__main__':
     for time_param in time_params:
         out_filename = out_filename.replace(time_param,datetime.datetime.strftime(mrf_date,time_param))
     
-    out_basename = output_dir + basename
+    out_basename = working_dir + basename
     out_filename = output_dir + out_filename
             
-    if len(alltiles) > 0 and output_format == "ESRI Shapefile":
-        for tile in alltiles:
-            geojson2shp(tile, out_basename, source_epsg, target_epsg, sigevent_url)
-            files = glob.glob(out_basename+"/*")
-            for sfile in files:
-                title, ext = os.path.splitext(os.path.basename(sfile))
-                log_info_mssg(str().join(['Moving ', out_basename+"/"+title+ext, ' to ', out_filename+ext]))
-                shutil.move(out_basename+"/"+title+ext, out_filename+ext)
-            shutil.rmtree(out_basename)
+    if len(alltiles) > 0:
+        if output_format == "esri shapefile":
+            for tile in alltiles:
+                geojson2shp(tile, out_basename, source_epsg, target_epsg, sigevent_url)
+                files = glob.glob(out_basename+"/*")
+                for sfile in files:
+                    title, ext = os.path.splitext(os.path.basename(sfile))
+                    log_info_mssg(str().join(['Moving ', out_basename+"/"+title+ext, ' to ', out_filename+ext]))
+                    shutil.move(out_basename+"/"+title+ext, out_filename+ext)
+                shutil.rmtree(out_basename)
+                mssg=str().join(['Output created:  ', out_filename+".shp"])
+        elif output_format == "mrf": # Create MVT-MRF
+            for tile in alltiles:
+                if string.lower(tile[-4:]) == "json":
+                    geojson_to_mrf(tile, basename, working_dir, source_epsg, False, levels, False)
+                elif string.lower(tile[-4:]) == ".shp":
+                    shapefile_to_mrf(tile, basename, working_dir, source_epsg, False, levels)
+                else:
+                    log_sig_exit('ERROR', "Invalid input file found " + tile, sigevent_url)
+                files = glob.glob(working_dir+"/"+basename+"*")
+                for mfile in files:
+                    title, ext = os.path.splitext(os.path.basename(mfile))
+                    if ext not in [".log",".xml"]:
+                        log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
+                        shutil.move(working_dir+"/"+title+ext, out_filename+ext)
+                mssg=str().join(['Output created:  ', out_filename+".mrf"])
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
     
     # Send to log.
-    mssg=str().join(['Output created:  ', out_filename+".shp"])
     try:
         log_info_mssg(mssg)
         sigevent('INFO', mssg, sigevent_url)
