@@ -54,7 +54,7 @@ MAP
     NAME "geojson"
     DRIVER "OGR/GEOJSON"
     FORMATOPTION "STORAGE=stream"
-    FORMATOPTION "FORM=stream"
+    FORMATOPTION "FORM=simple"
     FORMATOPTION "LCO:COORDINATE_PRECISION=3"
     FORMATOPTION "LCO:WRITE_BBOX=YES"
     MIMETYPE "application/json; subtype=geojson"
