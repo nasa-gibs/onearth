@@ -58,6 +58,20 @@ except:
 versionNumber = '1.0.0'
 basename = None
 
+def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
+    """
+    Converts GeoJSON into Esri Shapefile.
+    Arguments:
+        in_filename -- the input GeoJSON
+        out_filename -- the output Shapefile
+        sigevent_url -- the URL for SigEvent
+    """
+    if source_epsg == target_epsg:
+        ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-preserve_fid', out_filename, in_filename]
+    else:
+        ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-preserve_fid', '-s_srs', source_epsg, '-t_srs', target_epsg, out_filename, in_filename]
+    run_command(ogr2ogr_command_list, sigevent_url)
+
 def shp2geojson(in_filename, out_filename, sigevent_url):
     """
     Converts Esri Shapefile into GeoJSON.
@@ -143,21 +157,8 @@ if __name__ == '__main__':
             output_name=get_dom_tag_value(dom, 'output_name')
         except:
             # default to GIBS naming convention
-            output_name='{$parameter_name}%Y%j_.json'
+            output_name='{$parameter_name}%Y%j_'
         output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
-        try:
-            outsize = get_dom_tag_value(dom, 'outsize')
-            target_x, target_y = outsize.split(' ')
-        except:
-            outsize = ''
-            try:
-                target_x = get_dom_tag_value(dom, 'target_x')
-            except:
-                target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
-            try:
-                target_y = get_dom_tag_value(dom, 'target_y')
-            except:
-                target_y = ''
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -167,20 +168,6 @@ if __name__ == '__main__':
             source_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
         except:
             source_epsg = 'EPSG:4326' # default to geographic
-        # Target extents.
-        try:
-            extents = get_dom_tag_value(dom, 'extents')
-        except:
-            extents = '-180,-90,180,90' # default to geographic
-        xmin, ymin, xmax, ymax = extents.split(',')
-        try:
-            target_extents = get_dom_tag_value(dom, 'target_extents')
-        except:
-            if target_epsg == 'EPSG:3857':
-                target_extents = '-20037508.34,-20037508.34,20037508.34,20037508.34'
-            else:
-                target_extents = extents # default to extents
-        target_xmin, target_ymin, target_xmax, target_ymax = target_extents.split(',')
         # Input files.
         try:
             input_files = get_input_files(dom)
@@ -241,13 +228,8 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
-    log_info_mssg(str().join(['config outsize:                 ', outsize]))
-    log_info_mssg(str().join(['config target_x:                ', target_x]))
-    log_info_mssg(str().join(['config target_y:                ', target_y]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
     log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
-    log_info_mssg(str().join(['config extents:                 ', extents]))
-    log_info_mssg(str().join(['config target_extents:          ', target_extents]))
     log_info_mssg(str().join(['vectorgen current_cycle_time:   ', current_cycle_time]))
     log_info_mssg(str().join(['vectorgen basename:             ', basename]))
     
@@ -269,7 +251,8 @@ if __name__ == '__main__':
         input_files = input_files.strip()
         alltiles = input_files.split(',')
     if input_dir != None:
-        if output_format == 'geojson' or output_format == 'json':
+        if output_format == 'ESRI Shapefile':
+            alltiles = alltiles + glob.glob(str().join([input_dir, '*shp']))
             alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
         else:
             alltiles = alltiles + glob.glob(str().join([input_dir, '*']))
@@ -294,16 +277,20 @@ if __name__ == '__main__':
     out_basename = output_dir + basename
     out_filename = output_dir + out_filename
             
-    if len(alltiles) > 0 and output_format == "geojson":
-        out_basename = out_basename + ".json"
-        shp2geojson(alltiles[0], out_basename, sigevent_url)
-        log_info_mssg(str().join(['Moving ', out_basename, ' to ', out_filename]))
-        shutil.move(out_basename, out_filename)
+    if len(alltiles) > 0 and output_format == "ESRI Shapefile":
+        for tile in alltiles:
+            geojson2shp(tile, out_basename, source_epsg, target_epsg, sigevent_url)
+            files = glob.glob(out_basename+"/*")
+            for sfile in files:
+                title, ext = os.path.splitext(os.path.basename(sfile))
+                log_info_mssg(str().join(['Moving ', out_basename+"/"+title+ext, ' to ', out_filename+ext]))
+                shutil.move(out_basename+"/"+title+ext, out_filename+ext)
+            shutil.rmtree(out_basename)
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
     
     # Send to log.
-    mssg=str().join(['Output created:  ', out_filename])
+    mssg=str().join(['Output created:  ', out_filename+".shp"])
     try:
         log_info_mssg(mssg)
         sigevent('INFO', mssg, sigevent_url)

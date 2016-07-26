@@ -304,3 +304,4 @@ def run_command(cmd, sigevent_url):
     for error in process.stderr:
         log_sig_err(error.strip(), sigevent_url)
         raise Exception(error.strip())
+    

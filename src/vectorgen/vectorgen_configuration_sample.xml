@@ -20,6 +20,8 @@ limitations under the License.
  </input_files> 
  <output_dir>output_dir/</output_dir>
  <working_dir>working_dir/</working_dir>
- <output_name>{$parameter_name}%Y%j_.json</output_name>
- <output_format>GeoJSON</output_format>
+ <output_name>{$parameter_name}%Y%j_</output_name>
+ <output_format>ESRI Shapefile</output_format>
+ <source_epsg>4326</source_epsg>
+ <target_epsg>4326</target_epsg>
 </vectorgen_configuration>

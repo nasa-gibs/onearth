@@ -26,6 +26,8 @@ limitations under the License.
         <xs:element ref="logfile_dir" minOccurs="0"/>
         <xs:element ref="output_name"/>
         <xs:element ref="output_format"/>
+        <xs:element ref="target_epsg" minOccurs="0"/>
+        <xs:element ref="source_epsg" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -48,8 +50,10 @@ limitations under the License.
   <xs:element name="output_format">
     <xs:simpleType>
       <xs:restriction base="xs:string">
-        <xs:enumeration value="GeoJSON"/>
+        <xs:enumeration value="ESRI Shapefile"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
+  <xs:element name="target_epsg" type="xs:integer" default="4326"/>
+  <xs:element name="source_epsg" type="xs:integer" default="4326"/>
 </xs:schema>
