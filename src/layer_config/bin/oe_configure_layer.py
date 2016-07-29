@@ -1773,8 +1773,8 @@ for conf in conf_files:
                 log_sig_err("<Size> tag not present in MRF header file or layer config", sigevent_url)
                 continue
             if size_node != None:
-                if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
-                    log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
+                if not all(attr in size_node.attributes.keys() for attr in ('x', 'y')):
+                    log_sig_err("<Size> tag needs to have attributes x and y", sigevent_url)
                     continue
                 else:
                     raster_node.appendChild(size_node)
@@ -1815,10 +1815,10 @@ for conf in conf_files:
                 log_sig_err("<PageSize> tag not present in MRF header file or layer config", sigevent_url)
                 continue
             if page_size_node is not None:
-                if all (attr in page_size_node.attributes.keys() for attr in ('c','x','y')):
+                if all (attr in page_size_node.attributes.keys() for attr in ('x', 'y')):
                     raster_node.appendChild(page_size_node)
                 else:
-                    log_sig_err("<PageSize> requires c, x, and y attributes", sigevent_url)
+                    log_sig_err("<PageSize> requires x, and y attributes", sigevent_url)
                     continue
 
             # Add <Raster> tag to MRF
