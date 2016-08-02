@@ -1,12 +1,12 @@
 Name:		onearth
-Version:	1.0.1
-Release:	2%{?dist}
+Version:	1.0.2
+Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
 URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
-Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.3.1.tar.gz
+Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.tar.gz
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 
 BuildRequires:	httpd-devel
@@ -72,8 +72,8 @@ Requires:   python-unittest2
 Requires:	freetype-devel
 Requires:	gibs-gdal > 0.9.0
 BuildArch:	noarch
-Provides:	python-matplotlib = 1.3.1
-Obsoletes:	python-matplotlib < 1.3.1
+Provides:	python-matplotlib = 1.5.1
+Obsoletes:	python-matplotlib < 1.5.1
 
 %description config
 Layer configuration tools for OnEarth including Legend Generator
@@ -144,6 +144,11 @@ make install
 %{_bindir}/oe_generate_empty_tile.py
 %{_datadir}/mpl
 
+%post config		
+cd %{_datadir}/mpl/		
+python setup.py build		
+python setup.py install
+
 %files mrfgen
 %defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/mrfgen
@@ -170,6 +175,9 @@ mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 
 %changelog
+*Fri Jul 15 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.2
+- Updated Matplotlib dependency install to 1.5.1
+
 * Wed May 25 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.0.1-1
 - Modified empty tiles
 

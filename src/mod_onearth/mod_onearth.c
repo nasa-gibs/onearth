@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.0.1
+ * Version 1.0.2
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -467,6 +467,15 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
 			  	apr_time_exp_t snap_date;
 			  	apr_time_exp_gmt(&snap_date, snap_epoch);
+
+			  	// Fix year part of file path
+					if(yearloc != NULL) {
+					char oldpath=*(yearloc+4);
+					sprintf(yearloc,"%04d",snap_date.tm_year + 1900);
+					*(yearloc+4)=oldpath;
+			  	}
+
+			  	// Build rest of filename
 			  	if (hastime == 0) {
 					char old_char=*(fnloc+7);
 					sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);

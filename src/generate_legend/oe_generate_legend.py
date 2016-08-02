@@ -62,7 +62,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v1.0.1"
+versionNumber = "v1.0.2"
 
 class ColorMaps:
     """Collection of ColorMaps"""
@@ -818,6 +818,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                 position = (1,float(i)/float(len(entries)))
             ax.annotate(text, 
             xy=position,
+    	    xytext=position,
             textcoords='offset points', 
             color='black', 
             ha='center', 
