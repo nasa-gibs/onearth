@@ -21,7 +21,7 @@ LIB_DIR=$(shell \
 )
 RPMBUILD_FLAGS=-ba
 
-MPL_ARTIFACT=matplotlib-1.3.1.tar.gz
+MPL_ARTIFACT=matplotlib-1.5.1.tar.gz
 MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
 CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
