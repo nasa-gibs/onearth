@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.0.1
+ONEARTH_VERSION=1.0.2
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
