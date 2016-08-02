@@ -42,6 +42,7 @@ limitations under the License.
         <xs:element ref="extents" minOccurs="0"/>
         <xs:element ref="target_extents" minOccurs="0"/>
         <xs:element ref="colormap" minOccurs="0"/>
+        <xs:element ref="quality_prec" minOccurs="0"/>
         <xs:element ref="mrf_name" minOccurs="0"/>
         <xs:element ref="mrf_nocopy" minOccurs="0"/>
         <xs:element ref="mrf_merge" minOccurs="0"/>
@@ -84,6 +85,7 @@ limitations under the License.
         <xs:enumeration value="EPNG"/>
         <xs:enumeration value="TIF"/>
         <xs:enumeration value="TIFF"/>
+        <xs:enumeration value="LERC"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
@@ -138,6 +140,7 @@ limitations under the License.
   <xs:element name="extents" type="xs:string" nillable="true"/>
   <xs:element name="target_extents" type="xs:string" nillable="true"/>
   <xs:element name="colormap" type="xs:string" nillable="true"/>
+  <xs:element name="quality_prec" type="xs:float" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
   <xs:element name="mrf_nocopy" type="xs:boolean" nillable="true" default="true"/>
   <xs:element name="mrf_merge" type="xs:boolean" nillable="true" default="true"/>

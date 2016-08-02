@@ -1119,7 +1119,15 @@ else:
     try:
         colormap = get_dom_tag_value(dom, 'colormap')
     except:
-        colormap = ''  
+        colormap = ''
+    # quality/precision
+    try:
+        quality_prec = get_dom_tag_value(dom, 'quality_prec')
+    except:
+        if mrf_compression_type.lower() == 'lerc':
+            quality_prec = '0.001' # default to standard floating point precision if LERC
+        else:
+            quality_prec = '80' # default to 80 quality for everything else
     # z-levels
     try:
         zlevels = get_dom_tag_value(dom, 'mrf_z_levels')
@@ -1248,6 +1256,7 @@ log_info_mssg(str().join(['config overview resampling:     ', overview_resamplin
 log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resampling]))
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
+log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(blend)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
@@ -1875,13 +1884,12 @@ if mrf_empty_tile_filename != '' and (z == None or z == 0):
 # Create the gdal_translate command.         
 gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
 if compress == "COMPRESS=JPEG":
-    # Use JPEG quality of 80
     gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('QUALITY=80')
+    gdal_translate_command_list.append('QUALITY='+quality_prec)
 if compress == "COMPRESS=LERC":
     # Default to V1 for Javascript decoding
     gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('OPTIONS="LERC_PREC=0.01 V1=ON DEFLATE=ON"')
+    gdal_translate_command_list.append('OPTIONS="LERC_PREC=' + quality_prec + ' V1=ON DEFLATE=ON"')
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
