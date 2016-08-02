@@ -1881,7 +1881,7 @@ if compress == "COMPRESS=JPEG":
 if compress == "COMPRESS=LERC":
     # Default to V1 for Javascript decoding
     gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('OPTIONS="LERC_PREC=0.01 V1=ON"')    
+    gdal_translate_command_list.append('OPTIONS="LERC_PREC=0.01 V1=ON DEFLATE=ON"')
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
