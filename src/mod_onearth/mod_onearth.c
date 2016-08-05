@@ -2224,6 +2224,9 @@ static int mrf_handler(request_rec *r)
   if (apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf") == 0) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
   }
+  if (apr_strnatcmp(cfg->meta[count].mime_type, "image/lerc") == 0) {
+  	apr_table_setn(r->headers_out, "Content-Encoding", "deflate");
+  }
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
