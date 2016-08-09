@@ -80,6 +80,7 @@ from lxml import etree
 from shutil import copyfile
 
 versionNumber = '1.0.2'
+current_conf = None
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -191,6 +192,8 @@ def sigevent(type, mssg, sigevent_url):
     data['format']='TEXT'
     data['category']='ONEARTH'
     data['provider']='GIBS'
+    if current_conf != None:
+        data['data']=current_conf
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -1325,7 +1328,7 @@ if conf_files==[]:
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 for conf in conf_files:
-
+    current_conf = conf
     try:
         # Open file.
         config_file=open(conf, 'r')
