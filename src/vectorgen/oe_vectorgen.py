@@ -42,7 +42,7 @@
 
 from optparse import OptionParser
 from oe_utils import *
-from oe_create_mvt_mrf import *
+from oe_create_mvt_mrf import create_vector_mrf
 import glob
 import logging
 import os
@@ -160,15 +160,21 @@ if __name__ == '__main__':
             # default to GIBS naming convention
             output_name = '{$parameter_name}%Y%j_'
         output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
-        # overview levels
+        # user-specified tilematrixset to build
         try:
-            levels = int(get_dom_tag_value(dom, 'overview_levels'))
-            if levels.isdigit() == False:
-                log_sig_exit("ERROR", "'" + levels + "' is not a valid integer value.", sigevent_url)
-            if levels < 1:
-                log_sig_exit("ERROR", "'" + levels + "' must be greater than 0.", sigevent_url)
+            tilematrixset = get_dom_tag_value(dom, 'tilematrixset')
         except:
-            levels = 3 # default to 3
+            log_sig_exit('ERROR', 'Must specifiy a tilematrixset.')
+        # Tilematrixset definition file (defaults to $LCDIR/conf/tilematrixsets.xml)
+        try:
+            tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
+        except:
+            log_sig_warn('WARNING', 'TileMatrixSet definition config file not specified. Using $LCDIR/conf/tilematrixsets.xml')
+            lcdir = lcdir = os.environ.get('LCDIR')
+            if not lcdir:
+                log_sig_warn('WARNING', "Can't find $LCDIR environment variable. Using /etc/onearth/config")
+                lcdir = '/etc/onearth/config'
+            tilematrixset_definition_file = os.path.join(lcdir, 'tilematrixsets.xml')
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -178,6 +184,16 @@ if __name__ == '__main__':
             source_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
         except:
             source_epsg = 'EPSG:4326' # default to geographic
+        # Rate at which to reduce features
+        try:
+            feature_reduce_rate = float(get_dom_tag_value(dom, 'feature_reduce_rate'))
+        except:
+            feature_reduce_rate = 0
+        # Rate at which to reduce sub-pixel feature clusters
+        try:
+            cluster_reduce_rate = float(get_dom_tag_value(dom, 'cluster_reduce_rate'))
+        except:
+            cluster_reduce_rate = 0
         # Input files.
         try:
             input_files = get_input_files(dom)
@@ -238,7 +254,9 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
-    log_info_mssg(str().join(['config overview_levels:         ', str(levels)]))
+    log_info_mssg(str().join(['config tilematrixset:           ', tilematrixset]))
+    log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
+    log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
     log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
     log_info_mssg(str().join(['vectorgen current_cycle_time:   ', current_cycle_time]))
@@ -301,12 +319,13 @@ if __name__ == '__main__':
                 mssg=str().join(['Output created:  ', out_filename+".shp"])
         elif output_format == "mrf": # Create MVT-MRF
             for tile in alltiles:
-                if string.lower(tile[-4:]) == "json":
-                    geojson_to_mrf(tile, basename, working_dir, source_epsg, False, levels, False)
-                elif string.lower(tile[-4:]) == ".shp":
-                    shapefile_to_mrf(tile, basename, working_dir, source_epsg, False, levels)
-                else:
-                    log_sig_exit('ERROR', "Invalid input file found " + tile, sigevent_url)
+                outfile = tile
+                # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
+                if source_epsg != target_epsg:
+                    outfile = os.path.join(working_dir, basename + '_reproject' + os.path.splitext(tile)[1])
+                    ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
+                    run_command(ogr2ogr_command_list, sigevent_url)
+                create_vector_mrf(tile, working_dir, basename, tilematrixset, tilematrixset_definition_file, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
                 files = glob.glob(working_dir+"/"+basename+"*")
                 for mfile in files:
                     title, ext = os.path.splitext(os.path.basename(mfile))

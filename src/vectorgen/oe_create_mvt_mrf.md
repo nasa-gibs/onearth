@@ -1,31 +1,28 @@
 # oe_create_mvt_mrf -- Convert Shapefiles to GeoJSON and MVT tile MRFs.
 
 ## Dependencies
-- GDAL (ogr2ogr)
-- Tippecanoe (https://github.com/mapbox/tippecanoe)
+- libxml2
+- libxslt
+- libspatialindex 
+- Python dependencies listed in requirements.txt
 
 ## Installation
 
-#### Install GDAL
-GDAL's `ogr2ogr` program is needed to convert shapefiles to GeoJSON.
+#### Install libspatialindex, libxslt, and libxml2
 
-#### Install Tippecanoe
-Tippecanoe converts GeoJSON files to Vector Tiles. It performs decimation as well.
+*Note that this software requires libspatialindex v1.7 or higher. If installing in CentOS6, for example, you'll need to install from source: https://libspatialindex.github.io/.*
 
-1. Clone the Tippecanoe repo:
-`git clone https://github.com/mapbox/tippecanoe.git`
+`yum install spatialindex-devel libxml2-devel libxslt-devel`
 
-2. Make and install Tippecanoe:
-`make && make install`
+#### Install Python dependencies with pip
+`pip install -r requirements.txt`
 
 ## Making MVT MRFs
 
 ### From the Command Line:
-`perry.py [options] INPUT_SHAPEFILE OUTPUT_FILE_PREFIX`
+`oe_create_mvt_mrf.py [options] INPUT_SHAPEFILE TILEMATRIXSET`
 
 Use `-h` for information on additional options.
 
-The script detects whether the input file is a GeoJSON or Shapefile based on its extension.
- 
 ### From another Python script
-You can also directly use the functions in this script in your own scripts. There are only two functions (GeoJSON -> MRF and Shapefile -> MRF) and they are extensively documented within the script itself. 
+This script has one main function (create_vector_mrf) that can be used in other scripts. Check the source for implementation details.

@@ -22,7 +22,10 @@ limitations under the License.
  <working_dir>working_dir/</working_dir>
  <output_name>{$parameter_name}%Y%j_</output_name>
  <output_format>MRF</output_format>
- <overview_levels>3</overview_levels>
  <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
+ <tilematrixset>EPSG4326_16km</tilematrixset>
+ <tilematrixset_definition_file>/etc/onearth/config/conf/tilematrixsets.xml</tilematrixset_definition_file>
+ <feature_reduce_rate>2.5</feature_reduce_rate>
+ <cluster_reduce_rate>2</cluster_reduce_rate>
 </vectorgen_configuration>
