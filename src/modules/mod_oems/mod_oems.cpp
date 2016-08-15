@@ -39,20 +39,9 @@
 #include "mod_oems.h"
 
 const char *mapfiledir;
-const char *imagetempdir;
-
-static char epsg4326_aux[] = "<PAMDataset>\n<SRS>GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]</SRS>\n</PAMDataset> ";
-static char epsg3414_aux[] = "<PAMDataset>\n<SRS>PROJCS[\"WGS 84 / NSIDC Sea Ice Polar Stereographic North\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],PROJECTION[\"Polar_Stereographic\"],PARAMETER[\"latitude_of_origin\",70],PARAMETER[\"central_meridian\",-45],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],AUTHORITY[\"EPSG\",\"3413\"],AXIS[\"X\",UNKNOWN],AXIS[\"Y\",UNKNOWN]]</SRS>\n</PAMDataset>";
-static char epsg3031_aux[] = "<PAMDataset>\n<SRS>PROJCS[\"WGS 84 / Antarctic Polar Stereographic\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],PROJECTION[\"Polar_Stereographic\"],PARAMETER[\"latitude_of_origin\",-71],PARAMETER[\"central_meridian\",0],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],AUTHORITY[\"EPSG\",\"3031\"],AXIS[\"Easting\",UNKNOWN],AXIS[\"Northing\",UNKNOWN]]</SRS>\n</PAMDataset>";
-static char epsg3857_aux[] = "<PAMDataset>\n<SRS>PROJCS[\"WGS 84 / Pseudo-Mercator\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_1SP\"],PARAMETER[\"central_meridian\",0],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"X\",EAST],AXIS[\"Y\",NORTH],EXTENSION[\"PROJ4\",\"+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs\"],AUTHORITY[\"EPSG\",\"3857\"]]</SRS>\n</PAMDataset> ";
 
 static const char *mapfile_dir_set(cmd_parms *cmd, void *cfg, const char *arg) {
 	mapfiledir = arg;
-	return 0;
-}
-
-static const char *imagetemp_dir_set(cmd_parms *cmd, void *cfg, const char *arg) {
-	imagetempdir = arg;
 	return 0;
 }
 
@@ -84,24 +73,25 @@ char *get_mapfile(request_rec *r, char *mapfile) {
 			get_param(r->args, "srsname", mapfile); // Use SRSNAME for WFS
 		}
 	}
-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "SRS: %s", mapfile);
+//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "SRS: %s", mapfile);
 	if (ap_strstr(mapfile, "4326") != 0) {
 		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, "epsg4326.map");
 	} else if (ap_strstr(mapfile, "3031") != 0) {
 		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, "epsg3031.map");
 	} else if (ap_strstr(mapfile, "3413") != 0) {
 		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, "epsg3413.map");
-	} else {
+	} else if (ap_strstr(mapfile, "3857") != 0) {
 		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, "epsg3857.map");
+	} else {
+		mapfile = NULL;
 	}
 	return mapfile;
 }
 
 // Check for valid arguments and transform request for Mapserver
 char *validate_args(request_rec *r, char *mapfile) {
-
-	char proj[4];
 	char *args = r->args;
+	char proj[4];
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
 
@@ -110,7 +100,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	apr_size_t tmlen;
 	char *time = (char*)apr_pcalloc(r->pool,max_chars);
 	char *doytime = (char*)apr_pcalloc(r->pool,max_chars); // Ordinal date with time
-	char *productyear = (char*)apr_pcalloc(r->pool,max_chars);
+	char *productyear = (char*)apr_pcalloc(r->pool,5);
 
 	// General args
 	char *service = (char*)apr_pcalloc(r->pool,max_chars);
@@ -126,6 +116,27 @@ char *validate_args(request_rec *r, char *mapfile) {
 	get_param(args,"format",format);
 	get_param(args,"bbox",bbox);
 
+	// Previous args
+	char *prev_format = 0;
+	char *prev_time = 0;
+
+	// Set notes from previous request if there is one
+	if (r->prev != 0) {
+		prev_format = (char *) apr_table_get(r->prev->notes, "oems_format");
+		prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
+		if (prev_format != 0) {
+			ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "prev_format: %s", prev_format);
+			apr_table_setn(r->notes, "oems_format", prev_format);
+		} else {
+			apr_table_setn(r->notes, "oems_format", format);
+		}
+		if (prev_time != 0) {
+			apr_table_setn(r->notes, "oems_time", prev_time);
+		}
+	} else {
+		apr_table_setn(r->notes, "oems_format", format);
+	}
+
 	// handle TIME
 	if (ap_strchr(time, '-') != 0) {
 		int i; i= 0;
@@ -138,9 +149,9 @@ char *validate_args(request_rec *r, char *mapfile) {
 			t = apr_strtok(NULL,"-",&last);
 		}
 		// TODO: Handle HH:MM:SS
-		productyear = apr_psprintf(r->pool, "%s", times[0]);
-		time = apr_psprintf(r->pool, "%s%s%s", times[0], times[1], times[2]);
-		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "TIME: %s", time);
+		time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
+//		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "TIME: %s", time);
+		apr_table_setn(r->notes, "oems_time", time);
 
 		tm.tm_year = apr_atoi64(times[0]) - 1900;
 		tm.tm_mon = apr_atoi64(times[1]) - 1;
@@ -151,17 +162,21 @@ char *validate_args(request_rec *r, char *mapfile) {
 		apr_time_exp_gmt(&tm, epoch);
 
 		apr_strftime(doytime, &tmlen, 14, "%Y%j", &tm);
-		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "DOYTIME: %s", doytime);
+//		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "DOYTIME: %s", doytime);
 	}
 
 	// check if WMS or WFS
 	if (ap_strcasecmp_match(service, "WMS") == 0)  {
+
 		char *transparent = (char*)apr_pcalloc(r->pool,max_chars);
 		char *layers = (char*)apr_pcalloc(r->pool,max_chars);
 		char *srs = (char*)apr_pcalloc(r->pool,max_chars);
 		char *styles = (char*)apr_pcalloc(r->pool,max_chars);
 		char *width = (char*)apr_pcalloc(r->pool,max_chars);
 		char *height = (char*)apr_pcalloc(r->pool,max_chars);
+
+		char *layer_years = (char*)apr_pcalloc(r->pool,max_chars);
+		char *layer_times = (char*)apr_pcalloc(r->pool,max_chars);
 
 		get_param(args,"transparent",transparent);
 		get_param(args,"layers",layers);
@@ -170,13 +185,83 @@ char *validate_args(request_rec *r, char *mapfile) {
 		get_param(args,"height",height);
 
 		if (ap_strstr(version, "1.1") != 0) {
-			strcpy(proj,"SRS");
+			apr_cpystrn(proj, "SRS", 4);
 			get_param(args,"srs",srs);
 		} else {
-			strcpy(proj,"CRS");
+			apr_cpystrn(proj, "CRS", 4);
 			get_param(args,"crs",srs);
 		}
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s&TIME=%s&PRODUCTYEAR=%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,doytime,productyear);
+		apr_table_setn(r->notes, "oems_srs", srs);
+
+		// Split out layers
+		char *layer_cpy = (char*)apr_pcalloc(r->pool,max_chars);
+		char *layer_time_param = (char*)apr_pcalloc(r->pool,strlen(layers)+1);
+		char *layer_time_value = (char*)apr_pcalloc(r->pool,13);
+		char *last_layer = 0;
+	    char *prev_last_layer = 0;
+	    char *prev_last_layers = 0;
+	    if (r->prev != 0) {
+	    	prev_last_layer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
+	    	prev_last_layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
+			last_layer = (char*)apr_pcalloc(r->pool,max_chars+strlen(prev_last_layer));
+	    } else {
+	    	last_layer = (char*)apr_pcalloc(r->pool,max_chars);
+	    }
+//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "prev_last_layer: %s", prev_last_layer);
+//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "prev_last_layers: %s", prev_last_layers);
+	    apr_cpystrn(layer_cpy, layers, strlen(layers)+1);
+	    char *pt;
+	    char *last;
+	    pt = apr_strtok(layer_cpy, ",", &last);
+	    while (pt != NULL) {
+	    	if (prev_last_layers != 0) {
+	    		if (ap_strstr(prev_last_layers, pt) == 0) {
+	    			last_layer = pt;
+//	    			ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "new layer: %s", last_layer);
+	    		}
+	    	} else {
+		    	last_layer = pt;
+	    	}
+	    	layer_time_param = apr_psprintf(r->pool,"%s_TIME", pt);
+//	    	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_time: %s", layer_time_param);
+	    	get_param(args,layer_time_param,layer_time_value);
+	    	if(strlen(layer_time_value) != 0) {
+	    		doytime = layer_time_value;
+//	    		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_time_value: %s", layer_time_value);
+	    	}
+	    	layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s", layer_times, pt, doytime);
+	    	apr_cpystrn(productyear, doytime, 5);
+	    	productyear[4] = 0;
+	    	layer_years = apr_psprintf(r->pool,"%s&%s_YEAR=%s", layer_years, pt, productyear);
+	    	pt = apr_strtok(NULL, ",", &last);
+	    }
+
+	    if (prev_last_layer != 0) {
+			if (prev_format != 0){
+				last_layer = prev_last_layer;
+				apr_table_setn(r->notes, "oems_layers", prev_last_layers);
+			}
+			apr_table_setn(r->notes, "oems_clayer", last_layer);
+			if ((strlen(last_layer) != 0) && (prev_format == 0)) {
+				last_layer = apr_psprintf(r->pool,"%s,%s", last_layer, prev_last_layers);
+				apr_table_setn(r->notes, "oems_layers", last_layer);
+			}
+	    } else {
+	    	apr_table_setn(r->notes, "oems_clayer", last_layer);
+	    	apr_table_setn(r->notes, "oems_layers", last_layer);
+	    }
+
+//		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "checked_layers: %s", last_layer);
+//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_times: %s", layer_times);
+//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_years: %s", layer_years);
+
+	    if (strlen(last_layer) != 0) {
+			// Set filters for time snapping if there is a layer that hasn't been checked
+		    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
+		    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
+	    }
+
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years);
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);
@@ -189,6 +274,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 		}
 		get_param(args,"outputformat",outputformat);
 		get_param(args,"srsname",srsname);
+		apr_table_setn(r->notes, "oems_srs", srsname);
 
 		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&OUTPUTFORMAT=%s&TYPENAMES=%s&BBOX=%s&SRSNAME=%s&MAP=%s&TIME=%s&PRODUCTYEAR=%s","WFS",request,version,outputformat,typenames,bbox,srsname,mapfile,doytime,productyear);
 	} else {
@@ -200,13 +286,15 @@ char *validate_args(request_rec *r, char *mapfile) {
 // OnEarth Mapserver handler
 static int oems_handler(request_rec *r) {
 	// Log directory and args for debugging
-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapfile Dir: %s", mapfiledir);
-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Image Temp Dir: %s", imagetempdir);
-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Request args: %s", r->args);
+//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapfile Dir: %s", mapfiledir);
+//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "oems Request args: %s", r->args);
 
 	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(mapfiledir)+16);
 	mapfile = get_mapfile(r, mapfile);
-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapfile: %s", mapfile);
+	if (mapfile == 0) {
+		return DECLINED; // Don't handle if no mapfile found
+	}
+//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapfile: %s", mapfile);
 
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);
@@ -219,8 +307,12 @@ static int oems_handler(request_rec *r) {
 static int handler(request_rec *r) {
 	if (r->method_number != M_GET) return DECLINED;
 
-	if (!(r->args)) { // Dont handle if no arguments
+	if (!(r->args)) { // Don't handle if no arguments
 		return DECLINED;
+	} else {
+		if ((ap_strstr(r->args, "=WMS") == 0) && (ap_strstr(r->args, "=WFS") == 0)) { // Don't handle if not WMS or WFS
+			return DECLINED;
+		}
 	}
 	return oems_handler(r);
 }
@@ -234,13 +326,6 @@ static const command_rec cmds[] =
 		0, /* argument to include in call */
 		ACCESS_CONF, /* where available */
 		"The directory containing mapfiles" /* help string */
-	),
-	AP_INIT_TAKE1(
-		"ImageTempDir",
-		(cmd_func) imagetemp_dir_set,
-		0, /* argument to include in call */
-		ACCESS_CONF, /* where available */
-		"Temporary directory for processing images" /* help string */
 	),
 	{NULL}
 };

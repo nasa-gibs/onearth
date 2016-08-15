@@ -48,4 +48,3 @@ APLOG_USE_MODULE(oems);
 #endif
 
 extern module AP_MODULE_DECLARE_DATA oems_module;
-
