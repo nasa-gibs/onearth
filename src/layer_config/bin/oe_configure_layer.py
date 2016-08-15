@@ -2351,9 +2351,9 @@ $Patterns</TiledGroup>"""
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
-            timeDirPattern = "%TIME%"
+            timeDirPattern = "%"+identifier+"_TIME%_"
             timeParamRegex = '"^[0-9]{7}$"' if not subdaily else '"^[0-9]{13}$"'
-            yearDirPattern = "%PRODUCTYEAR%"
+            yearDirPattern = "%"+identifier+"_YEAR%"
             yearDirRegex = '"^[0-9]{4}$"'
 
             minx = projection.lowercorner[0]
@@ -2368,11 +2368,11 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tSTATUS\tON\n")
             mapfile.write("\tVALIDATION\n")
             if not static:
-                mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
-                mapfile.write("\t\t\"TIME\"\t\t\t" + timeParamRegex + "\n")
+                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+                mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
-                mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
-                mapfile.write("\t\t\"PRODUCTYEAR\"\t\t" + yearDirRegex + "\n")
+                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" + yearDirRegex + "\n")
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
