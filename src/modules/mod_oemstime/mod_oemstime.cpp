@@ -54,7 +54,7 @@ static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
     char *time = (char *) apr_table_get(r->notes, "oems_time");
     char *current_layer = (char *) apr_table_get(r->notes, "oems_clayer");
 
-	if (ap_strstr(r->content_type, "text/xml") != 0) { // run only if Mapserver has an error due to invalid time or format
+	if ((ap_strstr(r->content_type, "text/xml") != 0) || (ap_strstr(r->content_type, "application/vnd.ogc.se_xml") != 0)) { // run only if Mapserver has an error due to invalid time or format
 		int max_size = strlen(twmssserviceurl)+strlen(r->args);
 		char *pos = 0;
 		char *split;
