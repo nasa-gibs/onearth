@@ -8,6 +8,7 @@ URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.tar.gz
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
+Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -35,7 +36,6 @@ BuildArch:	noarch
 %description demo
 Demonstration of OnEarth
 
-
 %package metrics
 Summary:	OnEarth log tool for metrics
 BuildArch:	noarch
@@ -43,13 +43,22 @@ BuildArch:	noarch
 %description metrics
 OnEarth log tool for metrics
 
-
 %package mrfgen
 Summary:	MRF generator for OnEarth
 Requires:	gibs-gdal
 
 %description mrfgen
 MRF generator for OnEarth
+
+%package vectorgen
+Summary:	Vector data processing for OnEarth
+Requires:	libxml2-devel
+Requires:	libxslt-devel
+Requires:	python-pip
+Requires:	gibs-gdal-devel
+
+%description vectorgen
+Vector data processing for OnEarth
 
 
 %package config
@@ -84,6 +93,7 @@ Layer configuration tools for OnEarth including Legend Generator
 mkdir upstream
 cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
+cp %{SOURCE3} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -174,7 +184,19 @@ make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 
+%files vectorgen
+%defattr(664,gibs,gibs,775)
+%{_libdir}/*
+%{_includedir}/*
+
+%post vectorgen
+/sbin/ldconfig
+pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.6.1
+
 %changelog
+*Wed Aug 17 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.3
+- Added vectorgen package
+
 *Fri Jul 15 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.2
 - Updated Matplotlib dependency install to 1.5.1
 

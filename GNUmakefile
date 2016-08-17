@@ -13,6 +13,7 @@
 ONEARTH_VERSION=1.1.0
 
 PREFIX=/usr/local
+LIB_PREFIX=/usr
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
 LIB_DIR=$(shell \
 	[ "$(shell arch)" == "x86_64" ] \
@@ -25,17 +26,19 @@ MPL_ARTIFACT=matplotlib-1.5.1.tar.gz
 MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
 CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
+SPATIALINDEX_ARTIFACT=spatialindex-src-1.8.5.tar.gz
+SPATIALINDEX_URL=http://download.osgeo.org/libspatialindex/$(SPATIALINDEX_ARTIFACT)
 
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack spatialindex-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download
+download: mpl-download cgicc-download spatialindex-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -52,6 +55,14 @@ upstream/$(CGICC_ARTIFACT).downloaded:
 	rm -f upstream/$(CGICC_ARTIFACT)
 	( cd upstream ; wget $(CGICC_URL) )
 	touch upstream/$(CGICC_ARTIFACT).downloaded
+
+spatialindex-download: upstream/$(SPATIALINDEX_ARTIFACT).downloaded
+
+upstream/$(SPATIALINDEX_ARTIFACT).downloaded: 
+	mkdir -p upstream
+	rm -f upstream/$(SPATIALINDEX_ARTIFACT)
+	( cd upstream ; wget $(SPATIALINDEX_URL) )
+	touch upstream/$(SPATIALINDEX_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
@@ -70,6 +81,15 @@ build/cgicc/VERSION:
 	mkdir -p build/cgicc
 	tar xf upstream/$(CGICC_ARTIFACT) -C build/cgicc \
 		--strip-components=1 --exclude=.gitignore
+
+spatialindex-unpack: build/spatialindex/VERSION
+
+build/spatialindex/VERSION:
+	mkdir -p build/spatialindex
+	tar xf upstream/$(SPATIALINDEX_ARTIFACT) -C build/spatialindex \
+		--strip-components=1 --exclude=.gitignore
+	cd build/spatialindex && ./configure --libdir=$(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR) --prefix=$(DESTDIR)/$(LIB_PREFIX)
+	$(MAKE) -C build/spatialindex
 
 onearth-compile:
 	$(MAKE) -C src/modules/mod_onearth
@@ -151,6 +171,9 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
 
+	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
+	$(MAKE) install -C build/spatialindex
+
 
 #-----------------------------------------------------------------------------
 # Local install
@@ -187,6 +210,7 @@ onearth-rpm: onearth-artifact
 	cp \
 		upstream/$(MPL_ARTIFACT) \
 		upstream/$(CGICC_ARTIFACT) \
+		upstream/$(SPATIALINDEX_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \
