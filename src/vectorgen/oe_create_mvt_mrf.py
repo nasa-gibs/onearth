@@ -54,7 +54,7 @@ import decimal
         
 
 # Main tile-creation function.
-def create_vector_mrf(input_file_path, output_path, mrf_prefix, tilematrixset, tilematrix_defs_path, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
+def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, tilematrixset, tilematrix_defs_path, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
 
@@ -62,6 +62,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, tilematrixset, t
         input_file_path (str) -- Path to the vector datafile to be used. Accepts GeoJSON and Shapefiles
         output_path (str) -- Path to where the output MRF files should be stored.
         mrf_prefix (str) -- Prefix for the MRF filenames that will be generated.
+        layer_name (str) -- Name for the layer to be packed into the tile. Only single layers currently supported.
         tilematrixset (str) -- Name of the TileMatrixSet that will be used for this MRF.
             Note that the tilematrixset must be present in the tile matrix definitions XML.
         tilematrix_defs_path (str) -- Path to the XML file that contains this installation's tile matrix set information.
@@ -160,7 +161,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, tilematrixset, t
                 # Create MVT tile from the features in this tile (Only doing single layers for now)
                 if tile_features:
                     new_layer = {
-                        'name': mrf_prefix,
+                        'name': layer_name,
                         'features': tile_features
                     }
                     # Have to change the default rounding if in Python 2.6 due to Decimal rounding issues.

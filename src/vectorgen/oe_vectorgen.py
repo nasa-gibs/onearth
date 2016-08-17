@@ -169,10 +169,10 @@ if __name__ == '__main__':
         try:
             tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
         except:
-            log_sig_warn('WARNING', 'TileMatrixSet definition config file not specified. Using $LCDIR/conf/tilematrixsets.xml')
+            log_sig_warn('WARNING: TileMatrixSet definition config file not specified. Using $LCDIR/conf/tilematrixsets.xml', sigevent_url)
             lcdir = lcdir = os.environ.get('LCDIR')
             if not lcdir:
-                log_sig_warn('WARNING', "Can't find $LCDIR environment variable. Using /etc/onearth/config")
+                log_sig_warn("WARNING: Can't find $LCDIR environment variable. Using /etc/onearth/config", sigevent_url)
                 lcdir = '/etc/onearth/config'
             tilematrixset_definition_file = os.path.join(lcdir, 'tilematrixsets.xml')
         # EPSG code projection.
@@ -254,6 +254,7 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
+    log_info_mssg(str().join(['config tilematrixset_definition_file:           ', tilematrixset_definition_file]))
     log_info_mssg(str().join(['config tilematrixset:           ', tilematrixset]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
@@ -325,7 +326,8 @@ if __name__ == '__main__':
                     outfile = os.path.join(working_dir, basename + '_reproject' + os.path.splitext(tile)[1])
                     ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
                     run_command(ogr2ogr_command_list, sigevent_url)
-                create_vector_mrf(tile, working_dir, basename, tilematrixset, tilematrixset_definition_file, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+                tile_layer_name = parameter_name + '_' + date_of_data
+                create_vector_mrf(tile, working_dir, basename, tile_layer_name, tilematrixset, tilematrixset_definition_file, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
                 files = glob.glob(working_dir+"/"+basename+"*")
                 for mfile in files:
                     title, ext = os.path.splitext(os.path.basename(mfile))
