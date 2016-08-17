@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.0.1
+ONEARTH_VERSION=1.1.0
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -72,7 +72,8 @@ build/cgicc/VERSION:
 		--strip-components=1 --exclude=.gitignore
 
 onearth-compile:
-	$(MAKE) -C src/mod_onearth
+	$(MAKE) -C src/modules/mod_onearth
+	$(MAKE) -C src/modules/mod_oems
 
 #-----------------------------------------------------------------------------
 # Install
@@ -81,13 +82,15 @@ install: onearth-install
 
 onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules
-	install -m 755 src/mod_onearth/.libs/mod_twms.so \
+	install -m 755 src/modules/mod_onearth/.libs/mod_twms.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_twms.so
-	install -m 755 src/mod_onearth/.libs/mod_onearth.so \
+	install -m 755 src/modules/mod_onearth/.libs/mod_onearth.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_onearth.so
-
+	install -m 755 src/modules/mod_oems/.libs/mod_oems.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oems.so
+		
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 src/mod_onearth/oe_create_cache_config \
+	install -m 755 src/modules/mod_onearth/oe_create_cache_config \
 		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
 	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
@@ -168,7 +171,7 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/mod_onearth src/layer_config src/mrfgen src/cgi \
+		src/modules/mod_onearth src/modules/mod_oems src/layer_config src/mrfgen src/cgi \
 		src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------
@@ -213,7 +216,8 @@ clean: onearth-clean
 	rm -rf build
 
 onearth-clean:
-	$(MAKE) -C src/mod_onearth clean
+	$(MAKE) -C src/modules/mod_onearth clean
+	$(MAKE) -C src/modules/mod_oems clean
 
 distclean: clean
 	rm -rf dist

@@ -80,7 +80,8 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '1.0.1'
+versionNumber = '1.0.2'
+current_conf = None
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -192,6 +193,8 @@ def sigevent(type, mssg, sigevent_url):
     data['format']='TEXT'
     data['category']='ONEARTH'
     data['provider']='GIBS'
+    if current_conf != None:
+        data['data']=current_conf
     # Format sigevent parameters that get encoded into the URL.
     values=urllib.urlencode(data)
     # Create complete URL.
@@ -1339,7 +1342,7 @@ if conf_files==[]:
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 for conf in conf_files:
-
+    current_conf = conf
     try:
         # Open file.
         config_file=open(conf, 'r')
@@ -2414,9 +2417,9 @@ $Patterns</TiledGroup>"""
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
-            timeDirPattern = "%TIME%"
+            timeDirPattern = "%"+identifier+"_TIME%_"
             timeParamRegex = '"^[0-9]{7}$"' if not subdaily else '"^[0-9]{13}$"'
-            yearDirPattern = "%PRODUCTYEAR%"
+            yearDirPattern = "%"+identifier+"_YEAR%"
             yearDirRegex = '"^[0-9]{4}$"'
 
             minx = projection.lowercorner[0]
@@ -2436,11 +2439,11 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tVALIDATION\n")
             # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
             if not static:
-                mapfile.write("\t\t\"default_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
-                mapfile.write("\t\t\"TIME\"\t\t\t" + timeParamRegex + "\n")
+                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+                mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
-                mapfile.write("\t\t\"default_PRODUCTYEAR\"\t\"" + "YYYY" + "\"\n")
-                mapfile.write("\t\t\"PRODUCTYEAR\"\t\t" + yearDirRegex + "\n")
+                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" + yearDirRegex + "\n")
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")

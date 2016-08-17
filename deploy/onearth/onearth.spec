@@ -1,6 +1,6 @@
 Name:		onearth
-Version:	1.0.1
-Release:	2%{?dist}
+Version:	1.1.0
+Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -21,7 +21,7 @@ Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
 
-Obsoletes:	mod_twms mod_wms mod_onearth
+Obsoletes:	mod_twms mod_oems mod_onearth
 
 %description
 Installation packages for OnEarth

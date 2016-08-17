@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.0.1
+ * Version 1.0.2
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -340,6 +340,32 @@ static void *r_file_pread(request_rec *r, char *fname,
     }
   }
 
+  // Check if redirected from Mapserver for time snapping
+  char *layer = 0;
+  char *layers = 0;
+  char *prev_time = 0;
+  char *new_uri = 0;
+  int max_size = 0;
+  if (r->prev != 0) {
+  			if (ap_strstr(r->prev->args, "&MAP=") != 0) {
+				layer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
+				layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
+				prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
+				max_size = strlen(r->prev->uri) + strlen(r->prev->args) + strlen(prev_time);
+				new_uri = (char*) apr_pcalloc(r->pool, max_size);
+				// Set notes for next request
+				if (prev_time != 0) {
+					apr_table_setn(r->notes, "oems_time", prev_time);
+				}
+				if (layer != 0) {
+					apr_table_setn(r->notes, "oems_clayer", layer);
+				}
+				if (layer != 0) {
+					apr_table_setn(r->notes, "oems_layers", layers);
+				}
+  			}
+  }
+
   // check if layer has multi-day period if file not found
   if (0>(fd=open(fn,O_RDONLY))) 
   {
@@ -491,6 +517,26 @@ static void *r_file_pread(request_rec *r, char *fname,
 		  		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
 					time_period+=strlen(time_period)+1; // try next period
 				} else {
+					if (r->prev != 0) {
+						if (ap_strstr(r->prev->args, "&MAP=") != 0) {
+							char *layer_time = (char*)apr_pcalloc(r->pool, max_size);
+							char *firstpart = (char*)apr_pcalloc(r->pool, max_size);
+							char *pos;
+							char *split;
+							layer_time = apr_psprintf(r->pool,"&%s_TIME=", layer);
+							apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
+							pos = ap_strstr(new_uri, layer_time);
+							if (pos) {
+								size_t len = pos - new_uri;
+								memcpy(firstpart, new_uri, len);
+							}
+							pos += strlen(layer_time)+7;
+							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, pos);
+//							ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"new time: %04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
+//							ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"timesnap bounce: %s", new_uri);
+							ap_internal_redirect(new_uri, r);
+						}
+					}
 					break;
 				}
    		    }
@@ -499,6 +545,15 @@ static void *r_file_pread(request_rec *r, char *fname,
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
 			}
 		}
+	  }
+  } else {
+	  if (r->prev != 0) {
+			if (ap_strstr(r->prev->args, "&MAP=") != 0) { // no time-snapping for Mapserver, so redirect back
+				new_uri = apr_psprintf(r->pool, "%s?TIME=%s&%s", r->prev->uri, prev_time, r->prev->args);
+//				ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "no timesnap args: %s", r->args);
+//				ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "no timesnap bounce: %s", new_uri);
+				ap_internal_redirect(new_uri, r);
+			}
 	  }
   }
 
@@ -1916,6 +1971,40 @@ static int mrf_handler(request_rec *r)
 
   // No match?
   if (-1==count) {
+
+	// Redirected from Mapserver
+	if (r->prev != 0) {
+		if (ap_strstr(r->prev->args, "&MAP=") != 0) {
+//			ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no match bounce back %s", r->prev->args);
+			int max_size = strlen(r->prev->uri)+strlen(r->prev->args);
+			char *new_uri = (char*)apr_pcalloc(r->pool, max_size);
+			char *prev_clayer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
+			char *prev_layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
+			char *prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
+			char *prev_format = (char *) apr_table_get(r->prev->notes, "oems_format");
+			if (prev_time != 0) {
+				apr_table_setn(r->notes, "oems_time", prev_time);
+			}
+			if (prev_layers != 0) {
+				apr_table_setn(r->notes, "oems_layers", prev_layers);
+			}
+			if (prev_clayer != 0) {
+				apr_table_setn(r->notes, "oems_clayer", prev_clayer);
+			}
+			if (prev_format != 0) {
+				// try changing the format string and bounce back
+				new_uri = apr_psprintf(r->pool,"%s?%s", r->prev->uri, r->prev->args);
+				if (ap_strstr(prev_format, "jpeg") == 0) {
+					apr_table_setn(r->notes, "oems_format", "image/jpeg");
+					ap_internal_redirect(new_uri, r);
+				} else if (ap_strstr(prev_format, "png") == 0){
+					apr_table_setn(r->notes, "oems_format", "image/png");
+					ap_internal_redirect(new_uri, r);
+				}
+			}
+		}
+	}
+
     if (r->connection->local_addr->port==80) {
     	if (ap_strcasecmp_match(r->args, "request=GetCapabilities") == 0) {
         	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
@@ -1950,9 +2039,24 @@ static int mrf_handler(request_rec *r)
 
       // We got cache with levels, but do we have the data?
       if (!(level=wms_get_matching_level(r, cache, &bbox))) {
-	    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,
-			"Unmatched level %s",r->args);
-		return DECLINED; // No level match
+//	    ap_log_error(APLOG_MARK, APLOG_WARNING,0,r->server, "Unmatched level %s",r->args);
+	    if (r->prev != 0) {
+			if (ap_strstr(r->prev->args, "&MAP=") != 0) { // Redirected from Mapserver
+				level = GETLEVELS(cache);
+				char *ifname;
+				if (level->ifname[0] == '/') { // decide absolute or relative path from cachedir
+					  ifname = apr_pstrcat(r->pool,level->ifname,0);
+				} else {
+					  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
+				}
+				r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels);
+				return DECLINED;
+			} else {
+				return DECLINED;
+			}
+	    } else {
+	    	return DECLINED; // No level match
+	    }
       }
 
       // DEBUG
@@ -1965,10 +2069,9 @@ static int mrf_handler(request_rec *r)
       }
 
       if ((WMSlevel *)2==level) { // Too far from bin level
-	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, 
+    	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
 	      "Sending error, not cached %s",r->args);
-	return wms_return_error(r,
-	  "Resolution not cached. Please do not modify configuration!");
+    	  return wms_return_error(r, "Resolution not cached. Please do not modify configuration!");
       }
 
       // got a matching level and cache
