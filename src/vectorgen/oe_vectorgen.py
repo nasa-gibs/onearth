@@ -174,7 +174,7 @@ if __name__ == '__main__':
             if not lcdir:
                 log_sig_warn("WARNING: Can't find $LCDIR environment variable. Using /etc/onearth/config", sigevent_url)
                 lcdir = '/etc/onearth/config'
-            tilematrixset_definition_file = os.path.join(lcdir, 'tilematrixsets.xml')
+            tilematrixset_definition_file = os.path.join(lcdir, 'conf/tilematrixsets.xml')
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
