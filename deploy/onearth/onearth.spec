@@ -21,7 +21,7 @@ Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
 
-Obsoletes:	mod_twms mod_oems mod_onearth
+Obsoletes:	mod_twms mod_onearth mod_oems mod_oemstime
 
 %description
 Installation packages for OnEarth
