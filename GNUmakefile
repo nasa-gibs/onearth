@@ -26,16 +26,21 @@ MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
 CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
 
+MAPSERVER_VERSION=7.0.1
+MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
+MAPSERVER_HOME=http://download.osgeo.org/mapserver
+MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
+
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack mapserver-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download
+download: mpl-download cgicc-download mapserver-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -52,6 +57,14 @@ upstream/$(CGICC_ARTIFACT).downloaded:
 	rm -f upstream/$(CGICC_ARTIFACT)
 	( cd upstream ; wget $(CGICC_URL) )
 	touch upstream/$(CGICC_ARTIFACT).downloaded
+	
+mapserver-download: upstream/$(MAPSERVER_ARTIFACT).downloaded
+
+upstream/$(MAPSERVER_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -rf upstream/$(MAPSERVER_ARTIFACT)
+	( cd upstream ; wget $(MAPSERVER_URL) )
+	touch upstream/$(MAPSERVER_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
@@ -69,6 +82,13 @@ cgicc-unpack: build/cgicc/VERSION
 build/cgicc/VERSION:
 	mkdir -p build/cgicc
 	tar xf upstream/$(CGICC_ARTIFACT) -C build/cgicc \
+		--strip-components=1 --exclude=.gitignore
+		
+mapserver-unpack: build/mapserver/VERSION
+
+build/mapserver/VERSION:
+	mkdir -p build/mapserver
+	tar xf upstream/$(MAPSERVER_ARTIFACT) -C build/mapserver \
 		--strip-components=1 --exclude=.gitignore
 
 onearth-compile:
@@ -174,7 +194,7 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime \ 
+		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime \
 		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------
@@ -190,6 +210,7 @@ onearth-rpm: onearth-artifact
 	cp \
 		upstream/$(MPL_ARTIFACT) \
 		upstream/$(CGICC_ARTIFACT) \
+		upstream/$(MAPSERVER_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \
