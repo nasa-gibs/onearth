@@ -19,11 +19,13 @@ For more information, visit https://earthdata.nasa.gov/gibs
 * [Installation](doc/installation.md)
 * [Configuration](doc/configuration.md)
 * [Creating Image Archive](doc/archive.md)
+* [Configuring Vector Data](doc/config_vectors.md)
 
 ## Components
 
 * [mod_onearth](src/mod_onearth/README.md)
 * [mrfgen](src/mrfgen/README.md)
+* [vectorgen](src/vectorgen/README.md)
 * [OnEarth Layer Configurator](src/layer_config/README.md)
 * [OnEarth Legend Generator](src/generate_legend/README.md)
 * [OnEarth Metrics](src/onearth_logs/README.md)

@@ -24,7 +24,7 @@ limitations under the License.
         <xs:element ref="output_dir"/>
         <xs:element ref="working_dir"/>
         <xs:element ref="logfile_dir" minOccurs="0"/>
-        <xs:element ref="output_name"/>
+        <xs:element ref="output_name" minOccurs="0"/>
         <xs:element ref="output_format"/>
         <xs:element ref="target_epsg" minOccurs="0"/>
         <xs:element ref="source_epsg" minOccurs="0"/>

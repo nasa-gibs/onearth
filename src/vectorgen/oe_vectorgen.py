@@ -95,8 +95,6 @@ if __name__ == '__main__':
                       action='store', type='string', dest='configuration_filename',
                       default='./vectorgen_configuration_file.xml',
                       help='Full path of configuration filename.  Default:  ./vectorgen_configuration_file.xml')
-    parser.add_option("-d", "--data_only", action="store_true", dest="data_only", 
-                      default=False, help="Only output the MRF data, index, and header files")
     parser.add_option('-s', '--sigevent_url',
                       action='store', type='string', dest='sigevent_url',
                       default=
@@ -109,8 +107,6 @@ if __name__ == '__main__':
     configuration_filename=options.configuration_filename
     # Sigevent URL.
     sigevent_url=options.sigevent_url
-    # Data only.
-    data_only = options.data_only
     
     # Get current time, which is written to a file as the previous cycle time.  
     # Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
