@@ -82,6 +82,7 @@ Layer configuration tools for OnEarth including Legend Generator
 
 %package mapserver
 Summary:	Mapserver for OnEarth
+Requires:   proj-epsg
 Provides:	mapserver = %{version}-%{release}
 Obsoletes:	mapserver < 7.0.1
 
@@ -231,6 +232,8 @@ cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
+mkdir %{_datadir}/onearth/demo/wms
+ln -s %{_bindir}/mapserv %{_datadir}/onearth/demo/wms/mapserv
 
 %files mapserver
 %defattr(755,root,root,-)
