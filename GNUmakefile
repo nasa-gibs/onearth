@@ -29,16 +29,21 @@ CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
 SPATIALINDEX_ARTIFACT=spatialindex-src-1.8.5.tar.gz
 SPATIALINDEX_URL=http://download.osgeo.org/libspatialindex/$(SPATIALINDEX_ARTIFACT)
 
+MAPSERVER_VERSION=7.0.1
+MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
+MAPSERVER_HOME=http://download.osgeo.org/mapserver
+MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
+
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack spatialindex-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack spatialindex-unpack mapserver-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download spatialindex-download
+download: mpl-download cgicc-download spatialindex-download mapserver-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -63,6 +68,14 @@ upstream/$(SPATIALINDEX_ARTIFACT).downloaded:
 	rm -f upstream/$(SPATIALINDEX_ARTIFACT)
 	( cd upstream ; wget $(SPATIALINDEX_URL) )
 	touch upstream/$(SPATIALINDEX_ARTIFACT).downloaded
+
+mapserver-download: upstream/$(MAPSERVER_ARTIFACT).downloaded
+
+upstream/$(MAPSERVER_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -rf upstream/$(MAPSERVER_ARTIFACT)
+	( cd upstream ; wget $(MAPSERVER_URL) )
+	touch upstream/$(MAPSERVER_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
@@ -90,10 +103,18 @@ build/spatialindex/VERSION:
 		--strip-components=1 --exclude=.gitignore
 	cd build/spatialindex && ./configure --libdir=$(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR) --prefix=$(DESTDIR)/$(LIB_PREFIX)
 	$(MAKE) -C build/spatialindex
+		
+mapserver-unpack: build/mapserver/VERSION
+
+build/mapserver/VERSION:
+	mkdir -p build/mapserver
+	tar xf upstream/$(MAPSERVER_ARTIFACT) -C build/mapserver \
+		--strip-components=1 --exclude=.gitignore
 
 onearth-compile:
 	$(MAKE) -C src/modules/mod_onearth
 	$(MAKE) -C src/modules/mod_oems
+	$(MAKE) -C src/modules/mod_oemstime
 
 #-----------------------------------------------------------------------------
 # Install
@@ -108,6 +129,8 @@ onearth-install:
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_onearth.so
 	install -m 755 src/modules/mod_oems/.libs/mod_oems.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oems.so
+	install -m 755 src/modules/mod_oemstime/.libs/mod_oemstime.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oemstime.so
 		
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/modules/mod_onearth/oe_create_cache_config \
@@ -194,8 +217,8 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/layer_config src/mrfgen src/cgi \
-		src/demo src/onearth_logs src/generate_legend GNUmakefile
+		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime \
+		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------
 # RPM
@@ -211,6 +234,7 @@ onearth-rpm: onearth-artifact
 		upstream/$(MPL_ARTIFACT) \
 		upstream/$(CGICC_ARTIFACT) \
 		upstream/$(SPATIALINDEX_ARTIFACT) \
+		upstream/$(MAPSERVER_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \
@@ -242,6 +266,7 @@ clean: onearth-clean
 onearth-clean:
 	$(MAKE) -C src/modules/mod_onearth clean
 	$(MAKE) -C src/modules/mod_oems clean
+	$(MAKE) -C src/modules/mod_oemstime clean
 
 distclean: clean
 	rm -rf dist

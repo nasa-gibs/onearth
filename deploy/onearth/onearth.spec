@@ -9,6 +9,7 @@ Source0:	%{name}-%{version}.tar.bz2
 Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.tar.gz
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+Source4:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -18,11 +19,12 @@ BuildRequires:	gcc-c++
 BuildRequires:	freetype-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
+BuildRequires:	cmake
 Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
 
-Obsoletes:	mod_twms mod_oems mod_onearth
+Obsoletes:	mod_twms mod_onearth mod_oems mod_oemstime
 
 %description
 Installation packages for OnEarth
@@ -87,6 +89,16 @@ Obsoletes:	python-matplotlib < 1.5.1
 %description config
 Layer configuration tools for OnEarth including Legend Generator
 
+%package mapserver
+Summary:	Mapserver for OnEarth
+Requires:   proj-epsg
+Provides:	mapserver = %{version}-%{release}
+Obsoletes:	mapserver < 7.0.1
+
+%description mapserver
+Mapserver package utilized by OnEarth for WMS and WFS services
+
+%global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 
 %prep
 %setup -q
@@ -97,6 +109,37 @@ cp %{SOURCE3} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
+cd build/mapserver
+mkdir build
+cd build
+cmake \
+      -DCMAKE_INSTALL_PREFIX="%{_prefix}" \
+      -DWITH_GD=1 \
+      -DWITH_GIF=1 \
+      -DWITH_GDAL=1 \
+      -DWITH_OGR=1 \
+      -DWITH_GEOS=1 \
+      -DWITH_CAIRO=0 \
+      -DWITH_PROJ=1 \
+      -DWITH_KML=1 \
+      -DWITH_WMS=1 \
+      -DWITH_WFS=1 \
+      -DWITH_WCS=1 \
+      -DWITH_SOS=1 \
+      -DWITH_CLIENT_WMS=1 \
+      -DWITH_CLIENT_WFS=1 \
+      -DWITH_POSTGIS=0 \
+      -DWITH_CURL=1 \
+      -DWITH_LIBXML2=1 \
+      -DWITH_PHP=0 \
+      -DWITH_FRIBIDI=0 \
+      -DWITH_FCGI=0 \
+      -DWITH_THREAD_SAFETY=1 \
+      -DWITH_PYTHON=1 \
+      -DWITH_ICONV=1 \
+      -DWITH_HARFBUZZ=0 \
+      ..
+make %{?smp_flags}
 
 %install
 rm -rf %{buildroot}
@@ -120,6 +163,21 @@ ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/on_earth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
+
+( cd build/mapserver/build; DESTDIR=%{buildroot} make install )
+mv %{buildroot}/%{_libdir}/../lib/* %{buildroot}/%{_libdir}/
+chrpath --delete %{buildroot}/%{_bindir}/legend
+chrpath --delete %{buildroot}/%{_bindir}/mapserv
+chrpath --delete %{buildroot}/%{_bindir}/msencrypt
+chrpath --delete %{buildroot}/%{_bindir}/scalebar
+chrpath --delete %{buildroot}/%{_bindir}/shp2img
+chrpath --delete %{buildroot}/%{_bindir}/shptree
+chrpath --delete %{buildroot}/%{_bindir}/shptreetst
+chrpath --delete %{buildroot}/%{_bindir}/shptreevis
+chrpath --delete %{buildroot}/%{_bindir}/sortshp
+chrpath --delete %{buildroot}/%{_bindir}/tile4ms
+chrpath --delete %{buildroot}/%{_libdir}/*.so
+rm -rf %{buildroot}/%{_datarootdir}/mapserver/cmake/
 
 %clean
 rm -rf %{buildroot}
@@ -183,6 +241,25 @@ cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
+mkdir %{_datadir}/onearth/demo/wms
+ln -s %{_bindir}/mapserv %{_datadir}/onearth/demo/wms/mapserv
+
+%files mapserver
+%defattr(755,root,root,-)
+%{_libdir}/libmapserver.so*
+%{_includedir}/mapserver/*
+%{python_sitearch}/_mapscript*
+%{python_sitearch}/mapscript*
+%{_bindir}/legend
+%{_bindir}/mapserv
+%{_bindir}/msencrypt
+%{_bindir}/scalebar
+%{_bindir}/shp2img
+%{_bindir}/shptree
+%{_bindir}/shptreetst
+%{_bindir}/shptreevis
+%{_bindir}/sortshp
+%{_bindir}/tile4ms
 
 %files vectorgen
 %defattr(664,gibs,gibs,775)
@@ -194,10 +271,13 @@ mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
 pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.6.1
 
 %changelog
-*Wed Aug 17 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.3
+* Wed Aug 17 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.1.0-1
+- Added onearth-mapserver package, mod_oems, and mod_oemstime
+
+* Wed Aug 17 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.3
 - Added vectorgen package
 
-*Fri Jul 15 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.2
+* Fri Jul 15 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.2-1
 - Updated Matplotlib dependency install to 1.5.1
 
 * Wed May 25 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.0.1-1
