@@ -147,8 +147,16 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/mrfgen
 	install -m 755 src/mrfgen/colormap2vrt.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/colormap2vrt.py
+	install -m 755 src/mrfgen/overtiffpacker.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/overtiffpacker.py
 	install -m 755 src/mrfgen/RGBApng2Palpng  \
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
+	install -m 755 src/vectorgen/oe_vectorgen.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen.py
+	install -m 755 src/vectorgen/oe_create_mvt_mrf.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_create_mvt_mrf.py
+	install -m 755 src/vectorgen/oe_utils.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_utils.py
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
@@ -217,7 +225,7 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime \
+		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime src/vectorgen \
 		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------

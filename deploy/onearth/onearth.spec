@@ -62,7 +62,6 @@ Requires:	gibs-gdal-devel
 %description vectorgen
 Vector data processing for OnEarth
 
-
 %package config
 Summary:	Layer configuration tools for OnEarth
 Requires:	%{name} = %{version}-%{release}
@@ -106,6 +105,7 @@ mkdir upstream
 cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
+cp %{SOURCE4} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -224,6 +224,7 @@ python setup.py install
 %{_bindir}/RGBApng2Palpng
 %{_bindir}/mrfgen
 %{_bindir}/colormap2vrt.py
+%{_bindir}/overtiffpacker.py
 
 %files metrics
 %defattr(664,gibs,gibs,775)
@@ -262,9 +263,13 @@ ln -s %{_bindir}/mapserv %{_datadir}/onearth/demo/wms/mapserv
 %{_bindir}/tile4ms
 
 %files vectorgen
-%defattr(664,gibs,gibs,775)
-%{_libdir}/*
-%{_includedir}/*
+%defattr(755,root,root,-)
+%{_libdir}/libspatialindex*
+%{_libdir}/pkgconfig/libspatialindex.pc
+%{_includedir}/spatialindex/*
+%{_bindir}/oe_vectorgen.py
+%{_bindir}/oe_create_mvt_mrf.py
+%{_bindir}/oe_utils.py
 
 %post vectorgen
 /sbin/ldconfig
