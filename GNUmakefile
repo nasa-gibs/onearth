@@ -151,17 +151,12 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/overtiffpacker.py
 	install -m 755 src/mrfgen/RGBApng2Palpng  \
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
-	install -m 755 src/vectorgen/oe_vectorgen.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen.py
-	install -m 755 src/vectorgen/oe_create_mvt_mrf.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/oe_create_mvt_mrf.py
-	install -m 755 src/vectorgen/oe_utils.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/oe_utils.py
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	install -m 755 src/cgi/twms.cgi \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 src/cgi/wmts.cgi \
@@ -201,6 +196,11 @@ onearth-install:
 	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
+
+	
+	install -m 755 src/vectorgen/*.py \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
+	ln -s ../share/onearth/vectorgen/oe_vectorgen.py $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen
 
 	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
 	$(MAKE) install -C build/spatialindex
