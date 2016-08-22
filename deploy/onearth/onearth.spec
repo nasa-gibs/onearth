@@ -267,6 +267,7 @@ ln -s %{_bindir}/mapserv %{_datadir}/onearth/demo/wms/mapserv
 %{_libdir}/libspatialindex*
 %{_libdir}/pkgconfig/libspatialindex.pc
 %{_includedir}/spatialindex/*
+%{_datarootdir}/onearth/vectorgen/*
 %{_bindir}/oe_vectorgen
 
 %post vectorgen
