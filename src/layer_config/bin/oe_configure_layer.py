@@ -514,40 +514,39 @@ def get_environment(environmentConfig):
     try:
         mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
     except IndexError:
-        # log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
         mapfileStagingLocation = None
-    try:
-        os.makedirs(mapfileStagingLocation)
-    except OSError:
-        if not os.path.exists(mapfileStagingLocation):
-            # log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
-            mapfileStagingLocation = None
-        pass
+    if mapfileStagingLocation is not None:
+        try:
+            os.makedirs(mapfileStagingLocation)
+        except OSError:
+            if not os.path.exists(mapfileStagingLocation):
+                log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
+                mapfileStagingLocation = None
+            pass
 
     # Get output mapfile location
     try:
         mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
         mapfileLocation = mapfileLocationElement.firstChild.nodeValue
     except IndexError:
-        # log_sig_exit('ERROR', 'Mapfile creation chosen but no <MapfileLocation> present in environment config file.', sigevent_url)
-        mapfileStagingLocation = None
-
-    try:
-        mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
-    except KeyError:
-        log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
+        mapfileLocation = None
         mapfileLocationBasename = None
+
+    if mapfileLocation is not None:
+        try:
+            mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
+        except KeyError:
+            log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
+            mapfileLocationBasename = None
 
     # Get output mapfile config location
     try:
         mapfileConfigLocation = get_dom_tag_value(dom, 'MapfileConfigLocation')
     except IndexError:
         mapfileConfigLocation = '/etc/onearth/config/mapserver/'
-        log_sig_warn('Mapfile creation chosen but no <MapfileConfigLocation> present in environment config file.', sigevent_url)
     try:
         mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
-    except KeyError:
-        # log_sig_exit('ERROR', 'Mapfile creation chosen but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
+    except:
         mapfileConfigBasename = None
 
     return Environment(add_trailing_slash(cacheLocation_wmts),
@@ -2412,7 +2411,7 @@ $Patterns</TiledGroup>"""
         layer_xml.close()
         
     # Create mapfile (if specified by user)
-    if create_mapfile is True and compression != "PBF": # don't create mapfiles for protocol buffers (i.e,. vector tiles)
+    if create_mapfile is True and compression != "PBF" and environment.mapfileStagingLocation is not None: # don't create mapfiles for protocol buffers (i.e,. vector tiles)
         # Write mapfile info for layer
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:
@@ -2573,36 +2572,46 @@ if no_wmts == False:
 
 if create_mapfile is True:
     for key, wms_endpoint in wms_endpoints.iteritems():
-        # Create a new staging mapfile and add header, layers, and footer
-        staging_mapfile = os.path.join(wms_endpoint.mapfileStagingLocation, wms_endpoint.mapfileLocationBasename)
-        output_mapfile = os.path.join(wms_endpoint.mapfileLocation, wms_endpoint.mapfileLocationBasename + ".map")
-        with open(staging_mapfile, 'w+') as mapfile:
-            # Append header to mapfile if there is one
-            mapfile_config_prefix = os.path.join(wms_endpoint.mapfileConfigLocation, wms_endpoint.mapfileConfigBasename)
-            try:
-                with open(mapfile_config_prefix + '.header', 'r') as header:
-                    mapfile.write(header.read())
-                    print "\nUsing mapfile header: " + header.name
-            except IOError:
-                pass
-            # Iterate through layer mapfile snippets
-            layers = [os.path.join(wms_endpoint.mapfileStagingLocation, sfile) for sfile in sorted(os.listdir(wms_endpoint.mapfileStagingLocation), key=unicode.lower) if sfile.endswith('.map') and not sfile.startswith(wms_endpoint.mapfileLocationBasename)]
-            for layer in layers:
-                with open(layer, 'r') as f:
-                    mapfile.write('\n')
-                    mapfile.write(f.read())
-            # Append footer to mapfile if there is one
-            try:
-                with open(mapfile_config_prefix + '.footer', 'r') as footer:
-                    mapfile.write('\n')
-                    mapfile.write(footer.read())
-                    print "\nUsing mapfile footer: " + footer.name
-            except IOError:
-                mapfile.write('\nEND')
-                pass
-        print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, output_mapfile)
-        shutil.copyfile(staging_mapfile, output_mapfile)
-    
+        if wms_endpoint.mapfileLocation is not None and wms_endpoint.mapfileStagingLocation is not None and wms_endpoint.mapfileConfigLocation is not None and wms_endpoint.mapfileConfigBasename is not None:
+            # Create a new staging mapfile and add header, layers, and footer
+            staging_mapfile = os.path.join(wms_endpoint.mapfileStagingLocation, wms_endpoint.mapfileLocationBasename)
+            output_mapfile = os.path.join(wms_endpoint.mapfileLocation, wms_endpoint.mapfileLocationBasename + ".map")
+            with open(staging_mapfile, 'w+') as mapfile:
+                # Append header to mapfile if there is one
+                mapfile_config_prefix = os.path.join(wms_endpoint.mapfileConfigLocation, wms_endpoint.mapfileConfigBasename)
+                try:
+                    with open(mapfile_config_prefix + '.header', 'r') as header:
+                        mapfile.write(header.read())
+                        print "\nUsing mapfile header: " + header.name
+                except IOError:
+                    pass
+                # Iterate through layer mapfile snippets
+                layers = [os.path.join(wms_endpoint.mapfileStagingLocation, sfile) for sfile in sorted(os.listdir(wms_endpoint.mapfileStagingLocation), key=unicode.lower) if sfile.endswith('.map') and not sfile.startswith(wms_endpoint.mapfileLocationBasename)]
+                for layer in layers:
+                    with open(layer, 'r') as f:
+                        mapfile.write('\n')
+                        mapfile.write(f.read())
+                # Append footer to mapfile if there is one
+                try:
+                    with open(mapfile_config_prefix + '.footer', 'r') as footer:
+                        mapfile.write('\n')
+                        mapfile.write(footer.read())
+                        print "\nUsing mapfile footer: " + footer.name
+                except IOError:
+                    mapfile.write('\nEND')
+                    pass
+            print '\nCopying: Mapfile {0} to {1}'.format(staging_mapfile, output_mapfile)
+            shutil.copyfile(staging_mapfile, output_mapfile)
+        else:
+            if wms_endpoint.mapfileLocation is None:
+                log_sig_err('Mapfile creation enabled but no <MapfileLocation> present in environment config file.', sigevent_url)
+            if wms_endpoint.mapfileStagingLocation is None:
+                log_sig_err('Mapfile creation enabled but no <MapfileStagingLocation> present in environment config file.', sigevent_url)
+            if wms_endpoint.mapfileConfigLocation is None:
+                log_sig_err('Mapfile creation enabled but no <MapfileConfigLocation> present in environment config file.', sigevent_url)
+            if wms_endpoint.mapfileConfigBasename is None:
+                log_sig_err('Mapfile creation enabled but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
+
 
 print '\n*** Layers have been configured successfully ***'
 if no_cache == False:
