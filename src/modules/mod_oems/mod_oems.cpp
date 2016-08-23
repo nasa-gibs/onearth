@@ -39,6 +39,7 @@
 #include "mod_oems.h"
 
 const char *mapfiledir;
+static const char *defaultmap = "epsg_all.map";
 
 static const char *mapfile_dir_set(cmd_parms *cmd, void *cfg, const char *arg) {
 	mapfiledir = arg;
@@ -71,9 +72,11 @@ char *get_mapfile(request_rec *r, char *mapfile) {
 		get_param(r->args, "srs", mapfile); // Use SRS for WMS 1.1
 		if(strlen(mapfile) == 0) {
 			get_param(r->args, "srsname", mapfile); // Use SRSNAME for WFS
+			if(strlen(mapfile) == 0) {
+				mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, defaultmap);
+			}
 		}
 	}
-//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "SRS: %s", mapfile);
 	if (ap_strstr(mapfile, "4326") != 0) {
 		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, "epsg4326.map");
 	} else if (ap_strstr(mapfile, "3031") != 0) {
@@ -83,7 +86,7 @@ char *get_mapfile(request_rec *r, char *mapfile) {
 	} else if (ap_strstr(mapfile, "3857") != 0) {
 		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, "epsg3857.map");
 	} else {
-		mapfile = NULL;
+		mapfile = apr_psprintf(r->pool, "%s/%s", mapfiledir, defaultmap);
 	}
 	return mapfile;
 }
@@ -191,7 +194,12 @@ char *validate_args(request_rec *r, char *mapfile) {
 			apr_cpystrn(proj, "CRS", 4);
 			get_param(args,"crs",srs);
 		}
-		apr_table_setn(r->notes, "oems_srs", srs);
+		if(strlen(srs) == 0 || ap_strstr(srs, ":") == 0) {
+			apr_cpystrn(srs, "NONE", 5);
+			apr_table_setn(r->notes, "oems_srs", 0);
+		} else {
+			apr_table_setn(r->notes, "oems_srs", srs);
+		}
 
 		// Split out layers
 		char *layer_cpy = (char*)apr_pcalloc(r->pool,max_chars);
@@ -274,7 +282,12 @@ char *validate_args(request_rec *r, char *mapfile) {
 		}
 		get_param(args,"outputformat",outputformat);
 		get_param(args,"srsname",srsname);
-		apr_table_setn(r->notes, "oems_srs", srsname);
+		if(strlen(srsname) == 0 || ap_strstr(srsname, ":") == 0) {
+			apr_cpystrn(srsname, "NONE", 5);
+			apr_table_setn(r->notes, "oems_srs", 0);
+		} else {
+			apr_table_setn(r->notes, "oems_srs", srsname);
+		}
 
 		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&OUTPUTFORMAT=%s&TYPENAMES=%s&BBOX=%s&SRSNAME=%s&MAP=%s&TIME=%s&PRODUCTYEAR=%s","WFS",request,version,outputformat,typenames,bbox,srsname,mapfile,doytime,productyear);
 	} else {
@@ -294,7 +307,6 @@ static int oems_handler(request_rec *r) {
 	if (mapfile == 0) {
 		return DECLINED; // Don't handle if no mapfile found
 	}
-//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapfile: %s", mapfile);
 
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);

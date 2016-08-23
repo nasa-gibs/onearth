@@ -1912,13 +1912,17 @@ static int mrf_handler(request_rec *r)
 	// Redirected from Mapserver
 	if (r->prev != 0) {
 		if (ap_strstr(r->prev->args, "&MAP=") != 0) {
-//			ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"no match bounce back %s", r->prev->args);
 			int max_size = strlen(r->prev->uri)+strlen(r->prev->args);
 			char *new_uri = (char*)apr_pcalloc(r->pool, max_size);
-			char *prev_clayer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
-			char *prev_layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
-			char *prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
-			char *prev_format = (char *) apr_table_get(r->prev->notes, "oems_format");
+		    char *prev_clayer = 0;
+		    char *prev_layers = 0;
+		    char *prev_time = 0;
+		    char *prev_format = 0;
+			prev_clayer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
+			prev_layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
+			prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
+			prev_format = (char *) apr_table_get(r->prev->notes, "oems_format");
+			new_uri = apr_psprintf(r->pool,"%s?%s", r->prev->uri, r->prev->args);
 			if (prev_time != 0) {
 				apr_table_setn(r->notes, "oems_time", prev_time);
 			}
@@ -1928,16 +1932,19 @@ static int mrf_handler(request_rec *r)
 			if (prev_clayer != 0) {
 				apr_table_setn(r->notes, "oems_clayer", prev_clayer);
 			}
-			if (prev_format != 0) {
+			if (prev_format != 0 && ap_strstr(prev_format, "bounce") == 0) {
 				// try changing the format string and bounce back
-				new_uri = apr_psprintf(r->pool,"%s?%s", r->prev->uri, r->prev->args);
-				if (ap_strstr(prev_format, "jpeg") == 0) {
-					apr_table_setn(r->notes, "oems_format", "image/jpeg");
+				ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Previous Format %s", prev_format);
+				if (ap_strstr(prev_format, "image/png") != 0) {
+					apr_table_setn(r->notes, "oems_format", "image/jpeg&bounce=");
 					ap_internal_redirect(new_uri, r);
-				} else if (ap_strstr(prev_format, "png") == 0){
-					apr_table_setn(r->notes, "oems_format", "image/png");
+				} else {
+					apr_table_setn(r->notes, "oems_format", "image/png&bounce=");
 					ap_internal_redirect(new_uri, r);
 				}
+			} else { // Fail by setting to NULL
+				apr_table_setn(r->notes, "oems_format", 0);
+				ap_internal_redirect(new_uri, r);
 			}
 		}
 	}

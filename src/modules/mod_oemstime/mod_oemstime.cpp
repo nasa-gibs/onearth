@@ -49,31 +49,36 @@ static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
     conn_rec *c = f->c;
     request_rec *r = f->r;
 
-    char *srs = (char *) apr_table_get(r->notes, "oems_srs");
-    char *format = (char *) apr_table_get(r->notes, "oems_format");
-    char *time = (char *) apr_table_get(r->notes, "oems_time");
-    char *current_layer = (char *) apr_table_get(r->notes, "oems_clayer");
+    char *srs = 0;
+    char *format = 0;
+    char *time = 0;
+    char *current_layer = 0;
+    srs = (char *) apr_table_get(r->notes, "oems_srs");
+    format = (char *) apr_table_get(r->notes, "oems_format");
+    time = (char *) apr_table_get(r->notes, "oems_time");
+    current_layer = (char *) apr_table_get(r->notes, "oems_clayer");
 
-	if ((ap_strstr(r->content_type, "text/xml") != 0) || (ap_strstr(r->content_type, "application/vnd.ogc.se_xml") != 0)) { // run only if Mapserver has an error due to invalid time or format
-		int max_size = strlen(twmssserviceurl)+strlen(r->args);
-		char *pos = 0;
-		char *split;
-		char *last;
-	    char *new_uri = (char*)apr_pcalloc(r->pool, max_size);
-	    apr_cpystrn(new_uri, twmssserviceurl, strlen(twmssserviceurl)+1);
-	    split = apr_strtok(new_uri,"{SRS}",&last);
-	    while(split != NULL)
-	    {
-	        pos = split;
-	        split = apr_strtok(NULL,"{SRS}",&last);
-	    }
-	    srs = ap_strstr(srs, ":");
-	    srs += 1;
+    if ((srs != 0) && (format != 0) && (time != 0) && (current_layer != 0)) { // make sure no null values
+		if ((ap_strstr(r->content_type, "text/xml") != 0) || (ap_strstr(r->content_type, "application/vnd.ogc.se_xml") != 0)) { // run only if Mapserver has an error due to invalid time or format
+			int max_size = strlen(twmssserviceurl)+strlen(r->args);
+			char *pos = 0;
+			char *split;
+			char *last;
+			char *new_uri = (char*)apr_pcalloc(r->pool, max_size);
+			apr_cpystrn(new_uri, twmssserviceurl, strlen(twmssserviceurl)+1);
+			split = apr_strtok(new_uri,"{SRS}",&last);
+			while(split != NULL)
+			{
+				pos = split;
+				split = apr_strtok(NULL,"{SRS}",&last);
+			}
+			srs = ap_strstr(srs, ":");
+			srs += 1;
 
-		new_uri = apr_psprintf(r->pool,"%s%s%s?request=GetMap&layers=%s&srs=EPSG:%s&format=%s&styles=&time=%s&width=512&height=512&bbox=-1,1,-1,1",new_uri, srs, pos, current_layer, srs, format, time);
-		ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, c, "oemstime bounce: %s", new_uri);
-		ap_internal_redirect(new_uri, r); // redirect for handling of time by mod_onearth
-	}
+			new_uri = apr_psprintf(r->pool,"%s%s%s?request=GetMap&layers=%s&srs=EPSG:%s&format=%s&styles=&time=%s&width=512&height=512&bbox=-1,1,-1,1",new_uri, srs, pos, current_layer, srs, format, time);
+			ap_internal_redirect(new_uri, r); // redirect for handling of time by mod_onearth
+		}
+    }
 
     return ap_pass_brigade(f->next, bb) ;
 }
