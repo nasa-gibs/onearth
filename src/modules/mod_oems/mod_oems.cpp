@@ -128,7 +128,6 @@ char *validate_args(request_rec *r, char *mapfile) {
 		prev_format = (char *) apr_table_get(r->prev->notes, "oems_format");
 		prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
 		if (prev_format != 0) {
-			ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "prev_format: %s", prev_format);
 			apr_table_setn(r->notes, "oems_format", prev_format);
 		} else {
 			apr_table_setn(r->notes, "oems_format", format);
@@ -165,7 +164,6 @@ char *validate_args(request_rec *r, char *mapfile) {
 		apr_time_exp_gmt(&tm, epoch);
 
 		apr_strftime(doytime, &tmlen, 14, "%Y%j", &tm);
-//		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "DOYTIME: %s", doytime);
 	}
 
 	// check if WMS or WFS
@@ -194,7 +192,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 			apr_cpystrn(proj, "CRS", 4);
 			get_param(args,"crs",srs);
 		}
-		if(strlen(srs) == 0 || ap_strstr(srs, ":") == 0) {
+		if(strlen(srs) == 0 || ((ap_strstr(srs, ":") == 0) && ap_strstr(srs, "%3A") == 0)) {
 			apr_cpystrn(srs, "NONE", 5);
 			apr_table_setn(r->notes, "oems_srs", 0);
 		} else {
@@ -215,8 +213,6 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    } else {
 	    	last_layer = (char*)apr_pcalloc(r->pool,max_chars);
 	    }
-//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "prev_last_layer: %s", prev_last_layer);
-//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "prev_last_layers: %s", prev_last_layers);
 	    apr_cpystrn(layer_cpy, layers, strlen(layers)+1);
 	    char *pt;
 	    char *last;
@@ -225,17 +221,14 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	if (prev_last_layers != 0) {
 	    		if (ap_strstr(prev_last_layers, pt) == 0) {
 	    			last_layer = pt;
-//	    			ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "new layer: %s", last_layer);
 	    		}
 	    	} else {
 		    	last_layer = pt;
 	    	}
 	    	layer_time_param = apr_psprintf(r->pool,"%s_TIME", pt);
-//	    	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_time: %s", layer_time_param);
 	    	get_param(args,layer_time_param,layer_time_value);
 	    	if(strlen(layer_time_value) != 0) {
 	    		doytime = layer_time_value;
-//	    		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_time_value: %s", layer_time_value);
 	    	}
 	    	layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s", layer_times, pt, doytime);
 	    	apr_cpystrn(productyear, doytime, 5);
@@ -258,10 +251,6 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	apr_table_setn(r->notes, "oems_clayer", last_layer);
 	    	apr_table_setn(r->notes, "oems_layers", last_layer);
 	    }
-
-//		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "checked_layers: %s", last_layer);
-//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_times: %s", layer_times);
-//	    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "layer_years: %s", layer_years);
 
 	    if (strlen(last_layer) != 0) {
 			// Set filters for time snapping if there is a layer that hasn't been checked
@@ -298,20 +287,13 @@ char *validate_args(request_rec *r, char *mapfile) {
 
 // OnEarth Mapserver handler
 static int oems_handler(request_rec *r) {
-	// Log directory and args for debugging
-//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapfile Dir: %s", mapfiledir);
-//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "oems Request args: %s", r->args);
-
 	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(mapfiledir)+16);
 	mapfile = get_mapfile(r, mapfile);
 	if (mapfile == 0) {
 		return DECLINED; // Don't handle if no mapfile found
 	}
-
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);
-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapserver args: %s", r->args);
-
 	return DECLINED; // Pass request to Mapserver
 }
 

@@ -72,15 +72,20 @@ static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
 				pos = split;
 				split = apr_strtok(NULL,"{SRS}",&last);
 			}
-			srs = ap_strstr(srs, ":");
-			srs += 1;
+			if (ap_strstr(srs, ":") == 0) {
+				srs = ap_strstr(srs, "%3A");
+				srs += 3;
+			} else {
+				srs = ap_strstr(srs, ":");
+				srs += 1;
+			}
 
 			new_uri = apr_psprintf(r->pool,"%s%s%s?request=GetMap&layers=%s&srs=EPSG:%s&format=%s&styles=&time=%s&width=512&height=512&bbox=-1,1,-1,1",new_uri, srs, pos, current_layer, srs, format, time);
 			ap_internal_redirect(new_uri, r); // redirect for handling of time by mod_onearth
 		}
     }
 
-    return ap_pass_brigade(f->next, bb) ;
+    return ap_pass_brigade(f->next, bb);
 }
 
 // Configuration options that go in the httpd.conf
