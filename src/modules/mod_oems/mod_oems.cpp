@@ -287,7 +287,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 
 // OnEarth Mapserver handler
 static int oems_handler(request_rec *r) {
-	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(mapfiledir)+16);
+	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(mapfiledir)+strlen(r->args));
 	mapfile = get_mapfile(r, mapfile);
 	if (mapfile == 0) {
 		return DECLINED; // Don't handle if no mapfile found

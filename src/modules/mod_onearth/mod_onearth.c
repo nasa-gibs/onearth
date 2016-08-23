@@ -1934,7 +1934,7 @@ static int mrf_handler(request_rec *r)
 			}
 			if (prev_format != 0 && ap_strstr(prev_format, "bounce") == 0) {
 				// try changing the format string and bounce back
-				if (ap_strstr(prev_format, "image/png") != 0) {
+				if (ap_strstr(prev_format, "png") != 0) {
 					apr_table_setn(r->notes, "oems_format", "image/jpeg&bounce=");
 					ap_internal_redirect(new_uri, r);
 				} else {
