@@ -34,7 +34,7 @@ window.onload = function() {
     });
 
     var source = new ol.source.WMTS({
-        url: "/onearth/demo/wmts/wmts.cgi?",
+        url: "/onearth/wmts/epsg4326/wmts.cgi?",
         layer: "blue_marble",
         format: "image/jpeg",
         matrixSet: "EPSG4326_16km",
