@@ -38,12 +38,21 @@
 
 #include "mod_oems.h"
 
-const char *mapfiledir;
-static const char *defaultmap = "epsg_all.map";
-
-static const char *mapfile_dir_set(cmd_parms *cmd, void *cfg, const char *arg) {
-	mapfiledir = arg;
+static const char *mapfile_dir_set(cmd_parms *cmd, oems_conf *cfg, const char *arg) {
+	cfg->mapfiledir = arg;
 	return 0;
+}
+
+static const char *default_mapfile_set(cmd_parms *cmd, oems_conf *cfg, const char *arg) {
+	cfg->defaultmap = arg;
+	return 0;
+}
+
+static void *create_dir_config(apr_pool_t *p, char *dummy)
+{
+	oems_conf *cfg;
+	cfg = (oems_conf *)(apr_pcalloc(p, sizeof(oems_conf)));
+    return cfg;
 }
 
 // Retrieve parameter value from URL
@@ -66,7 +75,7 @@ void get_param(char *args, char *Name, char *Value) {
 }
 
 // Return mapfile with full path
-char *get_mapfile(request_rec *r, char *mapfile) {
+char *get_mapfile(request_rec *r, char *mapfile, const char *mapfiledir, const char *defaultmap) {
 	get_param(r->args, "crs", mapfile); // Use CRS for WMS 1.3
 	if(strlen(mapfile) == 0) {
 		get_param(r->args, "srs", mapfile); // Use SRS for WMS 1.1
@@ -287,13 +296,15 @@ char *validate_args(request_rec *r, char *mapfile) {
 
 // OnEarth Mapserver handler
 static int oems_handler(request_rec *r) {
-	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(mapfiledir)+strlen(r->args));
-	mapfile = get_mapfile(r, mapfile);
+	oems_conf *cfg = static_cast<oems_conf *>ap_get_module_config(r->per_dir_config, &oems_module);
+	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(cfg->mapfiledir)+strlen(r->args));
+	mapfile = get_mapfile(r, mapfile, cfg->mapfiledir, cfg->defaultmap);
 	if (mapfile == 0) {
 		return DECLINED; // Don't handle if no mapfile found
 	}
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);
+//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapserver args: %s", r->args);
 	return DECLINED; // Pass request to Mapserver
 }
 
@@ -321,6 +332,13 @@ static const command_rec cmds[] =
 		ACCESS_CONF, /* where available */
 		"The directory containing mapfiles" /* help string */
 	),
+	AP_INIT_TAKE1(
+		"DefaultMapfile",
+		(cmd_func) default_mapfile_set,
+		0, /* argument to include in call */
+		ACCESS_CONF, /* where available */
+		"File name of the default mapfile" /* help string */
+	),
 	{NULL}
 };
 
@@ -330,5 +348,5 @@ static void register_hooks(apr_pool_t *p) {
 
 module AP_MODULE_DECLARE_DATA oems_module = {
     STANDARD20_MODULE_STUFF,
-    0, 0, 0, 0, cmds, register_hooks
+    create_dir_config, 0, 0, 0, cmds, register_hooks
 };
