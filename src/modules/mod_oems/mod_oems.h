@@ -47,4 +47,9 @@
 APLOG_USE_MODULE(oems);
 #endif
 
+struct oems_conf {
+	const char *mapfiledir;
+	const char *defaultmap;
+};
+
 extern module AP_MODULE_DECLARE_DATA oems_module;
