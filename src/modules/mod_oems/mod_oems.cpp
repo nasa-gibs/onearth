@@ -281,13 +281,18 @@ char *validate_args(request_rec *r, char *mapfile) {
 		get_param(args,"outputformat",outputformat);
 		get_param(args,"srsname",srsname);
 		if(strlen(srsname) == 0 || ap_strstr(srsname, ":") == 0) {
-			apr_cpystrn(srsname, "NONE", 5);
 			apr_table_setn(r->notes, "oems_srs", 0);
 		} else {
 			apr_table_setn(r->notes, "oems_srs", srsname);
 		}
 
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&OUTPUTFORMAT=%s&TYPENAMES=%s&BBOX=%s&SRSNAME=%s&MAP=%s&TIME=%s&PRODUCTYEAR=%s","WFS",request,version,outputformat,typenames,bbox,srsname,mapfile,doytime,productyear);
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&OUTPUTFORMAT=%s&TYPENAMES=%s&MAP=%s&TIME=%s&PRODUCTYEAR=%s","WFS",request,version,outputformat,typenames,mapfile,doytime,productyear);
+		if(strlen(srsname) != 0) {
+			args = apr_psprintf(r->pool,"%s&SRSNAME=%s",args,srsname);
+		}
+		if(strlen(bbox) != 0) {
+			args = apr_psprintf(r->pool,"%s&BBOX=%s",args,bbox);
+		}
 	} else {
 		args = r->args;
 	}
