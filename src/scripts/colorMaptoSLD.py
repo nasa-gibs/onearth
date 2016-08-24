@@ -189,11 +189,11 @@ def generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder) :
                 print("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>")          
                 firstValue = False
             else:
-                threshold = str(re.match(r"\[([0-9\.\-]*),[0-9\.\-]*", cmEntry.value).group(1))
+                threshold = str(re.match(r"\[([0-9\.\-\+e]*),[0-9\.\-\+e]*", cmEntry.value).group(1))
                 print("                <se:Threshold>" + threshold + "</se:Threshold>")     
                 print("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>")     
           
-    print("              </se:Categorize")     
+    print("              </se:Categorize>")     
     print("            </se:ColorMap>")     
     print("          </se:RasterSymbolizer>")    
     print("        </se:Rule>")    

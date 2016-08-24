@@ -264,119 +264,139 @@ def color_string_to_list(color):
 
     return rgb
 
+
 ## START Generate HTML ##
-def generateHTML() :
+def generateHTML(outputHtmlFile) :
+
+    if outputHtmlFile:
+       outputHandle = open(outputHtmlFile, "w")
+    else:
+       outputHandle = sys.stdout
 
     for colorMaps in colorMapsList :
-        print("<!doctype html>")
-        print("<html>")
-        print("<head>")
-        print('<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-        print('<link rel="stylesheet" type="text/css" href="resources/colormap.css">')
-        print("</head>")
-        print("<body>")
+        outputHandle.write("<!doctype html>\n")
+        outputHandle.write("<html>\n")
+        outputHandle.write("<head>\n")
+        outputHandle.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+        outputHandle.write('<link rel="stylesheet" type="text/css" href="resources/colormap.css">')
+        outputHandle.write("</head>\n")
+        outputHandle.write("<body>\n")
 
-        print("<h1>" + colorMaps.product + "</h1>")
+        outputHandle.write("<h1>" + colorMaps.product + "</h1>\n")
 
-        print("<p>Download Color Map file <a href=\"../" + colorMaps.product + "\">here</a><br><br>")
+        outputHandle.write("<p>Download Color Map file <a href=\"../" + colorMaps.product + "\">here</a><br><br>\n")
 
         for colorMap in colorMaps.colormaps :
-            print("<h2> ColorMap : Title '" + colorMap.title.encode("utf-8") + "'  Units '" + colorMap.units.encode("utf-8") + "'</h2>")
-            print("<h3> Entries : MinLabel '" + colorMap.entries.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.entries.maxLabel.encode("utf-8") + "'</h3>")
+            outputHandle.write("<h2> ColorMap : Title '" + colorMap.title.encode("utf-8") + "'  Units '" + colorMap.units.encode("utf-8") + "'</h2>\n")
+            outputHandle.write("<h3> Entries : MinLabel '" + colorMap.entries.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.entries.maxLabel.encode("utf-8") + "'</h3>\n")
 
-            print("<table>")
+            outputHandle.write("<table>\n")
 
-            print("  <tr>")
-            print("    <th>RGB</th>")
-            print("    <th class='transparency'>Transparent</th>")
-            print("    <th class='data-value'>SourceValue</th>")
-            print("    <th class='data-value'>Value</th>")
-            print("    <th class='data-value'>Label</th>")
-            print("    <th class='data-value'>Reference</th>")
-            print("    <th class='data-value'>NoData</th>")
-            print("  </tr>")
+            outputHandle.write("  <tr>\n")
+            outputHandle.write("    <th>RGB</th>\n")
+            outputHandle.write("    <th class='transparency'>Transparent</th>\n")
+            outputHandle.write("    <th class='data-value'>SourceValue</th>\n")
+            outputHandle.write("    <th class='data-value'>Value</th>\n")
+            outputHandle.write("    <th class='data-value'>Label</th>\n")
+            outputHandle.write("    <th class='data-value'>Reference</th>\n")
+            outputHandle.write("    <th class='data-value'>NoData</th>\n")
+            outputHandle.write("  </tr>\n")
 
 
             for entry in colorMap.entries.colormapentries :
-                print("  <tr>")
-                print("    <td class='color' bgcolor=" + rgb_to_hex(entry.rgb) + ">" + \
+                outputHandle.write("  <tr>\n")
+                outputHandle.write("    <td class='color' bgcolor=" + rgb_to_hex(entry.rgb) + ">" + \
                        "<font color=\"" + ("black" if is_bright(entry.rgb) else "white") + "\">" + \
-                       entry.rgb + "</font></td>")
-                print("    <td class='transparency'>" + str(entry.transparent) + "</td>")
-                print("    <td class='data-value'>" + (str(entry.sourceValue.encode('ascii', 'xmlcharrefreplace')) if entry.sourceValue != None else "") + "</td>")
-                print("    <td class='data-value'>" + (str(entry.value.encode('ascii', 'xmlcharrefreplace')) if entry.value != None else "") + "</td>")
-                print("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>")
-                print("    <td class='data-value'>" + (str(entry.ref.encode('ascii', 'xmlcharrefreplace')) if entry.ref != None else "") + "</td>")
-                print("    <td class='data-value'>" +  str(entry.nodata) + "</td>")
-                print("  </tr>")
+                       entry.rgb + "</font></td>\n")
+                outputHandle.write("    <td class='transparency'>" + str(entry.transparent) + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.sourceValue.encode('ascii', 'xmlcharrefreplace')) if entry.sourceValue != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.value.encode('ascii', 'xmlcharrefreplace')) if entry.value != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.ref.encode('ascii', 'xmlcharrefreplace')) if entry.ref != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" +  str(entry.nodata) + "</td>\n")
+                outputHandle.write("  </tr>\n")
 
-            print("</table>")
+            outputHandle.write("</table>\n")
 
             if colorMap.legend == None:
-                 print("<h3>No Legend</h3>")
+                outputHandle.write("<h3>No Legend</h3>\n")
             else:
-                print("<h3> Legend : Type '" + colorMap.legend.type.encode("utf-8") + "'  MinLabel '" + colorMap.legend.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.legend.maxLabel.encode("utf-8") + "'</h3>")
+                outputHandle.write("<h3> Legend : Type '" + colorMap.legend.type.encode("utf-8") + "'  MinLabel '" + colorMap.legend.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.legend.maxLabel.encode("utf-8") + "'</h3>\n")
 
-                print("<table>")
+                outputHandle.write("<table>\n")
 
-                print("  <tr>")
-                print("    <th>RGB</th>")
-                print("    <th class='data-value'>showTick</th>")
-                print("    <th class='data-value'>showLabel</th>")
-                print("    <th class='data-value'>Label</th>")
-                print("    <th class='data-value'>ID</th>")
-                print("  </tr>")
+                outputHandle.write("  <tr>\n")
+                outputHandle.write("    <th>RGB</th>\n")
+                outputHandle.write("    <th class='data-value'>showTick</th>\n")
+                outputHandle.write("    <th class='data-value'>showLabel</th>\n")
+                outputHandle.write("    <th class='data-value'>Label</th>\n")
+                outputHandle.write("    <th class='data-value'>ID</th>\n")
+                outputHandle.write("  </tr>\n")
 
 
-                for entry in colorMap.legend.legendentries :
-                    print("  <tr>")
-                    print("    <td class='color' bgcolor=" + rgb_to_hex(entry.rgb) + ">" +
-                           "<font color=\"" + ("black" if is_bright(entry.rgb) else "white") + "\">" +
-                           entry.rgb + "</font></td>")
-                    print("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>")
-                    print("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>")
-                    print("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>")
-                    print("    <td class='data-value'>" + (str(entry.id.encode('ascii', 'xmlcharrefreplace')) if entry.id != None else "") + "</td>")
-                    print("  </tr>")
+                for entry in colorMap.legend.legendentries:
+                    outputHandle.write("  <tr>\n")
+                    
+                    outputHandle.write("    <td class='color' bgcolor=" + rgb_to_hex(entry.rgb) + ">" + "<font color=\"" + \
+                                          ("black" if is_bright(entry.rgb) else "white") + "\">" + entry.rgb + "</font></td>\n")
+                    outputHandle.write("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + (str(entry.id.encode('ascii', 'xmlcharrefreplace')) if entry.id != None else "") + "</td>\n")
+                    outputHandle.write("  </tr>\n")
 
-                print("</table>")
+                outputHandle.write("</table>\n")
 
 
             if not colorMap == colorMaps.colormaps[-1]:
-               print("<hr>")
-               print("<br>")
-               print("<br>")
-               print("<br>")
+               outputHandle.write("<hr>\n")
+               outputHandle.write("<br>\n")
+               outputHandle.write("<br>\n")
+               outputHandle.write("<br>\n")
 
-        print("</body>")
-        print("</html>")
+        outputHandle.write("</body>\n")
+        outputHandle.write("</html>\n")
+
+
+    if outputHtmlFile:
+       outputHandle.close()
+
+def usage():
+   print("Usage: colorMaptoHTML.py [OPTIONS]")
+   print("\nOptions:")
+   print("  -h, --help         show this help message and exit")
+   print("  -c COLORMAP_FILE, --colormap COLORMAP_FILE")
+   print("                     Path to colormap file to be converted.  (Required)")
+   print("  -o OUTPUT_HTML_FILE, --output OUTPUT_HTML_FILE")
+   print("                     Path to output html file.  If not provided, results are printed to stdout")
+
 
 def main(argv):
 
-    colormapFile = ""
+    colormapFile   = None
+    outputHtmlFile = None
 
     try:
-        opts, args = getopt.getopt(argv,"hi:c:",["colormap="])
+        opts, args = getopt.getopt(argv,"hi:c:o:",["colormap=","output="])
     except getopt.GetoptError:
-        print("Usage: colorMaptoHTML.py -c <colormap>")
-        print("\nOptions:")
-        print("  -h, --help             show this help message and exit")
-        print("  -c COLORMAP_FILE, --colormap COLORMAP_FILE")
-        print("							Path to colormap file to be converted")
+        usage()
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print("Usage: colorMaptoHTML.py -c <colormap>")
-            print("\nOptions:")
-            print("  -h, --help             show this help message and exit")
-            print("  -c COLORMAP_FILE, --colormap COLORMAP_FILE")
-            print("							Path to colormap file to be converted")
+            usage()
             sys.exit()
         elif opt in ("-c", "--colormap"):
             colormapFile = arg
+        elif opt in ("-o", "--output"):
+            outputHtmlFile = arg
+
+    if not colormapFile:
+       print("Colormap File must be provided")
+       sys.exit(-1)
 
     parseColorMaps(colormapFile, colormapFile)
-    generateHTML()
+    generateHTML(outputHtmlFile)
+
 
 if __name__ == "__main__":
    main(sys.argv[1:])
