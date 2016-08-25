@@ -200,45 +200,6 @@ class TestVectorgen(unittest.TestCase):
         except fiona.errors.FionaValueError:
             self.fail("Bad output geojson file {0}.".format(output_file))
 
-    # TODO: Can't find a reliable way to check if the projection that results is the one we want, because OSR doesn't recognize EPSG3431 and 3031 WKT
-    # definitions.
-
-    # def test_shapefile_reprojection(self):
-    #     # Process config file
-    #     test_artifact_path = os.path.join(self.main_artifact_path, 'reproject')
-    #     config = self.parse_vector_config(self.reproject_test_config, test_artifact_path)
-
-    #     # Open input shapefile and get stats
-    #     try:
-    #         with fiona.open(config['input_files'][0]) as geojson:
-    #             origin_num_features = len(list(geojson))
-    #     except fiona.errors.FionaValueError:
-    #         self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
-        
-    #     # Run vectorgen
-    #     os.chdir(test_artifact_path)
-    #     cmd = 'python ../../../vectorgen/oe_vectorgen.py -c ' + self.reproject_test_config
-    #     run_command(cmd, ignore_warnings=True)
-
-    #     # Check the output
-    #     output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
-    #     try:
-    #         with fiona.open(output_file) as shapefile:
-    #             self.assertEqual(shapefile.driver, 'ESRI Shapefile', "Output shapefile doesn't appear to be in the right format. ({0})".format(shapefile.driver))
-    #             self.assertEqual(origin_num_features, len(list(shapefile)),
-    #                              "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
-    #                              .format(config['input_files'][0], output_file))
-    #             # Check reprojection by comparing proj4 string of input geojson with output shapefile
-    #             pdb.set_trace()
-    #             output_proj = osr.SpatialReference()
-    #             output_proj.ImportFromProj4(fiona.crs.to_string(shapefile.crs) + ' +wktext')
-    #             output_proj.AutoIdentifyEPSG()
-    #             self.assertEqual(config['target_epsg'], output_proj.GetAuthorityCode(None), "Output projection does not match what was specified in the config XML.")
-    #     except IOError:
-    #         self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
-    #     except fiona.errors.FionaValueError:
-    #         self.fail("Bad output shapefile {0}.".format(output_file))
-
     @classmethod
     def tearDownClass(self):
         if not DEBUG:

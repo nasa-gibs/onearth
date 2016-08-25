@@ -157,20 +157,16 @@ if __name__ == '__main__':
             output_name = '{$parameter_name}%Y%j_'
         output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
         # user-specified tilematrixset to build
-        try:
-            tilematrixset = get_dom_tag_value(dom, 'tilematrixset')
-        except:
-            log_sig_exit('ERROR', 'Must specifiy a tilematrixset.')
-        # Tilematrixset definition file (defaults to $LCDIR/conf/tilematrixsets.xml)
-        try:
-            tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
-        except:
-            log_sig_warn('WARNING: TileMatrixSet definition config file not specified. Using $LCDIR/conf/tilematrixsets.xml', sigevent_url)
-            lcdir = lcdir = os.environ.get('LCDIR')
-            if not lcdir:
-                log_sig_warn("WARNING: Can't find $LCDIR environment variable. Using /etc/onearth/config", sigevent_url)
-                lcdir = '/etc/onearth/config'
-            tilematrixset_definition_file = os.path.join(lcdir, 'conf/tilematrixsets.xml')
+        if output_format == 'mrf':
+            try:
+                tilematrixset = get_dom_tag_value(dom, 'tilematrixset')
+            except:
+                log_sig_exit('ERROR', 'Must specifiy a tilematrixset.')
+            # Tilematrixset definition file (defaults to $LCDIR/conf/tilematrixsets.xml)
+            try:
+                tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
+            except:
+                tilematrixset_definition_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tilematrixsets.xml')
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -250,8 +246,9 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
-    log_info_mssg(str().join(['config tilematrixset_definition_file:           ', tilematrixset_definition_file]))
-    log_info_mssg(str().join(['config tilematrixset:           ', tilematrixset]))
+    if output_format == 'mrf':
+        log_info_mssg(str().join(['config tilematrixset_definition_file:           ', tilematrixset_definition_file]))
+        log_info_mssg(str().join(['config tilematrixset:           ', tilematrixset]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))

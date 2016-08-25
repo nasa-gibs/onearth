@@ -200,6 +200,8 @@ onearth-install:
 	
 	install -m 755 src/vectorgen/*.py \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
+	install -m 755 src/layer_config/conf/tilematrixsets.xml \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	ln -s ../share/onearth/vectorgen/oe_vectorgen.py $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen
 
 	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
