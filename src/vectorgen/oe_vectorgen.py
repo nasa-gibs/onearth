@@ -317,7 +317,7 @@ if __name__ == '__main__':
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
                 if source_epsg != target_epsg:
                     outfile = os.path.join(working_dir, basename + '_reproject' + os.path.splitext(tile)[1])
-                    ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
+                    ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1] else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
                     run_command(ogr2ogr_command_list, sigevent_url)
                 tile_layer_name = parameter_name + '_' + date_of_data
                 create_vector_mrf(tile, working_dir, basename, tile_layer_name, tilematrixset, tilematrixset_definition_file, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
