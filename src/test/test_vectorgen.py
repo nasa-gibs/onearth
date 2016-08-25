@@ -138,7 +138,7 @@ class TestVectorgen(unittest.TestCase):
         
         # Run vectorgen
         os.chdir(test_artifact_path)
-        cmd = 'python ../../../vectorgen/oe_vectorgen.py -d -c ' + self.mrf_test_config
+        cmd = 'python ../../../vectorgen/oe_vectorgen.py -c ' + self.mrf_test_config
         run_command(cmd, ignore_warnings=True)
 
         # Get index of first, second-to-last, and last tile in MRF
@@ -185,7 +185,7 @@ class TestVectorgen(unittest.TestCase):
         
         # Run vectorgen
         os.chdir(test_artifact_path)
-        cmd = 'python ../../../vectorgen/oe_vectorgen.py -d -c ' + self.shapefile_test_config
+        cmd = 'python ../../../vectorgen/oe_vectorgen.py -c ' + self.shapefile_test_config
         run_command(cmd, ignore_warnings=True)
 
         # Check the output
