@@ -2373,6 +2373,14 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
+            if not static and len(timeElements)>0:
+                defaultDate = ''
+                timeExtent = ''
+                for timeElement in timeElements:
+                    defaultDate = timeElement.firstChild.data.strip().split('/')[1]
+                    timeExtent = timeExtent + timeElement.firstChild.data.strip() + ","
+                mapfile.write("\t\t\"wms_timeextent\"\t\t\"" + timeExtent.rstrip(',') + "\"\n") 
+                mapfile.write("\t\t\"wms_timedefault\"\t\t\"" + defaultDate + "\"\n")
             mapfile.write("\tEND\n")
             if not static and year:
                 mapfile.write("\tDATA\t\"" + archiveLocation + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
