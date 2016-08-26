@@ -1,5 +1,5 @@
 MAP
-  Name                  "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:3857)"
+  Name                  "NASA_GIBS_3857"
   UNITS                 meters
   MAXSIZE               20000
   SIZE                  1600 1200
@@ -55,7 +55,7 @@ MAP
       "wms_contactposition"		"GIBS User Support"
       "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
       "wms_enable_request"      "GetMap GetCapabilities"
-      "wms_srs"                 "epsg:3857"
+      "wms_srs"                 "EPSG:3857"
       "wms_connectiontimeout"   "180"
       "wms_layerlimit"			"5"
     END
