@@ -266,7 +266,10 @@ char *validate_args(request_rec *r, char *mapfile) {
 		    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
 		    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
 	    }
-
+	    // In case all layers have been stripped out due to invalid time requests
+	    if (strlen(layers) == 0 && prev_last_layers != 0) {
+	    	layers = apr_psprintf(r->pool,"INVALIDTIME");
+	    }
 		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years);
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {

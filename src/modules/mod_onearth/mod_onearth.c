@@ -360,7 +360,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 				if (layer != 0) {
 					apr_table_setn(r->notes, "oems_clayer", layer);
 				}
-				if (layer != 0) {
+				if (layers != 0) {
 					apr_table_setn(r->notes, "oems_layers", layers);
 				}
   			}
@@ -532,8 +532,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 							}
 							pos += strlen(layer_time)+7;
 							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, pos);
-//							ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"new time: %04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
-//							ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"timesnap bounce: %s", new_uri);
 							ap_internal_redirect(new_uri, r);
 						}
 					}
@@ -543,6 +541,26 @@ static void *r_file_pread(request_rec *r, char *fname,
 			if (i==num_periods) {
 				  // no data found within all periods
 				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
+				  if (r->prev != 0) {
+						if (ap_strstr(r->prev->args, "&MAP=") != 0) { // Don't include layer in Mapserver request if no time found
+							char *args_cpy = (char*)apr_pcalloc(r->pool, strlen(r->prev->args)+1);
+						    char *args_pt;
+							apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
+							args_pt = ap_strstr(new_uri, layer);
+							if (args_pt != NULL) {
+								size_t len = args_pt - new_uri;
+								memcpy(args_cpy, new_uri, len);
+							}
+							if (args_pt[strlen(layer)] == ',') {
+								args_pt += strlen(layer)+1;
+							} else {
+								args_pt += strlen(layer);
+								args_cpy[strlen(args_cpy)-1] = 0;
+							}
+							new_uri = apr_psprintf(r->pool, "%s?%s%s", r->prev->uri, args_cpy, args_pt);
+							ap_internal_redirect(new_uri, r);
+						}
+				  }
 			}
 		}
 	  }
@@ -550,8 +568,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  if (r->prev != 0) {
 			if (ap_strstr(r->prev->args, "&MAP=") != 0) { // no time-snapping for Mapserver, so redirect back
 				new_uri = apr_psprintf(r->pool, "%s?TIME=%s&%s", r->prev->uri, prev_time, r->prev->args);
-//				ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "no timesnap args: %s", r->args);
-//				ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "no timesnap bounce: %s", new_uri);
 				ap_internal_redirect(new_uri, r);
 			}
 	  }
