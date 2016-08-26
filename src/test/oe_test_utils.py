@@ -42,6 +42,9 @@ import shlex
 from dateutil.relativedelta import relativedelta
 import sqlite3
 import urllib2
+import StringIO
+import gzip
+import mapbox_vector_tile
 
 
 def add_trailing_slash(directory_path):
@@ -343,6 +346,12 @@ def get_layer_config(filepath, archive_config):
     config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
     config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
     config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
+    try:
+        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[0].firstChild.nodeValue
+        config['mapfile_location_basename'] = env_dom.getElementsByTagName('MapfileLocation')[0].attributes["basename"].value
+        config['mapfile_staging_location'] = env_dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
+    except (IndexError, KeyError):
+        pass
 
     # Add everything we need from the layer config
     config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
@@ -350,7 +359,6 @@ def get_layer_config(filepath, archive_config):
     config['time'] = config_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
     config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[0].firstChild.nodeValue
     config['colormaps'] = config_dom.getElementsByTagName("ColorMap")
-
     try:
         config['empty_tile'] = config_dom.getElementsByTagName('EmptyTile')[0].firstChild.nodeValue
     except IndexError:
@@ -360,6 +368,11 @@ def get_layer_config(filepath, archive_config):
         if config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['year'].value == 'true':
             config['year_dir'] = True
     except KeyError:
+        pass
+    try:
+        config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
+        config['vector_style_file'] = config_dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
+    except IndexError:
         pass
 
     return config
@@ -530,3 +543,24 @@ def file_text_replace(infile, outfile, before, after):
         newfile = template.read().replace(before, after)
         with open(outfile, 'w') as out:
             out.write(newfile)
+
+
+def check_valid_mvt(file, warn_if_empty=False):
+    tile_buffer = StringIO.StringIO()
+    tile_buffer.write(file.read())
+    tile_buffer.seek(0)
+    try:
+        unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
+        tile_data = unzipped_tile.read()
+    except IOError:
+        return False
+    try:
+        tile = mapbox_vector_tile.decode(tile_data)
+    except:
+        return False
+    if warn_if_empty:
+        try:
+            num_features = len(tile[tile.keys()[0]]['features'])
+        except IndexError:
+            return False
+    return True

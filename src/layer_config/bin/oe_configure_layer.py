@@ -2469,7 +2469,7 @@ $Patterns</TiledGroup>"""
                     with open(vectorStyleFile, 'r') as f:
                         mapfile.write(f.read())
                 except:
-                    log_sig_err("Couldn't read mapfile STYLE file: " + vectorStyleFile)
+                    log_sig_err("Couldn't read mapfile STYLE file: " + vectorStyleFile, sigevent_url)
             mapfile.write("END\n")
 
 # run scripts
