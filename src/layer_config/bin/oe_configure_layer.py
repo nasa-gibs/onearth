@@ -2383,9 +2383,9 @@ $Patterns</TiledGroup>"""
                 mapfile.write("\t\t\"wms_timedefault\"\t\t\"" + defaultDate + "\"\n")
             mapfile.write("\tEND\n")
             if not static and year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+                mapfile.write("\tDATA\t\"" + archiveLocation + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + ".mrf\"\n")
             elif not static and not year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + fileNamePrefix + timeDirPattern + "_.mrf\"\n")
+                mapfile.write("\tDATA\t\"" + archiveLocation + fileNamePrefix + timeDirPattern + ".mrf\"\n")
             else:
                 mapfile.write("\tDATA\t\"" + archiveLocation + fileNamePrefix + ".mrf\"\n")
             mapfile.write("\tPROJECTION\n")
