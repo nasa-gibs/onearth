@@ -194,6 +194,19 @@ char *validate_args(request_rec *r, char *mapfile) {
 		get_param(args,"width",width);
 		get_param(args,"height",height);
 
+		// Projection handling
+		long epsg = 0;
+		char *p = r->uri;
+		while (*p) {
+			if (isdigit(*p)) {
+				epsg = strtol(p, &p, 10);
+			} else {
+				p++;
+			}
+		}
+		if (epsg != 0) {
+			apr_table_setn(r->notes, "oems_srs", apr_psprintf(r->pool,"EPSG:%d", epsg)); // For mod_oemstime
+		}
 		if (ap_strstr(version, "1.1") != 0) {
 			apr_cpystrn(proj, "SRS", 4);
 			get_param(args,"srs",srs);
@@ -204,7 +217,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 		if(strlen(srs) == 0 || ((ap_strstr(srs, ":") == 0) && ap_strstr(srs, "%3A") == 0)) {
 			apr_cpystrn(srs, "NONE", 5);
 			apr_table_setn(r->notes, "oems_srs", 0);
-		} else {
+		} else if (epsg == 0) {
 			apr_table_setn(r->notes, "oems_srs", srs);
 		}
 
@@ -305,11 +318,11 @@ char *validate_args(request_rec *r, char *mapfile) {
 // OnEarth Mapserver handler
 static int oems_handler(request_rec *r) {
 	oems_conf *cfg = static_cast<oems_conf *>ap_get_module_config(r->per_dir_config, &oems_module);
-	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(cfg->mapfiledir)+strlen(r->args));
-	mapfile = get_mapfile(r, mapfile, cfg->mapfiledir, cfg->defaultmap);
-	if (mapfile == 0) {
-		return DECLINED; // Don't handle if no mapfile found
+	if (cfg->mapfiledir == 0 || cfg->defaultmap == 0) {
+		return DECLINED; // Don't handle if no mapfile can be found
 	}
+	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(cfg->mapfiledir)+strlen(cfg->defaultmap)+1);
+	mapfile = apr_psprintf(r->pool, "%s/%s", cfg->mapfiledir, cfg->defaultmap);
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);
 //	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapserver args: %s", r->args);
