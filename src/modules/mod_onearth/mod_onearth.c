@@ -298,7 +298,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 		tm.tm_mon=apr_atoi64(targ);
 		targ+=3; // Skip the MM- part
 		tm.tm_mday=apr_atoi64(targ);
-		if (strlen(targ)==16 && zlevels==0) {
+		if (strlen(targ)==16 && zlevels==0 && ap_strstr(fn,"TTTTTTTTTTTTT_") != 0) {
 			hastime=1;
 			targ+=3;
 			tm.tm_hour = apr_atoi64(targ);
@@ -531,7 +531,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 								memcpy(firstpart, new_uri, len);
 							}
 							pos += strlen(layer_time)+7;
-							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, pos);
+							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%02d&%s_SUBDAILY=%02d%02d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, layer, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec, pos);
 							ap_internal_redirect(new_uri, r);
 						}
 					}

@@ -113,6 +113,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	char *time = (char*)apr_pcalloc(r->pool,max_chars);
 	char *doytime = (char*)apr_pcalloc(r->pool,max_chars); // Ordinal date with time
 	char *productyear = (char*)apr_pcalloc(r->pool,5);
+	char *subdaily = 0;
 
 	// General args
 	char *service = (char*)apr_pcalloc(r->pool,max_chars);
@@ -151,28 +152,47 @@ char *validate_args(request_rec *r, char *mapfile) {
 	// handle TIME
 	if (ap_strchr(time, '-') != 0) {
 		int i; i= 0;
-		char *times[3];
+		char *times[6];
 		char *t;
 		char *last;
 		t = apr_strtok(time,"-",&last);
-		while (t != NULL && i < 4) {
+		while (t != NULL && i < 3) {
 			times[i++] = t;
 			t = apr_strtok(NULL,"-",&last);
 		}
-		// TODO: Handle HH:MM:SS
-		time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
-//		ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "TIME: %s", time);
+		if (ap_strstr(times[2],"T") != 0) {
+			subdaily = times[2];
+			t = apr_strtok(subdaily,"T:",&last);
+			i = 2;
+			while (t != NULL && i < 6) {
+				times[i++] = t;
+				t = apr_strtok(NULL,"T:",&last);
+			}
+		}
+		if (subdaily == 0) {
+			time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
+		} else {
+			time = apr_psprintf(r->pool, "%s-%s-%sT%s:%s:%s", times[0], times[1], times[2], times[3], times[4], times[5]);
+		}
 		apr_table_setn(r->notes, "oems_time", time);
 
 		tm.tm_year = apr_atoi64(times[0]) - 1900;
 		tm.tm_mon = apr_atoi64(times[1]) - 1;
 		tm.tm_mday = apr_atoi64(times[2]);
+		if (subdaily != 0) {
+			tm.tm_hour = apr_atoi64(times[3]);
+			tm.tm_min = apr_atoi64(times[4]);
+			tm.tm_sec = apr_atoi64(times[5]);
+		}
 
 		apr_time_t epoch = 0;
 		apr_time_exp_get(&epoch, &tm);
 		apr_time_exp_gmt(&tm, epoch);
 
 		apr_strftime(doytime, &tmlen, 14, "%Y%j", &tm);
+		if (subdaily != 0) {
+			apr_strftime(subdaily, &tmlen, 7, "%H%M%S", &tm);
+		}
 	}
 
 	// check if WMS or WFS
@@ -252,7 +272,11 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	if(strlen(layer_time_value) != 0) {
 	    		doytime = layer_time_value;
 	    	}
-	    	layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s", layer_times, pt, doytime);
+	    	if (subdaily != 0) {
+				layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s&%s_SUBDAILY=%s", layer_times, pt, doytime, pt, subdaily);
+	    	} else {
+	    		layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s", layer_times, pt, doytime);
+	    	}
 	    	apr_cpystrn(productyear, doytime, 5);
 	    	productyear[4] = 0;
 	    	layer_years = apr_psprintf(r->pool,"%s&%s_YEAR=%s", layer_years, pt, productyear);

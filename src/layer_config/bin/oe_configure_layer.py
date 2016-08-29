@@ -2347,10 +2347,12 @@ $Patterns</TiledGroup>"""
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
-            timeDirPattern = "%"+identifier+"_TIME%_"
-            timeParamRegex = '"^[0-9]{7}$"' if not subdaily else '"^[0-9]{13}$"'
+            timeDirPattern = "%"+identifier+"_TIME%_" if not subdaily else "%"+identifier+"_TIME%"
+            timeParamRegex = '"^[0-9]{7}$"'
             yearDirPattern = "%"+identifier+"_YEAR%"
             yearDirRegex = '"^[0-9]{4}$"'
+            subdailyDirPattern = "%"+identifier+"_SUBDAILY%_"
+            subdailyParamRegex = '"^[0-9]{6}$"'
 
             minx = projection.lowercorner[0]
             miny = projection.lowercorner[1]
@@ -2364,11 +2366,14 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tSTATUS\tON\n")
             mapfile.write("\tVALIDATION\n")
             if not static:
-                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + "TTTTTTT" + ("TTTTTT" if subdaily else "") + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + "TTTTTTT" + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
                 mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + "YYYY" + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" + yearDirRegex + "\n")
+            if not static and subdaily:
+                mapfile.write("\t\t\"default_" + identifier + "_SUBDAILY\"\t\"" + "TTTTTT" + "\"\n")
+                mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
@@ -2383,7 +2388,10 @@ $Patterns</TiledGroup>"""
                 mapfile.write("\t\t\"wms_timedefault\"\t\t\"" + defaultDate + "\"\n")
             mapfile.write("\tEND\n")
             if not static and year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + ".mrf\"\n")
+                if subdaily:
+                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + subdailyDirPattern + ".mrf\"\n")
+                else:
+                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" + yearDirPattern + "/" + fileNamePrefix + timeDirPattern + ".mrf\"\n")
             elif not static and not year:
                 mapfile.write("\tDATA\t\"" + archiveLocation + fileNamePrefix + timeDirPattern + ".mrf\"\n")
             else:
