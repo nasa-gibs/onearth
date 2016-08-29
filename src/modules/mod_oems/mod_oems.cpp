@@ -319,6 +319,9 @@ char *validate_args(request_rec *r, char *mapfile) {
 			get_param(args,"typename",typenames);
 		}
 		get_param(args,"outputformat",outputformat);
+		if(strlen(outputformat) == 0) { // default output when none provided
+			outputformat = apr_psprintf(r->pool,"text/xml;subtype=gml/3.2.1");
+		}
 		get_param(args,"srsname",srsname);
 		if(strlen(srsname) == 0 || ap_strstr(srsname, ":") == 0) {
 			apr_table_setn(r->notes, "oems_srs", 0);
