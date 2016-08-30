@@ -30,6 +30,7 @@ LoadModule onearth_module modules/mod_onearth.so
 **Apache Config Directives:**
 
 `WMSCache`: Location of the cache configuration.
+
 `TWMSDirConfig`: Location of the getTileService XML file.
 
 See [Apache Configuration](../../../doc/config_apache.md) for more details on configuration.

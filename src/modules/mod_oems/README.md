@@ -28,6 +28,7 @@ LoadModule oems_module modules/mod_oems.so
 **Apache Config Directives:**
 
 `MapfileDir`: Location on the server of the Mapserver mapfiles.
+
 `DefaultMapfile`: Filename of the default mapfile to use relative to `MapfileDir`.
 
 See [Apache Configuration](../../../doc/config_apache.md) for more details on configuration.
