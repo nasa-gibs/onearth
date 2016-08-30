@@ -47,7 +47,7 @@ from optparse import OptionParser
 import png
 
 toolName = "oe_generate_empty_tile.py"
-versionNumber = "v1.0.2"
+versionNumber = "v1.1.0"
 
 class ColorMap:
     """ColorMap metadata"""
