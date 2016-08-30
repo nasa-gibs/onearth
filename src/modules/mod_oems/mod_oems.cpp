@@ -204,7 +204,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 		char *styles = (char*)apr_pcalloc(r->pool,max_chars);
 		char *width = (char*)apr_pcalloc(r->pool,max_chars);
 		char *height = (char*)apr_pcalloc(r->pool,max_chars);
-
+		char *maplayerops = (char*)apr_pcalloc(r->pool,max_chars);
 		char *layer_years = (char*)apr_pcalloc(r->pool,max_chars);
 		char *layer_times = (char*)apr_pcalloc(r->pool,max_chars);
 
@@ -280,6 +280,12 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	apr_cpystrn(productyear, doytime, 5);
 	    	productyear[4] = 0;
 	    	layer_years = apr_psprintf(r->pool,"%s&%s_YEAR=%s", layer_years, pt, productyear);
+	    	// Get additional map.layer options
+	    	char *layer_ops = (char*)apr_pcalloc(r->pool,max_chars);
+	    	get_param(args,apr_psprintf(r->pool,"map.layer[%s]", pt), layer_ops);
+	    	if (strlen(layer_ops) != 0) {
+	    		maplayerops = apr_psprintf(r->pool,"%s&map.layer[%s]=%s", maplayerops, pt, layer_ops);
+	    	}
 	    	pt = apr_strtok(NULL, ",", &last);
 	    }
 
@@ -307,7 +313,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    if (strlen(layers) == 0 && prev_last_layers != 0) {
 	    	layers = apr_psprintf(r->pool,"INVALIDTIME");
 	    }
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years);
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years,maplayerops);
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);
