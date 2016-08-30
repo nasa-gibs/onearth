@@ -7,7 +7,7 @@ This is the Apache module for OnEarth.  This software is designed for serving OG
 To build the module:
 
 ```Shell
-cd onearth/src/mod_onearth
+cd onearth/src/modules/mod_onearth
 make
 ```
 
@@ -16,8 +16,8 @@ make
 Copy the module files into your Apache modules directory.
 
 ```Shell
-cp onearth/src/mod_onearth/.libs/mod_twms.so {APACHE_HOME}/modules/
-cp onearth/src/mod_onearth/.libs/mod_onearth.so {APACHE_HOME}/modules/
+cp onearth/src/modules/mod_onearth/.libs/mod_twms.so {APACHE_HOME}/modules/
+cp onearth/src/modules/mod_onearth/.libs/mod_onearth.so {APACHE_HOME}/modules/
 ```
 
 Edit the Apache httpd.conf and include the following:
@@ -26,6 +26,13 @@ Edit the Apache httpd.conf and include the following:
 LoadModule twms_module modules/mod_twms.so
 LoadModule onearth_module modules/mod_onearth.so
 ```
+
+**Apache Config Directives:**
+
+`WMSCache`: Location of the cache configuration.
+`TWMSDirConfig`: Location of the getTileService XML file.
+
+See [Apache Configuration](../../../doc/config_apache.md) for more details on configuration.
 
 ## Time Snapping
 

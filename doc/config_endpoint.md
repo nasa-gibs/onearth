@@ -6,11 +6,10 @@ These steps demonstrate how to create a new endpoint on the file system.  Repeat
 
 1) Create the endpoint directory and copy files
 
-```Shell
-mkdir -p /usr/share/onearth/demo/wmts-geo
-
-cp -p /usr/share/onearth/apache/wmts.cgi /usr/share/onearth/demo/wmts-geo
-cp -p /usr/share/onearth/apache/index.html /usr/share/onearth/demo/wmts-geo
+```
+mkdir -p /usr/share/onearth/demo/wmts/epsg4326
+cp -p /usr/share/onearth/apache/wmts.cgi /usr/share/onearth/demo/wmts/epsg4326
+cp -p /usr/share/onearth/apache/index.html /usr/share/onearth/demo/wmts/epsg4326
 ```
 
 2) Check permissions
@@ -20,12 +19,27 @@ cp -p /usr/share/onearth/apache/index.html /usr/share/onearth/demo/wmts-geo
 
 1) Create the endpoint directory and copy files
 
-```Shell
-mkdir -p /usr/share/onearth/demo/twms-geo
-cp -r /usr/share/onearth/apache/ /usr/share/onearth/demo/twms-geo
+```
+mkdir -p /usr/share/onearth/demo/twms/epsg4326
+cp -r /usr/share/onearth/apache/ /usr/share/onearth/demo/twms/epsg4326
 ```
 
 2) Check permissions
+
+
+## WMS
+
+1) Create the endpoint directory and link to mapserv binary
+
+```
+mkdir -p /usr/share/onearth/demo/wms/epsg4326
+ln -s /usr/bin/mapserv /usr/share/onearth/demo/wms/epsg4326/index.html
+```
+
+2) Check permissions
+
+Note that TWMS endpoints must exist in order to leverage mod_onearth time snapping.
+
 
 ## KML
 

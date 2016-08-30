@@ -3,11 +3,24 @@
 The following sections outline the configuration updates that are required in order to serve imagery through the OnEarth apache module.  Configuration changes may be made directly in the `/etc/httpd/conf/conf.d` file or in a `/etc/httpd/conf.d/<config.d>` file.  The latter requires that Apache be configured to read configuration files in the `conf.d` directory.
 
 ## OnEarth Modules
-The OnEarth utility installs two Apache modules into the apache `<lib dir>/httpd/modules/` directory.  Apache must be configured to include these modules.  To do so, the following lines must be added to the apache configuration file.
+The OnEarth utility installs Apache modules into the apache `<lib dir>/httpd/modules/` directory.  Apache must be configured to include these modules.  To do so, the following lines must be added to the Apache configuration file.
 
-```bash
+```
 LoadModule onearth_module modules/mod_onearth.so
 LoadModule twms_module modules/mod_twms.so
+```
+
+For OnEarth WMS/WFS support using Mapserver, the onearth-mapserver package must be installed and the following lines must be added to the Apache configuration file.
+
+```
+LoadModule oems_module modules/mod_oems.so
+LoadModule oemstime_module modules/mod_oemstime.so
+```
+
+It is also recommended to increase the internal recursion limit for WMS support as these modules may cause a lot of internal redirects.
+
+```
+LimitInternalRecursion 20
 ```
 
 ## OnEarth Endpoint Directories
@@ -18,23 +31,24 @@ A '<Directory>' element must be included in the Apache configuration for each On
 * **Rewrite** - The suggested configuration rewrites '.jpg' to '.jpeg' to optimize URL matching internal to the OnEarth module.
 
 Sample WMTS endpoint
-```Shell
-<Directory "/usr/share/onearth/demo/wmts-geo">
+
+```
+<Directory "/usr/share/onearth/demo/wmts/epsg4326">
     Options Indexes FollowSymLinks +ExecCGI
     AddHandler cgi-script .cgi
     AllowOverride None
     Order allow,deny
     Allow from all
     WMSCache        /usr/share/onearth/demo/data/EPSG4326/cache_wmts.config
-
     Header set Access-Control-Allow-Origin *
 
 </Directory>
 ```
 
 Sample Tiled-WMS endpoint
-```Shell
-<Directory "/usr/share/onearth/demo/twms-geo">
+
+```
+<Directory "/usr/share/onearth/demo/epsg4326">
     Options Indexes FollowSymLinks ExecCGI
     AddHandler cgi-script .cgi
     AllowOverride None
@@ -42,11 +56,30 @@ Sample Tiled-WMS endpoint
     Allow from all
     wmsCache /usr/share/onearth/demo/data/EPSG4326/cache.config
     TWMSDirConfig .lib/getTileService.xml
+    Header set Access-Control-Allow-Origin *
+</Directory>
+```
+
+Sample WMS endpoint
+
+```
+ScriptAlias /wms/epsg4326 /usr/share/onearth/demo/wms/epsg4326
+<Directory "/usr/share/onearth/demo/wms/epsg4326">
+    Options Indexes FollowSymLinks ExecCGI
+    AddHandler cgi-script .cgi
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+    MapfileDir /usr/share/onearth/demo/mapserver/
+    DefaultMapfile epsg4326.map
+    TWMSServiceURL http://localhost/twms/epsg{SRS}/twms.cgi
+    Header set Access-Control-Allow-Origin *
 </Directory>
 ```
 
 A new endpoint must be create for each projection.  For instance, if Web Mercator projected imagery is also desired as a WMTS endpoint:
-```Shell
+
+```
 <Directory "/usr/share/onearth/demo/wmts-webmerc">
     Options Indexes FollowSymLinks +ExecCGI
     AddHandler cgi-script .cgi
@@ -54,9 +87,7 @@ A new endpoint must be create for each projection.  For instance, if Web Mercato
     Order allow,deny
     Allow from all
     WMSCache        /usr/share/onearth/demo/data/EPSG3857/cache_wmts.config
-
     Header set Access-Control-Allow-Origin *
-
 </Directory>
 ```
 

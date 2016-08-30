@@ -163,7 +163,8 @@ If no configuration file or directory is specified, the tool will look for files
 
 There is a `--generate_links` option that will automatically create soft links to files designated as the "default" for time varying layers (read this [documentation](archive.md#default-files) for more information on "Default Files"). 
 
-Additionally, there is an option to generate mapfile configurations for MapServer: `--create_mapfile`
+Additionally, there is an option to generate mapfile configurations for MapServer: `--create_mapfile`.
+Mapfile header files must exist in the `MapfileConfigLocation` of the environment configuration. Resulting mapfiles will be placed in the location specified with `MapfileLocation`.
 
 ### Restart Apache
 

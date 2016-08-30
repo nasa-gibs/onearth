@@ -70,6 +70,7 @@ The environment configuration file contains information that the OnEarth layer c
 * **ColorMap Location** - The file system path where color map files may be found. 
 * **ColorMap URL** - The base URL for external access to color maps.
 * **Mapfile** - (Optional) The file location and name of the Mapfile for MapServer.
+* **MapfileStagingLocation** (Optional) The location to stage configuration files for MapServer.
 * **MapfileConfigLocation** (Optional) The location of configuration files for MapServer.
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
@@ -91,6 +92,7 @@ The environment configuration does not have unique identifier.  Reference to the
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
     <ColorMapURL>http://onearth.project.org/colormaps/</ColorMapURL>
     <Mapfile>/usr/share/onearth/demo/mapserver/epsg4326.map</Mapfile>
+    <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG4326/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
 </EnvironmentConfiguration>
 ```

@@ -117,3 +117,12 @@ layers.**
 **For z-level subdaily layers, dates/times are not snapped.** Any
 request for a granule that does not exist currently results in a WMTS
 error.
+
+=====
+###WMS Time Snapping:
+
+**Time snapping also works via WMS request with the onearth-mapserver packaged installed.** mod_oems and mod_oemstime must be configured for the endpoint for time snapping to occur.
+
+**A Tiled-WMS endpoint must exist for mod_oemstime to leverage the mod_onearth time snapping functions.**
+
+**Time snapping will work with WMS requests with multiple layers.** If the requested date is invalid for a layer, that layer will be ignored by the request.

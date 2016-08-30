@@ -28,7 +28,9 @@ sudo yum -y install onearth-*
 
 For manual installation or to install or another OS, please refer to the specific component:
 
-* [mod_onearth](../src/mod_onearth/README.md)
+* [mod_onearth](../src/modules/mod_onearth/README.md)
+* [mod_oems](../src/modules/mod_oems/README.md)
+* [mod_oemstime](../src/modules/mod_oemstime/README.md)
 * [mrfgen](../src/mrfgen/README.md)
 * [OnEarth Layer Configurator](../src/layer_config/README.md)
 * [OnEarth Legend Generator](../src/generate_legend/README.md)
@@ -47,6 +49,16 @@ mod_onearth
 /usr/share/onearth/apache/*
 /usr/share/onearth/apache/kml/*
 ```
+
+mod_oems
+``
+/etc/httpd/modules/mod_oems.so
+``
+
+mod_oemstime
+``
+/etc/httpd/modules/mod_oemstime.so
+``
 
 mrfgen
 ```
@@ -74,6 +86,24 @@ OnEarth Demo
 ```
 /usr/share/onearth/demo/*
 /etc/httpd/conf.d/on_earth-demo.conf
+```
+
+OnEarth Mapserver
+```
+/usr/bin/legend
+/usr/bin/mapserv
+/usr/bin/msencrypt
+/usr/bin/scalebar
+/usr/bin/shp2img
+/usr/bin/shptree
+/usr/bin/shptreetst
+/usr/bin/shptreevis
+/usr/bin/sortshp
+/usr/bin/tile4ms
+/usr/lib64/libmapserver.so*
+/usr/include/mapserver/*
+/usr/lib64/python2.6/site-packages/_mapscript*
+/usr/lib64/python2.6/site-packages/mapscript*
 ```
 
 ## Next Steps
