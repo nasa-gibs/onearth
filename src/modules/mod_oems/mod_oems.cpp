@@ -234,7 +234,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 			apr_cpystrn(proj, "CRS", 4);
 			get_param(args,"crs",srs);
 		}
-		if(strlen(srs) == 0 || ((ap_strstr(srs, ":") == 0) && ap_strstr(srs, "%3A") == 0)) {
+		if(strlen(srs) == 0 || ((ap_strstr(srs, ":") == 0) && ap_strcasestr(srs, "%3A") == 0)) {
 			apr_cpystrn(srs, "NONE", 5);
 			apr_table_setn(r->notes, "oems_srs", 0);
 		} else if (epsg == 0) {

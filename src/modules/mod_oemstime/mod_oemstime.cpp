@@ -73,7 +73,7 @@ static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
 				split = apr_strtok(NULL,"{SRS}",&last);
 			}
 			if (ap_strstr(srs, ":") == 0) {
-				srs = ap_strstr(srs, "%3A");
+				srs = ap_strcasestr(srs, "%3A");
 				srs += 3;
 			} else {
 				srs = ap_strstr(srs, ":");
