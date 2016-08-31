@@ -2342,7 +2342,7 @@ $Patterns</TiledGroup>"""
         layer_xml.close()
         
     # Create mapfile (if specified by user)
-    if create_mapfile is True environment.mapfileStagingLocation is not None:
+    if create_mapfile is True and environment.mapfileStagingLocation is not None:
         # Write mapfile info for layer
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:
