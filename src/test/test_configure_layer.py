@@ -167,8 +167,8 @@ class TestLayerConfig(unittest.TestCase):
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_legend_generation.xml')
-        h_legend_ref_hash = '5b618677e22f79063580ca5edb2a0db5'
-        v_legend_ref_hash = '1d73b1a60326437c4b839c74683853aa'
+        h_legend_ref_hash = '45223e22a673700d52f17c6658eac7e0'
+        v_legend_ref_hash = 'cf9b632f30fbdbea466a489ecf363d76'
 
         config = get_layer_config(layer_config, self.archive_config)
 
