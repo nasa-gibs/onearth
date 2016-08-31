@@ -1,5 +1,5 @@
 MAP
-  Name                  "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)"
+  Name                  "NASA_GIBS_4326"
   UNITS                 dd
   MAXSIZE               20000
   SIZE                  1600 1200
@@ -55,7 +55,7 @@ MAP
       "wms_contactposition"		"GIBS User Support"
       "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
       "wms_enable_request"      "GetMap GetCapabilities"
-      "wms_srs"                 "epsg:4326"
+      "wms_srs"                 "EPSG:4326 EPSG:3857"
       "wms_connectiontimeout"   "180"
       "wms_layerlimit"			"5"
     END
