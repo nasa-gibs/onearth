@@ -692,7 +692,7 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
     			}
     		}
     	}
-    	if (sqlite3_column_count(res) > 4) { // Check if there are scale and offset columns
+    	if (sqlite3_column_count(res) > 5) { // Check if there are scale, offset, and uom columns
     		if (strcmp(sqlite3_column_name(res, 3), "scale") == 0) {
     			if (sqlite3_column_text(res, 3) != NULL) {
 					char *scale = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 3))+1);
@@ -705,6 +705,13 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
     				char *offset = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 4))+1);
 					apr_cpystrn(offset, (char*)sqlite3_column_text(res, 4), strlen(sqlite3_column_text(res, 4))+1);
 					apr_table_setn(r->headers_out, "Offset", offset);
+    			}
+    		}
+    		if (strcmp(sqlite3_column_name(res, 5), "uom") == 0) {
+    			if (sqlite3_column_text(res, 5) != NULL) {
+    				char *uom = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 5))+1);
+					apr_cpystrn(uom, (char*)sqlite3_column_text(res, 5), strlen(sqlite3_column_text(res, 5))+1);
+					apr_table_setn(r->headers_out, "UOM", uom);
     			}
     		}
     	}
@@ -2341,6 +2348,9 @@ static int mrf_handler(request_rec *r)
   // Set gzip encoding if output is pbf
   if (apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf") == 0) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
+  }
+  if (apr_strnatcmp(cfg->meta[count].mime_type, "image/lerc") == 0) {
+  	apr_table_setn(r->headers_out, "Content-Encoding", "deflate");
   }
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
