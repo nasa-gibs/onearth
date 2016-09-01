@@ -29,7 +29,7 @@
         <DCPType>
           <HTTP>
             <Get>
-              <OnlineResource xlink:href="http://localhost/onearth/test/twms/" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
+              <OnlineResource xlink:href="http://localhost/onearth/test/twms/twms.cgi?" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
             </Get>
           </HTTP>
         </DCPType>
@@ -38,13 +38,13 @@
         <Format>image/jpeg</Format>
         <Format>image/png</Format>
         <DCPType> <HTTP> <Get>
-          <OnlineResource xlink:href="http://localhost/onearth/test/twms/" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
+          <OnlineResource xlink:href="http://localhost/onearth/test/twms/twms.cgi?" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
         </Get> </HTTP> </DCPType>
       </GetMap>
       <GetTileService>
         <Format>text/xml</Format>
         <DCPType><HTTP><Get>
-          <OnlineResource xlink:href="http://localhost/onearth/test/twms/" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
+          <OnlineResource xlink:href="http://localhost/onearth/test/twms/twms.cgi?" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
         </Get></HTTP></DCPType>
       </GetTileService>
     </Request>
@@ -57,6 +57,16 @@
       <Title>Global Imagery Browse Services</Title>
       <SRS>EPSG:4326</SRS>
       <CRS>EPSG:4326</CRS>
+    <Layer queryable="0">
+      <Name>mvt_test</Name>
+      <Title xml:lang="en">OnEarth MVT Tile Test</Title>
+      <Abstract xml:lang="en">mvt_test abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
     <Layer queryable="0">
       <Name>snap_test_1a</Name>
       <Title xml:lang="en">OnEarth Date Snapping Scenario 1a</Title>

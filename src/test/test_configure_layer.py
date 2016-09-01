@@ -48,7 +48,7 @@ import re
 import hashlib
 
 import oe_test_utils as testutils
-from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, get_file_hash, file_text_replace
+from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, file_text_replace
 
 DEBUG = False
 
@@ -713,6 +713,53 @@ class TestLayerConfig(unittest.TestCase):
 
                 # Check result
                 self.assertTrue(check_result, error)
+
+    def test_vector_mapfile_style_inclusion(self):
+        """
+        Checks that the style snippet file indicated by <VectorStyleFile> is included
+        in the output Mapfile.
+        """
+        if DEBUG:
+            print '\nTESTING THAT VECTOR STYLES ARE INCLUDED IN GENERATED MAPFILE...'
+
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_vector_mapfile_style_inclusion.xml')
+        config = get_layer_config(layer_config, self.archive_config)
+
+        make_dir_tree(config['mapfile_staging_location'])
+        cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4} -n -w -x --create_mapfile'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd, ignore_warnings=True)
+
+        output_mapfile = os.path.join(config['mapfile_location'], config['mapfile_location_basename'] + '.map')
+
+        self.assertTrue(os.path.exists(output_mapfile), "Vector Mapfile Style addition test -- mapfile not created")
+
+        with open(output_mapfile) as mapfile:
+            with open(os.path.join(self.testfiles_path, config['vector_style_file'])) as style_file:
+                styles_exist = style_file.read() in mapfile.read()
+        self.assertTrue(styles_exist, 'Style file stuff not found in output mapfile')
+
+    def test_vector_data_type_inclusion(self):
+        """
+        Checks that the <VectorType> tag is being read and included in the output Mapfile.
+        """
+        if DEBUG:
+            print '\nTESTING THAT VECTOR DATA TYPE IS INCLUDED IN GENERATED MAPFILE...'
+
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_vector_mapfile_type_inclusion.xml')
+        config = get_layer_config(layer_config, self.archive_config)
+
+        make_dir_tree(config['mapfile_staging_location'])
+        cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4} -n -w -x --create_mapfile'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd, ignore_warnings=True)
+
+        output_mapfile = os.path.join(config['mapfile_location'], config['mapfile_location_basename'] + '.map')
+
+        self.assertTrue(os.path.exists(output_mapfile), "Vector Mapfile Type addition test -- mapfile not created")
+
+        with open(output_mapfile) as mapfile:
+            mapfile_type_string = str('TYPE\t' + config['vector_type'].upper())
+            type_string_exists = mapfile_type_string in mapfile.read()
+        self.assertTrue(type_string_exists, 'Style file stuff not found in output mapfile')
 
     def tearDown(self):
         rmtree(self.testfiles_path)

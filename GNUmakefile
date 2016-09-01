@@ -13,6 +13,7 @@
 ONEARTH_VERSION=1.1.0
 
 PREFIX=/usr/local
+LIB_PREFIX=/usr
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
 LIB_DIR=$(shell \
 	[ "$(shell arch)" == "x86_64" ] \
@@ -25,6 +26,8 @@ MPL_ARTIFACT=matplotlib-1.5.1.tar.gz
 MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
 CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
+SPATIALINDEX_ARTIFACT=spatialindex-src-1.8.5.tar.gz
+SPATIALINDEX_URL=http://download.osgeo.org/libspatialindex/$(SPATIALINDEX_ARTIFACT)
 
 MAPSERVER_VERSION=7.0.1
 MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
@@ -34,13 +37,13 @@ MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack mapserver-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack spatialindex-unpack mapserver-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download mapserver-download
+download: mpl-download cgicc-download spatialindex-download mapserver-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -57,7 +60,15 @@ upstream/$(CGICC_ARTIFACT).downloaded:
 	rm -f upstream/$(CGICC_ARTIFACT)
 	( cd upstream ; wget $(CGICC_URL) )
 	touch upstream/$(CGICC_ARTIFACT).downloaded
-	
+
+spatialindex-download: upstream/$(SPATIALINDEX_ARTIFACT).downloaded
+
+upstream/$(SPATIALINDEX_ARTIFACT).downloaded: 
+	mkdir -p upstream
+	rm -f upstream/$(SPATIALINDEX_ARTIFACT)
+	( cd upstream ; wget $(SPATIALINDEX_URL) )
+	touch upstream/$(SPATIALINDEX_ARTIFACT).downloaded
+
 mapserver-download: upstream/$(MAPSERVER_ARTIFACT).downloaded
 
 upstream/$(MAPSERVER_ARTIFACT).downloaded:
@@ -83,6 +94,15 @@ build/cgicc/VERSION:
 	mkdir -p build/cgicc
 	tar xf upstream/$(CGICC_ARTIFACT) -C build/cgicc \
 		--strip-components=1 --exclude=.gitignore
+
+spatialindex-unpack: build/spatialindex/VERSION
+
+build/spatialindex/VERSION:
+	mkdir -p build/spatialindex
+	tar xf upstream/$(SPATIALINDEX_ARTIFACT) -C build/spatialindex \
+		--strip-components=1 --exclude=.gitignore
+	cd build/spatialindex && ./configure --libdir=$(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR) --prefix=$(DESTDIR)/$(LIB_PREFIX)
+	$(MAKE) -C build/spatialindex
 		
 mapserver-unpack: build/mapserver/VERSION
 
@@ -127,6 +147,8 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/mrfgen
 	install -m 755 src/mrfgen/colormap2vrt.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/colormap2vrt.py
+	install -m 755 src/mrfgen/overtiffpacker.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/overtiffpacker.py
 	install -m 755 src/mrfgen/RGBApng2Palpng  \
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 
@@ -134,6 +156,7 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	install -m 755 src/cgi/twms.cgi \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 src/cgi/wmts.cgi \
@@ -174,6 +197,16 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
 
+	
+	install -m 755 src/vectorgen/*.py \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
+	install -m 755 src/layer_config/conf/tilematrixsets.xml \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
+	ln -s ../share/onearth/vectorgen/oe_vectorgen.py $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen
+
+	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
+	$(MAKE) install -C build/spatialindex
+
 
 #-----------------------------------------------------------------------------
 # Local install
@@ -194,7 +227,7 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime \
+		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime src/vectorgen \
 		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------
@@ -210,6 +243,7 @@ onearth-rpm: onearth-artifact
 	cp \
 		upstream/$(MPL_ARTIFACT) \
 		upstream/$(CGICC_ARTIFACT) \
+		upstream/$(SPATIALINDEX_ARTIFACT) \
 		upstream/$(MAPSERVER_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES

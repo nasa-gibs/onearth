@@ -45,7 +45,7 @@ from shutil import rmtree
 from optparse import OptionParser
 import datetime
 
-from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url
+from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, check_valid_mvt
 
 DEBUG = False
 
@@ -323,7 +323,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         14. Request WMTS GetCapabilities
         """
-        ref_hash = '89c72f00e64a9b29e51d968c2b62f0c2'
+        ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
@@ -335,7 +335,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         15. Request TWMS GetCapabilities
         """
-        ref_hash = '43080318f8270d0213574527a74ad058'
+        ref_hash = 'd2536cb2c0681c56b005eb9d60336326'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting TWMS GetCapablities'
@@ -347,7 +347,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16. Request TWMS GetTileService
         """
-        ref_hash = '5bc5886911453bd334aeb1417fd79853'
+        ref_hash = '7555d5ad3cca96aa8cbc8a36f5e04f19'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetTileService'
         if DEBUG:
             print '\nTesting WMTS GetTileService'
@@ -731,6 +731,14 @@ class TestModOnEarth(unittest.TestCase):
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods stretching across a year boundary requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
+
+    def test_mvt_layer(self):
+        layer_name = 'mvt_test'
+        req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer={0}&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-01-01'.format(layer_name)
+        if DEBUG:
+            print '\nTesting for Valid MVT Tile'
+        mvt_tile = get_url(req_url)
+        self.assertTrue(check_valid_mvt(mvt_tile), 'Output tile for MVT test layer is not a valid MVT tile.')
 
     # TEARDOWN
 

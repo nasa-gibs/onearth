@@ -582,12 +582,15 @@ static void *r_file_pread(request_rec *r, char *fname,
 }
 
 char *get_keyword(request_rec *r) {
-	  char *keyword = apr_pcalloc(r->pool,16);
+	  char *keyword = apr_pcalloc(r->pool,24);
 
 	  static char* timearg="time=";
+	  static char* stylearg="style=";
 	  char *targ=0;
+	  char *sarg=0;
 	  apr_time_exp_t tm; tm.tm_year=0; tm.tm_mon=0; tm.tm_mday=0; tm.tm_hour=0; tm.tm_min=0; tm.tm_sec=0;
 
+	  // Assume keyword is time for granules
 	  if ((targ=ap_strcasestr(r->args,timearg))) {
 	    targ+=5; // Skip the time= part
 	    if (strlen(targ)==24) { // Make sure time is in correct length
@@ -604,22 +607,43 @@ char *get_keyword(request_rec *r) {
 				targ+=5;
 				tm.tm_sec = apr_atoi64(targ);
 			}
-			sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);	
-	    } else if (strlen(targ)!=0) {
-	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
-	    	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
-			wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
-	    	return 0;
+			// Check if keyword should also include style
+	    	if ((sarg=ap_strcasestr(r->args,stylearg))) {
+	    		sarg+=6; // Skip the style= part
+	    		apr_cpystrn(keyword, sarg, 8);
+	    		if (ap_strstr(keyword,"encoded")) {
+	    			sprintf(keyword,"%04d%02d%02d%02d%02d%02d|encoded",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	    		} else {
+	    			sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	    		}
+	    	}
+	    	else {
+	    		sprintf(keyword,"%04d%02d%02d%02d%02d%02d",tm.tm_year,tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	    	}
+	    } else {
+	    	// Check if keyword should be style
+	    	if ((sarg=ap_strcasestr(r->args,stylearg))) {
+	    		sarg+=6; // Skip the style= part
+	    		apr_cpystrn(keyword, sarg, 8);
+	    		if (ap_strstr(keyword,"&TILEMA")) { // handle default styling
+	    			sprintf(keyword,"");
+	    		}
+	    	}
+//	    	else if (strlen(targ)!=0) {
+//				ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request: %s",r->args);
+//				ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Invalid time format: %s",targ);
+//				wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, granules must be YYYY-MM-DDThh:mm:ssZ");
+//				return 0;
+//	    	}
 	    }
 	  }
 
-//	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Keyword: %s",keyword);
 	  return keyword;
 }
 
 // Lookup the z index from ZDB file based on keyword
 static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
-	// ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
+//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Get z-index from %s with keyword %s", zidxfname, keyword);
 
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -637,7 +661,7 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
         return -1;
     }
 
-    char *sql = strlen(keyword)!=0 ? "SELECT z FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT z FROM ZINDEX order by key_str DESC LIMIT 1";
+    char *sql = strlen(keyword)!=0 ? "SELECT * FROM ZINDEX WHERE key_str = ? LIMIT 1" :  "SELECT * FROM ZINDEX WHERE key_str NOT LIKE '%encoded%' ORDER BY key_str DESC LIMIT 1";
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
     if (rc != SQLITE_OK) {
@@ -645,13 +669,45 @@ static int get_zlevel(request_rec *r, char *zidxfname, char *keyword) {
         sqlite3_close(db);
         return -1;
     } else if (strlen(keyword)!=0) {
-        sqlite3_bind_text(res, 1, keyword, 14, SQLITE_STATIC);
+        sqlite3_bind_text(res, 1, keyword, strlen(keyword), SQLITE_STATIC);
     }
 
     rc = sqlite3_step(res);
 
     if (rc == SQLITE_ROW) {
     	z = apr_atoi64((char*)sqlite3_column_text(res, 0));
+    	if (sqlite3_column_count(res) > 1) { // Check if there is a key_str column
+    		if (strcmp(sqlite3_column_name(res, 1), "key_str") == 0) {
+				char *key = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 1))+1);
+				apr_cpystrn(key, (char*)sqlite3_column_text(res, 1), strlen(sqlite3_column_text(res, 1))+1);
+				apr_table_setn(r->headers_out, "Source-Key", key);
+    		}
+    	}
+    	if (sqlite3_column_count(res) > 2) { // Check if there is a source_url column
+    		if (strcmp(sqlite3_column_name(res, 2), "source_url") == 0) {
+    			if (sqlite3_column_text(res, 2) != NULL) {
+					char *source_data = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 2))+1);
+					apr_cpystrn(source_data, (char*)sqlite3_column_text(res, 2), strlen(sqlite3_column_text(res, 2))+1);
+					apr_table_setn(r->headers_out, "Source-Data", source_data);
+    			}
+    		}
+    	}
+    	if (sqlite3_column_count(res) > 4) { // Check if there are scale and offset columns
+    		if (strcmp(sqlite3_column_name(res, 3), "scale") == 0) {
+    			if (sqlite3_column_text(res, 3) != NULL) {
+					char *scale = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 3))+1);
+					apr_cpystrn(scale, (char*)sqlite3_column_text(res, 3), strlen(sqlite3_column_text(res, 3))+1);
+					apr_table_setn(r->headers_out, "Scale", scale);
+    			}
+    		}
+    		if (strcmp(sqlite3_column_name(res, 4), "offset") == 0) {
+    			if (sqlite3_column_text(res, 4) != NULL) {
+    				char *offset = apr_pcalloc(r->pool,strlen(sqlite3_column_text(res, 4))+1);
+					apr_cpystrn(offset, (char*)sqlite3_column_text(res, 4), strlen(sqlite3_column_text(res, 4))+1);
+					apr_table_setn(r->headers_out, "Offset", offset);
+    			}
+    		}
+    	}
     } else {
     	wmts_add_error(r,404,"ImageNotFound","TIME", "Image cannot be found for the requested date and time");
     }
@@ -872,6 +928,10 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/png");
       else if (ap_find_token(cfg->p,cache->prefix,"tiff"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
+      else if (ap_find_token(cfg->p,cache->prefix,"lerc"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/lerc");
+       else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf");
       else {
 	ap_log_error(APLOG_MARK,APLOG_ERR,0,server,
 	  "Type not found, using text/html for cache %s", cache->pattern);
@@ -1590,8 +1650,11 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Fjpeg");
 	} else if (ap_strcasecmp_match(format, "image/tiff") == 0) {
 		strcpy(format,"image%2Ftiff");
+	} else if (ap_strcasecmp_match(format, "image/lerc") == 0) {
+		strcpy(format,"image%2Flerc");
+	} else if (ap_strcasecmp_match(format, "application/x-protobuf") == 0) {
+		strcpy(format,"application%2Fx-protobuf");
 	}
-
 	// handle colons
 	if (ap_strchr(time, ':') != 0) {
 		int i; i= 0;
@@ -2275,6 +2338,10 @@ static int mrf_handler(request_rec *r)
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
+  // Set gzip encoding if output is pbf
+  if (apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf") == 0) {
+  	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
+  }
   ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
@@ -2307,6 +2374,7 @@ int rewrite_rest_uri(request_rec *r) {
 	char *p;
 	char *params[16];
 	char *last;
+	char *format = apr_pcalloc(r->pool,26);
 
 	i = 0;
 	p = apr_strtok(r->uri,"/",&last);
@@ -2340,12 +2408,20 @@ int rewrite_rest_uri(request_rec *r) {
 		p = apr_strtok(NULL, ".",&last);
 	}
 
+	if (ap_strcasecmp_match(params[length+d],"pbf") == 0) {
+		sprintf(format,"application%%2Fx-protobuf");
+	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
+		sprintf(format,"image%%2F%sjpeg");
+	} else {
+		sprintf(format,"image%%2F%s", params[length+d]);
+	}
+
 	if (length == 7)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],ap_strcasecmp_match(params[7+d],"jpg") == 0 ? "jpeg" : params[7+d]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[3+d],params[4+d],params[5+d],params[6+d],format);
 	if (length == 8)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[8+d],"jpg") == 0 ? "jpeg" : params[8+d],params[3+d]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d]);
 	if (length == 9)
-		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=image%%2F%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],ap_strcasecmp_match(params[9+d],"jpg") == 0 ? "jpeg" : params[9+d],params[3+d],params[8+d]);
+		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d],params[8+d]);
 //	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
 	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
 	return 0;
@@ -2355,7 +2431,7 @@ static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
   if (!(r->args)) {
-	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") )) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") )) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else

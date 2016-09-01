@@ -45,6 +45,9 @@ then
   then
     echo -e "Content-type: image/jpeg\n"
     cat black.jpg
+  elif [[ $QUERY_STRING == *x-protobuf* ]]
+  then
+  	echo -e "Content-type: application/x-protobuf\n"
   else
     echo -e "Content-type: image/png\n"
     cat transparent.png

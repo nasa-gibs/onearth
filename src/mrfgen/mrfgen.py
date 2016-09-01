@@ -91,6 +91,7 @@ import shutil
 import imghdr
 import sqlite3
 import math
+from overtiffpacker import pack
 
 versionNumber = '1.1.0'
 basename = None
@@ -754,7 +755,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 log_sig_err('mrf_insert ' + message, sigevent_url)
             else:
                 log_info_mssg(message.strip())
-        # clean up        
+        # clean up      
         if ".blend." in tile:
             remove_file(tile)
             tile = tile.split('.vrt.blend.')[0]
@@ -766,13 +767,16 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
     return errors
 
 
-def insert_zdb(mrf, zlevels, zkey):
+def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset):
     """
     Inserts a list of tiles into an existing MRF
     Argument:
         mrf -- An MRF file
         zlevels -- The number of z-levels expected
         zkey -- The key to be used with the z-index
+        source_url -- The URL of the source dataset
+        scale -- Scale factor for encoded data values
+        offset -- Offset of encoded data values
     """  
     # Check if z-dimension is consistent if it's being used
     if zlevels != '':
@@ -808,8 +812,13 @@ def insert_zdb(mrf, zlevels, zkey):
         con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
         
         if db_exists == False:
-            cur = con.cursor() 
-            cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
+            cur = con.cursor()
+            create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);"
+            if source_url != "": 
+                create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT);"
+            if scale != None:
+                create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT, scale INTEGER, offset INTEGER);"
+            cur.executescript(create_script)
             con.commit()
 
         if zkey != '':
@@ -840,6 +849,12 @@ def insert_zdb(mrf, zlevels, zkey):
                     cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
                 z = cur.lastrowid
                 log_info_mssg("Current z-level is " +str(z))
+            if source_url != "" and source_url != "NONE":
+                log_info_mssg("Adding Source URL " + source_url + " to z=" +str(z))
+                cur.execute("UPDATE ZINDEX SET source_url=('"+source_url+"') WHERE z="+str(z))
+            if scale != None and offset != None:
+                log_info_mssg("Adding Scale:" + str(scale) + " and Offset:" + str(offset) + " to z=" +str(z))
+                cur.execute("UPDATE ZINDEX SET scale=("+str(scale)+"), offset=("+str(offset)+") WHERE z="+str(z))
         
     except sqlite3.Error, e:
         if con:
@@ -1129,6 +1144,13 @@ else:
             blend = True
     except:
         blend = False
+    try:
+        source_url = get_dom_tag_value(dom, 'source_url')
+    except:
+        if len(dom.getElementsByTagName('source_url')) > 0:
+            source_url = "NONE"
+        else:
+            source_url = ''    
     # Close file.
     config_file.close()
 
@@ -1209,6 +1231,7 @@ log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(blend)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
+log_info_mssg(str().join(['config source_url:              ', source_url]))
 log_info_mssg(str().join(['mrfgen current_cycle_time:      ', current_cycle_time]))
 log_info_mssg(str().join(['mrfgen basename:                ', basename]))
 
@@ -1234,8 +1257,8 @@ else:
 
     # Verify that the empty tile image format is either PNG or JPEG.
     mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
-    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff':
-        mssg='Empty tile image format must be either png, jpeg, or tiff.'
+    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff' and mrf_empty_tile_what != 'lerc':
+        mssg='Empty tile image format must be either png, jpeg, tiff, or lerc.'
         log_sig_exit('ERROR', mssg, sigevent_url)
     
     # Verify that the empty tile matches MRF compression type.
@@ -1272,6 +1295,10 @@ os.chdir(working_dir)
 
 # transparency flag for custom color maps; default to False
 add_transparency = False
+
+# Declare scale and offset
+scale = None
+offset = None
 
 # Get list of all tile filenames.
 alltiles = []
@@ -1422,12 +1449,58 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 add_transparency = True
             else:
                 log_info_mssg("Paletted image verified")
-                
+
         # remove tif temp tiles
         if temp_tile != None:
             remove_file(temp_tile)
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')     
+
+# Create an encoded PNG from GeoTIFF
+if mrf_compression_type == 'EPNG':
+    scale = 0
+    offset = 0
+    for i, tile in enumerate(alltiles):
+        tile_path = os.path.dirname(tile)
+        tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
+        output_tile = working_dir+tile_basename+'.png'
+        # Check if input is TIFF      
+        if tile.lower().endswith(('.tif', '.tiff')):
+            # Get Scale and Offset from gdalinfo
+            gdalinfo_command_list = ['gdalinfo', tile]    
+            log_the_command(gdalinfo_command_list)
+            gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            gdalinfo_out = gdalinfo.stdout.readlines()
+            if "Offset:" in ''.join(gdalinfo_out) and "Scale:" in ''.join(gdalinfo_out):
+                log_info_mssg(tile + " is already an encoded TIFF")
+            else: # Encode the TIFF file
+                encoded_tile = working_dir+tile_basename+'_encoded.tif'
+                log_info_mssg(tile + " will be encoded as " + encoded_tile) 
+                pack(tile, encoded_tile, False, True, None, None, None, False)
+                tile = encoded_tile
+                gdalinfo_command_list = ['gdalinfo', tile]    
+                log_the_command(gdalinfo_command_list)
+                gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                gdalinfo_out = gdalinfo.stdout.readlines()
+            log_info_mssg("Reading scale and offset from bands")
+            for line in gdalinfo_out:
+                if "Offset:" in line and "Scale:" in line:
+                    offset,scale = line.strip().replace("Offset: ","").replace("Scale:","").split(",")
+                    log_info_mssg("Offset: " + offset + ", Scale: " + scale)
+                    scale = int(scale)
+                    offset = int(offset)
+            gdalinfo_stderr = gdalinfo.stderr.read()
+            if len(gdalinfo_stderr) > 0:
+                log_sig_err(gdalinfo_stderr, sigevent_url)
+                        
+            # Convert the tile to PNG
+            gdal_translate_command_list = ['gdal_translate', '-of', 'PNG', tile, output_tile]    
+            log_the_command(gdal_translate_command_list)
+            gdal_translate = subprocess.Popen(gdal_translate_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            gdal_translate_stderr = gdal_translate.stderr.read()
+            if len(gdal_translate_stderr) > 0:
+                log_sig_err(gdal_translate_stderr, sigevent_url)
+            alltiles[i] = output_tile  
 
 # sort
 alltiles.sort()
@@ -1492,22 +1565,19 @@ mrf_filename=str().join([output_dir, basename, '.mrf'])
 # The .idx file is the index compnent of the MRF format.
 idx_filename=str().join([output_dir, basename, '.idx'])
 
-# The image component of MRF is .pjg or .ppg, depending on compression type.
-if mrf_compression_type == 'PNG':
+# The image component of MRF is .pjg, .ppg, .ptf, or lrc depending on compression type.
+if mrf_compression_type == 'PNG' or mrf_compression_type == 'PPNG' or mrf_compression_type == 'EPNG':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ppg'])
-elif mrf_compression_type == 'PPNG':
-    # Output filename.
-    out_filename=str().join([output_dir, basename, '.ppg'])
-elif mrf_compression_type == 'JPG':
-    # Output filename.
-    out_filename=str().join([output_dir, basename, '.pjg'])
-elif mrf_compression_type == 'JPEG':
+elif mrf_compression_type == 'JPG' or mrf_compression_type == 'JPEG':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.pjg'])
 elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ptf'])
+elif mrf_compression_type == 'LERC':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.lrc'])
 else:
     mssg='Unrecognized compression type for MRF: ' + mrf_compression_type 
     log_sig_exit('ERROR', mssg, sigevent_url)
@@ -1547,7 +1617,7 @@ if len(mrf_list) > 0:
         
     # Check if zdb is used
     if zlevels != '':
-        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey)
+        mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey, source_url, scale, offset)
     else:
         con = None
         
@@ -1578,7 +1648,7 @@ if zlevels != '':
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
-    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey)
+    gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url, scale, offset)
 else:
     con = None
     gdal_mrf_filename = mrf_filename
@@ -1689,7 +1759,7 @@ remove_file(gdalbuildvrt_stderr_filename)
 if mrf_compression_type == 'PNG':
     # Unpaletted PNG.
     compress=str('COMPRESS=PNG')
-elif mrf_compression_type == 'PPNG':
+elif mrf_compression_type == 'PPNG'  or mrf_compression_type == 'EPNG':
     # Paletted PNG.
     compress=str('COMPRESS=PPNG')
 elif mrf_compression_type == 'JPG':
@@ -1698,6 +1768,8 @@ elif mrf_compression_type == 'JPEG':
     compress=str('COMPRESS=JPEG')
 elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
     compress=str('COMPRESS=TIF')
+elif mrf_compression_type == 'LERC':
+    compress=str('COMPRESS=LERC')
 else:
     mssg='Unrecognized compression type for MRF.'
     log_sig_exit('ERROR', mssg, sigevent_url)

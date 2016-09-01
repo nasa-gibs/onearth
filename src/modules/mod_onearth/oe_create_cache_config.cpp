@@ -324,6 +324,14 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             dat_ext=".ptf";
             sig=tif_sig;
             h_format="Content-type: image/tiff";
+        } else if (compression=="LERC") {
+            dat_ext=".lrc";
+            sig=0;
+            h_format="Content-type: image/lerc";
+        } else if (compression=="PBF") {
+            dat_ext=".pvt";
+            sig=0;
+            h_format="Content-type: application/x-protobuf";
         }
 
         idx_fname=CPLGetXMLValue(input,"Rsets.IndexFileName",ifname);

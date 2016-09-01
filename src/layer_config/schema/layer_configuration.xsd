@@ -25,8 +25,8 @@ limitations under the License.
         <xs:element ref="DataFileLocation" minOccurs="0"/>
         <xs:element ref="IndexFileLocation" minOccurs="0"/>
         <xs:element ref="ZIndexFileLocation" minOccurs="0"/>
-        <xs:element ref="Compression"/>
-        <xs:element ref="TileMatrixSet"/>
+        <xs:element ref="Compression" minOccurs="0"/>
+        <xs:element ref="TileMatrixSet" minOccurs="0"/>
         <xs:element ref="EmptyTileSize" minOccurs="0"/>
         <xs:element ref="EmptyTile" minOccurs="0"/>
         <xs:element ref="Projection"/>
@@ -40,6 +40,8 @@ limitations under the License.
         <xs:element ref="PageSize" minOccurs="0"/>
         <xs:element ref="Rsets" minOccurs="0"/>
         <xs:element ref="BoundingBox" minOccurs="0"/>
+        <xs:element ref="VectorType" minOccurs="0"/>
+        <xs:element ref="VectorStyleFile" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -124,4 +126,6 @@ limitations under the License.
       <xs:attribute name="miny" type="xs:decimal" use="required"/>
     </xs:complexType>
   </xs:element>
+  <xs:element name="VectorType" type="xs:string"/>
+  <xs:element name="VectorStyleFile" type="xs:string"/>
 </xs:schema>

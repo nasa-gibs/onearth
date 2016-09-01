@@ -8,7 +8,8 @@ URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.tar.gz
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
-Source3:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
+Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+Source4:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -37,14 +38,12 @@ BuildArch:	noarch
 %description demo
 Demonstration of OnEarth
 
-
 %package metrics
 Summary:	OnEarth log tool for metrics
 BuildArch:	noarch
 
 %description metrics
 OnEarth log tool for metrics
-
 
 %package mrfgen
 Summary:	MRF generator for OnEarth
@@ -53,6 +52,15 @@ Requires:	gibs-gdal
 %description mrfgen
 MRF generator for OnEarth
 
+%package vectorgen
+Summary:	Vector data processing for OnEarth
+Requires:	libxml2-devel
+Requires:	libxslt-devel
+Requires:	python-pip
+Requires:	gibs-gdal-devel
+
+%description vectorgen
+Vector data processing for OnEarth
 
 %package config
 Summary:	Layer configuration tools for OnEarth
@@ -97,6 +105,7 @@ mkdir upstream
 cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
+cp %{SOURCE4} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -215,6 +224,7 @@ python setup.py install
 %{_bindir}/RGBApng2Palpng
 %{_bindir}/mrfgen
 %{_bindir}/colormap2vrt.py
+%{_bindir}/overtiffpacker.py
 
 %files metrics
 %defattr(664,gibs,gibs,775)
@@ -254,9 +264,24 @@ ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/
 %{_bindir}/sortshp
 %{_bindir}/tile4ms
 
+%files vectorgen
+%defattr(755,root,root,-)
+%{_libdir}/libspatialindex*
+%{_libdir}/pkgconfig/libspatialindex.pc
+%{_includedir}/spatialindex/*
+%{_datarootdir}/onearth/vectorgen/*
+%{_bindir}/oe_vectorgen
+
+%post vectorgen
+/sbin/ldconfig
+pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.6.1
+
 %changelog
 * Wed Aug 17 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.1.0-1
 - Added onearth-mapserver package, mod_oems, and mod_oemstime
+
+* Wed Aug 17 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.3
+- Added vectorgen package
 
 * Fri Jul 15 2016 Joshua D. Rodriguez <joshua.d.rodriguez@jpl.nasa.gov> - 1.0.2-1
 - Updated Matplotlib dependency install to 1.5.1
