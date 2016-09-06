@@ -307,7 +307,9 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    if (strlen(last_layer) != 0) {
 			// Set filters for time snapping if there is a layer that hasn't been checked
 		    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
-		    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
+		    if (receive_filter != NULL) {
+		    	ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
+		    }
 	    }
 	    // In case all layers have been stripped out due to invalid time requests
 	    if (strlen(layers) == 0 && prev_last_layers != 0) {
