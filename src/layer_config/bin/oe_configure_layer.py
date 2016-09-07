@@ -1115,7 +1115,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         last_time = detect_time(detected_times[-1], archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
     else:
         last_time = detected_times[-1].split("/")[1]
-    if os.path.isfile(get_file_from_time(last_time, fileNamePrefix, year)+".mrf") == False: # Detect the last time if file for specified time cannot be found
+    if os.path.isfile(archiveLocation + get_file_from_time(last_time, fileNamePrefix, year)+".idx") == False: # Detect the last time if file for specified time cannot be found
         log_sig_warn("Files for specified last time of " + last_time + " cannot be found for " + fileNamePrefix+ ", attempting to detect instead", sigevent_url)
         if len(detected_times[-1].split("/")) == 3:
             period = "/" + detected_times[-1].split("/")[2]
