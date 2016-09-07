@@ -1121,7 +1121,11 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
             period = "/" + detected_times[-1].split("/")[2]
         else:
             period = ""
-        last_time = detect_time(detected_times[-1].split("/")[0]+"/DETECT"+period, archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
+        try:
+            last_time = detect_time(detected_times[-1].split("/")[0]+"/DETECT"+period, archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
+        except IndexError:
+            log_sig_err("Unable to generate links due to no data files found for " + fileNamePrefix, sigevent_url)
+            return ""
     print "Current layer time for soft links: " + last_time
     
     link_pre, data_ext = os.path.splitext(dataFileLocation)
