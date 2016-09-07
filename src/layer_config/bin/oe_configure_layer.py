@@ -980,6 +980,30 @@ def read_zkey(zdb, sort):
         mssg = "%s:" % e.args[0]
         log_sig_err(mssg, sigevent_url)
 
+def get_file_from_time(timestr, fileNamePrefix, include_year_dir):
+    """
+    Retrieves the filename (without extension) of a file based on a time string and file name prefix
+    Arguments:
+        timestr -- time string (%Y-%m-%d or %Y-%m-%dT%H:%M:%SZ)
+        fileNamePrefix -- the prefix of the MRF files
+        include_year_dir -- whether or not to include the parent year directory
+    """
+    if 'T' in timestr: # sub-daily files
+        t = datetime.strptime(timestr,"%Y-%m-%dT%H:%M:%SZ")
+        if has_zdb:
+            filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
+        else:
+            filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
+        last_year = datetime.strftime(t,"%Y")
+    else:
+        t = datetime.strptime(timestr,"%Y-%m-%d")
+        filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
+        last_year = datetime.strftime(t,"%Y")
+    if include_year_dir:
+        return str(last_year)+"/"+filename
+    else:
+        return filename
+    
 def generate_legend(colormap, output, legend_url, orientation):
     """
     Generate an SVG legend graphic from GIBS color map.
@@ -1086,34 +1110,27 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         dataFileLocation -- file location for the default data file
         has_zdb -- whether or not the layer contains a zdb file
     """
-    
     # Find the latest file in the archive
-    if len(detected_times[-1].split("/")) == 3:
-        period = "/" + detected_times[-1].split("/")[2]
+    if "DETECT" in detected_times[-1].split("/")[1]:
+        last_time = detect_time(detected_times[-1], archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
     else:
-        period = ""
-    last_time = detect_time(detected_times[-1].split("/")[0]+"/DETECT"+period, archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
-    
-    if 'T' in last_time: # sub-daily files
-        t = datetime.strptime(last_time,"%Y-%m-%dT%H:%M:%SZ")
-        if has_zdb:
-            filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
+        last_time = detected_times[-1].split("/")[1]
+    if os.path.isfile(get_file_from_time(last_time, fileNamePrefix, year)+".mrf") == False: # Detect the last time if file for specified time cannot be found
+        log_sig_warn("Files for specified last time of " + last_time + " cannot be found for " + fileNamePrefix+ ", attempting to detect instead", sigevent_url)
+        if len(detected_times[-1].split("/")) == 3:
+            period = "/" + detected_times[-1].split("/")[2]
         else:
-            filename = fileNamePrefix + datetime.strftime(t,"%Y%j%H%M%S") + "_"
-        last_year = datetime.strftime(t,"%Y")
-    else:
-        t = datetime.strptime(last_time,"%Y-%m-%d")
-        filename = fileNamePrefix + datetime.strftime(t,"%Y%j") + "_"
-        last_year = datetime.strftime(t,"%Y")
+            period = ""
+        last_time = detect_time(detected_times[-1].split("/")[0]+"/DETECT"+period, archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
+    print "Current layer time for soft links: " + last_time
     
     link_pre, data_ext = os.path.splitext(dataFileLocation)
     link_dir = os.path.dirname(link_pre)
-    
-    mrf = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".mrf"
-    idx = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".idx"
-    data = archiveLocation + ("",str(last_year)+"/")[year] + filename + data_ext
-    zdb = archiveLocation + ("",str(last_year)+"/")[year] + filename + ".zdb"
-    
+    filename = get_file_from_time(last_time, fileNamePrefix, year)
+    mrf = archiveLocation + filename + ".mrf"
+    idx = archiveLocation + filename + ".idx"
+    data = archiveLocation + filename + data_ext
+    zdb = archiveLocation + filename + ".zdb"
     mrf_link = link_pre + ".mrf"
     idx_link = link_pre + ".idx"
     data_link = link_pre + data_ext
