@@ -1168,7 +1168,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         
     # special handling for shapefiles
     if data_ext == ".shp":
-        files = glob.glob(archiveLocation + ("",str(last_year)+"/")[year] + filename+"*")
+        files = glob.glob(archiveLocation + filename + "*")
         for sfile in files:
             ext = os.path.splitext(os.path.basename(sfile))[1]
             if os.path.lexists(link_pre + ext):
