@@ -72,6 +72,7 @@ import shutil
 import re
 import distutils.spawn
 import sqlite3
+import glob
 from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
@@ -686,30 +687,26 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
     if (time == detect or time == '' or time.startswith(detect+'/P')) and has_zdb==False:
     #detect everything including breaks in date
         dates = []
-        for dirname, dirnames, filenames in os.walk(archiveLocation, followlinks=True):
-            # Print subdirectories
-            for subdirname in dirnames:
-                print "Searching:", os.path.join(dirname, subdirname)
-
-            for filename in filenames:
-                if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
-                    try:
-                        filetime = filename[-12:-5]
-                        filedate = datetime.strptime(filetime,"%Y%j")
-                        dates.append(filedate)
-                    except ValueError:
-                        print "Skipping", filename
-                elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
-                    try:
-                        filetime = filename[-18:-5]
-                        filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                        dates.append(filedate)
-                        subdaily = True
-                        period = "PT24H"
-                    except ValueError:
-                        print "Skipping", filename
-                else:
-                    print "Ignoring", filename
+        for f in glob.glob(archiveLocation+'/[0-9]*/*.idx'):
+            filename = os.path.basename(f)
+            if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
+                try:
+                    filetime = filename[-12:-5]
+                    filedate = datetime.strptime(filetime,"%Y%j")
+                    dates.append(filedate)
+                except ValueError:
+                    print "Skipping", filename
+            elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                try:
+                    filetime = filename[-18:-5]
+                    filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                    dates.append(filedate)
+                    subdaily = True
+                    period = "PT24H"
+                except ValueError:
+                    print "Skipping", filename
+            else:
+                print "Ignoring", filename
         dates = sorted(list(set(dates)))
         
         # DEBUG: Print the entire list of dates found for the product
@@ -842,22 +839,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             oldest_year = ''
             if year == True: # get newest and oldest years
                 years = []
-                for subdirname in os.walk(archiveLocation, followlinks=True).next()[1]:
-                    if subdirname != 'YYYY':
-                        years.append(subdirname)
-                years = sorted(years)
-                print "Year directories available: " + ",".join(years)
-                for idx in range(0, len(years)):
-                    if len(os.listdir(archiveLocation+'/'+years[idx])) > 0:
-                        if years[idx].isdigit() == True:
-                            oldest_year = years[idx]
-                            break; 
-                for idx in reversed(range(0, len(years))):
-                    if len(os.listdir(archiveLocation+'/'+years[idx])) > 0:
-                        if years[idx].isdigit() == True:
-                            newest_year = years[idx]
-                            break;
-        
+                for yearDirPath in glob.glob(archiveLocation+'/[0-9]*'):
+                    years.append(os.path.basename(yearDirPath))
+                    years.sort()
+                if len(years) > 0:
+                    oldest_year = years[0]
+                    newest_year = years[-1]  
             if (newest_year == '' or oldest_year == '') and year==True:
                 mssg = "No data files found in year directories in " + archiveLocation 
                 log_sig_warn(mssg, sigevent_url)
@@ -867,25 +854,25 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                             
         if start==detect:
             dates = []
-            for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+oldest_year, followlinks=True):
-                for filename in filenames:
-                    if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
-                        try:
-                            filetime = filename[-12:-5]
-                            filedate = datetime.strptime(filetime,"%Y%j")
-                            dates.append(filedate)
-                        except ValueError:
-                            print "Skipping", filename
-                    elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
-                        try:
-                            filetime = filename[-18:-5]
-                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                            dates.append(filedate)
-                            subdaily = True
-                        except ValueError:
-                            print "Skipping", filename
-                    else:
-                        print "Ignoring", filename
+            for f in glob.glob(archiveLocation+'/'+oldest_year+'/*.idx'):
+                filename = os.path.basename(f)
+                if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
+                    try:
+                        filetime = filename[-12:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j")
+                        dates.append(filedate)
+                    except ValueError:
+                        print "Skipping", filename
+                elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                    try:
+                        filetime = filename[-18:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                        dates.append(filedate)
+                        subdaily = True
+                    except ValueError:
+                        print "Skipping", filename
+                else:
+                    print "Ignoring", filename
             if len(dates) == 0:
                 message = "No valid files with dates found for '" + fileNamePrefix + "' in '" + archiveLocation +"/"+oldest_year + "' - please check if data exists."
                 log_sig_err(message, sigevent_url)
@@ -905,25 +892,25 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         
         if end==detect:
             dates = []
-            for dirname, dirnames, filenames in os.walk(archiveLocation+'/'+newest_year, followlinks=True):
-                for filename in filenames:
-                    if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
-                        try:
-                            filetime = filename[-12:-5]
-                            filedate = datetime.strptime(filetime,"%Y%j")
-                            dates.append(filedate)
-                        except ValueError:
-                            print "Skipping", filename
-                    elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
-                        try:
-                            filetime = filename[-18:-5]
-                            filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
-                            dates.append(filedate)
-                            subdaily = True
-                        except ValueError:
-                            print "Skipping", filename
-                    else:
-                        print "Ignoring", filename
+            for f in glob.glob(archiveLocation+'/'+newest_year+'/*.idx'):
+                filename = os.path.basename(f)
+                if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
+                    try:
+                        filetime = filename[-12:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j")
+                        dates.append(filedate)
+                    except ValueError:
+                        print "Skipping", filename
+                elif str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                    try:
+                        filetime = filename[-18:-5]
+                        filedate = datetime.strptime(filetime,"%Y%j%H%M%S")
+                        dates.append(filedate)
+                        subdaily = True
+                    except ValueError:
+                        print "Skipping", filename
+                else:
+                    print "Ignoring", filename
             enddate = max(dates)
             if has_zdb==True:
                 try:
