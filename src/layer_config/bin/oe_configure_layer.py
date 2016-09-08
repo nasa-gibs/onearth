@@ -687,7 +687,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
     if (time == detect or time == '' or time.startswith(detect+'/P')) and has_zdb==False:
     #detect everything including breaks in date
         dates = []
-        for f in glob.glob(archiveLocation+'/[0-9]*/*.idx'):
+        for f in glob.glob(archiveLocation+'/[0-9]*/*[idx,shp]'):
             filename = os.path.basename(f)
             if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                 try:
@@ -854,7 +854,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                             
         if start==detect:
             dates = []
-            for f in glob.glob(archiveLocation+'/'+oldest_year+'/*.idx'):
+            for f in glob.glob(archiveLocation+'/'+oldest_year+'/*[idx,shp]'):
                 filename = os.path.basename(f)
                 if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                     try:
@@ -894,7 +894,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         
         if end==detect:
             dates = []
-            for f in glob.glob(archiveLocation+'/'+newest_year+'/*.idx'):
+            for f in glob.glob(archiveLocation+'/'+newest_year+'/*[idx,shp]'):
                 filename = os.path.basename(f)
                 if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                     try:
