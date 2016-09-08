@@ -243,8 +243,10 @@ char *validate_args(request_rec *r, char *mapfile) {
 
 		// Split out layers
 		char *layer_cpy = (char*)apr_pcalloc(r->pool,max_chars);
-		char *layer_time_param = (char*)apr_pcalloc(r->pool,strlen(layers)+1);
+		char *layer_time_param = (char*)apr_pcalloc(r->pool,strlen(layers)+6);
 		char *layer_time_value = (char*)apr_pcalloc(r->pool,13);
+		char *layer_subdaily_param = (char*)apr_pcalloc(r->pool,strlen(layers)+10);
+		char *layer_subdaily_value = (char*)apr_pcalloc(r->pool,7);
 		char *last_layer = 0;
 	    char *prev_last_layer = 0;
 	    char *prev_last_layers = 0;
@@ -271,6 +273,11 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	get_param(args,layer_time_param,layer_time_value);
 	    	if(strlen(layer_time_value) != 0) {
 	    		doytime = layer_time_value;
+	    	}
+	    	layer_subdaily_param = apr_psprintf(r->pool,"%s_SUBDAILY", pt);
+	    	get_param(args,layer_subdaily_param,layer_subdaily_value);
+	    	if(strlen(layer_subdaily_value) != 0) {
+	    		subdaily = layer_subdaily_value;
 	    	}
 	    	if (subdaily != 0) {
 				layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s&%s_SUBDAILY=%s", layer_times, pt, doytime, pt, subdaily);
@@ -307,7 +314,9 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    if (strlen(last_layer) != 0) {
 			// Set filters for time snapping if there is a layer that hasn't been checked
 		    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
-		    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
+		    if (receive_filter != NULL) {
+		    	ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
+		    }
 	    }
 	    // In case all layers have been stripped out due to invalid time requests
 	    if (strlen(layers) == 0 && prev_last_layers != 0) {
