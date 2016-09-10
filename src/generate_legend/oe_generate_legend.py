@@ -560,10 +560,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     title_loc = 1-t
                 else:
                     title_loc = bottom+height+(0.07/lc)
-                if colormap.style == "classification":
-                    fig.text(0.125, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
-                else:
-                    fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
+                fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
                     
         
         else: # default vertical orientation
