@@ -47,4 +47,8 @@
 APLOG_USE_MODULE(oemstime);
 #endif
 
+struct oemstime_conf {
+	const char *twmssserviceurl;
+};
+
 extern module AP_MODULE_DECLARE_DATA oemstime_module;

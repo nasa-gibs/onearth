@@ -38,17 +38,21 @@
 
 #include "mod_oemstime.h"
 
-const char *twmssserviceurl;
-
-static const char *twmssserviceurl_set(cmd_parms *cmd, void *cfg, const char *arg) {
-	twmssserviceurl = arg;
+static const char *twmssserviceurl_set(cmd_parms *cmd, oemstime_conf *cfg, const char *arg) {
+	cfg->twmssserviceurl = arg;
 	return 0;
 }
 
-static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
-    conn_rec *c = f->c;
-    request_rec *r = f->r;
+static void *create_dir_config(apr_pool_t *p, char *dummy)
+{
+	oemstime_conf *cfg;
+	cfg = (oemstime_conf *)(apr_pcalloc(p, sizeof(oemstime_conf)));
+    return cfg;
+}
 
+static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
+	request_rec *r = f->r;
+    oemstime_conf *cfg = static_cast<oemstime_conf *>ap_get_module_config(r->per_dir_config, &oemstime_module);
     char *srs = 0;
     char *format = 0;
     char *time = 0;
@@ -58,20 +62,15 @@ static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
     time = (char *) apr_table_get(r->notes, "oems_time");
     current_layer = (char *) apr_table_get(r->notes, "oems_clayer");
 
-    if ((srs != 0) && (format != 0) && (time != 0) && (current_layer != 0)) { // make sure no null values
+
+    if ((srs != 0) && (format != 0) && (time != 0) && (current_layer != 0) && (cfg->twmssserviceurl != 0)) { // make sure no null values
 		if ((ap_strstr(r->content_type, "text/xml") != 0) || (ap_strstr(r->content_type, "application/vnd.ogc.se_xml") != 0)) { // run only if Mapserver has an error due to invalid time or format
-			int max_size = strlen(twmssserviceurl)+strlen(r->args);
+			int max_size = strlen(cfg->twmssserviceurl)+strlen(r->args);
 			char *pos = 0;
 			char *split;
 			char *last;
 			char *new_uri = (char*)apr_pcalloc(r->pool, max_size);
-			apr_cpystrn(new_uri, twmssserviceurl, strlen(twmssserviceurl)+1);
-			split = apr_strtok(new_uri,"{SRS}",&last);
-			while(split != NULL)
-			{
-				pos = split;
-				split = apr_strtok(NULL,"{SRS}",&last);
-			}
+			apr_cpystrn(new_uri, cfg->twmssserviceurl, strlen(cfg->twmssserviceurl)+1);
 			if (ap_strstr(srs, ":") == 0) {
 				srs = ap_strcasestr(srs, "%3A");
 				srs += 3;
@@ -79,8 +78,17 @@ static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
 				srs = ap_strstr(srs, ":");
 				srs += 1;
 			}
+			if (ap_strstr(cfg->twmssserviceurl, "{SRS}")) {
+				split = apr_strtok(new_uri,"{SRS}",&last);
+				while(split != NULL)
+				{
+					pos = split;
+					split = apr_strtok(NULL,"{SRS}",&last);
+				}
+				new_uri = apr_psprintf(r->pool, "%s%s%s", new_uri, srs, pos);
+			}
 
-			new_uri = apr_psprintf(r->pool,"%s%s%s?request=GetMap&layers=%s&srs=EPSG:%s&format=%s&styles=&time=%s&width=512&height=512&bbox=-1,1,-1,1",new_uri, srs, pos, current_layer, srs, format, time);
+			new_uri = apr_psprintf(r->pool,"%s?request=GetMap&layers=%s&srs=EPSG:%s&format=%s&styles=&time=%s&width=512&height=512&bbox=-1,1,-1,1",new_uri, current_layer, srs, format, time);
 			ap_internal_redirect(new_uri, r); // redirect for handling of time by mod_onearth
 		}
     }
@@ -107,5 +115,5 @@ static void register_hooks(apr_pool_t *p) {
 
 module AP_MODULE_DECLARE_DATA oemstime_module = {
     STANDARD20_MODULE_STUFF,
-    0, 0, 0, 0, cmds, register_hooks
+    create_dir_config, 0, 0, 0, cmds, register_hooks
 };
