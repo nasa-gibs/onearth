@@ -520,10 +520,12 @@ static void *r_file_pread(request_rec *r, char *fname,
 					if (r->prev != 0) {
 						if (ap_strstr(r->prev->args, "&MAP=") != 0) {
 							char *layer_time = (char*)apr_pcalloc(r->pool, max_size);
+							char *layer_subdaily = (char*)apr_pcalloc(r->pool, max_size);
 							char *firstpart = (char*)apr_pcalloc(r->pool, max_size);
 							char *pos;
 							char *split;
 							layer_time = apr_psprintf(r->pool,"&%s_TIME=", layer);
+							layer_subdaily = apr_psprintf(r->pool,"&%s_SUBDAILY=", layer);
 							apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
 							pos = ap_strstr(new_uri, layer_time);
 							if (pos) {
@@ -531,7 +533,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 								memcpy(firstpart, new_uri, len);
 							}
 							pos += strlen(layer_time)+7;
-							if (ap_strstr(r->prev->args, "_SUBDAILY=") != 0) {
+							if (ap_strstr(r->prev->args, layer_subdaily) != 0) {
 								pos += strlen(layer_time)+10;
 							}
 							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%02d&%s_SUBDAILY=%02d%02d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, layer, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec, pos);
