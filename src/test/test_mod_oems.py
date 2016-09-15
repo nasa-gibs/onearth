@@ -66,9 +66,9 @@ class TestModOEMS(unittest.TestCase):
         # create links for mapserv
         mapserver_location = '/usr/bin/mapserv'
         if not os.path.exists(testdata_path + '/wms_endpoint'):
-            os.makedirs(directory) 
+            os.makedirs(testdata_path + '/wms_endpoint') 
         if not os.path.exists(testdata_path + '/wfs_endpoint'):
-            os.makedirs(directory)   
+            os.makedirs(testdata_path + '/wfs_endpoint')   
         if os.path.isfile(mapserver_location):
             if os.path.islink(testdata_path + '/wms_endpoint/mapserv') == False:
                 os.symlink(mapserver_location, testdata_path + '/wms_endpoint/mapserv')
@@ -173,7 +173,7 @@ class TestModOEMS(unittest.TestCase):
 
     def test_request_wms_date_from_noyear_layer(self):
         """
-        6. Request tile with date  from "non-year" layer via WMTS
+        6. Request tile with date  from "non-year" layer via WMS
         """
         ref_hash = '7c995c069a1a0325b9eba00470227613'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_nonyear_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29'
@@ -317,7 +317,7 @@ class TestModOEMS(unittest.TestCase):
         
     def test_request_wms_reprojection(self):
         """
-        18. Request layer with date and reproject from EPSG:4326 to EPSG:3857
+        18. Request layer with date and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
         ref_hash = '50843cf95d86d9139643f9fcd1d048ec'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&time=2012-02-22'
