@@ -65,6 +65,8 @@ MAP
   End
 
   WEB
+    IMAGEPATH "{cache_path}/twms_endpoint/"
+  	IMAGEURL "http://localhost/onearth/test/twms/"
     METADATA
       "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:4326)"
       "wfs_onlineresource" 		"http://localhost/wfs/epsg4326/"
@@ -138,22 +140,86 @@ LAYER
 END
 
 LAYER
-	NAME	"snap_test_1a"
+	NAME	"test_weekly_jpg"
 	TYPE	RASTER
 	STATUS	ON
 	VALIDATION
-		"default_snap_test_1a_TIME"		"TTTTTTT"
-		"snap_test_1a_TIME"			"^[0-9]{7}$"
-		"default_snap_test_1a_YEAR"	"YYYY"
-		"snap_test_1a_YEAR"		"^[0-9]{4}$"
+		"default_test_weekly_jpg_TIME"		"TTTTTTT"
+		"test_weekly_jpg_TIME"			"^[0-9]{7}$"
+		"default_test_weekly_jpg_YEAR"	"YYYY"
+		"test_weekly_jpg_YEAR"		"^[0-9]{4}$"
 	END
 	METADATA
-		"wms_title"		"snap_test_1a"
+		"wms_title"			"test_weekly_jpg"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2012-02-22/2012-02-29/P7D"
+		"wms_timedefault"		"2012-02-29"
+	END
+	DATA	"{cache_path}/test_imagery/test_weekly_jpg/%test_weekly_jpg_YEAR%/test_weekly_jpg%test_weekly_jpg_TIME%_.mrf"
+	PROJECTION
+		"init=epsg:4326"
+	END
+END
+
+LAYER
+	NAME	"test_nonyear_jpg"
+	TYPE	RASTER
+	STATUS	ON
+	VALIDATION
+		"default_test_nonyear_jpg_TIME"		"TTTTTTT"
+		"test_nonyear_jpg_TIME"			"^[0-9]{7}$"
+	END
+	METADATA
+		"wms_title"		"test_nonyear_jpg"
 		"wms_extent"		"-180 -90 180 90"
 		"wms_timeextent"		"2016-05-01/2016-02-29/P1D"
 		"wms_timedefault"		"2016-02-29"
 	END
-	DATA	"{cache_path}/test_imagery/snap_test_1a//%snap_test_1a_YEAR%/snap_test_1a%snap_test_1a_TIME%_.mrf"
+	DATA	"{cache_path}/test_imagery/test_nonyear_jpg/test_nonyear_jpg%test_nonyear_jpg_TIME%_.mrf"
+	PROJECTION
+		"init=epsg:4326"
+	END
+END
+
+LAYER
+	NAME	"snap_test_3a"
+	TYPE	RASTER
+	STATUS	ON
+	VALIDATION
+		"default_snap_test_3a_TIME"		"TTTTTTT"
+		"snap_test_3a_TIME"			"^[0-9]{7}$"
+		"default_snap_test_3a_YEAR"	"YYYY"
+		"snap_test_3a_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+		"wms_title"		"snap_test_3a"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2015-01-01/2016-01-01/P1M"
+		"wms_timedefault"		"2016-01-01"
+	END
+	DATA	"{cache_path}/test_imagery/snap_test_3a/snap_test_3a%snap_test_3a_TIME%_.mrf"
+	PROJECTION
+		"init=epsg:4326"
+	END
+END
+
+LAYER
+	NAME	"snap_test_3b"
+	TYPE	RASTER
+	STATUS	ON
+	VALIDATION
+		"default_snap_test_3b_TIME"		"TTTTTTT"
+		"snap_test_3b_TIME"			"^[0-9]{7}$"
+		"default_snap_test_3b_YEAR"	"YYYY"
+		"snap_test_3b_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+		"wms_title"		"snap_test_3b"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2015-01-01/2016-01-01/P3M"
+		"wms_timedefault"		"2016-01-01"
+	END
+	DATA	"{cache_path}/test_imagery/snap_test_3b/snap_test_3b%snap_test_3b_TIME%_.mrf"
 	PROJECTION
 		"init=epsg:4326"
 	END
@@ -173,6 +239,61 @@ LAYER
 	PROJECTION
 		"init=epsg:4326"
 	END
+END
+
+LAYER
+	NAME	"Terra_Orbit_Dsc_Dots"
+	TYPE	POINT
+	STATUS	ON
+	VALIDATION
+		"default_Terra_Orbit_Dsc_Dots_TIME"		"TTTTTTT"
+		"Terra_Orbit_Dsc_Dots_TIME"			"^[0-9]{7}$"
+		"default_Terra_Orbit_Dsc_Dots_YEAR"	"YYYY"
+		"Terra_Orbit_Dsc_Dots_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+		"wms_title"		"Terra_Orbit_Dsc_Dots"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2016-03-05/2016-03-05/P1D"
+		"wms_timedefault"		"2016-03-05"
+		"wfs_getfeature_formatlist"		"geojson,csv"
+		"gml_include_items"		"all"
+	END
+	DATA	"{cache_path}/test_imagery/Terra_Orbit_Dsc_Dots//%Terra_Orbit_Dsc_Dots_YEAR%/Terra_Orbit_Dsc_Dots%Terra_Orbit_Dsc_Dots_TIME%_"
+	PROJECTION
+		"init=epsg:4326"
+	END
+   LabelItem       "LABEL"
+   ClassItem       "TIME"
+    Class
+        Name            "Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][0,5]$/
+        Style
+            Symbol      "circle"
+            Size        10
+            Color       242 135 34
+        End
+
+        Label
+            Color           255 255 255
+            OutlineColor    128 128 128
+            Type            truetype
+            Size            7.5
+            Position        Auto
+            Partials        False
+            Buffer          10
+        End
+    End
+
+    Class
+        Name            "Non-Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][1,2,3,4,6,7,8,9]$/
+        Style
+            Symbol      "circle"
+            Size        7.5
+            Color       242 135 34
+        End
+    End
 END
 
 END
