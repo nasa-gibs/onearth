@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<xs:element name="ColorMaps">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="ColorMap" maxOccurs="unbounded" minOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="ColorMap">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="Entries" />
+      <xs:element ref="Legend" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute type="xs:string" name="title" use="required" />
+    <xs:attribute type="xs:string" name="units" use="optional" />
+  </xs:complexType>
+</xs:element>
+
+
+<xs:element name="Entries">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="ColorMapEntry" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="ColorMapEntry">
+  <xs:complexType>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="rgb" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="\d{1,3},\d{1,3},\d{1,3}" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute type="xs:boolean" name="transparent" default="false"/>
+        <xs:attribute name="sourceValue">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[\[(]?((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF))(,((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF)))?[\])]?(,[\[(]?((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF))(,((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF)))?[\])]?)*" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="value">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[\[(]?((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF))(,((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF)))?[\])]?(,[\[(]?((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF))(,((-?\d+(\.\d+)?(e[\+\-]\d+)?)|([\+\-]INF)))?[\])]?)*" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute type="xs:short" name="ref" use="required" />
+        <xs:attribute type="xs:boolean" name="nodata" default="false" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="Legend">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="LegendEntry" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="continuous" />
+          <xs:enumeration value="discrete" />
+          <xs:enumeration value="classification" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute type="xs:string" name="minLabel" use="optional" />
+    <xs:attribute type="xs:string" name="maxLabel" use="optional" />
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="LegendEntry">
+  <xs:complexType>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="rgb" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="\d{1,3},\d{1,3},\d{1,3}" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute type="xs:string" name="tooltip" use="required" />
+        <xs:attribute type="xs:string" name="label" use="optional" />
+        <xs:attribute type="xs:boolean" name="showTick" default="false" use="optional" />
+        <xs:attribute type="xs:boolean" name="showLabel" default="false" use="optional" />
+        <xs:attribute type="xs:short" name="id" use="required" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+</xs:element>
+</xs:schema>
