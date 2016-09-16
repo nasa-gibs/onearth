@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '1.1.0'
+versionNumber = '1.1.1'
 current_conf = None
 
 class WMTSEndPoint:
@@ -687,7 +687,13 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
     if (time == detect or time == '' or time.startswith(detect+'/P')) and has_zdb==False:
     #detect everything including breaks in date
         dates = []
-        for f in glob.glob(archiveLocation+'/[0-9]*/*[idx,shp]'):
+        if year == True:
+            filesearch = archiveLocation+'/[0-9]*/*[idx,shp]'
+            if len(glob.glob(filesearch)) == 0: # No files, maybe 'year' not specified correctly
+                filesearch = archiveLocation+'/*[idx,shp]'
+        else:
+            filesearch = archiveLocation+'/*[idx,shp]'
+        for f in glob.glob(filesearch):
             filename = os.path.basename(f)
             if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                 try:
@@ -844,7 +850,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                     years.sort()
                 if len(years) > 0:
                     oldest_year = years[0]
-                    newest_year = years[-1]  
+                    newest_year = years[-1]
+                print "Year directories available: " + ",".join(years)
             if (newest_year == '' or oldest_year == '') and year==True:
                 mssg = "No data files found in year directories in " + archiveLocation 
                 log_sig_warn(mssg, sigevent_url)
@@ -916,7 +923,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             enddate = max(dates)
             if has_zdb==True:
                 try:
-                    zdb = archiveLocation+'/'+oldest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
+                    zdb = archiveLocation+'/'+newest_year+'/'+fileNamePrefix+datetime.strftime(enddate,"%Y%j")+'_.zdb'
                     zkey = read_zkey(zdb, 'DESC')
                     enddate = datetime.strptime(str(zkey),"%Y%m%d%H%M%S")
                     subdaily = True
@@ -971,13 +978,14 @@ def read_zkey(zdb, sort):
         mssg = "%s:" % e.args[0]
         log_sig_err(mssg, sigevent_url)
 
-def get_file_from_time(timestr, fileNamePrefix, include_year_dir):
+def get_file_from_time(timestr, fileNamePrefix, include_year_dir, has_zdb):
     """
     Retrieves the filename (without extension) of a file based on a time string and file name prefix
     Arguments:
         timestr -- time string (%Y-%m-%d or %Y-%m-%dT%H:%M:%SZ)
         fileNamePrefix -- the prefix of the MRF files
         include_year_dir -- whether or not to include the parent year directory
+        has_zdb -- whether or not the layer contains a zdb file
     """
     if 'T' in timestr: # sub-daily files
         t = datetime.strptime(timestr,"%Y-%m-%dT%H:%M:%SZ")
@@ -1101,12 +1109,8 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
         dataFileLocation -- file location for the default data file
         has_zdb -- whether or not the layer contains a zdb file
     """
-    # Find the latest file in the archive
-    if "DETECT" in detected_times[-1].split("/")[1]:
-        last_time = detect_time(detected_times[-1], archiveLocation, fileNamePrefix, year, has_zdb)[-1].split("/")[1]
-    else:
-        last_time = detected_times[-1].split("/")[1]
-    if os.path.isfile(archiveLocation + get_file_from_time(last_time, fileNamePrefix, year)+".idx") == False: # Detect the last time if file for specified time cannot be found
+    last_time = detected_times[-1].split("/")[1]
+    if os.path.isfile(archiveLocation + get_file_from_time(last_time, fileNamePrefix, year, has_zdb)+".idx") == False: # Detect the last time if file for specified time cannot be found
         log_sig_warn("Files for specified last time of " + last_time + " cannot be found for " + fileNamePrefix+ ", attempting to detect instead", sigevent_url)
         if len(detected_times[-1].split("/")) == 3:
             period = "/" + detected_times[-1].split("/")[2]
@@ -1121,7 +1125,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFi
     
     link_pre, data_ext = os.path.splitext(dataFileLocation)
     link_dir = os.path.dirname(link_pre)
-    filename = get_file_from_time(last_time, fileNamePrefix, year)
+    filename = get_file_from_time(last_time, fileNamePrefix, year, has_zdb)
     mrf = archiveLocation + filename + ".mrf"
     idx = archiveLocation + filename + ".idx"
     data = archiveLocation + filename + data_ext

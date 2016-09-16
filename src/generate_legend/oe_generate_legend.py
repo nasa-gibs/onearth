@@ -60,7 +60,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v1.1.0"
+versionNumber = "v1.1.1"
 
 class ColorMaps:
     """Collection of ColorMaps"""
@@ -524,9 +524,6 @@ def generate_legend(colormaps, output, output_format, orientation):
                 for tick in cb.ax.xaxis.get_ticklabels():
                     tick.set_fontsize(8)
 
-                print(colormap.legend != None and len(bounds)>0)
-                print(colormap.legend != None)
-                print(len(bounds)>0)
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_xticklabels()) > 0:
                         xticklabels = cb.ax.get_xticklabels()
@@ -563,10 +560,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     title_loc = 1-t
                 else:
                     title_loc = bottom+height+(0.07/lc)
-                if colormap.style == "classification":
-                    fig.text(0.125, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
-                else:
-                    fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
+                fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
                     
         
         else: # default vertical orientation
@@ -695,7 +689,9 @@ def generate_legend(colormaps, output, output_format, orientation):
 
         for i, entry in enumerate(entries):
             if entry.tooltip:
-                text = entry.tooltip + " " + colormaps[0].units
+                text = entry.tooltip
+                if colormaps[0].units:
+                    text = text + " " + colormaps[0].units
             else:
                 text = entry.label
             if orientation == "horizontal":
@@ -734,9 +730,13 @@ def generate_legend(colormaps, output, output_format, orientation):
                 None
     
         # Add mouseover events to color bar
-        el = xmlid['QuadMesh_1']
-        elements = list(el)
-        elements.pop(0) # remove definitions
+        try:
+            el = xmlid['QuadMesh_1']
+            elements = list(el)
+            elements.pop(0) # remove definitions
+        except KeyError:
+            print "Warning: Unable to add tooltips"
+            elements = []
         for i, t in enumerate(elements):
             el = elements[i]
             el.set('onmouseover', "ShowTooltip("+str(i)+")")

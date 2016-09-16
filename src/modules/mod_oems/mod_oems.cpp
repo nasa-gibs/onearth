@@ -33,7 +33,7 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.1.0
+ * Version 1.1.1
  */
 
 #include "mod_oems.h"
@@ -328,6 +328,8 @@ char *validate_args(request_rec *r, char *mapfile) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);
 		char *outputformat = (char*)apr_pcalloc(r->pool,max_chars);
 		char *srsname = (char*)apr_pcalloc(r->pool,max_chars);
+		char *layer_years = (char*)apr_pcalloc(r->pool,max_chars);
+		char *layer_times = (char*)apr_pcalloc(r->pool,max_chars);
 
 		get_param(args,"typenames",typenames);
 		if(strlen(typenames) == 0) {
@@ -344,7 +346,21 @@ char *validate_args(request_rec *r, char *mapfile) {
 			apr_table_setn(r->notes, "oems_srs", srsname);
 		}
 
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&OUTPUTFORMAT=%s&TYPENAMES=%s&MAP=%s&TIME=%s&PRODUCTYEAR=%s","WFS",request,version,outputformat,typenames,mapfile,doytime,productyear);
+		// Prepend typenames to TIME and YEAR
+		char *layer_cpy = (char*)apr_pcalloc(r->pool,max_chars);
+	    apr_cpystrn(layer_cpy, typenames, strlen(typenames)+1);
+	    char *pt;
+	    char *last;
+	    pt = apr_strtok(layer_cpy, ",", &last);
+	    while (pt != NULL) {
+	    	layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s", layer_times, pt, doytime);
+	    	apr_cpystrn(productyear, doytime, 5);
+	    	productyear[4] = 0;
+	    	layer_years = apr_psprintf(r->pool,"%s&%s_YEAR=%s", layer_years, pt, productyear);
+	    	pt = apr_strtok(NULL, ",", &last);
+	    }
+
+		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&OUTPUTFORMAT=%s&TYPENAMES=%s&MAP=%s&%s&%s","WFS",request,version,outputformat,typenames,mapfile,layer_times,layer_years);
 		if(strlen(srsname) != 0) {
 			args = apr_psprintf(r->pool,"%s&SRSNAME=%s",args,srsname);
 		}

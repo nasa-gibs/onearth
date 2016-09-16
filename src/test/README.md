@@ -231,6 +231,34 @@ Each test script will output a JUnit XML results file. By default, these files a
         vi. 2003-01-01 -> 2002-12-27
 
         vii. 2003-01-04 -> Blank Tile
+        
+##List of mod_oems tests:
+
+1. Request current (no time) JPEG via WMS
+2. Request current (no time) PNG via WMS
+3. Request current (time=default) JPEG tile via WMS
+4. Request current (time=default) PNG tile via WMS
+5. Request tile with date from "year" layer via WMS
+6. Request tile with date from "non-year" layer via WMS
+7. Request tile with date and time (sub-daily) from "year" layer via WMS
+8. Request WMS GetCapabilities 1.1.1
+9. Request WMS GetCapabilities 1.3.0
+10. Request WFS GetCapabilities 2.0.0
+11. Request erroneous layer via WMS
+12. Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS
+13. Request tile with multi-day period and snap to available date via WMS
+14. Request multiple layers with multi-day period and snap to available date via WMS
+15. Request multiple layers with multi-day period and snap to date that is out of range via WMS
+16. Request multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS
+17. Request multiple layers with bad date format via WMS
+18. Request layer with date and reproject from EPSG:4326 to EPSG:3857 via WMS
+19. Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS
+20. Request tile with time (sub-daily) and snap to available date time via WMS
+21. Request image from vector source file with time via WMS
+22. Request GeoJSON from vector source file via WFS
+23. Request CSV from vector source file via WFS
+24. Request GeoJSON from vector source file with time via WFS
+25. Request CSV from vector source file with time via WFS
 
 ##List of mrfgen tests:
 1. Global geographic PNG-MRF
@@ -270,3 +298,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 	* Use single z-level
 	* Use time (hh:mm:ss)
 	* Use zdb lookup
+	
+##List of legend tests:
+
+Tests legends in horizontal and vertical formats as PNGs and SVGs using various GIBS colormaps. The list of colormaps are configured in this [file](legends_test_data/colormaps.json).
