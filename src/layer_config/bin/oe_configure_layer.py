@@ -687,7 +687,13 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
     if (time == detect or time == '' or time.startswith(detect+'/P')) and has_zdb==False:
     #detect everything including breaks in date
         dates = []
-        for f in glob.glob(archiveLocation+'/[0-9]*/*.idx'):
+        if year == True:
+            filesearch = archiveLocation+'/[0-9]*/*.idx'
+            if len(glob.glob(filesearch)) == 0: # No files, maybe 'year' not specified correctly
+                filesearch = archiveLocation+'/*.idx'
+        else:
+            filesearch = archiveLocation+'/*.idx'
+        for f in glob.glob(filesearch):
             filename = os.path.basename(f)
             if str(filename).startswith(fileNamePrefix) and len(filename) == (len(fileNamePrefix) + len("YYYYJJJ") + 5):
                 try:

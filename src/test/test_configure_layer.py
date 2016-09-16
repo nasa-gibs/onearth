@@ -318,7 +318,7 @@ class TestLayerConfig(unittest.TestCase):
 
                 # Generate the empty test files
                 test_dates = testutils.create_continuous_period_test_files(
-                    config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
+                    config['archive_location'], period_unit, period_length, 5, start_datetime, prefix=config['prefix'], suffix='_.idx', make_year_dirs=year_dir)
 
                 # Run layer config command for daily test days
                 cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
@@ -445,7 +445,7 @@ class TestLayerConfig(unittest.TestCase):
             make_dir_tree(config['twms_gc_path'])
             make_dir_tree(config['wmts_staging_location'])
             make_dir_tree(config['twms_staging_location'])
-            dummy_mrf = os.path.join(archive_location, config['prefix'] + start_datestring + '_.mrf')
+            dummy_mrf = os.path.join(archive_location, config['prefix'] + start_datestring + '_.idx')
             open(dummy_mrf, 'a').close()
 
             # Create a ZDB file for seeding with the dates we're looking for
@@ -612,7 +612,7 @@ class TestLayerConfig(unittest.TestCase):
                 make_dir_tree(config['twms_staging_location'])
 
                 # Create a continuous set of period files for each time interval
-                test_dates = testutils.create_continuous_period_test_files(config['archive_location'], period_unit, period_length, 4, start_datetime, prefix=config['prefix'], make_year_dirs=year_dir)
+                test_dates = testutils.create_continuous_period_test_files(config['archive_location'], period_unit, period_length, 4, start_datetime, prefix=config['prefix'], suffix='_.idx', make_year_dirs=year_dir)
 
                 # Create debug output message
                 if DEBUG:
