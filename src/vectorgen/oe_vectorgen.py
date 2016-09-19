@@ -161,12 +161,13 @@ if __name__ == '__main__':
             try:
                 tilematrixset = get_dom_tag_value(dom, 'tilematrixset')
             except:
-                log_sig_exit('ERROR', 'Must specifiy a tilematrixset.')
-            # Tilematrixset definition file (defaults to $LCDIR/conf/tilematrixsets.xml)
+                log_sig_exit('ERROR', 'Must specify a tilematrixset.')
+            # Tilematrixset definition file (defaults to current directory/tilematrixsets.xml)
             try:
                 tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
             except:
-                tilematrixset_definition_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tilematrixsets.xml')
+                log_sig_warn("Can't find tilematrix definition...using " + os.getcwd() + "/tilematrixsets.xml", sigevent_url)
+                tilematrixset_definition_file = os.path.join(os.getcwd(), 'tilematrixsets.xml')
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
