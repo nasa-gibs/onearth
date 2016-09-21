@@ -4,8 +4,10 @@
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
 * `test_mod_onearth.py` -- tests the OnEarth Apache module (requires `sudo`)
+* `test_mod_oems` -- tests the mod_oems and mod_oemstime modules (requires `sudo`)
 * `test_layer_config.py` -- tests the Layer Config tool
 * `test_mrfgen.py` -- tests MRFgen
+* `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 
 ##Setup
 These tests assume that OnEarth and its associated utilities are installed. **Test files for mod_onearth tests must be copied to a directory that Apache has permission to access.**
@@ -25,11 +27,19 @@ Each test script will output a JUnit XML results file. By default, these files a
 * `-d, --debug` -- This will output verbose messages on the test operations to the output file.
 * `-s, --start_server` -- This will load the test Apache configuration for manual testing purposes (normally the script deletes it when the tests are over.)
 
+####test_mod_oems.py
+* `-d, --debug` -- This will output verbose messages on the test operations to the output file.
+* `-s, --start_server` -- This will load the test Apache configuration for manual testing purposes (normally the script deletes it when the tests are over.)
+
 ####test_layer_config.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
 ####test_mrfgen.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
+
+####test_legends.py
+* `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
+
 
 --------
 ##List of test_layer_config tests:
