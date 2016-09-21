@@ -66,7 +66,18 @@ limitations under the License.
   <xs:element name="DataFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="IndexFileLocation" type="xs:string" nillable="true"/>
   <xs:element name="ZIndexFileLocation" type="xs:string" nillable="true"/>
-  <xs:element name="Compression" type="xs:NCName"/>
+  <xs:element name="Compression">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="JPEG"/>
+        <xs:enumeration value="PNG"/>
+        <xs:enumeration value="EPNG"/>
+        <xs:enumeration value="TIF"/>
+        <xs:enumeration value="LERC"/>
+        <xs:enumeration value="PBF"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
   <xs:element name="TileMatrixSet" type="xs:string"/>
   <xs:element name="EmptyTile" nillable="true">
     <xs:complexType mixed="true">
