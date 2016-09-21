@@ -2499,6 +2499,12 @@ $Patterns</TiledGroup>"""
                     log_sig_err("Couldn't read mapfile STYLE file: " + vectorStyleFile, sigevent_url)
             mapfile.write("END\n")
 
+# Use config filename or directory for logging the current config outside of loop
+if not options.layer_config_filename:
+    current_conf = configuration_directory
+else:
+    current_conf = configuration_filename
+
 # run scripts
 if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():

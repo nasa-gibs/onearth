@@ -10,6 +10,7 @@ If a new RPM build is desired, these instructions describe how to build the foll
 * onearth: OnEarth Apache module
 * onearth-config: OnEarth configuration tools (oe_configure_layer, oe_generate_legend, oe_generate_empty_tile)
 * onearth-demo: A simple demo layer for the OnEarth Apache module
+* onearth-mapserver: Apache modules that leverage MapServer for WMS and WFS services
 * onearth-metrics: OnEarth custom log generator for creating metrics
 * onearth-mrfgen: A tool used to help automate the generation of MRF files
 

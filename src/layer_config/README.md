@@ -8,7 +8,7 @@ The OnEarth Layer Configuration Tool (oe_configure_layer.py) is a Python script 
 
 * The tool generates getCapabilities.xml and the server cache configuration file for WMTS.
 * The tool generates getCapabilities.xml, getTileService.xml, and server cache configuration file for Tiled-WMS.
-* The tool can optionally generate Mapserver mapfiles.
+* The tool can optionally generate MapServer mapfiles.
 
 ```
 Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles
@@ -105,7 +105,7 @@ A SigEvent server URL, used for error reporting, may be specified using the -s o
 oe_configure_layer -s http://localhost:8100/sigevent/events/create
 ```
 
-#### Mapserver Config
+#### MapServer Config
 The tool can also create/update mapfiles with the `--create-mapfile` option. The location of the mapfile is located in the enivironment config XML. When the mapfile specified by the environment config doesn't exist, a new one is created from a header template stored in the `$LCDIR/mapfiles` directory. Note that this option will overwrite previously existing layers in the mapfile if they have the same name as the layer that's being added.
 
 When creating a new mapfile, the tool will look for `.header` and `.footer` files, and append them to the start and end of the mapfile if found. The location of these files is set by the `<MapfileConfigLocation>` element in the environment config file. The `"basename"` attribute of this element refers to the file prefix before the `.header` and `.footer` extension.
