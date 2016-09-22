@@ -10,23 +10,34 @@ imagery if they don’t know the exact dates those images are available.
 
 To make things easier, OnEarth allows layers to be configured with
 multiple time periods, and will “snap” an image request to the closest
-available date with data.
+overlapping time period date.  This is conforment with the "nearest value"
+concept outlined in the WMS time suffix, which the GIBS' WMTS implementation
+is following.
 
 For example, say a particular product only has 1 image for every 3-day
-period, starting 2012-01-01. Normally, a request for an image from
-2012-01-01 or 2012-01-04 would return imagery, but a request for
-2012-01-02 or 2012-01-05 would not.
+period, starting 2012-01-01 and with no end date. A request for an image 
+on 2012-01-01 or 2012-01-04 should be expected to return an image because
+those are defined dates within the period. If a server is not "snapping" time
+requests, then a server would _not_ return an image for a request for 
+2012-01-02 or 2012-01-05, as they do not align with the specified time period. 
 
-When a layer is configured with time periods in OnEarth, mod\_onearth
-will snap the otherwise invalid dates to the closest imagery before that
-date. So if a client requests data from 2012-01-02 OnEarth will serve
+However, since the GIBS WMTS does support the "nearest value" "snapping", 
+when a layer is configured with time periods in OnEarth, mod\_onearth
+will snap requests for otherwise invalid dates to the closest overlapping 
+time period. So if a client requests data from 2012-01-02 OnEarth will serve
 data from 2012-01-01. And for 2012-01-05, it will “snap” to 2012-01-04.
+
+Alternatively, a similar product may have imagery for every 3-day
+period, starting 2012-01-01 and ending 2012-01-10.  The ending date is
+considered to be the "first date in the final period."  Therefore, if a server
+is "snapping" time requests, requests for 2012-01-10 through 2010-01-12 will all
+return the 2012-01-10 image.  A request for 2012-01-13 will _not_ be snapped to 
+2012-01-10 because it is outside of the final period.
 
 This works the same for yearly products. Say a product only generates
 one image per year, and that image is delivered on April 1. All requests
-for dates between 2015-04-01 and 2016-03-01 will snap to 2015-04-01 –
-the first date of that time period. A request for 2016-06-17 will snap
-to 2016-04-01.
+for dates between 2015-04-01 and 2016-03-31 will snap to 2015-04-01 –
+the first date of that time period.
 
 =====
 ###Configuring Layer Time Periods
@@ -72,8 +83,7 @@ is acceptable.
 
 ###Some More Snapping Rules
 
-OnEarth follows a few rules when date snapping that are important to
-know.
+OnEarth follows a few rules when date snapping that are important to know.
 
 **Time periods are evaluated from the latest start date backwards to the
 earliest start date.** So in this example:
@@ -88,13 +98,14 @@ time period (so 2014-06-21 would snap to 2014-06-17 and not 2014-01-01).
 The first period is not evaluated, even though its time span overlaps
 the second.
 
-**Dates only snap backwards.** They always snap to the nearest interval
-before the request date, hence:
+**Dates only snap backwards.** 
+They always snap to the nearest interval before the request date, hence:
 
-**Request dates earlier than the start date of the period aren’t snapped.** If no periods containing the request date are found, the
-empty tile is served.
+- **Request dates earlier than the start date of the period aren’t snapped.** 
+If no periods containing the request date are found, the empty tile is served.   
 
-**Dates beyond the end date of the time period will snap backwards to the end date, but only if they are within one interval of the end date.**
+- **Dates beyond the end date of the time period will snap backwards to the end date, 
+but only if they are within one interval of the end date.**   
 
 For example, say the time period is `2011-01-01/2012-01-01/P7D`. The
 date **2012-01-06** will snap backwards to **2012-01-01**, since it’s
@@ -110,9 +121,8 @@ time/date snapping works same as with dates.** Times are snapped
 backwards as long as they are within the start date and the end of the
 last interval in the time period. 
 
-**Note that, with subdaily layers, the
-letter “M” stands for minutes and not months, as it does with daily
-layers.**
+**Note that, with subdaily layers, the letter “M” stands for minutes 
+and not months, as it does with daily layers.**
 
 **For z-level subdaily layers, dates/times are not snapped.** Any
 request for a granule that does not exist currently results in a WMTS
@@ -121,8 +131,9 @@ error.
 =====
 ###WMS Time Snapping:
 
-**Time snapping also works via WMS request with the onearth-mapserver packaged installed.** mod_oems and mod_oemstime must be configured for the endpoint for time snapping to occur.
+**Time snapping also works via WMS request with the onearth-mapserver packaged installed.** 
+mod_oems and mod_oemstime must be configured for the endpoint for time snapping to occur.
 
-**A Tiled-WMS endpoint must exist for mod_oemstime to leverage the mod_onearth time snapping functions.**
+**A local Tiled-WMS endpoint must exist for mod_oemstime to leverage the mod_onearth time snapping functions.**
 
 **Time snapping will work with WMS requests with multiple layers.** If the requested date is invalid for a layer, that layer will be ignored by the request.
