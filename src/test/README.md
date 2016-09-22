@@ -7,6 +7,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mod_oems` -- tests the mod_oems and mod_oemstime modules (requires `sudo`)
 * `test_layer_config.py` -- tests the Layer Config tool
 * `test_mrfgen.py` -- tests MRFgen
+* `test_vectorgen.py` -- tests oe_vectorgen
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 
 ##Setup
@@ -35,6 +36,9 @@ Each test script will output a JUnit XML results file. By default, these files a
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
 ####test_mrfgen.py
+* `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
+
+####test_vectorgen.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
 ####test_legends.py
@@ -308,6 +312,10 @@ Each test script will output a JUnit XML results file. By default, these files a
 	* Use single z-level
 	* Use time (hh:mm:ss)
 	* Use zdb lookup
+	
+##List of vectorgen tests:
+1. MVT MRF generation
+2. Shapefile generation
 	
 ##List of legend tests:
 

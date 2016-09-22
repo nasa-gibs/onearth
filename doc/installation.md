@@ -36,6 +36,7 @@ For manual installation or to install or another OS, please refer to the specifi
 * [OnEarth Legend Generator](../src/generate_legend/README.md)
 * [OnEarth Metrics](../src/onearth_logs/README.md)
 * [OnEarth Scripts](../src/scripts/README.md)
+* [vectorgen](../src/vectorgen/README.md)
 
 ## Install Locations
 
@@ -65,6 +66,7 @@ mrfgen
 /usr/bin/mrfgen
 /usr/bin/RGBApng2Palpng
 /usr/bin/colormap2vrt.py
+/usr/bin/overtiffpacker.py
 /usr/share/onearth/mrfgen/*
 ```
 
@@ -85,7 +87,7 @@ OnEarth Metrics
 OnEarth Demo
 ```
 /usr/share/onearth/demo/*
-/etc/httpd/conf.d/on_earth-demo.conf
+/etc/httpd/conf.d/onearth-demo.conf
 ```
 
 OnEarth Mapserver
@@ -104,6 +106,15 @@ OnEarth Mapserver
 /usr/include/mapserver/*
 /usr/lib64/python2.6/site-packages/_mapscript*
 /usr/lib64/python2.6/site-packages/mapscript*
+```
+
+vectorgen
+```
+/usr/bin/oe_vectorgen
+/usr/share/onearth/vectorgen/*
+/usr/include/spatialindex/*
+/usr/lib64/libspatialindex*
+/usr/lib64/pkgconfig/libspatialindex.pc
 ```
 
 ## Next Steps

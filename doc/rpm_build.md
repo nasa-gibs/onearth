@@ -13,6 +13,7 @@ If a new RPM build is desired, these instructions describe how to build the foll
 * onearth-mapserver: Apache modules that leverage MapServer for WMS and WFS services
 * onearth-metrics: OnEarth custom log generator for creating metrics
 * onearth-mrfgen: A tool used to help automate the generation of MRF files
+* onearth-vectorgen: A tool used to help organize vectors files and generate vector tiles
 
 ## Quick Build
 
@@ -58,7 +59,7 @@ make download gdal-rpm
 Install the RPM:
 
 ```Shell
-sudo yum -y install dist/gibs-gdal-1.11.*.el6.x86_64.rpm
+sudo yum -y install dist/gibs-gdal-*.el6.x86_64.rpm
 ```
 
 The development package needs to be installed to build the remaining packages. This RPM should not be installed on production systems:
@@ -83,5 +84,5 @@ make download onearth-rpm
 To install the OnEarth RPMs:
 
 ```Shell
-sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-metrics-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm dist/onearth-mapserver-*.el6.x86_64.rpm
+sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-metrics-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm dist/onearth-mapserver-*.el6.x86_64.rpm dist/onearth-vectorgen-*.el6.x86_64.rpm
 ```

@@ -6,6 +6,7 @@ This documentation will go through the steps needed to configure the OnEarth ser
 
 Dependent RPMs: 
 * onearth
+* onearth-mapserver
 
 Steps:
 * [Configure Apache](config_apache.md)
@@ -16,6 +17,7 @@ Steps:
 Dependent RPMs: 
 * gibs-gdal
 * onearth-mrfgen
+* onearth-vectorgen
 
 Please refer to the following documentation:
 [Creating Image Archive](archive.md)

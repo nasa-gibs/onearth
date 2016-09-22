@@ -40,11 +40,13 @@ Sample imagery and configurations may be found [here](../test/mrfgen_files/).
 
 ### Prepare Imagery
 
-* Gather image files for generating the MRF.  Imagery must be PNG, JPEG, or [GeoTIFF](http://trac.osgeo.org/geotiff/).  ESRI [world files](http://en.wikipedia.org/wiki/World_file) may be used for geo-referencing.
+* Gather image files for generating the MRF.  Imagery must be PNG, JPEG, [GeoTIFF](http://trac.osgeo.org/geotiff/), or [LERC](https://github.com/Esri/lerc).  ESRI [world files](http://en.wikipedia.org/wiki/World_file) may be used for geo-referencing.
 
 * Bit depth must be 24-bit true color or 8-bit indexed color; alpha channel is optional.
 
 * A single global image or a set of tiles may be used as input.
+
+* An "encoded" PNG (where a Float32 data type is packed into a 3 channel RGB image) can optionally be generated from GeoTIFF input.  
 
 ### Create Configuration File
 
@@ -79,7 +81,7 @@ Directory paths may be different than the example. Directories that do not exist
 * logfile_dir: The location of the log files.
 * mrf_empty_tile_filename: The file to be used for when there is a request for a tile with that is empty or contains all NoData values. It should be in the same file format as the MRF.
 * mrf_blocksize: The MRF tile size. All tiles are square.
-* mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), or PPNG (for 256 color paletted PNGs).
+* mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), PPNG (for 256 color paletted PNGs), EPNG (for encoded PNGs, requires [overtiffpacker.py](overtiffpacker.py)), TIFF, or [LERC](https://github.com/Esri/lerc).
 * target_x: The full x output size of the MRF image. target_y is calculated to maintain native aspect ratio if not defined in ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
 * mrf_nocopy: (true/false) Whether the MRF should be generated without GDAL copy. mrf_insert will be used for improved performance if true. Defaults to "true" unless a single global image is used as input.
 * mrf_merge: (true/false) Whether overlapping input images should be merged on a last-in basis when performing inserts. Defaults to "false" for faster performance.
@@ -99,6 +101,11 @@ These parameters are available but not used in the example above nor necessarily
 * colormap: The GIBS color map to be used if the MRF contains paletted PNGs ([example colormaps](https://gibs.earthdata.nasa.gov/colormaps/)).
 * mrf_z_levels: The maximum number of z levels for the final MRF.
 * mrf_z_key: The string key (e.g., time [YYYYMMDDhhmmss], elevation, band, style) used to map to a z level. See sample [here](../test/mrfgen_files/mrfgen_test_config4c.xml).
+* mrf_data_scale: Scale value for the input data.
+* mrf_data_offset: Offset value for the input data.
+* mrf_data_units: The unit of measurement for the input data.
+* quality_prec: The quality for JPEG (defaults to 80) or precision for LERC (defaults to 0.001).
+* source_url: The URL of the source data file, 
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 

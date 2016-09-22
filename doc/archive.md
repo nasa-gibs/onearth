@@ -84,11 +84,11 @@ These "TTTTTTT" files can simply be soft links to the latest date, rather than b
 An MRF file (or "file set" technically) is actually a triplet of files:
 1) a header file (.mrf),
 2) an index file (.idx), and
-3) a data file (.pjg/ppg/ptf).
+3) a data file (.pjg/ppg/ptf/lrc).
 
 * The header is an XML metadata file containing descriptive information about imagery for use with GDAL routines. All tiles store the same set of metadata.
 * The index file contains spatially organized pointers to individual tiles in an MRF data file.
-* The Pile of PNGs (ppg) or Pile of JPEGS (pjg) or Pile of TIFFs (ptf) data file contains blocks of concatenated images.
+* The Pile of PNGs (ppg) or Pile of JPEGS (pjg) or Pile of TIFFs (ptf) data file contains blocks of concatenated images. Esri LERC (lrc) format is also supported.
 
 Only the header and data file must exist and be co-located in the archive.  The header files are used only on the server for configuring layers, but may be useful to keep in the archive for consistency and troubleshooting.
 
@@ -100,3 +100,5 @@ For more information, see the [MRF Specification](https://github.com/nasa-gibs/m
 MRF files can be generated using GDAL with the MRF driver. A simple way to generate bulk MRF imagery is by using the mrfgen tool.
 
 For more information on generating MRF files, see the documentation for [mrfgen](../src/mrfgen/README.md).
+
+Vecto based datasets, including vector tiles, can be generated using [vectorgen](../src/vectorgen/README.md).
