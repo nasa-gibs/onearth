@@ -40,7 +40,7 @@ Sample imagery and configurations may be found [here](../test/mrfgen_files/).
 
 ### Prepare Imagery
 
-* Gather image files for generating the MRF.  Imagery must be PNG, JPEG, [GeoTIFF](http://trac.osgeo.org/geotiff/), or [LERC](https://github.com/Esri/lerc).  ESRI [world files](http://en.wikipedia.org/wiki/World_file) may be used for geo-referencing.
+* Gather image files for generating the MRF.  Imagery must be PNG, JPEG, or [GeoTIFF](http://trac.osgeo.org/geotiff/).  ESRI [world files](http://en.wikipedia.org/wiki/World_file) may be used for geo-referencing.
 
 * Bit depth must be 24-bit true color or 8-bit indexed color; alpha channel is optional.
 
@@ -101,9 +101,9 @@ These parameters are available but not used in the example above nor necessarily
 * colormap: The GIBS color map to be used if the MRF contains paletted PNGs ([example colormaps](https://gibs.earthdata.nasa.gov/colormaps/)).
 * mrf_z_levels: The maximum number of z levels for the final MRF.
 * mrf_z_key: The string key (e.g., time [YYYYMMDDhhmmss], elevation, band, style) used to map to a z level. See sample [here](../test/mrfgen_files/mrfgen_test_config4c.xml).
-* mrf_data_scale: Scale value for the input data.
-* mrf_data_offset: Offset value for the input data.
-* mrf_data_units: The unit of measurement for the input data.
+* mrf_data_scale: Scale value for the input data. mod_onearth can output this value in the HTTP header of a tile request.
+* mrf_data_offset: Offset value for the input data. mod_onearth can output this value in the HTTP header of a tile request.
+* mrf_data_units: The unit of measurement for the input data. mod_onearth can output this value in the HTTP header of a tile request.
 * quality_prec: The quality for JPEG (defaults to 80) or precision for LERC (defaults to 0.001).
 * source_url: The URL of the source data file, 
 
