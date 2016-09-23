@@ -151,6 +151,8 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/overtiffpacker.py
 	install -m 755 src/mrfgen/RGBApng2Palpng  \
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
+	install -m 755 src/scripts/oe_validate_palette.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_palette.py
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
@@ -227,7 +229,7 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime src/vectorgen \
+		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime src/scripts src/vectorgen \
 		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend GNUmakefile
 
 #-----------------------------------------------------------------------------

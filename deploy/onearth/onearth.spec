@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.1.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -225,6 +225,7 @@ python setup.py install
 %{_bindir}/mrfgen
 %{_bindir}/colormap2vrt.py
 %{_bindir}/overtiffpacker.py
+%{_bindir}/oe_validate_palette.py
 
 %files metrics
 %defattr(664,gibs,gibs,775)

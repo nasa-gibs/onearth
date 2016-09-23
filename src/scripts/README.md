@@ -48,6 +48,24 @@ Example execution:
 ./colorMaptoHTML.py -c path/to/colorap.xml
 ```
 
+## oe_validate_palette.py
+oe_validate_palette.py is a tool for validating an image palette with a GIBS colormap. The output includes a summary of colors matched and the colors unique to the colormap and image. Mismatches are displayed if there are any. The system exit code is the number of colors in the image not found in the color table.
+
+```Shell
+Usage: oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --sigevent_url [url] --verbose
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -c COLORMAP_FILENAME, --colormap=COLORMAP_FILENAME
+                        Full path of colormap filename.
+  -i INPUT_FILENAME, --input=INPUT_FILENAME
+                        Full path of input image
+  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
+                        Default:  http://localhost:8100/sigevent/events/create
+  -v, --verbose         Print out detailed log messages
+```
+
 
 ## read_idx.py
 
