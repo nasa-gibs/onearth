@@ -93,7 +93,7 @@ import sqlite3
 import math
 from overtiffpacker import pack
 
-versionNumber = '1.1.1'
+versionNumber = '1.2.0'
 basename = None
 
 #-------------------------------------------------------------------------------

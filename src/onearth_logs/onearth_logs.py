@@ -69,7 +69,7 @@ import urllib
 import xml.dom.minidom
 
 toolName = "onearth_logs.py"
-versionNumber = "1.1.1"
+versionNumber = "1.2.0"
 
 pixelsize = 0.00028 # meters
 

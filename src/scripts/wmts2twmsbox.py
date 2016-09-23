@@ -114,7 +114,7 @@ def wmts2twmsbox_scale(scale_denominator, col, row):
     return "Request BBOX: " + str(round(request_minx,10))+","+str(round(request_miny,10))+","+str(round(request_maxx,10))+","+str(round(request_maxy,10))
 
 
-versionNumber = '1.1.1'
+versionNumber = '1.2.0'
 usageText = 'wmts2twmsbox.py --col [TILECOL] --row [TILEROW] --scale_denominator [value] OR --top_left_bbox [bbox]'
 
 # Define command line options and args.
