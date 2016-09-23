@@ -67,7 +67,8 @@ class ColorEntry:
         self.g = int(g)
         self.b = int(b)
         self.a = int(a)
-        self.rgba = (str(idx) + ": " + str(r)+','+str(g)+','+str(b)+','+str(a)).strip()
+        self.rgba = (str(r)+','+str(g)+','+str(b)+','+str(a)).strip()
+        self.irgba = (str(idx) + ": " + str(r)+','+str(g)+','+str(b)+','+str(a)).strip()
         
     def __repr__(self):
         return '<Entry idx="%d" c1="%d" c2="%d" c3="%d" c4="%d"/>' % (self.idx, self.r, self.g, self.b, self.a)
@@ -222,8 +223,11 @@ def read_colormap(colormap_filename, sigevent_url):
         log_info_mssg("Opening file " + colormap_filename)
         colormap_file.close()
     except IOError: # try http URL
-        log_info_mssg("Accessing URL " + colormap_filename)
-        dom = xml.dom.minidom.parse(urllib.urlopen(colormap_filename))
+        log_info_mssg("Unable to find file, trying as URL: " + colormap_filename)
+        try:
+            dom = xml.dom.minidom.parse(urllib.urlopen(colormap_filename))
+        except IOError, e:
+            log_sig_exit("ERROR", str(e), sigevent_url)
     # ColorMap parameters
     colorMaps = dom.getElementsByTagName('ColorMap')
     idx = 0
@@ -290,7 +294,7 @@ def read_color_table(image, sigevent_url):
 
 print 'oe_validate_palette.py v' + versionNumber
 
-usageText = 'oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --sigevent_url [url] --verbose'
+usageText = 'oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --sigevent_url [url] --no_index --ignore_colors --verbose'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -300,6 +304,8 @@ parser.add_option('-c', '--colormap',
 parser.add_option('-i', '--input',
                   action='store', type='string', dest='input_filename',
                   help='Full path of input image')
+parser.add_option("-n", "--no_index", action="store_true", dest="no_index", 
+                  default=False, help="Do not check for matching index location")
 parser.add_option('-u', '--sigevent_url',
                   action='store', type='string', dest='sigevent_url',
                   default=
@@ -307,6 +313,9 @@ parser.add_option('-u', '--sigevent_url',
                   help='Default:  http://localhost:8100/sigevent/events/create')
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Print out detailed log messages")
+parser.add_option('-x', '--ignore_colors',
+                  action='store', type='string', dest='ignore_colors',
+                  help='List of RGBA color values to ignore separated by "|"')
 
 # Read command line args
 (options, args) = parser.parse_args()
@@ -325,15 +334,25 @@ if not options.input_filename:
 else:
     input_filename = options.input_filename
 
-# print verbose log mesaages
+# do not compare index location values
+no_index = options.no_index
+
+# print verbose log messages
 verbose = options.verbose
 
 # Sigevent URL.
 sigevent_url = options.sigevent_url
 
+# verbose logging
 if verbose:
     log_info_mssg('Colormap: ' + colormap_filename)
     log_info_mssg('Input Image: ' + input_filename)
+    
+# Colors to ignore
+if not options.ignore_colors:
+    ignore_colors = []
+else:
+    ignore_colors = options.ignore_colors.strip().split("|")
       
 # Read palette from colormap
 colortable = read_colormap(colormap_filename, sigevent_url)
@@ -348,25 +367,47 @@ image_only = []
 
 # Populate initial lists
 for img_color in img_colortable:
-    image_only.append(img_color.rgba)
+    image_only.append(img_color.rgba if no_index else img_color.irgba)
 for color in colortable:
-    colormap_only.append(color.rgba)
+    colormap_only.append(color.rgba if no_index else color.irgba)
+for ignore_color in ignore_colors:
+    if verbose:
+        log_info_mssg("Ignoring color: " + ignore_color)
+    image_only = [ x for x in image_only if ignore_color not in x ]
+    colormap_only = [ x for x in colormap_only if ignore_color not in x ]
+if no_index == True: # Get only unique values
+    image_only = list(set(image_only))
+    colormap_only = list(set(colormap_only))
     
 # Loop through color tables
 for color in colortable:
     match = False
     for img_color in img_colortable:
-        if color.rgba == img_color.rgba:
-            if img_color.rgba not in match_colors:
+        if no_index == True:
+            if color.rgba == img_color.rgba:
                 match = True
-                match_colors.append(img_color.rgba)
-                colormap_only.remove(color.rgba) 
-                image_only.remove(img_color.rgba)
-                if verbose:
-                    log_info_mssg("Found matching color " + img_color.rgba)
+                if img_color.rgba not in match_colors:
+                    match_colors.append(img_color.rgba)
+                    if color.rgba in colormap_only:
+                        colormap_only.remove(color.rgba)
+                    if img_color.rgba in image_only:
+                        image_only.remove(img_color.rgba)
+                    if verbose:
+                        log_info_mssg("Found matching color " + img_color.rgba)
+        else:
+            if color.irgba == img_color.irgba:
+                if img_color.irgba not in match_colors:
+                    match = True
+                    match_colors.append(img_color.irgba)
+                    if color.irgba in colormap_only:
+                        colormap_only.remove(color.irgba)
+                    if img_color.irgba in image_only:
+                        image_only.remove(img_color.irgba)
+                    if verbose:
+                        log_info_mssg("Found matching color " + img_color.irgba)
     if match == False:
         if verbose:
-            log_info_mssg("No match for color " + color.rgba)        
+            log_info_mssg("No match for color " + color.rgba)
 
 if verbose:
     log_info_mssg(("\nMatched colors: " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
