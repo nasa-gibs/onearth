@@ -215,6 +215,7 @@ python setup.py install
 %{_bindir}/RGBApng2Palpng
 %{_bindir}/mrfgen
 %{_bindir}/colormap2vrt.py
+%{_bindir}/oe_validate_palette.py
 
 %files metrics
 %defattr(664,gibs,gibs,775)

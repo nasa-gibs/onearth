@@ -129,6 +129,8 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/colormap2vrt.py
 	install -m 755 src/mrfgen/RGBApng2Palpng  \
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
+	install -m 755 src/scripts/oe_validate_palette.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_palette.py
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
