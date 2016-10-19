@@ -131,6 +131,16 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 	install -m 755 src/scripts/oe_validate_palette.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_palette.py
+	install -m 755 src/scripts/read_idx.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/read_idx.py
+	install -m 755 src/scripts/read_mrf.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/read_mrf.py
+	install -m 755 src/scripts/read_mrfdata.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/read_mrfdata.py
+	install -m 755 src/scripts/twmsbox2wmts.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/twmsbox2wmts.py
+	install -m 755 src/scripts/wmts2twmsbox.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/wmts2twmsbox.py
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
