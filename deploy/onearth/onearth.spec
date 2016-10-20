@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.2.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -210,6 +210,8 @@ make install
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_generate_legend.py
 %{_bindir}/oe_generate_empty_tile.py
+%{_bindir}/twmsbox2wmts.py
+%{_bindir}/wmts2twmsbox.py
 %{_datadir}/mpl
 
 %post config		
@@ -226,6 +228,9 @@ python setup.py install
 %{_bindir}/colormap2vrt.py
 %{_bindir}/overtiffpacker.py
 %{_bindir}/oe_validate_palette.py
+%{_bindir}/read_idx.py
+%{_bindir}/read_mrf.py
+%{_bindir}/read_mrfdata.py
 
 %files metrics
 %defattr(664,gibs,gibs,775)
