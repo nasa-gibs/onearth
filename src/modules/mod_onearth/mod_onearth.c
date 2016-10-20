@@ -1090,12 +1090,12 @@ static apr_off_t wmts_get_index_offset(request_rec *r, WMSlevel *level)
  
 }
 
-static apr_off_t wmts_get_index_offset_z(request_rec *r, WMSlevel *level, int z, int zlevels)
+static apr_off_t wmts_get_index_offset_z(request_rec *r, WMSlevel *level, long long z, long long zlevels)
 {
  char *args;
  char *pszx,*pszy;
  // The tile indices are directly passed from the top-left
- int x,y,i;
+ long long x,y,i;
 
  // Convert the whole input string to uppercase
  args=apr_pstrdup(r->pool,r->args);
@@ -1189,7 +1189,7 @@ static apr_off_t get_index_offset(WMSlevel *level, wms_wmsbbox *bb,
 }
 
 static apr_off_t twms_get_index_offset_z(WMSlevel *level, wms_wmsbbox *bb,
-                                  int ori, int z, int zlevels, request_rec *r) 
+                                  int ori, long long z, long long zlevels, request_rec *r)
 {
   apr_off_t ix,iy;
   double x,y;
