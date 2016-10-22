@@ -805,14 +805,20 @@ def insert_zdb(mrf, zlevels, zkey):
     try:
         db_exists = os.path.isfile(zdb_out)
         log_info_mssg("Connecting to " + zdb_out)
-        con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
+        con = sqlite3.connect(zdb_out, timeout=1800.0) # 30 minute timeout
         
         if db_exists == False:
             cur = con.cursor() 
-            cur.executescript("CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);")
-            con.commit()
+            try:
+                cur.executescript(create_script)
+                con.commit()
+            except sqlite3.Error, e:
+                mssg = "%s:" % e.args[0]
+                if "database schema has changed" in mssg: # in case two processes attempt to create schema at once
+                    log_sig_warn(mssg + zdb_out, sigevent_url)
 
         if zkey != '':
+            is_update = False
             cur = con.cursor()
             # Check for existing key
             cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
@@ -821,7 +827,8 @@ def insert_zdb(mrf, zlevels, zkey):
                 mssg = zkey + " key already exists...overwriting"
                 log_sig_warn(mssg, sigevent_url)
                 cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
-                z = int(cur.fetchone()[0]) 
+                z = int(cur.fetchone()[0])
+                is_update = True
             else:              
                 # Check z size
                 cur.execute("SELECT COUNT(*) FROM ZINDEX;")
@@ -840,19 +847,30 @@ def insert_zdb(mrf, zlevels, zkey):
                     cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
                 z = cur.lastrowid
                 log_info_mssg("Current z-level is " +str(z))
+            if is_update == True: # commit if updating existing z; if not, hold off commit until MRF is updated to avoid having orphan z key
+                if con:
+                    con.commit()
+                    con.close()
+                    con = None
+                    log_info_mssg("Successfully committed record to " + zdb_out)
         
     except sqlite3.Error, e:
         if con:
-            con.rollback()
+            con.close()
+            con = None
         mssg = "%s:" % e.args[0]
-        log_sig_exit('ERROR', mssg, sigevent_url)
+        if "database is locked" in mssg:
+            log_sig_warn(mssg + " retrying connection to " + zdb_out, sigevent_url)
+            return insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units)
+        else:
+            log_sig_exit('ERROR', mssg, sigevent_url)
         
     # Use specific z if appropriate
     if z != None:
         gdal_mrf_filename = mrf + ":MRF:Z" + str(z)
     else:
         gdal_mrf_filename = mrf
-        
+
     return (gdal_mrf_filename, z, zdb_out, con)
 
 
@@ -948,9 +966,9 @@ sigevent_url=options.sigevent_url
 data_only = options.data_only
 
 # Get current time, which is written to a file as the previous cycle time.  
-# Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
+# Time format is "yyyymmdd.hhmmss.f".  Do this first to avoid any gap where tiles 
 # may get passed over because they were created while this script is running.
-current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
+current_cycle_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f")
 
 errors = 0
 
@@ -971,8 +989,7 @@ else:
 
     # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
     # Files get date_of_date added, links do not.
-    basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', 
-                         current_cycle_time])    
+    basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', current_cycle_time, '_', str(os.getpid())])    
     
     # for sub-daily imagery
     try: 
@@ -1422,7 +1439,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 add_transparency = True
             else:
                 log_info_mssg("Paletted image verified")
-                
+
         # remove tif temp tiles
         if temp_tile != None:
             remove_file(temp_tile)
