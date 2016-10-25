@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2002-2015, California Institute of Technology.
+# Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -31,40 +31,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ct() {
-  while read a
-  do
-    echo $a
-  done
-}
-
-QS=${QUERY_STRING%%GetMap*}
-if [[ -z ${QS##*=} ]]
-then
-  if [[ $QUERY_STRING == *jpeg* ]]
-  then
-    echo -e "Content-type: image/jpeg\n"
-    cat black.jpg
-  else
-    echo -e "Content-type: image/png\n"
-    cat transparent.png
-  fi
-  exit
+MAPSERV="/usr/bin/mapserv"
+if [ "${REQUEST_METHOD}" = "GET" ]; then
+  exec ${MAPSERV}
 else
-  if [[ $QUERY_STRING == *GetCapabilities* ]]
-  then
-    echo -e "Content-type: text/xml\n"
-    cat .lib/getCapabilities.xml
-#    IFS= ct <.lib/getCapabilities.xml
-    exit
-  else
-    if [[ $QUERY_STRING == *GetTileService* ]]
-    then
-      echo -e "Content-type: text/xml\n"
-      cat .lib/getTileService.xml
-      exit
-    fi
-  fi
-  echo -e "Content-type: text/html\n"
-  echo "<body>This is not a full WMS server!</body>"
+  echo "Sorry, I only understand GET requests."
 fi
+exit 1
