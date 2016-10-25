@@ -73,6 +73,7 @@ import re
 import distutils.spawn
 import sqlite3
 import glob
+import tempfile
 from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
@@ -1708,7 +1709,12 @@ for conf in conf_files:
         except IOError:
             log_sig_err("Can't open MRF file: {0}".format(header_file_name), sigevent_url)
             continue
-    
+ 
+    try:
+        mrf_file.close()
+    except:
+        pass
+ 
     # Create base MRF document. We'll be adding stuff from either the header MRF or the 
     # layer config file to this.
     mrf_impl = xml.dom.minidom.getDOMImplementation()
@@ -1923,56 +1929,63 @@ for conf in conf_files:
         projectionElement.appendChild(mrf_dom.createCDATASection(projection.wkt))
         mrf_meta.appendChild(projectionElement)
     
-    if not os.path.exists(twmsEndPoint):
-        os.makedirs(twmsEndPoint)
-    if not os.path.exists(wmtsEndPoint):
-        os.makedirs(wmtsEndPoint)
-        
-    twms_mrf_filename = twmsEndPoint+'/'+mrf_base
-    twms_mrf_file = open(twms_mrf_filename,'w+')
+    if no_twms == False:
+        if not os.path.exists(twmsEndPoint):
+            os.makedirs(twmsEndPoint)
+        twms_mrf_filename = twmsEndPoint+'/'+mrf_base
+        twms_mrf_file = open(twms_mrf_filename,'w+')
 
+    else:
+        twms_mrf_file = tempfile.TemporaryFile()
+      
     formatted_xml = get_pretty_xml(mrf_dom)
     twms_mrf_file.write(formatted_xml)
     twms_mrf_file.seek(0)
 
-    wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
-    # check if file already exists and has same TileMatrixSet, if not then create another file
-    if os.path.isfile(wmts_mrf_filename):
-        wmts_mrf_file = open(wmts_mrf_filename,'r')
-        if tilematrixset not in wmts_mrf_file.read():
-            log_sig_warn(tilematrixset + " not found in existing " + wmts_mrf_filename + ". Creating new file for TileMatrixSet.", sigevent_url)
-            wmts_mrf_filename = wmts_mrf_filename.split(".mrf")[0] + "_" + tilematrixset + ".mrf"
-        wmts_mrf_file.close()
-        
-    wmts_mrf_file = open(wmts_mrf_filename,'w+')
     lines = twms_mrf_file.readlines()
-    
-    # change patterns for WMTS
-    pattern_replaced = False
-    try:
-        wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
-    except KeyError:
-        log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
-    for line in lines:
-        if '<Pattern>' in line:
-            if pattern_replaced == False:
-                patternline = line.split('Pattern')
-                line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]               
-                pattern_replaced = True
-            else:
-                line = ''
-        wmts_mrf_file.write(line)
-    
     twms_mrf_file.close()
-    wmts_mrf_file.seek(0)
-    wmts_mrf_file.close()
-    try:
-        mrf_file.close()
-    except:
-        pass
     
-    print '\n'+ twms_mrf_filename + ' configured successfully\n'
-    print '\n'+ wmts_mrf_filename + ' configured successfully\n'
+    if no_twms == False:
+        print '\n'+ twms_mrf_filename + ' configured successfully\n'
+
+
+    if no_wmts == False:
+        if not os.path.exists(wmtsEndPoint):
+            os.makedirs(wmtsEndPoint)
+
+        wmts_mrf_filename = wmtsEndPoint+'/'+mrf_base
+        # check if file already exists and has same TileMatrixSet, if not then create another file
+        if os.path.isfile(wmts_mrf_filename):
+            wmts_mrf_file = open(wmts_mrf_filename,'r')
+            if tilematrixset not in wmts_mrf_file.read():
+                log_sig_warn(tilematrixset + " not found in existing " + wmts_mrf_filename + ". Creating new file for TileMatrixSet.", sigevent_url)
+                wmts_mrf_filename = wmts_mrf_filename.split(".mrf")[0] + "_" + tilematrixset + ".mrf"
+            wmts_mrf_file.close()
+        
+        wmts_mrf_file = open(wmts_mrf_filename,'w+')
+    
+        # change patterns for WMTS
+        pattern_replaced = False
+        try:
+            wmts_pattern = "<![CDATA[SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=%s&STYLE=(default)?&TILEMATRIXSET=%s&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=%s]]>" % (identifier, tilematrixset, mrf_format.replace("/","%2F"))
+        except KeyError:
+            log_sig_exit('ERROR', 'TileMatrixSet ' + tilematrixset + ' not found for projection: ' + projection.id, sigevent_url)
+
+        for line in lines:
+            if '<Pattern>' in line:
+                if pattern_replaced == False:
+                    patternline = line.split('Pattern')
+                    line = patternline[0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[-1]               
+                    pattern_replaced = True
+                else:
+                    line = ''
+            wmts_mrf_file.write(line)
+    
+        wmts_mrf_file.seek(0)
+        wmts_mrf_file.close()
+      
+        print '\n'+ wmts_mrf_filename + ' configured successfully\n'
+    
     
     # generate archive links if requested
     if links == True:
@@ -1982,6 +1995,7 @@ for conf in conf_files:
         else:
             print fileNamePrefix + " is not a time varying layer" 
 
+          
     # generate color map if requested
     legendUrl_vertical = ''
     legendUrl_horizontal = '' 
@@ -2014,7 +2028,6 @@ for conf in conf_files:
             
 # Modify service files
     
-
     #getCapabilities TWMS
     if no_twms == False:
         try:
@@ -2046,7 +2059,7 @@ for conf in conf_files:
             getCapabilities_base.writelines(lines)
             getCapabilities_base.close()
     
-        #getTileService
+    #getTileService
     if no_twms == False:
         try:
             # Copy and open base GetTileService.
