@@ -2388,7 +2388,7 @@ $Patterns</TiledGroup>"""
                 mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
-            mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
+            mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
             if not static and len(timeElements)>0:
                 defaultDate = ''
