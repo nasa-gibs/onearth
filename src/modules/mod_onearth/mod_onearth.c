@@ -536,7 +536,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 							if (ap_strstr(r->prev->args, layer_subdaily) != 0) {
 								pos += strlen(layer_time)+10;
 							}
-							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%02d&%s_SUBDAILY=%02d%02d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, layer, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec, pos);
+							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%03d&%s_SUBDAILY=%02d%02d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, layer, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec, pos);
 							ap_internal_redirect(new_uri, r);
 						}
 					}
