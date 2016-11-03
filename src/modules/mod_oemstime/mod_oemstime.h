@@ -43,12 +43,21 @@
 #include <apr_file_io.h>
 #include <apr_strings.h>
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
 #if defined(APLOG_USE_MODULE)
 APLOG_USE_MODULE(oemstime);
 #endif
 
 struct oemstime_conf {
 	const char *twmssserviceurl;
+};
+
+struct filter_ctx {
+	apr_bucket_brigade *bb_out;
 };
 
 extern module AP_MODULE_DECLARE_DATA oemstime_module;

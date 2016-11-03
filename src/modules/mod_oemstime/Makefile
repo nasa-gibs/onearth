@@ -32,13 +32,13 @@
 TARGET=.libs/mod_oemstime.so
 C_SRC = mod_oemstime.cpp
 FILES = $(C_SRC)
-INCLUDES = -I /usr/include/httpd -I /usr/include/apr-1
+INCLUDES = -I /usr/include/httpd -I /usr/include/apr-1 -I /usr/include/libxml2
 MOD_PATH = /usr/lib64/httpd/modules/
 
 default	: $(TARGET)
 $(TARGET) : $(FILES)
 	libtool --silent --mode=compile g++ -prefer-pic -O2 -Wall  -DLINUX -D_REENTRANT -D_GNU_SOURCE -pthread $(INCLUDES) -c -o mod_oemstime.lo $(C_SRC) && touch mod_oemstime.slo
-	libtool --silent --mode=link g++ -o mod_oemstime.la -rpath $(MOD_PATH) -module -avoid-version mod_oemstime.lo
+	libtool --silent --mode=link g++ -o mod_oemstime.la -rpath $(MOD_PATH) -module -avoid-version -lxml2 mod_oemstime.lo
 
 install	:	$(TARGET)
 	sudo	cp $(TARGET)	$(MOD_PATH)
