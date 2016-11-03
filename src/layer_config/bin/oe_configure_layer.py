@@ -2136,7 +2136,7 @@ for conf in conf_files:
             <Format>$Format</Format>
             <Dimension>
                 <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
+                <ows:UOM>ISO8601</ows:UOM>
                 <Default>$DefaultDate</Default>
                 <Current>false</Current>
                 <Value>$DateRange</Value>
@@ -2197,7 +2197,7 @@ for conf in conf_files:
                 line = line.replace("$TileMatrixSet",tilematrixset)
                 tilematrixset_line = line
             if static == True or len(timeElements)==0:
-                if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
+                if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<ows:UOM>ISO8601</ows:UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
                     line = ''
                 if '/{Time}' in line:
                     line = line.replace('/{Time}', '')
