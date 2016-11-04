@@ -33,7 +33,7 @@ window.onload = function() {
     var blue_marble = new ol.layer.Image({
 		extent: [-180,-90,180,90],
 		source: new ol.source.ImageWMS({
-			url: 'http://localhost/onearth/wms/epsg4326/mapserv',
+			url: 'http://localhost/onearth/wms/epsg4326/wms.cgi',
 			params: {'LAYERS': 'blue_marble', 'FORMAT': 'image/jpeg'}
 		})
     })

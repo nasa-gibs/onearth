@@ -156,6 +156,8 @@ onearth-install:
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 src/cgi/wmts.cgi \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	install -m 755 src/cgi/wms.cgi \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	cp src/cgi/kml/* \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
 	cp src/cgi/index.html \

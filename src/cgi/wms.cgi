@@ -35,6 +35,6 @@ MAPSERV="/usr/bin/mapserv"
 if [ "${REQUEST_METHOD}" = "GET" ]; then
   exec ${MAPSERV}
 else
-  echo "Sorry, I only understand GET requests."
+  echo "Unable to handle request with MapServer."
 fi
 exit 1
