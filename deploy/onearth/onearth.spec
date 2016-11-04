@@ -112,7 +112,7 @@ cp %{SOURCE3} upstream
 make onearth PREFIX=%{_prefix}
 cd src/mrfgen/
 gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
-cd build/mapserver
+cd ../../build/mapserver
 mkdir build
 cd build
 cmake \
@@ -210,6 +210,9 @@ make install
 %{_bindir}/read_idx.py
 %{_bindir}/read_mrf.py
 %{_bindir}/read_mrfdata.py
+%{_bindir}/colorMaptoHTML.py
+%{_bindir}/colorMaptoSLD.py
+%{_bindir}/SLDtoColorMap.py
 %{_datadir}/mpl
 
 %post tools		

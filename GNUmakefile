@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.1.1
+ONEARTH_VERSION=1.1.2
 
 PREFIX=/usr/local
 SMP_FLAGS=-j $(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -117,7 +117,7 @@ onearth-install:
 		$(DESTDIR)/$(PREFIX)/bin/oe_create_cache_config
 	install -m 755 src/layer_config/bin/oe_configure_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
-	install -m 755 src/layer_config/bin/oe_generate_empty_tile.py  \
+	install -m 755 src/empty_tile/oe_generate_empty_tile.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_generate_empty_tile.py
 	install -m 755 src/onearth_logs/onearth_logs.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/onearth_metrics
@@ -129,7 +129,7 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/colormap2vrt.py
 	install -m 755 src/mrfgen/RGBApng2Palpng  \
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
-	install -m 755 src/scripts/oe_validate_palette.py  \
+	install -m 755 src/mrfgen/oe_validate_palette.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_palette.py
 	install -m 755 src/scripts/read_idx.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/read_idx.py
@@ -141,6 +141,12 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/twmsbox2wmts.py
 	install -m 755 src/scripts/wmts2twmsbox.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/wmts2twmsbox.py
+	install -m 755 src/colormaps/bin/colorMaptoHTML.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/colorMaptoHTML.py
+	install -m 755 src/colormaps/bin/colorMaptoSLD.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/colorMaptoSLD.py
+	install -m 755 src/colormaps/bin/SLDtoColorMap.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/SLDtoColorMap.py
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/empty_tiles
