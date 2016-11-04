@@ -50,99 +50,98 @@ static void *create_dir_config(apr_pool_t *p, char *dummy)
     return cfg;
 }
 
-static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
+static int oemstime_output_filter(ap_filter_t *f, apr_bucket_brigade *bb) {
 	request_rec *r = f->r;
 	conn_rec *c = r->connection;
     oemstime_conf *cfg = static_cast<oemstime_conf *>ap_get_module_config(r->per_dir_config, &oemstime_module);
     char *srs = 0;
     char *format = 0;
     char *time = 0;
-    char *layer_list = 0;
     char *current_layer = 0;
 
     srs = (char *) apr_table_get(r->notes, "oems_srs");
     format = (char *) apr_table_get(r->notes, "oems_format");
     time = (char *) apr_table_get(r->notes, "oems_time");
-    layer_list = (char *) apr_table_get(r->notes, "oems_layers");
     current_layer = (char *) apr_table_get(r->notes, "oems_clayer");
+	
+	// run only if Mapserver has an error due to invalid time or format
+	if ((ap_strstr(r->content_type, "text/xml") != 0) || (ap_strstr(r->content_type, "application/vnd.ogc.se_xml") != 0)) {
 
-    if ((srs != 0) && (format != 0) && (time != 0) && (current_layer != 0) && (cfg->twmssserviceurl != 0)) { // make sure no null values
-		if ((ap_strstr(r->content_type, "text/xml") != 0) || (ap_strstr(r->content_type, "application/vnd.ogc.se_xml") != 0)) { // run only if Mapserver has an error due to invalid time or format
-
-			// If this is the last layer (i.e. layer list is down to 1, no comma delimiters left), handle as a fatal error message, parse and modify the XML.
-			if (!ap_strstr(layer_list, ",")) 
+		// Parse, sanitize, and return XML error message if this is the last of a bunch of unsuccessful layer queries.
+		if (current_layer == 0) {
+			// Outgoing bucket brigade is stored in the filter context for re-use.
+			struct filter_ctx *ctx = static_cast<filter_ctx *>(f->ctx);
+			if (!ctx)
 			{
-				// Outgoing bucket brigade is stored in the filter context for re-use.
-				struct filter_ctx *ctx = static_cast<filter_ctx *>(f->ctx);
-				if (!ctx)
-				{
-					f->ctx = ctx = static_cast<filter_ctx *>(apr_palloc(r->pool, sizeof(filter_ctx*)));
-					ctx->bb_out = apr_brigade_create(r->pool, c->bucket_alloc);
+				f->ctx = ctx = static_cast<filter_ctx *>(apr_palloc(r->pool, sizeof(filter_ctx*)));
+				ctx->bb_out = apr_brigade_create(r->pool, c->bucket_alloc);
+			}
+
+			xmlParserCtxtPtr xmlctx = 0;
+			xmlDocPtr doc = 0;
+			apr_bucket_brigade *bb_out = ctx->bb_out;
+
+			/* This loop handles incoming buckets, which are read and loaded into the XML parser. When the final bucket arrives,
+			The XML is checked for validity, and then the <ServiceException> tag message is modified using an xpath search.
+			The output XML string is then written to the output stream. */
+		    for (apr_bucket *b = APR_BRIGADE_FIRST(bb); 
+		    	b != APR_BRIGADE_SENTINEL(bb); 
+		    	b = APR_BUCKET_NEXT(b))
+		    {
+		    	if (APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b)) 
+		    	{
+		    		xmlParseChunk(xmlctx, 0, 0, 1);
+		    		if (!xmlctx->valid)
+		    		{
+		    			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Can't parse Mapserver output: invalid XML");	
+		    		}
+		    		doc = xmlctx->myDoc;
+
+    		        xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
+			        xmlXPathRegisterNs(xpathCtx, BAD_CAST "new", BAD_CAST "http://www.opengis.net/ogc");
+			        const xmlChar *search_xpath = (const xmlChar *)"/new:ServiceExceptionReport/new:ServiceException/text()";
+			        xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(search_xpath, xpathCtx);
+			        const char* out_buf;
+			        int out_size;
+			        if (xpathObj->nodesetval) {
+			            xmlNodeSetContent(xpathObj->nodesetval->nodeTab[0], (const xmlChar *)"The data for your request was not found.");    
+			            xmlDocDumpMemory(doc, (xmlChar **)&out_buf, &out_size);
+			        }
+
+			        xmlXPathFreeObject(xpathObj);
+			        xmlXPathFreeContext(xpathCtx);
+			        xmlFreeDoc(doc);
+
+			    	ap_fwrite(f->next, bb_out, out_buf, out_size);
+
+			    	// Add EOS bucket to tail once we're done w/ the XML
+		    		APR_BUCKET_REMOVE(b);
+		    		APR_BRIGADE_INSERT_TAIL(bb_out, b);
+		    		ap_pass_brigade(f->next, bb_out);
+		    		return APR_SUCCESS;
+		    	}
+
+		    	const char *buf = 0;
+		    	apr_size_t bytes;
+		    	if (APR_SUCCESS != apr_bucket_read(b, &buf, &bytes, APR_BLOCK_READ)) {
+					ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Error reading bucket");
 				}
 
-				xmlParserCtxtPtr xmlctx = 0;
-				xmlDocPtr doc = 0;
-				apr_bucket_brigade *bb_out = ctx->bb_out;
+				if (!xmlctx)
+				{
+					xmlctx = xmlCreatePushParserCtxt(NULL, NULL, buf, bytes, NULL);
+					continue;
+				}
 
-				/* This loop handles incoming buckets, which are read and loaded into the XML parser. When the final bucket arrives,
-				The XML is checked for validity, and then the <ServiceException> tag message is modified using an xpath search.
-				The output XML string is then written to the output stream. */
-			    for (apr_bucket *b = APR_BRIGADE_FIRST(bb); 
-			    	b != APR_BRIGADE_SENTINEL(bb); 
-			    	b = APR_BUCKET_NEXT(b))
-			    {
-			    	if (APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b)) 
-			    	{
-			    		xmlParseChunk(xmlctx, 0, 0, 1);
-			    		if (!xmlctx->valid)
-			    		{
-			    			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Can't parse Mapserver output: invalid XML");	
-			    		}
-			    		doc = xmlctx->myDoc;
-
-	    		        xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
-				        xmlXPathRegisterNs(xpathCtx, BAD_CAST "new", BAD_CAST "http://www.opengis.net/ogc");
-				        const xmlChar *search_xpath = (const xmlChar *)"/new:ServiceExceptionReport/new:ServiceException/text()";
-				        xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(search_xpath, xpathCtx);
-				        const char* out_buf;
-				        int out_size;
-				        if (xpathObj->nodesetval) {
-				            xmlNodeSetContent(xpathObj->nodesetval->nodeTab[0], (const xmlChar *)"The data for your request was not found.");    
-				            xmlDocDumpMemory(doc, (xmlChar **)&out_buf, &out_size);
-				        }
-
-				        xmlXPathFreeObject(xpathObj);
-				        xmlXPathFreeContext(xpathCtx);
-				        xmlFreeDoc(doc);
-
-    			    	ap_fwrite(f->next, bb_out, out_buf, out_size);
-
-    			    	// Add EOS bucket to tail once we're done w/ the XML
-			    		APR_BUCKET_REMOVE(b);
-			    		APR_BRIGADE_INSERT_TAIL(bb_out, b);
-			    		ap_pass_brigade(f->next, bb_out);
-			    		return APR_SUCCESS;
-			    	}
-
-			    	const char *buf = 0;
-			    	apr_size_t bytes;
-			    	if (APR_SUCCESS != apr_bucket_read(b, &buf, &bytes, APR_BLOCK_READ)) {
-						ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Error reading bucket");
-					}
-
-					if (!xmlctx)
-					{
-						xmlctx = xmlCreatePushParserCtxt(NULL, NULL, buf, bytes, NULL);
-						continue;
-					}
-
-					if (xmlParseChunk(xmlctx, buf, bytes, 0))
-					{
-						ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Error reading XML");	
-					}
-		    }
+				if (xmlParseChunk(xmlctx, buf, bytes, 0))
+				{
+					ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Error reading XML");	
+				}
+	    	}
 		}
 
+		// Otherwise, redirect to mod_onearth for time snapping.
+	    if ((srs != 0) && (format != 0) && (time != 0) && (current_layer != 0) && (cfg->twmssserviceurl != 0)) { // make sure no null values
 			int max_size = strlen(cfg->twmssserviceurl)+strlen(r->args);
 			char *pos = 0;
 			char *split;

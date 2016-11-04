@@ -38,6 +38,74 @@
 
 #include "mod_oems.h"
 
+// Output filter for GetCapabilities. Currently swaps "nearestValue=0" to "nearestValue=1"
+static apr_status_t gc_output_filter(ap_filter_t *f, apr_bucket_brigade *bb)
+{
+	request_rec *r = f->r;
+	conn_rec *c = r->connection;
+	apr_bucket_brigade *bb_out = apr_brigade_create(r->pool, c->bucket_alloc);
+	xmlParserCtxtPtr xmlctx = 0;
+	xmlDocPtr doc = 0;
+
+    for (apr_bucket *b = APR_BRIGADE_FIRST(bb); 
+		b != APR_BRIGADE_SENTINEL(bb); 
+		b = APR_BUCKET_NEXT(b))
+	{
+		if (APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b)) 
+		{
+			xmlParseChunk(xmlctx, 0, 0, 1);
+			if (!xmlctx->valid)
+			{
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Can't parse Mapserver output: invalid XML");	
+			}
+			doc = xmlctx->myDoc;
+
+	        xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
+	        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/wms");
+	        const xmlChar *search_xpath = (const xmlChar *)"/default:WMS_Capabilities/default:Capability/default:Layer/default:Layer/default:Dimension/@nearestValue";
+	        xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(search_xpath, xpathCtx);
+	        const char* out_buf;
+	        int out_size;
+	        for (int i=0; i<xpathObj->nodesetval->nodeNr; i++)
+	        {
+	            xmlNodeSetContent(xpathObj->nodesetval->nodeTab[i], (const xmlChar *)"1");    
+	            xmlDocDumpMemory(doc, (xmlChar **)&out_buf, &out_size);
+	        }
+
+	        xmlXPathFreeObject(xpathObj);
+	        xmlXPathFreeContext(xpathCtx);
+	        xmlFreeDoc(doc);
+
+	    	ap_fwrite(f->next, bb_out, out_buf, out_size);
+
+	    	// Add EOS bucket to tail once we're done w/ the XML
+			APR_BUCKET_REMOVE(b);
+			APR_BRIGADE_INSERT_TAIL(bb_out, b);
+			ap_pass_brigade(f->next, bb_out);
+			return APR_SUCCESS;
+		}
+
+		const char *buf = 0;
+		apr_size_t bytes;
+		if (APR_SUCCESS != apr_bucket_read(b, &buf, &bytes, APR_BLOCK_READ)) {
+			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Error reading bucket");
+		}
+
+		if (!xmlctx)
+		{
+			xmlctx = xmlCreatePushParserCtxt(NULL, NULL, buf, bytes, NULL);
+			continue;
+		}
+
+		if (xmlParseChunk(xmlctx, buf, bytes, 0))
+		{
+			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Error reading XML");	
+		}
+	}
+
+	return APR_SUCCESS;
+}
+
 static const char *mapfile_dir_set(cmd_parms *cmd, oems_conf *cfg, const char *arg) {
 	cfg->mapfiledir = arg;
 	return 0;
@@ -128,6 +196,18 @@ char *validate_args(request_rec *r, char *mapfile) {
 	get_param(args,"request",request);
 	get_param(args,"format",format);
 	get_param(args,"bbox",bbox);
+
+	// Handle GetCapabilities requests -- need to replace "nearestValue=0" with "nearestValue=1"
+	if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
+		ap_filter_rec_t *gc_filter_handle = ap_register_output_filter_protocol("get_capabilities_filter",
+																		gc_output_filter,
+																		NULL,
+																		AP_FTYPE_CONTENT_SET,
+																		AP_FILTER_PROTO_CHANGE
+																		);
+
+		ap_add_output_filter_handle(gc_filter_handle, NULL, r, r->connection);
+	}
 
 	// Previous args
 	char *prev_format = 0;
