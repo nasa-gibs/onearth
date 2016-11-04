@@ -1,6 +1,6 @@
 Name:		onearth
-Version:	1.1.1
-Release:	3%{?dist}
+Version:	1.1.2
+Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -22,6 +22,7 @@ BuildRequires:	cmake
 Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
+Requires:   libxml2
 
 Obsoletes:	mod_twms mod_onearth mod_oems mod_oemstime
 
@@ -37,7 +38,6 @@ BuildArch:	noarch
 %description demo
 Demonstration of OnEarth
 
-
 %package metrics
 Summary:	OnEarth log tool for metrics
 BuildArch:	noarch
@@ -45,18 +45,8 @@ BuildArch:	noarch
 %description metrics
 OnEarth log tool for metrics
 
-
-%package mrfgen
-Summary:	MRF generator for OnEarth
-Requires:	gibs-gdal
-
-%description mrfgen
-MRF generator for OnEarth
-
-
-%package config
-Summary:	Layer configuration tools for OnEarth
-Requires:	%{name} = %{version}-%{release}
+%package tools
+Summary:    Auxiliary tools for OnEarth
 Requires:	libpng-devel
 Requires:	chrpath
 Requires:	gcc-c++
@@ -73,12 +63,32 @@ Requires:	python-nose
 Requires:   python-unittest2
 Requires:	freetype-devel
 Requires:	gibs-gdal > 0.9.0
-BuildArch:	noarch
 Provides:	python-matplotlib = 1.5.1
 Obsoletes:	python-matplotlib < 1.5.1
+BuildArch:	noarch
+
+%description tools
+Auxiliary configuration tools for OnEarth including Legend Generator
+
+%package mrfgen
+Summary:	MRF generator for OnEarth
+Requires:   onearth-tools
+Requires:	gibs-gdal > 0.9.0
+
+%description mrfgen
+MRF generator for OnEarth
+
+%package config
+Summary:	Layer configuration tools for OnEarth
+Requires:	%{name} = %{version}-%{release}
+Requires:   onearth-tools
+Requires:	python-dateutil
+Requires:	python-lxml
+Requires:   python-unittest2
+BuildArch:	noarch
 
 %description config
-Layer configuration tools for OnEarth including Legend Generator
+Layer configuration tools for OnEarth
 
 %package mapserver
 Summary:	Mapserver for OnEarth
@@ -100,6 +110,8 @@ cp %{SOURCE3} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
+cd src/mrfgen/
+gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 cd build/mapserver
 mkdir build
 cd build
@@ -189,6 +201,22 @@ cd %{_datadir}/cgicc/
 %{_datadir}/cgicc/configure --prefix=/usr
 make install
 
+%files tools
+%defattr(755,root,root,-)
+%{_bindir}/oe_generate_legend.py
+%{_bindir}/oe_generate_empty_tile.py
+%{_bindir}/twmsbox2wmts.py
+%{_bindir}/wmts2twmsbox.py
+%{_bindir}/read_idx.py
+%{_bindir}/read_mrf.py
+%{_bindir}/read_mrfdata.py
+%{_datadir}/mpl
+
+%post tools		
+cd %{_datadir}/mpl/
+python setup.py build		
+python setup.py install
+
 %files config
 %defattr(664,gibs,gibs,775)
 %{_sysconfdir}/onearth/config/
@@ -199,16 +227,6 @@ make install
 %{_sysconfdir}/onearth/config/schema
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer
-%{_bindir}/oe_generate_legend.py
-%{_bindir}/oe_generate_empty_tile.py
-%{_bindir}/twmsbox2wmts.py
-%{_bindir}/wmts2twmsbox.py
-%{_datadir}/mpl
-
-%post config		
-cd %{_datadir}/mpl/		
-python setup.py build		
-python setup.py install
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
@@ -218,9 +236,6 @@ python setup.py install
 %{_bindir}/mrfgen
 %{_bindir}/colormap2vrt.py
 %{_bindir}/oe_validate_palette.py
-%{_bindir}/read_idx.py
-%{_bindir}/read_mrf.py
-%{_bindir}/read_mrfdata.py
 
 %files metrics
 %defattr(664,gibs,gibs,775)
@@ -261,6 +276,9 @@ ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/
 %{_bindir}/tile4ms
 
 %changelog
+* Thu Nov 03 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.1.2-1
+- Added onearth-tools package and reorganized files for several packages
+
 * Wed Aug 17 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.1.0-1
 - Added onearth-mapserver package, mod_oems, and mod_oemstime
 
