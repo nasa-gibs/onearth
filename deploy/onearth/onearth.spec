@@ -92,7 +92,7 @@ Layer configuration tools for OnEarth
 
 %package mapserver
 Summary:	Mapserver for OnEarth
-Requires:   proj-epsg
+Requires:   proj-epsg >= 4.8.0
 Provides:	mapserver = %{version}-%{release}
 Obsoletes:	mapserver < 7.0.1
 
@@ -163,8 +163,6 @@ ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo/transparent.png
-ln -s %{_datadir}/onearth/apache/wms.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/wms/epsg4326
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/onearth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
@@ -259,6 +257,7 @@ make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 mkdir %{_datadir}/onearth/demo/wms/epsg4326
+ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/wms/epsg4326
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wms/
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/
 
