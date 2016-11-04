@@ -199,6 +199,55 @@ cd test/
 ./test_mrfgen.py
 ```
 
+## RGBApng2Palpng
+
+The RGBApng2Palpng tool converts an RGBA PNG image to a Paletted PNG image using a GIBS color map or lookup table of comma-separated RGBA values.
+
+### Compile
+
+To compile the tool:
+```Shell
+gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
+```
+
+### Usage
+
+```Shell
+Usage: RGBApng2Palpng [-v] -lut=<ColorMap file (must contain RGBA)> -fill=<LUT index value> -of=<output palette PNG file> <input RGBA PNG file>
+```
+* -v: Verbose print mode
+* -lut: [GIBS color map](https://map1.vis.earthdata.nasa.gov/colormaps/) or lookup table of comma-separated RGBA values to be used as the PNG palette
+* -fill: The fill value, used to fill the remaining palette of colors
+* -of: The Paletted PNG output file
+
+Example execution:
+```Shell
+./RGBApng2Palpng -v -lut=colormap.xml -fill=0 -of=pal_output.png rgba_input.png
+```
+
+If the RGBApng2Palpng tool detects colors in the image that are not in the colormap, they will be printed out to the command line at the end of the script. The number of missing colors is used as the exit code.
+
+This tool is utilized by mrfgen.py.
+
+## oe_validate_palette.py
+
+oe_validate_palette.py is a tool for validating an image palette with a GIBS colormap. The output includes a summary of colors matched and the colors unique to the colormap and image. Mismatches are displayed if there are any. The system exit code is the number of colors in the image not found in the color table.
+
+```Shell
+Usage: oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --sigevent_url [url] --verbose
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -c COLORMAP_FILENAME, --colormap=COLORMAP_FILENAME
+                        Full path of colormap filename.
+  -i INPUT_FILENAME, --input=INPUT_FILENAME
+                        Full path of input image
+  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
+                        Default:  http://localhost:8100/sigevent/events/create
+  -v, --verbose         Print out detailed log messages
+```
+
 ## Contact
 
 Contact us by sending an email to
