@@ -92,7 +92,8 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 	xml_filter_ctx *ctx = (xml_filter_ctx *)f->ctx;
 	
 	ctx->should_parse = ap_strstr(r->content_type, "text/xml")
-						|| ap_strstr(r->content_type, "application/vnd.ogc.se_xml");
+						|| ap_strstr(r->content_type, "application/vnd.ogc.se_xml")
+						|| ap_strstr(r->content_type, "application/vnd.ogc.wms_xml");
 	
 	if (!ctx->should_parse) ap_remove_output_filter(f); // Bail early if this isn't an XML response.
 
