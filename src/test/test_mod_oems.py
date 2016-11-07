@@ -199,7 +199,7 @@ class TestModOEMS(unittest.TestCase):
         """
         8. Request WMS GetCapabilities 1.1.1
         """
-        ref_hash = 'bcfb8df956e848705a4a76035a560460'
+        ref_hash = '91d5f50860dc4324a805791191683588'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WMS GetCapablities 1.1.1'
@@ -211,7 +211,7 @@ class TestModOEMS(unittest.TestCase):
         """
         9. Request WMS GetCapabilities 1.3.0
         """
-        ref_hash = '7021210da004e005602bccb6b4460c59'
+        ref_hash = 'dfbd4b79796c78db32df08eddc8ff14c'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WMS GetCapablities 1.3.0'
@@ -235,7 +235,7 @@ class TestModOEMS(unittest.TestCase):
         """
         11. Request erroneous layer via WMS
         """
-        ref_hash = '76453fe3c6c2490243d41595c964b2e8'
+        ref_hash = '28b9e89643766a3b6cfe80029d349f24'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print '\nTesting: Request erroneous layer via WMS'
@@ -283,7 +283,7 @@ class TestModOEMS(unittest.TestCase):
         """
         15. Request multiple layers with multi-day period and snap to date that is out of range via WMS
         """
-        ref_hash = '8ff06e9113d2ebbfebb2505c2c8e864e'
+        ref_hash = '09f337e245d8fcce256c0b7657498021'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-04-02'
         if DEBUG:
             print '\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range via WMS'
@@ -295,7 +295,7 @@ class TestModOEMS(unittest.TestCase):
         """
         16. Request multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS
         """
-        ref_hash = '3b38bef10ecb5302a3e937cd8aceac67'
+        ref_hash = 'b1c9cb360c0d78b41b88fb4ddc8d42dc'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02'
         if DEBUG:
             print '\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS'
