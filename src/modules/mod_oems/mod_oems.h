@@ -57,4 +57,11 @@ struct oems_conf {
 	const char *defaultmap;
 };
 
+typedef struct {
+	int root_elem_found;
+	int is_gc;
+	int is_error;
+	int should_parse;
+} xml_filter_ctx;
+
 extern module AP_MODULE_DECLARE_DATA oems_module;
