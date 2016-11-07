@@ -43,11 +43,6 @@
 #include <apr_file_io.h>
 #include <apr_strings.h>
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-#include <libxml/xpath.h>
-#include <libxml/xpathInternals.h>
-
 #if defined(APLOG_USE_MODULE)
 APLOG_USE_MODULE(oemstime);
 #endif
