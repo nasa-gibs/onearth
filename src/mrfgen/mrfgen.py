@@ -1847,7 +1847,11 @@ except IOError:
     mssg=str().join(['Cannot read:  ', mrf_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
 else:
-    dom=xml.dom.minidom.parse(mrf_file)
+    try:
+        dom=xml.dom.minidom.parse(mrf_file)
+    except:
+        mssg=str().join(['Cannot parse:  ', mrf_filename])
+        log_sig_exit('ERROR', mssg, sigevent_url)
     # Raster
     size_elements=dom.getElementsByTagName('Size')
     sizeX=size_elements[0].getAttribute('x') #width
@@ -1862,8 +1866,8 @@ else:
         mrf_file.seek(0)
         lines = mrf_file.readlines()
         for idx in range(0, len(lines)):
-            if '<Raster' in lines[idx]:
-                lines[idx] = lines[idx].replace('<Raster','<Raster mp_safe="on"')
+            if '<Raster>' in lines[idx]:
+                lines[idx] = lines[idx].replace('<Raster>','<Raster mp_safe="on">')
                 log_info_mssg("Set MRF mp_safe on")
         mrf_file.seek(0)
         mrf_file.truncate()
