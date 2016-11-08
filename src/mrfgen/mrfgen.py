@@ -863,7 +863,7 @@ def insert_zdb(mrf, zlevels, zkey):
         mssg = "%s:" % e.args[0]
         if "database is locked" in mssg:
             log_sig_warn(mssg + " retrying connection to " + zdb_out, sigevent_url)
-            return insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units)
+            return insert_zdb(mrf, zlevels, zkey)
         else:
             log_sig_exit('ERROR', mssg, sigevent_url)
         
