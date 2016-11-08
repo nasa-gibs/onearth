@@ -808,7 +808,8 @@ def insert_zdb(mrf, zlevels, zkey):
         con = sqlite3.connect(zdb_out, timeout=1800.0) # 30 minute timeout
         
         if db_exists == False:
-            cur = con.cursor() 
+            cur = con.cursor()
+            create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT);"
             try:
                 cur.executescript(create_script)
                 con.commit()
@@ -856,6 +857,7 @@ def insert_zdb(mrf, zlevels, zkey):
         
     except sqlite3.Error, e:
         if con:
+            con.rollback()
             con.close()
             con = None
         mssg = "%s:" % e.args[0]
