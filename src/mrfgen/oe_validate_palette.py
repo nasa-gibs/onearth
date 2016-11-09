@@ -376,18 +376,24 @@ img_colortable = read_color_table(input_filename, sigevent_url)
 # Lists to track matching colors
 match_colors = []
 colormap_only = []
+mm_colormap_only = []
+ex_colormap_only = []
 image_only = []
 mm_image_only = []
 ex_image_only = []
+img_color_idx = len(img_colortable)
 
 # Populate initial lists
 for i, img_color in enumerate(img_colortable):
     if img_color.rgba != fill_value:
         image_only.append(img_color.rgba if no_index else img_color.irgba)
     else:
-        if i < len(colortable)-1:
-            if colortable[i+1].rgba != fill_value:
+        if i < len(img_colortable)-1:
+            if img_colortable[i+1].rgba != fill_value:
                 image_only.append(img_color.rgba if no_index else img_color.irgba)
+            else:
+                if img_color_idx == len(img_colortable):
+                    img_color_idx = img_color.idx # keep track of where fill values begin
 #for color in colortable:
 for color in colortable:
     colormap_only.append(color.rgba if no_index else color.irgba)
@@ -439,35 +445,49 @@ if no_index == False:
     for color in image_only:
         if color not in ex_image_only:
             mm_image_only.append(color)
+            
+    for i, color in enumerate(colortable):
+        if i >= img_color_idx:
+            if color.irgba in colormap_only:
+                ex_colormap_only.append(color.irgba)
+    for color in colormap_only:
+        if color not in ex_colormap_only:
+            mm_colormap_only.append(color)
 
 if verbose:
-    log_info_mssg(("\nMatched palette entries: " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
+    log_info_mssg(("\nMatched entries: " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
 else:
-    log_info_mssg("\nMatched palette entries: " + str(len(match_colors)))
-if verbose and len(colormap_only) > 0:
-    if no_index == False:
-        log_info_mssg(("\nMismatched colormap entries: " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
-    else:
-        log_info_mssg(("\nColors found only in colormap: " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
+    log_info_mssg("\nMatched entries: " + str(len(match_colors)))
 if len(image_only) > 0 and no_index == False:
     log_info_mssg(("\nMismatched palette entries: " + str(len(mm_image_only)) + "\n") + "\n".join(mm_image_only))
-    log_info_mssg(("\nExtra palette entries: " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
-if len(image_only) > 0 and no_index == True:
-    log_info_mssg(("\nColors found only in image palette:: " + str(len(image_only)) + "\n") + "\n".join(image_only))
+if len(colormap_only) > 0:
+    if no_index == False:
+        log_info_mssg(("\nMismatched colormap entries: " + str(len(mm_colormap_only)) + "\n") + "\n".join(mm_colormap_only))
+        log_info_mssg(("\nExtra colormap entries: " + str(len(ex_colormap_only)) + "\n") + "\n".join(ex_colormap_only))
+    else:
+        log_info_mssg(("\nColors found only in colormap: " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
+if len(image_only) > 0:
+    if no_index == True:
+        log_info_mssg(("\nColors found only in image palette:: " + str(len(image_only)) + "\n") + "\n".join(image_only))
+    else:
+        log_info_mssg(("\nExtra image palette entries: " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
 print "\n"   
  
-summary = "Summary:\nMatched colors: " + str(len(match_colors))
-if verbose and no_index == True:
-        summary = summary + "\nColors found only in colormap: " + str(len(colormap_only))
-if verbose or len(image_only) > 0:
+summary = "Summary:\nMatched entries: " + str(len(match_colors))
+if verbose or len(image_only) > 0 or len(colormap_only) > 0:
     if no_index == True:
+        summary = summary + "\nColors found only in colormap: " + str(len(colormap_only))
         summary = summary + "\nColors found only in image palette: " + str(len(image_only)) + "\n"
     else:
-        summary = summary + "\nMismatched image palette entries: " + str(len(mm_image_only))
+        summary = summary + "\nMismatched entries: " + str(len(mm_image_only))
+        summary = summary + "\nExtra colormap entries: " + str(len(ex_colormap_only))
         summary = summary + "\nExtra image palette entries: " + str(len(ex_image_only)) + "\n"
 
-if len(image_only) > 0:
-    sig_status = 'ERROR'
+if len(image_only) > 0 or len(colormap_only) > 0:
+    if len(colormap_only) == 0:
+        sig_status = 'WARN'
+    else:
+        sig_status = 'ERROR'
 else:
     sig_status = 'INFO'
 try:
