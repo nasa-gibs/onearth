@@ -468,7 +468,7 @@ if len(colormap_only) > 0:
     else:
         log_info_mssg(("\nMissing palette entries   : " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
 
- if len(image_only) > 0:
+if len(image_only) > 0:
     if no_index == False:
         log_info_mssg(("\nExtra palette entries     : " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
     else:
