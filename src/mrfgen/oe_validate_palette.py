@@ -81,7 +81,6 @@ def hex_to_rgb(value):
     lv = len(value)
     return tuple(int(value[i:i+lv/3], 16) for i in range(0, lv, lv/3))
     
-
 def sigevent(type, mssg, sigevent_url):
     """
     Send a message to sigevent service.
@@ -314,7 +313,7 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
                   default=False, help="Print out detailed log messages")
 parser.add_option('-x', '--ignore_colors',
                   action='store', type='string', dest='ignore_colors',
-                  help='List of RGBA color values to ignore separated by "|"')
+                  help='List of RGBA color values to ignore in image palette separated by "|"')
 
 # Read command line args
 (options, args) = parser.parse_args()
@@ -385,6 +384,10 @@ img_color_idx = len(img_colortable)
 
 # Populate initial lists
 for i, img_color in enumerate(img_colortable):
+    if img_color in ignore_colors:
+        if verbose:
+            log_info_mssg("Ignoring color: " + ignore_color)
+        continue
     if img_color.rgba != fill_value:
         image_only.append(img_color.rgba if no_index else img_color.irgba)
     else:
@@ -394,14 +397,11 @@ for i, img_color in enumerate(img_colortable):
             else:
                 if img_color_idx == len(img_colortable):
                     img_color_idx = img_color.idx # keep track of where fill values begin
+
 #for color in colortable:
 for color in colortable:
     colormap_only.append(color.rgba if no_index else color.irgba)
-for ignore_color in ignore_colors:
-    if verbose:
-        log_info_mssg("Ignoring color: " + ignore_color)
-    image_only = [ x for x in image_only if ignore_color not in x ]
-    colormap_only = [ x for x in colormap_only if ignore_color not in x ]
+
 if no_index == True: # Get only unique values
     image_only = list(set(image_only))
     colormap_only = list(set(colormap_only))
@@ -455,33 +455,35 @@ if no_index == False:
             mm_colormap_only.append(color)
 
 if verbose:
-    log_info_mssg(("\nMatched entries: " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
+    log_info_mssg(("\nMatched palette entries   : " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
 else:
-    log_info_mssg("\nMatched entries: " + str(len(match_colors)))
+    log_info_mssg("\nMatched palette entries   : " + str(len(match_colors)))
+
 if len(image_only) > 0 and no_index == False:
     log_info_mssg(("\nMismatched palette entries: " + str(len(mm_image_only)) + "\n") + "\n".join(mm_image_only))
+
 if len(colormap_only) > 0:
     if no_index == False:
-        log_info_mssg(("\nMismatched colormap entries: " + str(len(mm_colormap_only)) + "\n") + "\n".join(mm_colormap_only))
-        log_info_mssg(("\nExtra colormap entries: " + str(len(ex_colormap_only)) + "\n") + "\n".join(ex_colormap_only))
+        log_info_mssg(("\nMissing palette entries   : " + str(len(ex_colormap_only)) + "\n") + "\n".join(ex_colormap_only))
     else:
-        log_info_mssg(("\nColors found only in colormap: " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
-if len(image_only) > 0:
-    if no_index == True:
-        log_info_mssg(("\nColors found only in image palette:: " + str(len(image_only)) + "\n") + "\n".join(image_only))
+        log_info_mssg(("\nMissing palette entries   : " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
+
+ if len(image_only) > 0:
+    if no_index == False:
+        log_info_mssg(("\nExtra palette entries     : " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
     else:
-        log_info_mssg(("\nExtra image palette entries: " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
+        log_info_mssg(("\nExtra palette entries     : " + str(len(image_only)) + "\n") + "\n".join(image_only))
 print "\n"   
- 
-summary = "Summary:\nMatched entries: " + str(len(match_colors))
+
+summary = "Summary:\nMatched palette entries   : " + str(len(match_colors))
 if verbose or len(image_only) > 0 or len(colormap_only) > 0:
     if no_index == True:
-        summary = summary + "\nColors found only in colormap: " + str(len(colormap_only))
-        summary = summary + "\nColors found only in image palette: " + str(len(image_only)) + "\n"
+        summary = summary + "\nMissing palette entries   : " + str(len(colormap_only))
+        summary = summary + "\nExtra palette entries     : " + str(len(image_only)) + "\n"
     else:
-        summary = summary + "\nMismatched entries: " + str(len(mm_image_only))
-        summary = summary + "\nExtra colormap entries: " + str(len(ex_colormap_only))
-        summary = summary + "\nExtra image palette entries: " + str(len(ex_image_only)) + "\n"
+        summary = summary + "\nMismatched palette entries: " + str(len(mm_image_only))
+        summary = summary + "\nMissing palette entries   : " + str(len(ex_colormap_only))
+        summary = summary + "\nExtra palette entries     : " + str(len(ex_image_only)) + "\n"
 
 if len(image_only) > 0 or len(colormap_only) > 0:
     if len(colormap_only) == 0:
