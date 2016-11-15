@@ -632,7 +632,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     }
     """
     cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
-    cutline_left = cutline_template.replace('$values',cutline_values.format(float(ulx), float(uly), float(antimeridian)-float(xres), float(lry)))
+    cutline_left = cutline_template.replace('$values',cutline_values.format(float(ulx), float(uly), float(antimeridian), float(lry)))
     cutline_right = cutline_template.replace('$values',cutline_values.format(float(antimeridian), float(uly), float(new_lrx), float(lry)))
     
     # Create VRT of input tile
@@ -712,7 +712,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
             log_info_mssg(tile + " crosses antimeridian")
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)), source_epsg, target_epsg, working_dir)
-            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir)
+            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
             continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
@@ -1626,10 +1626,13 @@ else:
 
 gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
 # use resolution?
-if diff_res == True and target_x != '':
-    xres = str(360.0/int(target_x))
-    yres = xres
-    log_sig_warn("Different tile resolutions detected, using: " + str(xres), sigevent_url)
+if target_x != '':
+    xres = repr(abs((float(xmax)-float(xmin))/float(target_x)))
+    if target_y != '':
+        yres = repr(abs((float(ymin)-float(ymax))/float(target_y)))
+    else:
+        yres = xres
+    log_info_mssg("x resolution: " + xres + ", y resolution: " + yres)
     gdalbuildvrt_command_list.append('-resolution')
     gdalbuildvrt_command_list.append('user')
     gdalbuildvrt_command_list.append('-tr')
@@ -1645,9 +1648,6 @@ if vrtnodata != "":
     gdalbuildvrt_command_list.append(vrtnodata)
 # add VRT filename at the end        
 gdalbuildvrt_command_list.append(vrt_filename)
-
-# USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
-#'-tr', target_x, target_y, '-resolution', 'user'
 # Log the gdalbuildvrt command.
 log_the_command(gdalbuildvrt_command_list)
 # Capture stderr to record skipped .png files that are not valid PNG+World.
