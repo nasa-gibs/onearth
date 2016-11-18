@@ -54,7 +54,7 @@ MAP
       "wms_contactorganization"	"GIBS User Support"
       "wms_contactposition"		"GIBS User Support"
       "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
-      "wms_enable_request"      "GetMap GetCapabilities"
+      "wms_enable_request"      "GetMap GetCapabilities GetStyles"
       "wms_srs"                 "EPSG:4326 EPSG:3857"
       "wms_connectiontimeout"   "180"
       "wms_layerlimit"			"5"
