@@ -93,7 +93,7 @@ import sqlite3
 import math
 from overtiffpacker import pack
 
-versionNumber = '1.2.0'
+versionNumber = '1.2.1'
 basename = None
 
 #-------------------------------------------------------------------------------
@@ -558,7 +558,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
-def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, working_dir):
+def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir):
     """
     Runs gdalmerge and returns merged tile
     Arguments:
@@ -573,23 +573,34 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         xmax -- Maximum x value
         ymax -- Maximum y value
         nodata -- nodata value
+        resize_resampling -- resampling method; nearest is used for PPNG
         working_dir -- Directory to use for temporary files
     """
-    if nodata == "":
-        nodata = "0"
+    if resize_resampling == '':
+        resize_resampling = "average" # use average as default for RGBA
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = working_dir + os.path.basename(tile)+".blend.tif"
-    gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-n', nodata, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff']
     if has_color_table(tile) == True:
-        gdal_merge_command_list.append('-pct')
-    gdal_merge_command_list.append(mrf)
-    gdal_merge_command_list.append(tile)
+        gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
+        if nodata != "":
+            gdal_merge_command_list.append('-n')
+            gdal_merge_command_list.append(nodata)
+        gdal_merge_command_list.append(mrf)
+        gdal_merge_command_list.append(tile)
+    else: # use gdalwarp for RGBA imagery
+        gdal_merge_command_list = ['gdalwarp', '-te', ulx, lry, lrx, uly, '-tr', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-of', 'GTiff', '-r', resize_resampling]
+        if nodata != "":
+            gdal_merge_command_list.append('-srcnodata')
+            gdal_merge_command_list.append(nodata)
+        gdal_merge_command_list.append(tile)
+        gdal_merge_command_list.append(mrf)
+        gdal_merge_command_list.append(new_tile)
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     insert_message = gdal_merge.stderr.readlines()
     for message in insert_message:
         if 'ERROR' in message.upper():
-            log_sig_err(message + ' in gdal_merge.py while processing ' + tile, sigevent_url)
+            log_sig_err(message + ' in merging image while processing ' + tile, sigevent_url)
         else:
             log_info_mssg(message.strip())
     gdal_merge.wait()
@@ -622,7 +633,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     }
     """
     cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
-    cutline_left = cutline_template.replace('$values',cutline_values.format(float(ulx), float(uly), float(antimeridian)-float(xres), float(lry)))
+    cutline_left = cutline_template.replace('$values',cutline_values.format(float(ulx), float(uly), float(antimeridian), float(lry)))
     cutline_right = cutline_template.replace('$values',cutline_values.format(float(antimeridian), float(uly), float(new_lrx), float(lry)))
     
     # Create VRT of input tile
@@ -702,11 +713,11 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
             log_info_mssg(tile + " crosses antimeridian")
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)), source_epsg, target_epsg, working_dir)
-            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir)
+            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
             continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
-            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, working_dir)
+            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir)
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
         if diff_res:
             # convert tile to matching resolution
@@ -732,7 +743,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             if blend == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(vrt_tile) # get new extents
                 log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
-                tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, working_dir)
+                tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir)
                 mrf_insert_command_list.append(tile)
             else:
                 mrf_insert_command_list.append(vrt_tile)
@@ -810,7 +821,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
     try:
         db_exists = os.path.isfile(zdb_out)
         log_info_mssg("Connecting to " + zdb_out)
-        con = sqlite3.connect(zdb_out, timeout=600.0) # 10 minute timeout
+        con = sqlite3.connect(zdb_out, timeout=1800.0) # 30 minute timeout
         
         if db_exists == False:
             cur = con.cursor()
@@ -819,10 +830,16 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
                 create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT);"
             if scale != None:
                 create_script = "CREATE TABLE ZINDEX(z INTEGER PRIMARY KEY AUTOINCREMENT, key_str TEXT, source_url TEXT, scale INTEGER, offset INTEGER, uom TEXT);"
-            cur.executescript(create_script)
-            con.commit()
+            try:
+                cur.executescript(create_script)
+                con.commit()
+            except sqlite3.Error, e:
+                mssg = "%s:" % e.args[0]
+                if "database schema has changed" in mssg: # in case two processes attempt to create schema at once
+                    log_sig_warn(mssg + zdb_out, sigevent_url)
 
         if zkey != '':
+            is_update = False
             cur = con.cursor()
             # Check for existing key
             cur.execute("SELECT COUNT(*) FROM ZINDEX WHERE key_str='"+zkey+"';")
@@ -831,7 +848,8 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
                 mssg = zkey + " key already exists...overwriting"
                 log_sig_warn(mssg, sigevent_url)
                 cur.execute("SELECT z FROM ZINDEX WHERE key_str='"+zkey+"';")
-                z = int(cur.fetchone()[0]) 
+                z = int(cur.fetchone()[0])
+                is_update = True
             else:              
                 # Check z size
                 cur.execute("SELECT COUNT(*) FROM ZINDEX;")
@@ -859,19 +877,32 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
             if scale != None:
                 log_info_mssg("Adding Units:" + units + " to z=" +str(z))
                 cur.execute("UPDATE ZINDEX SET uom=('"+units+"') WHERE z="+str(z))                
+
+            if is_update == True: # commit if updating existing z; if not, hold off commit until MRF is updated to avoid having orphan z key
+                if con:
+                    con.commit()
+                    con.close()
+                    con = None
+                    log_info_mssg("Successfully committed record to " + zdb_out)
         
     except sqlite3.Error, e:
         if con:
             con.rollback()
+            con.close()
+            con = None
         mssg = "%s:" % e.args[0]
-        log_sig_exit('ERROR', mssg, sigevent_url)
+        if "database is locked" in mssg:
+            log_sig_warn(mssg + " retrying connection to " + zdb_out, sigevent_url)
+            return insert_zdb(mrf, zlevels, zkey)
+        else:
+            log_sig_exit('ERROR', mssg, sigevent_url)
         
     # Use specific z if appropriate
     if z != None:
         gdal_mrf_filename = mrf + ":MRF:Z" + str(z)
     else:
         gdal_mrf_filename = mrf
-        
+
     return (gdal_mrf_filename, z, zdb_out, con)
 
 
@@ -967,9 +998,9 @@ sigevent_url=options.sigevent_url
 data_only = options.data_only
 
 # Get current time, which is written to a file as the previous cycle time.  
-# Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
+# Time format is "yyyymmdd.hhmmss.f".  Do this first to avoid any gap where tiles 
 # may get passed over because they were created while this script is running.
-current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
+current_cycle_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f")
 
 errors = 0
 
@@ -990,8 +1021,7 @@ else:
 
     # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
     # Files get date_of_date added, links do not.
-    basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', 
-                         current_cycle_time])    
+    basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', current_cycle_time, '_', str(os.getpid())])    
     
     # for sub-daily imagery
     try: 
@@ -1708,10 +1738,13 @@ else:
 
 gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
 # use resolution?
-if diff_res == True and target_x != '':
-    xres = str(360.0/int(target_x))
-    yres = xres
-    log_sig_warn("Different tile resolutions detected, using: " + str(xres), sigevent_url)
+if target_x != '':
+    xres = repr(abs((float(xmax)-float(xmin))/float(target_x)))
+    if target_y != '':
+        yres = repr(abs((float(ymin)-float(ymax))/float(target_y)))
+    else:
+        yres = xres
+    log_info_mssg("x resolution: " + xres + ", y resolution: " + yres)
     gdalbuildvrt_command_list.append('-resolution')
     gdalbuildvrt_command_list.append('user')
     gdalbuildvrt_command_list.append('-tr')
@@ -1727,9 +1760,6 @@ if vrtnodata != "":
     gdalbuildvrt_command_list.append(vrtnodata)
 # add VRT filename at the end        
 gdalbuildvrt_command_list.append(vrt_filename)
-
-# USE GDAL_TRANSLATE -OUTSIZE INSTEAD OF -TR.
-#'-tr', target_x, target_y, '-resolution', 'user'
 # Log the gdalbuildvrt command.
 log_the_command(gdalbuildvrt_command_list)
 # Capture stderr to record skipped .png files that are not valid PNG+World.
@@ -1945,7 +1975,11 @@ except IOError:
     mssg=str().join(['Cannot read:  ', mrf_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
 else:
-    dom=xml.dom.minidom.parse(mrf_file)
+    try:
+        dom=xml.dom.minidom.parse(mrf_file)
+    except:
+        mssg=str().join(['Cannot parse:  ', mrf_filename])
+        log_sig_exit('ERROR', mssg, sigevent_url)
     # Raster
     size_elements=dom.getElementsByTagName('Size')
     sizeX=size_elements[0].getAttribute('x') #width
@@ -1960,8 +1994,8 @@ else:
         mrf_file.seek(0)
         lines = mrf_file.readlines()
         for idx in range(0, len(lines)):
-            if '<Raster' in lines[idx]:
-                lines[idx] = lines[idx].replace('<Raster','<Raster mp_safe="on"')
+            if '<Raster>' in lines[idx]:
+                lines[idx] = lines[idx].replace('<Raster>','<Raster mp_safe="on">')
                 log_info_mssg("Set MRF mp_safe on")
         mrf_file.seek(0)
         mrf_file.truncate()

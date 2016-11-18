@@ -54,8 +54,9 @@ import subprocess
 import urllib
 import urllib2
 import xml.dom.minidom
+import re
 
-versionNumber = '1.2.0'
+versionNumber = '1.2.1'
 colormap_filename = None
     
 class ColorEntry:
@@ -80,7 +81,6 @@ def hex_to_rgb(value):
     lv = len(value)
     return tuple(int(value[i:i+lv/3], 16) for i in range(0, lv, lv/3))
     
-
 def sigevent(type, mssg, sigevent_url):
     """
     Send a message to sigevent service.
@@ -257,11 +257,6 @@ def read_colormap(colormap_filename, sigevent_url):
             colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], entry_alpha)
             colortable.append(colorEntry)
             idx+=1
-        if (count+1) == len(colorMaps):
-            while idx < 256: # pad out with zero values to get 256 colors for MRFs
-                colorEntry = ColorEntry(idx, 0, 0, 0, 0)
-                colortable.append(colorEntry)
-                idx+=1
     return colortable
 
 def read_color_table(image, sigevent_url):
@@ -287,7 +282,7 @@ def read_color_table(image, sigevent_url):
         if "Color Table" in line:
             has_color_table = True
     if has_color_table == False:
-        log_sig_warn("No color table found", sigevent_url)
+        log_sig_exit("Error", "No color table found in " + image, sigevent_url)
     return colortable
     
 #-------------------------------------------------------------------------------   
@@ -301,6 +296,9 @@ parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-c', '--colormap',
                   action='store', type='string', dest='colormap_filename',
                   help='Full path of colormap filename.')
+parser.add_option('-f', '--fill_value',
+                  action='store', type='string', dest='fill_value',
+                  default="0,0,0,0", help='Fill value for colormaps. Default: "0,0,0,0"')
 parser.add_option('-i', '--input',
                   action='store', type='string', dest='input_filename',
                   help='Full path of input image')
@@ -315,7 +313,7 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
                   default=False, help="Print out detailed log messages")
 parser.add_option('-x', '--ignore_colors',
                   action='store', type='string', dest='ignore_colors',
-                  help='List of RGBA color values to ignore separated by "|"')
+                  help='List of RGBA color values to ignore in image palette separated by "|"')
 
 # Read command line args
 (options, args) = parser.parse_args()
@@ -343,19 +341,33 @@ verbose = options.verbose
 # Sigevent URL.
 sigevent_url = options.sigevent_url
 
-# verbose logging
-if verbose:
-    log_info_mssg('Colormap: ' + colormap_filename)
-    log_info_mssg('Input Image: ' + input_filename)
-    
+# fill color value
+fill_value = str(options.fill_value).strip()
+r_color = re.compile(r'\d+,\d+,\d+,\d+')
+if r_color.match(fill_value) is None:
+    log_sig_exit("Error", "fill_value format must be %d,%d,%d,%d", sigevent_url)
+
 # Colors to ignore
 if not options.ignore_colors:
     ignore_colors = []
 else:
     ignore_colors = options.ignore_colors.strip().split("|")
+    for ignore_color in ignore_colors:
+        if r_color.match(ignore_color) is None:
+            log_sig_exit("Error", ignore_color + " ignore_color format must be %d,%d,%d,%d", sigevent_url)
+
+# verbose logging
+if verbose:
+    log_info_mssg('Colormap: ' + colormap_filename)
+    log_info_mssg('Input Image: ' + input_filename)
+    log_info_mssg('Fill Value: ' + fill_value)
+    log_info_mssg('Ignore Colors: ' + str(ignore_colors))
       
 # Read palette from colormap
-colortable = read_colormap(colormap_filename, sigevent_url)
+try:
+    colortable = read_colormap(colormap_filename, sigevent_url)
+except:
+    log_sig_exit("Error", "Unable to read colormap " + colormap_filename, sigevent_url)
       
 # Read palette from image
 img_colortable = read_color_table(input_filename, sigevent_url)
@@ -363,18 +375,33 @@ img_colortable = read_color_table(input_filename, sigevent_url)
 # Lists to track matching colors
 match_colors = []
 colormap_only = []
+mm_colormap_only = []
+ex_colormap_only = []
 image_only = []
+mm_image_only = []
+ex_image_only = []
+img_color_idx = len(img_colortable)
 
 # Populate initial lists
-for img_color in img_colortable:
-    image_only.append(img_color.rgba if no_index else img_color.irgba)
+for i, img_color in enumerate(img_colortable):
+    if img_color in ignore_colors:
+        if verbose:
+            log_info_mssg("Ignoring color: " + ignore_color)
+        continue
+    if img_color.rgba != fill_value:
+        image_only.append(img_color.rgba if no_index else img_color.irgba)
+    else:
+        if i < len(img_colortable)-1:
+            if img_colortable[i+1].rgba != fill_value:
+                image_only.append(img_color.rgba if no_index else img_color.irgba)
+            else:
+                if img_color_idx == len(img_colortable):
+                    img_color_idx = img_color.idx # keep track of where fill values begin
+
+#for color in colortable:
 for color in colortable:
     colormap_only.append(color.rgba if no_index else color.irgba)
-for ignore_color in ignore_colors:
-    if verbose:
-        log_info_mssg("Ignoring color: " + ignore_color)
-    image_only = [ x for x in image_only if ignore_color not in x ]
-    colormap_only = [ x for x in colormap_only if ignore_color not in x ]
+
 if no_index == True: # Get only unique values
     image_only = list(set(image_only))
     colormap_only = list(set(colormap_only))
@@ -405,22 +432,64 @@ for color in colortable:
                         image_only.remove(img_color.irgba)
                     if verbose:
                         log_info_mssg("Found matching color " + img_color.irgba)
-    if match == False:
+    if match == False and color.rgba != fill_value:
         if verbose:
             log_info_mssg("No match for color " + color.rgba)
 
+# Distinguish between mismatch or extra
+if no_index == False:
+    for i, color in enumerate(img_colortable):
+        if i >= len(colortable):
+            if color.irgba in image_only:
+                ex_image_only.append(color.irgba)
+    for color in image_only:
+        if color not in ex_image_only:
+            mm_image_only.append(color)
+            
+    for i, color in enumerate(colortable):
+        if i >= img_color_idx:
+            if color.irgba in colormap_only:
+                ex_colormap_only.append(color.irgba)
+    for color in colormap_only:
+        if color not in ex_colormap_only:
+            mm_colormap_only.append(color)
+
 if verbose:
-    log_info_mssg(("\nMatched colors: " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
+    log_info_mssg(("\nMatched palette entries   : " + str(len(match_colors)) + "\n") + "\n".join(match_colors))
+else:
+    log_info_mssg("\nMatched palette entries   : " + str(len(match_colors)))
+
+if len(image_only) > 0 and no_index == False:
+    log_info_mssg(("\nMismatched palette entries: " + str(len(mm_image_only)) + "\n") + "\n".join(mm_image_only))
+
 if len(colormap_only) > 0:
-    log_info_mssg(("\nColors found only in colormap: " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
-if len(image_only) > 0:
-    log_info_mssg(("\nColors found only in image: " + str(len(image_only)) + "\n") + "\n".join(image_only))
-print "\n"   
- 
-summary = "Summary:\nMatched colors: " + str(len(match_colors)) + "\nColors found only in colormap: " + str(len(colormap_only)) + "\nColors found only in image: " + str(len(image_only)) + "\n"
+    if no_index == False:
+        log_info_mssg(("\nMissing palette entries   : " + str(len(ex_colormap_only)) + "\n") + "\n".join(ex_colormap_only))
+    else:
+        log_info_mssg(("\nMissing palette entries   : " + str(len(colormap_only)) + "\n") + "\n".join(colormap_only))
 
 if len(image_only) > 0:
-    sig_status = 'ERROR'
+    if no_index == False:
+        log_info_mssg(("\nExtra palette entries     : " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
+    else:
+        log_info_mssg(("\nExtra palette entries     : " + str(len(image_only)) + "\n") + "\n".join(image_only))
+print "\n"   
+
+summary = "Summary:\nMatched palette entries   : " + str(len(match_colors))
+if verbose or len(image_only) > 0 or len(colormap_only) > 0:
+    if no_index == True:
+        summary = summary + "\nMissing palette entries   : " + str(len(colormap_only))
+        summary = summary + "\nExtra palette entries     : " + str(len(image_only)) + "\n"
+    else:
+        summary = summary + "\nMismatched palette entries: " + str(len(mm_image_only))
+        summary = summary + "\nMissing palette entries   : " + str(len(ex_colormap_only))
+        summary = summary + "\nExtra palette entries     : " + str(len(ex_image_only)) + "\n"
+
+if len(image_only) > 0 or len(colormap_only) > 0:
+    if len(colormap_only) == 0:
+        sig_status = 'WARN'
+    else:
+        sig_status = 'ERROR'
 else:
     sig_status = 'INFO'
 try:

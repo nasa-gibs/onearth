@@ -27,9 +27,9 @@ A WMS endpoint that uses MapServer is available.
 
 ``<server_url>/onearth/wms``
 
-The demo utilizes a link to mapserv:
+The demo utilizes a link to mapserv via wms.cgi:
 
-``<server_url>/onearth/wms/mapserv``
+``<server_url>/onearth/wms/epsg4326/wms.cgi``
 
 ## Contact
 

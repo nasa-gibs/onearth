@@ -43,6 +43,11 @@
 #include <apr_file_io.h>
 #include <apr_strings.h>
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
 #if defined(APLOG_USE_MODULE)
 APLOG_USE_MODULE(oems);
 #endif
@@ -51,5 +56,12 @@ struct oems_conf {
 	const char *mapfiledir;
 	const char *defaultmap;
 };
+
+typedef struct {
+	int root_elem_found;
+	int is_gc;
+	int is_error;
+	int should_parse;
+} xml_filter_ctx;
 
 extern module AP_MODULE_DECLARE_DATA oems_module;

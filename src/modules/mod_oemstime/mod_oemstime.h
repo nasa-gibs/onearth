@@ -51,4 +51,8 @@ struct oemstime_conf {
 	const char *twmssserviceurl;
 };
 
+struct filter_ctx {
+	apr_bucket_brigade *bb_out;
+};
+
 extern module AP_MODULE_DECLARE_DATA oemstime_module;

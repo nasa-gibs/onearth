@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '1.2.0'
+versionNumber = '1.2.1'
 current_conf = None
 
 class WMTSEndPoint:
@@ -2196,7 +2196,7 @@ for conf in conf_files:
             <Format>$Format</Format>
             <Dimension>
                 <ows:Identifier>time</ows:Identifier>
-                <UOM>ISO8601</UOM>
+                <ows:UOM>ISO8601</ows:UOM>
                 <Default>$DefaultDate</Default>
                 <Current>false</Current>
                 <Value>$DateRange</Value>
@@ -2257,7 +2257,7 @@ for conf in conf_files:
                 line = line.replace("$TileMatrixSet",tilematrixset)
                 tilematrixset_line = line
             if static == True or len(timeElements)==0:
-                if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<UOM>ISO8601</UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
+                if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<ows:UOM>ISO8601</ows:UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
                     line = ''
                 if '/{Time}' in line:
                     line = line.replace('/{Time}', '')
@@ -2461,7 +2461,7 @@ $Patterns</TiledGroup>"""
                 mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
-            mapfile.write("\t\t\"wms_title\"\t\t\"" + identifier + "\"\n")
+            mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
             if not static and len(timeElements)>0:
                 defaultDate = ''
@@ -2582,19 +2582,22 @@ if no_wmts == False:
                 if xml_file.endswith(".xml") and xml_file != "getCapabilities.xml" and (xml_file.startswith("cache")==False):
                     layer_xml = layer_xml + open(wmts_endpoint.path+'/'+str(xml_file), 'r').read()
             getCapabilities_file = wmts_endpoint.path+'/getCapabilities.xml'
-            getCapabilities_base = open(getCapabilities_file, 'r+')
-            gc_lines = getCapabilities_base.readlines()
-            for idx in range(0, len(gc_lines)):
-                if "<Contents>" in gc_lines[idx]:
-                    gc_lines[idx] = gc_lines[idx] + layer_xml
-                    print '\nAdding layers to WMTS GetCapabilities'
-                if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
-                    gc_lines[idx] = wmts_endpoint.projection.tilematrixset_xml[2:] + '\n' + gc_lines[idx]
-                    print "\nAdding TileMatrixSet to WMTS GetCapabilities"
-                getCapabilities_base.seek(0)
-                getCapabilities_base.truncate()
-                getCapabilities_base.writelines(gc_lines)        
-            getCapabilities_base.close()
+            try:
+                getCapabilities_base = open(getCapabilities_file, 'r+')
+                gc_lines = getCapabilities_base.readlines()
+                for idx in range(0, len(gc_lines)):
+                    if "<Contents>" in gc_lines[idx]:
+                        gc_lines[idx] = gc_lines[idx] + layer_xml
+                        print '\nAdding layers to WMTS GetCapabilities'
+                    if "</Contents>" in gc_lines[idx] and " </TileMatrixSet>" not in gc_lines[idx-1]:
+                        gc_lines[idx] = wmts_endpoint.projection.tilematrixset_xml[2:] + '\n' + gc_lines[idx]
+                        print "\nAdding TileMatrixSet to WMTS GetCapabilities"
+                    getCapabilities_base.seek(0)
+                    getCapabilities_base.truncate()
+                    getCapabilities_base.writelines(gc_lines)
+                getCapabilities_base.close()
+            except:
+                log_sig_err("Couldn't read GetCapabilities file: " + getCapabilities_file, sigevent_url)
             if no_xml == False:            
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities+'/getCapabilities.xml'
                 shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities+'/getCapabilities.xml')

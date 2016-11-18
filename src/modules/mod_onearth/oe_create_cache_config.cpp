@@ -34,7 +34,7 @@
 
 
 // oe_create_cache_config.cpp : Defines the entry point for the console application.
-// version 1.2.0
+// version 1.2.1
 
 // For windows, this file should exist but be empty on Linux
 #include "stdafx.h"

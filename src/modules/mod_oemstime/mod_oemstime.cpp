@@ -33,7 +33,7 @@
 
 /*
  * mod_oemstime.cpp: OnEarth module for leveraging time snapping from Mapserver requests
- * Version 1.2.0
+ * Version 1.2.1
  */
 
 #include "mod_oemstime.h"
@@ -50,7 +50,7 @@ static void *create_dir_config(apr_pool_t *p, char *dummy)
     return cfg;
 }
 
-static int oemstime_output_filter (ap_filter_t *f, apr_bucket_brigade *bb) {
+static int oemstime_output_filter(ap_filter_t *f, apr_bucket_brigade *bb) {
 	request_rec *r = f->r;
     oemstime_conf *cfg = static_cast<oemstime_conf *>ap_get_module_config(r->per_dir_config, &oemstime_module);
     char *srs = 0;

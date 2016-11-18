@@ -33,10 +33,175 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.2.0
+ * Version 1.2.1
  */
 
 #include "mod_oems.h"
+
+static int change_xml_node_values(const xmlChar *search_xpath, 
+								  xmlXPathContextPtr *xpathCtx, 
+								  const char *search_txt,
+								  const char *replacement_txt)
+{
+	int rv = 0;
+	xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(search_xpath, *xpathCtx);
+    if (xpathObj->nodesetval) 
+    {
+    	rv = 1;
+        for (int i=0; i<xpathObj->nodesetval->nodeNr; i++)
+        {
+        	xmlNode *node = xpathObj->nodesetval->nodeTab[i];
+        	// Only replace node text if the search string is present (if one was specified).
+        	if (search_txt && !ap_strstr((const char*)xmlNodeGetContent(node), search_txt)) return 0;
+            xmlNodeSetContent(xpathObj->nodesetval->nodeTab[i], (const xmlChar *)replacement_txt);    
+        }	        	
+    }
+    xmlXPathFreeObject(xpathObj);
+    return rv;
+}
+
+// This SAX function checks to see if the XML repsonse from Mapserver is one of the types that we're filtering.
+static void xml_first_element_handler(void * user_data, const xmlChar * name, const xmlChar ** attrs)
+{
+	xml_filter_ctx *ctx = (xml_filter_ctx *)user_data;
+	if (!ctx->root_elem_found) // We only care about the first element in the XML response
+	{
+		ctx->root_elem_found = 1;
+	    if (apr_strnatcasecmp((const char *)name, "WMS_Capabilities") == 0
+	    	|| apr_strnatcasecmp((const char *)name, "WMT_MS_Capabilities") == 0)
+	    {
+	    	ctx->is_gc = 1;
+	    }
+	    else if (apr_strnatcasecmp((const char *)name, "ServiceExceptionReport") == 0)
+	    {
+	    	ctx->is_error = 1;
+	    }
+	    ctx->should_parse = ctx->is_gc || ctx->is_error;
+	}
+}
+
+/*
+ This filter works on various types of Mapserver text output. It currently strips filenames
+from error messages and makes a couple of corrections to GetCapabilities responses.
+*/
+static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *bb)
+{
+	request_rec *r = f->r;
+	conn_rec *c = r->connection;
+	apr_bucket_brigade *bb_out = apr_brigade_create(r->pool, c->bucket_alloc);
+	xml_filter_ctx *ctx = (xml_filter_ctx *)f->ctx;
+	
+	ctx->should_parse = ap_strstr(r->content_type, "text/xml")
+						|| ap_strstr(r->content_type, "application/vnd.ogc.se_xml")
+						|| ap_strstr(r->content_type, "application/vnd.ogc.wms_xml");
+	
+	if (!ctx->should_parse) ap_remove_output_filter(f); // Bail early if this isn't an XML response.
+
+	/* 
+	Set up the libxml2 SAX parser and the tree parser. The SAX parser is used to see
+	if this is a response we want to modify, in which case the tree parser is used for those 
+	operations. 
+	*/
+	xmlParserCtxtPtr xmlctx = 0;
+	xmlParserCtxtPtr xmlsaxctx = 0;
+	xmlDocPtr doc = 0;
+	xmlSAXHandler SAXHandler;
+	memset(&SAXHandler, 0, sizeof(xmlSAXHandler));
+	SAXHandler.startElement = xml_first_element_handler;
+
+    for (apr_bucket *b = APR_BRIGADE_FIRST(bb); 
+		b != APR_BRIGADE_SENTINEL(bb); 
+		b = APR_BUCKET_NEXT(b))
+	{
+		// If this isn't a response that we need to modify, we pass back the cached buckets and bail on the rest of the brigade.
+		if (!ctx->should_parse)
+		{
+		    xmlFreeParserCtxt(xmlctx);
+		    xmlFreeParserCtxt(xmlsaxctx);
+			ap_pass_brigade(f->next, bb_out);
+			apr_brigade_cleanup(bb_out);
+			ap_pass_brigade(f->next, bb);
+			return APR_SUCCESS;
+		}
+
+		if (APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b)) 
+		{
+			// Stream is over, now we check the XML for stuff we need to change, dump it into a buffer, and send it off.
+			xmlParseChunk(xmlctx, 0, 0, 1);
+			if (!xmlctx->valid)
+			{
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Can't parse Mapserver output: invalid XML");	
+			}
+			doc = xmlctx->myDoc;
+	        const char* out_buf;
+	        int out_size;
+	        xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
+
+			if (ctx->is_gc) // Have to swap nearestValue=0 to nearestValue=1 in the GC responses
+			{
+				xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/wms");
+		        const xmlChar *search_xpath = (const xmlChar *)"/default:WMS_Capabilities/default:Capability/default:Layer/default:Layer/default:Dimension/@nearestValue";
+		        int rv = change_xml_node_values(search_xpath, &xpathCtx, NULL, "1");
+		        if (!rv) // nearestValue tag is located in a different spot in WMS v1.1.1, so try that method if none found in the 1.3 scheme.
+		        {
+					search_xpath = (const xmlChar *)"/WMT_MS_Capabilities/Capability/Layer/Layer/Extent/@nearestValue";	        	
+					rv = change_xml_node_values(search_xpath, &xpathCtx, NULL, "1");
+		        }
+			}
+
+			if (ctx->is_error) // We also want to strip out any filenames the come through Mapserver errors.
+			{
+		        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
+		        const xmlChar *search_xpath = (const xmlChar *)"/default:ServiceExceptionReport/default:ServiceException/text()";
+		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "Unable to access -- corrupt, empty or missing file.");
+  			}
+
+  			// Cleanup for all the XML parser stuff
+	        xmlDocDumpMemory(doc, (xmlChar **)&out_buf, &out_size);
+	        xmlFreeParserCtxt(xmlctx);
+	        xmlFreeParserCtxt(xmlsaxctx);
+	        xmlXPathFreeContext(xpathCtx);
+	        xmlFreeDoc(doc);
+
+	        // Dump new XML into a new brigade
+			apr_brigade_cleanup(bb_out);
+	    	ap_fwrite(f->next, bb_out, out_buf, out_size);
+
+	    	// Add EOS bucket to tail once we're done w/ the XML
+			APR_BUCKET_REMOVE(b);
+			APR_BRIGADE_INSERT_TAIL(bb_out, b);
+			ap_pass_brigade(f->next, bb_out);
+			apr_brigade_cleanup(bb_out);
+			return APR_SUCCESS;
+		}
+
+		// Read bucket content into a buffer.
+		const char *buf = 0;
+		apr_size_t bytes;
+		if (APR_SUCCESS != apr_bucket_read(b, &buf, &bytes, APR_BLOCK_READ)) {
+			ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Error reading bucket");
+		}
+
+		// We have to cache buckets until we know what kind of document we're dealing with.
+		if (!ctx->root_elem_found)
+		{
+			apr_bucket * b_out = apr_bucket_immortal_create(buf, bytes, c->bucket_alloc);
+			APR_BRIGADE_INSERT_TAIL(bb_out, b_out);
+			APR_BUCKET_REMOVE(b);			
+		}
+
+		if (!xmlctx && !xmlsaxctx) // Set up parser contexts
+		{
+			xmlctx = xmlCreatePushParserCtxt(NULL, NULL, buf, bytes, NULL);
+			xmlsaxctx = xmlCreatePushParserCtxt(&SAXHandler, ctx, buf, bytes, NULL);
+			continue;
+		}
+
+		xmlParseChunk(xmlctx, buf, bytes, 0);
+		if (!ctx->root_elem_found) xmlParseChunk(xmlsaxctx, buf, bytes, 0); // Don't update the SAX parser once it's served its purpose.
+	}
+	return APR_SUCCESS;
+}
 
 static const char *mapfile_dir_set(cmd_parms *cmd, oems_conf *cfg, const char *arg) {
 	cfg->mapfiledir = arg;
@@ -128,6 +293,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	get_param(args,"request",request);
 	get_param(args,"format",format);
 	get_param(args,"bbox",bbox);
+
 
 	// Previous args
 	char *prev_format = 0;
@@ -318,6 +484,17 @@ char *validate_args(request_rec *r, char *mapfile) {
 		    	ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
 		    }
 	    }
+
+		// Add output filter to sanitize error messages from Mapserver. The filter iself is defined in this file.
+		xml_filter_ctx *filter_ctx = (xml_filter_ctx *)apr_pcalloc(r->pool, sizeof(xml_filter_ctx));
+		ap_filter_rec_t *err_filter_handle = ap_register_output_filter_protocol("mapserver_err_filter",
+																		mapserver_output_filter,
+																		NULL,
+																		AP_FTYPE_CONTENT_SET,
+																		AP_FILTER_PROTO_CHANGE
+																		);
+		ap_add_output_filter_handle(err_filter_handle, filter_ctx, r, r->connection);
+
 	    // In case all layers have been stripped out due to invalid time requests
 	    if (strlen(layers) == 0 && prev_last_layers != 0) {
 	    	layers = apr_psprintf(r->pool,"INVALIDTIME");
