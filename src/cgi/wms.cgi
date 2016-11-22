@@ -35,6 +35,7 @@ MAPSERV="/usr/bin/mapserv"
 if [ "${REQUEST_METHOD}" = "GET" ]; then
   exec ${MAPSERV}
 else
-  echo "Unable to handle request with MapServer."
+  echo -e "Content-type: text/html\n"
+  echo "<body>Unable to handle request with MapServer.</body>"
 fi
 exit 1
