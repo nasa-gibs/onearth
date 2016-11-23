@@ -211,6 +211,7 @@ void server_config::dump(ostream &ofname) {
 */
 
 void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
+	if (!valid) return;
     if (verbose)  cerr << "Cache # " << cfg.count << endl
         << "Matches " << patt[0] << endl 
         << "Level count " << levels << endl;
@@ -291,15 +292,14 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
 mrf_data::mrf_data(const char *ifname) :valid(false) {
 
     CPLXMLNode *input=XMLParseFile(ifname);
-    if (!input) return;
 
     try {
         // List of signatures for different compression schemes
         // The tiff is not quite right, it depends on endianess, this one is for big endian
         const int sig_jpg=-2555936, sig_png=-1991255785, tif_sig=1296891946;
-        if (!input) throw("Can't read input");
+        if (!input) throw CPLString().Printf("Can't read input %s", ifname);
         CPLXMLNode *raster=CPLGetXMLNode(input,"Raster");
-        if (!raster) throw("Can't find the Raster node");
+        if (!raster) throw CPLString().Printf("Can't find the Raster node in %s", ifname);
         orientation=EQUAL(CPLGetXMLValue(raster,"Orientation","TL"),"TL")?0:1;
 
         stringstream(CPLGetXMLValue(raster,"Size.x","1")) >> whole_size_x;
@@ -341,7 +341,7 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         }
 
         if (idx_fname=="-" || data_fname=="-")
-            throw (CPLString("Need data and index file names, under <Rsets><IndexFileName> or <Rsets><DataFileName>"));
+            throw (CPLString().Printf("Need data and index file names, under <Rsets><IndexFileName> or <Rsets><DataFileName>"));
         if (string::npos!=data_fname.find(".unknown_ext"))
             throw (CPLString().Printf("Can't guess extension for data file compressed as %s, please provide <Rsets><DataFilename>",
             compression.c_str()));
@@ -400,7 +400,7 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
     }
     catch (CPLString message) {
         CPLDestroyXMLNode(input);
-        cerr << "Error :" << message << endl;
+        cerr << "ERROR: " << message << endl;
         return;
     }
     valid=true;
