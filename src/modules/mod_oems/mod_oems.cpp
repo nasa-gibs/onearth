@@ -572,8 +572,9 @@ static int handler(request_rec *r) {
 	if (!(r->args)) { // Don't handle if no arguments
 		return DECLINED;
 	} else {
-		if ((ap_strstr(r->args, "=WMS") == 0) && (ap_strstr(r->args, "=WFS") == 0)) { // Don't handle if not WMS or WFS
-			return DECLINED;
+		if ((ap_strstr(r->args, "SERVICE=WMS") == 0) && (ap_strstr(r->args, "SERVICE=WFS") == 0)) { // Don't handle if not WMS or WFS
+		    ap_rputs("Invalid WMS or WFS request. Check parameters.", r);
+		    return OK;
 		}
 	}
 	return oems_handler(r);
