@@ -153,7 +153,8 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 			{
 		        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
 		        const xmlChar *search_xpath = (const xmlChar *)"/default:ServiceExceptionReport/default:ServiceException/text()";
-		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "Unable to access -- corrupt, empty or missing file.");
+		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- corrupt, empty or missing file.");
+		        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- check for valid LAYER and TIME (if applicable).");
   			}
 
   			// Cleanup for all the XML parser stuff
