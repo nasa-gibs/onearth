@@ -151,10 +151,18 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 
 			if (ctx->is_error) // We also want to strip out any filenames the come through Mapserver errors.
 			{
+	    		char *oe_error = 0;
 		        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
 		        const xmlChar *search_xpath = (const xmlChar *)"/default:ServiceExceptionReport/default:ServiceException/text()";
 		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- corrupt, empty or missing file.");
-		        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- check for valid LAYER and TIME (if applicable).");
+		    	if (r->prev != 0) {
+		    		oe_error = (char *) apr_table_get(r->prev->notes, "oe_error");
+		    	}
+		    	if (oe_error != 0) {
+			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid TIME.");
+		    	} else {
+			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid LAYER(s).");
+		    	}
   			}
 
   			// Cleanup for all the XML parser stuff

@@ -562,6 +562,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 								args_pt += strlen(layer);
 								args_cpy[strlen(args_cpy)-1] = 0;
 							}
+							apr_table_setn(r->notes, "oe_error", "Invalid TIME.");
 							new_uri = apr_psprintf(r->pool, "%s?%s%s", r->prev->uri, args_cpy, args_pt);
 							ap_internal_redirect(new_uri, r);
 						}
