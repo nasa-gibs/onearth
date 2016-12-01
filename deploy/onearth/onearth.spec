@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.1.2
-Release:	1%{?dist}
+Release:	5%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
