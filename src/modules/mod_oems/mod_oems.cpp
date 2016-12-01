@@ -164,7 +164,7 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 		    		oe_error = (char *) apr_table_get(r->prev->notes, "oe_error");
 		    	}
 		    	if (oe_error != 0) {
-			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid TIME.");
+			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid TIME for LAYER.");
 		    	} else {
 			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid LAYER(s).");
 		    	}
@@ -290,14 +290,15 @@ char *validate_args(request_rec *r, char *mapfile) {
 	char proj[4];
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
-	char *error = 0;
 
 	// Time args
+	const char *time_error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
 	apr_time_exp_t tm = {0};
 	apr_size_t tmlen;
 	char *time = (char*)apr_pcalloc(r->pool,max_chars);
 	char *doytime = (char*)apr_pcalloc(r->pool,max_chars); // Ordinal date with time
 	char *productyear = (char*)apr_pcalloc(r->pool,5);
+	char *formatted_time = (char*)apr_pcalloc(r->pool,21);
 	char *subdaily = 0;
 
 	// General args
@@ -346,6 +347,11 @@ char *validate_args(request_rec *r, char *mapfile) {
 			times[i++] = t;
 			t = apr_strtok(NULL,"-",&last);
 		}
+		if (times[2] == NULL) {
+			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
+			ap_rprintf(r, time_error);
+			return 0;
+		}
 		if (ap_strstr(times[2],"T") != 0) {
 			subdaily = times[2];
 			t = apr_strtok(subdaily,"T:",&last);
@@ -358,17 +364,15 @@ char *validate_args(request_rec *r, char *mapfile) {
 		if (subdaily == 0) {
 			time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
 			if (ap_regexec(daily_time,time,0,NULL,0)) {
-				error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
-				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, error);
-				ap_rprintf(r, error);
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
+				ap_rprintf(r, time_error);
 				return 0;
 			}
 		} else {
 			time = apr_psprintf(r->pool, "%s-%s-%sT%s:%s:%s", times[0], times[1], times[2], times[3], times[4], times[5]);
 			if (ap_regexec(subdaily_time,time,0,NULL,0)) {
-				error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
-				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, error);
-				ap_rprintf(r, error);
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
+				ap_rprintf(r, time_error);
 				return 0;
 			}
 		}
@@ -387,9 +391,29 @@ char *validate_args(request_rec *r, char *mapfile) {
 		apr_time_exp_get(&epoch, &tm);
 		apr_time_exp_gmt(&tm, epoch);
 
+		// Create DOY date and time
 		apr_strftime(doytime, &tmlen, 14, "%Y%j", &tm);
 		if (subdaily != 0) {
 			apr_strftime(subdaily, &tmlen, 7, "%H%M%S", &tm);
+		}
+
+		// Validate real date/time
+		if (subdaily != 0) {
+			apr_strftime(formatted_time, &tmlen, 21, "%Y-%m-%dT%H:%M:%SZ", &tm);
+			if (apr_strnatcasecmp(time, formatted_time)) {
+				char *error = "Invalid TIME";
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "%s: %s", error, time);
+				ap_rprintf(r, error);
+				return 0;
+			}
+		} else {
+			apr_strftime(formatted_time, &tmlen, 11, "%Y-%m-%d", &tm);
+			if (apr_strnatcasecmp(time, formatted_time)) {
+				char *error = "Invalid date in TIME";
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "%s: %s", error, time);
+				ap_rprintf(r, error);
+				return 0;
+			}
 		}
 	}
 
