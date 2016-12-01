@@ -38,6 +38,11 @@
 
 #include "mod_oems.h"
 
+ap_regex_t* daily_time;
+ap_regex_t* subdaily_time;
+static const char *daily_time_pattern = "\\d{4}-\\d{2}-\\d{2}";
+static const char *subdaily_time_pattern = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z";
+
 static int change_xml_node_values(const xmlChar *search_xpath, 
 								  xmlXPathContextPtr *xpathCtx, 
 								  const char *search_txt,
@@ -226,6 +231,11 @@ static void *create_dir_config(apr_pool_t *p, char *dummy)
 {
 	oems_conf *cfg;
 	cfg = (oems_conf *)(apr_pcalloc(p, sizeof(oems_conf)));
+
+	// compile regexes
+	daily_time = ap_pregcomp(p, daily_time_pattern, 0);
+	subdaily_time = ap_pregcomp(p, subdaily_time_pattern, 0);
+
     return cfg;
 }
 
@@ -280,6 +290,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	char proj[4];
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
+	char *error = 0;
 
 	// Time args
 	apr_time_exp_t tm = {0};
@@ -346,8 +357,20 @@ char *validate_args(request_rec *r, char *mapfile) {
 		}
 		if (subdaily == 0) {
 			time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
+			if (ap_regexec(daily_time,time,0,NULL,0)) {
+				error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, error);
+				ap_rprintf(r, error);
+				return 0;
+			}
 		} else {
 			time = apr_psprintf(r->pool, "%s-%s-%sT%s:%s:%s", times[0], times[1], times[2], times[3], times[4], times[5]);
+			if (ap_regexec(subdaily_time,time,0,NULL,0)) {
+				error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, error);
+				ap_rprintf(r, error);
+				return 0;
+			}
 		}
 		apr_table_setn(r->notes, "oems_time", time);
 
@@ -570,7 +593,11 @@ static int oems_handler(request_rec *r) {
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);
 //	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapserver args: %s", r->args);
-	return DECLINED; // Pass request to Mapserver
+	if (r->args != 0) {
+		return DECLINED; // Pass request to Mapserver
+	} else {
+		return OK; // We handled this request due to errors
+	}
 }
 
 // Main handler for module

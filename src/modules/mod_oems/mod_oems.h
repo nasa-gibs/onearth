@@ -42,6 +42,7 @@
 #include <apr_lib.h>
 #include <apr_file_io.h>
 #include <apr_strings.h>
+#include <ap_regex.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
