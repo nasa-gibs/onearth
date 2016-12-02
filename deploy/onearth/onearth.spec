@@ -30,7 +30,6 @@ Obsoletes:	mod_twms mod_onearth mod_oems mod_oemstime
 %description
 Installation packages for OnEarth
 
-
 %package demo
 Summary:	Demonstration of OnEarth
 Requires:	%{name} = %{version}-%{release}
@@ -46,13 +45,6 @@ BuildArch:	noarch
 %description metrics
 OnEarth log tool for metrics
 
-%package mrfgen
-Summary:	MRF generator for OnEarth
-Requires:	gibs-gdal
-
-%description mrfgen
-MRF generator for OnEarth
-
 %package vectorgen
 Summary:	Vector data processing for OnEarth
 Requires:	libxml2-devel
@@ -62,10 +54,6 @@ Requires:	gibs-gdal-devel
 
 %description vectorgen
 Vector data processing for OnEarth
-
-%package config
-Summary:	Layer configuration tools for OnEarth
-Requires:	%{name} = %{version}-%{release}
 
 %package tools
 Summary:    Auxiliary tools for OnEarth

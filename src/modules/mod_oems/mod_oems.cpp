@@ -38,6 +38,11 @@
 
 #include "mod_oems.h"
 
+ap_regex_t* daily_time;
+ap_regex_t* subdaily_time;
+static const char *daily_time_pattern = "\\d{4}-\\d{2}-\\d{2}";
+static const char *subdaily_time_pattern = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z";
+
 static int change_xml_node_values(const xmlChar *search_xpath, 
 								  xmlXPathContextPtr *xpathCtx, 
 								  const char *search_txt,
@@ -151,9 +156,18 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 
 			if (ctx->is_error) // We also want to strip out any filenames the come through Mapserver errors.
 			{
+	    		char *oe_error = 0;
 		        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
 		        const xmlChar *search_xpath = (const xmlChar *)"/default:ServiceExceptionReport/default:ServiceException/text()";
-		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "Unable to access -- corrupt, empty or missing file.");
+		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- corrupt, empty or missing file.");
+		    	if (r->prev != 0) {
+		    		oe_error = (char *) apr_table_get(r->prev->notes, "oe_error");
+		    	}
+		    	if (oe_error != 0) {
+			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid TIME for LAYER.");
+		    	} else {
+			        change_xml_node_values(search_xpath, &xpathCtx, "Invalid layer", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- invalid LAYER(s).");
+		    	}
   			}
 
   			// Cleanup for all the XML parser stuff
@@ -217,6 +231,11 @@ static void *create_dir_config(apr_pool_t *p, char *dummy)
 {
 	oems_conf *cfg;
 	cfg = (oems_conf *)(apr_pcalloc(p, sizeof(oems_conf)));
+
+	// compile regexes
+	daily_time = ap_pregcomp(p, daily_time_pattern, 0);
+	subdaily_time = ap_pregcomp(p, subdaily_time_pattern, 0);
+
     return cfg;
 }
 
@@ -273,11 +292,13 @@ char *validate_args(request_rec *r, char *mapfile) {
 	max_chars = strlen(r->args) + 1;
 
 	// Time args
+	const char *time_error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
 	apr_time_exp_t tm = {0};
 	apr_size_t tmlen;
 	char *time = (char*)apr_pcalloc(r->pool,max_chars);
 	char *doytime = (char*)apr_pcalloc(r->pool,max_chars); // Ordinal date with time
 	char *productyear = (char*)apr_pcalloc(r->pool,5);
+	char *formatted_time = (char*)apr_pcalloc(r->pool,21);
 	char *subdaily = 0;
 
 	// General args
@@ -326,6 +347,11 @@ char *validate_args(request_rec *r, char *mapfile) {
 			times[i++] = t;
 			t = apr_strtok(NULL,"-",&last);
 		}
+		if (times[2] == NULL) {
+			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
+			ap_rprintf(r, time_error);
+			return 0;
+		}
 		if (ap_strstr(times[2],"T") != 0) {
 			subdaily = times[2];
 			t = apr_strtok(subdaily,"T:",&last);
@@ -337,8 +363,18 @@ char *validate_args(request_rec *r, char *mapfile) {
 		}
 		if (subdaily == 0) {
 			time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
+			if (ap_regexec(daily_time,time,0,NULL,0)) {
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
+				ap_rprintf(r, time_error);
+				return 0;
+			}
 		} else {
 			time = apr_psprintf(r->pool, "%s-%s-%sT%s:%s:%s", times[0], times[1], times[2], times[3], times[4], times[5]);
+			if (ap_regexec(subdaily_time,time,0,NULL,0)) {
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
+				ap_rprintf(r, time_error);
+				return 0;
+			}
 		}
 		apr_table_setn(r->notes, "oems_time", time);
 
@@ -355,9 +391,29 @@ char *validate_args(request_rec *r, char *mapfile) {
 		apr_time_exp_get(&epoch, &tm);
 		apr_time_exp_gmt(&tm, epoch);
 
+		// Create DOY date and time
 		apr_strftime(doytime, &tmlen, 14, "%Y%j", &tm);
 		if (subdaily != 0) {
 			apr_strftime(subdaily, &tmlen, 7, "%H%M%S", &tm);
+		}
+
+		// Validate real date/time
+		if (subdaily != 0) {
+			apr_strftime(formatted_time, &tmlen, 21, "%Y-%m-%dT%H:%M:%SZ", &tm);
+			if (apr_strnatcasecmp(time, formatted_time)) {
+				char *error = "Invalid TIME";
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "%s: %s", error, time);
+				ap_rprintf(r, error);
+				return 0;
+			}
+		} else {
+			apr_strftime(formatted_time, &tmlen, 11, "%Y-%m-%d", &tm);
+			if (apr_strnatcasecmp(time, formatted_time)) {
+				char *error = "Invalid date in TIME";
+				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "%s: %s", error, time);
+				ap_rprintf(r, error);
+				return 0;
+			}
 		}
 	}
 
@@ -561,7 +617,11 @@ static int oems_handler(request_rec *r) {
 	// Call Mapserver with mapfile
 	r->args = validate_args(r, mapfile);
 //	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapserver args: %s", r->args);
-	return DECLINED; // Pass request to Mapserver
+	if (r->args != 0) {
+		return DECLINED; // Pass request to Mapserver
+	} else {
+		return OK; // We handled this request due to errors
+	}
 }
 
 // Main handler for module
@@ -571,8 +631,9 @@ static int handler(request_rec *r) {
 	if (!(r->args)) { // Don't handle if no arguments
 		return DECLINED;
 	} else {
-		if ((ap_strstr(r->args, "=WMS") == 0) && (ap_strstr(r->args, "=WFS") == 0)) { // Don't handle if not WMS or WFS
-			return DECLINED;
+		if ((ap_strstr(r->args, "SERVICE=WMS") == 0) && (ap_strstr(r->args, "SERVICE=WFS") == 0)) { // Don't handle if not WMS or WFS
+		    ap_rputs("Invalid WMS or WFS request. Check parameters.", r);
+		    return OK;
 		}
 	}
 	return oems_handler(r);

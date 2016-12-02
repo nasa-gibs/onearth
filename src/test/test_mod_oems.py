@@ -235,8 +235,8 @@ class TestModOEMS(unittest.TestCase):
         """
         11. Request erroneous layer via WMS
         """
-        ref_hash = '28b9e89643766a3b6cfe80029d349f24'
-        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
+        ref_hash = '35a5f708101eb4a452d9cc3da3adb5e4'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=blah&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print '\nTesting: Request erroneous layer via WMS'
             print 'URL: ' + req_url
@@ -283,7 +283,7 @@ class TestModOEMS(unittest.TestCase):
         """
         15. Request multiple layers with multi-day period and snap to date that is out of range via WMS
         """
-        ref_hash = '09f337e245d8fcce256c0b7657498021'
+        ref_hash = 'bb012764b0dd6ce9c1e8e4e21f523147'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-04-02'
         if DEBUG:
             print '\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range via WMS'
@@ -307,10 +307,10 @@ class TestModOEMS(unittest.TestCase):
         """
         17. Request multiple layers with bad date format via WMS
         """
-        ref_hash = 'd41d8cd98f00b204e9800998ecf8427e'
-        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-002'
+        ref_hash = '15bfb2f8a156a407e746268688a1cf31'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03'
         if DEBUG:
-            print '\nTesting: Request  multiple layers bad date format via WMS'
+            print '\nTesting: Request multiple layers bad date format via WMS'
             print 'URL: ' + req_url
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers bad date format does not match what\'s expected. URL: ' + req_url)
@@ -423,6 +423,54 @@ class TestModOEMS(unittest.TestCase):
             print 'URL: ' + req_url
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS request CSV from vector source file with time via WFS does not match what\'s expected. URL: ' + req_url)
+
+    def test_request_wms_baddate(self):
+        """
+        26. Request multiple layers with bad date via WMS
+        """
+        ref_hash = '7a381e294d85fe36d69d61a981da8147'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-11-31'
+        if DEBUG:
+            print '\nTesting: Request multiple layers bad date via WMS'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS multiple layers bad date does not match what\'s expected. URL: ' + req_url)
+        
+    def test_request_wms_badtime(self):
+        """
+        27. Request multiple layers with bad time via WMS
+        """
+        ref_hash = '59c36f4da5efb41c160e64e342edef58'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02T23:30:99Z'
+        if DEBUG:
+            print '\nTesting: Request multiple layers bad time via WMS'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS multiple layers bad time does not match what\'s expected. URL: ' + req_url)
+        
+    def test_request_wms_badtimeformat(self):
+        """
+        28. Request multiple layers with bad time format via WMS
+        """
+        ref_hash = '15bfb2f8a156a407e746268688a1cf31'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02T23:30:59'
+        if DEBUG:
+            print '\nTesting: Request multiple layers bad time format via WMS'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS multiple layers bad time format does not match what\'s expected. URL: ' + req_url)
+        
+    def test_request_wms_no_layer_error(self):
+        """
+        29. Request missing layers via WMS
+        """
+        ref_hash = '28b9e89643766a3b6cfe80029d349f24'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
+        if DEBUG:
+            print '\nTesting: Request missing layers via WMS'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Request missing layers via WMS does not match what\'s expected. URL: ' + req_url)
 
     # TEARDOWN
 

@@ -2566,9 +2566,15 @@ if no_wmts == False:
         #wmts
         print "\nRunning commands for endpoint: " + wmts_endpoint.path
         cmd = depth + '/oe_create_cache_config -cbd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config'
-        run_command(cmd, sigevent_url)
+        try:
+            run_command(cmd, sigevent_url)
+        except:
+            log_sig_err("Error in generating binary cache config using command: " + cmd, sigevent_url)
         cmd = depth + '/oe_create_cache_config -cxd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
-        run_command(cmd, sigevent_url)
+        try:
+            run_command(cmd, sigevent_url)
+        except:
+            log_sig_err("Error in generating XML cache config using command: " + cmd, sigevent_url)
         if no_cache == False:
             if wmts_endpoint.cacheConfigLocation:
                 print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config'

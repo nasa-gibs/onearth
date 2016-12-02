@@ -891,7 +891,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
             con.close()
             con = None
         mssg = "%s:" % e.args[0]
-        if "database is locked" in mssg:
+        if "database is locked" in mssg or "no such table" in mssg:
             log_sig_warn(mssg + " retrying connection to " + zdb_out, sigevent_url)
             return insert_zdb(mrf, zlevels, zkey)
         else:
@@ -1721,6 +1721,13 @@ if zlevels != '':
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
     gdal_mrf_filename, z, zdb_out, con = insert_zdb(mrf_filename, zlevels, zkey, source_url, scale, offset, units)
+    # Commit database if successful
+    if con:
+        con.commit()
+        con.close()
+        log_info_mssg("Successfully committed record to " + zdb_out)
+    else:
+        log_info_mssg("No ZDB record created")
 else:
     con = None
     gdal_mrf_filename = mrf_filename
@@ -2116,14 +2123,6 @@ if data_only == True:
     remove_file(log_filename)
     remove_file(output_dir+"/"+basename+".mrf.aux.xml")
     remove_file(working_dir+"/"+basename+".configuration_file.xml")
-    
-# Commit database if successful
-if con:
-    con.commit()
-    con.close()
-    log_info_mssg("Successfully committed record to " + zdb_out)
-else:
-    log_info_mssg("No ZDB record created")
 
 # Remove temp tiles
 for tilename in (alltiles):
