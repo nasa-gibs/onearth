@@ -34,6 +34,10 @@ typedef unsigned char byte;
 /* Face it, if more than 100 image colors are not the the color table you've obviously got the wrong table! */
 #define MAX_NOT_FOUND 100
 
+/* Fixes PNG issue with libpng > 1.4 */
+#define png_infopp_NULL (png_infopp)NULL
+#define int_p_NULL (int*)NULL
+
 enum {COLOR, GRAYSCALE};
 
 
