@@ -256,8 +256,7 @@ int return_code=0;
     			char *buffer = (char *)malloc(size);
     			const char *entry_key = "ColorMapEntry";
     			const char *rgb_key = "rgb=";
-    			const char *transparent_key = "transparent=";
-    			const char *true_str = "\"true\"";
+    			const char *transparent_str = "transparent=\"true\"";
     			
     			do { // read all lines in file
 					pos = 0;
@@ -273,7 +272,6 @@ int return_code=0;
 
 					char *entry = strstr(buffer,entry_key);
 					char *rgb = strstr(buffer,rgb_key);
-					char *transparent = strstr(buffer,transparent_key);
 					
 					// GIBS colormap RGB values
 					if (rgb != NULL && entry != NULL) {
@@ -295,7 +293,7 @@ int return_code=0;
 						dest_pal->green = green;
 						dest_pal->blue = blue;
 
-						alpha = strstr(transparent, true_str) != NULL ? 0 : 255;
+						alpha = strstr(entry, transparent_str) != NULL ? 0 : 255;
 						
 						dest_pal++;
 						redarr[j] = red;
