@@ -350,7 +350,7 @@ def parse_legend(legend_xml, colormap_entries):
     return legend
     
 
-def generate_legend(colormaps, output, output_format, orientation):
+def generate_legend(colormaps, output, output_format, orientation, label_color):
     
     # set ticklines out
     rcParams['xtick.direction'] = 'out'
@@ -505,6 +505,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                 else:
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
+                for text in legend.get_texts():
+                    text.set_color(label_color)
             
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 ax = fig.add_axes([0.075, bottom, 0.85, height])
@@ -523,6 +525,7 @@ def generate_legend(colormaps, output, output_format, orientation):
             
                 for tick in cb.ax.xaxis.get_ticklabels():
                     tick.set_fontsize(8)
+                    tick.set_color(label_color)
 
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_xticklabels()) > 0:
@@ -553,14 +556,14 @@ def generate_legend(colormaps, output, output_format, orientation):
                         cb.ax.set_xticklabels(xticklabels)
                 
                 if colormap.units != None:
-                    fig.text(0.5, bottom-height-(0.20/lc), colormap.units, fontsize=10, horizontalalignment='center')
+                    fig.text(0.5, bottom-height-(0.20/lc), colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
                     
             if colormap.title != None:
                 if lc ==1:
                     title_loc = 1-t
                 else:
                     title_loc = bottom+height+(0.07/lc)
-                fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold')
+                fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold', color=label_color)
                     
         
         else: # default vertical orientation
@@ -600,6 +603,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                 else:
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
+                for text in legend.get_texts():
+                    text.set_color(label_color)
          
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 ax = fig.add_axes([left, 0.1, width, 0.8])
@@ -617,7 +622,8 @@ def generate_legend(colormaps, output, output_format, orientation):
                 cb.solids.set_edgecolor("face")
                         
                 for tick in cb.ax.yaxis.get_ticklabels():
-                    tick.set_fontsize(10)        
+                    tick.set_fontsize(10)
+                    tick.set_color(label_color)
                     
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_yticklabels()) > 0:
@@ -636,7 +642,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                                     yticklabels[idx] = ""
                                 else:
                                     if float(yticklabels[idx]).is_integer():
-                                        yticklabels[idx] = int(float(yticklabels[idx]))                              
+                                        yticklabels[idx] = int(float(yticklabels[idx]))
                             except ValueError:
                                 yticklabels[idx] = ""
                         
@@ -651,7 +657,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                         cb.ax.set_yticklabels(yticklabels)
                 
                 if colormap.units != None:
-                    fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center')
+                    fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
 
                                             
             if colormap.title != None:
@@ -677,7 +683,7 @@ def generate_legend(colormaps, output, output_format, orientation):
                     for word in title_words[half:len(title_words)]:
                         title = title + word + " "                    
                     colormap.title = title
-                fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold') 
+                fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold', color=label_color) 
             
     fig.savefig(output, transparent=True, format=output_format)
         
@@ -789,6 +795,9 @@ parser.add_option('-c', '--colormap',
 parser.add_option('-f', '--format',
                   action='store', type='string', dest='format', default = 'svg',
                   help='Format of output file. Supported formats: eps, pdf, pgf, png, ps, raw, rgba, svg (default), svgz.')
+parser.add_option('-l', '--label_color',
+                  action='store', type='string', dest='label_color', default = 'black',
+                  help='Color of labels. Supported colors: black (default), blue, green, red, cyan, magenta, yellow, white')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
@@ -822,6 +831,15 @@ if options.orientation:
     if options.orientation not in ['horizontal','vertical']:
         print str(options.orientation) + " is not a valid legend orientation. Please choose horizontal or vertical."
         exit()
+        
+# check label color
+if options.label_color:
+    label_color = str(options.label_color).lower()
+    if label_color not in ["blue","green","red","cyan","magenta","yellow","black","white"]:
+        print "Invalid label color"
+        exit()
+else:
+    label_color = "black"
 
 colormaps = []
 # parse colormap file
@@ -848,7 +866,7 @@ for colormap_xml in colormap_elements:
 
 # generate legend
 try:
-    generate_legend(colormaps, output_location, options.format, options.orientation)
+    generate_legend(colormaps, output_location, options.format, options.orientation, label_color)
 except IOError,e:
     print str(e)
     exit()
