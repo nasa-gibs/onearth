@@ -12,18 +12,27 @@ This are instructions on how to install OnEarth on CentOS/RedHat Linux 6.4 or gr
 Download the latest OnEarth release (https://github.com/nasa-gibs/onearth/releases)
 
 Unpackage the release .tar.gz file
-```Shell
+
+```
 tar -zxvf onearth-*.tar.gz
 ```
 
 Install GIBS GDAL with the MRF driver
-```Shell
+
+```
 sudo yum -y install gibs-gdal-*
 ```
 
 Install OnEarth packages
-```Shell
+
+```
 sudo yum -y install onearth-*
+```
+
+If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing the Postgres Repository RPM
+
+```
+sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
 ```
 
 For manual installation or to install or another OS, please refer to the specific component:
