@@ -1704,23 +1704,23 @@ for conf in conf_files:
         else:
             # use relative path to cache
             dataFileLocation = mrf.replace(cacheConfig,'')
-        if compression.lower() in ['jpg', 'jpeg']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
-            mrf_format = 'image/jpeg'
-        elif compression.lower() in ['tif', 'tiff']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
-            mrf_format = 'image/tiff'
-        elif compression.lower() in ['lerc']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
-            mrf_format = 'image/lerc'
-        elif compression.lower() in ['pbf']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
-            mrf_format = 'application/x-protobuf'
-        elif vectorType is not None:
-            dataFileLocation = dataFileLocation.replace('.mrf','.shp')
-        else:
-            dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
-            mrf_format = 'image/png'
+    if compression.lower() in ['jpg', 'jpeg']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
+        mrf_format = 'image/jpeg'
+    elif compression.lower() in ['tif', 'tiff']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
+        mrf_format = 'image/tiff'
+    elif compression.lower() in ['lerc']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
+        mrf_format = 'image/lerc'
+    elif compression.lower() in ['pbf']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
+        mrf_format = 'application/x-protobuf'
+    elif vectorType is not None:
+        dataFileLocation = dataFileLocation.replace('.mrf','.shp')
+    else:
+        dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
+        mrf_format = 'image/png'
 
     if zIndexFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
