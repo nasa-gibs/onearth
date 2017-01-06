@@ -63,6 +63,7 @@ typedef struct {
 	int is_gc;
 	int is_error;
 	int should_parse;
+	char* wms_version;
 } xml_filter_ctx;
 
 extern module AP_MODULE_DECLARE_DATA oems_module;
