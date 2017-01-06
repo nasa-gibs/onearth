@@ -81,6 +81,10 @@ static void xml_first_element_handler(void * user_data, const xmlChar * name, co
 	    {
 	    	ctx->is_error = 1;
 	    }
+	    if (apr_strnatcasecmp((const char *)attrs[0], "version") == 0)
+	    {
+	    	apr_cpystrn(ctx->wms_version, (char *)attrs[1], 7);
+	    }
 	    ctx->should_parse = ctx->is_gc || ctx->is_error;
 	}
 }
@@ -113,6 +117,7 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 	xmlSAXHandler SAXHandler;
 	memset(&SAXHandler, 0, sizeof(xmlSAXHandler));
 	SAXHandler.startElement = xml_first_element_handler;
+	ctx->wms_version = (char *)apr_pcalloc(r->pool, 7);
 
     for (apr_bucket *b = APR_BRIGADE_FIRST(bb); 
 		b != APR_BRIGADE_SENTINEL(bb); 
@@ -157,8 +162,20 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 			if (ctx->is_error) // We also want to strip out any filenames the come through Mapserver errors.
 			{
 	    		char *oe_error = 0;
-		        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
-		        const xmlChar *search_xpath = (const xmlChar *)"/default:ServiceExceptionReport/default:ServiceException/text()";
+	    		const xmlChar *search_xpath;
+	    		if (apr_strnatcasecmp(ctx->wms_version, "1.3.0") == 0)
+	    		{
+			        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
+		        	search_xpath = (const xmlChar *)"/default:ServiceExceptionReport/default:ServiceException/text()";	    			
+	    		} 
+	    		else if (apr_strnatcasecmp(ctx->wms_version, "1.1.1") == 0)
+	    		{
+		        	search_xpath = (const xmlChar *)"/ServiceExceptionReport/ServiceException/text()";
+	    		}
+	    		else
+	    		{
+	    			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "Can't fix XML error message -- not v1.3.0 or 1.1.1");
+	    		}
 		        change_xml_node_values(search_xpath, &xpathCtx, ".mrf", "msWMSLoadGetMapParams(): WMS server error. Unable to access -- corrupt, empty or missing file.");
 		    	if (r->prev != 0) {
 		    		oe_error = (char *) apr_table_get(r->prev->notes, "oe_error");
