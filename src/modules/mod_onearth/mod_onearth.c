@@ -1590,13 +1590,11 @@ char *order_args(request_rec *r) {
 	getParam(args,"time",time);
 
 	// fix format slash
-	if (ap_strstr(format, "%2F")) {
-		char *formatslash = 0;
-		formatslash = ap_strstr(format, "%2F");
-		formatslash += 3;
-		ap_str_tolower(formatslash);
-	} else {
-		ap_str_tolower(format);
+	ap_str_tolower(format);
+	if (ap_strstr(format, "%2f")) {
+		char *formatslash = ap_strstr(format, "%2f");
+		formatslash += 2;
+		*formatslash = 'F';
 	}
 	if (ap_strcasecmp_match(format, "image/png") == 0) {
 		strcpy(format,"image%2Fpng");
