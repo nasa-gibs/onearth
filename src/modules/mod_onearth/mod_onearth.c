@@ -1590,6 +1590,14 @@ char *order_args(request_rec *r) {
 	getParam(args,"time",time);
 
 	// fix format slash
+	if (ap_strstr(format, "%2F")) {
+		char *formatslash = 0;
+		formatslash = ap_strstr(format, "%2F");
+		formatslash += 3;
+		ap_str_tolower(formatslash);
+	} else {
+		ap_str_tolower(format);
+	}
 	if (ap_strcasecmp_match(format, "image/png") == 0) {
 		strcpy(format,"image%2Fpng");
 	} else if (ap_strcasecmp_match(format, "image/jpeg") == 0) {
@@ -1956,7 +1964,7 @@ static int mrf_handler(request_rec *r)
 			}
 			if (prev_format != 0 && ap_strstr(prev_format, "bounce") == 0) {
 				// try changing the format string and bounce back
-				if (ap_strstr(prev_format, "png") != 0) {
+				if (ap_strcasestr(prev_format, "png") != 0) {
 					apr_table_setn(r->notes, "oems_format", "image/jpeg&bounce=");
 					ap_internal_redirect(new_uri, r);
 				} else {
