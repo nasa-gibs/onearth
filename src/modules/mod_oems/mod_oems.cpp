@@ -146,23 +146,25 @@ static apr_status_t mapserver_output_filter(ap_filter_t *f, apr_bucket_brigade *
 	        const char* out_buf;
 	        int out_size;
 	        xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
+	        const xmlChar *search_xpath;
 
 			if (ctx->is_gc) // Have to swap nearestValue=0 to nearestValue=1 in the GC responses
 			{
-				xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/wms");
-		        const xmlChar *search_xpath = (const xmlChar *)"/default:WMS_Capabilities/default:Capability/default:Layer/default:Layer/default:Dimension/@nearestValue";
-		        int rv = change_xml_node_values(search_xpath, &xpathCtx, NULL, "1");
-		        if (!rv) // nearestValue tag is located in a different spot in WMS v1.1.1, so try that method if none found in the 1.3 scheme.
-		        {
-					search_xpath = (const xmlChar *)"/WMT_MS_Capabilities/Capability/Layer/Layer/Extent/@nearestValue";	        	
-					rv = change_xml_node_values(search_xpath, &xpathCtx, NULL, "1");
-		        }
+	    		if (apr_strnatcasecmp(ctx->wms_version, "1.3.0") == 0)
+	    		{
+			        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/wms");
+		        	search_xpath = (const xmlChar *)"/default:WMS_Capabilities/default:Capability/default:Layer/default:Layer/default:Dimension/@nearestValue";			
+	    		} 
+	    		else if (apr_strnatcasecmp(ctx->wms_version, "1.1.1") == 0)
+	    		{
+		        	search_xpath = (const xmlChar *)"/WMT_MS_Capabilities/Capability/Layer/Layer/Extent/@nearestValue";
+	    		}
+		        change_xml_node_values(search_xpath, &xpathCtx, NULL, "1");
 			}
 
 			if (ctx->is_error) // We also want to strip out any filenames the come through Mapserver errors.
 			{
 	    		char *oe_error = 0;
-	    		const xmlChar *search_xpath;
 	    		if (apr_strnatcasecmp(ctx->wms_version, "1.3.0") == 0)
 	    		{
 			        xmlXPathRegisterNs(xpathCtx, BAD_CAST "default", BAD_CAST "http://www.opengis.net/ogc");
