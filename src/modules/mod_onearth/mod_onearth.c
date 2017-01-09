@@ -397,10 +397,35 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 			  	apr_time_t end_epoch = parse_date_string(time_period);
 			  	apr_time_t req_epoch;
+			  	apr_time_exp_t snap_date;
 			  	// Fix request time (apache expects to see years since 1900 and zero-indexed months)
 			  	tm.tm_year -= 1900;
 			  	tm.tm_mon -= 1;
 			  	apr_time_exp_get(&req_epoch, &tm);
+
+			  	if (ap_strstr(fn,tstamp)) { // Use the end epoch for the "default" when no time has been requested
+				  	apr_time_exp_gmt(&snap_date, end_epoch);
+					if ((yearloc=ap_strstr(fn,year))) {
+						char old_char=*(yearloc+4);
+						sprintf(yearloc,"%04d",snap_date.tm_year + 1900); // replace YYYY with actual year
+						*(yearloc+4)=old_char;
+					}
+				  	if (hastime == 0) {
+						char old_char=*(fnloc+7);
+						sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
+					  	*(fnloc+7)=old_char;
+				  	} else {
+						char old_char=*(fnloc+13);
+						sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
+						*(fnloc+13)=old_char;
+				  	}
+				  	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Using the following as default: %s", fn);
+				  	if (0>(fd=open(fn,O_RDONLY))) {
+				  		continue;
+				  	} else {
+				  		break;
+				  	}
+			  	}
 
 			  	// First, check if the request date is earlier than the start date of the period. (we don't snap forward)
 			  	if (req_epoch < start_epoch) {
@@ -491,11 +516,10 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 
 			  	// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
-			  	apr_time_exp_t snap_date;
-			  	apr_time_exp_gmt(&snap_date, snap_epoch);
+				apr_time_exp_gmt(&snap_date, snap_epoch);
 
 			  	// Fix year part of file path
-					if(yearloc != NULL) {
+				if(yearloc != NULL) {
 					char oldpath=*(yearloc+4);
 					sprintf(yearloc,"%04d",snap_date.tm_year + 1900);
 					*(yearloc+4)=oldpath;
