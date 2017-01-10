@@ -338,6 +338,13 @@ static void *r_file_pread(request_rec *r, char *fname,
 		wmts_add_error(r,400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
     	return 0;
     }
+	// just get the filename if zdb
+	if (ap_strcasestr(fn,".zdb")) {
+		if (ap_strstr(fn,tstamp) == 0) {
+			ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"ZDB file name: %s", fn);
+			return fn;
+		}
+	}
   }
 
   // Check if redirected from Mapserver for time snapping
@@ -390,7 +397,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	// First, parse the period start and end time strings, as well as the request.
 			  	// We're going to parse them into UNIX time integers (microseconds since 1970) for ease of working with them
 			  	apr_time_t start_epoch = parse_date_string(time_period);
-			  	if (time_period[11] == 'T') {
+			  	if (time_period[10] == 'T') {
 			  		time_period += 21;
 			  	} else {
 			  		time_period += 11;
@@ -410,16 +417,20 @@ static void *r_file_pread(request_rec *r, char *fname,
 						sprintf(yearloc,"%04d",snap_date.tm_year + 1900); // replace YYYY with actual year
 						*(yearloc+4)=old_char;
 					}
-				  	if (hastime == 0) {
+				  	if (ap_strstr(fn,"TTTTTTTTTTTTT_")==0) {
 						char old_char=*(fnloc+7);
 						sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
 					  	*(fnloc+7)=old_char;
 				  	} else {
+				  		fnloc-=6;
 						char old_char=*(fnloc+13);
 						sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
 						*(fnloc+13)=old_char;
 				  	}
 				  	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Using the following as default: %s", fn);
+			  		if (ap_strcasestr(fn,".zdb")) { // just get the filename if zdb
+			  			return fn;
+			  		}
 				  	if (0>(fd=open(fn,O_RDONLY))) {
 				  		continue;
 				  	} else {
@@ -2157,7 +2168,7 @@ static int mrf_handler(request_rec *r)
 
 			  if (z<0) {
 				  // Lookup the z index from the ZDB file based on keyword
-				  z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
+				  z = get_zlevel(r,r_file_pread(r, zidxfname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels),get_keyword(r));
 				  if (z<0) {
 					  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d, %s", z, r->args);
 				  }
@@ -2232,7 +2243,7 @@ static int mrf_handler(request_rec *r)
 
 			  // Lookup the z index from the ZDB file based on keyword
 			  if (z<0) {
-			  	z = get_zlevel(r,tstamp_fname(r,zidxfname),get_keyword(r));
+			  	z = get_zlevel(r,r_file_pread(r, zidxfname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels),get_keyword(r));
 			  	if (z<0) {
 				  	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d, %s", z, r->args);
 			  	}
