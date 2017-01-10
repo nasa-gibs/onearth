@@ -279,6 +279,7 @@ static void *r_file_pread(request_rec *r, char *fname,
       "Can't get memory for pread");
     return 0;
   }
+  const char *extension = &fn[strlen(fn)-4];
 
   // Hook and name change for time variant file names
   if ((targ=ap_strcasestr(r->args,timearg))&&(fnloc=ap_strstr(fn,tstamp))) { 
@@ -339,9 +340,8 @@ static void *r_file_pread(request_rec *r, char *fname,
     	return 0;
     }
 	// just get the filename if zdb
-	if (ap_strcasestr(fn,".zdb")) {
+	if (ap_strcasestr(extension,".zdb")) {
 		if (ap_strstr(fn,tstamp) == 0) {
-			ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"ZDB file name: %s", fn);
 			return fn;
 		}
 	}
@@ -428,7 +428,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 						*(fnloc+13)=old_char;
 				  	}
 				  	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Using the following as default: %s", fn);
-			  		if (ap_strcasestr(fn,".zdb")) { // just get the filename if zdb
+			  		if (ap_strcasestr(extension,".zdb")) { // just get the filename if zdb
 			  			return fn;
 			  		}
 				  	if (0>(fd=open(fn,O_RDONLY))) {
