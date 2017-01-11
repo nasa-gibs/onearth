@@ -1490,15 +1490,15 @@ for conf in conf_files:
         except:
             headerFileName = None
         try:
-            dataFileLocation = get_dom_tag_value(dom, 'DataFileLocation')
+            dataFileLocation = get_dom_tag_value(dom, 'DataFileName')
         except:
             dataFileLocation = None
         try:
-            indexFileLocation = get_dom_tag_value(dom, 'IndexFileLocation')
+            indexFileLocation = get_dom_tag_value(dom, 'IndexFileName')
         except:
             indexFileLocation = None
         try:
-            zIndexFileLocation = get_dom_tag_value(dom, 'ZIndexFileLocation')
+            zIndexFileLocation = get_dom_tag_value(dom, 'ZIndexFileName')
         except:
             zIndexFileLocation = None
         try:
@@ -1630,11 +1630,11 @@ for conf in conf_files:
     if archiveLocation:
         log_info_mssg('config: ArchiveLocation static=' + str(static) + ' year=' + str(year) + ' subdaily=' + str(subdaily) + ': ' + archiveLocation)
     if dataFileLocation:
-        log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
+        log_info_mssg('config: DataFileName: ' + dataFileLocation)
     if indexFileLocation:
-        log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
+        log_info_mssg('config: IndexFileName: ' + indexFileLocation)
     if zIndexFileLocation:
-        log_info_mssg('config: ZIndexFileLocation: ' + zIndexFileLocation)
+        log_info_mssg('config: ZIndexFileName: ' + zIndexFileLocation)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection.id))
     if getTileService:
