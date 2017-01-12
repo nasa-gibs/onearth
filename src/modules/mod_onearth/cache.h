@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2015, California Institute of Technology.
+* Copyright (c) 2002-2016, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -55,8 +55,11 @@ typedef struct {
   // values for the pages size.
   double levelx,levely;
 
-  char *dfname; // These are pointers or offsets
+  // These are pointers or offsets
+  char *dfname;
   char *ifname;
+  char *default_dfname;
+  char *default_ifname;
 } WMSlevel;
 
 typedef struct {
@@ -73,6 +76,7 @@ typedef struct {
   char *prefix;
   char *time_period;
   char *zidxfname;
+  char *default_zidxfname;
   int num_periods;
   int zlevels; // the max number of z levels
 } WMSCache;

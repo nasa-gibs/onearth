@@ -8,6 +8,9 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **DataFileName (optional)** - The file name of the MRF data file (e.g., \*.pjg, \*.ppg, \*.ptf, \*.pvt, \*.lrc) that will be used as the "default" for tile requests. 
 * **IndexFileName (optional)** - The file name of the MRF index file (i.e., \*.idx file) that will be used as the "default" for tile requests. 
 * **ZIndexFileName (optional)** - The file name of the MRF Z index file (i.e., \*.zdb file) that will be used as the "default" for tile requests. 
+* **DefaultDataFileName (optional)** - Same as DataFileName but is used when the "default" file exists outside of the MRF archive or has a different file naming convention.
+* **DefaultIndexFileName (optional)** - Same as IndexFileName but is used when the "default" file exists outside of the MRF archive or has a different file naming convention. 
+* **DefaultZIndexFileName (optional)** - Same as ZIndexFileName but is used when the "default" file exists outside of the MRF archive or has a different file naming convention. 
 * **Compression** - The image file format.   Valid values are "JPEG", "PNG", "EPNG" (encoded PNG), "TIF", "LERC", and "PBF" (vector tile protocol buffers). mod_onearth uses MIME types: "image/jpeg", "image/png", "image/tiff", "image/lerc", and "application/x-protobuf". Optional "style=encoded" in WMTS requests can be used for encoded PNGs.
 * **Projection** - The identifier of the layer's associated projection as contained within the [projection configuration](config_support.md#projection-configuration) and [TileMatrixSets](config_support.md#tilematrixsets) support files.
 * **TileMatrixSet** - The identifier of the layer's associated TileMatrixSet within the projection as contained within the [TileMatrixSets](config_support.md#tilematrixsets) support file.

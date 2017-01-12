@@ -255,8 +255,7 @@ char *tstamp_fname(request_rec *r,char *fname)
 
 // Same, but uses a request, and does the time stamp part
 
-static void *r_file_pread(request_rec *r, char *fname, 
-                          apr_size_t nbytes, apr_off_t location, char *time_period, int num_periods, int zlevels)
+static void *r_file_pread(request_rec *r, char *fname, apr_size_t nbytes, apr_off_t location, char *time_period, int num_periods, int zlevels, char *defaultfname)
 {
   int fd;
   int leap=0;
@@ -373,246 +372,261 @@ static void *r_file_pread(request_rec *r, char *fname,
   			}
   }
 
-  // check if layer has multi-day period if file not found
-  if (0>(fd=open(fn,O_RDONLY))) 
-  {
-	  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%s is not available",fn);
-	  if (!fnloc) {
+
+  // Use specified default file is "default" time is requested
+  if (tm.tm_mday == 0) { // Check if time was part of request
+	  if (0>(fd=open(defaultfname,O_RDONLY))) {
+		  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%s is not available",defaultfname);
 		  close(fd);
-		  return 0;
 	  }
-	  else {
-    		
-		  if (sizeof(time_period) > 0) {
-		  	int i;
-   		    for (i=0;i<num_periods;i++) {
-	   		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
-	   		    if (!ap_strstr(time_period,"P")) {
-	   		    	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No duration detected in %s", time_period);
-	   		    	continue;
-	   		    }
-			  	apr_time_t interval = evaluate_period(time_period);
-
-			  	// START OF DATE SNAPPING ROUTINE 
-			  	// First, parse the period start and end time strings, as well as the request.
-			  	// We're going to parse them into UNIX time integers (microseconds since 1970) for ease of working with them
-			  	apr_time_t start_epoch = parse_date_string(time_period);
-			  	if (time_period[10] == 'T') {
-			  		time_period += 21;
-			  	} else {
-			  		time_period += 11;
-			  	}
-			  	apr_time_t end_epoch = parse_date_string(time_period);
-			  	apr_time_t req_epoch;
-			  	apr_time_exp_t snap_date;
-			  	// Fix request time (apache expects to see years since 1900 and zero-indexed months)
-			  	tm.tm_year -= 1900;
-			  	tm.tm_mon -= 1;
-			  	apr_time_exp_get(&req_epoch, &tm);
-
-			  	if (ap_strstr(fn,tstamp)) { // Use the end epoch for the "default" when no time has been requested
-				  	apr_time_exp_gmt(&snap_date, end_epoch);
-					if ((yearloc=ap_strstr(fn,year))) {
-						char old_char=*(yearloc+4);
-						sprintf(yearloc,"%04d",snap_date.tm_year + 1900); // replace YYYY with actual year
-						*(yearloc+4)=old_char;
+  } else {
+	  fd = -1;
+  }
+  // Check if layer has multi-day period if file not found
+  if (fd < 0) {
+	  if (strcmp(defaultfname,fn) != 0) { // If file name is different than the default file name, try that one
+		  if (0>(fd=open(fn,O_RDONLY))) {
+			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"%s is not available",fn);
+		  }
+	  }
+	  if (fd < 0)
+	  {	  // Do time snapping if request contains time
+		  if (!fnloc) {
+			  close(fd);
+			  return 0;
+		  }
+		  else {
+			  if (sizeof(time_period) > 0) {
+				int i;
+				for (i=0;i<num_periods;i++) {
+					ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
+					if (!ap_strstr(time_period,"P")) {
+						ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No duration detected in %s", time_period);
+						continue;
 					}
-				  	if (ap_strstr(fn,"TTTTTTTTTTTTT_")==0) {
+					apr_time_t interval = evaluate_period(time_period);
+
+					// START OF DATE SNAPPING ROUTINE
+					// First, parse the period start and end time strings, as well as the request.
+					// We're going to parse them into UNIX time integers (microseconds since 1970) for ease of working with them
+					apr_time_t start_epoch = parse_date_string(time_period);
+					if (time_period[10] == 'T') {
+						time_period += 21;
+					} else {
+						time_period += 11;
+					}
+					apr_time_t end_epoch = parse_date_string(time_period);
+					apr_time_t req_epoch;
+					apr_time_exp_t snap_date;
+					// Fix request time (apache expects to see years since 1900 and zero-indexed months)
+					tm.tm_year -= 1900;
+					tm.tm_mon -= 1;
+					apr_time_exp_get(&req_epoch, &tm);
+
+					if (ap_strstr(fn,tstamp)) { // Use the end epoch for the "default" when no time has been requested
+						apr_time_exp_gmt(&snap_date, end_epoch);
+						if ((yearloc=ap_strstr(fn,year))) {
+							char old_char=*(yearloc+4);
+							sprintf(yearloc,"%04d",snap_date.tm_year + 1900); // replace YYYY with actual year
+							*(yearloc+4)=old_char;
+						}
+						if (ap_strstr(fn,"TTTTTTTTTTTTT_")==0) {
+							char old_char=*(fnloc+7);
+							sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
+							*(fnloc+7)=old_char;
+						} else {
+							fnloc-=6;
+							char old_char=*(fnloc+13);
+							sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
+							*(fnloc+13)=old_char;
+						}
+						ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Using the following as default: %s", fn);
+						if (ap_strcasestr(extension,".zdb")) { // just get the filename if zdb
+							return fn;
+						}
+						if (0>(fd=open(fn,O_RDONLY))) {
+							continue;
+						} else {
+							break;
+						}
+					}
+
+					// First, check if the request date is earlier than the start date of the period. (we don't snap forward)
+					if (req_epoch < start_epoch) {
+						// Move to next period
+						if (i == num_periods) {
+							break;
+						} else {
+							time_period+=strlen(time_period)+1;
+							continue;
+						}
+					}
+
+					// Now we find the closest time before the requested time
+					// We do this by counting up intervals from the start date.
+					// Years and months aren't a fixed time interval so we process separately
+					apr_time_t snap_epoch = 0;
+					apr_time_t date_epoch;
+					apr_time_t prev_epoch = start_epoch;
+					char interval_char = time_period[(strlen(time_period) - 1)];
+					switch (interval_char) {
+						case 'Y':
+							for(;;) {
+								date_epoch = add_date_interval(prev_epoch, interval, "years");
+								// If the new counter date is bigger than the request date, we've found the snap date
+								if (date_epoch > req_epoch) {
+									snap_epoch = prev_epoch;
+									break;
+								}
+								// Didn't snap yet, check if we're past the end date
+								if (date_epoch > end_epoch) {
+									break;
+								}
+								// If we made it this far, increment the date and try again
+								prev_epoch = date_epoch;
+								continue;
+							}
+							break;
+						case 'M':
+							for (;;) {
+								date_epoch = add_date_interval(prev_epoch, interval, "months");
+								// If the new counter date is bigger than the request date, we've found the snap date
+								if (date_epoch > req_epoch) {
+									snap_epoch = prev_epoch;
+									break;
+								}
+								// Didn't snap yet, check if we're past the end date
+								if (date_epoch > end_epoch) {
+									break;
+								}
+								// If we made it this far, increment the date and try again
+								prev_epoch = date_epoch;
+								continue;
+							}
+							break;
+						default:
+							// Not year or month. Since days and time intervals are fixed, we can treat them all as microsecond intervals
+							// Get interval in ms
+							switch (interval_char) {
+								case 'D':
+									interval = interval * 24 * 60 * 60 * 1000 * 1000;
+									break;
+								case 'H':
+									interval = interval * 60 * 60 * 1000 * 1000;
+									break;
+								case 'M':
+									interval = interval * 60 * 1000 * 1000;
+									break;
+								case 'S':
+									interval = interval * 1000 * 1000;
+									break;
+							}
+							apr_time_t closest_interval =  (((req_epoch - start_epoch) / interval) * interval) + start_epoch;
+							if (closest_interval <= end_epoch) {
+								// Closest date we can snap to is beyond end of the last allowable interval
+								snap_epoch = closest_interval;
+							}
+							break;
+					}
+
+					// Go to next time period if we still don't have a snap date
+					if (snap_epoch == 0) {
+						if (i == num_periods) {
+							break;
+						} else {
+							time_period+=strlen(time_period)+1;
+							continue;
+						}
+					}
+
+					// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
+					apr_time_exp_gmt(&snap_date, snap_epoch);
+
+					// Fix year part of file path
+					if(yearloc != NULL) {
+						char oldpath=*(yearloc+4);
+						sprintf(yearloc,"%04d",snap_date.tm_year + 1900);
+						*(yearloc+4)=oldpath;
+					}
+
+					// Build rest of filename
+					if (hastime == 0) {
 						char old_char=*(fnloc+7);
 						sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
-					  	*(fnloc+7)=old_char;
-				  	} else {
-				  		fnloc-=6;
+						*(fnloc+7)=old_char;
+					} else {
 						char old_char=*(fnloc+13);
 						sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
 						*(fnloc+13)=old_char;
-				  	}
-				  	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Using the following as default: %s", fn);
-			  		if (ap_strcasestr(extension,".zdb")) { // just get the filename if zdb
-			  			return fn;
-			  		}
-				  	if (0>(fd=open(fn,O_RDONLY))) {
-				  		continue;
-				  	} else {
-				  		break;
-				  	}
-			  	}
-
-			  	// First, check if the request date is earlier than the start date of the period. (we don't snap forward)
-			  	if (req_epoch < start_epoch) {
-			  		// Move to next period
-			  		if (i == num_periods) {
-			  			break;
-			  		} else {
-				 		time_period+=strlen(time_period)+1;
-				 		continue;
-				 	}
-			  	}
-
-			  	// Now we find the closest time before the requested time
-			  	// We do this by counting up intervals from the start date.
-			  	// Years and months aren't a fixed time interval so we process separately
-			  	apr_time_t snap_epoch = 0;
-			  	apr_time_t date_epoch;
-			  	apr_time_t prev_epoch = start_epoch;
-			  	char interval_char = time_period[(strlen(time_period) - 1)];
-			  	switch (interval_char) {
-			  		case 'Y':
-			  			for(;;) {
-			  				date_epoch = add_date_interval(prev_epoch, interval, "years");	
-			  				// If the new counter date is bigger than the request date, we've found the snap date
-			  				if (date_epoch > req_epoch) {
-			  					snap_epoch = prev_epoch;
-			  					break;
-			  				}
-			  				// Didn't snap yet, check if we're past the end date
-			  				if (date_epoch > end_epoch) {
-			  					break;
-			  				}
-			  				// If we made it this far, increment the date and try again
-			  				prev_epoch = date_epoch;
-			  				continue;
-			  			}
-			  			break;
-			  		case 'M':
-			  			for (;;) {
-			  				date_epoch = add_date_interval(prev_epoch, interval, "months");
-			  				// If the new counter date is bigger than the request date, we've found the snap date
-			  				if (date_epoch > req_epoch) {
-			  					snap_epoch = prev_epoch;
-			  					break;
-			  				}
-			  				// Didn't snap yet, check if we're past the end date
-			  				if (date_epoch > end_epoch) {
-			  					break;
-			  				}
-			  				// If we made it this far, increment the date and try again
-			  				prev_epoch = date_epoch;
-			  				continue;
-			  			}
-			  			break;
-			  		default:
-			  			// Not year or month. Since days and time intervals are fixed, we can treat them all as microsecond intervals
-			  			// Get interval in ms
-			  			switch (interval_char) {
-			  				case 'D':
-			  					interval = interval * 24 * 60 * 60 * 1000 * 1000;
-			  					break;
-			  				case 'H':
-			  					interval = interval * 60 * 60 * 1000 * 1000;
-			  					break;
-			  				case 'M':
-			  					interval = interval * 60 * 1000 * 1000;
-			  					break;
-			  				case 'S':
-			  					interval = interval * 1000 * 1000;
-			  					break;
-			  			}
-			  			apr_time_t closest_interval =  (((req_epoch - start_epoch) / interval) * interval) + start_epoch;
-			  			if (closest_interval <= end_epoch) {
-			  				// Closest date we can snap to is beyond end of the last allowable interval
-			  				snap_epoch = closest_interval;
-			  			}
-			  			break;
-			  	}
-
-			  	// Go to next time period if we still don't have a snap date
-			  	if (snap_epoch == 0) {
-			  		if (i == num_periods) {
-			  			break;
-			  		} else {
-				 		time_period+=strlen(time_period)+1;
-				 		continue;
-			  		}
-			  	}
-
-			  	// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
-				apr_time_exp_gmt(&snap_date, snap_epoch);
-
-			  	// Fix year part of file path
-				if(yearloc != NULL) {
-					char oldpath=*(yearloc+4);
-					sprintf(yearloc,"%04d",snap_date.tm_year + 1900);
-					*(yearloc+4)=oldpath;
-			  	}
-
-			  	// Build rest of filename
-			  	if (hastime == 0) {
-					char old_char=*(fnloc+7);
-					sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
-				  	*(fnloc+7)=old_char;
-			  	} else {
-					char old_char=*(fnloc+13);
-					sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
-					*(fnloc+13)=old_char;
-			  	}
-			  	// Now let's try the request with our new filename
-				ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Snapping to period in file %s",fn);
-			    if (0>(fd=open(fn,O_RDONLY))) {
-		  		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
-					time_period+=strlen(time_period)+1; // try next period
-				} else {
-					if (r->prev != 0) {
-						if (ap_strstr(r->prev->args, "&MAP=") != 0) {
-							char *layer_time = (char*)apr_pcalloc(r->pool, max_size);
-							char *layer_subdaily = (char*)apr_pcalloc(r->pool, max_size);
-							char *firstpart = (char*)apr_pcalloc(r->pool, max_size);
-							char *pos;
-							char *split;
-							layer_time = apr_psprintf(r->pool,"&%s_TIME=", layer);
-							layer_subdaily = apr_psprintf(r->pool,"&%s_SUBDAILY=", layer);
-							apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
-							pos = ap_strstr(new_uri, layer_time);
-							if (pos) {
-								size_t len = pos - new_uri;
-								memcpy(firstpart, new_uri, len);
-							}
-							pos += strlen(layer_time)+7;
-							if (ap_strstr(r->prev->args, layer_subdaily) != 0) {
-								pos += strlen(layer_time)+10;
-							}
-							new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%03d&%s_SUBDAILY=%02d%02d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, layer, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec, pos);
-							ap_internal_redirect(new_uri, r);
-						}
 					}
-					break;
-				}
-   		    }
-			if (i==num_periods) {
-				  // no data found within all periods
-				  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
-				  if (r->prev != 0) {
-						if (ap_strstr(r->prev->args, "&MAP=") != 0) { // Don't include layer in Mapserver request if no time found
-							char *args_cpy = (char*)apr_pcalloc(r->pool, strlen(r->prev->args)+1);
-						    char *args_pt;
-							apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
-							args_pt = ap_strstr(new_uri, layer);
-							if (args_pt != NULL) {
-								size_t len = args_pt - new_uri;
-								memcpy(args_cpy, new_uri, len);
+					// Now let's try the request with our new filename
+					ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Snapping to period in file %s",fn);
+					if (0>(fd=open(fn,O_RDONLY))) {
+						ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
+						time_period+=strlen(time_period)+1; // try next period
+					} else {
+						if (r->prev != 0) {
+							if (ap_strstr(r->prev->args, "&MAP=") != 0) {
+								char *layer_time = (char*)apr_pcalloc(r->pool, max_size);
+								char *layer_subdaily = (char*)apr_pcalloc(r->pool, max_size);
+								char *firstpart = (char*)apr_pcalloc(r->pool, max_size);
+								char *pos;
+								char *split;
+								layer_time = apr_psprintf(r->pool,"&%s_TIME=", layer);
+								layer_subdaily = apr_psprintf(r->pool,"&%s_SUBDAILY=", layer);
+								apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
+								pos = ap_strstr(new_uri, layer_time);
+								if (pos) {
+									size_t len = pos - new_uri;
+									memcpy(firstpart, new_uri, len);
+								}
+								pos += strlen(layer_time)+7;
+								if (ap_strstr(r->prev->args, layer_subdaily) != 0) {
+									pos += strlen(layer_time)+10;
+								}
+								new_uri = apr_psprintf(r->pool,"%s?TIME=%s&%s%s%04d%03d&%s_SUBDAILY=%02d%02d%02d%s", r->prev->uri, prev_time, firstpart, layer_time, snap_date.tm_year + 1900, snap_date.tm_yday + 1, layer, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec, pos);
+								ap_internal_redirect(new_uri, r);
 							}
-							if (args_pt[strlen(layer)] == ',') {
-								args_pt += strlen(layer)+1;
-							} else {
-								args_pt += strlen(layer);
-								args_cpy[strlen(args_cpy)-1] = 0;
-							}
-							apr_table_setn(r->notes, "oe_error", "Invalid TIME.");
-							new_uri = apr_psprintf(r->pool, "%s?%s%s", r->prev->uri, args_cpy, args_pt);
-							ap_internal_redirect(new_uri, r);
 						}
-				  }
+						break;
+					}
+				}
+				if (i==num_periods) {
+					  // no data found within all periods
+					  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Data not found in %d periods", num_periods);
+					  if (r->prev != 0) {
+							if (ap_strstr(r->prev->args, "&MAP=") != 0) { // Don't include layer in Mapserver request if no time found
+								char *args_cpy = (char*)apr_pcalloc(r->pool, strlen(r->prev->args)+1);
+								char *args_pt;
+								apr_cpystrn(new_uri, r->prev->args, strlen(r->prev->args)+1);
+								args_pt = ap_strstr(new_uri, layer);
+								if (args_pt != NULL) {
+									size_t len = args_pt - new_uri;
+									memcpy(args_cpy, new_uri, len);
+								}
+								if (args_pt[strlen(layer)] == ',') {
+									args_pt += strlen(layer)+1;
+								} else {
+									args_pt += strlen(layer);
+									args_cpy[strlen(args_cpy)-1] = 0;
+								}
+								apr_table_setn(r->notes, "oe_error", "Invalid TIME.");
+								new_uri = apr_psprintf(r->pool, "%s?%s%s", r->prev->uri, args_cpy, args_pt);
+								ap_internal_redirect(new_uri, r);
+							}
+					  }
+				}
 			}
-		}
+		  }
+	  } else {
+		  if (r->prev != 0) {
+				if (ap_strstr(r->prev->args, "&MAP=") != 0) { // no time-snapping for Mapserver, so redirect back
+					new_uri = apr_psprintf(r->pool, "%s?TIME=%s&%s", r->prev->uri, prev_time, r->prev->args);
+					ap_internal_redirect(new_uri, r);
+				}
+		  }
 	  }
-  } else {
-	  if (r->prev != 0) {
-			if (ap_strstr(r->prev->args, "&MAP=") != 0) { // no time-snapping for Mapserver, so redirect back
-				new_uri = apr_psprintf(r->pool, "%s?TIME=%s&%s", r->prev->uri, prev_time, r->prev->args);
-				ap_internal_redirect(new_uri, r);
-			}
-	  }
-  }
+  } // end check for multi-day
 
   readbytes=pread64(fd,buffer,nbytes,location);
 //  if (readbytes!=nbytes) {
@@ -945,6 +959,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
     cache->prefix+=(apr_off_t)caches;
     cache->time_period+=(apr_off_t)caches;
     cache->zidxfname+=(apr_off_t)caches;
+    cache->default_zidxfname+=(apr_off_t)caches;
 
     ap_log_error(APLOG_MARK,APLOG_DEBUG,0,server,
       "Cache number %d at %llx, count %d, first string %s",count,(long long) cache,
@@ -994,6 +1009,8 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
 	// pointers
 	levelt->dfname+=(apr_off_t)caches;
 	levelt->ifname+=(apr_off_t)caches;
+	levelt->default_dfname+=(apr_off_t)caches;
+	levelt->default_ifname+=(apr_off_t)caches;
 
 	cfg->meta[count].empties[lev_num].data=0;
 	cfg->meta[count].empties[lev_num].index.size   = 
@@ -2125,7 +2142,7 @@ static int mrf_handler(request_rec *r)
 				} else {
 					  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
 				}
-				r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels);
+				r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels, level->default_ifname);
 				return DECLINED;
 			} else {
 				return DECLINED;
@@ -2159,16 +2176,14 @@ static int mrf_handler(request_rec *r)
 			  offset = -1;
 		  } else {
 			  char *zidxfname;
-//			  ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"z-index filename %s",cache->zidxfname);
 			  if (cache->zidxfname[0] == '/') { // decide absolute or relative path from cachedir
 				  zidxfname = apr_pstrcat(r->pool,cache->zidxfname,0);
 			  } else {
 				  zidxfname = apr_pstrcat(r->pool,cfg->cachedir,cache->zidxfname,0);
 			  }
-
 			  if (z<0) {
 				  // Lookup the z index from the ZDB file based on keyword
-				  z = get_zlevel(r,r_file_pread(r, zidxfname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels),get_keyword(r));
+				  z = get_zlevel(r,r_file_pread(r, zidxfname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels, cache->default_zidxfname),get_keyword(r));
 				  if (z<0) {
 					  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d, %s", z, r->args);
 				  }
@@ -2243,7 +2258,7 @@ static int mrf_handler(request_rec *r)
 
 			  // Lookup the z index from the ZDB file based on keyword
 			  if (z<0) {
-			  	z = get_zlevel(r,r_file_pread(r, zidxfname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels),get_keyword(r));
+			  	z = get_zlevel(r,r_file_pread(r, zidxfname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels, cache->default_zidxfname),get_keyword(r));
 			  	if (z<0) {
 				  	ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"z index %d, %s", z, r->args);
 			  	}
@@ -2269,7 +2284,7 @@ static int mrf_handler(request_rec *r)
   	  ifname = apr_pstrcat(r->pool,cfg->cachedir,level->ifname,0);
   }
   default_idx = 0;
-  this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels);
+  this_record = r_file_pread(r, ifname, sizeof(index_s),offset, cache->time_period, cache->num_periods, cache->zlevels, level->default_ifname);
 
 	if (!this_record) {
 		// try to read from 0,0 in static index
@@ -2355,7 +2370,7 @@ static int mrf_handler(request_rec *r)
 	  dfname = apr_pstrcat(r->pool,cfg->cachedir,level->dfname,0);
   }
   if (this_record->size && default_idx==0) {
-	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods, cache->zlevels);
+	  this_data=r_file_pread(r, dfname, this_record->size,this_record->offset, cache->time_period, cache->num_periods, cache->zlevels, level->default_dfname);
   }
   if (!this_data) { // get empty tile
     int lc=level-GETLEVELS(cache);

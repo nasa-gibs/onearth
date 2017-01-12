@@ -72,8 +72,12 @@ void PrintUsage() {
         "  <Rsets>\n"
         "       checks model=uniform attribute for levels\n"
         "       checks scale=N attribute for powers of overviews\n"
+        "       <DataFileName>  Defaults to mrf basename + compression dependent extension\n"
         "       <IndexFileName> Defaults to mrf basename + .idx\n"
-        "       <DataFileName>  Default to mrf basename + compression dependent extension\n"
+        "       <ZIndexFileName> Defaults to mrf basename + .zdb\n"
+        "       <DefaultDataFileName>  Defaults to <DataFileName>\n"
+        "       <DefaultIndexFileName> Defaults to <IndexFileName>\n"
+        "       <DefaultZIndexFileName> Defaults to <ZIndexFileName>\n"
         "  <GeoTags>\n"
         "       <BoundingBox> minx,miny,maxx,maxy [-180,-90,180,90]\n"
         "  <TWMS>\n"
@@ -136,7 +140,7 @@ public:
     double cov_lx,cov_ly,cov_ux,cov_uy;
     long long int empty_size,empty_offset;
     string h_format;
-    string data_fname,idx_fname,zidx_fname;
+    string data_fname,idx_fname,zidx_fname,default_data_fname,default_idx_fname,default_zidx_fname;
     vector<string> time_period;
     mrf_data(const char *ifname);
     void mrf2cache(ostream &out);
@@ -189,6 +193,7 @@ void server_config::dump(ostream &ofname) {
         caches[i].prefix+=string_offset;
         caches[i].time_period+=string_offset;
         caches[i].zidxfname+=string_offset;
+        caches[i].default_zidxfname+=string_offset;
         // The levelt_offset is relative to each particular cache
         caches[i].levelt_offset+=sizeof(WMSCache)*(count-i);
         ofname.write((char *)&caches[i],sizeof(WMSCache));
@@ -198,6 +203,8 @@ void server_config::dump(ostream &ofname) {
     for (int i=0;i<levels.size();i++) {
         levels[i].dfname+=string_offset;
         levels[i].ifname+=string_offset;
+        levels[i].default_dfname+=string_offset;
+        levels[i].default_ifname+=string_offset;
         ofname.write((char *)&levels[i],sizeof(WMSlevel));
     }
 
@@ -238,6 +245,7 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
 
     c.zlevels=zlevels;
     c.zidxfname += cfg.string_insert(zidx_fname);
+    c.default_zidxfname += cfg.string_insert(default_zidx_fname);
 
     c.orientation=orientation;
     c.signature=sig;
@@ -270,6 +278,8 @@ void mrf_data::mrf2cacheb(server_config &cfg, bool verbose) {
         // These two are string pointers, will be adjusted later
         level.dfname+=cfg.string_insert(data_fname);
         level.ifname+=cfg.string_insert(idx_fname);
+        level.default_dfname+=cfg.string_insert(default_data_fname);
+        level.default_ifname+=cfg.string_insert(default_idx_fname);
 
         cfg.levels.push_back(level);
         cfg.total_size+=sizeof(WMSlevel);
@@ -338,14 +348,26 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         if (idx_fname==string(ifname)&&idx_fname.size()>4)
             idx_fname.replace(idx_fname.size()-4,4,".idx");
 
+        default_idx_fname=CPLGetXMLValue(input,"Rsets.DefaultIndexFileName",ifname);
+        if (default_idx_fname==string(ifname)&&default_idx_fname.size()>4)
+        	default_idx_fname.replace(default_idx_fname.size()-4,4,".idx");
+
         data_fname=CPLGetXMLValue(input,"Rsets.DataFileName",ifname);
         if (data_fname==string(ifname)&&data_fname.size()>4)
             data_fname.replace(data_fname.size()-4,4,dat_ext);
+
+        default_data_fname=CPLGetXMLValue(input,"Rsets.DefaultDataFileName",ifname);
+        if (default_data_fname==string(ifname)&&default_data_fname.size()>4)
+        	default_data_fname.replace(default_data_fname.size()-4,4,dat_ext);
 
         if (zlevels > 0) {
 			zidx_fname=CPLGetXMLValue(input,"Rsets.ZIndexFileName",ifname);
 			if (zidx_fname==string(ifname)&&zidx_fname.size()>4)
 				zidx_fname.replace(zidx_fname.size()-4,4,".zdb");
+
+			default_zidx_fname=CPLGetXMLValue(input,"Rsets.DefaultZIndexFileName",ifname);
+			if (default_zidx_fname==string(ifname)&&default_zidx_fname.size()>4)
+				default_zidx_fname.replace(default_zidx_fname.size()-4,4,".zdb");
         }
 
         if (idx_fname=="-" || data_fname=="-")
@@ -491,6 +513,7 @@ void mrf_data::mrf2cachex(ostream &out, CPLXMLNode &cache) {
 
     if (zlevels > 0) {
         CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"ZIndexFileName"),CXT_Text,zidx_fname.c_str());
+        CPLCreateXMLNode(CPLCreateXMLNode(layer,CXT_Element,"DefaultZIndexFileName"),CXT_Text,default_zidx_fname.c_str());
     }
 
     long long int offset=0;
@@ -516,7 +539,9 @@ void mrf_data::mrf2cachex(ostream &out, CPLXMLNode &cache) {
         CPLCreateXMLNode(CPLCreateXMLNode(TileRes,CXT_Attribute,"y"),
             CXT_Text,CPLString().FormatC((cov_uy - cov_ly) * (tile_size_y * pow(scale,i)) / whole_size_y,FMT).c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"DataFileName"),CXT_Text,data_fname.c_str());
+        CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"DefaultDataFileName"),CXT_Text,default_data_fname.c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"IndexFileName"),CXT_Text,idx_fname.c_str());
+        CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"DefaultIndexFileName"),CXT_Text,default_idx_fname.c_str());
         CPLCreateXMLNode(CPLCreateXMLNode(level,CXT_Element,"IndexOffset"),
             CXT_Text,CPLString().Printf("%lld",offset).c_str());
         offset+=static_cast<long long>(16)*((whole_size_x-1)/(tile_size_x * pow(scale,i)) +1) *

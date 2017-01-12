@@ -154,9 +154,12 @@ oe_create_cache_config [MODE] [OPTION]... [INPUT] [OUTPUT]
   <Rsets>
        checks model=uniform attribute for levels
        checks scale=N attribute for powers of overviews
+       <DataFileName>  Defaults to mrf basename + compression dependent extension
        <IndexFileName> Defaults to mrf basename + .idx
-       <DataFileName>  Default to mrf basename + compression dependent extension
        <ZIndexFileName> Defaults to mrf basename + .zdb (only included if 'z' attribute of <Size> is < 1)
+       <DefaultDataFileName>  Defaults to <DataFileName>
+       <DefaultIndexFileName> Defaults to <IndexFileName>
+       <DefaultZIndexFileName> Defaults to <ZIndexFileName>
   <GeoTags>
        <BoundingBox> minx,miny,maxx,maxy [-180,-90,180,90]
   <TWMS>

@@ -1502,6 +1502,18 @@ for conf in conf_files:
         except:
             zIndexFileLocation = None
         try:
+            defaultDataFileName = get_dom_tag_value(dom, 'DefaultDataFileName')
+        except:
+            defaultDataFileName = None
+        try:
+            defaultIndexFileName = get_dom_tag_value(dom, 'DefaultIndexFileName')
+        except:
+            defaultIndexFileName = None
+        try:
+            defaultZIndexFileName = get_dom_tag_value(dom, 'DefaultZIndexFileName')
+        except:
+            defaultZIndexFileName = None
+        try:
             projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir, tilematrixset_configuration)
         except IndexError:
             log_sig_err('Required <Projection> element is missing in ' + conf, sigevent_url)
@@ -1635,6 +1647,12 @@ for conf in conf_files:
         log_info_mssg('config: IndexFileName: ' + indexFileLocation)
     if zIndexFileLocation:
         log_info_mssg('config: ZIndexFileName: ' + zIndexFileLocation)
+    if defaultDataFileName:
+        log_info_mssg('config: DefaultDataFileName: ' + defaultDataFileName)
+    if defaultIndexFileName:
+        log_info_mssg('config: DefaultIndexFileName: ' + defaultIndexFileName)
+    if defaultZIndexFileName:
+        log_info_mssg('config: DefaultZIndexFileName: ' + defaultZIndexFileName)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection.id))
     if getTileService:
@@ -1689,14 +1707,6 @@ for conf in conf_files:
         else:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
     
-    if indexFileLocation == None:
-        if archiveLocation != None and archiveLocation[0] == '/':
-            # use absolute path of archive
-            indexFileLocation = mrf.replace('.mrf','.idx')
-        else:
-            # use relative path to cache
-            indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
-        
     if dataFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
             # use absolute path of archive
@@ -1721,6 +1731,20 @@ for conf in conf_files:
     else:
         dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
         mrf_format = 'image/png'
+        
+    if defaultDataFileName == None:
+        defaultDataFileName = dataFileLocation
+    
+    if indexFileLocation == None:
+        if archiveLocation != None and archiveLocation[0] == '/':
+            # use absolute path of archive
+            indexFileLocation = mrf.replace('.mrf','.idx')
+        else:
+            # use relative path to cache
+            indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
+            
+    if defaultIndexFileName == None:
+        defaultIndexFileName = indexFileLocation
 
     if zIndexFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
@@ -1730,6 +1754,9 @@ for conf in conf_files:
             # use relative path to cache
             zIndexFileLocation = mrf.replace(cacheConfig,'')
         zIndexFileLocation = zIndexFileLocation.replace('.mrf','.zdb')
+        
+    if defaultZIndexFileName == None:
+        defaultZIndexFileName = zIndexFileLocation
 
     # Parse header filename. Default is to use the 'mrf' filename.
     header_type = None
@@ -1866,8 +1893,14 @@ for conf in conf_files:
                 dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
                 indexFileNameElement = mrf_dom.createElement('IndexFileName')
                 indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
+                defaultDataFileNameElement = mrf_dom.createElement('DefaultDataFileName')
+                defaultDataFileNameElement.appendChild(mrf_dom.createTextNode(defaultDataFileName))
+                defaultIndexFileNameElement = mrf_dom.createElement('DefaultIndexFileName')
+                defaultIndexFileNameElement.appendChild(mrf_dom.createTextNode(defaultIndexFileName))
                 rsets_node.appendChild(dataFileNameElement)
                 rsets_node.appendChild(indexFileNameElement)
+                rsets_node.appendChild(defaultDataFileNameElement)
+                rsets_node.appendChild(defaultIndexFileNameElement)
 
             # Add zindex file name
             has_zdb = False;
@@ -1876,6 +1909,10 @@ for conf in conf_files:
                 z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
                 z_index_node.appendChild(z_index_text_node)
                 rsets_node.appendChild(z_index_node)
+                default_z_index_node = mrf_dom.createElement('DefaultZIndexFileName')
+                default_z_index_text_node = mrf_dom.createTextNode(defaultZIndexFileName)
+                default_z_index_node.appendChild(default_z_index_text_node)
+                rsets_node.appendChild(default_z_index_node)
                 has_zdb = True
 
             mrf_meta.appendChild(rsets_node)
@@ -2068,7 +2105,7 @@ for conf in conf_files:
     if links == True:
         if len(detected_times) > 0:
             print "Generating archive links for " + fileNamePrefix
-            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
+            generate_links(detected_times, archiveLocation, fileNamePrefix, year, defaultDataFileName, has_zdb)
         else:
             print fileNamePrefix + " is not a time varying layer"     
             
