@@ -76,6 +76,12 @@ The contents of this directory should be whatever MRF is used as the "current" d
 
 These "TTTTTTT" files can simply be soft links to the latest date, rather than be copied or newly generated.
 
+If the default files must exist outside of the archive (e.g., in the case of a read-only archive where links can't be updated) or if they require different file names, the "Default<Data|Index|ZIndex>FileName" options of the layer configuration files can be used.
+
+For time dependent layers, if no default files exist or if the files cannot be accessed, the last available time within the layer's time period configuration will be used.
+
+If no files can be accessed, an empty tile will be returned.
+
 
 ### MRF Files
 

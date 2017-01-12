@@ -1490,17 +1490,29 @@ for conf in conf_files:
         except:
             headerFileName = None
         try:
-            dataFileLocation = get_dom_tag_value(dom, 'DataFileLocation')
+            dataFileLocation = get_dom_tag_value(dom, 'DataFileName')
         except:
             dataFileLocation = None
         try:
-            indexFileLocation = get_dom_tag_value(dom, 'IndexFileLocation')
+            indexFileLocation = get_dom_tag_value(dom, 'IndexFileName')
         except:
             indexFileLocation = None
         try:
-            zIndexFileLocation = get_dom_tag_value(dom, 'ZIndexFileLocation')
+            zIndexFileLocation = get_dom_tag_value(dom, 'ZIndexFileName')
         except:
             zIndexFileLocation = None
+        try:
+            defaultDataFileName = get_dom_tag_value(dom, 'DefaultDataFileName')
+        except:
+            defaultDataFileName = None
+        try:
+            defaultIndexFileName = get_dom_tag_value(dom, 'DefaultIndexFileName')
+        except:
+            defaultIndexFileName = None
+        try:
+            defaultZIndexFileName = get_dom_tag_value(dom, 'DefaultZIndexFileName')
+        except:
+            defaultZIndexFileName = None
         try:
             projection = get_projection(get_dom_tag_value(dom, 'Projection'), projection_configuration, lcdir, tilematrixset_configuration)
         except IndexError:
@@ -1630,11 +1642,17 @@ for conf in conf_files:
     if archiveLocation:
         log_info_mssg('config: ArchiveLocation static=' + str(static) + ' year=' + str(year) + ' subdaily=' + str(subdaily) + ': ' + archiveLocation)
     if dataFileLocation:
-        log_info_mssg('config: DataFileLocation: ' + dataFileLocation)
+        log_info_mssg('config: DataFileName: ' + dataFileLocation)
     if indexFileLocation:
-        log_info_mssg('config: IndexFileLocation: ' + indexFileLocation)
+        log_info_mssg('config: IndexFileName: ' + indexFileLocation)
     if zIndexFileLocation:
-        log_info_mssg('config: ZIndexFileLocation: ' + zIndexFileLocation)
+        log_info_mssg('config: ZIndexFileName: ' + zIndexFileLocation)
+    if defaultDataFileName:
+        log_info_mssg('config: DefaultDataFileName: ' + defaultDataFileName)
+    if defaultIndexFileName:
+        log_info_mssg('config: DefaultIndexFileName: ' + defaultIndexFileName)
+    if defaultZIndexFileName:
+        log_info_mssg('config: DefaultZIndexFileName: ' + defaultZIndexFileName)
     if projection:
         log_info_mssg('config: Projection: ' + str(projection.id))
     if getTileService:
@@ -1689,14 +1707,6 @@ for conf in conf_files:
         else:
             mrf = mrfLocation + fileNamePrefix + 'TTTTTTT_.mrf'
     
-    if indexFileLocation == None:
-        if archiveLocation != None and archiveLocation[0] == '/':
-            # use absolute path of archive
-            indexFileLocation = mrf.replace('.mrf','.idx')
-        else:
-            # use relative path to cache
-            indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
-        
     if dataFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
             # use absolute path of archive
@@ -1704,23 +1714,37 @@ for conf in conf_files:
         else:
             # use relative path to cache
             dataFileLocation = mrf.replace(cacheConfig,'')
-        if compression.lower() in ['jpg', 'jpeg']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
-            mrf_format = 'image/jpeg'
-        elif compression.lower() in ['tif', 'tiff']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
-            mrf_format = 'image/tiff'
-        elif compression.lower() in ['lerc']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
-            mrf_format = 'image/lerc'
-        elif compression.lower() in ['pbf']:
-            dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
-            mrf_format = 'application/x-protobuf'
-        elif vectorType is not None:
-            dataFileLocation = dataFileLocation.replace('.mrf','.shp')
+    if compression.lower() in ['jpg', 'jpeg']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.pjg')
+        mrf_format = 'image/jpeg'
+    elif compression.lower() in ['tif', 'tiff']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.ptf')
+        mrf_format = 'image/tiff'
+    elif compression.lower() in ['lerc']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
+        mrf_format = 'image/lerc'
+    elif compression.lower() in ['pbf']:
+        dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
+        mrf_format = 'application/x-protobuf'
+    elif vectorType is not None:
+        dataFileLocation = dataFileLocation.replace('.mrf','.shp')
+    else:
+        dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
+        mrf_format = 'image/png'
+        
+    if defaultDataFileName == None:
+        defaultDataFileName = dataFileLocation
+    
+    if indexFileLocation == None:
+        if archiveLocation != None and archiveLocation[0] == '/':
+            # use absolute path of archive
+            indexFileLocation = mrf.replace('.mrf','.idx')
         else:
-            dataFileLocation = dataFileLocation.replace('.mrf','.ppg')
-            mrf_format = 'image/png'
+            # use relative path to cache
+            indexFileLocation = mrf.replace(cacheConfig,'').replace('.mrf','.idx')
+            
+    if defaultIndexFileName == None:
+        defaultIndexFileName = indexFileLocation
 
     if zIndexFileLocation == None:
         if archiveLocation != None and archiveLocation[0] == '/':
@@ -1730,6 +1754,9 @@ for conf in conf_files:
             # use relative path to cache
             zIndexFileLocation = mrf.replace(cacheConfig,'')
         zIndexFileLocation = zIndexFileLocation.replace('.mrf','.zdb')
+        
+    if defaultZIndexFileName == None:
+        defaultZIndexFileName = zIndexFileLocation
 
     # Parse header filename. Default is to use the 'mrf' filename.
     header_type = None
@@ -1866,8 +1893,14 @@ for conf in conf_files:
                 dataFileNameElement.appendChild(mrf_dom.createTextNode(dataFileLocation))
                 indexFileNameElement = mrf_dom.createElement('IndexFileName')
                 indexFileNameElement.appendChild(mrf_dom.createTextNode(indexFileLocation))
+                defaultDataFileNameElement = mrf_dom.createElement('DefaultDataFileName')
+                defaultDataFileNameElement.appendChild(mrf_dom.createTextNode(defaultDataFileName))
+                defaultIndexFileNameElement = mrf_dom.createElement('DefaultIndexFileName')
+                defaultIndexFileNameElement.appendChild(mrf_dom.createTextNode(defaultIndexFileName))
                 rsets_node.appendChild(dataFileNameElement)
                 rsets_node.appendChild(indexFileNameElement)
+                rsets_node.appendChild(defaultDataFileNameElement)
+                rsets_node.appendChild(defaultIndexFileNameElement)
 
             # Add zindex file name
             has_zdb = False;
@@ -1876,6 +1909,10 @@ for conf in conf_files:
                 z_index_text_node = mrf_dom.createTextNode(zIndexFileLocation)
                 z_index_node.appendChild(z_index_text_node)
                 rsets_node.appendChild(z_index_node)
+                default_z_index_node = mrf_dom.createElement('DefaultZIndexFileName')
+                default_z_index_text_node = mrf_dom.createTextNode(defaultZIndexFileName)
+                default_z_index_node.appendChild(default_z_index_text_node)
+                rsets_node.appendChild(default_z_index_node)
                 has_zdb = True
 
             mrf_meta.appendChild(rsets_node)
@@ -2068,7 +2105,7 @@ for conf in conf_files:
     if links == True:
         if len(detected_times) > 0:
             print "Generating archive links for " + fileNamePrefix
-            generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb)
+            generate_links(detected_times, archiveLocation, fileNamePrefix, year, defaultDataFileName, has_zdb)
         else:
             print fileNamePrefix + " is not a time varying layer"     
             

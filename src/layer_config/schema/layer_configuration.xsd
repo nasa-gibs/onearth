@@ -22,9 +22,9 @@ limitations under the License.
         <xs:element ref="Abstract" minOccurs="0"/>
         <xs:element ref="TiledGroupName" minOccurs="0"/>
         <xs:element ref="HeaderFileName" minOccurs="0"/>
-        <xs:element ref="DataFileLocation" minOccurs="0"/>
-        <xs:element ref="IndexFileLocation" minOccurs="0"/>
-        <xs:element ref="ZIndexFileLocation" minOccurs="0"/>
+        <xs:element ref="DataFileName" minOccurs="0"/>
+        <xs:element ref="IndexFileName" minOccurs="0"/>
+        <xs:element ref="ZIndexFileName" minOccurs="0"/>
         <xs:element ref="Compression" minOccurs="0"/>
         <xs:element ref="TileMatrixSet" minOccurs="0"/>
         <xs:element ref="EmptyTileSize" minOccurs="0"/>
@@ -63,9 +63,9 @@ limitations under the License.
       <xs:attribute name="type" use="optional" type="xs:string"/>
     </xs:complexType>
   </xs:element>
-  <xs:element name="DataFileLocation" type="xs:string" nillable="true"/>
-  <xs:element name="IndexFileLocation" type="xs:string" nillable="true"/>
-  <xs:element name="ZIndexFileLocation" type="xs:string" nillable="true"/>
+  <xs:element name="DataFileName" type="xs:string" nillable="true"/>
+  <xs:element name="IndexFileName" type="xs:string" nillable="true"/>
+  <xs:element name="ZIndexFileName" type="xs:string" nillable="true"/>
   <xs:element name="Compression">
     <xs:simpleType>
       <xs:restriction base="xs:string">
