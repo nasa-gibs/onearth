@@ -2438,8 +2438,11 @@ int rewrite_rest_uri(request_rec *r) {
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d]);
 	if (length == 9)
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d],params[8+d]);
-//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
-	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
+	// Try to get image, otherwise redirect to cgi to handle error
+	if (mrf_handler(r) < 0) {
+//		ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/wmts.cgi?%s",r->uri,r->args);
+		ap_internal_redirect(apr_psprintf(r->pool,"%s/wmts.cgi?%s",r->uri,r->args),r);
+	}
 	return 0;
 }
 
