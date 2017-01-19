@@ -1,0 +1,3 @@
+[submodule "src/modules/mod_reproject"]
+	path = src/modules/mod_reproject
+	url = https://github.com/lucianpls/mod_reproject.git
