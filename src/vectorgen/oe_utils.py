@@ -304,6 +304,9 @@ def run_command(cmd, sigevent_url):
     for output in process.stdout:
         log_info_mssg(output.strip())
     for error in process.stderr:
-        log_sig_err(error.strip(), sigevent_url)
-        raise Exception(error.strip())
+        if "warning" in error.strip().lower():
+            log_sig_warn(error.strip(), sigevent_url)
+        else:
+            log_sig_err(error.strip(), sigevent_url)
+            raise Exception(error.strip())
     
