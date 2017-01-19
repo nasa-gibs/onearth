@@ -41,9 +41,7 @@ import sys
 import struct
 import StringIO
 import gzip
-from lxml import etree as ET
 import xml.dom.minidom
-from optparse import OptionParser
 import math
 import random
 import fiona
@@ -55,27 +53,43 @@ import decimal
         
 
 # Main tile-creation function.
-def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, tilematrixset, tilematrix_defs_path, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
+def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, target_x, target_y, extents, tile_size, overview_levels, projection_str, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
+
+    NOTE: Vectors don't have a concept of pixels. We're only using pixel dimensions as a way of expressing the proportional size of the tiles and to match them up with
+    raster tilesets.
 
     Args:
         input_file_path (str) -- Path to the vector datafile to be used. Accepts GeoJSON and Shapefiles
         output_path (str) -- Path to where the output MRF files should be stored.
         mrf_prefix (str) -- Prefix for the MRF filenames that will be generated.
         layer_name (str) -- Name for the layer to be packed into the tile. Only single layers currently supported.
-        tilematrixset (str) -- Name of the TileMatrixSet that will be used for this MRF.
-            Note that the tilematrixset must be present in the tile matrix definitions XML.
-        tilematrix_defs_path (str) -- Path to the XML file that contains this installation's tile matrix set information.
-            By default, this file is stored in $LCDIR/conf/tilematrixsets.xml
+        target_x (int) -- Pixel width of the highest zoom level.
+        target_y (int) -- Pixel height of the highest zoom level.
+        extents (list float) -- The bounding box for the chosen projection in map units.
+        tile_size (int) -- Pixel size of the tiles to be generated.
+        overview_levels (list int) -- A list of the overview levels to be used (i.e., a level of 2 will render a level that's 1/2 the width and height of the base level)
+        projection_str (str) -- EPSG code for the projection to be used.
         feature_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce features for each successive zoom level.
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
             Default is 2 (retain the square root of the total points in the cluster).
         debug (bool) -- Toggle verbose output messages and PBF file artifacts (PBF tile files will be created in addition to MRF)
     """
-    # Get TileMatrixSet information
-    tile_matrices = get_tilematrixset(tilematrix_defs_path, tilematrixset)
+    # Get projection and calculate overview levels if necessary
+    proj = osr.SpatialReference()
+    proj.ImportFromEPSG(int(projection_str.split(':')[1]))
+    if not target_y:
+        target_y = (target_x / 2) if proj.IsGeographic() else target_x
+    if not overview_levels:
+        overview_levels = [2]
+        exp = 2
+        while (overview_levels[-1] * tile_size) < target_x:
+            overview_levels.append(2**exp)
+            exp += 1
+
+    tile_matrices = get_tms(target_x, target_y, extents, tile_size, overview_levels, proj)
 
     # Open MRF data and index files and generate the MRF XML
     fidx = open(os.path.join(output_path, mrf_prefix + '.idx'), 'w+')
@@ -83,7 +97,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, tile
     notile = struct.pack('!QQ', 0, 0)
     pvt_offset = 0
     
-    mrf_dom = build_mrf_dom(tile_matrices)
+    mrf_dom = build_mrf_dom(tile_matrices, extents, tile_size, proj)
     with open(os.path.join(output_path, mrf_prefix) + '.mrf', 'w+') as f:
         f.write(mrf_dom.toprettyxml())
 
@@ -129,11 +143,11 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, tile
 
         # Start making tiles. We figure out the tile's bbox, then search for all the features that intersect with that bbox,
         # then turn the resulting list into an MVT tile and write the tile.
-        for y in xrange(tile_matrix['dimensions'][1]):
-            for x in xrange(tile_matrix['dimensions'][0]):
+        for y in xrange(tile_matrix['matrix_height']):
+            for x in xrange(tile_matrix['matrix_width']):
                 # Get tile bounds
-                min_x = tile_matrix['extents'][0] + (x * tile_matrix['tile_size_in_map_units'])
-                max_y = tile_matrix['extents'][3] - (y * tile_matrix['tile_size_in_map_units'])
+                min_x = tile_matrix['matrix_extents'][0] + (x * tile_matrix['tile_size_in_map_units'])
+                max_y = tile_matrix['matrix_extents'][3] - (y * tile_matrix['tile_size_in_map_units'])
                 max_x = min_x + tile_matrix['tile_size_in_map_units']
                 min_y = max_y - tile_matrix['tile_size_in_map_units']
                 tile_bbox = shapely.geometry.box(min_x, min_y, max_x, max_y)
@@ -176,7 +190,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, tile
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    pbf_filename = './tiles/test_{0}_{1}_{2}.pbf'.format(z, x, y)
+                    pbf_filename = os.path.join(os.getcwd(), 'tiles/test_{0}_{1}_{2}.pbf'.format(z, x, y))
                     with open(pbf_filename, 'w+') as f:
                         f.write(mvt_tile)
 
@@ -228,74 +242,52 @@ def py_26_round_fn(val):  # mapbox_vector_tile monkeypatch for python 2.6
     return float(rounded)
 
 
-def get_tilematrixset(tms_file, tms_name):
-    """
-    Function to parse a tilematrixset file and get all the relevant details for the chosen tilematrixset.
-
-    Args:
-        tms_file (str) -- path to the tilematrixset XML definition file.
-        tms_name (str) -- name of the tilematrixset to look for and gather information from.
-    Returns:
-        List of tilematrix objects with relevant information for creating vector tiles for each tilematrix.
-    """
-    with open(tms_file, 'r') as f:
-        tms_dom = ET.parse(f)
-
-    # Namespace magic courtesy http://stackoverflow.com/questions/14853243/parsing-xml-with-namespace-in-python-via-elementtree
-    namespaces = dict([node for x, node in ET.iterparse(tms_file, events=['start-ns'])])
-    xpath_string = './/*[ows:Identifier="{0}"]TileMatrix'.format(tms_name)
-    tile_matrix_tags = tms_dom.findall(xpath_string, namespaces)
-    tile_matrix_tags.sort(key=lambda matrix, ns=namespaces: matrix.findall('.//ows:Identifier', ns)[0].text)
-
-    # Grabbing the EPSG projection code from the parent element of the tilematrixset we're using
-    proj_string = tms_dom.findall('.//*[ows:Identifier="' + tms_name + '"]..', namespaces)[0].attrib['id']
-    proj = osr.SpatialReference()
-    proj.ImportFromEPSG(int(proj_string.split(':')[1]))
-
-    # Using OpenLayers' method of calculating meters per degree
+def get_tms(target_x, target_y, extents, tile_size, o_levels, proj):
+    tile_matrices = []
     if proj.IsGeographic():
         map_meters_per_unit = 2 * math.pi * 6370997 / 360
     else:
         map_meters_per_unit = 1
 
-    # Build a bunch of dicts with all the relevant info to build each tilematrix
-    tile_matrices = []
-    if tile_matrix_tags:
-        for tile_matrix in tile_matrix_tags:
-            tile_size = int(tile_matrix.find('TileWidth').text)
-            matrix_width = int(tile_matrix.find('MatrixWidth').text)
-            matrix_height = int(tile_matrix.find('MatrixHeight').text)
-            scale_denominator = float(tile_matrix.find('ScaleDenominator').text)
-            resolution = scale_denominator * 0.28E-3 / map_meters_per_unit
-            top_left_corner = [float(x) for x in tile_matrix.find('TopLeftCorner').text.split(' ')]
-            if proj_string == 'EPSG:4326':
-                max_x = resolution * tile_size * matrix_width
-                min_y = -(resolution * tile_size * matrix_height)
-                tile_size_in_map_units = max_x / matrix_width
-                extents = (top_left_corner[0], min_y, max_x, top_left_corner[1])
-                # Because our EPSG:4326 tilematrices aren't square, we need to manually enter the correct bounds of the world in the projection.
-                # TODO: Programmatic way to get this value?
-                projection_extents = (-180, -90, 180, 90)
-            else:
-                extents = (top_left_corner[0], -top_left_corner[1], -top_left_corner[0], top_left_corner[1])
-                tile_size_in_map_units = (extents[2] - extents[0]) / matrix_width
-                projection_extents = extents
+    width_in_meters = map_meters_per_unit * (extents[2] - extents[0])
 
-            new_matrix = {
-                'tile_size': tile_size,
-                'dimensions': (matrix_width, matrix_height),
-                'resolution': resolution,
-                'top_left_corner': top_left_corner,
-                'extents': extents,
-                'tile_size_in_map_units': tile_size_in_map_units,
-                'projection': proj,
-                'projection_extents': projection_extents
-            }
-            tile_matrices.append(new_matrix)
+    o_levels.insert(0, 1)
+    for level in sorted(o_levels, reverse=True):
+        tms = {}
+        x_dim = target_x / level
+        y_dim = target_y / level
+
+        tms['matrix_width'] = int(math.ceil(float(x_dim) / float(tile_size)))
+        tms['matrix_height'] = int(math.ceil(float(y_dim) / float(tile_size)))
+
+        if proj.IsGeographic():
+            # We don't support 0-level tiles in geographic
+            if x_dim <= tile_size:
+                continue
+            # Current solution for dealing with the weird GIBS geographic TMSs
+            if tms['matrix_width'] == 5:
+                tms['resolution'] = 0.14078259895979
+            elif tms['matrix_width'] == 3:
+                tms['resolution'] = 0.28156519791957
+            elif tms['matrix_width'] == 2:
+                tms['resolution'] = 0.56313039583914
+            else:
+                tms['resolution'] = 360 / float(x_dim)
+            max_x = tms['resolution'] * tile_size * tms['matrix_width']
+            min_y = -(tms['resolution'] * tile_size * tms['matrix_height'])
+            tms['matrix_extents'] = (-180, min_y, max_x, 90)
+            tms['tile_size_in_map_units'] = max_x / tms['matrix_width']
+        else:
+            tms['matrix_extents'] = extents
+            tms['tile_size_in_map_units'] = (extents[2] - extents[0]) / tms['matrix_width']
+            tms['resolution'] = width_in_meters / x_dim
+        
+        tile_matrices.append(tms)
+
     return tile_matrices
 
 
-def build_mrf_dom(tile_matrices):
+def build_mrf_dom(tile_matrices, extents, tile_size, proj):
     """
     Function that builds and returns an MRF XML DOM.
 
@@ -312,14 +304,14 @@ def build_mrf_dom(tile_matrices):
     
     # Create <Size> element
     size_node = mrf_dom.createElement('Size')
-    size_node.setAttribute('x', str(tile_matrices[-1]['dimensions'][0] * tile_matrices[-1]['tile_size']))
-    size_node.setAttribute('y', str(tile_matrices[-1]['dimensions'][1] * tile_matrices[-1]['tile_size']))
+    size_node.setAttribute('x', str(tile_matrices[-1]['matrix_width'] * tile_size))
+    size_node.setAttribute('y', str(tile_matrices[-1]['matrix_height'] * tile_size))
     raster_node.appendChild(size_node)
 
     # Create <PageSize> element
     page_size_node = mrf_dom.createElement('PageSize')
-    page_size_node.setAttribute('x', str(tile_matrices[0]['tile_size']))
-    page_size_node.setAttribute('y', str(tile_matrices[0]['tile_size']))
+    page_size_node.setAttribute('x', str(tile_size))
+    page_size_node.setAttribute('y', str(tile_size))
     raster_node.appendChild(page_size_node)
 
     # Create <Compression> element
@@ -343,14 +335,14 @@ def build_mrf_dom(tile_matrices):
     # Create <GeoTags> element
     geotags_node = mrf_dom.createElement('GeoTags')
     bbox_node = mrf_dom.createElement('BoundingBox')
-    bbox_node.setAttribute('minx', str(tile_matrices[0]['projection_extents'][0]))
-    bbox_node.setAttribute('miny', str(tile_matrices[0]['projection_extents'][1]))
-    bbox_node.setAttribute('maxx', str(tile_matrices[0]['projection_extents'][2]))
-    bbox_node.setAttribute('maxy', str(tile_matrices[0]['projection_extents'][3]))
+    bbox_node.setAttribute('minx', str(extents[0]))
+    bbox_node.setAttribute('miny', str(extents[1]))
+    bbox_node.setAttribute('maxx', str(extents[2]))
+    bbox_node.setAttribute('maxy', str(extents[3]))
     geotags_node.appendChild(bbox_node)
 
     projection_node = mrf_dom.createElement('Projection')
-    projection_text = mrf_dom.createTextNode(tile_matrices[0]['projection'].ExportToWkt())
+    projection_text = mrf_dom.createTextNode(proj.ExportToWkt())
     projection_node.appendChild(projection_text)
     geotags_node.appendChild(projection_node)
 
@@ -364,46 +356,3 @@ def build_mrf_dom(tile_matrices):
 def rtree_index_generator(features):
     for idx, feature in enumerate(features):
         yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
-
-# CLI mode routine
-if __name__ == "__main__":
-    usage = 'oe_create_mvt_mrf.py [options] INPUT_SHAPEFILE TILEMATRIXSET'
-    parser = OptionParser(usage=usage)
-    parser.add_option('-t', '--tms_config', action='store', type='string', dest='tms_file',
-                      help='Path to the tilematrixset definition file. Defaults to $LCDIR/conf/tilematrixsets.xml')
-    parser.add_option('-r', '--point_reduction', action='store', type='float', dest='point_reduction',
-                      help="""Define the rate at which you want to reduce features in higher zoom levels. Defaults to 2.5 (1 feature retained for every\
-                      2.5 in the previous zoom level).""", default=2.5)
-    parser.add_option('-c', '--cluster_reduction', action='store', type='float', dest='cluster_reduction',
-                      help="""Define the rate at which you want to reduce features within one pixel of each other. Default is 2 (retain the square root of the total points in the cluster).""", default=2)
-    parser.add_option('-p', '--prefix', action='store', dest='prefix', help='Set the prefix for the MRF files to be created. Defaults to the filename of the input shapefile.')
-    parser.add_option('-o', '--output', action='store', dest='output_path', help='Set the output path for the created MRF files.')
-    parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Provide verbose output and leave behind file artifacts')
-
-    (options, args) = parser.parse_args()
-
-    if len(args) < 2:
-        print 'Not enough arguments. Use the "-h" option for information on usage.'
-        sys.exit()
-
-    if not options.tms_file:
-        print 'TileMatrixSet definition file not set. Defaulting to $LCDIR/conf/tilematrixsets.xml'
-        lcdir = os.environ.get('LCDIR')
-        if not lcdir:
-            print 'LCDIR environment variable not set. Defaulting to /etc/onearth'
-            lcdir = '/etc/onearth'
-        tms_file = os.path.join(lcdir, 'conf/tilematrixsets.xml')
-    else:
-        tms_file = options.tms_file
-
-    if not options.prefix:
-        mrf_prefix = os.path.splitext(args[0])[0]
-    else:
-        mrf_prefix = options.prefix
-
-    if not options.output_path:
-        output_path = './'
-    else:
-        output_path = options.output_path
-
-    create_vector_mrf(args[0], output_path, mrf_prefix, args[1], tms_file, feature_reduce_rate=options.point_reduction, cluster_reduce_rate=options.cluster_reduction, debug=options.debug)

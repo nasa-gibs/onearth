@@ -28,8 +28,11 @@ limitations under the License.
         <xs:element ref="output_format"/>
         <xs:element ref="target_epsg" minOccurs="0"/>
         <xs:element ref="source_epsg" minOccurs="0"/>
-        <xs:element ref="tilematrixset" minOccurs="0"/>
-        <xs:element ref="tilematrixset_definition_file" minOccurs="0"/>
+        <xs:element ref="target_x"/>
+        <xs:element ref="target_y" minOccurs="0"/>
+        <xs:element ref="extents" minOccurs="0"/>
+        <xs:element ref="tile_size" minOccurs="0"/>
+        <xs:element ref="overview_levels" minOccurs="0"/>
         <xs:element ref="feature_reduce_rate" minOccurs="0"/>
         <xs:element ref="cluster_reduce_rate" minOccurs="0"/>
       </xs:sequence>
@@ -61,8 +64,11 @@ limitations under the License.
   </xs:element>
   <xs:element name="target_epsg" type="xs:integer" default="4326"/>
   <xs:element name="source_epsg" type="xs:integer" default="4326"/>
-  <xs:element name="tilematrixset" type="xs:string" default="EPSG4326_16km"/>
-  <xs:element name="tilematrixset_definition_file" type="xs:string" default="/etc/onearth/config/conf/tilematrixsets.xml"/>
+  <xs:element name="target_x" type="xs:integer"/>
+  <xs:element name="target_y" type="xs:integer" nillable="true"/>
+  <xs:element name="extents" type="xs:string" nillable="true"/>
+  <xs:element name="overview_levels" type="xs:string" nillable="true"/>
+  <xs:element name="tile_size" type="xs:integer" nillable="true"/>
   <xs:element name="feature_reduce_rate" type="xs:float" default="2.5"/>
   <xs:element name="cluster_reduce_rate" type="xs:float" default="2"/>
 </xs:schema>

@@ -156,18 +156,6 @@ if __name__ == '__main__':
             # default to GIBS naming convention
             output_name = '{$parameter_name}%Y%j_'
         output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
-        # user-specified tilematrixset to build
-        if output_format == 'mrf':
-            try:
-                tilematrixset = get_dom_tag_value(dom, 'tilematrixset')
-            except:
-                log_sig_exit('ERROR', 'Must specify a tilematrixset.')
-            # Tilematrixset definition file (defaults to current directory/tilematrixsets.xml)
-            try:
-                tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
-            except:
-                log_sig_warn("Can't find tilematrix definition...using " + os.getcwd() + "/tilematrixsets.xml", sigevent_url)
-                tilematrixset_definition_file = os.path.join(os.getcwd(), 'tilematrixsets.xml')
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -197,7 +185,47 @@ if __name__ == '__main__':
                 log_sig_exit('ERROR', "<input_files> or <input_dir> is required", sigevent_url)
             else:
                 input_files = ''
-
+        if output_format == 'mrf':
+            try:
+                target_x = int(get_dom_tag_value(dom, 'target_x'))
+            except IndexError:
+                log_sig_exit('ERROR', '<target_x> is required but not specified', sigevent_url)
+            except ValueError:
+                log_sig_exit('ERROR', '<target_x> value is invalid', sigevent_url)
+            try:
+                target_y = int(get_dom_tag_value(dom, 'target_y'))
+            except IndexError:
+                target_y = None
+            except ValueError:
+                log_sig_exit('ERROR', '<target_y> value is invalid', sigevent_url)
+            try:
+                extents_str = get_dom_tag_value(dom, 'extents')
+                if len(extents_str.split(',')) == 4:
+                    extents = [float(extent) for extent in extents_str.split(',')]
+                elif len(extents_str.split(' ')) == 4:
+                    extents = [float(extent) for extent in extents_str.split(' ')]
+                else:
+                    log_sig_exit('ERROR', 'Invalid <extents> value -- must be comma or space-separated')
+            except IndexError:
+                extents = (-180, -90, 180, 90)
+                log_sig_warn('<extents> not specified, assuming -180, -90, 180, 90', sigevent_url)
+            except ValueError:
+                log_sig_exit('ERROR', 'Problem processing <extents>, must be comma or space-separated list.', sigevent_url)
+            try:
+                tile_size = int(get_dom_tag_value(dom, 'tile_size'))
+            except IndexError:
+                tile_size = 512
+                log_sig_warn('<tile_size> not specified, assuming 512', sigevent_url)
+            except ValueError:
+                log_sig_exit('ERROR', 'Invalid <tile_size> specified', sigevent_url)
+            try:
+                overview_levels_str = get_dom_tag_value(dom, '<overview_levels>')
+                if ',' in overview_levels_str:
+                    overview_levels = overview_levels_str.split(',')
+                else:
+                    overview_levels = overview_levels_str.split(' ')
+            except IndexError:
+                overview_levels = None
         # Close file.
         config_file.close()
     
@@ -248,8 +276,10 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
     if output_format == 'mrf':
-        log_info_mssg(str().join(['config tilematrixset_definition_file:           ', tilematrixset_definition_file]))
-        log_info_mssg(str().join(['config tilematrixset:           ', tilematrixset]))
+        log_info_mssg(str().join(['config target_x:           ', str(target_x)]))
+        log_info_mssg(str().join(['config target_y:           ', str(target_y) if target_y else 'Not specified']))
+        log_info_mssg(str().join(['config extents:           ', str(extents)]))
+        log_info_mssg(str().join(['config overview_levels:           ', str(overview_levels)]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
@@ -321,7 +351,7 @@ if __name__ == '__main__':
                     run_command(ogr2ogr_command_list, sigevent_url)
                     tile = outfile
                 tile_layer_name = parameter_name + '_' + date_of_data
-                create_vector_mrf(tile, working_dir, basename, tile_layer_name, tilematrixset, tilematrixset_definition_file, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+                create_vector_mrf(tile, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
                 files = glob.glob(working_dir+"/"+basename+"*")
                 for mfile in files:
                     title, ext = os.path.splitext(os.path.basename(mfile))
