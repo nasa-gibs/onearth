@@ -58,7 +58,7 @@ limitations under the License.
     <xs:simpleType>
       <xs:restriction base="xs:string">
         <xs:enumeration value="ESRI Shapefile"/>
-        <xs:enumeration value="MRF"/>
+        <xs:enumeration value="MVT-MRF"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>

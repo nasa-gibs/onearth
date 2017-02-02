@@ -56,7 +56,7 @@ try:
 except:
     sys.exit('ERROR: cannot find GDAL/OGR modules')
 
-versionNumber = '1.0.0'
+versionNumber = '1.2.2'
 basename = None
 
 def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
@@ -186,6 +186,9 @@ if __name__ == '__main__':
             else:
                 input_files = ''
         if output_format == 'mrf':
+            log_sig_warn('"MRF" output format not supported, using "MVT-MRF" instead', sigevent_url)
+            output_format = 'mvt-mrf'
+        if output_format == 'mvt-mrf':
             try:
                 target_x = int(get_dom_tag_value(dom, 'target_x'))
             except IndexError:
@@ -275,7 +278,7 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
-    if output_format == 'mrf':
+    if output_format == 'mvt-mrf':
         log_info_mssg(str().join(['config target_x:           ', str(target_x)]))
         log_info_mssg(str().join(['config target_y:           ', str(target_y) if target_y else 'Not specified']))
         log_info_mssg(str().join(['config extents:           ', str(extents)]))
@@ -342,7 +345,7 @@ if __name__ == '__main__':
                     shutil.move(out_basename+"/"+title+ext, out_filename+ext)
                 shutil.rmtree(out_basename)
                 mssg=str().join(['Output created:  ', out_filename+".shp"])
-        elif output_format == "mrf": # Create MVT-MRF
+        elif output_format == "mvt-mrf": # Create MVT-MRF
             for tile in alltiles:
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
                 if source_epsg != target_epsg:
