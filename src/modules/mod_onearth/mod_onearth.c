@@ -1757,6 +1757,8 @@ char *order_args(request_rec *r) {
 		args = apr_psprintf(r->pool, "request=GetCapabilities");
 	} else if (ap_strcasecmp_match(request, "GetTileService") == 0) { // getTileService
 		args = apr_psprintf(r->pool, "request=GetTileService");
+	} else if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // GetLegendGraphic is not supported
+		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
 	} else if ( ap_strcasestr(r->args,"layers") != 0) { // is KML
 //    	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting KML");
 	} else if (service[0]=='\0') { // missing WMTS service
@@ -1764,7 +1766,7 @@ char *order_args(request_rec *r) {
 	} else if (ap_strcasecmp_match(service, "WMTS") != 0) { // unrecognized service
 		wmts_add_error(r,400,"InvalidParameterValue","SERVICE", "Unrecognized service");
 	} else { // invalid REQUEST value
-		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
+		wmts_add_error(r,400,"InvalidParameterValue","REQUEST", "Unrecognized request");
 	}
 
 	return args;
