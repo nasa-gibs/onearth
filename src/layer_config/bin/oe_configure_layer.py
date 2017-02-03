@@ -1401,8 +1401,8 @@ for conf in conf_files:
             if compression == "EPNG":
                 compression = "PNG"
                 is_encoded = True
-            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF"]:
-                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or PBF in ' + conf, sigevent_url)
+            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF", "MVT"]:
+                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, PBF, or MVT in ' + conf, sigevent_url)
                 continue
         except IndexError:
             if vectorType is None:
@@ -1713,9 +1713,10 @@ for conf in conf_files:
         elif compression.lower() in ['lerc']:
             dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
             mrf_format = 'image/lerc'
-        elif compression.lower() in ['pbf']:
+        elif compression.lower() in ['pbf', 'mvt']:
+            compression = "PBF";
             dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
-            mrf_format = 'application/x-protobuf'
+            mrf_format = 'application/x-protobuf;type=mapbox-vector'
         elif vectorType is not None:
             dataFileLocation = dataFileLocation.replace('.mrf','.shp')
         else:
@@ -2249,8 +2250,13 @@ for conf in conf_files:
                             line += newline[3:]
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
+                if mrf_format == "application/x-protobuf;type=mapbox-vector":
+                    line = line + line.replace("   ","",1).replace(mrf_format,"application/vnd.mapbox-vector-tile")
             if '$FileType' in line:
-                line = line.replace("$FileType",mrf_format.replace("x-protobuf","pbf").split('/')[1])
+                line = line.replace("$FileType",mrf_format.replace("x-protobuf;type=mapbox-vector","pbf").split('/')[1])
+                if "application/vnd.mapbox-vector-tile" in line:
+                    line = line.replace("}.pbf","}.mvt")
+                line = line.replace("}.mvt","}.pbf",1) # looks like the previous line will replace all
             if '$WMTSServiceURL' in line:
                 line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)      
             if '$TileMatrixSet' in line:

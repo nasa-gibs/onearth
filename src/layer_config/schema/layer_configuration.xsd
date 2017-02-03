@@ -75,6 +75,7 @@ limitations under the License.
         <xs:enumeration value="TIF"/>
         <xs:enumeration value="LERC"/>
         <xs:enumeration value="PBF"/>
+        <xs:enumeration value="MVT"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
