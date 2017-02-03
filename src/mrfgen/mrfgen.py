@@ -92,7 +92,7 @@ import imghdr
 import sqlite3
 import math
 
-versionNumber = '1.1.2'
+versionNumber = '1.1.2-6'
 basename = None
 
 #-------------------------------------------------------------------------------
@@ -784,7 +784,8 @@ def insert_zdb(mrf, zlevels, zkey):
         mrf -- An MRF file
         zlevels -- The number of z-levels expected
         zkey -- The key to be used with the z-index
-    """  
+    """
+    log_info_mssg("Modifying zdb for " + mrf + " with key " + zkey)  
     # Check if z-dimension is consistent if it's being used
     if zlevels != '':
         try:
@@ -1578,6 +1579,12 @@ if len(mrf_list) > 0:
     # Check if zdb is used
     if zlevels != '':
         mrf, z, zdb_out, con = insert_zdb(mrf, zlevels, zkey)
+        if con:
+            con.commit()
+            con.close()
+            log_info_mssg("Successfully committed record to " + zdb_out)
+        else:
+            log_info_mssg("No ZDB record created")
     else:
         con = None
         
@@ -1585,12 +1592,6 @@ if len(mrf_list) > 0:
     
     # Clean up
     remove_file(all_tiles_filename)
-    if con:
-        con.commit()
-        con.close()
-        log_info_mssg("Successfully committed record to " + zdb_out)
-    else:
-        log_info_mssg("No ZDB record created")
 
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
