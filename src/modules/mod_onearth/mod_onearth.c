@@ -943,8 +943,10 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
       else if (ap_find_token(cfg->p,cache->prefix,"lerc"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/lerc");
-       else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
- 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf");
+      else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf;type=mapbox-vector");
+      else if (ap_find_token(cfg->p,cache->prefix,"vnd.mapbox-vector-tile"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/vnd.mapbox-vector-tile");
       else {
 	ap_log_error(APLOG_MARK,APLOG_ERR,0,server,
 	  "Type not found, using text/html for cache %s", cache->pattern);
@@ -1671,8 +1673,24 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Ftiff");
 	} else if (ap_strcasecmp_match(format, "image/lerc") == 0) {
 		strcpy(format,"image%2Flerc");
+	} // special handling for vectors
+	  else if (ap_strcasecmp_match(format, "application%2Fx-protobuf;type=mapbox-vector") == 0) {
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(format, "application/x-protobuf;type=mapbox-vector") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
 	} else if (ap_strcasecmp_match(format, "application/x-protobuf") == 0) {
-		strcpy(format,"application%2Fx-protobuf");
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(format, "application%2Fx-protobuf") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(format, "application/vnd.mapbox-vector-tile") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
+	} else if (ap_strcasecmp_match(format, "application%2Fvnd.mapbox-vector-tile") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
 	}
 	// handle colons
 	if (ap_strchr(time, ':') != 0) {
@@ -2360,13 +2378,14 @@ static int mrf_handler(request_rec *r)
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
   // Set gzip encoding if output is pbf
-  if (apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf") == 0) {
+  if ((apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf;type=mapbox-vector") == 0) || (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0)) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
+  } else {
+	  ap_set_content_type(r,cfg->meta[count].mime_type);
   }
   if (apr_strnatcmp(cfg->meta[count].mime_type, "image/lerc") == 0) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "deflate");
   }
-  ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
 
@@ -2398,7 +2417,7 @@ int rewrite_rest_uri(request_rec *r) {
 	char *p;
 	char *params[16];
 	char *last;
-	char *format = apr_pcalloc(r->pool,26);
+	char *format = apr_pcalloc(r->pool,45);
 
 	i = 0;
 	p = apr_strtok(r->uri,"/",&last);
@@ -2433,7 +2452,9 @@ int rewrite_rest_uri(request_rec *r) {
 	}
 
 	if (ap_strcasecmp_match(params[length+d],"pbf") == 0) {
-		sprintf(format,"application%%2Fx-protobuf");
+		sprintf(format,"application%%2Fx-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(params[length+d],"mvt") == 0) {
+		sprintf(format,"application%%2Fvnd.mapbox-vector-tile");
 	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
 		sprintf(format,"image%%2F%sjpeg");
 	} else {
@@ -2455,7 +2476,7 @@ static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
   if (!(r->args)) {
-	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") )) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else

@@ -331,7 +331,11 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         } else if (compression=="PBF") {
             dat_ext=".pvt";
             sig=0;
-            h_format="Content-type: application/x-protobuf";
+            h_format="Content-type: application/x-protobuf;type=mapbox-vector";
+        } else if (compression=="MVT") {
+            dat_ext=".pvt";
+            sig=0;
+            h_format="Content-type: application/vnd.mapbox-vector-tile";
         }
 
         idx_fname=CPLGetXMLValue(input,"Rsets.IndexFileName",ifname);
