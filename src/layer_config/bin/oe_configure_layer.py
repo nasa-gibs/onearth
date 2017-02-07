@@ -846,7 +846,10 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             if year == True: # get newest and oldest years
                 years = []
                 for yearDirPath in glob.glob(archiveLocation+'/[0-9]*'):
-                    years.append(os.path.basename(yearDirPath))
+                    if os.listdir(yearDirPath) != []: # check if directory is not empty
+                        years.append(os.path.basename(yearDirPath))
+                    else:
+                        log_sig_warn(yearDirPath + " is empty", sigevent_url)
                     years.sort()
                 if len(years) > 0:
                     oldest_year = years[0]
