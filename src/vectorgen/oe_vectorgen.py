@@ -307,12 +307,9 @@ if __name__ == '__main__':
     if input_files != '':
         input_files = input_files.strip()
         alltiles = input_files.split(',')
-    if input_dir != None:
-        if output_format == 'esri shapefile':
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*shp']))
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
-        else:
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*']))
+    if input_dir != None: # search for only .shp or json/geojson files
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*.shp']))
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
     
     striptiles = []
     for tile in alltiles:
@@ -360,6 +357,9 @@ if __name__ == '__main__':
                     title, ext = os.path.splitext(os.path.basename(mfile))
                     if ext not in [".log",".xml"]:
                         log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
+                        if os.path.isfile(out_filename+ext):
+                            log_sig_warn(out_filename+ext + " already exists...overwriting", sigevent_url)
+                            os.remove(out_filename+ext)
                         shutil.move(working_dir+"/"+title+ext, out_filename+ext)
                 mssg=str().join(['Output created:  ', out_filename+".mrf"])
     else:
