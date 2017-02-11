@@ -27,6 +27,8 @@ limitations under the License.
         <xs:element ref="MapfileLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileStagingLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileConfigLocation" maxOccurs="1" minOccurs="0"/>
+        <xs:element ref="WMTSReprojectApacheConfigLocation" maxOccurs="1" minOccurs="0"/>
+        <xs:element ref="WMTSReprojectApacheConfigHeaderLocation" maxOccurs="1" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -87,6 +89,16 @@ limitations under the License.
   </xs:element>
   <xs:element name="MapfileStagingLocation" type="xs:string" nillable="true"/>
   <xs:element name="MapfileConfigLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="basename" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="WMTSReprojectApacheConfigLocation">
+    <xs:complexType mixed="true">
+      <xs:attribute name="basename" use="required" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="WMTSReprojectApacheConfigHeaderLocation">
     <xs:complexType mixed="true">
       <xs:attribute name="basename" use="required" type="xs:string"/>
     </xs:complexType>

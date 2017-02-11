@@ -79,6 +79,7 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
+from osgeo import osr
 
 versionNumber = '1.2.1'
 current_conf = None
@@ -86,12 +87,16 @@ current_conf = None
 class WMTSEndPoint:
     """End point data for WMTS"""
     
-    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, getCapabilities, projection):
+    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, getCapabilities, projection, apacheConfigLocation, apacheConfigBasename, apacheConfigHeaderLocation, apacheConfigHeaderBasename):
         self.path = path
         self.cacheConfigLocation = cacheConfigLocation
         self.cacheConfigBasename = cacheConfigBasename
         self.getCapabilities = getCapabilities
         self.projection = projection
+        self.apacheConfigLocation = apacheConfigLocation
+        self.apacheConfigBasename = apacheConfigBasename
+        self.apacheConfigHeaderLocation = apacheConfigHeaderLocation
+        self.apacheConfigHeaderBasename = apacheConfigHeaderBasename
         
 class TWMSEndPoint:
     """End point data for TWMS"""
@@ -118,7 +123,8 @@ class Environment:
     """Environment information for layer(s)"""
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename):
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
+        apacheConfigLocation, apacheConfigBasename, apacheConfigHeaderLocation, apacheConfigHeaderBasename):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -139,6 +145,10 @@ class Environment:
         self.mapfileLocationBasename = mapfileLocationBasename
         self.mapfileConfigLocation = mapfileConfigLocation
         self.mapfileConfigBasename = mapfileConfigBasename
+        self.apacheConfigLocation = apacheConfigLocation
+        self.apacheConfigBasename = apacheConfigBasename
+        self.apacheConfigHeaderLocation = apacheConfigHeaderLocation
+        self.apacheConfigHeaderBasename = apacheConfigHeaderBasename
         
 class Projection:
     """Projection information for layer"""
@@ -549,20 +559,45 @@ def get_environment(environmentConfig):
     except:
         mapfileConfigBasename = None
 
+    try:
+        wmtsReprojectApacheConfigLocationElem = dom.getElementsByTagName('WMTSReprojectApacheConfigLocation')[0]
+        wmtsReprojectApacheConfigLocation = wmtsReprojectApacheConfigLocationElem.firstChild.nodeValue
+        wmtsReprojectApacheConfigBasename = wmtsReprojectApacheConfigLocationElem.getAttribute('basename')
+        if not wmtsReprojectApacheConfigBasename:
+            log_sig_warn('<WMTSReprojectApacheConfigLocation> element does not have a "basename" attribute', sigevent_url)
+    except IndexError:
+        wmtsReprojectApacheConfigLocation = None
+        wmtsReprojectApacheConfigBasename = None
+
+    try:
+        wmtsReprojectApacheConfigHeaderLocationElem = dom.getElementsByTagName('WMTSReprojectApacheConfigHeaderLocation')[0]
+        wmtsReprojectApacheConfigHeaderLocation = wmtsReprojectApacheConfigHeaderLocationElem.firstChild.nodeValue
+        wmtsReprojectApacheConfigHeaderBasename = wmtsReprojectApacheConfigHeaderLocationElem.getAttribute('basename')
+        if not wmtsReprojectApacheConfigHeaderLocation:
+            log_sig_warn('<WMTSReprojectApacheConfigHeaderLocation> element does not have a "basename" attribute', sigevent_url)
+    except IndexError:
+        wmtsReprojectApacheConfigHeaderLocation = None
+        wmtsReprojectApacheConfigHeaderBasename = None
+
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),
                        cacheBasename_wmts, cacheBasename_twms,
                        add_trailing_slash(wmts_getCapabilities), 
-                       add_trailing_slash(twms_getCapabilities), 
+                       add_trailing_slash(twms_getCapabilities),
                        add_trailing_slash(getTileService),
                        add_trailing_slash(wmtsServiceUrl), 
                        add_trailing_slash(twmsServiceUrl),
-                       wmtsStagingLocation, twmsStagingLocation,
+                       wmtsStagingLocation,
+                       twmsStagingLocation,
                        legendLocation, legendUrl,
                        colormapLocations, colormapUrls,
                        mapfileStagingLocation, mapfileLocation,
                        mapfileLocationBasename, mapfileConfigLocation, 
-                       mapfileConfigBasename)
+                       mapfileConfigBasename,
+                       wmtsReprojectApacheConfigLocation,
+                       wmtsReprojectApacheConfigBasename,
+                       wmtsReprojectApacheConfigHeaderLocation,
+                       wmtsReprojectApacheConfigHeaderBasename)
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -1098,6 +1133,54 @@ def generate_empty_tile(colormap, output, width, height):
     
     return empty_size
 
+
+# Takes a WKT string and converts it to an 'EPSG:XXXX' string
+# http://gis.stackexchange.com/questions/20298/is-it-possible-to-get-the-epsg-value-from-an-osr-spatialreference-class-using-th
+def wkt_to_epsg(wkt):
+    proj = osr.SpatialReference()
+    if proj.ImportFromWkt(wkt) != 0:
+        raise ValueError('Invalid WKT projection string')
+    else:
+        if proj.IsGeographic() == 1:
+            cstype = 'GEOGCS'
+        else:
+            cstype = 'PROJCS'
+        authName = proj.GetAuthorityName(cstype)
+        authCode = proj.GetAuthorityCode(cstype)
+        if authName and authCode:
+            return '{0}:{1}'.format(authName, authCode)
+        else:
+            raise ValueError("Can't identify EPSG projection string from WKT")
+
+
+def size_elem_to_string(elem):
+    x = elem.get('x')
+    y = elem.get('y')
+    if not (x and y):
+        raise ValueError('Missing x and or y elements from <PageSize> element')
+    z = elem.get('z')
+    z = z if z else ''  # Otherwise, "None" string appears for missing values
+    c = elem.get('c')
+    c = c if c else ''
+    return '{0} {1} {2} {3}'.format(x, y, z, c)
+
+
+def pagesize_elem_to_string(elem):
+    dims = ('x', 'y', 'c')
+    values = [elem.get(dim) for dim in dims]
+    if any([not val for val in values]):
+        raise ValueError('Invalid <PageSize> element')
+    return '{0} {1} 1 {2}'.format(*values)
+
+
+def bbox_elem_to_string(elem):
+    bounds = ('minx', 'miny', 'maxx', 'maxy')
+    values = [elem.get(bound) for bound in bounds]
+    if any([not val for val in values]):
+        raise ValueError('Invalid <BoundingBox> element')
+    return '{0},{1},{2},{3}'.format(*values)
+
+
 def generate_links(detected_times, archiveLocation, fileNamePrefix, year, dataFileLocation, has_zdb):
     """
     Generate a archive links for a layer based on the last provided time period
@@ -1362,6 +1445,13 @@ for conf in conf_files:
         continue
     else:
         dom = xml.dom.minidom.parse(config_file)
+
+        # Check for reprojection options
+        try:
+            reprojectionInfo = dom.getElementsByTagName('ReprojectionSourceConfig')[0]
+        except KeyError:
+            reprojectionInfo = None
+
         
         #Vector parameters
         try:
@@ -1607,7 +1697,7 @@ for conf in conf_files:
             # default projection dir
             twmsEndPoint = lcdir + "/twms/" + projection.id.replace(":","")
 
-        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
+        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection, environment.apacheConfigLocation, environment.apacheConfigBasename, environment.apacheConfigHeaderLocation, environment.apacheConfigHeaderBasename)
         twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
         wms_endpoints[environment.mapfileStagingLocation] = WMSEndPoint(environment.mapfileStagingLocation, environment.mapfileLocation, environment.mapfileLocationBasename, environment.mapfileConfigLocation, environment.mapfileConfigBasename)
         
@@ -1665,6 +1755,594 @@ for conf in conf_files:
     if len(times) > 0:
         log_info_mssg('config: Time: ' + str(times))
     
+    if reprojectionInfo:
+        if not environment.apacheConfigLocation:
+            log_sig_warn('A reprojection layer has been specified but environment is missing <WMTSReprojectApacheConfigLocation>', sigevent_url)
+        if not environment.apacheConfigHeaderLocation:
+            log_sig_warn('A reprojection layer has been specified but environment is missing <WMTSReprojectApacheConfigHeaderLocation>', sigevent_url)
+        
+        # Using lxml to navigate the DOM because we may have nested tags and minidom isn't great at parsing those
+        mainDom = etree.fromstring(dom.toxml())
+        srcConfigDom = mainDom.find('ReprojectionSourceConfig')
+        try:
+            reprojectionSrcHeaderFile = srcConfigDom.find('HeaderFileName').text
+        except AttributeError:
+            reprojectionSrcHeaderFile = None
+
+        # Start by making sure all the required reprojection info is in place.
+        reprojSrcSize = None
+        reprojSrcPageSize = None
+        reprojSrcProj = None
+        reprojSrcBbox = None
+
+        if reprojectionSrcHeaderFile:
+            # Start by parsing the (optional) MRF header for the source layer.
+            try:
+                reprojSrcHeaderDom = etree.parse(reprojectionSrcHeaderFile)
+            except IOError:
+                log_sig_err("Can't find file " + reprojectionHeaderFile, sigevent_url)
+            except lxml.etree.ParseError:
+                log_sig_err('Invalid XML: ' + reprojectionHeaderFile, sigevent_url)
+
+            if reprojSrcHeaderDom:
+                reprojSrcRasterElem = reprojSrcHeaderDom.find('Raster')
+
+                if reprojSrcRasterElem is not None:
+                    if reprojSrcRasterElem.find('Size') is not None:
+                        try:
+                            reprojSrcSize = size_elem_to_string(reprojSrcRasterElem.find('Size'))
+                        except ValueError:
+                            log_sig_warn('Bad <Size> element in reprojection source MRF file ' + reprojectionSrcHeaderFile, sigevent_url)
+                    
+                    if reprojSrcRasterElem.find('PageSize') is not None:
+                        try:
+                            reprojPageSize = pagesize_elem_to_string(reprojSrcRasterElem.find('PageSize'))
+                        except ValueError:
+                            log_sig_warn('Bad <PageSize> element in reprojection source MRF file ' + reprojectionSrcHeaderFile, sigevent_url)
+                        
+                reprojSrcGeoTagsElem = reprojSrcHeaderDom.find('GeoTags')
+
+                if reprojSrcGeoTagsElem is not None:
+                    if reprojSrcGeoTagsElem.find('Projection') is not None:
+                        try:
+                            reprojSrcProj = wkt_to_epsg(reprojSrcGeoTagsElem.find('Projection').text)
+                        except AttributeError:
+                            pass
+                        except ValueError as e:
+                            log_sig_warn('Error parsing projection in reprojection source MRF file {0}: '.format(reprojectionSrcHeaderFile, e), sigevent_url)
+
+                    if reprojSrcGeoTagsElem.find('BoundingBox') is not None:
+                        try:
+                            reprojSrcBbox = bbox_elem_to_string(reprojSrcGeoTagsElem.find('BoundingBox'))
+                        except ValueError as e:
+                            log_sig_warn('Error parsing bounding box in reprojection source MRF file {0}: '.format(reprojectionSrcHeaderFile, e), sigevent_url)
+
+
+        # Check for source values in the layer config. Fail if required values aren't present in header or layer config.
+        # Layer config file values always supersede those in the MRF header.
+        try:
+            reprojSrcPath = srcConfigDom.find('SourcePath').text
+        except AttributeError:
+            log_sig_exit('<ReprojectionSourceConfig> included but <SourcePath> not found in ' + conf, sigevent_url)
+        
+        if srcConfigDom.find('Size') is not None:
+            try:
+                reprojSrcSize = size_elem_to_string(srcConfigDom.find('Size'))
+            except ValueError:
+                log_sig_warn('Bad <Size> element in <ReprojectionSourceConfig>', sigevent_url)
+        if not reprojSrcSize:
+            log_sig_err('Reprojection source <Size> element not found in layer config or header', sigevent_url)
+
+        if srcConfigDom.find('PageSize') is not None:
+            try:
+                reprojSrcSize = pagesize_elem_to_string(srcConfigDom.find('PageSize'))
+            except ValueError:
+                log_sig_warn('Bad <PageSize> element in <ReprojectionSourceConfig>', sigevent_url)
+
+        try:
+            reprojSrcProj = srcConfigDom.find('Projection').text
+        except AttributeError:
+            pass
+        if not reprojSrcProj:
+            log_sig_warn('Reprojection layer specifed but source <Projection> not present in header or layer config.', sigevent_url)
+
+        if srcConfigDom.find('BoundingBox') is not None:
+            try:
+                reprojSrcBbox = bbox_elem_to_string(srcConfigDom.find('BoundingBox'))
+            except ValueError as e:
+                log_sig_warn('Error parsing reprojection source <BoundingBox> element: ' + e, sigevent_url)
+
+        try:
+            reprojSrcDataType = srcConfigDom.find('DataType').text
+        except AttributeError:
+            reprojSrcDataType = None
+
+        try:
+            reprojSrcSkippedLevels = srcConfigDom.find('SkippedLevels').text
+        except AttributeError:
+            reprojSrcSkippedLevels = None
+
+        try:
+            reprojSrcPostfix = srcConfigDom.find('SourcePostfix').text
+        except AttributeError:
+            reprojSrcPostfix = None
+
+        # Now get all the info for the output reprojection layer.
+        reprojOutSize = None
+        reprojOutPageSize = None
+        reprojOutProj = None
+        reprojOutBbox = None
+
+        # First check for the info in the header file (if specified)
+        try:
+            reprojOutHeaderFileName = mainDom.find('HeaderFileName').text
+        except AttributeError:
+            reprojOutHeaderFileName = None
+        if reprojOutHeaderFileName:
+            reprojOutHeaderType = mainDom.find('HeaderFileName').get('type')
+            if reprojOutHeaderType != 'prefix':
+                reprojOutHeaderDom = None
+                try:
+                    reprojOutHeaderDom = etree.parse(reprojOutHeaderFileName)
+                except IOError:
+                    log_sig_err("Can't find file " + reprojectionHeaderFile, sigevent_url)
+                except lxml.etree.ParseError:
+                    log_sig_err('Invalid XML: ' + reprojectionHeaderFile, sigevent_url)
+
+            if reprojOutHeaderDom:
+                reprojOutRasterElem = reprojOutHeaderDom.find('Raster')
+                if reprojOutRasterElem is not None:
+                    if reprojOutRasterElem.find('Size') is not None:
+                        try:
+                            reprojOutSize = size_elem_to_string(reprojOutRasterElem.find('Size'))
+                        except ValueError:
+                            log_sig_warn('Bad <Size> element in header file ' + reprojectionHeaderFile, sigevent_url)
+                    
+                    if reprojOutRasterElem.find('PageSize') is not None:
+                        try:
+                            reprojOutPageSize = pagesize_elem_to_string(reprojOutRasterElem.find('PageSize'))
+                        except ValueError:
+                            log_sig_warn('Bad <PageSize> element in header file ' + reprojectionHeaderFile, sigevent_url)
+
+                reprojOutGeoTagsElem = reprojOutHeaderDom.find('GeoTags')
+                if reprojOutGeoTagsElem is not None:
+                    if reprojOutGeoTagsElem.find('Projection') is not None:
+                        try:
+                            reprojOutProj = wkt_to_epsg(reprojOutGeoTagsElem.find('Projection').text)
+                        except AttributeError:
+                            pass
+                        except ValueError as e:
+                            log_sig_warn('Error parsing projection in reprojection source MRF file {0}: '.format(reprojectionSrcHeaderFile, e), sigevent_url)
+
+                    if reprojOutGeoTagsElem.find('BoundingBox') is not None:
+                        try:
+                            reprojOutBbox = bbox_elem_to_string(reprojOutGeoTagsElem.find('BoundingBox'))
+                        except ValueError as e:
+                            log_sig_warn('Error parsing bounding box in reprojection source MRF file {0}: '.format(reprojectionSrcHeaderFile, e), sigevent_url)
+
+        # Grab the rest of the config options for this layer.
+        if mainDom.find('Size') is not None:
+            try:
+                reprojOutSize = size_elem_to_string(mainDom.find('Size'))
+            except ValueError:
+                log_sig_warn('Bad <Size> element in <LayerConfiguration>', sigevent_url)
+        if not reprojOutSize:
+            log_sig_err('Reprojection output <Size> element not found in layer config or header', sigevent_url)
+
+        if mainDom.find('PageSize') is not None:
+            try:
+                reprojOutSize = pagesize_elem_to_string(mainDom.find('PageSize'))
+            except ValueError:
+                log_sig_warn('Bad <PageSize> element in <LayerConfiguration>', sigevent_url)
+
+        try:
+            reprojOutProj = mainDom.find('Projection').text
+        except AttributeError:
+            pass
+        if not reprojOutProj:
+            log_sig_warn('Reprojection layer specifed but output <Projection> not present in header or layer config.', sigevent_url)
+
+        if mainDom.find('BoundingBox') is not None:
+            try:
+                reprojOutBbox = bbox_elem_to_string(mainDom.find('BoundingBox'))
+            except ValueError as e:
+                log_sig_warn('Error parsing reprojection output <BoundingBox> element: ' + e, sigevent_url)
+
+        try:
+            reprojOutDataType = mainDom.find('DataType').text
+        except AttributeError:
+            reprojOutDataType = None
+
+        try:
+            reprojOutSkippedLevels = mainDom.find('SkippedLevels').text
+        except AttributeError:
+            reprojOutSkippedLevels = None
+
+        try:
+            reprojOutMimeType = mainDom.find('MimeType').text
+        except AttributeError:
+            reprojOutMimeType = None
+
+        try:
+            reprojEtagSeed = mainDom.find('ETagSeed').text
+        except AttributeError:
+            reprojEtagSeed = None
+
+        try:
+            reprojInputBufferSize = mainDom.find('InputBufferSize').text
+        except AttributeError:
+            reprojInputBufferSize = None
+
+        try:
+            reprojOutputBufferSize = mainDom.find('OutputBufferSize').text
+        except AttributeError:
+            reprojOutputBufferSize = None
+
+        try:
+            reprojOutQuality = mainDom.find('Quality').text
+        except AttributeError:
+            reprojOutQuality = None
+
+        try:
+            reprojOutOversample = mainDom.find('Oversample').text.lower() == 'on'
+        except AttributeError:
+            reprojOutOversample = False
+
+        try:
+            reprojOutNearest = mainDom.find('Nearest').text.lower() == 'on'
+        except AttributeError:
+            reprojOutNearest = False
+
+        try:
+            reprojOutRadius = mainDom.find('Radius').text
+        except AttributeError:
+            reprojOutRadius = None
+
+        # Now create the mod_reproject configs in the staging area
+        stagingLayerPath = os.path.join(environment.wmts_dir, identifier)
+        stagingStylePath = os.path.join(stagingLayerPath, "default")
+        stagingPath = os.path.join(stagingStylePath, tilematrixset)
+
+        try:
+            os.makedirs(stagingPath)
+        except OSError:
+            if not os.path.exists(stagingPath):
+                log_sig_exit('ERROR', 'WMTS staging location: ' + stagingPath + ' cannot be created.', sigevent_url)
+            pass
+
+        # Write the source and reproject (output) configuration files
+        reprojSrcCfgFilename = identifier + '_source.config'
+        with open(os.path.join(stagingPath, reprojSrcCfgFilename), 'w+') as srcCfg:
+            srcCfg.write('Size {0}\n'.format(reprojSrcSize))
+            if reprojSrcPageSize:
+                srcCfg.write('PageSize {0}\n'.format(reprojSrcPageSize))
+            if reprojSrcProj:
+                srcCfg.write('Projection {0}\n'.format(reprojSrcProj))
+            if reprojSrcDataType:
+                srcCfg.write('DataType {0}\n'.format(reprojSrcDataType))
+            if reprojSrcSkippedLevels:
+                srcCfg.write('SkippedLevels {0}\n'.format(reprojSrcSkippedLevels))
+            if reprojSrcBbox:
+                srcCfg.write('BoundingBox {0}\n'.format(reprojSrcBbox))
+
+        reprojOutCfgFilename = identifier + '_reproject.config'
+        with open(os.path.join(stagingPath, reprojOutCfgFilename), 'w+') as reprojCfg:
+            reprojCfg.write('Size {0}\n'.format(reprojOutSize))
+            if reprojOutPageSize:
+                reprojCfg.write('PageSize {0}\n'.format(reprojOutPageSize))
+            if reprojOutProj:
+                reprojCfg.write('Projection {0}\n'.format(reprojOutProj))
+            if reprojOutDataType:
+                reprojCfg.write('DataType {0}\n'.format(reprojOutDataType))
+            if reprojOutSkippedLevels:
+                reprojCfg.write('SkippedLevels {0}\n'.format(reprojOutSkippedLevels))
+            if reprojOutBbox:
+                reprojCfg.write('BoundingBox {0}\n'.format(reprojOutBbox))
+
+            reprojCfg.write('SourcePath {0}\n'.format(reprojSrcPath))
+            if reprojSrcPostfix:
+                reprojCfg.write('SourcePostfix {0}\n'.format(reprojSrcPostfix))
+            if reprojOutMimeType:
+                reprojCfg.write('MimeType {0}\n'.format(reprojOutMimeType))
+            if reprojEtagSeed:
+                reprojCfg.write('ETagSeed {0}\n'.format(reprojEtagSeed))
+            if reprojInputBufferSize:
+                reprojCfg.write('InputBufferSize {0}\n'.format(reprojInputBufferSize))
+            if reprojOutputBufferSize:
+                reprojCfg.write('OutputBufferSize {0}\n'.format(reprojOutputBufferSize))
+            if reprojOutQuality:
+                reprojCfg.write('Quality {0}\n'.format(reprojOutQuality))
+            if reprojOutOversample:
+                reprojCfg.write('Oversample\n')
+            if reprojOutNearest:
+                reprojCfg.write('Nearest\n')
+            if reprojOutRadius:
+                reprojCfg.write('Radius {0}\n'.format(reprojOutRadius))
+
+        # Write the snippet that will be put into the main Apache config for all the reprojected layers
+        apacheConfigStagingFilePath = os.path.join(environment.wmts_dir, identifier + '_' + tilematrixset + '.conf')
+
+        baseEndpoint = environment.getCapabilities_wmts
+        layerEndpoint = os.path.join(baseEndpoint, identifier)
+        styleEndpoint = os.path.join(layerEndpoint, "default")
+        tmsEndpoint = os.path.join(styleEndpoint, tilematrixset)
+
+        srcCfgPath = os.path.join(tmsEndpoint, reprojSrcCfgFilename)
+        outCfgPath = os.path.join(tmsEndpoint, reprojOutCfgFilename)
+        regexpStr = tilematrixset + '/\d{1,2}/\d{1,3}/\d{1,3}.(png|jpeg|jpg)'
+
+        with open(apacheConfigStagingFilePath, 'w+') as apacheConf:
+            # apacheConf.write('Alias {0} {1}\n'.format(environment.wmtsReprojectEndpoint, environment.wmtsReprojectConfigLocation))
+            apacheConf.write('<Directory {0}>\n'.format(baseEndpoint))
+            apacheConf.write('\tWMTSWrapperRole root\n')
+            apacheConf.write('</Directory>\n')
+            apacheConf.write('<Directory {0}>\n'.format(layerEndpoint))
+            apacheConf.write('\tWMTSWrapperRole layer\n')
+            if not static:
+                apacheConf.write('\tWMTSWrapperEnableTime on\n')
+            apacheConf.write('</Directory>\n')
+            apacheConf.write('<Directory {0}>\n'.format(styleEndpoint))
+            apacheConf.write('\tWMTSWrapperRole style\n')
+            apacheConf.write('</Directory>\n')
+            apacheConf.write('<Directory {0}>\n'.format(tmsEndpoint))
+            apacheConf.write('\tWMTSWrapperRole tilematrixset\n')
+            apacheConf.write('\tReproject_RegExp {0}\n'.format(regexpStr))
+            apacheConf.write('\tReproject_ConfigurationFiles {0} {1}\n'.format(srcCfgPath, outCfgPath))
+            apacheConf.write('</Directory>\n')
+
+        try:
+            # Open layer XML file
+            xmlPath = os.path.join(environment.wmts_dir, identifier + '_' + 'default' + '_' + tilematrixset + '.xml')
+            with open(xmlPath, 'w+') as layer_xml:
+                wmts_layer_template = """<Layer>
+                    <ows:Title xml:lang=\"en\">$Title</ows:Title>
+                    $BoundingBox
+                    <ows:Identifier>$Identifier</ows:Identifier>
+                    <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap$MapVersion" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+                    <Style isDefault="true">
+                        <ows:Title xml:lang=\"en\">default</ows:Title>
+                        <ows:Identifier>default</ows:Identifier>
+                        $LegendURL_vertical
+                        $LegendURL_horizontal
+                    </Style>
+                    <Format>$Format</Format>
+                    <Dimension>
+                        <ows:Identifier>time</ows:Identifier>
+                        <ows:UOM>ISO8601</ows:UOM>
+                        <Default>$DefaultDate</Default>
+                        <Current>false</Current>
+                        <Value>$DateRange</Value>
+                    </Dimension>
+                    <TileMatrixSetLink>
+                        <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
+                    </TileMatrixSetLink>
+                    <ResourceURL format="$Format" resourceType="tile" template="$WMTSServiceURL$Identifier/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.$FileType"/>
+                </Layer>"""
+
+                layer_output = ""
+                lines = wmts_layer_template.splitlines(True)
+                for line in lines:
+                    # replace lines in template
+                    if '<Layer>' in line:
+                        line = '         '+line
+                    if '</Layer>' in line:
+                        line = ' '+line+'\n'                
+                    if '$Title' in line:
+                        line = line.replace("$Title",title)
+                    if '$BoundingBox' in line:
+                        line = line.replace("$BoundingBox",projection.bbox_xml)
+                    if '$Identifier' in line:
+                        line = line.replace("$Identifier",identifier)
+                    # if '$LegendURL_vertical' in line:
+                    #     line = line.replace("$LegendURL_vertical",legendUrl_vertical)
+                    # if '$LegendURL_horizontal' in line:
+                    #     line = line.replace("$LegendURL_horizontal",legendUrl_horizontal)
+                    if '$ColorMap' in line:
+                        if colormaps == None or default_colormap == None:
+                            line = ''
+                        else:
+                            line_template = line
+                            # First create line for default colormap
+                            if default_colormap.attributes['url'].value != '':
+                                default_colormap_url = add_trailing_slash(default_colormap.attributes['url'].value) + default_colormap.firstChild.nodeValue
+                            else:
+                                default_colormap_url = default_colormap.firstChild.nodeValue
+                            line = line.replace("$MapVersion", '')   
+                            line = line.replace("$ColorMap", default_colormap_url)    
+                            # Add rest of tags
+                            if default_colormap.attributes['version'].value != '':
+                                for colormap in colormaps:
+                                    if colormap.attributes['url'].value != '':
+                                        colormap_url = add_trailing_slash(colormap.attributes['url'].value) + colormap.firstChild.nodeValue
+                                    else:
+                                        colormap_url = colormap.firstChild.nodeValue
+                                    newline = line_template.replace("$MapVersion", '/' + colormap.attributes['version'].value)
+                                    newline = newline.replace("$ColorMap", colormap_url)
+                                    line += newline[3:]
+                    # if '$Format' in line:
+                    #     line = line.replace("$Format",mrf_format)
+                    # if '$FileType' in line:
+                    #     line = line.replace("$FileType",mrf_format.replace("x-protobuf","pbf").split('/')[1])
+                    # if '$WMTSServiceURL' in line:
+                    #     line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)      
+                    # if '$TileMatrixSet' in line:
+                    #     line = line.replace("$TileMatrixSet",tilematrixset)
+                    #     tilematrixset_line = line
+                    # if static == True:
+                    #     if any(x in line for x in ['Dimension', '<ows:Identifier>time</ows:Identifier>', '<ows:UOM>ISO8601</ows:UOM>', '$DefaultDate', '<Current>false</Current>', '$DateRange']):
+                    #         line = ''
+                    #     if '/{Time}' in line:
+                    #         line = line.replace('/{Time}', '')
+                    # else:
+                    #     if '$DefaultDate' in line:
+                    #         defaultDate = ''
+                    #         for timeElement in timeElements:
+                    #             defaultDate = timeElement.firstChild.data.strip().split('/')[1]
+                    #         line = line.replace("$DefaultDate",defaultDate)
+                    #     if '$DateRange' in line:
+                    #         line = line.replace("$DateRange",timeElements[0].firstChild.data.strip())
+                    #         iterTime = iter(timeElements)
+                    #         next(iterTime)
+                    #         for timeElement in iterTime:
+                    #             line = line + "             " + timeElement.toxml().replace('Time','Value')+"\n"
+                    # remove extra white space from lines
+                    line = line[3:]
+                    layer_output = layer_output + line
+                # Replace extra lines before </Style>
+                blanks = """             
+                     
+        """
+                layer_output = layer_output.replace(blanks, "")
+                # Check if additional encoded style is needed
+                if is_encoded == True:
+                    style_encoded = """</Style>
+                 <Style isDefault="false">
+                    <ows:Title xml:lang=\"en\">encoded</ows:Title>
+                    <ows:Identifier>encoded</ows:Identifier>
+                 </Style>"""
+                    layer_output = layer_output.replace("</Style>", style_encoded)
+                layer_xml.writelines(layer_output)
+                
+                # special case, add additional tilematrixsets from existing file and then remove
+                # existing_layer_xml_filename = xmlPath.replace("_"+tilematrixset,'')
+                # if tilematrixset in xmlPath:
+                #     try:
+                #         # Open GetCapabilities.
+                #         existing_layer_xml=open(existing_layer_xml_filename, 'r+')
+                #         lines = existing_layer_xml.readlines()
+                #         os.remove(existing_layer_xml_filename)
+                #         for idx in range(0, len(lines)):
+                #             if '<TileMatrixSet>' in lines[idx]:
+                #                 lines[idx] = lines[idx] + tilematrixset_line
+                #         layer_xml.seek(0)
+                #         layer_xml.writelines(lines)
+                #         existing_layer_xml.close()
+                #     except:
+                #         mssg=str().join(['Cannot read existing layer XML file:  ', existing_layer_xml_filename])
+                #         log_sig_err(mssg, sigevent_url)
+                
+                # # close new file        
+                # layer_xml.close()
+
+        except IOError:
+            mssg=str().join(['Cannot read layer XML file:  ', 
+                             wmts_mrf_filename.replace('.mrf','.xml')])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+
+        continue
+    
+
+    # create TWMS layer metadata for GetCapabilities
+    if no_twms == False and vectorType is None:
+        try:
+            # Open layer XML file
+            layer_xml=open(twms_mrf_filename.replace('.mrf','_gc.xml'), 'w+')
+        except IOError:
+            mssg=str().join(['Cannot read layer XML file:  ', 
+                             twms_mrf_filename.replace('.mrf','_gc.xml')])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+    
+        twms_layer_template = """    <Layer queryable=\"0\">
+      <Name>$Identifier</Name>
+      <Title xml:lang=\"en\">$Title</Title>
+      <Abstract xml:lang=\"en\">$Abstract</Abstract>
+      <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang=\"en\">(default) Default style</Title>
+      </Style>
+      <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
+      </Layer>"""
+    
+        layer_output = ""
+        lines = twms_layer_template.splitlines(True)
+        for line in lines:
+            # replace lines in template
+            if '</Layer>' in line:
+                line = ' '+line+'\n'  
+            if '$Identifier' in line:
+                line = line.replace("$Identifier",identifier)              
+            if '$Title' in line:
+                line = line.replace("$Title",title)
+            if '$Abstract' in line:
+                line = line.replace("$Abstract", abstract)
+            if '$minx' in line:
+                line = line.replace("$minx",projection.lowercorner[0])
+            if '$miny' in line:
+                line = line.replace("$miny",projection.lowercorner[1])
+            if '$maxx' in line:
+                line = line.replace("$maxx",projection.uppercorner[0])
+            if '$maxy' in line:
+                line = line.replace("$maxy",projection.uppercorner[1])
+            layer_output = layer_output + line
+        layer_xml.writelines(layer_output)
+        layer_xml.close()
+        
+    # create TWMS layer metadata for GetTileService
+    if no_twms == False and vectorType is None:
+        try:
+            # Open layer XML file
+            layer_xml=open(twms_mrf_filename.replace('.mrf','_gts.xml'), 'w+')
+        except IOError:
+            mssg=str().join(['Cannot read layer XML file:  ', 
+                             twms_mrf_filename.replace('.mrf','_gts.xml')])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+    
+        twms_layer_template = """<TiledGroup>
+    <Name>$TiledGroupName</Name>
+    <Title xml:lang=\"en\">$Title</Title>
+    <Abstract xml:lang=\"en\">$Abstract</Abstract>
+    <Projection>$Projection</Projection>
+    <Pad>0</Pad>
+    <Bands>$Bands</Bands>
+    <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
+    <Key>${time}</Key>
+$Patterns</TiledGroup>"""
+    
+        layer_output = ""
+        lines = twms_layer_template.splitlines(True)
+        for line in lines:
+            # replace lines in template 
+            if '</TiledGroup>' in line:
+                line = ' '+line+'\n'              
+            if '$TiledGroupName' in line:
+                line = line.replace("$TiledGroupName",tiledGroupName) 
+            if '$Title' in line:
+                line = line.replace("$Title",title)
+            if '$Abstract' in line:
+                line = line.replace("$Abstract",abstract)
+            if '$Projection' in line:
+                line = line.replace("$Projection",projection.wkt)
+            if '$Bands' in line:
+                if mrf_format == 'image/png':
+                    line = line.replace("$Bands","4") # GDAL wants 4 for PNGs
+                else:
+                    line = line.replace("$Bands",bands)
+            if '$minx' in line:
+                line = line.replace("$minx",projection.lowercorner[0])
+            if '$miny' in line:
+                line = line.replace("$miny",projection.lowercorner[1])
+            if '$maxx' in line:
+                line = line.replace("$maxx",projection.uppercorner[0])
+            if '$maxy' in line:
+                line = line.replace("$maxy",projection.uppercorner[1])
+            if '$Patterns' in line:
+                patterns = ""
+                cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
+                try:
+                    print '\nRunning command: ' + cmd
+                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    process.wait()
+                    for output in process.stdout:
+                        patterns = patterns + output
+                except:
+                    log_sig_err("Error running command " + cmd, sigevent_url)
+                line = line.replace("$Patterns",patterns)
+            layer_output = layer_output + line
+        layer_xml.writelines(layer_output)
+        layer_xml.close()
+        continue
+
+
     if archiveLocation != None:
         archiveLocation = add_trailing_slash(archiveLocation)
         # check if absolute path or else use relative to cache location
@@ -1768,30 +2446,20 @@ for conf in conf_files:
         # Create <Raster> tag
         raster_node = mrf_dom.createElement('Raster')
 
-        # If the "prefix" attribute of <HeaderFileName> is present, we grab MRF stuff from the 
-        # layer config file. Otherwise, use the header file specified.
-        if header_type == 'prefix':
-            mrf_base = header_file_name + '.mrf'
-            header_dom = dom
-            log_info_mssg('Using MRF data within layer config file')
-        else:
-            log_info_mssg('Using MRF Archetype: ' + header_file_name)
-            mrf_base = os.path.basename(header_file_name)
-
-        if header_dom != None:
-            # Check if <Size> tag present and has all 3 required values (x,y,c)
-            try:
-                size_node = header_dom.getElementsByTagName('Size')[0]
-            except IndexError:
-                log_sig_err("<Size> tag not present in MRF header file or layer config", sigevent_url)
+    if header_dom:
+        # Check if <Size> tag present and has all 3 required values (x,y,c)
+        try:
+            size_node = header_dom.getElementsByTagName('Size')[0]
+        except IndexError:
+            log_sig_err("<Size> tag not present in MRF header file or layer config", sigevent_url)
+            continue
+        if size_node:
+            if not all(attr in size_node.attributes.keys() for attr in ('c','x','y')):
+                log_sig_err("<Size> tag needs to have attributes x, y, and c", sigevent_url)
                 continue
-            if size_node != None:
-                if not all(attr in size_node.attributes.keys() for attr in ('x', 'y')):
-                    log_sig_err("<Size> tag needs to have attributes x and y", sigevent_url)
-                    continue
-                else:
-                    raster_node.appendChild(size_node)
-                    bands = size_node.getAttribute('c')     
+            else:
+                raster_node.appendChild(size_node)
+                bands = size_node.getAttribute('c')
 
             # Create <Compression> node
             compression_node = mrf_dom.createElement('Compression')
@@ -1799,26 +2467,26 @@ for conf in conf_files:
             compression_node.appendChild(compression_text_node)
             raster_node.appendChild(compression_node)
 
-            # Check if <DataValues> tag is present and the NoData attribute is present
-            try:
-                datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
-            except IndexError:
-                datavalues_node = None
-            finally:
-                if datavalues_node is not None:    
-                    raster_node.appendChild(datavalues_node)
+        # Check if <DataValues> tag is present and the NoData attribute is present
+        try:
+            datavalues_node = header_dom.getElementsByTagName('DataValues')[0]
+        except IndexError:
+            datavalues_node = None
+        finally:
+            if datavalues_node:
+                raster_node.appendChild(datavalues_node)
 
-            # Check if the <Quality> tag is present and of a valid type
-            try:
-                quality_node = header_dom.getElementsByTagName('Quality')[0]
-            except IndexError:
-                quality_node = None
-            if quality_node is not None:    
-                if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
-                    log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
-                    continue
-                else:
-                    raster_node.appendChild(quality_node)
+        # Check if the <Quality> tag is present and of a valid type
+        try:
+            quality_node = header_dom.getElementsByTagName('Quality')[0]
+        except IndexError:
+            quality_node = None
+        if quality_node:
+            if quality_node.firstChild.nodeValue >= 0 and quality_node.firstChild.nodeValue <= 100:
+                log_sig_err("<Quality> tag must be an integer between 1 and 100", sigevent_url)
+                continue
+            else:
+                raster_node.appendChild(quality_node)
 
             # Check if <PageSize> node is present and has c, x, and y attributes
             try:
@@ -1837,7 +2505,14 @@ for conf in conf_files:
             # Add <Raster> tag to MRF
             mrf_meta.appendChild(raster_node)
 
-            # Create <Rsets> 
+        # Create <Rsets> 
+        try:
+            rsets_node = header_dom.getElementsByTagName('Rsets')[0]
+        except IndexError:
+            rsets_node = None
+            log_sig_err("<Rsets> tag not present in layer config or MRF header file", sigevent_url)
+            continue
+        if rsets_node:
             try:
                 rsets_node = header_dom.getElementsByTagName('Rsets')[0]
             except IndexError:
@@ -2612,6 +3287,43 @@ if no_wmts == False:
                 print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
                 shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
 
+        # Run the reproject Apache config stuff if we have those environment variables.
+        if wmts_endpoint.apacheConfigHeaderLocation or wmts_endpoint.apacheConfigLocation:
+            if not wmts_endpoint.apacheConfigLocation:
+                log_sig_err('Missing <WMTSReprojectApacheConfigLocation>', sigevent_url)
+            if not wmts_endpoint.apacheConfigHeaderLocation:
+                log_sig_err('Missing <WMTSReprojectApacheConfigHeaderLocation>', sigevent_url)
+            # Build main Apache config in the staging area
+            apacheConfStagingPath = os.path.join(wmts_endpoint.path, wmts_endpoint.apacheConfigBasename + '.conf')
+            with open(apacheConfStagingPath, 'w+') as apacheConf:
+                try:
+                    apacheHeaderPath = os.path.join(wmts_endpoint.apacheConfigHeaderLocation, wmts_endpoint.apacheConfigHeaderBasename + '.conf')
+                    with open(apacheHeaderPath, 'r') as header:
+                        apacheConf.write(header.read())
+                except (OSError, TypeError):
+                    pass
+                layers = [os.path.join(wmts_endpoint.path, sfile)
+                    for sfile in sorted(os.listdir(wmts_endpoint.path), key=unicode.lower)
+                        if sfile.endswith('.conf') and not sfile.startswith(wmts_endpoint.apacheConfigBasename)]
+                for layer in layers:
+                    with open(layer, 'r') as f:
+                        apacheConf.write(f.read())
+
+            # Copy Apache config and layer directories/config files to final locations
+            layer_dirs = [subdir for subdir in os.listdir(wmts_endpoint.path) if os.path.isdir(os.path.join(wmts_endpoint.path, subdir))]
+            for layer_dir in layer_dirs:
+                layer_endpoint = os.path.join(wmts_endpoint.getCapabilities, layer_dir)
+                if os.path.exists(layer_endpoint):
+                    shutil.rmtree(layer_endpoint)
+                layer_staging_path = os.path.join(wmts_endpoint.path, layer_dir)
+                print '\nCopying reprojected layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+                shutil.copytree(os.path.join(wmts_endpoint.path, layer_dir), layer_endpoint)
+
+            apacheConfFinalPath = os.path.join(wmts_endpoint.apacheConfigLocation, wmts_endpoint.apacheConfigBasename + '.conf')
+            print '\nCopying reprojected layer Apache config {0} -> {1}'.format(apacheConfStagingPath, apacheConfFinalPath)
+            shutil.copyfile(apacheConfStagingPath, apacheConfFinalPath)
+
+
 if create_mapfile is True:
     for key, wms_endpoint in wms_endpoints.iteritems():
         if wms_endpoint.mapfileLocation is not None and wms_endpoint.mapfileStagingLocation is not None and wms_endpoint.mapfileConfigLocation is not None and wms_endpoint.mapfileConfigBasename is not None:
@@ -2653,6 +3365,45 @@ if create_mapfile is True:
                 log_sig_err('Mapfile creation enabled but no <MapfileConfigLocation> present in environment config file.', sigevent_url)
             if wms_endpoint.mapfileConfigBasename is None:
                 log_sig_err('Mapfile creation enabled but no "basename" attribute specified for <MapfileConfigLocation>.', sigevent_url)
+
+# no_reproj = False
+# if not no_reproj:
+#     for key, wmts_endpoint in wmts_endpoints.iteritems():
+#         # Run the reproject Apache config stuff if we have those environment variables.
+#         if wmts_endpoint.apacheConfigHeaderLocation or wmts_endpoint.apacheConfigLocation:
+#             if not wmts_endpoint.apacheConfigLocation:
+#                 log_sig_err('Missing <WMTSReprojectApacheConfigLocation>', sigevent_url)
+#             if not wmts_endpoint.apacheConfigHeaderLocation:
+#                 log_sig_err('Missing <WMTSReprojectApacheConfigHeaderLocation>', sigevent_url)
+#             # Build main Apache config in the staging area
+#             apacheConfStagingPath = os.path.join(wmts_endpoint.path, wmts_endpoint.apacheConfigBasename + '.conf')
+#             with open(apacheConfStagingPath, 'w+') as apacheConf:
+#                 try:
+#                     apacheHeaderPath = os.path.join(wmts_endpoint.apacheConfigHeaderLocation, wmts_endpoint.apacheConfigHeaderBasename + '.conf')
+#                     with open(apacheHeaderPath, 'r') as header:
+#                         apacheConf.write(header.read())
+#                 except (OSError, TypeError):
+#                     pass
+#                 layers = [os.path.join(wmts_endpoint.path, sfile)
+#                     for sfile in sorted(os.listdir(wmts_endpoint.path), key=unicode.lower)
+#                         if sfile.endswith('.conf') and not sfile.startswith(wmts_endpoint.apacheConfigBasename)]
+#                 for layer in layers:
+#                     with open(layer, 'r') as f:
+#                         apacheConf.write(f.read())
+
+#             # Copy Apache config and layer directories/config files to final locations
+#             layer_dirs = [subdir for subdir in os.listdir(wmts_endpoint.path) if os.path.isdir(os.path.join(wmts_endpoint.path, subdir))]
+#             for layer_dir in layer_dirs:
+#                 layer_endpoint = os.path.join(wmts_endpoint.getCapabilities, layer_dir)
+#                 if os.path.exists(layer_endpoint):
+#                     shutil.rmtree(layer_endpoint)
+#                 layer_staging_path = os.path.join(wmts_endpoint.path, layer_dir)
+#                 print '\nCopying reprojected layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+#                 shutil.copytree(os.path.join(wmts_endpoint.path, layer_dir), layer_endpoint)
+
+#             apacheConfFinalPath = os.path.join(wmts_endpoint.apacheConfigLocation, wmts_endpoint.apacheConfigBasename + '.conf')
+#             print '\nCopying reprojected layer Apache config {0} -> {1}'.format(apacheConfStagingPath, apacheConfFinalPath)
+#             shutil.copyfile(apacheConfStagingPath, apacheConfFinalPath)
 
 
 print '\n*** Layers have been configured successfully ***'
