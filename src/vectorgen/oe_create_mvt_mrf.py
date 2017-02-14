@@ -101,45 +101,52 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
     with open(os.path.join(output_path, mrf_prefix) + '.mrf', 'w+') as f:
         f.write(mrf_dom.toprettyxml())
 
+    spatial_dbs = []
+    source_schemas = []
     # Dump contents of shapefile into a mutable rtree spatial database for faster searching.
-    with fiona.open(input_file_path) as shapefile:
-        spatial_db = index.Index(rtree_index_generator(list(shapefile)))
-        source_schema = shapefile.schema['geometry']
-        if debug:
-            print 'Points to process: ' + str(spatial_db.count(spatial_db.bounds))
+    for input_file in input_file_path:
+        print 'Processing ' + input_file
+        with fiona.open(input_file) as shapefile:
+            spatial_db = index.Index(rtree_index_generator(list(shapefile)))
+            spatial_dbs.append(spatial_db)
+            source_schema = shapefile.schema['geometry']
+            source_schemas.append(source_schema)
+            if debug:
+                print 'Points to process: ' + str(spatial_db.count(spatial_db.bounds))
 
     # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right, top-bottom and write them
     # successively to the MRF.
-    for idx, tile_matrix in enumerate(reversed(tile_matrices)):
-        z = len(tile_matrices) - idx - 1
+    for i, tile_matrix in enumerate(reversed(tile_matrices)):
+        z = len(tile_matrices) - i - 1
 
-        # We do general point rate reduction randomly, deleting those items from the
-        # spatial index. The highest zoom level is never reduced.
-        if source_schema == 'Point' and feature_reduce_rate and z != len(tile_matrices) - 1:
-            feature_count = spatial_db.count(spatial_db.bounds)
-            num_points_to_delete = int(feature_count - math.floor(feature_count / feature_reduce_rate))
-            if debug:
-                print 'Deleting ' + str(num_points_to_delete) + ' points from dataset'
-            for feature in random.sample([feature for feature in spatial_db.intersection(spatial_db.bounds, objects=True)], num_points_to_delete):
-                spatial_db.delete(feature.id, feature.bbox)
-
-        # Here we're culling points that are less than a pixel away from each other. We use a queue to keep track of them and avoid looking at points twice.
-        if source_schema == 'Point' and cluster_reduce_rate and z != len(tile_matrices) - 1:
-            feature_queue = [item for item in spatial_db.intersection(spatial_db.bounds, objects=True)]
-            while feature_queue:
-                feature = feature_queue.pop()
-                sub_pixel_bbox = (feature.bbox[0] - tile_matrix['resolution'],
-                                  feature.bbox[1] - tile_matrix['resolution'],
-                                  feature.bbox[2] + tile_matrix['resolution'],
-                                  feature.bbox[3] + tile_matrix['resolution'])
-                nearby_points = [item for item in spatial_db.intersection(sub_pixel_bbox, objects=True) if item.id != feature.id]
-                if nearby_points:
-                    # We reduce the number of clustered points to 1/nth of their previous number. (user-selectable)
-                    # All the nearby points are then dropped from the queue.
-                    for point in random.sample(nearby_points, len(nearby_points) - int(math.floor(len(nearby_points) ** (1 / float(cluster_reduce_rate))))):
-                        spatial_db.delete(point.id, point.bbox)
-                    for point in nearby_points:
-                        [feature_queue.remove(item) for item in feature_queue if item.id == point.id]
+        for idx, spatial_db in enumerate(spatial_dbs):
+            # We do general point rate reduction randomly, deleting those items from the
+            # spatial index. The highest zoom level is never reduced.
+            if source_schemas[idx] == 'Point' and feature_reduce_rate and z != len(tile_matrices) - 1:
+                feature_count = spatial_dbs[idx].count(spatial_dbs[idx].bounds)
+                num_points_to_delete = int(feature_count - math.floor(feature_count / feature_reduce_rate))
+                if debug:
+                    print 'Deleting ' + str(num_points_to_delete) + ' points from dataset'
+                for feature in random.sample([feature for feature in spatial_dbs[idx].intersection(spatial_dbs[idx].bounds, objects=True)], num_points_to_delete):
+                    spatial_dbs[idx].delete(feature.id, feature.bbox)
+    
+            # Here we're culling points that are less than a pixel away from each other. We use a queue to keep track of them and avoid looking at points twice.
+            if source_schemas[idx] == 'Point' and cluster_reduce_rate and z != len(tile_matrices) - 1:
+                feature_queue = [item for item in spatial_dbs[idx].intersection(spatial_dbs[idx].bounds, objects=True)]
+                while feature_queue:
+                    feature = feature_queue.pop()
+                    sub_pixel_bbox = (feature.bbox[0] - tile_matrix['resolution'],
+                                      feature.bbox[1] - tile_matrix['resolution'],
+                                      feature.bbox[2] + tile_matrix['resolution'],
+                                      feature.bbox[3] + tile_matrix['resolution'])
+                    nearby_points = [item for item in spatial_dbs[idx].intersection(sub_pixel_bbox, objects=True) if item.id != feature.id]
+                    if nearby_points:
+                        # We reduce the number of clustered points to 1/nth of their previous number. (user-selectable)
+                        # All the nearby points are then dropped from the queue.
+                        for point in random.sample(nearby_points, len(nearby_points) - int(math.floor(len(nearby_points) ** (1 / float(cluster_reduce_rate))))):
+                            spatial_dbs[idx].delete(point.id, point.bbox)
+                        for point in nearby_points:
+                            [feature_queue.remove(item) for item in feature_queue if item.id == point.id]
 
         # Start making tiles. We figure out the tile's bbox, then search for all the features that intersect with that bbox,
         # then turn the resulting list into an MVT tile and write the tile.
@@ -162,16 +169,17 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
 
                 # Iterate through the shapefile geometry and grab anything in this tile's bounds
                 tile_features = []
-                for feature in [item.object for item in spatial_db.intersection(tile_buffer_bbox.bounds, objects=True)]:
-                    geometry = shapely.geometry.shape(feature['geometry'])
-                    # If the feature isn't fully contained in the tile bounds, we need to clip it.
-                    if not shapely.geometry.shape(feature['geometry']).within(tile_buffer_bbox):
-                        geometry = tile_buffer_bbox.intersection(geometry)
-                    new_feature = {
-                        'geometry': geometry,
-                        'properties': feature['properties']
-                    }
-                    tile_features.append(new_feature)
+                for spatial_db in spatial_dbs:
+                    for feature in [item.object for item in spatial_db.intersection(tile_buffer_bbox.bounds, objects=True)]:
+                        geometry = shapely.geometry.shape(feature['geometry'])
+                        # If the feature isn't fully contained in the tile bounds, we need to clip it.
+                        if not shapely.geometry.shape(feature['geometry']).within(tile_buffer_bbox):
+                            geometry = tile_buffer_bbox.intersection(geometry)
+                        new_feature = {
+                            'geometry': geometry,
+                            'properties': feature['properties']
+                        }
+                        tile_features.append(new_feature)
                 
                 # Create MVT tile from the features in this tile (Only doing single layers for now)
                 if tile_features:
@@ -355,4 +363,7 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 # This is the recommended way of building an rtree index.
 def rtree_index_generator(features):
     for idx, feature in enumerate(features):
-        yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
+        try:
+            yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
+        except ValueError as e:
+            print "WARN - " + str(e)

@@ -128,7 +128,7 @@ if __name__ == '__main__':
         date_of_data = get_dom_tag_value(dom, 'date_of_data')
     
         # Define output basename
-        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time])    
+        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time, '_', str(os.getpid())])    
         
         # for sub-daily imagery
         try: 
@@ -343,25 +343,29 @@ if __name__ == '__main__':
                 shutil.rmtree(out_basename)
                 mssg=str().join(['Output created:  ', out_filename+".shp"])
         elif output_format == "mvt-mrf": # Create MVT-MRF
-            for tile in alltiles:
+            for idx, tile in enumerate(alltiles):
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
+                tile_layer_name = parameter_name + '_' + date_of_data
                 if source_epsg != target_epsg:
-                    outfile = os.path.join(working_dir, basename + '_reproject' + os.path.splitext(tile)[1])
+                    outfile = os.path.join(working_dir, basename + '_reproject_' + str(idx) + os.path.splitext(tile)[1])
                     ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1] else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
                     run_command(ogr2ogr_command_list, sigevent_url)
-                    tile = outfile
-                tile_layer_name = parameter_name + '_' + date_of_data
-                create_vector_mrf(tile, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
-                files = glob.glob(working_dir+"/"+basename+"*")
-                for mfile in files:
-                    title, ext = os.path.splitext(os.path.basename(mfile))
-                    if ext not in [".log",".xml"]:
-                        log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
-                        if os.path.isfile(out_filename+ext):
-                            log_sig_warn(out_filename+ext + " already exists...overwriting", sigevent_url)
-                            os.remove(out_filename+ext)
-                        shutil.move(working_dir+"/"+title+ext, out_filename+ext)
-                mssg=str().join(['Output created:  ', out_filename+".mrf"])
+                    alltiles[idx] = outfile
+                
+            log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
+            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+            
+            files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
+            for mfile in files:
+                title, ext = os.path.splitext(os.path.basename(mfile))
+                if ext not in [".log",".xml"]:
+                    log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
+                    if os.path.isfile(out_filename+ext):
+                        log_sig_warn(out_filename+ext + " already exists...overwriting", sigevent_url)
+                        os.remove(out_filename+ext)
+                    shutil.move(working_dir+"/"+title+ext, out_filename+ext)
+            mssg=str().join(['Output created:  ', out_filename+".mrf"])
+            
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
     
