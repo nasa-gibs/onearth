@@ -1777,12 +1777,13 @@ for conf in conf_files:
 
         if reprojectionSrcHeaderFile:
             # Start by parsing the (optional) MRF header for the source layer.
+            reprojSrcHeaderDom = None
             try:
                 reprojSrcHeaderDom = etree.parse(reprojectionSrcHeaderFile)
             except IOError:
-                log_sig_err("Can't find file " + reprojectionHeaderFile, sigevent_url)
+                log_sig_err("Can't find file " + reprojectionSrcHeaderFile, sigevent_url)
             except lxml.etree.ParseError:
-                log_sig_err('Invalid XML: ' + reprojectionHeaderFile, sigevent_url)
+                log_sig_err('Invalid XML: ' + reprojectionSrcHeaderFile, sigevent_url)
 
             if reprojSrcHeaderDom:
                 reprojSrcRasterElem = reprojSrcHeaderDom.find('Raster')
@@ -1885,9 +1886,9 @@ for conf in conf_files:
                 try:
                     reprojOutHeaderDom = etree.parse(reprojOutHeaderFileName)
                 except IOError:
-                    log_sig_err("Can't find file " + reprojectionHeaderFile, sigevent_url)
+                    log_sig_err("Can't find file " + reprojOutHeaderFileName, sigevent_url)
                 except lxml.etree.ParseError:
-                    log_sig_err('Invalid XML: ' + reprojectionHeaderFile, sigevent_url)
+                    log_sig_err('Invalid XML: ' + reprojOutHeaderFileName, sigevent_url)
 
             if reprojOutHeaderDom:
                 reprojOutRasterElem = reprojOutHeaderDom.find('Raster')
@@ -1896,13 +1897,13 @@ for conf in conf_files:
                         try:
                             reprojOutSize = size_elem_to_string(reprojOutRasterElem.find('Size'))
                         except ValueError:
-                            log_sig_warn('Bad <Size> element in header file ' + reprojectionHeaderFile, sigevent_url)
+                            log_sig_warn('Bad <Size> element in header file ' + reprojOutHeaderFileName, sigevent_url)
                     
                     if reprojOutRasterElem.find('PageSize') is not None:
                         try:
                             reprojOutPageSize = pagesize_elem_to_string(reprojOutRasterElem.find('PageSize'))
                         except ValueError:
-                            log_sig_warn('Bad <PageSize> element in header file ' + reprojectionHeaderFile, sigevent_url)
+                            log_sig_warn('Bad <PageSize> element in header file ' + reprojOutHeaderFileName, sigevent_url)
 
                 reprojOutGeoTagsElem = reprojOutHeaderDom.find('GeoTags')
                 if reprojOutGeoTagsElem is not None:
@@ -3181,7 +3182,7 @@ else:
     current_conf = configuration_filename
 
 # run scripts
-if no_twms == False:
+if not no_twms and not reprojectionInfo:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
@@ -3252,10 +3253,13 @@ if no_wmts == False:
             log_sig_err("Error in generating XML cache config using command: " + cmd, sigevent_url)
         if no_cache == False:
             if wmts_endpoint.cacheConfigLocation:
-                print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config'
-                shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config')
-                print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
-                shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml')
+                try:
+                    print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config'
+                    shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config')
+                    print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
+                    shutil.copyfile(wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml', wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.xml')
+                except IOError:
+                    print '\nNo cache config files found -- this is OK if only reprojected layers are being set up.'
         if wmts_endpoint.getCapabilities:
             # Add layer metadata to getCapabilities
             layer_xml = ""
@@ -3280,12 +3284,15 @@ if no_wmts == False:
             except:
                 log_sig_err("Couldn't read GetCapabilities file: " + getCapabilities_file, sigevent_url)
             if no_xml == False:            
-                print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities+'/getCapabilities.xml'
-                shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities+'/getCapabilities.xml')
-                if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
-                    os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
-                print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
-                shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
+                try:
+                    print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities+'/getCapabilities.xml'
+                    shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities+'/getCapabilities.xml')
+                    if not os.path.exists(wmts_endpoint.getCapabilities +'1.0.0/'):
+                        os.makedirs(wmts_endpoint.getCapabilities +'1.0.0')
+                    print '\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml'
+                    shutil.copyfile(getCapabilities_file, wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
+                except IOError:
+                    print '\nNo GC files found.'
 
         # Run the reproject Apache config stuff if we have those environment variables.
         if wmts_endpoint.apacheConfigHeaderLocation or wmts_endpoint.apacheConfigLocation:

@@ -408,6 +408,10 @@ static int post_hook(request_rec *r)
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);
     if (!cfg->role) return DECLINED;
 
+    // First check to see if request is for a valid file.
+    apr_finfo_t *fileinfo = (apr_finfo_t *)apr_palloc(r->pool, sizeof(apr_finfo_t));
+    if (apr_stat(fileinfo, r->filename, 0, r->pool) == APR_SUCCESS) return DECLINED;
+
     if (!apr_strnatcasecmp(cfg->role, "root")) {
         if (!r->args) {
             wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "LAYER", "LAYER does not exist");
