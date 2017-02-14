@@ -21,6 +21,7 @@ limitations under the License.
         <xs:element ref="FileNamePrefix"/>
         <xs:element ref="Abstract" minOccurs="0"/>
         <xs:element ref="TiledGroupName" minOccurs="0"/>
+        <xs:element ref="WMSGroupName" minOccurs="0"/>
         <xs:element ref="HeaderFileName" minOccurs="0"/>
         <xs:element ref="DataFileLocation" minOccurs="0"/>
         <xs:element ref="IndexFileLocation" minOccurs="0"/>
@@ -50,6 +51,7 @@ limitations under the License.
   <xs:element name="FileNamePrefix" type="xs:string"/>
   <xs:element name="Abstract" type="xs:string"/>
   <xs:element name="TiledGroupName" type="xs:string"/>
+  <xs:element name="WMSGroupName" type="xs:string"/>
   <xs:element name="ArchiveLocation" nillable="true">
     <xs:complexType mixed="true">
       <xs:attribute name="static" use="required" type="xs:boolean"/>

@@ -1464,6 +1464,10 @@ for conf in conf_files:
         except:
             tiledGroupName = identifier + " tileset"
         try:
+            wmsGroupName = get_dom_tag_value(dom, 'WMSGroupName')
+        except:
+            wmsGroupName = None
+        try:
             abstract = get_dom_tag_value(dom, 'Abstract')
         except:
             abstract = identifier + " abstract"
@@ -1623,6 +1627,8 @@ for conf in conf_files:
     log_info_mssg('config: TiledGroupName: ' + tiledGroupName)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
+    if wmsGroupName:
+        log_info_mssg('config: WMSGroupName: ' + wmsGroupName)
     if emptyTile:
         log_info_mssg('config: EmptyTile: ' + emptyTile)
     if str(emptyTileSize) != "":
@@ -2437,11 +2443,11 @@ $Patterns</TiledGroup>"""
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
             timeDirPattern = "%"+identifier+"_TIME%_" if not subdaily else "%"+identifier+"_TIME%"
-            timeParamRegex = '"^[0-9]{7}$"'
+            timeParamRegex = '"^([0-9]|T){7}$"'
             yearDirPattern = "%"+identifier+"_YEAR%"
-            yearDirRegex = '"^[0-9]{4}$"'
+            yearDirRegex = '"^([0-9]|Y){4}$"'
             subdailyDirPattern = "%"+identifier+"_SUBDAILY%_"
-            subdailyParamRegex = '"^[0-9]{6}$"'
+            subdailyParamRegex = '"^([0-9]|T){6}$"'
 
             minx = projection.lowercorner[0]
             miny = projection.lowercorner[1]
@@ -2451,6 +2457,18 @@ $Patterns</TiledGroup>"""
             # Write mapfile lines
             mapfile.write("LAYER\n")
             mapfile.write("\tNAME\t\"" + identifier + "\"\n")
+            if wmsGroupName:
+                mapfile.write("\tGROUP\t\"" + wmsGroupName + "\"\n")
+                # default time/year needs to be handled by mod_oems for layer groups
+                default_time = ""
+                default_year = ""
+                default_subdaily = ""
+                timeDirPattern = ("%"+wmsGroupName+"_TIME%") + timeDirPattern
+                yearDirPattern = yearDirPattern + "%"+wmsGroupName+"_YEAR%"
+            else:
+                default_time = "TTTTTTT"
+                default_year = "YYYY"
+                default_subdaily = "TTTTTT"
             if vectorType:
                 layer_type = vectorType.upper()
             else:
@@ -2460,14 +2478,23 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tVALIDATION\n")
             # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
             if not static:
-                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + "TTTTTTT" + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + default_time + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" + timeParamRegex + "\n")
+                if wmsGroupName: # add group substitutions as well
+                    mapfile.write("\t\t\"default_" + wmsGroupName + "_TIME\"\t\t\"" + default_time + "\"\n")
+                    mapfile.write("\t\t\"" + wmsGroupName + "_TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
-                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + default_year + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" + yearDirRegex + "\n")
+                if wmsGroupName:
+                    mapfile.write("\t\t\"default_" + wmsGroupName + "_YEAR\"\t\"" + default_year + "\"\n")
+                    mapfile.write("\t\t\"" + wmsGroupName + "_YEAR\"\t\t" + yearDirRegex + "\n")
             if not static and subdaily:
-                mapfile.write("\t\t\"default_" + identifier + "_SUBDAILY\"\t\"" + "TTTTTT" + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
+                if wmsGroupName:
+                    mapfile.write("\t\t\"default_" + wmsGroupName + "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
+                    mapfile.write("\t\t\"" + wmsGroupName + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")             
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
@@ -2480,6 +2507,8 @@ $Patterns</TiledGroup>"""
                     timeExtent = timeExtent + timeElement.firstChild.data.strip() + ","
                 mapfile.write("\t\t\"wms_timeextent\"\t\t\"" + timeExtent.rstrip(',') + "\"\n") 
                 mapfile.write("\t\t\"wms_timedefault\"\t\t\"" + defaultDate + "\"\n")
+            if wmsGroupName:
+                mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName + "\"\n")
             if vectorType:
                 mapfile.write('\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
                 mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
