@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '1.2.1'
+versionNumber = '1.2.2'
 current_conf = None
 
 class WMTSEndPoint:
@@ -118,7 +118,7 @@ class Environment:
     """Environment information for layer(s)"""
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename):
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -134,6 +134,8 @@ class Environment:
         self.legendUrl = legendUrl
         self.colormap_dirs = colormap_dirs
         self.colormapUrls = colormapUrls
+        self.stylejson_dirs = stylejson_dirs
+        self.stylejsonUrls = stylejsonUrls
         self.mapfileStagingLocation = mapfileStagingLocation
         self.mapfileLocation = mapfileLocation
         self.mapfileLocationBasename = mapfileLocationBasename
@@ -508,6 +510,29 @@ def get_environment(environmentConfig):
                     url.attributes['version'] = ''
     except KeyError:
         colormapUrls = None
+        
+    # Same deal as colormaps for style JSON files
+    try:
+        stylejsonLocations = dom.getElementsByTagName('StyleJSONLocation')
+        for location in stylejsonLocations:
+            if 'version' not in location.attributes.keys():
+                if len(stylejsonLocations) > 1:
+                    log_sig_err('Multiple <StyleJSONLocation> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    location.attributes['version'] = ''
+    except KeyError:
+        stylejsonLocations = None
+
+    try:
+        stylejsonUrls = dom.getElementsByTagName('StyleJSONURL')
+        for url in stylejsonUrls:
+            if 'version' not in url.attributes.keys():
+                if len(stylejsonUrls) > 1:
+                    log_sig_err('Multiple <StyleJSONURL> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    url.attributes['version'] = ''
+    except KeyError:
+        stylejsonUrls = None
 
     # Get mapfile parameters from environment config file
     # Get/create mapfile staging location
@@ -560,6 +585,7 @@ def get_environment(environmentConfig):
                        wmtsStagingLocation, twmsStagingLocation,
                        legendLocation, legendUrl,
                        colormapLocations, colormapUrls,
+                       stylejsonLocations, stylejsonUrls,
                        mapfileStagingLocation, mapfileLocation,
                        mapfileLocationBasename, mapfileConfigLocation, 
                        mapfileConfigBasename)
@@ -1565,6 +1591,53 @@ for conf in conf_files:
 
                 colormap.attributes['url'] = url
                 colormap.attributes['location'] = location
+                
+        # Similar treatment as ColorMap for StyleJSON
+        stylejsons = []
+        for stylejson in dom.getElementsByTagName('StyleJSON'):
+            if stylejson.firstChild:
+                stylejsons.append(stylejson)
+                
+        # Set default StyleJSON
+        default_stylejson = None
+        if stylejsons:
+            if len(stylejsons) == 1:
+                default_stylejson = stylejsons[0]
+            else:
+                for stylejson in stylejsons:                
+                    if 'default' in stylejson.attributes.keys() and stylejson.attributes['default'].value == 'true':
+                        if default_stylejson is not None:
+                            err_msg = 'Multiple <StyleJSON> elements have "default=true" attribute but only one is allowed, using ' + stylejson.toxml()
+                            log_sig_err(err_msg, sigevent_url)
+                        default_stylejson = stylejson
+            if len(stylejsons) > 1 and default_stylejson is None:
+                default_stylejson = stylejsons[-1]
+                err_msg = 'Multiple <StyleJSON> elements but none have "default=true" attribute, using ' + default_stylejson.toxml()
+                log_sig_err(err_msg, sigevent_url)
+        
+        # Match <StyleJSONLocation> and <StyleJSONURL> to style json files with the same version and set them as attributes of the <StyleJSON>
+        if stylejsons:
+            for stylejson in stylejsons:
+                if 'version' not in stylejson.attributes.keys():
+                    stylejson.attributes['version'] = ''
+
+                stylejson_value = stylejson.firstChild.nodeValue
+                version = stylejson.attributes['version'].value
+                location = next((location.firstChild.nodeValue for location in environment.stylejson_dirs if location.attributes['version'].value == version), None)
+                url = next((url.firstChild.nodeValue for url in environment.stylejsonUrls if url.attributes['version'].value == version), None)
+
+                if not location:
+                    location = ''
+                    err_msg = "StyleJSONLocation for version '{0}' not defined for environment {1} - Trying StyleJSON path {2}".format(version, environmentConfig, stylejson_value)
+                    log_sig_warn(err_msg, sigevent_url)
+
+                if not url:
+                    url = ''
+                    err_msg = "StyleJSONURL for version '{0}' not defined for environment {1} - Trying StyleJSON path {2}".format(version, environmentConfig, stylejson_value)
+                    log_sig_warn(err_msg, sigevent_url)
+
+                stylejson.attributes['url'] = url
+                stylejson.attributes['location'] = location
 
         try:
             emptyTile = get_dom_tag_value(dom, 'EmptyTile')
@@ -1668,6 +1741,10 @@ for conf in conf_files:
         for colormap in colormaps:
             map_value = colormap.firstChild.nodeValue.strip()
             log_info_mssg('config: ColorMap: ' + str(map_value))
+    if stylejsons:
+        for stylejson in stylejsons:
+            json_value = stylejson.firstChild.nodeValue.strip()
+            log_info_mssg('config: StyleJSON: ' + str(json_value))
     log_info_mssg('config: Patterns: ' + str(patterns))
     if len(rest_patterns) > 0:
         log_info_mssg('config: WMTS-REST Patterns: ' + str(rest_patterns))
@@ -2197,6 +2274,7 @@ for conf in conf_files:
             $BoundingBox
             <ows:Identifier>$Identifier</ows:Identifier>
             <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap$MapVersion" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style$MapVersion" xlink:href="$StyleJSON" xlink:title="Mapbox GL Layer Styles"/>
             <Style isDefault="true">
                 <ows:Title xml:lang=\"en\">default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
@@ -2256,6 +2334,28 @@ for conf in conf_files:
                                 colormap_url = colormap.firstChild.nodeValue
                             newline = line_template.replace("$MapVersion", '/' + colormap.attributes['version'].value)
                             newline = newline.replace("$ColorMap", colormap_url)
+                            line += newline[3:]
+            if '$StyleJSON' in line:
+                if stylejsons == None or default_stylejson == None:
+                    line = ''
+                else:
+                    line_template = line
+                    # First create line for default colormap
+                    if default_stylejson.attributes['url'].value != '':
+                        default_stylejson_url = add_trailing_slash(default_stylejson.attributes['url'].value) + default_stylejson.firstChild.nodeValue
+                    else:
+                        default_stylejson_url = default_stylejson.firstChild.nodeValue
+                    line = line.replace("$MapVersion", '')   
+                    line = line.replace("$StyleJSON", default_stylejson_url)    
+                    # Add rest of tags
+                    if default_stylejson.attributes['version'].value != '':
+                        for stylejson in stylejsons:
+                            if stylejson.attributes['url'].value != '':
+                                stylejson_url = add_trailing_slash(stylejson.attributes['url'].value) + stylejson.firstChild.nodeValue
+                            else:
+                                stylejson_url = stylejson.firstChild.nodeValue
+                            newline = line_template.replace("$MapVersion", '/' + stylejson.attributes['version'].value)
+                            newline = newline.replace("$StyleJSON", stylejson_url)
                             line += newline[3:]
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)

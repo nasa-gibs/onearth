@@ -26,6 +26,8 @@ limitations under the License.
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
     <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
+    <StyleJSONLocation>/usr/share/onearth/demo/gl-styles/</StyleJSONLocation>
+    <StyleJSONURL>http://localhost/gl-styles/</StyleJSONURL>
     <MapfileLocation basename="epsg3857">/usr/share/onearth/demo/mapserver/</MapfileLocation>
     <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG3857/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG3857">/etc/onearth/config/mapserver/</MapfileConfigLocation>
