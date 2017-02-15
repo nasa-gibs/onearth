@@ -263,6 +263,17 @@ void get_param(char *args, char *Name, char *Value) {
 	char *pos1 = ap_strcasestr(args, Name);
 	if (pos1) {
 		pos1 += strlen(Name);
+		if (*pos1 != '=') { // Make sure we get a real parameter
+			char nName[(strlen(Name) + 1)];
+			sprintf(nName, "%s=", Name);
+			pos1 = ap_strcasestr(args, nName);
+			if (pos1) {
+				pos1 += strlen(Name);
+			} else {
+				Value[0]='\0';
+				return;
+			}
+		}
 		if (*pos1 == '=') {
 			pos1++;
 			while (*pos1 && *pos1 != '&') {
