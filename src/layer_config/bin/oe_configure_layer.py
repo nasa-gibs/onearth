@@ -78,7 +78,6 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
-from shutil import copyfile
 from osgeo import osr
 
 versionNumber = '1.2.1'
@@ -101,13 +100,17 @@ class WMTSEndPoint:
 class TWMSEndPoint:
     """End point data for TWMS"""
     
-    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, getCapabilities, getTileService, projection):
+    def __init__(self, path, cacheConfigLocation, cacheConfigBasename, getCapabilities, getTileService, projection, apacheConfigLocation, apacheConfigBasename, apacheConfigHeaderLocation, apacheConfigHeaderBasename):
         self.path = path
         self.cacheConfigLocation = cacheConfigLocation
         self.cacheConfigBasename = cacheConfigBasename
         self.getCapabilities = getCapabilities
         self.getTileService = getTileService
         self.projection = projection
+        self.apacheConfigLocation = apacheConfigLocation
+        self.apacheConfigBasename = apacheConfigBasename
+        self.apacheConfigHeaderLocation = apacheConfigHeaderLocation
+        self.apacheConfigHeaderBasename = apacheConfigHeaderBasename
                 
 class WMSEndPoint:
     """End point data for WMS"""
@@ -124,7 +127,8 @@ class Environment:
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
         projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
-        apacheConfigLocation, apacheConfigBasename, apacheConfigHeaderLocation, apacheConfigHeaderBasename):
+        wmtsApacheConfigLocation, wmtsApacheConfigBasename, wmtsApacheConfigHeaderLocation, wmtsApacheConfigHeaderBasename, twmsApacheConfigLocation, twmsApacheConfigBasename, 
+        twmsApacheConfigHeaderLocation, twmsApacheConfigHeaderBasename, wmtsReprojectEndpoint, twmsReprojectEndpoint):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -145,10 +149,16 @@ class Environment:
         self.mapfileLocationBasename = mapfileLocationBasename
         self.mapfileConfigLocation = mapfileConfigLocation
         self.mapfileConfigBasename = mapfileConfigBasename
-        self.apacheConfigLocation = apacheConfigLocation
-        self.apacheConfigBasename = apacheConfigBasename
-        self.apacheConfigHeaderLocation = apacheConfigHeaderLocation
-        self.apacheConfigHeaderBasename = apacheConfigHeaderBasename
+        self.wmtsApacheConfigLocation = wmtsApacheConfigLocation
+        self.wmtsApacheConfigBasename = wmtsApacheConfigBasename
+        self.wmtsApacheConfigHeaderLocation = wmtsApacheConfigHeaderLocation
+        self.wmtsApacheConfigHeaderBasename = wmtsApacheConfigHeaderBasename
+        self.twmsApacheConfigLocation = twmsApacheConfigLocation
+        self.twmsApacheConfigBasename = twmsApacheConfigBasename
+        self.twmsApacheConfigHeaderLocation = twmsApacheConfigHeaderLocation
+        self.twmsApacheConfigHeaderBasename = twmsApacheConfigHeaderBasename
+        self.wmtsReprojectEndpoint = wmtsReprojectEndpoint
+        self.twmsReprojectEndpoint = twmsReprojectEndpoint
         
 class Projection:
     """Projection information for layer"""
@@ -559,25 +569,63 @@ def get_environment(environmentConfig):
     except:
         mapfileConfigBasename = None
 
-    try:
-        wmtsReprojectApacheConfigLocationElem = dom.getElementsByTagName('WMTSReprojectApacheConfigLocation')[0]
-        wmtsReprojectApacheConfigLocation = wmtsReprojectApacheConfigLocationElem.firstChild.nodeValue
-        wmtsReprojectApacheConfigBasename = wmtsReprojectApacheConfigLocationElem.getAttribute('basename')
-        if not wmtsReprojectApacheConfigBasename:
-            log_sig_warn('<WMTSReprojectApacheConfigLocation> element does not have a "basename" attribute', sigevent_url)
-    except IndexError:
-        wmtsReprojectApacheConfigLocation = None
-        wmtsReprojectApacheConfigBasename = None
+    wmtsApacheConfigLocation = None
+    wmtsApacheConfigBasename = None
+    twmsApacheConfigLocation = None
+    twmsApacheConfigBasename = None
+    apacheConfigLocationElems = dom.getElementsByTagName('ApacheConfigLocation')
+    for elem in apacheConfigLocationElems:
+        service = elem.getAttribute('service')
+        if not service:
+            log_sig_warn('<ApacheConfigLocation> element does not have a "service" attribute', sigevent_url)
+        basename = elem.getAttribute('basename')
+        if not basename:
+            log_sig_warn('<ApacheConfigLocation> element does not have a "basename" attribute', sigevent_url)
+        if service == 'wmts':
+            wmtsApacheConfigLocation = elem.firstChild.nodeValue
+            wmtsApacheConfigBasename = basename
+        elif service == 'twms':
+            twmsApacheConfigLocation = elem.firstChild.nodeValue
+            twmsApacheConfigBasename = basename
+        else:
+            log_sig_warn('<ApacheConfigLocation> element has an invalid "service" attribute', sigevent_url)
 
-    try:
-        wmtsReprojectApacheConfigHeaderLocationElem = dom.getElementsByTagName('WMTSReprojectApacheConfigHeaderLocation')[0]
-        wmtsReprojectApacheConfigHeaderLocation = wmtsReprojectApacheConfigHeaderLocationElem.firstChild.nodeValue
-        wmtsReprojectApacheConfigHeaderBasename = wmtsReprojectApacheConfigHeaderLocationElem.getAttribute('basename')
-        if not wmtsReprojectApacheConfigHeaderLocation:
-            log_sig_warn('<WMTSReprojectApacheConfigHeaderLocation> element does not have a "basename" attribute', sigevent_url)
-    except IndexError:
-        wmtsReprojectApacheConfigHeaderLocation = None
-        wmtsReprojectApacheConfigHeaderBasename = None
+    wmtsApacheConfigHeaderLocation = None
+    wmtsApacheConfigHeaderBasename = None
+    twmsApacheConfigHeaderLocation = None
+    twmsApacheConfigHeaderBasename = None
+    apacheConfigHeaderLocationElems = dom.getElementsByTagName('ApacheConfigHeaderLocation')
+    for elem in apacheConfigHeaderLocationElems:
+        service = elem.getAttribute('service')
+        if not service:
+            log_sig_warn('<ApacheConfigHeaderLocation> element does not have a "service" attribute', sigevent_url)
+        basename = elem.getAttribute('basename')
+        if not basename:
+            log_sig_warn('<ApacheConfigHeaderLocation> element does not have a "basename" attribute', sigevent_url)
+        if service == 'wmts':
+            wmtsApacheConfigHeaderLocation = elem.firstChild.nodeValue
+            wmtsApacheConfigHeaderBasename = basename
+        elif service == 'twms':
+            twmsApacheConfigHeaderLocation = elem.firstChild.nodeValue
+            twmsApacheConfigHeaderBasename = basename
+        else:
+            log_sig_warn('<ApacheConfigHeaderLocation> element has an invalid "service" attribute', sigevent_url)
+
+    wmtsReprojectEndpoint = None
+    twmsReprojectEndpoint = None
+    reprojectEndpointElems = dom.getElementsByTagName('ReprojectEndpoint')
+    for elem in reprojectEndpointElems:
+        service = elem.getAttribute('service')
+        if not service:
+            log_sig_warn('<ReprojectEndpoint> element does not have a "service" attribute', sigevent_url)
+        if service == 'wmts':
+            wmtsReprojectEndpoint = elem.firstChild.nodeValue
+        elif service == 'twms':
+            twmsReprojectEndpoint = elem.firstChild.nodeValue
+        else:
+            log_sig_warn('<ReprojectEndpoint> element has an invalid "service" attribute', sigevent_url)
+
+
 
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),
@@ -594,10 +642,16 @@ def get_environment(environmentConfig):
                        mapfileStagingLocation, mapfileLocation,
                        mapfileLocationBasename, mapfileConfigLocation, 
                        mapfileConfigBasename,
-                       wmtsReprojectApacheConfigLocation,
-                       wmtsReprojectApacheConfigBasename,
-                       wmtsReprojectApacheConfigHeaderLocation,
-                       wmtsReprojectApacheConfigHeaderBasename)
+                       wmtsApacheConfigLocation,
+                       wmtsApacheConfigBasename,
+                       wmtsApacheConfigHeaderLocation,
+                       wmtsApacheConfigHeaderBasename,
+                       twmsApacheConfigLocation,
+                       twmsApacheConfigBasename,
+                       twmsApacheConfigHeaderLocation,
+                       twmsApacheConfigHeaderBasename,
+                       wmtsReprojectEndpoint,
+                       twmsReprojectEndpoint)
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -1433,7 +1487,8 @@ print conf_files
 if conf_files==[]:
     mssg = 'No configuration files found.'
     log_sig_exit('ERROR', mssg, sigevent_url)
-    
+
+max_tms = None
 for conf in conf_files:
     current_conf = conf
     try:
@@ -1697,8 +1752,8 @@ for conf in conf_files:
             # default projection dir
             twmsEndPoint = lcdir + "/twms/" + projection.id.replace(":","")
 
-        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection, environment.apacheConfigLocation, environment.apacheConfigBasename, environment.apacheConfigHeaderLocation, environment.apacheConfigHeaderBasename)
-        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
+        wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection, environment.wmtsApacheConfigLocation, environment.wmtsApacheConfigBasename, environment.wmtsApacheConfigHeaderLocation, environment.wmtsApacheConfigHeaderBasename)
+        twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection, environment.twmsApacheConfigLocation, environment.twmsApacheConfigBasename, environment.twmsApacheConfigHeaderLocation, environment.twmsApacheConfigHeaderBasename)
         wms_endpoints[environment.mapfileStagingLocation] = WMSEndPoint(environment.mapfileStagingLocation, environment.mapfileLocation, environment.mapfileLocationBasename, environment.mapfileConfigLocation, environment.mapfileConfigBasename)
         
         # Close file.
@@ -1756,10 +1811,16 @@ for conf in conf_files:
         log_info_mssg('config: Time: ' + str(times))
     
     if reprojectionInfo:
-        if not environment.apacheConfigLocation:
-            log_sig_warn('A reprojection layer has been specified but environment is missing <WMTSReprojectApacheConfigLocation>', sigevent_url)
-        if not environment.apacheConfigHeaderLocation:
-            log_sig_warn('A reprojection layer has been specified but environment is missing <WMTSReprojectApacheConfigHeaderLocation>', sigevent_url)
+        if not no_wmts:
+            if not environment.wmtsApacheConfigLocation:
+                log_sig_warn('A reprojection layer has been specified but environment is missing <ApacheConfigLocation>', sigevent_url)
+            if not environment.wmtsApacheConfigHeaderLocation:
+                log_sig_warn('A reprojection layer has been specified but environment is missing <ApacheConfigHeaderLocation>', sigevent_url)
+        if not no_twms:
+            if not environment.twmsApacheConfigLocation:
+                log_sig_warn('A reprojection layer has been specified but environment is missing <ApacheConfigLocation>', sigevent_url)
+            if not environment.twmsApacheConfigHeaderLocation:
+                log_sig_warn('A reprojection layer has been specified but environment is missing <ApacheConfigHeaderLocation>', sigevent_url)
         
         # Using lxml to navigate the DOM because we may have nested tags and minidom isn't great at parsing those
         mainDom = etree.fromstring(dom.toxml())
@@ -2073,7 +2134,7 @@ for conf in conf_files:
         regexpStr = tilematrixset + '/\d{1,2}/\d{1,3}/\d{1,3}.(png|jpeg|jpg)'
 
         with open(apacheConfigStagingFilePath, 'w+') as apacheConf:
-            # apacheConf.write('Alias {0} {1}\n'.format(environment.wmtsReprojectEndpoint, environment.wmtsReprojectConfigLocation))
+            # apacheConf.write('Alias {0} {1}\n'.format(environment.wmtsReprojectEndpoint, baseEndpoint))
             apacheConf.write('<Directory {0}>\n'.format(baseEndpoint))
             apacheConf.write('\tWMTSWrapperRole root\n')
             apacheConf.write('</Directory>\n')
@@ -2229,6 +2290,41 @@ for conf in conf_files:
             mssg=str().join(['Cannot read layer XML file:  ', 
                              wmts_mrf_filename.replace('.mrf','.xml')])
             log_sig_exit('ERROR', mssg, sigevent_url)
+
+        # Now create the TWMS config snippet
+        twmsStagingPath = os.path.join(environment.twms_dir, identifier)
+        try:
+            os.makedirs(twmsStagingPath)
+        except OSError:
+            if not os.path.exists(twmsStagingPath):
+                log_sig_exit('ERROR', 'TWMS staging location: ' + twmsStagingPath + ' cannot be created.', sigevent_url)
+            pass
+
+        if not max_tms or projection.tilematrixsets[tilematrixset].levels > projection.tilematrixsets[max_tms].levels:
+            max_tms = tilematrixset
+            reprojTwmsCfgFilename = 'twms.config'
+            with open(os.path.join(twmsStagingPath, reprojTwmsCfgFilename), 'w+') as srcCfg:
+                srcCfg.write('Size {0}\n'.format(reprojOutSize))
+                if reprojSrcPageSize:
+                    srcCfg.write('PageSize {0}\n'.format(reprojOutPageSize))
+                if reprojSrcSkippedLevels:
+                    srcCfg.write('SkippedLevels {0}\n'.format(reprojOutSkippedLevels))
+                if reprojSrcBbox:
+                    srcCfg.write('BoundingBox {0}\n'.format(reprojOutBbox))
+                twmsSrcLayerPath = os.path.join(environment.wmtsReprojectEndpoint, identifier)
+                twmsSrcStylePath = os.path.join(twmsSrcLayerPath, 'default')
+                if static:
+                    twmsSrcPath = os.path.join(twmsSrcStylePath, tilematrixset)
+                else:
+                    twmsSrcTimePath = os.path.join(twmsSrcStylePath, '${date}')
+                    twmsSrcPath = os.path.join(twmsSrcTimePath, tilematrixset)
+                srcCfg.write('SourcePath {0}\n'.format(twmsSrcPath))
+                twmsSrcPostfix = None
+                if compression == 'JPEG':
+                    twmsSrcPostfix = '.jpg'
+                elif compression == 'PNG':
+                    twmsSrcPostfix = '.png'
+                srcCfg.write('SourcePostfix {0}'.format(twmsSrcPostfix))
 
         continue
     
@@ -3182,7 +3278,7 @@ else:
     current_conf = configuration_filename
 
 # run scripts
-if not no_twms and not reprojectionInfo:
+if not no_twms:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
@@ -3236,6 +3332,56 @@ if not no_twms and not reprojectionInfo:
             if no_xml == False:          
                     print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService+'/getTileService.xml'
                     shutil.copyfile(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService+'/getTileService.xml')
+
+        # Run the reproject Apache config stuff if we have those environment variables.
+        if twms_endpoint.apacheConfigHeaderLocation or twms_endpoint.apacheConfigLocation:
+            if not twms_endpoint.apacheConfigLocation:
+                log_sig_err('Missing <ApacheConfigLocation>', sigevent_url)
+            if not twms_endpoint.apacheConfigHeaderLocation:
+                log_sig_err('Missing <ApacheConfigHeaderLocation>', sigevent_url)
+            # Build main Apache config in the staging area
+            apacheConfStagingPath = os.path.join(twms_endpoint.path, twms_endpoint.apacheConfigBasename + '.conf')
+            with open(apacheConfStagingPath, 'w+') as apacheConf:
+                try:
+                    apacheHeaderPath = os.path.join(twms_endpoint.apacheConfigHeaderLocation, twms_endpoint.apacheConfigHeaderBasename + '.conf')
+                    with open(apacheHeaderPath, 'r') as header:
+                        apacheConf.write(header.read())
+                except (OSError, TypeError, IOError):
+                    pass
+                
+                # Write the TWMS apache conf snippet
+                twmsBaseEndpoint = environment.getCapabilities_twms
+                if os.path.split(os.path.dirname(twmsBaseEndpoint))[1] == '.lib':
+                    twmsBaseEndpoint = os.path.split(os.path.dirname(twmsBaseEndpoint))[0]
+                twmsCfgPath = os.path.join(twmsBaseEndpoint, '${layer}/twms.config')
+
+                twmsRegexp = 'twms.cgi'
+                
+                apacheConf.write('<Directory {0}>\n'.format(twmsBaseEndpoint))
+                apacheConf.write('\ttWMS_RegExp {0}\n'.format(twmsRegexp))
+                apacheConf.write('\ttWMS_ConfigurationFile {0}\n'.format(twmsCfgPath))
+                apacheConf.write('</Directory>\n')
+                # layers = [os.path.join(twms_endpoint.path, sfile)
+                #     for sfile in sorted(os.listdir(twms_endpoint.path), key=unicode.lower)
+                #         if sfile.endswith('.conf') and not sfile.startswith(twms_endpoint.apacheConfigBasename)]
+                # for layer in layers:
+                #     with open(layer, 'r') as f:
+                #         apacheConf.write(f.read())
+
+            # Copy Apache config and layer directories/config files to final locations
+            layer_dirs = [subdir for subdir in os.listdir(twms_endpoint.path) if os.path.isdir(os.path.join(twms_endpoint.path, subdir))]
+            for layer_dir in layer_dirs:
+                layer_endpoint = os.path.join(twmsBaseEndpoint, layer_dir)
+                if os.path.exists(layer_endpoint):
+                    shutil.rmtree(layer_endpoint)
+                layer_staging_path = os.path.join(twms_endpoint.path, layer_dir)
+                print '\nCopying reprojected layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+                shutil.copytree(os.path.join(twms_endpoint.path, layer_dir), layer_endpoint)
+
+            apacheConfFinalPath = os.path.join(twms_endpoint.apacheConfigLocation, twms_endpoint.apacheConfigBasename + '.conf')
+            print '\nCopying reprojected layer Apache config {0} -> {1}'.format(apacheConfStagingPath, apacheConfFinalPath)
+            shutil.copyfile(apacheConfStagingPath, apacheConfFinalPath)
+
 
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
@@ -3297,9 +3443,9 @@ if no_wmts == False:
         # Run the reproject Apache config stuff if we have those environment variables.
         if wmts_endpoint.apacheConfigHeaderLocation or wmts_endpoint.apacheConfigLocation:
             if not wmts_endpoint.apacheConfigLocation:
-                log_sig_err('Missing <WMTSReprojectApacheConfigLocation>', sigevent_url)
+                log_sig_err('Missing <ApacheConfigLocation>', sigevent_url)
             if not wmts_endpoint.apacheConfigHeaderLocation:
-                log_sig_err('Missing <WMTSReprojectApacheConfigHeaderLocation>', sigevent_url)
+                log_sig_err('Missing <ApacheConfigHeaderLocation>', sigevent_url)
             # Build main Apache config in the staging area
             apacheConfStagingPath = os.path.join(wmts_endpoint.path, wmts_endpoint.apacheConfigBasename + '.conf')
             with open(apacheConfStagingPath, 'w+') as apacheConf:
@@ -3307,7 +3453,7 @@ if no_wmts == False:
                     apacheHeaderPath = os.path.join(wmts_endpoint.apacheConfigHeaderLocation, wmts_endpoint.apacheConfigHeaderBasename + '.conf')
                     with open(apacheHeaderPath, 'r') as header:
                         apacheConf.write(header.read())
-                except (OSError, TypeError):
+                except (OSError, TypeError, IOError):
                     pass
                 layers = [os.path.join(wmts_endpoint.path, sfile)
                     for sfile in sorted(os.listdir(wmts_endpoint.path), key=unicode.lower)
