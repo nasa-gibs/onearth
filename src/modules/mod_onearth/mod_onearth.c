@@ -153,7 +153,7 @@ static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
 }
 
 static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
-	apr_time_exp_t date;
+	apr_time_exp_t date = {0};
 	// Convert start date to apr_time_exp_t
 	apr_time_exp_gmt(&date, start_epoch);
 	int i;
@@ -516,7 +516,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 
 			  	// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
-			  	apr_time_exp_t snap_date;
+			  	apr_time_exp_t snap_date = {0};
 			  	apr_time_exp_gmt(&snap_date, snap_epoch);
 
 			  	// Fix year part of file path
