@@ -139,6 +139,19 @@ static int evaluate_period(char *time_period)
 	return period;
 }
 
+static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
+{
+	struct tm t;
+	t.tm_year = date.tm_year;
+	t.tm_mon = date.tm_mon;
+	t.tm_mday = date.tm_mday;
+	t.tm_hour = date.tm_hour;
+	t.tm_min = date.tm_min;
+	t.tm_sec = date.tm_sec;
+	apr_time_t epoch = (apr_time_t)mktime(&t) * 1000 * 1000;
+	return epoch;
+}
+
 static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
 	apr_time_exp_t date;
 	// Convert start date to apr_time_exp_t
@@ -158,22 +171,10 @@ static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *
 		date.tm_year += (interval);
 	}
 	// Convert it back to epoch form
+	if (date.tm_year < 70) return get_pre_1970_epoch(date);
 	apr_time_exp_get(&start_epoch, &date);
 	return start_epoch;		
 
-}
-
-static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
-{
-	struct tm t;
-	t.tm_year = date.tm_year;
-	t.tm_mon = date.tm_mon;
-	t.tm_mday = date.tm_mday;
-	t.tm_hour = date.tm_hour;
-	t.tm_min = date.tm_min;
-	t.tm_sec = date.tm_sec;
-	apr_time_t epoch = (apr_time_t)mktime(&t) * 1000 * 1000;
-	return epoch;
 }
 
 static apr_time_t parse_date_string(char *string)
