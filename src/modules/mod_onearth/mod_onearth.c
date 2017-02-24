@@ -395,6 +395,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  else {
     		
 		  if (sizeof(time_period) > 0) {
+			// Fix request time (apache expects to see years since 1900 and zero-indexed months)
+			tm.tm_year -= 1900;
+			tm.tm_mon -= 1;
 		  	int i;
    		    for (i=0;i<num_periods;i++) {
 	   		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
@@ -415,9 +418,6 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 			  	apr_time_t end_epoch = parse_date_string(time_period);
 			  	apr_time_t req_epoch;
-			  	// Fix request time (apache expects to see years since 1900 and zero-indexed months)
-			  	tm.tm_year -= 1900;
-			  	tm.tm_mon -= 1;
 
 			  	// Can't use the Apache time struct for pre-1970 dates
 			  	if (tm.tm_year < 70) {
