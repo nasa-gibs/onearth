@@ -148,7 +148,7 @@ static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
 	t.tm_hour = date.tm_hour;
 	t.tm_min = date.tm_min;
 	t.tm_sec = date.tm_sec;
-	apr_time_t epoch = (apr_time_t)mktime(&t) * 1000 * 1000;
+	apr_time_t epoch = (apr_time_t)timegm(&t) * 1000 * 1000;
 	return epoch;
 }
 
