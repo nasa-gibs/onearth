@@ -218,7 +218,7 @@ onearth-install:
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
 
 	install -m 755 src/scripts/oe_utils.py \
-		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen/oe_utils.py
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	install -m 755 src/vectorgen/*.py \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	install -m 755 src/layer_config/conf/tilematrixsets.xml \
