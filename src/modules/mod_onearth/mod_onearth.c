@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.2.1
+ * Version 1.2.2
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -139,8 +139,21 @@ static int evaluate_period(char *time_period)
 	return period;
 }
 
+static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
+{
+	struct tm t;
+	t.tm_year = date.tm_year;
+	t.tm_mon = date.tm_mon;
+	t.tm_mday = date.tm_mday;
+	t.tm_hour = date.tm_hour;
+	t.tm_min = date.tm_min;
+	t.tm_sec = date.tm_sec;
+	apr_time_t epoch = (apr_time_t)timegm(&t) * 1000 * 1000;
+	return epoch;
+}
+
 static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
-	apr_time_exp_t date;
+	apr_time_exp_t date = {0};
 	// Convert start date to apr_time_exp_t
 	apr_time_exp_gmt(&date, start_epoch);
 	int i;
@@ -158,6 +171,7 @@ static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *
 		date.tm_year += (interval);
 	}
 	// Convert it back to epoch form
+	if (date.tm_year < 70) return get_pre_1970_epoch(date);
 	apr_time_exp_get(&start_epoch, &date);
 	return start_epoch;		
 
@@ -169,6 +183,7 @@ static apr_time_t parse_date_string(char *string)
 	// First we parse the date into a apr_time_exp_t struct.
 	apr_time_exp_t date = {0};
 	date.tm_year = apr_atoi64(string) - 1900; // tm_year is years since 1900
+
 	// Push the pointer forward
 	string += 5;
 	date.tm_mon = apr_atoi64(string) - 1; // tm_mon is zero-indexed
@@ -186,6 +201,10 @@ static apr_time_t parse_date_string(char *string)
 		string += 3;
 		date.tm_sec = apr_atoi64(string);
 	}
+
+	// The Apache time struct doesn't support dates before Jan 01, 1970, so we use the normal UNIX date stuff
+	// to get a negative epoch for those cases.
+	if (date.tm_year < 70) return get_pre_1970_epoch(date);
 
 	// Now convert the string into UNIX time and return it
 	apr_time_t epoch = 0;
@@ -377,6 +396,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  else {
     		
 		  if (sizeof(time_period) > 0) {
+			// Fix request time (apache expects to see years since 1900 and zero-indexed months)
+			tm.tm_year -= 1900;
+			tm.tm_mon -= 1;
 		  	int i;
    		    for (i=0;i<num_periods;i++) {
 	   		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
@@ -397,10 +419,13 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 			  	apr_time_t end_epoch = parse_date_string(time_period);
 			  	apr_time_t req_epoch;
-			  	// Fix request time (apache expects to see years since 1900 and zero-indexed months)
-			  	tm.tm_year -= 1900;
-			  	tm.tm_mon -= 1;
-			  	apr_time_exp_get(&req_epoch, &tm);
+
+			  	// Can't use the Apache time struct for pre-1970 dates
+			  	if (tm.tm_year < 70) {
+			  		req_epoch = get_pre_1970_epoch(tm);
+			  	} else {
+					apr_time_exp_get(&req_epoch, &tm);
+			  	}
 
 			  	// First, check if the request date is earlier than the start date of the period. (we don't snap forward)
 			  	if (req_epoch < start_epoch) {
@@ -491,7 +516,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 
 			  	// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
-			  	apr_time_exp_t snap_date;
+			  	apr_time_exp_t snap_date = {0};
 			  	apr_time_exp_gmt(&snap_date, snap_epoch);
 
 			  	// Fix year part of file path
@@ -943,8 +968,10 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
       else if (ap_find_token(cfg->p,cache->prefix,"lerc"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/lerc");
-       else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
- 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf");
+      else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf;type=mapbox-vector");
+      else if (ap_find_token(cfg->p,cache->prefix,"vnd.mapbox-vector-tile"))
+ 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/vnd.mapbox-vector-tile");
       else {
 	ap_log_error(APLOG_MARK,APLOG_ERR,0,server,
 	  "Type not found, using text/html for cache %s", cache->pattern);
@@ -1671,8 +1698,24 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Ftiff");
 	} else if (ap_strcasecmp_match(format, "image/lerc") == 0) {
 		strcpy(format,"image%2Flerc");
+	} // special handling for vectors
+	  else if (ap_strcasecmp_match(format, "application%2Fx-protobuf;type=mapbox-vector") == 0) {
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(format, "application/x-protobuf;type=mapbox-vector") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
 	} else if (ap_strcasecmp_match(format, "application/x-protobuf") == 0) {
-		strcpy(format,"application%2Fx-protobuf");
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(format, "application%2Fx-protobuf") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(format, "application/vnd.mapbox-vector-tile") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
+	} else if (ap_strcasecmp_match(format, "application%2Fvnd.mapbox-vector-tile") == 0) {
+		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
 	}
 	// handle colons
 	if (ap_strchr(time, ':') != 0) {
@@ -1757,6 +1800,8 @@ char *order_args(request_rec *r) {
 		args = apr_psprintf(r->pool, "request=GetCapabilities");
 	} else if (ap_strcasecmp_match(request, "GetTileService") == 0) { // getTileService
 		args = apr_psprintf(r->pool, "request=GetTileService");
+	} else if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // GetLegendGraphic is not supported
+		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
 	} else if ( ap_strcasestr(r->args,"layers") != 0) { // is KML
 //    	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting KML");
 	} else if (service[0]=='\0') { // missing WMTS service
@@ -1764,7 +1809,7 @@ char *order_args(request_rec *r) {
 	} else if (ap_strcasecmp_match(service, "WMTS") != 0) { // unrecognized service
 		wmts_add_error(r,400,"InvalidParameterValue","SERVICE", "Unrecognized service");
 	} else { // invalid REQUEST value
-		wmts_add_error(r,501,"OperationNotSupported","REQUEST", "The request type is not supported");
+		wmts_add_error(r,400,"InvalidParameterValue","REQUEST", "Unrecognized request");
 	}
 
 	return args;
@@ -2358,13 +2403,14 @@ static int mrf_handler(request_rec *r)
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
   // Set gzip encoding if output is pbf
-  if (apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf") == 0) {
+  if ((apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf;type=mapbox-vector") == 0) || (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0)) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
+  } else {
+	  ap_set_content_type(r,cfg->meta[count].mime_type);
   }
   if (apr_strnatcmp(cfg->meta[count].mime_type, "image/lerc") == 0) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "deflate");
   }
-  ap_set_content_type(r,cfg->meta[count].mime_type);
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
 
@@ -2396,7 +2442,7 @@ int rewrite_rest_uri(request_rec *r) {
 	char *p;
 	char *params[16];
 	char *last;
-	char *format = apr_pcalloc(r->pool,26);
+	char *format = apr_pcalloc(r->pool,45);
 
 	i = 0;
 	p = apr_strtok(r->uri,"/",&last);
@@ -2431,7 +2477,9 @@ int rewrite_rest_uri(request_rec *r) {
 	}
 
 	if (ap_strcasecmp_match(params[length+d],"pbf") == 0) {
-		sprintf(format,"application%%2Fx-protobuf");
+		sprintf(format,"application%%2Fx-protobuf;type=mapbox-vector");
+	} else if (ap_strcasecmp_match(params[length+d],"mvt") == 0) {
+		sprintf(format,"application%%2Fvnd.mapbox-vector-tile");
 	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
 		sprintf(format,"image%%2F%sjpeg");
 	} else {
@@ -2456,7 +2504,7 @@ static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
   if (!(r->args)) {
-	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") )) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else

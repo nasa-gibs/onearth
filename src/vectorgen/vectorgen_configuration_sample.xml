@@ -16,16 +16,17 @@ limitations under the License.
  <date_of_data>20160429</date_of_data>
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
-  <file>input_dir/terra_2016-04-29_epsg4326_points_descending.shp</file>
+  <file>input_dir/terra_2016-03-04_epsg4326_points_descending.shp</file>
  </input_files> 
  <output_dir>output_dir/</output_dir>
  <working_dir>working_dir/</working_dir>
  <output_name>{$parameter_name}%Y%j_</output_name>
- <output_format>MRF</output_format>
+ <output_format>MVT-MRF</output_format>
  <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
- <tilematrixset>EPSG4326_16km</tilematrixset>
- <tilematrixset_definition_file>/etc/onearth/config/conf/tilematrixsets.xml</tilematrixset_definition_file>
- <feature_reduce_rate>2.5</feature_reduce_rate>
- <cluster_reduce_rate>2</cluster_reduce_rate>
+ <target_x>2048</target_x>
+ <extents>-20037508.3428,-20037508.3428,20037508.3428,20037508.3428</extents>
+ <tile_size>256</tile_size>
+ <feature_reduce_rate>0</feature_reduce_rate>
+ <cluster_reduce_rate>0</cluster_reduce_rate>
 </vectorgen_configuration>

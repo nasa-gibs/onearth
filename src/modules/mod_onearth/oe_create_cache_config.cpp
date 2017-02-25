@@ -34,7 +34,7 @@
 
 
 // oe_create_cache_config.cpp : Defines the entry point for the console application.
-// version 1.2.1
+// version 1.2.2
 
 // For windows, this file should exist but be empty on Linux
 #include "stdafx.h"
@@ -331,7 +331,11 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
         } else if (compression=="PBF") {
             dat_ext=".pvt";
             sig=0;
-            h_format="Content-type: application/x-protobuf";
+            h_format="Content-type: application/x-protobuf;type=mapbox-vector";
+        } else if (compression=="MVT") {
+            dat_ext=".pvt";
+            sig=0;
+            h_format="Content-type: application/vnd.mapbox-vector-tile";
         }
 
         idx_fname=CPLGetXMLValue(input,"Rsets.IndexFileName",ifname);

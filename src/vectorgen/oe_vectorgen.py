@@ -56,7 +56,7 @@ try:
 except:
     sys.exit('ERROR: cannot find GDAL/OGR modules')
 
-versionNumber = '1.0.0'
+versionNumber = '1.2.2'
 basename = None
 
 def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         date_of_data = get_dom_tag_value(dom, 'date_of_data')
     
         # Define output basename
-        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time])    
+        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time, '_', str(os.getpid())])    
         
         # for sub-daily imagery
         try: 
@@ -156,18 +156,6 @@ if __name__ == '__main__':
             # default to GIBS naming convention
             output_name = '{$parameter_name}%Y%j_'
         output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
-        # user-specified tilematrixset to build
-        if output_format == 'mrf':
-            try:
-                tilematrixset = get_dom_tag_value(dom, 'tilematrixset')
-            except:
-                log_sig_exit('ERROR', 'Must specify a tilematrixset.')
-            # Tilematrixset definition file (defaults to current directory/tilematrixsets.xml)
-            try:
-                tilematrixset_definition_file = get_dom_tag_value(dom, 'tilematrixset_definition_file')
-            except:
-                log_sig_warn("Can't find tilematrix definition...using " + os.getcwd() + "/tilematrixsets.xml", sigevent_url)
-                tilematrixset_definition_file = os.path.join(os.getcwd(), 'tilematrixsets.xml')
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -197,7 +185,50 @@ if __name__ == '__main__':
                 log_sig_exit('ERROR', "<input_files> or <input_dir> is required", sigevent_url)
             else:
                 input_files = ''
-
+        if output_format == 'mrf':
+            log_sig_warn('"MRF" output format not supported, using "MVT-MRF" instead', sigevent_url)
+            output_format = 'mvt-mrf'
+        if output_format == 'mvt-mrf':
+            try:
+                target_x = int(get_dom_tag_value(dom, 'target_x'))
+            except IndexError:
+                log_sig_exit('ERROR', '<target_x> is required but not specified', sigevent_url)
+            except ValueError:
+                log_sig_exit('ERROR', '<target_x> value is invalid', sigevent_url)
+            try:
+                target_y = int(get_dom_tag_value(dom, 'target_y'))
+            except IndexError:
+                target_y = None
+            except ValueError:
+                log_sig_exit('ERROR', '<target_y> value is invalid', sigevent_url)
+            try:
+                extents_str = get_dom_tag_value(dom, 'extents')
+                if len(extents_str.split(',')) == 4:
+                    extents = [float(extent) for extent in extents_str.split(',')]
+                elif len(extents_str.split(' ')) == 4:
+                    extents = [float(extent) for extent in extents_str.split(' ')]
+                else:
+                    log_sig_exit('ERROR', 'Invalid <extents> value -- must be comma or space-separated')
+            except IndexError:
+                extents = (-180, -90, 180, 90)
+                log_sig_warn('<extents> not specified, assuming -180, -90, 180, 90', sigevent_url)
+            except ValueError:
+                log_sig_exit('ERROR', 'Problem processing <extents>, must be comma or space-separated list.', sigevent_url)
+            try:
+                tile_size = int(get_dom_tag_value(dom, 'tile_size'))
+            except IndexError:
+                tile_size = 512
+                log_sig_warn('<tile_size> not specified, assuming 512', sigevent_url)
+            except ValueError:
+                log_sig_exit('ERROR', 'Invalid <tile_size> specified', sigevent_url)
+            try:
+                overview_levels_str = get_dom_tag_value(dom, '<overview_levels>')
+                if ',' in overview_levels_str:
+                    overview_levels = overview_levels_str.split(',')
+                else:
+                    overview_levels = overview_levels_str.split(' ')
+            except IndexError:
+                overview_levels = None
         # Close file.
         config_file.close()
     
@@ -247,9 +278,11 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
-    if output_format == 'mrf':
-        log_info_mssg(str().join(['config tilematrixset_definition_file:           ', tilematrixset_definition_file]))
-        log_info_mssg(str().join(['config tilematrixset:           ', tilematrixset]))
+    if output_format == 'mvt-mrf':
+        log_info_mssg(str().join(['config target_x:           ', str(target_x)]))
+        log_info_mssg(str().join(['config target_y:           ', str(target_y) if target_y else 'Not specified']))
+        log_info_mssg(str().join(['config extents:           ', str(extents)]))
+        log_info_mssg(str().join(['config overview_levels:           ', str(overview_levels)]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
@@ -274,12 +307,9 @@ if __name__ == '__main__':
     if input_files != '':
         input_files = input_files.strip()
         alltiles = input_files.split(',')
-    if input_dir != None:
-        if output_format == 'esri shapefile':
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*shp']))
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
-        else:
-            alltiles = alltiles + glob.glob(str().join([input_dir, '*']))
+    if input_dir != None: # search for only .shp or json/geojson files
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*.shp']))
+        alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
     
     striptiles = []
     for tile in alltiles:
@@ -312,23 +342,30 @@ if __name__ == '__main__':
                     shutil.move(out_basename+"/"+title+ext, out_filename+ext)
                 shutil.rmtree(out_basename)
                 mssg=str().join(['Output created:  ', out_filename+".shp"])
-        elif output_format == "mrf": # Create MVT-MRF
-            for tile in alltiles:
+        elif output_format == "mvt-mrf": # Create MVT-MRF
+            for idx, tile in enumerate(alltiles):
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
+                tile_layer_name = parameter_name + '_' + date_of_data
                 if source_epsg != target_epsg:
-                    outfile = os.path.join(working_dir, basename + '_reproject' + os.path.splitext(tile)[1])
+                    outfile = os.path.join(working_dir, basename + '_reproject_' + str(idx) + os.path.splitext(tile)[1])
                     ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1] else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
                     run_command(ogr2ogr_command_list, sigevent_url)
-                    tile = outfile
-                tile_layer_name = parameter_name + '_' + date_of_data
-                create_vector_mrf(tile, working_dir, basename, tile_layer_name, tilematrixset, tilematrixset_definition_file, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
-                files = glob.glob(working_dir+"/"+basename+"*")
-                for mfile in files:
-                    title, ext = os.path.splitext(os.path.basename(mfile))
-                    if ext not in [".log",".xml"]:
-                        log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
-                        shutil.move(working_dir+"/"+title+ext, out_filename+ext)
-                mssg=str().join(['Output created:  ', out_filename+".mrf"])
+                    alltiles[idx] = outfile
+                
+            log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
+            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+            
+            files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
+            for mfile in files:
+                title, ext = os.path.splitext(os.path.basename(mfile))
+                if ext not in [".log",".xml"]:
+                    log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
+                    if os.path.isfile(out_filename+ext):
+                        log_sig_warn(out_filename+ext + " already exists...overwriting", sigevent_url)
+                        os.remove(out_filename+ext)
+                    shutil.move(working_dir+"/"+title+ext, out_filename+ext)
+            mssg=str().join(['Output created:  ', out_filename+".mrf"])
+            
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
     

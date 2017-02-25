@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from osgeo import osr
 
-versionNumber = '1.2.1'
+versionNumber = '1.2.2'
 current_conf = None
 
 class WMTSEndPoint:
@@ -126,9 +126,10 @@ class Environment:
     """Environment information for layer(s)"""
     
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
         wmtsApacheConfigLocation, wmtsApacheConfigBasename, wmtsApacheConfigHeaderLocation, wmtsApacheConfigHeaderBasename, twmsApacheConfigLocation, twmsApacheConfigBasename, 
         twmsApacheConfigHeaderLocation, twmsApacheConfigHeaderBasename, wmtsReprojectEndpoint, twmsReprojectEndpoint):
+
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -144,6 +145,8 @@ class Environment:
         self.legendUrl = legendUrl
         self.colormap_dirs = colormap_dirs
         self.colormapUrls = colormapUrls
+        self.stylejson_dirs = stylejson_dirs
+        self.stylejsonUrls = stylejsonUrls
         self.mapfileStagingLocation = mapfileStagingLocation
         self.mapfileLocation = mapfileLocation
         self.mapfileLocationBasename = mapfileLocationBasename
@@ -528,6 +531,29 @@ def get_environment(environmentConfig):
                     url.attributes['version'] = ''
     except KeyError:
         colormapUrls = None
+        
+    # Same deal as colormaps for style JSON files
+    try:
+        stylejsonLocations = dom.getElementsByTagName('StyleJSONLocation')
+        for location in stylejsonLocations:
+            if 'version' not in location.attributes.keys():
+                if len(stylejsonLocations) > 1:
+                    log_sig_err('Multiple <StyleJSONLocation> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    location.attributes['version'] = ''
+    except KeyError:
+        stylejsonLocations = None
+
+    try:
+        stylejsonUrls = dom.getElementsByTagName('StyleJSONURL')
+        for url in stylejsonUrls:
+            if 'version' not in url.attributes.keys():
+                if len(stylejsonUrls) > 1:
+                    log_sig_err('Multiple <StyleJSONURL> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    url.attributes['version'] = ''
+    except KeyError:
+        stylejsonUrls = None
 
     # Get mapfile parameters from environment config file
     # Get/create mapfile staging location
@@ -639,6 +665,7 @@ def get_environment(environmentConfig):
                        twmsStagingLocation,
                        legendLocation, legendUrl,
                        colormapLocations, colormapUrls,
+                       stylejsonLocations, stylejsonUrls,
                        mapfileStagingLocation, mapfileLocation,
                        mapfileLocationBasename, mapfileConfigLocation, 
                        mapfileConfigBasename,
@@ -935,7 +962,10 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             if year == True: # get newest and oldest years
                 years = []
                 for yearDirPath in glob.glob(archiveLocation+'/[0-9]*'):
-                    years.append(os.path.basename(yearDirPath))
+                    if os.listdir(yearDirPath) != []: # check if directory is not empty
+                        years.append(os.path.basename(yearDirPath))
+                    else:
+                        log_sig_warn(yearDirPath + " is empty", sigevent_url)
                     years.sort()
                 if len(years) > 0:
                     oldest_year = years[0]
@@ -1546,8 +1576,8 @@ for conf in conf_files:
             if compression == "EPNG":
                 compression = "PNG"
                 is_encoded = True
-            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF"]:
-                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or PBF in ' + conf, sigevent_url)
+            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF", "MVT"]:
+                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, PBF, or MVT in ' + conf, sigevent_url)
                 continue
         except IndexError:
             if vectorType is None:
@@ -1605,6 +1635,10 @@ for conf in conf_files:
             tiledGroupName = get_dom_tag_value(dom, 'TiledGroupName')
         except:
             tiledGroupName = identifier + " tileset"
+        try:
+            wmsGroupName = get_dom_tag_value(dom, 'WMSGroupName')
+        except:
+            wmsGroupName = None
         try:
             abstract = get_dom_tag_value(dom, 'Abstract')
         except:
@@ -1703,6 +1737,53 @@ for conf in conf_files:
 
                 colormap.attributes['url'] = url
                 colormap.attributes['location'] = location
+                
+        # Similar treatment as ColorMap for StyleJSON
+        stylejsons = []
+        for stylejson in dom.getElementsByTagName('StyleJSON'):
+            if stylejson.firstChild:
+                stylejsons.append(stylejson)
+                
+        # Set default StyleJSON
+        default_stylejson = None
+        if stylejsons:
+            if len(stylejsons) == 1:
+                default_stylejson = stylejsons[0]
+            else:
+                for stylejson in stylejsons:                
+                    if 'default' in stylejson.attributes.keys() and stylejson.attributes['default'].value == 'true':
+                        if default_stylejson is not None:
+                            err_msg = 'Multiple <StyleJSON> elements have "default=true" attribute but only one is allowed, using ' + stylejson.toxml()
+                            log_sig_err(err_msg, sigevent_url)
+                        default_stylejson = stylejson
+            if len(stylejsons) > 1 and default_stylejson is None:
+                default_stylejson = stylejsons[-1]
+                err_msg = 'Multiple <StyleJSON> elements but none have "default=true" attribute, using ' + default_stylejson.toxml()
+                log_sig_err(err_msg, sigevent_url)
+        
+        # Match <StyleJSONLocation> and <StyleJSONURL> to style json files with the same version and set them as attributes of the <StyleJSON>
+        if stylejsons:
+            for stylejson in stylejsons:
+                if 'version' not in stylejson.attributes.keys():
+                    stylejson.attributes['version'] = ''
+
+                stylejson_value = stylejson.firstChild.nodeValue
+                version = stylejson.attributes['version'].value
+                location = next((location.firstChild.nodeValue for location in environment.stylejson_dirs if location.attributes['version'].value == version), None)
+                url = next((url.firstChild.nodeValue for url in environment.stylejsonUrls if url.attributes['version'].value == version), None)
+
+                if not location:
+                    location = ''
+                    err_msg = "StyleJSONLocation for version '{0}' not defined for environment {1} - Trying StyleJSON path {2}".format(version, environmentConfig, stylejson_value)
+                    log_sig_warn(err_msg, sigevent_url)
+
+                if not url:
+                    url = ''
+                    err_msg = "StyleJSONURL for version '{0}' not defined for environment {1} - Trying StyleJSON path {2}".format(version, environmentConfig, stylejson_value)
+                    log_sig_warn(err_msg, sigevent_url)
+
+                stylejson.attributes['url'] = url
+                stylejson.attributes['location'] = location
 
         try:
             emptyTile = get_dom_tag_value(dom, 'EmptyTile')
@@ -1765,6 +1846,8 @@ for conf in conf_files:
     log_info_mssg('config: TiledGroupName: ' + tiledGroupName)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
+    if wmsGroupName:
+        log_info_mssg('config: WMSGroupName: ' + wmsGroupName)
     if emptyTile:
         log_info_mssg('config: EmptyTile: ' + emptyTile)
     if str(emptyTileSize) != "":
@@ -1804,6 +1887,10 @@ for conf in conf_files:
         for colormap in colormaps:
             map_value = colormap.firstChild.nodeValue.strip()
             log_info_mssg('config: ColorMap: ' + str(map_value))
+    if stylejsons:
+        for stylejson in stylejsons:
+            json_value = stylejson.firstChild.nodeValue.strip()
+            log_info_mssg('config: StyleJSON: ' + str(json_value))
     log_info_mssg('config: Patterns: ' + str(patterns))
     if len(rest_patterns) > 0:
         log_info_mssg('config: WMTS-REST Patterns: ' + str(rest_patterns))
@@ -2488,9 +2575,10 @@ $Patterns</TiledGroup>"""
         elif compression.lower() in ['lerc']:
             dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
             mrf_format = 'image/lerc'
-        elif compression.lower() in ['pbf']:
+        elif compression.lower() in ['pbf', 'mvt']:
+            compression = "PBF";
             dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
-            mrf_format = 'application/x-protobuf'
+            mrf_format = 'application/x-protobuf;type=mapbox-vector'
         elif vectorType is not None:
             dataFileLocation = dataFileLocation.replace('.mrf','.shp')
         else:
@@ -2959,6 +3047,7 @@ $Patterns</TiledGroup>"""
             $BoundingBox
             <ows:Identifier>$Identifier</ows:Identifier>
             <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap$MapVersion" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
+            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style$MapVersion" xlink:href="$StyleJSON" xlink:title="Mapbox GL Layer Styles"/>
             <Style isDefault="true">
                 <ows:Title xml:lang=\"en\">default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
@@ -3019,10 +3108,37 @@ $Patterns</TiledGroup>"""
                             newline = line_template.replace("$MapVersion", '/' + colormap.attributes['version'].value)
                             newline = newline.replace("$ColorMap", colormap_url)
                             line += newline[3:]
+            if '$StyleJSON' in line:
+                if stylejsons == None or default_stylejson == None:
+                    line = ''
+                else:
+                    line_template = line
+                    # First create line for default colormap
+                    if default_stylejson.attributes['url'].value != '':
+                        default_stylejson_url = add_trailing_slash(default_stylejson.attributes['url'].value) + default_stylejson.firstChild.nodeValue
+                    else:
+                        default_stylejson_url = default_stylejson.firstChild.nodeValue
+                    line = line.replace("$MapVersion", '')   
+                    line = line.replace("$StyleJSON", default_stylejson_url)    
+                    # Add rest of tags
+                    if default_stylejson.attributes['version'].value != '':
+                        for stylejson in stylejsons:
+                            if stylejson.attributes['url'].value != '':
+                                stylejson_url = add_trailing_slash(stylejson.attributes['url'].value) + stylejson.firstChild.nodeValue
+                            else:
+                                stylejson_url = stylejson.firstChild.nodeValue
+                            newline = line_template.replace("$MapVersion", '/' + stylejson.attributes['version'].value)
+                            newline = newline.replace("$StyleJSON", stylejson_url)
+                            line += newline[3:]
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
+                if mrf_format == "application/x-protobuf;type=mapbox-vector":
+                    line = line + line.replace("   ","",1).replace(mrf_format,"application/vnd.mapbox-vector-tile")
             if '$FileType' in line:
-                line = line.replace("$FileType",mrf_format.replace("x-protobuf","pbf").split('/')[1])
+                line = line.replace("$FileType",mrf_format.replace("x-protobuf;type=mapbox-vector","pbf").split('/')[1])
+                if "application/vnd.mapbox-vector-tile" in line:
+                    line = line.replace("}.pbf","}.mvt")
+                line = line.replace("}.mvt","}.pbf",1) # looks like the previous line will replace all
             if '$WMTSServiceURL' in line:
                 line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)      
             if '$TileMatrixSet' in line:
@@ -3200,11 +3316,11 @@ $Patterns</TiledGroup>"""
         with open(mapfile_name, 'w+') as mapfile:
             # Initialize validation values
             timeDirPattern = "%"+identifier+"_TIME%_" if not subdaily else "%"+identifier+"_TIME%"
-            timeParamRegex = '"^[0-9]{7}$"'
+            timeParamRegex = '"^([0-9]|T){7}$"'
             yearDirPattern = "%"+identifier+"_YEAR%"
-            yearDirRegex = '"^[0-9]{4}$"'
+            yearDirRegex = '"^([0-9]|Y){4}$"'
             subdailyDirPattern = "%"+identifier+"_SUBDAILY%_"
-            subdailyParamRegex = '"^[0-9]{6}$"'
+            subdailyParamRegex = '"^([0-9]|T){6}$"'
 
             minx = projection.lowercorner[0]
             miny = projection.lowercorner[1]
@@ -3214,6 +3330,18 @@ $Patterns</TiledGroup>"""
             # Write mapfile lines
             mapfile.write("LAYER\n")
             mapfile.write("\tNAME\t\"" + identifier + "\"\n")
+            if wmsGroupName:
+                mapfile.write("\tGROUP\t\"" + wmsGroupName + "\"\n")
+                # default time/year needs to be handled by mod_oems for layer groups
+                default_time = ""
+                default_year = ""
+                default_subdaily = ""
+                timeDirPattern = ("%"+wmsGroupName+"_TIME%") + timeDirPattern
+                yearDirPattern = yearDirPattern + "%"+wmsGroupName+"_YEAR%"
+            else:
+                default_time = "TTTTTTT"
+                default_year = "YYYY"
+                default_subdaily = "TTTTTT"
             if vectorType:
                 layer_type = vectorType.upper()
             else:
@@ -3223,14 +3351,23 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tVALIDATION\n")
             # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
             if not static:
-                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + "TTTTTTT" + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + default_time + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" + timeParamRegex + "\n")
+                if wmsGroupName: # add group substitutions as well
+                    mapfile.write("\t\t\"default_" + wmsGroupName + "_TIME\"\t\t\"" + default_time + "\"\n")
+                    mapfile.write("\t\t\"" + wmsGroupName + "_TIME\"\t\t\t" + timeParamRegex + "\n")
             if not static and year:
-                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + "YYYY" + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + default_year + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" + yearDirRegex + "\n")
+                if wmsGroupName:
+                    mapfile.write("\t\t\"default_" + wmsGroupName + "_YEAR\"\t\"" + default_year + "\"\n")
+                    mapfile.write("\t\t\"" + wmsGroupName + "_YEAR\"\t\t" + yearDirRegex + "\n")
             if not static and subdaily:
-                mapfile.write("\t\t\"default_" + identifier + "_SUBDAILY\"\t\"" + "TTTTTT" + "\"\n")
+                mapfile.write("\t\t\"default_" + identifier + "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
                 mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
+                if wmsGroupName:
+                    mapfile.write("\t\t\"default_" + wmsGroupName + "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
+                    mapfile.write("\t\t\"" + wmsGroupName + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")             
             mapfile.write("\tEND\n")
             mapfile.write("\tMETADATA\n")
             mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
@@ -3243,6 +3380,8 @@ $Patterns</TiledGroup>"""
                     timeExtent = timeExtent + timeElement.firstChild.data.strip() + ","
                 mapfile.write("\t\t\"wms_timeextent\"\t\t\"" + timeExtent.rstrip(',') + "\"\n") 
                 mapfile.write("\t\t\"wms_timedefault\"\t\t\"" + defaultDate + "\"\n")
+            if wmsGroupName:
+                mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName + "\"\n")
             if vectorType:
                 mapfile.write('\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
                 mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
