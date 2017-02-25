@@ -138,13 +138,6 @@ class TestVectorgen(unittest.TestCase):
         
         # Run vectorgen
         os.chdir(test_artifact_path)
-        if os.path.isfile("../../tilematrixsets.xml") == False: # Check for tilematrixsets.xml
-            if os.path.isfile("/etc/onearth/config/conf/tilematrixsets.xml"):
-                os.symlink("/etc/onearth/config/conf/tilematrixsets.xml", test_artifact_path+"/tilematrixsets.xml")
-            else:
-                self.fail("Cannot find tilematrixsets.xml. Aborting test.")
-        else:
-            os.symlink("../../tilematrixsets.xml", test_artifact_path+"/tilematrixsets.xml")
         cmd = 'oe_vectorgen -c ' + self.mrf_test_config
         run_command(cmd, ignore_warnings=True)
 
