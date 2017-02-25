@@ -139,8 +139,21 @@ static int evaluate_period(char *time_period)
 	return period;
 }
 
+static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
+{
+	struct tm t;
+	t.tm_year = date.tm_year;
+	t.tm_mon = date.tm_mon;
+	t.tm_mday = date.tm_mday;
+	t.tm_hour = date.tm_hour;
+	t.tm_min = date.tm_min;
+	t.tm_sec = date.tm_sec;
+	apr_time_t epoch = (apr_time_t)timegm(&t) * 1000 * 1000;
+	return epoch;
+}
+
 static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
-	apr_time_exp_t date;
+	apr_time_exp_t date = {0};
 	// Convert start date to apr_time_exp_t
 	apr_time_exp_gmt(&date, start_epoch);
 	int i;
@@ -158,6 +171,7 @@ static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *
 		date.tm_year += (interval);
 	}
 	// Convert it back to epoch form
+	if (date.tm_year < 70) return get_pre_1970_epoch(date);
 	apr_time_exp_get(&start_epoch, &date);
 	return start_epoch;		
 
@@ -169,6 +183,7 @@ static apr_time_t parse_date_string(char *string)
 	// First we parse the date into a apr_time_exp_t struct.
 	apr_time_exp_t date = {0};
 	date.tm_year = apr_atoi64(string) - 1900; // tm_year is years since 1900
+
 	// Push the pointer forward
 	string += 5;
 	date.tm_mon = apr_atoi64(string) - 1; // tm_mon is zero-indexed
@@ -186,6 +201,10 @@ static apr_time_t parse_date_string(char *string)
 		string += 3;
 		date.tm_sec = apr_atoi64(string);
 	}
+
+	// The Apache time struct doesn't support dates before Jan 01, 1970, so we use the normal UNIX date stuff
+	// to get a negative epoch for those cases.
+	if (date.tm_year < 70) return get_pre_1970_epoch(date);
 
 	// Now convert the string into UNIX time and return it
 	apr_time_t epoch = 0;
@@ -377,6 +396,9 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  else {
     		
 		  if (sizeof(time_period) > 0) {
+			// Fix request time (apache expects to see years since 1900 and zero-indexed months)
+			tm.tm_year -= 1900;
+			tm.tm_mon -= 1;
 		  	int i;
    		    for (i=0;i<num_periods;i++) {
 	   		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Evaluating time period %s", time_period);
@@ -397,10 +419,13 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 			  	apr_time_t end_epoch = parse_date_string(time_period);
 			  	apr_time_t req_epoch;
-			  	// Fix request time (apache expects to see years since 1900 and zero-indexed months)
-			  	tm.tm_year -= 1900;
-			  	tm.tm_mon -= 1;
-			  	apr_time_exp_get(&req_epoch, &tm);
+
+			  	// Can't use the Apache time struct for pre-1970 dates
+			  	if (tm.tm_year < 70) {
+			  		req_epoch = get_pre_1970_epoch(tm);
+			  	} else {
+					apr_time_exp_get(&req_epoch, &tm);
+			  	}
 
 			  	// First, check if the request date is earlier than the start date of the period. (we don't snap forward)
 			  	if (req_epoch < start_epoch) {
@@ -491,7 +516,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 
 			  	// We have a snap date, time to build the filename (remember that tm_yday is zero-indexed)
-			  	apr_time_exp_t snap_date;
+			  	apr_time_exp_t snap_date = {0};
 			  	apr_time_exp_gmt(&snap_date, snap_epoch);
 
 			  	// Fix year part of file path
