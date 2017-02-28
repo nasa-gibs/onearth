@@ -221,13 +221,6 @@ static int pre_hook(request_rec *r)
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
         }
-        
-        const char *layer = NULL;
-        if ((param = apr_table_get(args_table, "LAYER"))) {
-            layer = param;
-        } else {
-            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
-        }
 
         const char *style = NULL;
         if ((param = apr_table_get(args_table, "STYLE"))) {
@@ -249,13 +242,22 @@ static int pre_hook(request_rec *r)
 
         const char *request = NULL;
         if ((param = apr_table_get(args_table, "REQUEST"))) {
-            if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTileService") != 0 &&apr_strnatcasecmp(param, "GetTile") != 0) {
+            if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0) {
                 wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
             } else {
                 request = param;
             }
         }
         
+        const char *layer = NULL;
+        if ((param = apr_table_get(args_table, "LAYER"))) {
+            layer = param;
+        } else {
+            if (apr_strnatcasecmp(request, "GetCapabilities") != 0) {
+                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
+            }
+        }
+
         const char *service = NULL;
         if ((param = apr_table_get(args_table, "SERVICE"))) {
             if (apr_strnatcasecmp(param, "WMTS"))
@@ -322,6 +324,10 @@ static int pre_hook(request_rec *r)
             request_rec *rr = ap_sub_req_lookup_uri(out_uri, r, r->output_filters);   
             apr_table_set(rr->notes, "mod_wmts_date", time ? time : "default");
             return ap_run_sub_req(rr);    
+        } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
+            request_rec *rr = ap_sub_req_lookup_uri("getCapabilities.xml", r, r->output_filters);   
+            ap_set_content_type(rr, "text/xml");
+            return ap_run_sub_req(rr);   
         }
         if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
         return DECLINED;
@@ -417,13 +423,16 @@ static int post_hook(request_rec *r)
             wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "LAYER", "LAYER does not exist");
             return wmts_return_all_errors(r, errors, wmts_errors);
         }
-    } else if (!apr_strnatcasecmp(cfg->role, "layer")) {
+    } 
+    if (!apr_strnatcasecmp(cfg->role, "layer")) {
         wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","STYLE", "STYLE is invalid for LAYER");
         return wmts_return_all_errors(r, errors, wmts_errors);
-    } else if (!apr_strnatcasecmp(cfg->role, "style")) {
+    } 
+    if (!apr_strnatcasecmp(cfg->role, "style")) {
         wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
         return wmts_return_all_errors(r, errors, wmts_errors);
-    } else if (!apr_strnatcasecmp(cfg->role, "tilematrixset")) {
+    } 
+    if (!apr_strnatcasecmp(cfg->role, "tilematrixset")) {
         // This would be a tile-level request and as such errors are handled by the pre-hook.
     }
     return DECLINED;
