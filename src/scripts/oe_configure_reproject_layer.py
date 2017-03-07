@@ -50,7 +50,11 @@ from optparse import OptionParser
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
     'image/png': '.png',
-    'image/jpeg': '.jpg'
+    'image/jpeg': '.jpg',
+    'image/tiff': '.tif',
+    'image/lerc': '.lerc',
+    'application/x-protobuf;type=mapbox-vector': '.pbf',
+    'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
 
@@ -262,6 +266,12 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 dest_url = '{0}/{1}'.format(dest_url, src_tilematrixset_name)
             dest_file_type = dest_resource_url_elem.get('format')
             dest_file_ext = get_ext_for_file_type(dest_file_type)
+            if dest_file_ext == None:
+                log_sig_warn("File type is not supported for OnEarth: " + dest_file_type, sigevent_url)
+                break
+            if dest_file_ext in ['.tif', '.lerc', '.mvt', '.pbf']:
+                log_sig_warn("File type is not supported for reproject: " + dest_file_type, sigevent_url)
+                break
 
             if wmts:
                 # Write the source and reproject (output) configuration files
@@ -331,7 +341,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                         twms_src_path = os.path.join(twms_src_time_path, dest_tilematrixset_name)
                     twms_cfg.write('SourcePath {0}\n'.format(twms_src_path))
                     twms_cfg.write('SourcePostfix {0}'.format(dest_file_ext))
-
+                    
+        if dest_file_ext == None: # Skip layer if unsupported file type
+            continue
+        
         if wmts:
             # Finish building the layer Apache config
             layer_apache_config = '<Directory {0}>\n'.format(layer_endpoint)
@@ -366,7 +379,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                         with open(wmts_apache_header_path, 'r') as header:
                             wmts_apache_config_file.write(header.read())
                     except IOError:
-                        log_sig_warn("Can't open WMTS reproject Apache header file: " + wmts_apache_header_path)
+                        log_sig_warn("Can't open WMTS reproject Apache header file: " + wmts_apache_header_path, sigevent_url)
 
                     # Write endpoint Apache stuff
                     wmts_apache_config_file.write(endpoint_apache_config)
