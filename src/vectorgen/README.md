@@ -27,15 +27,23 @@ Similar to with `mrfgen`, `oe_vectorgen` uses options specified in an XML file t
 
 **`<output_name>`** - Name for files created by `oe_vectorgen`. Defauts to `{$parameter_name}%Y%j_`.
 
-**`<output_format>`** - Currently supports "MVT" and "ESRI Shapefile".
+**`<output_format>`** - Currently supports "MRF-MVT" and "ESRI Shapefile".
 
 **`<target_epsg>`** - Specify the EPSG code of the output projection. 
 
 **`<source_epsg>`** - Specify the EPSG code of the input projection. 
 
-**`<tilematrixset>` (MVT only)** - Specify the TileMatrixSet to be used when building the pyramid of MVT tiles. This will determine how many zoom levels will be created and the dimensions of each level. The TileMatrixSet string specified must be present in the `<tilematrixset_definition_file>`.
+**`<target_x>` (MVT only)** - Pixel width of the highest zoom level (i.e., the bottom of the pyramid). Note that vector layers don't have a concept of pixels -- we use them as a way to describe the dimensions of the tile matrices and match them up with raster layer tile matrices. For example, if you select a `target_x` of 2048 and `tile_size` of 256, the highest zoom level will be 8 tiles wide (2048/256).
 
-**`<tilematrixset_definition_file>` (MVT only)** - Defaults to `$LCDIR/conf/tilematrixsets.xml`. Must contain the definition of the TileMatrixSet specified in `<tilematrixset>`.
+Please note that because the dimensions of the vector pyramid are arbitrary, this option is required and must be the exact dimension of the bottom of the pyramid. The easiest way to calculate this dimension is to multiply the desired tile pixel size by the width (in tiles) of the lowest level of the tile matrix set you wish to match up to.
+
+**`<target_y>` (MVT only)** - Same as above, but for height. If this dimension is omitted, a square (i.e. 1x1) tile matrix will be assumed for projected layers and a rectangular matrix.
+
+**`<extents>` (MVT only)** - The extents of the projection you're using in the units of that projection. Defaults to -180, -90, 180, 90 (degrees).
+
+**`<overview_levels>` (MVT only)** - By default, overview levels are calculated as powers of 2. You can list a comma separated list of overview levels if you prefer.
+
+**`<tile_size>` (MVT only)** - The tile size, in pixels relative to `<target_x>`. Match this up to any raster layers you wish to use these tiles with.
 
 **`<feature_reduce_rate>` (MVT only)** - In order to increase performance and reduce tile size, `oe_vectorgen` can drop features from lower zoom levels. For example, with a rate of 2.5, all the features in the overview zoom level (i.e., the highest) will be retained. For each successive zoom level, 1 feature (chosen randomly) will be retained for every 2.5 in the previous zoom level.
 

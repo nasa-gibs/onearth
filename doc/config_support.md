@@ -69,7 +69,9 @@ The environment configuration file contains information that the OnEarth layer c
 * **Legend URL** - The base URL for external access to legend images.
 * **ColorMap Location** - The file system path where color map files may be found. 
 * **ColorMap URL** - The base URL for external access to color maps.
-* **Mapfile** - (Optional) The file location and name of the Mapfile for MapServer.
+* **StyleJSON Location** - (Optional) The file system path where style JSON files may be found. 
+* **StyleJSON URL** - (Optional) The base URL for external access to style JSON files.
+* **MapfileLocation** - (Optional) The location of the Mapfile for MapServer.
 * **MapfileStagingLocation** (Optional) The location to stage configuration files for MapServer.
 * **MapfileConfigLocation** (Optional) The location of configuration files for MapServer.
 
@@ -91,7 +93,9 @@ The environment configuration does not have unique identifier.  Reference to the
     <LegendURL>http://onearth.project.org/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
     <ColorMapURL>http://onearth.project.org/colormaps/</ColorMapURL>
-    <Mapfile>/usr/share/onearth/demo/mapserver/epsg4326.map</Mapfile>
+    <StyleJSONLocation>/usr/share/onearth/demo/gl-styles/</StyleJSONLocation>
+    <StyleJSONURL>http://localhost/gl-styles/</StyleJSONURL>
+    <MapfileLocation basename="epsg4326">/usr/share/onearth/demo/mapserver/</MapfileLocation>
     <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG4326/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
 </EnvironmentConfiguration>

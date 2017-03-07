@@ -86,7 +86,8 @@ class TestModOnEarth(unittest.TestCase):
         restart_apache()
 
         # Set some handy constant values
-        self.tile_hashes = {'210964547845bbeb357f62c214128215': '1990-01-01',
+        self.tile_hashes = {'3d5280b13cbabc41676973d26844f310': '1948-03-01',
+                            '210964547845bbeb357f62c214128215': '1990-01-01',
                             '403705d851af424b3bf9cafbbf869d0c': '2000-01-01',
                             '4832d6edeed31fad0bd59bbc26d92275': '2000-06-01',
                             '7ea2038a74af2988dc432a614ec94187': '2000-07-03',
@@ -460,7 +461,7 @@ class TestModOnEarth(unittest.TestCase):
         # OperationNotSupported tests
         response_code = 501
         response_value = 'OperationNotSupported'
-        req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetLost&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
+        req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetLegendGraphic&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         if DEBUG:
             print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
         check_code = check_response_code(req_url, response_code, response_value)
@@ -562,7 +563,8 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_snapping_3a(self):
         layer_name = 'snap_test_3a'
-        tests = (('2015-01-01', '2015-01-01'),
+        tests = (('1948-03-01', '1948-03-01'),
+                 ('2015-01-01', '2015-01-01'),
                  ('2015-01-20', '2015-01-01'),
                  ('2015-12-31', '2015-12-01'),
                  ('2016-01-01', '2016-01-01'),
@@ -571,7 +573,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2014-12-31', 'black'))
         if DEBUG:
             print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period 3a: 2015-01-01/2016-01-01/P1M'
+            print 'Time Period 3a: 2015-01-01/2016-01-01/P1M & 1948-01-01/1948-03-01/P1M'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:

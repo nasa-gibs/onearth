@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.2.1
+ONEARTH_VERSION=1.2.2
 
 PREFIX=/usr/local
 LIB_PREFIX=/usr
@@ -217,7 +217,8 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
 
-	
+	install -m 755 src/scripts/oe_utils.py \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	install -m 755 src/vectorgen/*.py \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	install -m 755 src/layer_config/conf/tilematrixsets.xml \

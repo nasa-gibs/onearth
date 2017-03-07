@@ -33,7 +33,7 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.2.1
+ * Version 1.2.2
  */
 
 #include "mod_oems.h"
@@ -263,6 +263,17 @@ void get_param(char *args, char *Name, char *Value) {
 	char *pos1 = ap_strcasestr(args, Name);
 	if (pos1) {
 		pos1 += strlen(Name);
+		if (*pos1 != '=') { // Make sure we get a real parameter
+			char nName[(strlen(Name) + 1)];
+			sprintf(nName, "%s=", Name);
+			pos1 = ap_strcasestr(args, nName);
+			if (pos1) {
+				pos1 += strlen(Name);
+			} else {
+				Value[0]='\0';
+				return;
+			}
+		}
 		if (*pos1 == '=') {
 			pos1++;
 			while (*pos1 && *pos1 != '&') {
@@ -520,13 +531,19 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	if(strlen(layer_subdaily_value) != 0) {
 	    		subdaily = layer_subdaily_value;
 	    	}
+	    	// set to default if no time
+    		if (strlen(doytime) == 0) {
+    			doytime = "TTTTTTT";
+    			productyear = "YYYY";
+    		} else {
+    	    	apr_cpystrn(productyear, doytime, 5);
+    	    	productyear[4] = 0;
+    		}
 	    	if (subdaily != 0) {
 				layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s&%s_SUBDAILY=%s", layer_times, pt, doytime, pt, subdaily);
 	    	} else {
 	    		layer_times = apr_psprintf(r->pool,"%s&%s_TIME=%s", layer_times, pt, doytime);
 	    	}
-	    	apr_cpystrn(productyear, doytime, 5);
-	    	productyear[4] = 0;
 	    	layer_years = apr_psprintf(r->pool,"%s&%s_YEAR=%s", layer_years, pt, productyear);
 	    	// Get additional map.layer options
 	    	char *layer_ops = (char*)apr_pcalloc(r->pool,max_chars);
