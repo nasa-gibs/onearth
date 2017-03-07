@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
 
-versionNumber = '1.2.2'
+versionNumber = '1.3.0'
 current_conf = None
 
 class WMTSEndPoint:

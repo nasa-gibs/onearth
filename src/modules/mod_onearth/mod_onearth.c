@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.2.2
+ * Version 1.3.0
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -1641,24 +1641,30 @@ static int kml_handler (request_rec *r)
 
 void getParam(char *args, char *Name, char *Value) {
 	char *pos1 = ap_strcasestr(args, Name);
-
 	if (pos1) {
 		pos1 += strlen(Name);
-
+		if (*pos1 != '=') { // Make sure we get a real parameter
+			char nName[(strlen(Name) + 1)];
+			sprintf(nName, "%s=", Name);
+			pos1 = ap_strcasestr(args, nName);
+			if (pos1) {
+				pos1 += strlen(Name);
+			} else {
+				Value[0]='\0';
+				return;
+			}
+		}
 		if (*pos1 == '=') {
 			pos1++;
-
 			while (*pos1 && *pos1 != '&') {
 				*Value++ = *pos1++;
 			}
-
 			*Value++ = '\0';
 			return;
 		}
 	} else {
 		Value[0]='\0';
 	}
-
 	return;
 }
 
