@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import log_sig_exit, log_sig_warn, log_info_mssg
+from oe_utils import log_sig_exit, log_sig_warn, log_info_mssg, run_command
 import requests
 import math
 import functools
@@ -446,7 +446,15 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         # Copy the WMTS Apache config to the specified directory (like conf.d)
         apache_conf_path = os.path.join(wmts_apache_config_location, wmts_apache_config_basename + '.conf')
         print '\nCopying reprojected WMTS layer Apache config {0} -> {1}'.format(apache_staging_conf_path, apache_conf_path)
-        shutil.copyfile(apache_staging_conf_path, apache_conf_path)
+        try:
+            shutil.copyfile(apache_staging_conf_path, apache_conf_path)
+        except IOError, e: # Try with sudo if permission denied
+            if 'Permission denied' in str(e):
+                cmd = ['sudo', 'cp', apache_staging_conf_path, apache_conf_path]
+                try:
+                    run_command(cmd, sigevent_url)
+                except Exception, e:
+                    log_sig_exit('ERROR', str(e), sigevent_url)
 
         # Configure GetCapabilties (routine copied from oe_configure_layer)
         try:
@@ -519,7 +527,15 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         # Copy the TWMS Apache config to the specified directory (like conf.d)
         twms_apache_conf_path = os.path.join(twms_apache_config_location, twms_apache_config_basename + '.conf')
         print '\nCopying reprojected TWMS layer Apache config {0} -> {1}'.format(twms_apache_staging_conf_path, twms_apache_conf_path)
-        shutil.copyfile(twms_apache_staging_conf_path, twms_apache_conf_path)
+        try:
+            shutil.copyfile(twms_apache_staging_conf_path, twms_apache_conf_path)
+        except IOError, e: # Try with sudo if permission denied
+            if 'Permission denied' in str(e):
+                cmd = ['sudo', 'cp', twms_apache_staging_conf_path, twms_apache_conf_path]
+                try:
+                    run_command(cmd, sigevent_url)
+                except Exception, e:
+                    log_sig_exit('ERROR', str(e), sigevent_url)
 
         # Configure base GC file for TWMS
         if create_gc:
