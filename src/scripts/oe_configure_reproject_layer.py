@@ -239,6 +239,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             src_pagesize_height = matrices[0].findtext('{*}TileHeight')
             src_bbox_elem = layer.find(ows + 'WGS84BoundingBox')
             src_bbox = ','.join(src_bbox_elem.findtext(ows + 'LowerCorner').split(' ')) + ',' + ','.join(src_bbox_elem.findtext(ows + 'UpperCorner').split(' '))
+            src_format = layer.findtext('{*}Format')
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely matches the scale denominator of the source.
@@ -266,7 +267,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 dest_url = '{0}/{1}'.format(dest_url, src_tilematrixset_name)
             dest_file_type = dest_resource_url_elem.get('format')
             dest_file_ext = get_ext_for_file_type(dest_file_type)
-            if dest_file_ext == None:
+            if dest_file_ext is None:
                 log_sig_warn("File type is not supported for OnEarth: " + dest_file_type, sigevent_url)
                 break
             if dest_file_ext in ['.tif', '.lerc', '.mvt', '.pbf']:
@@ -288,6 +289,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
                 src_cfg_filename = identifier + '_source.config'
                 with open(os.path.join(wmts_staging_path, src_cfg_filename), 'w+') as src_cfg:
+                    if 'image/png' in src_format:
+                        src_cfg.write('Size {0} {1} {2} 4\n'.format(src_width, src_height, src_levels))
+                    else:
+                        src_cfg.write('Size {0} {1} {2}\n'.format(src_width, src_height, src_levels))
                     src_cfg.write('Size {0} {1} {2}\n'.format(src_width, src_height, src_levels))
                     src_cfg.write('PageSize {0} {1}\n'.format(src_pagesize_width, src_pagesize_height))
                     src_cfg.write('Projection {0}\n'.format('EPSG:4326'))
@@ -296,12 +301,16 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
                 dest_cfg_filename = identifier + '_reproject.config'
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
-                    dest_cfg.write('Size {0} {1} {2}\n'.format(dest_width, dest_height, dest_levels))
+                    if 'image/png' in src_format:
+                        dest_cfg.write('Size {0} {1} {2} 4\n'.format(dest_width, dest_height, dest_levels))
+                    else:
+                        dest_cfg.write('Size {0} {1} {2}\n'.format(dest_width, dest_height, dest_levels))
                     dest_cfg.write('PageSize {0} {1}\n'.format(dest_pagesize_width, dest_pagesize_height))
                     dest_cfg.write('Projection {0}\n'.format('EPSG:3857'))
                     dest_cfg.write('BoundingBox {0}\n'.format(dest_bbox))
                     dest_cfg.write('SourcePath {0}\n'.format(dest_url))
                     dest_cfg.write('SourcePostfix {0}\n'.format(dest_file_ext))
+                    dest_cfg.write('MimeType {0}\n'.format(src_format))
                     # dest_cfg.write('SkippedLevels 1\n')
 
                 # Build Apache config snippet for TMS
@@ -342,7 +351,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     twms_cfg.write('SourcePath {0}\n'.format(twms_src_path))
                     twms_cfg.write('SourcePostfix {0}'.format(dest_file_ext))
                     
-        if dest_file_ext == None: # Skip layer if unsupported file type
+        if dest_file_ext is None:  # Skip layer if unsupported file type
             continue
         
         if wmts:
