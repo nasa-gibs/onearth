@@ -2487,7 +2487,7 @@ int rewrite_rest_uri(request_rec *r) {
 	} else if (ap_strcasecmp_match(params[length+d],"mvt") == 0) {
 		sprintf(format,"application%%2Fvnd.mapbox-vector-tile");
 	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
-		sprintf(format,"image%%2F%sjpeg");
+		sprintf(format,"image%%2Fjpeg");
 	} else {
 		sprintf(format,"image%%2F%s", params[length+d]);
 	}
