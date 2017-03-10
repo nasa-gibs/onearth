@@ -290,10 +290,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 src_cfg_filename = identifier + '_source.config'
                 with open(os.path.join(wmts_staging_path, src_cfg_filename), 'w+') as src_cfg:
                     if 'image/png' in src_format:
-                        src_cfg.write('Size {0} {1} {2} 4\n'.format(src_width, src_height, src_levels))
+                        src_cfg.write('Size {0} {1} 1 1\n'.format(src_width, src_height))
                     else:
-                        src_cfg.write('Size {0} {1} {2}\n'.format(src_width, src_height, src_levels))
-                    src_cfg.write('Size {0} {1} {2}\n'.format(src_width, src_height, src_levels))
+                        src_cfg.write('Size {0} {1}\n'.format(src_width, src_height))
                     src_cfg.write('PageSize {0} {1}\n'.format(src_pagesize_width, src_pagesize_height))
                     src_cfg.write('Projection {0}\n'.format('EPSG:4326'))
                     src_cfg.write('SkippedLevels 1\n')
@@ -302,15 +301,17 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 dest_cfg_filename = identifier + '_reproject.config'
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
                     if 'image/png' in src_format:
-                        dest_cfg.write('Size {0} {1} {2} 4\n'.format(dest_width, dest_height, dest_levels))
+                        dest_cfg.write('Size {0} {1} 1 1\n'.format(dest_width, dest_height))
+                        dest_cfg.write('Nearest On\n')
                     else:
-                        dest_cfg.write('Size {0} {1} {2}\n'.format(dest_width, dest_height, dest_levels))
+                        dest_cfg.write('Size {0} {1}\n'.format(dest_width, dest_height))
                     dest_cfg.write('PageSize {0} {1}\n'.format(dest_pagesize_width, dest_pagesize_height))
                     dest_cfg.write('Projection {0}\n'.format('EPSG:3857'))
                     dest_cfg.write('BoundingBox {0}\n'.format(dest_bbox))
                     dest_cfg.write('SourcePath {0}\n'.format(dest_url))
                     dest_cfg.write('SourcePostfix {0}\n'.format(dest_file_ext))
                     dest_cfg.write('MimeType {0}\n'.format(src_format))
+
                     # dest_cfg.write('SkippedLevels 1\n')
 
                 # Build Apache config snippet for TMS
