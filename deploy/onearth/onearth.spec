@@ -25,7 +25,7 @@ Requires:	gibs-gdal
 Requires:   sqlite
 Requires:   libxml2
 
-Obsoletes:	mod_twms mod_onearth mod_oems mod_oemstime
+Obsoletes:	mod_oetwms mod_onearth mod_oems mod_oemstime
 
 %description
 Installation packages for OnEarth

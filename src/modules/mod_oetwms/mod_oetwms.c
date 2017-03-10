@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2015, California Institute of Technology.
+* Copyright (c) 2002-2017, California Institute of Technology.
 * All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,7 +33,7 @@
 
 /*
  * Tiled WMS cache module for Apache 2.0
- * Version 2.0
+ * Version 1.3.0
  *
  * Lucian Plesea
  */
@@ -55,9 +55,6 @@
 #define APR_WANT_MEMFUNC
 #include "apr_want.h"
 
-//#include "mod_twms.h" // external API
-//#include "twms.h" // internal use
-
 typedef struct {
   server_rec *s;
   void *data_ptr;
@@ -71,7 +68,7 @@ typedef struct {
 } twms_dir_conf;
 
 // This module
-module AP_MODULE_DECLARE_DATA twms_module;
+module AP_MODULE_DECLARE_DATA oetwms_module;
 
 static int twms_handler(request_rec *r)
 
@@ -87,8 +84,8 @@ static int twms_handler(request_rec *r)
 
   if ((r->method_number != M_GET )||(r->args==0)) return DECLINED;
   data=r->args;
-  // scfg=ap_get_module_config(r->server->module_config,&twms_module);
-  dcfg=ap_get_module_config(r->per_dir_config,&twms_module);
+  // scfg=ap_get_module_config(r->server->module_config,&oetwms_module);
+  dcfg=ap_get_module_config(r->per_dir_config,&oetwms_module);
   if (!dcfg) return DECLINED; // Does this ever happen?
 
   if (!ap_strstr(data,"GetTileService")) return DECLINED;
@@ -223,7 +220,7 @@ static void *merge_dir_config(apr_pool_t *p, void *basev, void *overlayv)
   return c;
 }
 
-module AP_MODULE_DECLARE_DATA twms_module =
+module AP_MODULE_DECLARE_DATA oetwms_module =
 {
         STANDARD20_MODULE_STUFF,
         create_dir_config, // Dir Create

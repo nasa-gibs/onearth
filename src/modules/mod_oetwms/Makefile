@@ -1,4 +1,4 @@
-# Copyright (c) 2002-2015, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -31,16 +31,13 @@
 
 APXS=apxs
 
-TARGETS= .libs/mod_onearth.so oe_create_cache_config
+TARGETS= .libs/mod_oetwms.so
 default	: $(TARGETS)
 
-module	:	.libs/mod_onearth.so
+module	:	.libs/mod_oetwms.so
 
-.libs/mod_onearth.so	: mod_onearth.c cache.h
-	$(APXS) -c mod_onearth.c -lm -lsqlite3
-
-oe_create_cache_config	: oe_create_cache_config.cpp oe_create_cache_config.h
-	$(CXX) -DLINUX -O2 $(INCLUDE) -o $@ $< $(LDFLAGS) -lgdal $(LIBS)
+.libs/mod_oetwms.so	: mod_oetwms.c
+	$(APXS) -c mod_oetwms.c
 
 clean	:
-	rm -rf .libs mod_onearth.{*o,la}  oe_create_cache_config
+	rm -rf .libs mod_oetwms.{*o,la}

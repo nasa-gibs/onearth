@@ -123,8 +123,8 @@ install: onearth-install
 
 onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules
-	install -m 755 src/modules/mod_onearth/.libs/mod_twms.so \
-		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_twms.so
+	install -m 755 src/modules/mod_onearth/.libs/mod_oetwms.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oetwms.so
 	install -m 755 src/modules/mod_onearth/.libs/mod_onearth.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_onearth.so
 	install -m 755 src/modules/mod_oems/.libs/mod_oems.so \
@@ -286,7 +286,7 @@ onearth-mock:
 	mock --shell \
 	       "yum install -y /gibs-gdal-*$(GDAL_VERSION)-*.$(shell arch).rpm"
 	mock --rebuild --no-clean \
-		dist/mod_twms-$(ONEARTH_VERSION)-*.src.rpm
+		dist/mod_oetwms-$(ONEARTH_VERSION)-*.src.rpm
 
 #-----------------------------------------------------------------------------
 # Clean
