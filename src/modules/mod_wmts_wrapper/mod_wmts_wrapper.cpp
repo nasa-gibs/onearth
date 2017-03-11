@@ -273,6 +273,14 @@ static int pre_hook(request_rec *r)
                     format = ".jpg";
                 } else if (apr_strnatcasecmp(param, "image/png") == 0) {
                     format = ".png";
+                } else if (apr_strnatcasecmp(param, "image/tiff") == 0) {
+                    format = ".tiff";
+                } else if (apr_strnatcasecmp(param, "image/lerc") == 0) {
+                    format = ".lerc";
+                } else if (apr_strnatcasecmp(param, "application/x-protobuf;type=mapbox-vector") == 0) {
+                    format = ".pbf";
+                } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0) {
+                    format = ".mvt";
                 } else {
                     wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","FORMAT", "Unrecognized format");
                 }

@@ -51,7 +51,7 @@ EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
     'image/png': '.png',
     'image/jpeg': '.jpg',
-    'image/tiff': '.tif',
+    'image/tiff': '.tiff',
     'image/lerc': '.lerc',
     'application/x-protobuf;type=mapbox-vector': '.pbf',
     'application/vnd.mapbox-vector-tile': '.mvt'
@@ -195,8 +195,11 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             available_tilematrixsets.append(tms)
 
     # Download and parse GC file from endpoint
-    r = requests.get(gc_uri)
-    if r.status_code != 200:
+    try:
+        r = requests.get(gc_uri)
+        if r.status_code != 200:
+            log_sig_exit('ERROR', 'Can\'t download GetCapabilities from URL: ' + gc_uri, sigevent_url)
+    except:
         log_sig_exit('ERROR', 'Can\'t download GetCapabilities from URL: ' + gc_uri, sigevent_url)
 
     # Get the layers and source TMSs from the source GC file
