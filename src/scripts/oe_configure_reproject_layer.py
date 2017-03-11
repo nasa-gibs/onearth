@@ -47,6 +47,8 @@ import re
 import shutil
 from optparse import OptionParser
 from osgeo import osr
+import png
+from io import BytesIO
 
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
@@ -226,6 +228,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         layer_endpoint = os.path.join(wmts_base_endpoint, identifier)
         layer_style_endpoint = os.path.join(layer_endpoint, 'default')
         layer_tms_apache_configs = []
+        png_bands = None
 
         # Get TMSs for this layer and build a config for each
         tms_list = [elem for elem in tilematrixsets if elem.findtext(ows + 'Identifier') == layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')]
@@ -245,6 +248,24 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             src_bbox = ','.join(src_bbox_elem.findtext(ows + 'LowerCorner').split(' ')) + ',' + ','.join(src_bbox_elem.findtext(ows + 'UpperCorner').split(' '))
             src_format = layer.findtext('{*}Format')
             src_title = layer.findtext(ows + 'Title')
+
+            # If it's a PNG, we need to grab a tile and check if it's paletted
+            if 'image/png' in src_format and not png_bands:
+                sample_tile_url = layer.find('{*}ResourceURL').get('template').replace('{Time}', 'default')\
+                    .replace('{TileMatrixSet}', src_tilematrixset_name).replace('{TileMatrix}', '0').replace('{TileRow}', '0').replace('{TileCol}', '0')
+                print 'Checking for palette for PNG layer: ' + identifier
+                r = requests.get(sample_tile_url)
+                if r.status_code != 200:
+                    log_sig_exit('ERROR', 'Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
+                sample_png = png.Reader(BytesIO(r.content))
+                sample_png.read()
+                try:
+                    if sample_png.palette():
+                        png_bands = 1
+                except png.FormatError:
+                    # No palette, assume RGBA
+                    # TODO: Add grayscale check?
+                    png_bands = 4
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely matches the scale denominator of the source.
@@ -295,7 +316,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 src_cfg_filename = identifier + '_source.config'
                 with open(os.path.join(wmts_staging_path, src_cfg_filename), 'w+') as src_cfg:
                     if 'image/png' in src_format:
-                        src_cfg.write('Size {0} {1} 1 1\n'.format(src_width, src_height))
+                        src_cfg.write('Size {0} {1} 1 {2}\n'.format(src_width, src_height, png_bands))
                     else:
                         src_cfg.write('Size {0} {1}\n'.format(src_width, src_height))
                     src_cfg.write('PageSize {0} {1}\n'.format(src_pagesize_width, src_pagesize_height))
@@ -306,7 +327,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 dest_cfg_filename = identifier + '_reproject.config'
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
                     if 'image/png' in src_format:
-                        dest_cfg.write('Size {0} {1} 1 1\n'.format(dest_width, dest_height))
+                        dest_cfg.write('Size {0} {1} 1 {2}\n'.format(dest_width, dest_height, png_bands))
                         dest_cfg.write('Nearest On\n')
                     else:
                         dest_cfg.write('Size {0} {1}\n'.format(dest_width, dest_height))
