@@ -46,6 +46,7 @@ import os
 import re
 import shutil
 from optparse import OptionParser
+from osgeo import osr
 
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
@@ -99,7 +100,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     src_locations = config_xml.findall('SrcLocation')
     gc_uri = config_xml.findtext('GetCapabilitiesURI')
     if not gc_uri:
-        log_sig_exit('ERROR: <GetCapabilitiesURI> not present in reprojection config file: {0}'.format(layer_config_path), sigevent_url)
+        log_sig_exit('ERROR:', '<GetCapabilitiesURI> not present in reprojection config file: {0}'.format(layer_config_path), sigevent_url)
     layer_exclude_list = [name.text for name in config_xml.findall('ExcludeLayer')]
     layer_include_list = [name.text for name in config_xml.findall('IncludeLayer')]
 
@@ -243,6 +244,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             src_bbox_elem = layer.find(ows + 'WGS84BoundingBox')
             src_bbox = ','.join(src_bbox_elem.findtext(ows + 'LowerCorner').split(' ')) + ',' + ','.join(src_bbox_elem.findtext(ows + 'UpperCorner').split(' '))
             src_format = layer.findtext('{*}Format')
+            src_title = layer.findtext(ows + 'Title')
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely matches the scale denominator of the source.
@@ -443,6 +445,118 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     wmts_gc_snippet.write(etree.tostring(layer, pretty_print=True))
             except IOError:
                 log_sig_exit('ERROR', 'Could not create staging XML snippet', sigevent_url)
+
+        if twms:
+            try:
+                twms_gc_staging_snippet = os.path.join(twms_staging_location, identifier + '_gc.xml')
+                # Open layer XML file
+                twms_gc_xml = open(twms_gc_staging_snippet, 'w+')
+            except IOError:
+                mssg=str().join(['Cannot read layer XML file:  ', 
+                                 twms_gc_staging_snippet])
+                log_sig_exit('ERROR', mssg, sigevent_url)
+
+            twms_gc_layer_template = """<Layer queryable=\"0\">
+            <Name>$Identifier</Name>
+            <Title xml:lang=\"en\">$Title</Title>
+            <Abstract xml:lang=\"en\">$Abstract</Abstract>
+            <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang=\"en\">(default) Default style</Title>
+            </Style>
+            <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
+            </Layer>"""
+
+            layer_output = ""
+            lines = twms_gc_layer_template.splitlines(True)
+            for line in lines:
+                # replace lines in template
+                if '</Layer>' in line:
+                    line = ' '+line+'\n'  
+                if '$Identifier' in line:
+                    line = line.replace("$Identifier",identifier)              
+                if '$Title' in line:
+                    line = line.replace("$Title", src_title)
+                # if '$Abstract' in line:
+                #     line = line.replace("$Abstract", abstract)
+                if '$minx' in line:
+                    line = line.replace("$minx", str(-dest_top_left_corner[0]))
+                if '$miny' in line:
+                    line = line.replace("$miny", str(-dest_top_left_corner[0]))
+                if '$maxx' in line:
+                    line = line.replace("$maxx", str(dest_top_left_corner[0]))
+                if '$maxy' in line:
+                    line = line.replace("$maxy", str(dest_top_left_corner[0]))
+                layer_output = layer_output + line
+            twms_gc_xml.writelines(layer_output)
+            twms_gc_xml.close()
+
+            twms_gts_layer_template = """<TiledGroup>
+            <Name>$TiledGroupName</Name>
+            <Title xml:lang=\"en\">$Title</Title>
+            <Abstract xml:lang=\"en\">$Abstract</Abstract>
+            <Projection>$Projection</Projection>
+            <Pad>0</Pad>
+            <Bands>$Bands</Bands>
+            <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
+            <Key>${time}</Key>
+            $Patterns</TiledGroup>"""
+        
+            try:
+                twms_gts_staging_snippet = os.path.join(twms_staging_location, identifier + '_gts.xml')
+                # Open layer XML file
+                twms_gts_xml = open(twms_gts_staging_snippet, 'w+')
+            except IOError:
+                mssg=str().join(['Cannot read layer XML file:  ', 
+                                 twms_gts_staging_snippet])
+                log_sig_exit('ERROR', mssg, sigevent_url)
+
+            proj = osr.SpatialReference()
+            proj.ImportFromEPSG(3857)
+
+            layer_output = ""
+            lines = twms_gts_layer_template.splitlines(True)
+            for line in lines:
+                # replace lines in template 
+                if '</TiledGroup>' in line:
+                    line = ' '+line+'\n'              
+                if '$TiledGroupName' in line:
+                    line = line.replace('$TiledGroupName', identifier + 'tileset')
+                if '$Title' in line:
+                    line = line.replace("$Title", src_title)
+                if '$Abstract' in line:
+                    # line = line.replace("$Abstract",abstract)
+                    line = line.replace("$Abstract", '')
+                if '$Projection' in line:
+                    line = line.replace("$Projection", proj.ExportToWkt())
+                if '$Bands' in line:
+                    if src_format == 'image/png':
+                        line = line.replace("$Bands","4") # GDAL wants 4 for PNGs
+                    else:
+                        line = line.replace("$Bands","3")
+                if '$minx' in line:
+                    line = line.replace("$minx", str(-dest_top_left_corner[0]))
+                if '$miny' in line:
+                    line = line.replace("$miny", str(-dest_top_left_corner[0]))
+                if '$maxx' in line:
+                    line = line.replace("$maxx", str(dest_top_left_corner[0]))
+                if '$maxy' in line:
+                    line = line.replace("$maxy", str(dest_top_left_corner[0]))
+                if '$Patterns' in line:
+                    patterns = ""
+                #     cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
+                #     try:
+                #         print '\nRunning command: ' + cmd
+                #         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                #         process.wait()
+                #         for output in process.stdout:
+                #             patterns = patterns + output
+                #     except:
+                #         log_sig_err("Error running command " + cmd, sigevent_url)
+                    line = line.replace("$Patterns",patterns)
+                layer_output = layer_output + line
+            twms_gts_xml.writelines(layer_output)
+            twms_gts_xml.close()
 
     # Final routines (after all layers have been processed)
     if wmts:
