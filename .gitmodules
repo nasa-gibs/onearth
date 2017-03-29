@@ -9,7 +9,8 @@
 	url = https://github.com/lucianpls/mod_sfim.git
 [submodule "src/modules/mod_reproject"]
 	path = src/modules/mod_reproject
-	url = https://github.com/lucianpls/mod_reproject.git
+	url = https://github.com/nasa-gibs/mod_reproject.git
+	branch = gibs
 [submodule "src/modules/mod_twms"]
 	path = src/modules/mod_twms
-	url = https://github.com/lucianpls/mod_twms.git
+	url = https://github.com/nasa-gibs/mod_twms.git

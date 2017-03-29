@@ -7,7 +7,7 @@ The OnEarth utility installs Apache modules into the apache `<lib dir>/httpd/mod
 
 ```
 LoadModule onearth_module modules/mod_onearth.so
-LoadModule twms_module modules/mod_twms.so
+LoadModule oetwms_module modules/mod_oetwms.so
 ```
 
 For OnEarth WMS/WFS support using Mapserver, the onearth-mapserver package must be installed and the following lines must be added to the Apache configuration file.

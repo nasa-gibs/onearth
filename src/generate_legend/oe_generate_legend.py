@@ -51,6 +51,7 @@ import matplotlib.pyplot as plt
 from StringIO import StringIO
 #import numpy as np
 import math
+import re
 
 # for SVG tooltips
 try:
@@ -60,7 +61,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v1.2.2"
+versionNumber = "v1.3.0"
 
 class ColorMaps:
     """Collection of ColorMaps"""
@@ -350,7 +351,7 @@ def parse_legend(legend_xml, colormap_entries):
     return legend
     
 
-def generate_legend(colormaps, output, output_format, orientation, label_color):
+def generate_legend(colormaps, output, output_format, orientation, label_color, colorbar_only):
     
     # set ticklines out
     rcParams['xtick.direction'] = 'out'
@@ -509,7 +510,12 @@ def generate_legend(colormaps, output, output_format, orientation, label_color):
                     text.set_color(label_color)
             
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
-                ax = fig.add_axes([0.075, bottom, 0.85, height])
+                if colorbar_only:
+                    fig.set_figheight(height)
+                    fig.set_figwidth(2.56)
+                    ax = fig.add_axes([0, 0.03, 0.995, 0.97])
+                else:
+                    ax = fig.add_axes([0.075, bottom, 0.85, height])
                 cmap = mpl.colors.ListedColormap(colors)
 
                 if len(bounds) > 0:
@@ -526,6 +532,11 @@ def generate_legend(colormaps, output, output_format, orientation, label_color):
                 for tick in cb.ax.xaxis.get_ticklabels():
                     tick.set_fontsize(8)
                     tick.set_color(label_color)
+                    if colorbar_only:
+                        tick.set_alpha(0)
+                if colorbar_only: # hide ticks if we want to show colorbar only
+                    for tickline in cb.ax.xaxis.get_ticklines():
+                        tickline.set_alpha(0)
 
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_xticklabels()) > 0:
@@ -555,10 +566,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color):
 #                         xticklabels = [int(float(label)) for label in xticklabels if float(label).is_integer()]
                         cb.ax.set_xticklabels(xticklabels)
                 
-                if colormap.units != None:
+                if colormap.units != None and colorbar_only == False:
                     fig.text(0.5, bottom-height-(0.20/lc), colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
                     
-            if colormap.title != None:
+            if colormap.title != None and colorbar_only == False:
                 if lc ==1:
                     title_loc = 1-t
                 else:
@@ -607,7 +618,12 @@ def generate_legend(colormaps, output, output_format, orientation, label_color):
                     text.set_color(label_color)
          
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
-                ax = fig.add_axes([left, 0.1, width, 0.8])
+                if colorbar_only:
+                    fig.set_figheight(2.56)
+                    fig.set_figwidth(0.2)
+                    ax = fig.add_axes([0.02, 0.005, 0.94, 0.995])
+                else:
+                    ax = fig.add_axes([left, 0.1, width, 0.8])
                 cmap = mpl.colors.ListedColormap(colors)
 
                 if len(bounds) > 0:
@@ -624,6 +640,11 @@ def generate_legend(colormaps, output, output_format, orientation, label_color):
                 for tick in cb.ax.yaxis.get_ticklabels():
                     tick.set_fontsize(10)
                     tick.set_color(label_color)
+                    if colorbar_only:
+                        tick.set_alpha(0)
+                if colorbar_only: # hide ticks if we want to show colorbar only
+                    for tickline in cb.ax.yaxis.get_ticklines():
+                        tickline.set_alpha(0)
                     
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_yticklabels()) > 0:
@@ -656,11 +677,11 @@ def generate_legend(colormaps, output, output_format, orientation, label_color):
 #                         yticklabels = [int(float(label)) for label in yticklabels if float(label).is_integer()]
                         cb.ax.set_yticklabels(yticklabels)
                 
-                if colormap.units != None:
+                if colormap.units != None and colorbar_only == False:
                     fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
 
                                             
-            if colormap.title != None:
+            if colormap.title != None and colorbar_only == False:
                 title_left = left+(0.08/lc)
                 title_top = 0.935
                 if colormap.style == "classification":
@@ -789,6 +810,9 @@ usageText = toolName + " --colormap [file] --output [file]"
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
+parser.add_option("-b", "--colorbar_only",
+                  action="store_true", dest="colorbar_only", 
+                  default=False, help="Generate only the colorbar (i.e., no labels)")
 parser.add_option('-c', '--colormap',
                   action='store', type='string', dest='colormap',
                   help='Full path or URL of colormap filename.')
@@ -797,7 +821,7 @@ parser.add_option('-f', '--format',
                   help='Format of output file. Supported formats: eps, pdf, pgf, png, ps, raw, rgba, svg (default), svgz.')
 parser.add_option('-l', '--label_color',
                   action='store', type='string', dest='label_color', default = 'black',
-                  help='Color of labels. Supported colors: black (default), blue, green, red, cyan, magenta, yellow, white')
+                  help='Color of labels. Supported colors: black (default), blue, green, red, cyan, magenta, yellow, white or hexstring')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
@@ -836,8 +860,11 @@ if options.orientation:
 if options.label_color:
     label_color = str(options.label_color).lower()
     if label_color not in ["blue","green","red","cyan","magenta","yellow","black","white"]:
-        print "Invalid label color"
-        exit()
+        print "Using custom color " + label_color
+        colormatch = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', label_color)
+        if colormatch == False:
+            print "Invalid label color"
+            exit()
 else:
     label_color = "black"
 
@@ -866,7 +893,7 @@ for colormap_xml in colormap_elements:
 
 # generate legend
 try:
-    generate_legend(colormaps, output_location, options.format, options.orientation, label_color)
+    generate_legend(colormaps, output_location, options.format, options.orientation, label_color, options.colorbar_only)
 except IOError,e:
     print str(e)
     exit()

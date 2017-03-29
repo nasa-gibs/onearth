@@ -78,9 +78,9 @@ from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
-from shutil import copyfile
+from oe_configure_reproject_layer import build_reproject_configs
 
-versionNumber = '1.2.2'
+versionNumber = '1.3.0'
 current_conf = None
 
 class WMTSEndPoint:
@@ -1391,6 +1391,37 @@ for conf in conf_files:
         continue
     else:
         dom = xml.dom.minidom.parse(config_file)
+
+        # Get environment 
+        try:
+            environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
+            try:
+                environment = get_environment(environmentConfig)
+            except Exception, e:
+                log_sig_err(str(e), sigevent_url)
+                continue
+        except IndexError:
+            log_sig_err('Required <EnvironmentConfig> element is missing in ' + conf, sigevent_url)
+            continue
+
+        wmts_getCapabilities = environment.getCapabilities_wmts
+        twms_getCapabilities = environment.getCapabilities_twms
+        getTileService = environment.getTileService
+
+        # Reprojected layers are handled by a separate script
+        if dom.getElementsByTagName('ReprojectLayerConfig'):
+            projection = get_projection('EPSG:3857', projection_configuration, lcdir, tilematrixset_configuration)
+            print 'Configuring reprojection layers...'
+            base_twms_gc = lcdir + '/conf/getcapabilities_base_twms.xml'
+            base_twms_get_tile_service = lcdir + '/conf/gettileservice_base.xml'
+            base_wmts_gc = lcdir + '/conf/getcapabilities_base_wmts.xml'
+            build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, sigevent_url=sigevent_url, base_wmts_gc=base_wmts_gc,
+                                    base_twms_gc=base_twms_gc, base_twms_get_tile_service=base_twms_get_tile_service)
+            wmtsEndPoint = environment.wmts_dir
+            twmsEndPoint = environment.twms_dir
+            wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, None, None, wmts_getCapabilities, projection)
+            twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, None, None, twms_getCapabilities, getTileService, projection)
+            continue
         
         #Vector parameters
         try:
@@ -1478,9 +1509,6 @@ for conf in conf_files:
         cacheLocation_twms = environment.cacheLocation_twms
         cacheBasename_twms = environment.cacheBasename_twms
         cacheConfig = cacheLocation_wmts # default to WMTS cache location
-        wmts_getCapabilities = environment.getCapabilities_wmts
-        twms_getCapabilities = environment.getCapabilities_twms
-        getTileService = environment.getTileService
         wmtsServiceUrl = environment.wmtsServiceUrl
         twmsServiceUrl = environment.twmsServiceUrl
 
@@ -2685,10 +2713,11 @@ if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
         print "\nRunning commands for endpoint: " + twms_endpoint.path
-        cmd = depth + '/oe_create_cache_config -cbd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
-        run_command(cmd, sigevent_url)
-        cmd = depth + '/oe_create_cache_config -cxd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'
-        run_command(cmd, sigevent_url)
+        if twms_endpoint.cacheConfigBasename:
+            cmd = depth + '/oe_create_cache_config -cbd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
+            run_command(cmd, sigevent_url)
+            cmd = depth + '/oe_create_cache_config -cxd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'
+            run_command(cmd, sigevent_url)
         if no_cache == False:
             if twms_endpoint.cacheConfigLocation:
                 print '\nCopying: ' + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config' + ' -> ' + twms_endpoint.cacheConfigLocation+'/' + twms_endpoint.cacheConfigBasename + '.config'
@@ -2739,17 +2768,18 @@ if no_twms == False:
 if no_wmts == False:
     for key, wmts_endpoint in wmts_endpoints.iteritems():
         #wmts
-        print "\nRunning commands for endpoint: " + wmts_endpoint.path
-        cmd = depth + '/oe_create_cache_config -cbd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config'
-        try:
-            run_command(cmd, sigevent_url)
-        except:
-            log_sig_err("Error in generating binary cache config using command: " + cmd, sigevent_url)
-        cmd = depth + '/oe_create_cache_config -cxd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
-        try:
-            run_command(cmd, sigevent_url)
-        except:
-            log_sig_err("Error in generating XML cache config using command: " + cmd, sigevent_url)
+        if wmts_endpoint.cacheConfigBasename:
+            print "\nRunning commands for endpoint: " + wmts_endpoint.path
+            cmd = depth + '/oe_create_cache_config -cbd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config'
+            try:
+                run_command(cmd, sigevent_url)
+            except:
+                log_sig_err("Error in generating binary cache config using command: " + cmd, sigevent_url)
+            cmd = depth + '/oe_create_cache_config -cxd '+ wmts_endpoint.path + " " + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.xml'
+            try:
+                run_command(cmd, sigevent_url)
+            except:
+                log_sig_err("Error in generating XML cache config using command: " + cmd, sigevent_url)
         if no_cache == False:
             if wmts_endpoint.cacheConfigLocation:
                 print '\nCopying: ' + wmts_endpoint.path+'/' + wmts_endpoint.cacheConfigBasename + '.config' + ' -> ' + wmts_endpoint.cacheConfigLocation+'/' + wmts_endpoint.cacheConfigBasename + '.config'

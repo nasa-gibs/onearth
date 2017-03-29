@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.2.2
+ * Version 1.3.0
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -1698,24 +1698,30 @@ static int kml_handler (request_rec *r)
 
 void getParam(char *args, char *Name, char *Value) {
 	char *pos1 = ap_strcasestr(args, Name);
-
 	if (pos1) {
 		pos1 += strlen(Name);
-
+		if (*pos1 != '=') { // Make sure we get a real parameter
+			char nName[(strlen(Name) + 1)];
+			sprintf(nName, "%s=", Name);
+			pos1 = ap_strcasestr(args, nName);
+			if (pos1) {
+				pos1 += strlen(Name);
+			} else {
+				Value[0]='\0';
+				return;
+			}
+		}
 		if (*pos1 == '=') {
 			pos1++;
-
 			while (*pos1 && *pos1 != '&') {
 				*Value++ = *pos1++;
 			}
-
 			*Value++ = '\0';
 			return;
 		}
 	} else {
 		Value[0]='\0';
 	}
-
 	return;
 }
 
@@ -2536,7 +2542,7 @@ int rewrite_rest_uri(request_rec *r) {
 	} else if (ap_strcasecmp_match(params[length+d],"mvt") == 0) {
 		sprintf(format,"application%%2Fvnd.mapbox-vector-tile");
 	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
-		sprintf(format,"image%%2F%sjpeg");
+		sprintf(format,"image%%2Fjpeg");
 	} else {
 		sprintf(format,"image%%2F%s", params[length+d]);
 	}
@@ -2547,8 +2553,11 @@ int rewrite_rest_uri(request_rec *r) {
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d]);
 	if (length == 9)
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d],params[8+d]);
-//	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/%s",r->uri,r->args);
-	ap_internal_redirect(apr_psprintf(r->pool,"%s/%s",r->uri,r->args),r);
+	// Try to get image, otherwise redirect to cgi to handle error
+	if (mrf_handler(r) < 0) {
+//		ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/wmts.cgi?%s",r->uri,r->args);
+		ap_internal_redirect(apr_psprintf(r->pool,"%s/wmts.cgi?%s",r->uri,r->args),r);
+	}
 	return 0;
 }
 
