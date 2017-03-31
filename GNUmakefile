@@ -113,6 +113,7 @@ build/mapserver/VERSION:
 
 onearth-compile:
 	$(MAKE) -C src/modules/mod_onearth
+	$(MAKE) -C src/modules/mod_oetwms
 	$(MAKE) -C src/modules/mod_oems
 	$(MAKE) -C src/modules/mod_oemstime
 
@@ -123,7 +124,7 @@ install: onearth-install
 
 onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules
-	install -m 755 src/modules/mod_onearth/.libs/mod_oetwms.so \
+	install -m 755 src/modules/mod_oetwms/.libs/mod_oetwms.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oetwms.so
 	install -m 755 src/modules/mod_onearth/.libs/mod_onearth.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_onearth.so
@@ -248,7 +249,7 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime src/scripts src/colormaps src/vectorgen \
+		src/modules/mod_onearth src/modules/mod_oetwms src/modules/mod_oems src/modules/mod_oemstime src/scripts src/colormaps src/vectorgen \
 		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend src/empty_tile GNUmakefile
 
 #-----------------------------------------------------------------------------
@@ -286,7 +287,7 @@ onearth-mock:
 	mock --shell \
 	       "yum install -y /gibs-gdal-*$(GDAL_VERSION)-*.$(shell arch).rpm"
 	mock --rebuild --no-clean \
-		dist/mod_oetwms-$(ONEARTH_VERSION)-*.src.rpm
+		dist/onearth*$(ONEARTH_VERSION)-*.src.rpm
 
 #-----------------------------------------------------------------------------
 # Clean
@@ -296,6 +297,7 @@ clean: onearth-clean
 
 onearth-clean:
 	$(MAKE) -C src/modules/mod_onearth clean
+	$(MAKE) -C src/modules/mod_oetwms clean
 	$(MAKE) -C src/modules/mod_oems clean
 	$(MAKE) -C src/modules/mod_oemstime clean
 
