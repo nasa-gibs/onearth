@@ -5,3 +5,6 @@
 [submodule "src/modules/mod_twms"]
 	path = src/modules/mod_twms
 	url = https://github.com/nasa-gibs/mod_twms.git
+[submodule "src/modules/mod_receive"]
+	path = src/modules/mod_receive
+	url = https://github.com/nasa-gibs/mod_receive.git
