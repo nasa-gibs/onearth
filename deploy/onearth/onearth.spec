@@ -20,6 +20,8 @@ BuildRequires:	freetype-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:	cmake
+BuildRequires:  centos-release-scl
+BuildRequires:  devtoolset-3-toolchain
 Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
