@@ -173,6 +173,10 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 	install -m 755 src/mrfgen/oe_validate_palette.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_palette.py
+	install -m 755 src/scripts/oe_utils.py \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_utils.py
+	install -m 755 src/scripts/oe_configure_reproject_layer.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_reproject_layer.py
 	install -m 755 src/scripts/read_idx.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/read_idx.py
 	install -m 755 src/scripts/read_mrf.py  \

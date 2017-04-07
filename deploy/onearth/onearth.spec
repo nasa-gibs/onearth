@@ -97,6 +97,7 @@ Requires:   onearth-tools
 Requires:	python-dateutil
 Requires:	python-lxml
 Requires:   python-unittest2
+Requires:   python-requests
 BuildArch:	noarch
 
 %description config
@@ -243,6 +244,8 @@ python setup.py install
 %{_sysconfdir}/onearth/config/schema
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer
+%{_bindir}/oe_configure_reproject_layer.py
+%{_bindir}/oe_utils.py
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
