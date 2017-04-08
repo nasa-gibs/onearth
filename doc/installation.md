@@ -86,6 +86,8 @@ mrfgen
 OnEarth Layer Configurator
 ```
 /usr/bin/oe_configure_layer
+/usr/bin/oe_configure_reproject_layer.py
+/usr/bin/oe_utils.py
 /usr/bin/oe_generate_legend.py
 /usr/bin/oe_generate_empty_tile.py
 /etc/onearth/config/*

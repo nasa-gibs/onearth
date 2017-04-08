@@ -239,6 +239,7 @@ python setup.py install
 %{_sysconfdir}/onearth/config/
 %config(noreplace) %{_sysconfdir}/onearth/config/conf
 %config(noreplace) %{_sysconfdir}/onearth/config/layers
+%config(noreplace) %{_sysconfdir}/onearth/config/reproject
 %config(noreplace) %{_sysconfdir}/onearth/config/headers
 %config(noreplace) %{_sysconfdir}/onearth/config/mapserver
 %{_sysconfdir}/onearth/config/schema

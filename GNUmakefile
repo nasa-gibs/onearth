@@ -221,6 +221,8 @@ onearth-install:
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/layers \
 		$(DESTDIR)/etc/onearth/config
+	cp -r src/layer_config/reproject \
+		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/schema \
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/mapserver \
