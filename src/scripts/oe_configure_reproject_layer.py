@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import log_sig_exit, log_sig_warn, log_info_mssg, run_command
+from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
 import requests
 import math
 import functools
@@ -256,7 +256,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 print 'Checking for palette for PNG layer: ' + identifier
                 r = requests.get(sample_tile_url)
                 if r.status_code != 200:
-                    log_sig_exit('ERROR', 'Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
+                    log_sig_err('Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
+                    continue
                 sample_png = png.Reader(BytesIO(r.content))
                 sample_png.read()
                 try:

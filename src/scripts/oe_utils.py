@@ -150,7 +150,7 @@ def log_sig_exit(type, mssg, sigevent_url):
     """
     exit_code = 0
     # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting mrfgen.'])
+    mssg=str().join([mssg, ' - Exiting.'])
     # Send to sigevent.
     try:
         sent=sigevent(type, mssg, sigevent_url)
