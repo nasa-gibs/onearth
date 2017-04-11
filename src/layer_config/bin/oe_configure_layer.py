@@ -2704,7 +2704,9 @@ if no_twms == False:
                 getCapabilities_base.truncate()
                 getCapabilities_base.writelines(gc_lines)        
             getCapabilities_base.close()
-            if no_xml == False:                
+            if no_xml == False:
+                    if not os.path.exists(twms_endpoint.getCapabilities):
+                        os.makedirs(twms_endpoint.getCapabilities)
                     print '\nCopying: ' + twms_endpoint.path+'/getCapabilities.xml' + ' -> ' + twms_endpoint.getCapabilities+'/getCapabilities.xml'
                     shutil.copyfile(twms_endpoint.path+'/getCapabilities.xml', twms_endpoint.getCapabilities+'/getCapabilities.xml')
         if twms_endpoint.getTileService:
@@ -2724,7 +2726,9 @@ if no_twms == False:
                 getTileService_base.truncate()
                 getTileService_base.writelines(gc_lines)        
             getTileService_base.close()
-            if no_xml == False:          
+            if no_xml == False:
+                    if not os.path.exists(twms_endpoint.getTileService):
+                        os.makedirs(twms_endpoint.getTileService)      
                     print '\nCopying: ' + twms_endpoint.path+'/getTileService.xml' + ' -> ' + twms_endpoint.getTileService+'/getTileService.xml'
                     shutil.copyfile(twms_endpoint.path+'/getTileService.xml', twms_endpoint.getTileService+'/getTileService.xml')
 
