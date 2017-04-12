@@ -97,7 +97,7 @@ window.onload = function() {
 
     var layer = new ol.layer.Tile({
         source: new ol.source.XYZ({
-            url: "http://localhost/onearth/wmts/epsg3857/blue_marble/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.jpeg"
+            url: "http://localhost/onearth/wmts/epsg3857/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg"
         })
     })
 
