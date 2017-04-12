@@ -170,6 +170,14 @@ ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
+ln -s %{_datadir}/onearth/apache/wmts.cgi \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
+   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/1.0.0
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
 ln -s %{_datadir}/onearth/apache/twms.cgi \
@@ -279,6 +287,7 @@ mkdir %{_datadir}/onearth/demo/wms/epsg4326
 ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/wms/epsg4326
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wms/
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/
+ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-webmerc/
 
 %files mapserver
 %defattr(755,root,root,-)

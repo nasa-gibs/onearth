@@ -60,3 +60,34 @@
 #attribution a:hover {
     color: rgb(255, 255, 255);
 }
+
+#layer-select-box {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    padding: 0.5em;
+    background: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgb(200, 200, 200);
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+
+#layer-select {
+   margin-top: 5px;
+}
+
+#layer-select-box button {
+   background-color: transparent;
+   border-color: transparent;
+   padding: 0;
+   color: rgb(200, 200, 200);
+}
+
+.layer-checkbox-label {
+   display: block;
+   color: white;
+   font-size: 12px;
+   font-weight: normal;
+   color: rgb(200, 200, 200);
+}
