@@ -26,6 +26,7 @@ Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
 Requires:   libxml2
+Requires:   mod_ssl
 
 Obsoletes:	mod_oetwms mod_onearth mod_oems mod_oemstime
 
