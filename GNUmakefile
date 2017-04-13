@@ -112,9 +112,21 @@ build/mapserver/VERSION:
 		--strip-components=1 --exclude=.gitignore
 
 onearth-compile:
+	# Handle external headers
+	cp src/modules/mod_receive/src/receive_context.h src/modules/mod_reproject/src/
+	sed -i 's/<receive_context.h>/"receive_context.h"/g' src/modules/mod_reproject/src/mod_reproject.cpp
+	cp src/modules/mod_receive/src/receive_context.h src/modules/mod_twms/src/
+	sed -i 's/<receive_context.h>/"receive_context.h"/g' src/modules/mod_twms/src/mod_twms.cpp
+	cp src/modules/mod_reproject/src/mod_reproject.h src/modules/mod_wmts_wrapper/
+	
 	$(MAKE) -C src/modules/mod_onearth
+	$(MAKE) -C src/modules/mod_oetwms
 	$(MAKE) -C src/modules/mod_oems
 	$(MAKE) -C src/modules/mod_oemstime
+	$(MAKE) -C src/modules/mod_wmts_wrapper
+	$(MAKE) -C src/modules/mod_receive/src
+	$(MAKE) -C src/modules/mod_reproject/src
+	$(MAKE) -C src/modules/mod_twms/src
 
 #-----------------------------------------------------------------------------
 # Install
@@ -123,7 +135,7 @@ install: onearth-install
 
 onearth-install:
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules
-	install -m 755 src/modules/mod_onearth/.libs/mod_oetwms.so \
+	install -m 755 src/modules/mod_oetwms/.libs/mod_oetwms.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oetwms.so
 	install -m 755 src/modules/mod_onearth/.libs/mod_onearth.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_onearth.so
@@ -131,6 +143,14 @@ onearth-install:
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oems.so
 	install -m 755 src/modules/mod_oemstime/.libs/mod_oemstime.so \
 		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_oemstime.so
+	install -m 755 src/modules/mod_receive/src/.libs/mod_receive.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_receive.so
+	install -m 755 src/modules/mod_reproject/src/.libs/mod_reproject.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_reproject.so
+	install -m 755 src/modules/mod_twms/src/.libs/mod_twms.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_twms.so
+	install -m 755 src/modules/mod_wmts_wrapper/.libs/mod_wmts_wrapper.so \
+		$(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_wmts_wrapper.so
 		
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/bin
 	install -m 755 src/modules/mod_onearth/oe_create_cache_config \
@@ -153,6 +173,10 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/RGBApng2Palpng
 	install -m 755 src/mrfgen/oe_validate_palette.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_palette.py
+	install -m 755 src/scripts/oe_utils.py \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_utils.py
+	install -m 755 src/scripts/oe_configure_reproject_layer.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_reproject_layer.py
 	install -m 755 src/scripts/read_idx.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/read_idx.py
 	install -m 755 src/scripts/read_mrf.py  \
@@ -196,6 +220,8 @@ onearth-install:
 	cp -r src/layer_config/conf \
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/layers \
+		$(DESTDIR)/etc/onearth/config
+	cp -r src/layer_config/reproject \
 		$(DESTDIR)/etc/onearth/config
 	cp -r src/layer_config/schema \
 		$(DESTDIR)/etc/onearth/config
@@ -248,8 +274,9 @@ onearth-artifact: onearth-clean
 	rm -rf dist/onearth-$(ONEARTH_VERSION).tar.bz2
 	tar cjvf dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
-		src/modules/mod_onearth src/modules/mod_oems src/modules/mod_oemstime src/scripts src/colormaps src/vectorgen \
-		src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend src/empty_tile GNUmakefile
+		src/modules/mod_onearth src/modules/mod_oetwms src/modules/mod_oems src/modules/mod_oemstime \
+		src/modules/mod_receive/src src/modules/mod_reproject/src src/modules/mod_twms/src src/modules/mod_wmts_wrapper \
+		src/scripts src/colormaps src/vectorgen src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend src/empty_tile GNUmakefile
 
 #-----------------------------------------------------------------------------
 # RPM
@@ -286,7 +313,7 @@ onearth-mock:
 	mock --shell \
 	       "yum install -y /gibs-gdal-*$(GDAL_VERSION)-*.$(shell arch).rpm"
 	mock --rebuild --no-clean \
-		dist/mod_oetwms-$(ONEARTH_VERSION)-*.src.rpm
+		dist/onearth*$(ONEARTH_VERSION)-*.src.rpm
 
 #-----------------------------------------------------------------------------
 # Clean
@@ -295,9 +322,19 @@ clean: onearth-clean
 	rm -rf build
 
 onearth-clean:
+	# Reuse Makefile.lcl for external modules
+	cp src/modules/mod_wmts_wrapper/Makefile.lcl src/modules/mod_receive/src/
+	cp src/modules/mod_wmts_wrapper/Makefile.lcl src/modules/mod_reproject/src/
+	cp src/modules/mod_wmts_wrapper/Makefile.lcl src/modules/mod_twms/src/
+	
 	$(MAKE) -C src/modules/mod_onearth clean
+	$(MAKE) -C src/modules/mod_oetwms clean
 	$(MAKE) -C src/modules/mod_oems clean
 	$(MAKE) -C src/modules/mod_oemstime clean
+	$(MAKE) -C src/modules/mod_receive/src clean
+	$(MAKE) -C src/modules/mod_reproject/src clean
+	$(MAKE) -C src/modules/mod_twms/src clean
+	$(MAKE) -C src/modules/mod_wmts_wrapper clean
 
 distclean: clean
 	rm -rf dist

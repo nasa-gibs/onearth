@@ -20,8 +20,8 @@ limitations under the License.
     <CacheLocation service="twms" basename="cache_all_twms">/usr/share/onearth/demo/data/EPSG4326/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG4326/</StagingLocation>
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG4326/</StagingLocation>
-    <ServiceURL service="wmts">http://localhost/wmts-geo/</ServiceURL>
-    <ServiceURL service="twms">http://localhost/twms-geo/</ServiceURL>
+    <ServiceURL service="wmts">http://localhost/onearth/wmts/epsg4326/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/onearth/twms/epsg4326/</ServiceURL>
     <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>

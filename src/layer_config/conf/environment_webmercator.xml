@@ -20,8 +20,8 @@ limitations under the License.
     <CacheLocation service="twms" basename="cache_all_twms">/usr/share/onearth/demo/data/EPSG3857/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3857/</StagingLocation>
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG3857/</StagingLocation>
-    <ServiceURL service="wmts">http://localhost/wmts-webmerc/</ServiceURL>
-    <ServiceURL service="twms">http://localhost/twms-webmerc/</ServiceURL>
+    <ServiceURL service="wmts">http://localhost/onearth/wmts/epsg3857/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/onearth/twms/epsg3857/</ServiceURL>
     <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
@@ -31,4 +31,10 @@ limitations under the License.
     <MapfileLocation basename="epsg3857">/usr/share/onearth/demo/mapserver/</MapfileLocation>
     <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG3857/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG3857">/etc/onearth/config/mapserver/</MapfileConfigLocation>
+    <ReprojectEndpoint service="wmts">/onearth/wmts/epsg3857</ReprojectEndpoint>
+    <ReprojectEndpoint service="twms">/onearth/twms/epsg3857</ReprojectEndpoint>
+    <ApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ApacheConfigLocation>
+    <ApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ApacheConfigLocation>
+    <ApacheConfigHeaderLocation service="twms" basename="webmerc-reproject-twms">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
+    <ApacheConfigHeaderLocation service="wmts" basename="webmerc-reproject-wmts">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
 </EnvironmentConfiguration>

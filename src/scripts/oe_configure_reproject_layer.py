@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import log_sig_exit, log_sig_warn, log_info_mssg, run_command
+from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
 import requests
 import math
 import functools
@@ -133,9 +133,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if not twms_staging_location:
         log_sig_warn('no twms staging location specified', sigevent_url)
 
-    wmts_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'wmts')
-    if not wmts_reproject_endpoint:
-        log_sig_warn('no wmts reproject endpoint specified -- cannot configure TWMS', sigevent_url)
+    if len(environment_xml.findall('ReprojectEndpoint')) > 0:
+        wmts_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'wmts')
+    else:
+        log_sig_exit('ERROR', 'no ReprojectEndpoint specified in ' + environment_config_path, sigevent_url)
 
     wmts_service_url = next(elem.text for elem in environment_xml.findall('ServiceURL') if elem.get('service') == 'wmts')
     if not wmts_service_url:
@@ -145,7 +146,11 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if not wmts_base_endpoint:
         log_sig_warn('no wmts GC URL specified', sigevent_url)
 
-    wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'wmts')
+    if len(environment_xml.findall('ApacheConfigLocation')) > 1:
+        wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'wmts')
+        twms_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'twms')
+    else:
+        log_sig_exit('ERROR', 'ApacheConfigLocation missing in ' + environment_config_path, sigevent_url)
     wmts_apache_config_location = wmts_apache_config_location_elem.text
     if not wmts_apache_config_location:
         log_sig_warn('no wmts Apache config location specified', sigevent_url)
@@ -153,7 +158,11 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if not wmts_apache_config_basename:
         log_sig_warn('no wmts Apache config basename specified', sigevent_url)
 
-    wmts_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'wmts')
+    if len(environment_xml.findall('ApacheConfigHeaderLocation')) > 1:
+        wmts_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'wmts')
+        twms_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'twms')
+    else:
+        log_sig_exit('ERROR', 'ApacheConfigHeaderLocation missing in ' + environment_config_path, sigevent_url)
     wmts_apache_config_header_location = wmts_apache_config_header_location_elem.text
     if not wmts_apache_config_header_location:
         log_sig_warn('no wmts Apache header location specified', sigevent_url)
@@ -167,7 +176,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if os.path.split(os.path.dirname(twms_base_endpoint))[1] == '.lib':
         twms_base_endpoint = os.path.split(os.path.dirname(twms_base_endpoint))[0]
 
-    twms_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'twms')
     twms_apache_config_location = twms_apache_config_location_elem.text
     if not twms_apache_config_location:
         log_sig_warn('no twms Apache config location specified', sigevent_url)
@@ -175,7 +183,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if not twms_apache_config_basename:
         log_sig_warn('no twms Apache config basename specified', sigevent_url)
 
-    twms_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'twms')
     twms_apache_config_header_location = twms_apache_config_header_location_elem.text
     if not twms_apache_config_header_location:
         log_sig_warn('no twms Apache header location specified', sigevent_url)
@@ -256,7 +263,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 print 'Checking for palette for PNG layer: ' + identifier
                 r = requests.get(sample_tile_url)
                 if r.status_code != 200:
-                    log_sig_exit('ERROR', 'Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
+                    log_sig_err('Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
+                    continue
                 sample_png = png.Reader(BytesIO(r.content))
                 sample_png.read()
                 try:

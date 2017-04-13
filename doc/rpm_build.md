@@ -69,12 +69,24 @@ The development package needs to be installed to build the remaining packages. T
 sudo yum -y install dist/gibs-gdal-devel-*.el6.x86_64.rpm 
 ```
 
-Install the build dependencies for onearth:
+Initialize onearth submodules:
 
 ```Shell
 cd ../onearth
+git submodule update --init --recursive
+```
+
+Install the build dependencies for onearth:
+
+```Shell
 sudo yum-builddep deploy/onearth/onearth.spec
 ```
+
+Enable newer gcc compiler if using CentOS 6
+
+```Shell
+scl enable devtoolset-3 bash
+``` 
 
 Build the RPM:
 
