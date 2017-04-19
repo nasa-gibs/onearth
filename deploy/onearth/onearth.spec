@@ -20,8 +20,10 @@ BuildRequires:	freetype-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:	cmake
-BuildRequires:  centos-release-scl
-BuildRequires:  devtoolset-3-toolchain
+%if 0%{?centos}  == 6
+%{BuildRequires:  centos-release-scl}
+%{BuildRequires:  devtoolset-3-toolchain}
+%endif
 Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
@@ -238,9 +240,9 @@ make install
 %{_bindir}/SLDtoColorMap.py
 %{_datadir}/mpl
 
-%post tools		
+%post tools
 cd %{_datadir}/mpl/
-python setup.py build		
+python setup.py build
 python setup.py install
 
 %files config
