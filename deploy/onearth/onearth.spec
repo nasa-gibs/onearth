@@ -21,8 +21,8 @@ BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:	cmake
 %if 0%{?centos}  == 6
-%{BuildRequires:  centos-release-scl}
-%{BuildRequires:  devtoolset-3-toolchain}
+BuildRequires:  centos-release-scl
+BuildRequires:  devtoolset-3-toolchain
 %endif
 Requires:	httpd
 Requires:	gibs-gdal
