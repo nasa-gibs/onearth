@@ -270,10 +270,15 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 try:
                     if sample_png.palette():
                         png_bands = 1
+                        print identifier + ' contains palette'
                 except png.FormatError:
-                    # No palette, assume RGBA
-                    # TODO: Add grayscale check?
-                    png_bands = 4
+                    # No palette, check for greyscale
+                    if sample_png.asDirect()[3]['greyscale'] == True:
+                        png_bands = 1
+                        print identifier + ' is greyscale'
+                    else: # Assume RGBA
+                        png_bands = 4
+                        print identifier + ' does NOT contain palette'
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely matches the scale denominator of the source.
