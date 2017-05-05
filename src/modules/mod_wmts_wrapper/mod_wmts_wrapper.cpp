@@ -205,6 +205,7 @@ static int pre_hook(request_rec *r)
     int errors = 0;
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
     if (!cfg->role) return DECLINED;
+    if (apr_table_get(r->notes, "old_onearth_handled")) return DECLINED; // This is a redirect from mod_onearth, ignore it.
 
     if (apr_strnatcasecmp(cfg->role, "root") == 0 && r->args) {
         apr_table_t *args_table;
@@ -230,7 +231,7 @@ static int pre_hook(request_rec *r)
         }
 
         const char *time = NULL;
-        if ((param = apr_table_get(args_table, "TIME"))) {
+        if ((param = apr_table_get(args_table, "TIME")) && strlen(param)) {
             // Verify that the date is in the right format
             if (ap_regexec(cfg->date_regexp, param, 0, NULL, 0) == AP_REG_NOMATCH 
                 && apr_strnatcasecmp(param, "default")) {
@@ -359,6 +360,14 @@ static int pre_hook(request_rec *r)
         apr_table_set(rr->notes, "mod_wmts_date", datetime_str);
         return ap_run_sub_req(rr);    
     } else if (apr_strnatcasecmp(cfg->role, "tilematrixset") == 0) {
+
+        // If we get to this point, we know mod_reproject is configured for this endpoint, so keep mod_onearth from handling it
+        if (module *old_onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
+            apr_table_set(r->notes, "old_onearth_ignore", "true");
+        }
+        
+        const char *datetime_str = apr_table_get(r->notes, "mod_wmts_date");
+
         // Start by getting the requested tile coordinates from the failed URI.
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *dim;
@@ -484,7 +493,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
 static void register_hooks(apr_pool_t *p)
 
 {
-    ap_hook_handler(pre_hook, NULL, NULL, APR_HOOK_FIRST);
+    ap_hook_handler(pre_hook, NULL, NULL, APR_HOOK_FIRST-1);
     ap_hook_handler(post_hook, NULL, NULL, APR_HOOK_LAST);
 }
 

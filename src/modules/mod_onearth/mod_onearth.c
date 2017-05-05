@@ -2473,7 +2473,7 @@ int rewrite_rest_uri(request_rec *r) {
 	int length = i-d;
 	// test using number of slashes
 	if (length < 7 || length > 9)
-		return -1;
+		return DECLINED;
 
 	i = i-1; // step back to split on "."
 	p = apr_strtok(params[i],".",&last);
@@ -2500,21 +2500,23 @@ int rewrite_rest_uri(request_rec *r) {
 		r->args = apr_psprintf(r->pool,"wmts.cgi?SERVICE=%s&REQUEST=%s&VERSION=%s&LAYER=%s&STYLE=%s&TILEMATRIXSET=%s&TILEMATRIX=%s&TILEROW=%s&TILECOL=%s&FORMAT=%s&TIME=%s&ZINDEX=%s","WMTS","GetTile","1.0.0",params[1+d],params[2+d],params[4+d],params[5+d],params[6+d],params[7+d],format,params[3+d],params[8+d]);
 	// Try to get image, otherwise redirect to cgi to handle error
 	if (mrf_handler(r) < 0) {
+		request_rec *rr = ap_sub_req_lookup_uri(apr_psprintf(r->pool,"%s/wmts.cgi?%s",r->uri,r->args), r, r->output_filters);   
+  	    apr_table_set(rr->notes, "old_onearth_handled", "true");
 //		ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/wmts.cgi?%s",r->uri,r->args);
-		ap_internal_redirect(apr_psprintf(r->pool,"%s/wmts.cgi?%s",r->uri,r->args),r);
+		return ap_run_sub_req(rr);
 	}
-	return 0;
+	return DECLINED;
 }
 
 static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
+  if (apr_table_get(r->notes, "old_onearth_ignore")) {
+  	return DECLINED;
+  }
   if (!(r->args)) {
 	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
-		  if (rewrite_rest_uri(r) < 0)
-			  return DECLINED;
-		  else
-			  return OK;
+		  return rewrite_rest_uri(r);
 	  }
 	  else
 		  return DECLINED;
