@@ -82,6 +82,18 @@ void ap_args_to_table(request_rec *r, apr_table_t **table)
     *table = t;
 }
 
+static const char *get_base_uri(request_rec *r)
+{
+    const char *uri = r->uri;
+    int uri_len = strlen(uri);
+    int i;
+    for (i=0;i<uri_len; i++)
+    {
+        if (uri[uri_len-i] == '/') break;
+    }
+    return apr_pstrmemdup(r->pool, uri, uri_len-i);
+}
+
 static wmts_error wmts_make_error(int status, const char *exceptionCode, const char *locator, const char *exceptionText)
 {
 
@@ -173,6 +185,144 @@ static const char *remove_date_from_uri(apr_pool_t *p, apr_array_header_t *token
     return out_uri;
 }
 
+static int handleKvP(request_rec *r) 
+{
+    wmts_error wmts_errors[5];
+    int errors = 0;
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module); 
+    apr_table_t *args_table;
+    ap_args_to_table(r, &args_table);
+
+    const char *param = NULL;
+    const char *version = NULL;
+    if ((param = apr_table_get(args_table, "VERSION"))) {
+        if (apr_strnatcasecmp(param, "1.0.0") == 0) {
+            version = param;
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","VERSION", "Invalid VERSION parameter");
+        }
+    } else {
+        wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
+    }
+
+    const char *style = NULL;
+    if ((param = apr_table_get(args_table, "STYLE")) && strlen(param)) {
+        style = param;
+    } else {
+        style = "default";
+    }
+
+    const char *time = NULL;
+    if ((param = apr_table_get(args_table, "TIME")) && strlen(param)) {
+        // Verify that the date is in the right format
+        if (ap_regexec(cfg->date_regexp, param, 0, NULL, 0) == AP_REG_NOMATCH 
+            && apr_strnatcasecmp(param, "default")) {
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
+        } else {
+            time = param;
+        }
+    }
+
+    const char *request = NULL;
+    if ((param = apr_table_get(args_table, "REQUEST"))) {
+        if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0) {
+            wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
+        } else {
+            request = param;
+        }
+    }
+    
+    const char *layer = NULL;
+    if ((param = apr_table_get(args_table, "LAYER"))) {
+        layer = param;
+    } else {
+        if (apr_strnatcasecmp(request, "GetCapabilities") != 0) {
+            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
+        }
+    }
+
+    const char *service = NULL;
+    if ((param = apr_table_get(args_table, "SERVICE"))) {
+        if (apr_strnatcasecmp(param, "WMTS"))
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","SERVICE", "Unrecognized service");
+    } else {
+        wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","SERVICE", "Missing SERVICE parameter");
+    }   
+
+    const char *format = NULL;
+    if (request && apr_strnatcasecmp(request, "GetTile") == 0) {
+        if ((param = apr_table_get(args_table, "FORMAT"))) {
+            if (apr_strnatcasecmp(param, "image/jpeg") == 0) {
+                format = ".jpg";
+            } else if (apr_strnatcasecmp(param, "image/png") == 0) {
+                format = ".png";
+            } else if (apr_strnatcasecmp(param, "image/tiff") == 0) {
+                format = ".tiff";
+            } else if (apr_strnatcasecmp(param, "image/lerc") == 0) {
+                format = ".lerc";
+            } else if (apr_strnatcasecmp(param, "application/x-protobuf;type=mapbox-vector") == 0) {
+                format = ".pbf";
+            } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0) {
+                format = ".mvt";
+            } else {
+                wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","FORMAT", "Unrecognized format");
+            }
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","FORMAT", "Missing FORMAT parameter");
+        }
+
+        const char *tilematrixset = NULL;
+        if ((param = apr_table_get(args_table, "TILEMATRIXSET"))) {
+            tilematrixset = param;
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
+        }
+
+        const char *tile_l = NULL;
+        if ((param = apr_table_get(args_table, "TILEMATRIX"))) {
+            tile_l = param;
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIX", "Missing TILEMATRIX parameter");
+        }
+
+        const char *tile_x = NULL;
+        if ((param = apr_table_get(args_table, "TILEROW"))) {
+            tile_x = param;
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEROW", "Missing TILEROW parameter");
+        }
+
+        const char *tile_y = NULL;
+        if ((param = apr_table_get(args_table, "TILECOL"))) {
+            tile_y = param;
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILECOL", "Missing TILECOL parameter");
+        }
+
+        if (errors) {
+            return wmts_return_all_errors(r, errors, wmts_errors);
+        }
+
+        const char *out_uri = apr_psprintf(r->pool, "%s/%s/%s/%s/%s/%s/%s%s",
+                                        get_base_uri(r),
+                                        layer,
+                                        style,
+                                        tilematrixset,
+                                        tile_l,
+                                        tile_x,
+                                        tile_y,
+                                        format
+                                        );
+        apr_table_set(r->notes, "mod_wmts_date", time ? time : "default");
+        ap_internal_redirect(out_uri, r);
+        return DECLINED;
+    } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
+        ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getCapabilities.xml"), r);
+        return DECLINED;    
+    }
+}
+
+
 // static const char *get_date_from_uri(apr_pool_t *p, wmts_wrapper_conf *cfg, const char *uri)
 // {
 //     const char *pattern = "\\d{4}-\\d{2}-\\d{2}";
@@ -205,140 +355,8 @@ static int pre_hook(request_rec *r)
     int errors = 0;
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
     if (!cfg->role) return DECLINED;
-    if (apr_table_get(r->notes, "old_onearth_handled")) return DECLINED; // This is a redirect from mod_onearth, ignore it.
 
-    if (apr_strnatcasecmp(cfg->role, "root") == 0 && r->args) {
-        apr_table_t *args_table;
-        ap_args_to_table(r, &args_table);
-
-        const char *param = NULL;
-        const char *version = NULL;
-        if ((param = apr_table_get(args_table, "VERSION"))) {
-            if (apr_strnatcasecmp(param, "1.0.0") == 0) {
-                version = param;
-            } else {
-                wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","VERSION", "Invalid VERSION parameter");
-            }
-        } else {
-            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
-        }
-
-        const char *style = NULL;
-        if ((param = apr_table_get(args_table, "STYLE"))) {
-            style = param;
-        } else {
-            style = "default";
-        }
-
-        const char *time = NULL;
-        if ((param = apr_table_get(args_table, "TIME")) && strlen(param)) {
-            // Verify that the date is in the right format
-            if (ap_regexec(cfg->date_regexp, param, 0, NULL, 0) == AP_REG_NOMATCH 
-                && apr_strnatcasecmp(param, "default")) {
-                wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
-            } else {
-                time = param;
-            }
-        }
-
-        const char *request = NULL;
-        if ((param = apr_table_get(args_table, "REQUEST"))) {
-            if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0) {
-                wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
-            } else {
-                request = param;
-            }
-        }
-        
-        const char *layer = NULL;
-        if ((param = apr_table_get(args_table, "LAYER"))) {
-            layer = param;
-        } else {
-            if (apr_strnatcasecmp(request, "GetCapabilities") != 0) {
-                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
-            }
-        }
-
-        const char *service = NULL;
-        if ((param = apr_table_get(args_table, "SERVICE"))) {
-            if (apr_strnatcasecmp(param, "WMTS"))
-                wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","SERVICE", "Unrecognized service");
-        } else {
-            wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","SERVICE", "Missing SERVICE parameter");
-        }   
-
-        const char *format = NULL;
-        if (request && apr_strnatcasecmp(request, "GetTile") == 0) {
-            if ((param = apr_table_get(args_table, "FORMAT"))) {
-                if (apr_strnatcasecmp(param, "image/jpeg") == 0) {
-                    format = ".jpg";
-                } else if (apr_strnatcasecmp(param, "image/png") == 0) {
-                    format = ".png";
-                } else if (apr_strnatcasecmp(param, "image/tiff") == 0) {
-                    format = ".tiff";
-                } else if (apr_strnatcasecmp(param, "image/lerc") == 0) {
-                    format = ".lerc";
-                } else if (apr_strnatcasecmp(param, "application/x-protobuf;type=mapbox-vector") == 0) {
-                    format = ".pbf";
-                } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0) {
-                    format = ".mvt";
-                } else {
-                    wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","FORMAT", "Unrecognized format");
-                }
-            } else {
-                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","FORMAT", "Missing FORMAT parameter");
-            }
-
-            const char *tilematrixset = NULL;
-            if ((param = apr_table_get(args_table, "TILEMATRIXSET"))) {
-                tilematrixset = param;
-            } else {
-                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
-            }
-
-            const char *tile_l = NULL;
-            if ((param = apr_table_get(args_table, "TILEMATRIX"))) {
-                tile_l = param;
-            } else {
-                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIX", "Missing TILEMATRIX parameter");
-            }
-
-            const char *tile_x = NULL;
-            if ((param = apr_table_get(args_table, "TILEROW"))) {
-                tile_x = param;
-            } else {
-                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEROW", "Missing TILEROW parameter");
-            }
-
-            const char *tile_y = NULL;
-            if ((param = apr_table_get(args_table, "TILECOL"))) {
-                tile_y = param;
-            } else {
-                wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILECOL", "Missing TILECOL parameter");
-            }
-
-            if (errors) {
-                return wmts_return_all_errors(r, errors, wmts_errors);
-            }
-
-            const char *out_uri = apr_psprintf(r->pool, "%s/%s/%s/%s/%s/%s%s",
-                                            layer,
-                                            style,
-                                            tilematrixset,
-                                            tile_l,
-                                            tile_x,
-                                            tile_y,
-                                            format
-                                            );
-            request_rec *rr = ap_sub_req_lookup_uri(out_uri, r, r->output_filters);   
-            apr_table_set(rr->notes, "mod_wmts_date", time ? time : "default");
-            return ap_run_sub_req(rr);    
-        } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
-            request_rec *rr = ap_sub_req_lookup_uri("getCapabilities.xml", r, r->output_filters);   
-            ap_set_content_type(rr, "text/xml");
-            return ap_run_sub_req(rr);   
-        }
-        if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
+    if (apr_strnatcasecmp(cfg->role, "root") == 0) {
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "style") == 0 && cfg->time) {
         if (apr_table_get(r->notes, "mod_wmts_date")) {
@@ -356,9 +374,11 @@ static int pre_hook(request_rec *r)
         }
         // Rewrite URI to exclude date and put the date in the notes for the redirect.
         const char *out_uri = remove_date_from_uri(r->pool, tokens);
-        request_rec *rr = ap_sub_req_lookup_uri(out_uri, r, r->output_filters);   
-        apr_table_set(rr->notes, "mod_wmts_date", datetime_str);
-        return ap_run_sub_req(rr);    
+        // request_rec *rr = ap_sub_req_lookup_uri(out_uri, r, r->output_filters);   
+        apr_table_set(r->notes, "mod_wmts_date", datetime_str);
+        // return ap_run_sub_req(rr);    
+        ap_internal_redirect(out_uri, r);
+        return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "tilematrixset") == 0) {
 
         // If we get to this point, we know mod_reproject is configured for this endpoint, so keep mod_onearth from handling it
@@ -366,7 +386,7 @@ static int pre_hook(request_rec *r)
             apr_table_set(r->notes, "old_onearth_ignore", "true");
         }
         
-        const char *datetime_str = apr_table_get(r->notes, "mod_wmts_date");
+        const char *datetime_str = apr_table_get(r->prev->notes, "mod_wmts_date");
 
         // Start by getting the requested tile coordinates from the failed URI.
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
@@ -401,8 +421,6 @@ static int pre_hook(request_rec *r)
             }
             if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
             if (cfg->time) {
-                const char *datetime_str = apr_table_get(r->notes, "mod_wmts_date");
-
                 // If this is a directory that mod_reproject is configured to run in, create a new configuration, replacing the 
                 // source URL ${date} field with the date for this request.
                 if (reproject_config->source) {
@@ -436,10 +454,10 @@ static int post_hook(request_rec *r)
     if (apr_stat(fileinfo, r->filename, 0, r->pool) == APR_SUCCESS) return DECLINED;
 
     if (!apr_strnatcasecmp(cfg->role, "root")) {
-        if (!r->args) {
-            wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "LAYER", "LAYER does not exist");
-            return wmts_return_all_errors(r, errors, wmts_errors);
-        }
+        if (r->args) return handleKvP(r);
+
+        wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "LAYER", "LAYER does not exist");
+        return wmts_return_all_errors(r, errors, wmts_errors);
     } 
     if (!apr_strnatcasecmp(cfg->role, "layer")) {
         wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","STYLE", "STYLE is invalid for LAYER");
