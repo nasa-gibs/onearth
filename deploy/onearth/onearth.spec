@@ -10,6 +10,12 @@ Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.t
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
 Source4:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
+%if 0%{?centos}  == 6
+Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
+%endif
+%if 0%{?centos}  == 7
+Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
+%endif
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -124,6 +130,7 @@ cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
 cp %{SOURCE4} upstream
+cp %{SOURCE5} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -212,6 +219,7 @@ rm -rf %{buildroot}
 
 %files
 %{_libdir}/httpd/modules/*
+%{_libdir}/httpd/modules/mod_proxy/*
 %defattr(-,gibs,gibs,775)
 %dir %{_datadir}/onearth
 %defattr(775,gibs,gibs,775)
@@ -225,6 +233,14 @@ rm -rf %{buildroot}
 cd %{_datadir}/cgicc/
 %{_datadir}/cgicc/configure --prefix=/usr
 make install
+
+for file in %{_libdir}/httpd/modules/mod_proxy*.so; do
+    mv "$file" "%{_libdir}/httpd/modules/`basename "$file" .so`.save"
+done
+cd %{_libdir}/httpd/modules/
+for file in %{_libdir}/httpd/modules/mod_proxy/*.so; do
+	ln -s "$file" `basename "$file"`
+done
 
 %files tools
 %defattr(755,root,root,-)

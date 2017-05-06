@@ -29,6 +29,16 @@ CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
 SPATIALINDEX_ARTIFACT=spatialindex-src-1.8.5.tar.gz
 SPATIALINDEX_URL=http://download.osgeo.org/libspatialindex/$(SPATIALINDEX_ARTIFACT)
 
+HTTPD_VERSION=$(shell rpm -q --qf "%{VERSION}" $(shell rpm -q --whatprovides redhat-release))
+ifeq ($(HTTPD_VERSION), 6)
+        HTTPD_ARTIFACT=httpd-2.2.15.tar.gz
+        LINE=933
+else
+		HTTPD_ARTIFACT=httpd-2.4.6.tar.gz
+		LINE=735
+endif
+HTTPD_URL=https://archive.apache.org/dist/httpd/$(HTTPD_ARTIFACT)
+
 MAPSERVER_VERSION=7.0.1
 MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
@@ -37,13 +47,13 @@ MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack spatialindex-unpack mapserver-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack spatialindex-unpack httpd-unpack mapserver-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download spatialindex-download mapserver-download
+download: mpl-download cgicc-download spatialindex-download httpd-download mapserver-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -68,6 +78,14 @@ upstream/$(SPATIALINDEX_ARTIFACT).downloaded:
 	rm -f upstream/$(SPATIALINDEX_ARTIFACT)
 	( cd upstream ; wget $(SPATIALINDEX_URL) )
 	touch upstream/$(SPATIALINDEX_ARTIFACT).downloaded
+	
+httpd-download: upstream/$(HTTPD_ARTIFACT).downloaded
+
+upstream/$(HTTPD_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -f upstream/$(HTTPD_ARTIFACT)
+	( cd upstream ; wget $(HTTPD_URL) )
+	touch upstream/$(HTTPD_ARTIFACT).downloaded
 
 mapserver-download: upstream/$(MAPSERVER_ARTIFACT).downloaded
 
@@ -103,6 +121,18 @@ build/spatialindex/VERSION:
 		--strip-components=1 --exclude=.gitignore
 	cd build/spatialindex && ./configure --libdir=$(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR) --prefix=$(DESTDIR)/$(LIB_PREFIX)
 	$(MAKE) -C build/spatialindex
+	
+httpd-unpack: build/httpd/VERSION
+
+build/httpd/VERSION:
+	mkdir -p build/httpd
+	mkdir -p /tmp/httpd
+	tar xf upstream/$(HTTPD_ARTIFACT) -C build/httpd \
+		--strip-components=1 --exclude=.gitignore
+	sed -i "${LINE}d" build/httpd/modules/proxy/mod_proxy_http.c
+	cd build/httpd && ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared 
+	cd build/httpd && make
+	cd build/httpd && make install
 		
 mapserver-unpack: build/mapserver/VERSION
 
@@ -254,6 +284,10 @@ onearth-install:
 	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
 	$(MAKE) install -C build/spatialindex
 
+	# Install patched mod_proxy
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_proxy
+	cp -r /tmp/httpd/modules/mod_proxy* $(DESTDIR)/$(PREFIX)/$(LIB_DIR)/httpd/modules/mod_proxy
+	rm -rf /tmp/httpd/
 
 #-----------------------------------------------------------------------------
 # Local install
@@ -292,6 +326,7 @@ onearth-rpm: onearth-artifact
 		upstream/$(MPL_ARTIFACT) \
 		upstream/$(CGICC_ARTIFACT) \
 		upstream/$(SPATIALINDEX_ARTIFACT) \
+		upstream/$(HTTPD_ARTIFACT) \
 		upstream/$(MAPSERVER_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
