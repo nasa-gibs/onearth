@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.3.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -286,6 +286,7 @@ make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 mkdir %{_datadir}/onearth/demo/wms/epsg4326
+mkdir %{_datadir}/onearth/demo/data/EPSG3857
 ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/wms/epsg4326
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wms/
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/
