@@ -74,6 +74,8 @@ The environment configuration file contains information that the OnEarth layer c
 * **MapfileLocation** - (Optional) The location of the Mapfile for MapServer.
 * **MapfileStagingLocation** (Optional) The location to stage configuration files for MapServer.
 * **MapfileConfigLocation** (Optional) The location of configuration files for MapServer.
+* **ApacheConfigLocation** (Optional) Used for reprojected layers, this location is where Apache configuration files for reprojected layers are stored. As such, this must be a location Apache is configured to read upon startup (for example `/etc/httpd/conf.d`, or a location specified by an `Includes` directive in your Apache config).
+* **ApacheConfigHeaderLocation** (Optional) Also used for reprojected layers, this location should contain any header files for the generated Apache configs. (See [here](../src/layer_config/reproject) for a couple of example headers)
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
 
@@ -98,6 +100,10 @@ The environment configuration does not have unique identifier.  Reference to the
     <MapfileLocation basename="epsg4326">/usr/share/onearth/demo/mapserver/</MapfileLocation>
     <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG4326/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
+    <ApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ApacheConfigLocation>
+    <ApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ApacheConfigLocation>
+    <ApacheConfigHeaderLocation service="twms" basename="webmerc-reproject-twms">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
+    <ApacheConfigHeaderLocation service="wmts" basename="webmerc-reproject-wmts">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
 </EnvironmentConfiguration>
 ```
 

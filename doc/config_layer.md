@@ -31,6 +31,11 @@ Certain tags from MRF files can be also used in the layer config XML. In this ca
 * **PageSize (required if no MRF header)** Denotes the tile dimensions for the MRF with 'x' and 'y' attributes.
 * **DataValues (optional)** The 'NoData' attribute indicates the default no data value.
 
+##### Reprojection Fields
+A different schema is used to configure reprojected layers. For more information, see the [reprojection doc page](config_reproject.md).
+
+-----
+
 A sample layer configuration file is shown here:
 
 ```xml
