@@ -2389,6 +2389,7 @@ static int mrf_handler(request_rec *r)
       if (!this_data) { // No empty tile provided, let it pass
     	  miss_count--;
     	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Record not present %s",r->args);
+	      apr_table_set(r->notes, "old_onearth_failed", "true");
     	  return DECLINED;
       }
     }

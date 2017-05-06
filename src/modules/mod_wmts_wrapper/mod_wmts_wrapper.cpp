@@ -185,6 +185,28 @@ static const char *remove_date_from_uri(apr_pool_t *p, apr_array_header_t *token
     return out_uri;
 }
 
+static const char *get_blank_tile_filename(request_rec *r)
+{
+    const char *blank_tile_filename;
+    const char *uri = r->uri;
+    const char *file_ext = uri + strlen(uri) - 4;
+    apr_table_t *args_table;
+    ap_args_to_table(r, &args_table);
+    const char *param = apr_table_get(args_table, "FORMAT");
+    if (apr_strnatcasecmp(param, "image/jpeg") == 0 || apr_strnatcasecmp(file_ext, ".jpg") == 0)  {
+        blank_tile_filename = "black.jpg";
+    } else if (apr_strnatcasecmp(param, "image/png") == 0 || apr_strnatcasecmp(file_ext, ".png") == 0)  {
+        blank_tile_filename = "transparent.png";
+    } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0 || apr_strnatcasecmp(file_ext, ".mvt") == 0)  {
+        blank_tile_filename = "empty.mvt";
+    } else if (apr_strnatcasecmp(param, "application/x-protobuf;type=mapbox-vector") == 0 || apr_strnatcasecmp(file_ext, ".pbf") == 0)  {
+        blank_tile_filename = "empty.mvt";
+    } else {
+        return NULL;
+    }
+    return apr_psprintf(r->pool, "%s/%s", get_base_uri(r), blank_tile_filename);
+}
+
 static int handleKvP(request_rec *r) 
 {
     wmts_error wmts_errors[5];
@@ -225,7 +247,7 @@ static int handleKvP(request_rec *r)
 
     const char *request = NULL;
     if ((param = apr_table_get(args_table, "REQUEST"))) {
-        if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0) {
+        if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0 && apr_strnatcasecmp(param, "GetTileService") != 0) {
             wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
         } else {
             request = param;
@@ -236,7 +258,7 @@ static int handleKvP(request_rec *r)
     if ((param = apr_table_get(args_table, "LAYER"))) {
         layer = param;
     } else {
-        if (apr_strnatcasecmp(request, "GetCapabilities") != 0) {
+        if (apr_strnatcasecmp(request, "GetCapabilities") != 0 && apr_strnatcasecmp(request, "GetTileService") != 0) {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
         }
     }
@@ -319,6 +341,9 @@ static int handleKvP(request_rec *r)
     } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
         ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getCapabilities.xml"), r);
         return DECLINED;    
+    } else if (apr_strnatcasecmp(request, "GetTileService") == 0) {
+        ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getTileService.xml"), r);
+        return DECLINED;    
     }
 }
 
@@ -357,6 +382,7 @@ static int pre_hook(request_rec *r)
     if (!cfg->role) return DECLINED;
 
     if (apr_strnatcasecmp(cfg->role, "root") == 0) {
+        apr_table_set(r->notes, "old_onearth_failed", "true");
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "style") == 0 && cfg->time) {
         if (apr_table_get(r->notes, "mod_wmts_date")) {
@@ -454,6 +480,14 @@ static int post_hook(request_rec *r)
     if (apr_stat(fileinfo, r->filename, 0, r->pool) == APR_SUCCESS) return DECLINED;
 
     if (!apr_strnatcasecmp(cfg->role, "root")) {
+        // If mod_onearth has handled and failed this request, we serve up the appropriate blank tile (if it exists)
+        if (apr_table_get(r->notes, "old_onearth_failed")) {
+            if (const char *blank_tile_url = get_blank_tile_filename(r)) {
+                ap_internal_redirect(blank_tile_url, r);
+            }
+            return DECLINED;
+        }
+
         if (r->args) return handleKvP(r);
 
         wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "LAYER", "LAYER does not exist");
