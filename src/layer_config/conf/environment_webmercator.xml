@@ -33,8 +33,8 @@ limitations under the License.
     <MapfileConfigLocation basename="EPSG3857">/etc/onearth/config/mapserver/</MapfileConfigLocation>
     <ReprojectEndpoint service="wmts">/onearth/wmts/epsg3857</ReprojectEndpoint>
     <ReprojectEndpoint service="twms">/onearth/twms/epsg3857</ReprojectEndpoint>
-    <ApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ApacheConfigLocation>
-    <ApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ApacheConfigLocation>
+    <ApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/usr/share/onearth/demo/data/EPSG3857/</ApacheConfigLocation>
+    <ApacheConfigLocation service="twms" basename="onearth-reproject-twms">/usr/share/onearth/demo/data/EPSG3857/</ApacheConfigLocation>
     <ApacheConfigHeaderLocation service="twms" basename="webmerc-reproject-twms">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
     <ApacheConfigHeaderLocation service="wmts" basename="webmerc-reproject-wmts">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
 </EnvironmentConfiguration>
