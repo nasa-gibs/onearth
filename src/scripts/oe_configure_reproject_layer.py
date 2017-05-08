@@ -399,8 +399,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             # Finish building the layer Apache config
             layer_apache_config = '<Directory {0}>\n'.format(layer_endpoint)
             layer_apache_config += '\tWMTSWrapperRole layer\n'
-            if not static:
-                layer_apache_config += '\tWMTSWrapperEnableTime on\n'
+            layer_apache_config += '\tWMTSWrapperEnableTime on\n'
             layer_apache_config += '</Directory>\n'
             layer_apache_config += '<Directory {0}>\n'.format(layer_style_endpoint)
             layer_apache_config += '\tWMTSWrapperRole style\n'
