@@ -336,6 +336,7 @@ static int handleKvP(request_rec *r)
                                         format
                                         );
         apr_table_set(r->notes, "mod_wmts_date", time ? time : "default");
+        apr_table_set(r->notes, "mod_onearth_ignore", "true");
         ap_internal_redirect(out_uri, r);
         return DECLINED;
     } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
@@ -382,7 +383,6 @@ static int pre_hook(request_rec *r)
     if (!cfg->role) return DECLINED;
 
     if (apr_strnatcasecmp(cfg->role, "root") == 0) {
-        apr_table_set(r->notes, "old_onearth_failed", "true");
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "style") == 0 && cfg->time) {
         if (apr_table_get(r->notes, "mod_wmts_date")) {
@@ -409,7 +409,7 @@ static int pre_hook(request_rec *r)
 
         // If we get to this point, we know mod_reproject is configured for this endpoint, so keep mod_onearth from handling it
         if (module *old_onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
-            apr_table_set(r->notes, "old_onearth_ignore", "true");
+            apr_table_set(r->notes, "mod_onearth_ignore", "true");
         }
         
         const char *datetime_str = apr_table_get(r->prev->notes, "mod_wmts_date");
@@ -481,7 +481,7 @@ static int post_hook(request_rec *r)
 
     if (!apr_strnatcasecmp(cfg->role, "root")) {
         // If mod_onearth has handled and failed this request, we serve up the appropriate blank tile (if it exists)
-        if (apr_table_get(r->notes, "old_onearth_failed")) {
+        if (apr_table_get(r->notes, "mod_onearth_failed")) {
             if (const char *blank_tile_url = get_blank_tile_filename(r)) {
                 ap_internal_redirect(blank_tile_url, r);
             }
