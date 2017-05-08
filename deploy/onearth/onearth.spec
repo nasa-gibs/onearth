@@ -235,11 +235,9 @@ cd %{_datadir}/cgicc/
 %{_datadir}/cgicc/configure --prefix=/usr
 make install
 
-for file in %{_libdir}/httpd/modules/mod_proxy*.so; do
-    mv "$file" "%{_libdir}/httpd/modules/`basename "$file" .so`.save"
-done
 cd %{_libdir}/httpd/modules/
 for file in %{_libdir}/httpd/modules/mod_proxy/*.so; do
+	mv "`basename "$file"`" "`basename "$file" .so`.save"
 	ln -s "$file" `basename "$file"`
 done
 
