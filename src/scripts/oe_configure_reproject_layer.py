@@ -350,6 +350,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_cfg.write('SourcePath {0}\n'.format(dest_url))
                     dest_cfg.write('SourcePostfix {0}\n'.format(dest_file_ext))
                     dest_cfg.write('MimeType {0}\n'.format(src_format))
+                    dest_cfg.write('Oversample On\n')
                     dest_cfg.write('ExtraLevels 1\n')
                     # dest_cfg.write('SkippedLevels 1\n')
 
