@@ -276,9 +276,13 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     if sample_png.asDirect()[3]['greyscale'] == True:
                         png_bands = 1
                         print identifier + ' is greyscale'
-                    else: # Assume RGBA
-                        png_bands = 4
-                        print identifier + ' does NOT contain palette'
+                    else: # Check for alpha
+                        if sample_png.asDirect()[3]['alpha'] == True:
+                            png_bands = 4
+                            print identifier + ' is RGBA'
+                        else:
+                            png_bands = 3
+                            print identifier + ' is RGB'
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely matches the scale denominator of the source.
