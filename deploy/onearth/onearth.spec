@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.3.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -26,6 +26,7 @@ BuildRequires:	freetype-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:	cmake
+BuildRequires:  turbojpeg-devel
 %if 0%{?centos}  == 6
 BuildRequires:  centos-release-scl
 BuildRequires:  devtoolset-3-toolchain
@@ -181,8 +182,6 @@ ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
-ln -s %{_datadir}/onearth/apache/wmts.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
@@ -241,6 +240,12 @@ for file in %{_libdir}/httpd/modules/mod_proxy/*.so; do
 	ln -s "$file" `basename "$file"`
 done
 
+%postun
+cd %{_libdir}/httpd/modules/
+for file in %{_libdir}/httpd/modules/*.save; do
+	mv "$file" "`basename "$file" .save`.so"
+done
+
 %files tools
 %defattr(755,root,root,-)
 %{_bindir}/oe_generate_legend.py
@@ -296,6 +301,7 @@ python setup.py install
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/onearth-demo.conf
 
 %post demo
+%defattr(-,gibs,gibs,-)
 cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
