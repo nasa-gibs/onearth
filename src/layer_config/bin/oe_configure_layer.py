@@ -81,7 +81,7 @@ from optparse import OptionParser
 from lxml import etree
 from shutil import copyfile
 
-versionNumber = '1.1.3'
+versionNumber = '1.1.4'
 current_conf = None
 
 class WMTSEndPoint:
