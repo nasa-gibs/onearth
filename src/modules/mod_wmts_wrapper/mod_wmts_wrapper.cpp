@@ -412,7 +412,9 @@ static int pre_hook(request_rec *r)
             apr_table_set(r->notes, "mod_onearth_ignore", "true");
         }
         
-        const char *datetime_str = apr_table_get(r->prev->notes, "mod_wmts_date");
+        const char *datetime_str = r->prev && apr_table_get(r->prev->notes, "mod_wmts_date")
+            ? apr_table_get(r->prev->notes, "mod_wmts_date")
+            : "default";
 
         // Start by getting the requested tile coordinates from the failed URI.
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
