@@ -263,8 +263,15 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 print 'Checking for palette for PNG layer: ' + identifier
                 r = requests.get(sample_tile_url)
                 if r.status_code != 200:
-                    log_sig_err('Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
-                    continue
+                    if "Invalid time format" in r.text: # Try taking out TIME if server doesn't like the request
+                        sample_tile_url = sample_tile_url.replace('default/default', 'default')
+                        r = requests.get(sample_tile_url)
+                        if r.status_code != 200:
+                            log_sig_err('Can\'t get sample PNG tile from URL: ' + sample_tile_url, sigevent_url)
+                            continue
+                    else:
+                        log_sig_err('Can\'t get sample PNG tile from URL: ' + sample_tile_url, sigevent_url)
+                        continue
                 sample_png = png.Reader(BytesIO(r.content))
                 sample_png.read()
                 try:
