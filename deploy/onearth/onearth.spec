@@ -301,7 +301,6 @@ python setup.py install
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/onearth-demo.conf
 
 %post demo
-%defattr(-,gibs,gibs,-)
 cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
