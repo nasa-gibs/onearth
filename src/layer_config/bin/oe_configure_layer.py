@@ -1858,13 +1858,14 @@ for conf in conf_files:
     levelsElement = mrf_dom.createElement('Levels')
     levelsElement.appendChild(mrf_dom.createTextNode(str(projection.tilematrixsets[tilematrixset].levels)))
     
+    # Get page sizes for TWMS pattern and/or empty tile generation 
+    pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
+    tileX = int(pageSize.getAttribute('x'))
+    tileY = int(pageSize.getAttribute('y'))
+    
     if emptyTile != None:
         # Generate empty tile and override size if colormap is used
         if default_colormap != None and skip_empty_tiles == False:
-            pageSize = mrf_dom.getElementsByTagName('PageSize')[0]
-            tileX = int(pageSize.getAttribute('x'))
-            tileY = int(pageSize.getAttribute('y'))
-
             colormap_value = default_colormap.firstChild.nodeValue
             colormap_location = default_colormap.attributes['location'].value
             if colormap_location == '':
@@ -1896,8 +1897,8 @@ for conf in conf_files:
 #         twms.appendChild(twms.appendChild(metadataElement))
     
     # add default TWMS patterns
-    twms_time_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
-    twms_notime_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"))
+    twms_time_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&time=[-0-9]*&width=%s&height=%s&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"), str(tileX), str(tileY))
+    twms_notime_pattern = "request=GetMap&layers=%s&srs=%s&format=%s&styles=&width=%s&height=%s&bbox=[-,\.0-9+Ee]*" % (identifier, str(projection.id), mrf_format.replace("/","%2F"), str(tileX), str(tileY))
     patterns.append(twms_time_pattern)
     patterns.append(twms_notime_pattern)
 
