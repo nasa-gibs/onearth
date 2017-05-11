@@ -557,7 +557,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
-def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir):
+def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg):
     """
     Runs gdalmerge and returns merged tile
     Arguments:
@@ -586,14 +586,52 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
             gdal_merge_command_list.append(nodata)
         gdal_merge_command_list.append(mrf)
         gdal_merge_command_list.append(tile)
-    else: # use gdalwarp for RGBA imagery
-        gdal_merge_command_list = ['gdalwarp', '-te', ulx, lry, lrx, uly, '-tr', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-of', 'GTiff', '-r', resize_resampling]
-        if nodata != "":
-            gdal_merge_command_list.append('-srcnodata')
-            gdal_merge_command_list.append(nodata)
-        gdal_merge_command_list.append(tile)
-        gdal_merge_command_list.append(mrf)
-        gdal_merge_command_list.append(new_tile)
+    else: # use gdalbuildvrt/gdalwarp/gdal_translate for RGBA imagery
+        
+        # Build a VRT, adding SRS to the input. Technically, if this is a TIF we wouldn't have to do that
+        vrt_tile = working_dir + os.path.basename(tile) + ".vrt"
+        gdal_vrt_command_list = ['gdalbuildvrt', '-a_srs', target_epsg, vrt_tile, tile]
+        log_the_command(gdal_vrt_command_list)
+        gdal_vrt = subprocess.Popen(gdal_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        insert_message = gdal_vrt.stderr.readlines()
+        for message in insert_message:
+            if 'ERROR' in message.upper():
+                log_sig_err(message + ' in merging image (gdalbuildvrt) while processing ' + tile, sigevent_url)
+            else:
+                log_info_mssg(message.strip())
+        gdal_vrt.wait()
+        
+        # Warp the input image VRT to have the right resolution
+        warp_vrt_tile = working_dir + os.path.basename(tile) + ".warp.vrt"
+        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT', '-tr', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), vrt_tile, warp_vrt_tile]
+        log_the_command(gdal_warp_command_list)
+        gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        insert_message = gdal_warp.stderr.readlines()
+        for message in insert_message:
+            if 'ERROR' in message.upper():
+                log_sig_err(message + ' in merging image (gdalwarp) while processing ' + tile, sigevent_url)
+            else:
+                log_info_mssg(message.strip())
+        gdal_warp.wait()
+        
+        # Now build a combined VRT for both the input VRT and the MRF
+        combined_vrt_tile = working_dir + os.path.basename(tile) + ".combined.vrt"
+        gdal_vrt_command_list2 = ['gdalbuildvrt', combined_vrt_tile, mrf, warp_vrt_tile]
+        log_the_command(gdal_vrt_command_list2)
+        gdal_vrt2 = subprocess.Popen(gdal_vrt_command_list2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        insert_message = gdal_vrt2.stderr.readlines()
+        for message in insert_message:
+            if 'ERROR' in message.upper():
+                log_sig_err(message + ' in merging image (gdalbuildvrt - 2) while processing ' + tile, sigevent_url)
+            else:
+                log_info_mssg(message.strip())
+        gdal_vrt2.wait()
+
+        # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
+        new_tile = working_dir + os.path.basename(tile)+".merge.vrt"
+        gdal_merge_command_list = ['gdal_translate', '-outsize', repr((float(lrx)-float(ulx))/((float(xmax)-float(xmin))/float(target_x))), repr((float(lry)-float(uly))/((float(ymin)-float(ymax))/float(target_y))), '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
+        
+    # Execute the merge
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     insert_message = gdal_merge.stderr.readlines()
@@ -716,7 +754,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
-            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir)
+            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
+            diff_res = False # gdalmerge has corrected the resolutions
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
         if diff_res:
             # convert tile to matching resolution
@@ -742,7 +781,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             if blend == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
                 granule, extents = is_granule_image(vrt_tile) # get new extents
                 log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
-                tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir)
+                tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
                 mrf_insert_command_list.append(tile)
             else:
                 mrf_insert_command_list.append(vrt_tile)
@@ -771,7 +810,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             tile = tile.split('.vrt.blend.')[0]
         remove_file(vrt_tile)
     for tile in tiles:
-        temp_vrt_files = glob.glob(str().join([(working_dir + os.path.basename(tile)).split('.temp.vrt')[0], '.temp.vrt*']))
+        temp_vrt_files = glob.glob(working_dir + os.path.basename(tile) + "*vrt*")
         for vrt in temp_vrt_files:
             remove_file(vrt)
     return errors
