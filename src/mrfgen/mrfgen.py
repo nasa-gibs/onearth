@@ -91,6 +91,7 @@ import shutil
 import imghdr
 import sqlite3
 import math
+from decimal import *
 
 versionNumber = '1.1.4'
 basename = None
@@ -516,21 +517,21 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
         target_y -- The target resolution for y
         mrf_blocksize -- The block size of MRF tiles
     """
-    extents = [float(x) for x in extents]
+    extents = [Decimal(x) for x in extents]
     ulx, uly, lrx, lry = extents
-    x_len = abs(float(xmax)-float(xmin))
-    y_len = abs(float(ymax)-float(ymin))
-    x_res = float(target_x)/x_len
-    y_res = float(target_y)/y_len
+    x_len = abs(Decimal(xmax)-Decimal(xmin))
+    y_len = abs(Decimal(ymax)-Decimal(ymin))
+    x_res = Decimal(target_x)/x_len
+    y_res = Decimal(target_y)/y_len
     x_size = abs(lrx-ulx) * x_res
     y_size = abs(lry-uly) * y_res
-    x_pixelsize = (float(xmax)-float(xmin))/float(target_x)
-    y_pixelsize = (float(ymin)-float(ymax))/float(target_y)
+    x_pixelsize = (Decimal(xmax)-Decimal(xmin))/Decimal(target_x)
+    y_pixelsize = (Decimal(ymin)-Decimal(ymax))/Decimal(target_y)
     log_info_mssg ("x-res: " + str(x_res) + ", y-res: " + str(y_res) + ", x-size: " + str(x_size) + ", y-size: " + str(y_size) + ", x-pixelsize: " + str(x_pixelsize) + ", y-pixelsize: " + str(y_pixelsize))
 
     # figure out appropriate block size that covers extent of granule    
-    block_x = float(mrf_blocksize)
-    block_y = float(mrf_blocksize)
+    block_x = Decimal(mrf_blocksize)
+    block_y = Decimal(mrf_blocksize)
     while (block_x*2) < x_size:
         block_x = block_x * 2
     while (block_y*2) < y_size:
@@ -540,20 +541,20 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     log_info_mssg("Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y)))
     
     # calculate new extents that align with MRF blocks
-    ulx = float((math.floor((ulx*x_res) / block)) * block) / x_res
-    uly = float((math.ceil((uly*y_res) / block)) * block) / y_res
-    lrx = float((math.ceil((lrx*x_res) / block)) * block) / x_res
-    lry = float((math.floor((lry*y_res) / block)) * block) / y_res
+    ulx = Decimal(Decimal(math.floor((ulx*x_res) / block)) * block) / x_res
+    uly = Decimal(Decimal(math.ceil((uly*y_res) / block)) * block) / y_res
+    lrx = Decimal(Decimal(math.ceil((lrx*x_res) / block)) * block) / x_res
+    lry = Decimal(Decimal(math.floor((lry*y_res) / block)) * block) / y_res
 
     # snap to min/max extents if on the edge
-    if ulx < float(xmin):
+    if ulx < Decimal(xmin):
         ulx = xmin
-    if uly > float(ymax):
+    if uly > Decimal(ymax):
         uly = ymax
-    if lrx > float(xmax):
-        lrx = str(float(xmax) - x_pixelsize)
-    if lry < float(ymin):
-        lry = str(float(ymin) - y_pixelsize)
+    if lrx > Decimal(xmax):
+        lrx = str(Decimal(xmax) - x_pixelsize)
+    if lry < Decimal(ymin):
+        lry = str(Decimal(ymin) - y_pixelsize)
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
@@ -574,13 +575,14 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         nodata -- nodata value
         resize_resampling -- resampling method; nearest is used for PPNG
         working_dir -- Directory to use for temporary files
+        target_epsg -- EPSG code for output tile
     """
     if resize_resampling == '':
         resize_resampling = "average" # use average as default for RGBA
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = working_dir + os.path.basename(tile)+".blend.tif"
     if has_color_table(tile) == True:
-        gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
+        gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
         if nodata != "":
             gdal_merge_command_list.append('-n')
             gdal_merge_command_list.append(nodata)
@@ -603,7 +605,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         
         # Warp the input image VRT to have the right resolution
         warp_vrt_tile = working_dir + os.path.basename(tile) + ".warp.vrt"
-        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT', '-tr', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y)), vrt_tile, warp_vrt_tile]
+        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT', '-tr', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), vrt_tile, warp_vrt_tile]
         log_the_command(gdal_warp_command_list)
         gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_warp.stderr.readlines()
@@ -629,7 +631,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
 
         # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
         new_tile = working_dir + os.path.basename(tile)+".merge.vrt"
-        gdal_merge_command_list = ['gdal_translate', '-outsize', repr((float(lrx)-float(ulx))/((float(xmax)-float(xmin))/float(target_x))), repr((float(lry)-float(uly))/((float(ymin)-float(ymax))/float(target_y))), '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
+        gdal_merge_command_list = ['gdal_translate', '-outsize', str((Decimal(lrx)-Decimal(ulx))/((Decimal(xmax)-Decimal(xmin))/Decimal(target_x))), str((Decimal(lry)-Decimal(uly))/((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))), '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
         
     # Execute the merge
     log_the_command(gdal_merge_command_list)
@@ -656,11 +658,11 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     """
     temp_tile = working_dir + os.path.basename(tile) + '.temp.vrt'
     ulx, uly, lrx, lry = extents
-    if float(lrx) <= float(antimeridian):
-        new_lrx = str(float(lrx)+float(antimeridian)*2)
+    if Decimal(lrx) <= Decimal(antimeridian):
+        new_lrx = str(Decimal(lrx)+Decimal(antimeridian)*2)
     else:
         new_lrx = lrx
-        lrx = str(float(antimeridian)*-1 - (float(antimeridian)-float(lrx)))
+        lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
     cutline_template = """
     {
       "type": "Polygon",
@@ -670,8 +672,8 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     }
     """
     cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
-    cutline_left = cutline_template.replace('$values',cutline_values.format(float(ulx), float(uly), float(antimeridian), float(lry)))
-    cutline_right = cutline_template.replace('$values',cutline_values.format(float(antimeridian), float(uly), float(new_lrx), float(lry)))
+    cutline_left = cutline_template.replace('$values',cutline_values.format(Decimal(ulx), Decimal(uly), Decimal(antimeridian), Decimal(lry)))
+    cutline_right = cutline_template.replace('$values',cutline_values.format(Decimal(antimeridian), Decimal(uly), Decimal(new_lrx), Decimal(lry)))
     
     # Create VRT of input tile
     gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
@@ -682,7 +684,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     tile_left = tile+".left_cut.vrt"
     tile_right = tile+".right_cut.vrt" 
     
-    if float(extents[2]) <= float(antimeridian):
+    if Decimal(extents[2]) <= Decimal(antimeridian):
         # modify input into >180 space if not already
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
         log_the_command(gdal_edit_command_list)
@@ -706,7 +708,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
         log_sig_err(right_cut_stderr, sigevent_url)
     
     # flip the origin longitude of the right half
-    gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(float(antimeridian)*-1), uly, lrx, lry]
+    gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian)*-1), uly, lrx, lry]
     log_the_command(gdal_edit_command_list)
     gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdal_edit.wait()  
@@ -749,7 +751,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         # check if granule crosses antimeridian
         if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
             log_info_mssg(tile + " crosses antimeridian")
-            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, repr((float(s_xmax)-float(s_xmin))/float(target_x)), repr((float(s_ymin)-float(s_ymax))/float(target_y)), source_epsg, target_epsg, working_dir)
+            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
             continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
@@ -761,7 +763,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', repr((float(xmax)-float(xmin))/float(target_x)), repr((float(ymin)-float(ymax))/float(target_y))]
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))]
             if target_epsg != source_epsg:
                 tile_vrt_command_list.append('-s_srs')
                 tile_vrt_command_list.append(source_epsg)
