@@ -22,6 +22,8 @@ Dependent RPMs:
 Please refer to the following documentation:
 [Creating Image Archive](archive.md)
 
+## Layer Reprojection
+See the [reprojection doc page](config_reproject.md).
 
 ## Imagery Layers
 

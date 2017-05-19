@@ -263,17 +263,33 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 print 'Checking for palette for PNG layer: ' + identifier
                 r = requests.get(sample_tile_url)
                 if r.status_code != 200:
-                    log_sig_err('Can\'t get sample PNG tile from from URL: ' + sample_tile_url, sigevent_url)
-                    continue
+                    if "Invalid time format" in r.text: # Try taking out TIME if server doesn't like the request
+                        sample_tile_url = sample_tile_url.replace('default/default', 'default')
+                        r = requests.get(sample_tile_url)
+                        if r.status_code != 200:
+                            log_sig_err('Can\'t get sample PNG tile from URL: ' + sample_tile_url, sigevent_url)
+                            continue
+                    else:
+                        log_sig_err('Can\'t get sample PNG tile from URL: ' + sample_tile_url, sigevent_url)
+                        continue
                 sample_png = png.Reader(BytesIO(r.content))
                 sample_png.read()
                 try:
                     if sample_png.palette():
                         png_bands = 1
+                        print identifier + ' contains palette'
                 except png.FormatError:
-                    # No palette, assume RGBA
-                    # TODO: Add grayscale check?
-                    png_bands = 4
+                    # No palette, check for greyscale
+                    if sample_png.asDirect()[3]['greyscale'] == True:
+                        png_bands = 1
+                        print identifier + ' is greyscale'
+                    else: # Check for alpha
+                        if sample_png.asDirect()[3]['alpha'] == True:
+                            png_bands = 4
+                            print identifier + ' is RGBA'
+                        else:
+                            png_bands = 3
+                            print identifier + ' is RGB'
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely matches the scale denominator of the source.
@@ -345,7 +361,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_cfg.write('SourcePath {0}\n'.format(dest_url))
                     dest_cfg.write('SourcePostfix {0}\n'.format(dest_file_ext))
                     dest_cfg.write('MimeType {0}\n'.format(src_format))
-
+                    dest_cfg.write('Oversample On\n')
+                    dest_cfg.write('ExtraLevels 1\n')
                     # dest_cfg.write('SkippedLevels 1\n')
 
                 # Build Apache config snippet for TMS
@@ -393,8 +410,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             # Finish building the layer Apache config
             layer_apache_config = '<Directory {0}>\n'.format(layer_endpoint)
             layer_apache_config += '\tWMTSWrapperRole layer\n'
-            if not static:
-                layer_apache_config += '\tWMTSWrapperEnableTime on\n'
+            layer_apache_config += '\tWMTSWrapperEnableTime on\n'
             layer_apache_config += '</Directory>\n'
             layer_apache_config += '<Directory {0}>\n'.format(layer_style_endpoint)
             layer_apache_config += '\tWMTSWrapperRole style\n'

@@ -74,6 +74,26 @@ mod_oemstime
 /etc/httpd/modules/mod_oemstime.so
 ``
 
+mod_receive
+``
+/etc/httpd/modules/mod_receive.so
+``
+
+mod_reproject
+``
+/etc/httpd/modules/mod_reproject.so
+``
+
+mod_wmts_wrapper
+``
+/etc/httpd/modules/mod_wmts_wrapper.so
+``
+
+mod_twms
+``
+/etc/httpd/modules/mod_twms.so
+``
+
 mrfgen
 ```
 /usr/bin/mrfgen

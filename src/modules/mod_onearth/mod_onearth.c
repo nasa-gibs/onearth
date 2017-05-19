@@ -2453,6 +2453,7 @@ static int mrf_handler(request_rec *r)
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,
        "Data read error from file %s size %ld offset %ld",level->dfname,this_record->size, this_record->offset);
     ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Request args: %s",r->args);
+    apr_table_set(r->notes, "mod_onearth_failed", "true");
     return DECLINED; // Can't read the data for some reason
   }
 
@@ -2564,6 +2565,7 @@ int rewrite_rest_uri(request_rec *r) {
 static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
+  if (r->prev && apr_table_get(r->prev->notes, "mod_onearth_ignore")) return DECLINED;
   if (!(r->args)) {
 	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
 		  if (rewrite_rest_uri(r) < 0)

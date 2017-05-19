@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.3.0
-Release:	1%{?dist}
+Release:	4%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -10,6 +10,12 @@ Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.t
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
 Source4:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
+%if 0%{?centos}  == 6
+Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
+%endif
+%if 0%{?centos}  == 7
+Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
+%endif
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -20,13 +26,17 @@ BuildRequires:	freetype-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:	cmake
+BuildRequires:  turbojpeg-devel
+%if 0%{?centos}  == 6
 BuildRequires:  centos-release-scl
 BuildRequires:  devtoolset-3-toolchain
+%endif
 Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
 Requires:   libxml2
 Requires:   mod_ssl
+Requires:   turbojpeg
 
 Obsoletes:	mod_oetwms mod_onearth mod_oems mod_oemstime
 
@@ -122,6 +132,7 @@ cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
 cp %{SOURCE4} upstream
+cp %{SOURCE5} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -171,8 +182,6 @@ ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
 install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
-ln -s %{_datadir}/onearth/apache/wmts.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
    %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
@@ -210,6 +219,7 @@ rm -rf %{buildroot}
 
 %files
 %{_libdir}/httpd/modules/*
+%{_libdir}/httpd/modules/mod_proxy/*
 %defattr(-,gibs,gibs,775)
 %dir %{_datadir}/onearth
 %defattr(775,gibs,gibs,775)
@@ -223,6 +233,18 @@ rm -rf %{buildroot}
 cd %{_datadir}/cgicc/
 %{_datadir}/cgicc/configure --prefix=/usr
 make install
+
+cd %{_libdir}/httpd/modules/
+for file in %{_libdir}/httpd/modules/mod_proxy/*.so; do
+	mv "`basename "$file"`" "`basename "$file" .so`.save"
+	ln -s "$file" `basename "$file"`
+done
+
+%postun
+cd %{_libdir}/httpd/modules/
+for file in %{_libdir}/httpd/modules/*.save; do
+	mv "$file" "`basename "$file" .save`.so"
+done
 
 %files tools
 %defattr(755,root,root,-)
@@ -238,9 +260,9 @@ make install
 %{_bindir}/SLDtoColorMap.py
 %{_datadir}/mpl
 
-%post tools		
+%post tools
 cd %{_datadir}/mpl/
-python setup.py build		
+python setup.py build
 python setup.py install
 
 %files config
@@ -284,6 +306,7 @@ make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/twms-geo
 mkdir %{_datadir}/onearth/demo/wms/epsg4326
+mkdir %{_datadir}/onearth/demo/data/EPSG3857
 ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/wms/epsg4326
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wms/
 ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/

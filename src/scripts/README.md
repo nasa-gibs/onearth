@@ -112,6 +112,33 @@ Options:
                         (e.g., "-180,81,-171,90").
 ```
 
+
+## oe_configure_reproject_layer.py
+
+Utility script to generate configurations for mod_reproject/mod_wmts_wrapper. Typically used by `oe_configure_layer` but can be used as a separate tool.
+
+```
+Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --sigevent_url [url] --no_twms --no_wmts
+
+Options:
+  -h, --help            show this help message and exit
+  -c LAYER_CONFIG_PATH, --conf_file=LAYER_CONFIG_PATH
+                        Full path of layer configuration filename.
+  -l LCDIR, --lcdir=LCDIR
+                        Full path of the OnEarth Layer Configurator
+                        (layer_config) directory.  Default: $LCDIR
+  -m TILEMATRIXSETS_CONFIG_PATH, --tilematrixset_config=TILEMATRIXSETS_CONFIG_PATH
+                        Full path of TileMatrixSet configuration file.
+                        Default: $LCDIR/conf/tilematrixsets.xml
+  -n, --no_twms         Do not use configurations for Tiled-WMS
+  -s SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
+                        Default:  http://localhost:8100/sigevent/events/create
+  -w, --no_wmts         Do not use configurations for WMTS.
+  -x, --no_xml          Do not generate getCapabilities and getTileService
+                        XML.
+  --debug               Produce verbose debug messages
+```
+
 ## Contact
 
 Contact us by sending an email to
