@@ -541,10 +541,10 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     log_info_mssg("Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y)))
     
     # calculate new extents that align with MRF blocks
-    ulx = Decimal(Decimal(math.floor((ulx*x_res) / block)) * block) / x_res
-    uly = Decimal(Decimal(math.ceil((uly*y_res) / block)) * block) / y_res
-    lrx = Decimal(Decimal(math.ceil((lrx*x_res) / block)) * block) / x_res
-    lry = Decimal(Decimal(math.floor((lry*y_res) / block)) * block) / y_res
+    ulx = Decimal(Decimal(str(math.floor((ulx*x_res) / block))) * block) / x_res
+    uly = Decimal(Decimal(str(math.ceil((uly*y_res) / block))) * block) / y_res
+    lrx = Decimal(Decimal(str(math.ceil((lrx*x_res) / block))) * block) / x_res
+    lry = Decimal(Decimal(str(math.floor((lry*y_res) / block))) * block) / y_res
 
     # snap to min/max extents if on the edge
     if ulx < Decimal(xmin):
