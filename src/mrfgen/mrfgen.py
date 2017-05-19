@@ -631,7 +631,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
 
         # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
         new_tile = working_dir + os.path.basename(tile)+".merge.vrt"
-        gdal_merge_command_list = ['gdal_translate', '-outsize', str((Decimal(lrx)-Decimal(ulx))/((Decimal(xmax)-Decimal(xmin))/Decimal(target_x))), str((Decimal(lry)-Decimal(uly))/((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))), '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
+        gdal_merge_command_list = ['gdal_translate', '-outsize', str(int(round((Decimal(lrx)-Decimal(ulx))/((Decimal(xmax)-Decimal(xmin))/Decimal(target_x))))), str(int(round((Decimal(lry)-Decimal(uly))/((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))))), '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
         
     # Execute the merge
     log_the_command(gdal_merge_command_list)
