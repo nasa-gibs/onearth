@@ -536,7 +536,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
         block_x = block_x * 2
     while (block_y*2) < y_size:
         block_y = block_y * 2
-    block = max([block_x,block_y])
+    block = Decimal(str(max([block_x,block_y])))
     
     log_info_mssg("Insert block size %s - (x: %s y: %s)" % (str(block), str(block_x), str(block_y)))
     
