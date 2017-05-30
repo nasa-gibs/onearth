@@ -44,6 +44,7 @@
 
 #include "mod_wmts_wrapper.h"
 #include "mod_reproject.h"
+#include "mod_mrf.h"
 
 // argstr_to_table and argstr_to_table are taken from Apache 2.4
 void argstr_to_table(char *str, apr_table_t *parms)
@@ -167,6 +168,27 @@ static const char *add_date_to_uri(apr_pool_t *p, const char *source_str, const 
         return apr_pstrcat(p, prefix, date_str, datefield + strlen("${date}"), NULL);
     }
     return source_str;
+}
+
+static const char *add_date_to_filename(apr_pool_t *p, const char *source_str, const char *date_str)
+{
+    apr_array_header_t *tokens = tokenize(p, source_str, '/');
+    int i;
+    char *out_uri = (char *)apr_pcalloc(p, MAX_STRING_LEN);
+    char *ptr = out_uri;
+    for (i=0; i<tokens->nelts; i++) {
+        *ptr++ = '/';
+        const char *token = (const char *)APR_ARRAY_IDX(tokens, i, const char *); 
+        apr_cpystrn(ptr, token, MAX_STRING_LEN);
+        ptr += strlen(token);
+        // Add date to the 4th item from the end
+        if (i == tokens->nelts - 3) {
+            apr_cpystrn(ptr, date_str, MAX_STRING_LEN);
+            ptr += strlen(date_str);
+            *ptr++ = '/';
+        }
+    }
+    return out_uri;   
 }
 
 
@@ -434,28 +456,52 @@ static int pre_hook(request_rec *r)
 
         module *reproject_module = (module *)ap_find_linked_module("mod_reproject.cpp");
         repro_conf *reproject_config = (repro_conf *)ap_get_module_config(r->per_dir_config, reproject_module);
-        if (reproject_config->source) {
-            // Get the tile grid bounds from mod_reproject config and comapre them with the requested tile.
+
+        module *mrf_module = (module *)ap_find_linked_module("mod_mrf.cpp");
+        mrf_conf *mrf_config = (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module);
+
+        if (int n_levels = reproject_config->raster.n_levels || mrf_config->n_levels) {
+            // Get the tile grid bounds from the tile module config and compare them with the requested tile.
             char *err_msg;
-            if (tile_l > reproject_config->raster.n_levels || tile_l < 0) {
-                err_msg = apr_psprintf(r->pool, "TILEMATRIX is out of range, maximum value is %d", reproject_config->raster.n_levels - 1);
+            int max_width;
+            int max_height;
+            if (tile_l > n_levels || tile_l < 0) {
+                err_msg = apr_psprintf(r->pool, "TILEMATRIX is out of range, maximum value is %d", n_levels - 1);
                 wmts_errors[errors++] = wmts_make_error(400, "TileOutOfRange","TILEMATRIX", err_msg);
-            } else if (tile_x >= reproject_config->raster.rsets[tile_l].width || tile_x < 0) {
-                err_msg = apr_psprintf(r->pool, "TILECOL is out of range, maximum value is %d", reproject_config->raster.rsets[tile_l].width - 1);
+            } 
+            if (reproject_config->raster.rsets) {
+                rset *rsets = reproject_config->raster.rsets;
+                max_width = rsets[tile_l].width;
+                max_height = rsets[tile_l].height;
+            } else if (mrf_config->rsets) {
+                tile_l += mrf_config->skip_levels;
+                mrf_rset *rsets = mrf_config->rsets;
+                max_width = rsets[tile_l].width;
+                max_height = rsets[tile_l].height;
+            }
+
+            if (tile_x >= max_width || tile_x < 0) {
+                err_msg = apr_psprintf(r->pool, "TILECOL is out of range, maximum value is %d", max_width - 1);
                 wmts_errors[errors++] = wmts_make_error(400, "TileOutOfRange","TILECOL", err_msg);
-            } else if (tile_y >= reproject_config->raster.rsets[tile_l].height || tile_y < 0) {
-                err_msg = apr_psprintf(r->pool, "TILEROW is out of range, maximum value is %d", reproject_config->raster.rsets[tile_l].height - 1);
+            } else if (tile_y >= max_height || tile_y < 0) {
+                err_msg = apr_psprintf(r->pool, "TILEROW is out of range, maximum value is %d", max_height - 1);
                 wmts_errors[errors++] = wmts_make_error(400, "TileOutOfRange","TILEROW", err_msg);
             }
             if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
             if (cfg->time) {
-                // If this is a directory that mod_reproject is configured to run in, create a new configuration, replacing the 
+                // If this is a directory that mod_reproject or mod_mrf is configured to run in, create a new configuration, replacing the 
                 // source URL ${date} field with the date for this request.
                 if (reproject_config->source) {
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
                     out_cfg->source = add_date_to_uri(r->pool, reproject_config->source, datetime_str);
                     ap_set_module_config(r->request_config, reproject_module, out_cfg);  
+                } else if (mrf_config->datafname) {
+                    // mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
+                    // memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
+                    // out_cfg->datafname = (char *)add_date_to_filename(r->pool, mrf_config->datafname, datetime_str);
+                    // out_cfg->idxfname = (char *)add_date_to_filename(r->pool, mrf_config->idxfname, datetime_str);
+                    // ap_set_module_config(r->request_config, mrf_module, out_cfg);  
                 }
             }
         }
