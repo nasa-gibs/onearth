@@ -1,9 +1,6 @@
 [submodule "src/modules/mod_mrf"]
 	path = src/modules/mod_mrf
 	url = https://github.com/lucianpls/mod_mrf.git
-[submodule "src/modules/mod_receive"]
-	path = src/modules/mod_receive
-	url = https://github.com/lucianpls/mod_receive.git
 [submodule "src/modules/mod_sfim"]
 	path = src/modules/mod_sfim
 	url = https://github.com/lucianpls/mod_sfim.git
