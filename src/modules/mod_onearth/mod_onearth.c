@@ -439,27 +439,30 @@ static void *r_file_pread(request_rec *r, char *fname, apr_size_t nbytes, apr_of
 					}
 					apr_time_t end_epoch = parse_date_string(time_period);
 					apr_time_t req_epoch;
-					apr_time_exp_t snap_date;
-					// Fix request time (apache expects to see years since 1900 and zero-indexed months)
-					tm.tm_year -= 1900;
-					tm.tm_mon -= 1;
-					apr_time_exp_get(&req_epoch, &tm);
+					apr_time_exp_t default_snap_date;
+
+					// Can't use the Apache time struct for pre-1970 dates
+					if (tm.tm_year < 70) {
+						req_epoch = get_pre_1970_epoch(tm);
+					} else {
+						apr_time_exp_get(&req_epoch, &tm);
+					}
 
 					if (ap_strstr(fn,tstamp)) { // Use the end epoch for the "default" when no time has been requested
-						apr_time_exp_gmt(&snap_date, end_epoch);
+						apr_time_exp_gmt(&default_snap_date, end_epoch);
 						if ((yearloc=ap_strstr(fn,year))) {
 							char old_char=*(yearloc+4);
-							sprintf(yearloc,"%04d",snap_date.tm_year + 1900); // replace YYYY with actual year
+							sprintf(yearloc,"%04d",default_snap_date.tm_year + 1900); // replace YYYY with actual year
 							*(yearloc+4)=old_char;
 						}
 						if (ap_strstr(fn,"TTTTTTTTTTTTT_")==0) {
 							char old_char=*(fnloc+7);
-							sprintf(fnloc,"%04d%03d",snap_date.tm_year + 1900,snap_date.tm_yday + 1);
+							sprintf(fnloc,"%04d%03d",default_snap_date.tm_year + 1900,default_snap_date.tm_yday + 1);
 							*(fnloc+7)=old_char;
 						} else {
 							fnloc-=6;
 							char old_char=*(fnloc+13);
-							sprintf(fnloc,"%04d%03d%02d%02d%02d",snap_date.tm_year + 1900,snap_date.tm_yday + 1, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
+							sprintf(fnloc,"%04d%03d%02d%02d%02d",default_snap_date.tm_year + 1900,default_snap_date.tm_yday + 1, default_snap_date.tm_hour, default_snap_date.tm_min, default_snap_date.tm_sec);
 							*(fnloc+13)=old_char;
 						}
 						ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Using the following as default: %s", fn);
@@ -471,13 +474,6 @@ static void *r_file_pread(request_rec *r, char *fname, apr_size_t nbytes, apr_of
 						} else {
 							break;
 						}
-					}
-					
-					// Can't use the Apache time struct for pre-1970 dates
-					if (tm.tm_year < 70) {
-						req_epoch = get_pre_1970_epoch(tm);
-					} else {
-						apr_time_exp_get(&req_epoch, &tm);
 					}
 
 					// First, check if the request date is earlier than the start date of the period. (we don't snap forward)
