@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.3.1
+ONEARTH_VERSION=2.0.0
 
 PREFIX=/usr/local
 LIB_PREFIX=/usr
