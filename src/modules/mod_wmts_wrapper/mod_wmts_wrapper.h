@@ -47,6 +47,20 @@ typedef struct {
   const char *exceptionText;
 } wmts_error;
 
+// Legacy OnEarth config struct stuff
+typedef struct { // One of these per cache pack
+  int size; // Size of all records, plus the strings
+  int count; // How many WMSCache records are there
+} Caches;
+
+typedef struct {
+  Caches *caches;   // The cache configuration
+  apr_pool_t *p;    // The persistent server pool
+  char *cachedir;   // The cache directory name
+  void *meta; // Run-time information for each cache
+  char *dir;		// The server directory
+} wms_cfg;
+
 extern module AP_MODULE_DECLARE_DATA wmts_wrapper_module;
 
 #endif
