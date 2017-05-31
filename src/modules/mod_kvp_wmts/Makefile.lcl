@@ -1,4 +1,0 @@
-INCLUDES = -I /usr/include/httpd -I /usr/include/apr-1
-MOD_PATH = /etc/httpd/modules
-HTTPD_INCLUDES_PATH = /usr/include/httpd
-
