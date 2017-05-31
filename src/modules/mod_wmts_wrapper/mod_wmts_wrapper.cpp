@@ -172,23 +172,11 @@ static const char *add_date_to_uri(apr_pool_t *p, const char *source_str, const 
 
 static const char *add_date_to_filename(apr_pool_t *p, const char *source_str, const char *date_str)
 {
-    apr_array_header_t *tokens = tokenize(p, source_str, '/');
-    int i;
+    struct tm req_time = {0};
+    strptime(date_str, "%Y-%m-%d", &req_time);
     char *out_uri = (char *)apr_pcalloc(p, MAX_STRING_LEN);
-    char *ptr = out_uri;
-    for (i=0; i<tokens->nelts; i++) {
-        *ptr++ = '/';
-        const char *token = (const char *)APR_ARRAY_IDX(tokens, i, const char *); 
-        apr_cpystrn(ptr, token, MAX_STRING_LEN);
-        ptr += strlen(token);
-        // Add date to the 4th item from the end
-        if (i == tokens->nelts - 3) {
-            apr_cpystrn(ptr, date_str, MAX_STRING_LEN);
-            ptr += strlen(date_str);
-            *ptr++ = '/';
-        }
-    }
-    return out_uri;   
+    strftime(out_uri, MAX_STRING_LEN, source_str, &req_time);
+    return out_uri;
 }
 
 
@@ -368,6 +356,7 @@ static int handleKvP(request_rec *r)
         ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getTileService.xml"), r);
         return DECLINED;    
     }
+    return 1;
 }
 
 
@@ -497,11 +486,11 @@ static int pre_hook(request_rec *r)
                     out_cfg->source = add_date_to_uri(r->pool, reproject_config->source, datetime_str);
                     ap_set_module_config(r->request_config, reproject_module, out_cfg);  
                 } else if (mrf_config->datafname) {
-                    // mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
-                    // memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
-                    // out_cfg->datafname = (char *)add_date_to_filename(r->pool, mrf_config->datafname, datetime_str);
-                    // out_cfg->idxfname = (char *)add_date_to_filename(r->pool, mrf_config->idxfname, datetime_str);
-                    // ap_set_module_config(r->request_config, mrf_module, out_cfg);  
+                    mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
+                    memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
+                    out_cfg->datafname = (char *)add_date_to_filename(r->pool, mrf_config->datafname, datetime_str);
+                    out_cfg->idxfname = (char *)add_date_to_filename(r->pool, mrf_config->idxfname, datetime_str);
+                    ap_set_module_config(r->request_config, mrf_module, out_cfg);  
                 }
             }
         }
