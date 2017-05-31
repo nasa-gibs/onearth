@@ -217,7 +217,7 @@ static int handleKvP(request_rec *r)
 
     const char *param = NULL;
     const char *version = NULL;
-    if ((param = apr_table_get(args_table, "VERSION"))) {
+    if (strlen(param = apr_table_get(args_table, "VERSION"))) {
         if (apr_strnatcasecmp(param, "1.0.0") == 0) {
             version = param;
         } else {
@@ -246,16 +246,18 @@ static int handleKvP(request_rec *r)
     }
 
     const char *request = NULL;
-    if ((param = apr_table_get(args_table, "REQUEST"))) {
+    if (strlen(param = apr_table_get(args_table, "REQUEST"))) {
         if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0 && apr_strnatcasecmp(param, "GetTileService") != 0) {
             wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
         } else {
             request = param;
         }
-    }
+    } else {
+        wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","REQUEST", "Missing REQUEST parameter");
+    }  
     
     const char *layer = NULL;
-    if ((param = apr_table_get(args_table, "LAYER"))) {
+    if (strlen(param = apr_table_get(args_table, "LAYER"))) {
         layer = param;
     } else {
         if (apr_strnatcasecmp(request, "GetCapabilities") != 0 && apr_strnatcasecmp(request, "GetTileService") != 0) {
@@ -264,7 +266,7 @@ static int handleKvP(request_rec *r)
     }
 
     const char *service = NULL;
-    if ((param = apr_table_get(args_table, "SERVICE"))) {
+    if (strlen(param = apr_table_get(args_table, "SERVICE"))) {
         if (apr_strnatcasecmp(param, "WMTS"))
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","SERVICE", "Unrecognized service");
     } else {
@@ -273,7 +275,7 @@ static int handleKvP(request_rec *r)
 
     const char *format = NULL;
     if (request && apr_strnatcasecmp(request, "GetTile") == 0) {
-        if ((param = apr_table_get(args_table, "FORMAT"))) {
+        if (strlen(param = apr_table_get(args_table, "FORMAT"))) {
             if (apr_strnatcasecmp(param, "image/jpeg") == 0) {
                 format = ".jpg";
             } else if (apr_strnatcasecmp(param, "image/png") == 0) {
@@ -294,28 +296,28 @@ static int handleKvP(request_rec *r)
         }
 
         const char *tilematrixset = NULL;
-        if ((param = apr_table_get(args_table, "TILEMATRIXSET"))) {
+        if (strlen(param = apr_table_get(args_table, "TILEMATRIXSET"))) {
             tilematrixset = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
         }
 
         const char *tile_l = NULL;
-        if ((param = apr_table_get(args_table, "TILEMATRIX"))) {
+        if (strlen(param = apr_table_get(args_table, "TILEMATRIX"))) {
             tile_l = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIX", "Missing TILEMATRIX parameter");
         }
 
         const char *tile_x = NULL;
-        if ((param = apr_table_get(args_table, "TILEROW"))) {
+        if (strlen(param = apr_table_get(args_table, "TILEROW"))) {
             tile_x = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEROW", "Missing TILEROW parameter");
         }
 
         const char *tile_y = NULL;
-        if ((param = apr_table_get(args_table, "TILECOL"))) {
+        if (strlen(param = apr_table_get(args_table, "TILECOL"))) {
             tile_y = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILECOL", "Missing TILECOL parameter");
@@ -336,7 +338,7 @@ static int handleKvP(request_rec *r)
                                         format
                                         );
         apr_table_set(r->notes, "mod_wmts_date", time ? time : "default");
-        apr_table_set(r->notes, "mod_onearth_ignore", "true");
+        apr_table_set(r->notes, "mod_onearth_handled", "true");
         ap_internal_redirect(out_uri, r);
         return DECLINED;
     } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
@@ -346,6 +348,7 @@ static int handleKvP(request_rec *r)
         ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getTileService.xml"), r);
         return DECLINED;    
     }
+    return DECLINED;
 }
 
 
@@ -377,6 +380,20 @@ This is possible because we're grabbing the mod_reproject configuration and gett
 */
 static int pre_hook(request_rec *r)
 {
+    // If mod_onearth is configured for this endpoint and hasn't handled the request yet, ignore it.
+    if (module *onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
+        wms_cfg *onearth_config = (wms_cfg *)ap_get_module_config(r->per_dir_config, onearth_module);
+        if (onearth_config->caches && (!r->prev || !apr_table_get(r->prev->notes, "mod_onearth_handled"))) {
+            apr_table_set(r->notes, "mod_wmts_wrapper_enabled", "true");
+            return DECLINED;
+        }
+    }
+
+    // Make sure that this note survives into the next request.
+    if (r->prev && apr_table_get(r->prev->notes, "mod_onearth_handled")) {
+        apr_table_set(r->notes, "mod_onearth_handled", "true");
+    }
+
     wmts_error wmts_errors[5];
     int errors = 0;
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
@@ -385,7 +402,8 @@ static int pre_hook(request_rec *r)
     if (apr_strnatcasecmp(cfg->role, "root") == 0) {
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "style") == 0 && cfg->time) {
-        if (apr_table_get(r->notes, "mod_wmts_date")) {
+        // If we've already handled the date, but are still getting stuck at the STYLE part of the REST request, we know the TMS is bad.
+        if (apr_table_get(r->notes, "mod_wmts_date") || (r->prev && apr_table_get(r->prev->notes, "mod_wmts_date"))) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
             return wmts_return_all_errors(r, errors, wmts_errors);
         }
@@ -409,7 +427,7 @@ static int pre_hook(request_rec *r)
 
         // If we get to this point, we know mod_reproject is configured for this endpoint, so keep mod_onearth from handling it
         if (module *old_onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
-            apr_table_set(r->notes, "mod_onearth_ignore", "true");
+            apr_table_set(r->notes, "mod_onearth_handled", "true");
         }
         
         const char *datetime_str = r->prev && apr_table_get(r->prev->notes, "mod_wmts_date")
