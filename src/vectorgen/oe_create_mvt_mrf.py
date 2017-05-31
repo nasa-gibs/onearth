@@ -338,6 +338,7 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
     # Create <Rsets> element
     rsets_node = mrf_dom.createElement('Rsets')
     rsets_node.setAttribute('model', 'uniform')
+    rsets_node.setAttribute('scale', '2')
     mrf_meta.appendChild(rsets_node)
 
     # Create <GeoTags> element
