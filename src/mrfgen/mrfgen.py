@@ -1675,7 +1675,7 @@ else:
 
 gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
 # use resolution?
-if target_x != '':
+if diff_res == True and target_x != '':
     xres = repr(abs((float(xmax)-float(xmin))/float(target_x)))
     if target_y != '':
         yres = repr(abs((float(ymin)-float(ymax))/float(target_y)))
@@ -1695,6 +1695,7 @@ if vrtnodata != "":
     gdalbuildvrt_command_list.append(vrtnodata)
     gdalbuildvrt_command_list.append('-srcnodata')
     gdalbuildvrt_command_list.append(vrtnodata)
+    
 # add VRT filename at the end        
 gdalbuildvrt_command_list.append(vrt_filename)
 # Log the gdalbuildvrt command.
