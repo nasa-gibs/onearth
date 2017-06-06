@@ -337,7 +337,7 @@ static int handleKvP(request_rec *r)
                                         tile_y,
                                         format
                                         );
-        apr_table_set(r->notes, "mod_wmts_date", time ? time : "default");
+        apr_table_set(r->notes, "mod_wmts_wrapper_date", time ? time : "default");
         apr_table_set(r->notes, "mod_onearth_handled", "true");
         ap_internal_redirect(out_uri, r);
         return DECLINED;
@@ -403,7 +403,7 @@ static int pre_hook(request_rec *r)
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "style") == 0 && cfg->time) {
         // If we've already handled the date, but are still getting stuck at the STYLE part of the REST request, we know the TMS is bad.
-        if (apr_table_get(r->notes, "mod_wmts_date") || (r->prev && apr_table_get(r->prev->notes, "mod_wmts_date"))) {
+        if (apr_table_get(r->notes, "mod_wmts_wrapper_date") || (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date"))) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
             return wmts_return_all_errors(r, errors, wmts_errors);
         }
@@ -419,7 +419,7 @@ static int pre_hook(request_rec *r)
         // Rewrite URI to exclude date and put the date in the notes for the redirect.
         const char *out_uri = remove_date_from_uri(r->pool, tokens);
         // request_rec *rr = ap_sub_req_lookup_uri(out_uri, r, r->output_filters);   
-        apr_table_set(r->notes, "mod_wmts_date", datetime_str);
+        apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);
         // return ap_run_sub_req(rr);    
         ap_internal_redirect(out_uri, r);
         return DECLINED;
@@ -430,8 +430,8 @@ static int pre_hook(request_rec *r)
             apr_table_set(r->notes, "mod_onearth_handled", "true");
         }
         
-        const char *datetime_str = r->prev && apr_table_get(r->prev->notes, "mod_wmts_date")
-            ? apr_table_get(r->prev->notes, "mod_wmts_date")
+        const char *datetime_str = r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")
+            ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")
             : "default";
 
         // Start by getting the requested tile coordinates from the failed URI.
@@ -514,7 +514,11 @@ static int post_hook(request_rec *r)
         return wmts_return_all_errors(r, errors, wmts_errors);
     } 
     if (!apr_strnatcasecmp(cfg->role, "layer")) {
-        wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","STYLE", "STYLE is invalid for LAYER");
+        if (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")) {
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
+        } else {
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","STYLE", "STYLE is invalid for LAYER");
+        }
         return wmts_return_all_errors(r, errors, wmts_errors);
     } 
     if (!apr_strnatcasecmp(cfg->role, "style")) {
