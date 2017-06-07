@@ -74,6 +74,7 @@ The environment configuration file contains information that the OnEarth layer c
 * **MapfileLocation** - (Optional) The location of the Mapfile for MapServer.
 * **MapfileStagingLocation** (Optional) The location to stage configuration files for MapServer.
 * **MapfileConfigLocation** (Optional) The location of configuration files for MapServer.
+* **ReprojectEndpoint** (Optional) Used for reprojected layers. The endpoint location relative to the base server URL for accessing reprojected layers.
 * **ApacheConfigLocation** (Optional) Used for reprojected layers, this location is where Apache configuration files for reprojected layers are stored. As such, this must be a location Apache is configured to read upon startup (for example `/etc/httpd/conf.d`, or a location specified by an `Includes` directive in your Apache config).
 * **ApacheConfigHeaderLocation** (Optional) Also used for reprojected layers, this location should contain any header files for the generated Apache configs. (See [here](../src/layer_config/reproject) for a couple of example headers)
 
@@ -82,24 +83,26 @@ The environment configuration does not have unique identifier.  Reference to the
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <EnvironmentConfiguration>
-    <GetCapabilitiesLocation service="wmts">/srv/www/onearth/wmts/antarctic/</GetCapabilitiesLocation>
-    <GetCapabilitiesLocation service="twms">/srv/www/onearth/twms/antarctic/.lib/</GetCapabilitiesLocation>
-    <GetTileServiceLocation>/srv/www/onearth/twms/antarctic/.lib/</GetTileServiceLocation>
-    <CacheLocation service="wmts" basename="cache_all_wmts">/archive/imagery/antarctic/</CacheLocation>
-    <CacheLocation service="twms" basename="cache_all_twms">/archive/imagery/antarctic/</CacheLocation>
-    <StagingLocation service="wmts">/etc/onearth/config/wmts/EPSG3031/</StagingLocation>
-    <StagingLocation service="twms">/etc/onearth/config/twms/EPSG3031/</StagingLocation>
-    <ServiceURL service="wmts">http://onearth.project.org/wmts/antarctic/</ServiceURL>
-    <ServiceURL service="twms">http://onearth.project.org/twms/antarctic/</ServiceURL>
+    <GetCapabilitiesLocation service="wmts">/srv/www/onearth/wmts/epsg3857/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/srv/www/onearth/twms/epsg3857/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/srv/www/onearth/twms/epsg3857/.lib/</GetTileServiceLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">/archive/imagery/epsg3857/</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">/archive/imagery/epsg3857/</CacheLocation>
+    <StagingLocation service="wmts">/etc/onearth/config/wmts/EPSG3857/</StagingLocation>
+    <StagingLocation service="twms">/etc/onearth/config/twms/EPSG3857/</StagingLocation>
+    <ServiceURL service="wmts">http://onearth.project.org/wmts/epsg3857/</ServiceURL>
+    <ServiceURL service="twms">http://onearth.project.org/twms/epsg3857/</ServiceURL>
     <LegendLocation>/usr/share/onearth/legends</LegendLocation>
     <LegendURL>http://onearth.project.org/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
     <ColorMapURL>http://onearth.project.org/colormaps/</ColorMapURL>
     <StyleJSONLocation>/usr/share/onearth/demo/gl-styles/</StyleJSONLocation>
     <StyleJSONURL>http://localhost/gl-styles/</StyleJSONURL>
-    <MapfileLocation basename="epsg4326">/usr/share/onearth/demo/mapserver/</MapfileLocation>
-    <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG4326/</MapfileStagingLocation>
-    <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
+    <MapfileLocation basename="epsg3857">/usr/share/onearth/demo/mapserver/</MapfileLocation>
+    <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG3857/</MapfileStagingLocation>
+    <MapfileConfigLocation basename="EPSG3857">/etc/onearth/config/mapserver/</MapfileConfigLocation>
+    <ReprojectEndpoint service="wmts">/wmts/epsg3857</ReprojectEndpoint>
+    <ReprojectEndpoint service="twms">/twms/epsg3857</ReprojectEndpoint>
     <ApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ApacheConfigLocation>
     <ApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ApacheConfigLocation>
     <ApacheConfigHeaderLocation service="twms" basename="webmerc-reproject-twms">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
