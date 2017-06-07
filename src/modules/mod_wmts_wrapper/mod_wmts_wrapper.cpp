@@ -45,6 +45,34 @@
 #include "mod_wmts_wrapper.h"
 #include "mod_reproject.h"
 
+
+// Check a file extension against the specified MIME type
+int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    if (apr_strnatcasecmp(cfg->mime_type, "image/png") == 0) {
+        return (apr_strnatcasecmp(".png", extension) == 0);
+    }
+
+    if (apr_strnatcasecmp(cfg->mime_type, "image/jpeg") == 0) {
+        return (apr_strnatcasecmp(".jpg", extension) == 0 || apr_strnatcasecmp(".jpeg", extension) == 0);
+    }
+
+    // Vector tiles are all the same despite differing extensions and MIME types
+    if (apr_strnatcasecmp(cfg->mime_type, "application/vnd.mapbox-vector-tile") == 0
+            || apr_strnatcasecmp(cfg->mime_type, "application/x-protobuf;type=mapbox-vector") == 0) {
+        return (apr_strnatcasecmp(".pbf", extension) == 0 || apr_strnatcasecmp(".mvt", extension) == 0);
+    }
+
+    if (apr_strnatcasecmp(cfg->mime_type, "image/tiff") == 0) {
+        return (apr_strnatcasecmp(".tif", extension) == 0 || apr_strnatcasecmp(".tiff", extension) == 0);
+    }
+
+    if (apr_strnatcasecmp(cfg->mime_type, "image/lerc") == 0) {
+        return (apr_strnatcasecmp(".lerc", extension) == 0);
+    }
+}
+
 // argstr_to_table and argstr_to_table are taken from Apache 2.4
 void argstr_to_table(char *str, apr_table_t *parms)
 {
@@ -209,7 +237,7 @@ static const char *get_blank_tile_filename(request_rec *r)
 
 static int handleKvP(request_rec *r) 
 {
-    wmts_error wmts_errors[5];
+    wmts_error wmts_errors[10];
     int errors = 0;
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module); 
     apr_table_t *args_table;
@@ -217,11 +245,11 @@ static int handleKvP(request_rec *r)
 
     const char *param = NULL;
     const char *version = NULL;
-    if (strlen(param = apr_table_get(args_table, "VERSION"))) {
+    if ((param = apr_table_get(args_table, "VERSION")) && strlen(param)) {
         if (apr_strnatcasecmp(param, "1.0.0") == 0) {
             version = param;
         } else {
-            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","VERSION", "Invalid VERSION parameter");
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","VERSION", "VERSION is invalid");
         }
     } else {
         wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","VERSION", "Missing VERSION parameter");
@@ -246,7 +274,7 @@ static int handleKvP(request_rec *r)
     }
 
     const char *request = NULL;
-    if (strlen(param = apr_table_get(args_table, "REQUEST"))) {
+    if ((param = apr_table_get(args_table, "REQUEST")) && strlen(param)) {
         if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0 && apr_strnatcasecmp(param, "GetTileService") != 0) {
             wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
         } else {
@@ -257,16 +285,16 @@ static int handleKvP(request_rec *r)
     }  
     
     const char *layer = NULL;
-    if (strlen(param = apr_table_get(args_table, "LAYER"))) {
+    if ((param = apr_table_get(args_table, "LAYER")) && strlen(param)) {
         layer = param;
     } else {
-        if (apr_strnatcasecmp(request, "GetCapabilities") != 0 && apr_strnatcasecmp(request, "GetTileService") != 0) {
+        if (request && apr_strnatcasecmp(request, "GetCapabilities") != 0 && apr_strnatcasecmp(request, "GetTileService") != 0) {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","LAYER", "Missing LAYER parameter");
         }
     }
 
     const char *service = NULL;
-    if (strlen(param = apr_table_get(args_table, "SERVICE"))) {
+    if ((param = apr_table_get(args_table, "SERVICE")) && strlen(param)) {
         if (apr_strnatcasecmp(param, "WMTS"))
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","SERVICE", "Unrecognized service");
     } else {
@@ -275,7 +303,7 @@ static int handleKvP(request_rec *r)
 
     const char *format = NULL;
     if (request && apr_strnatcasecmp(request, "GetTile") == 0) {
-        if (strlen(param = apr_table_get(args_table, "FORMAT"))) {
+        if ((param = apr_table_get(args_table, "FORMAT")) && strlen(param)) {
             if (apr_strnatcasecmp(param, "image/jpeg") == 0) {
                 format = ".jpg";
             } else if (apr_strnatcasecmp(param, "image/png") == 0) {
@@ -289,35 +317,35 @@ static int handleKvP(request_rec *r)
             } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0) {
                 format = ".mvt";
             } else {
-                wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","FORMAT", "Unrecognized format");
+                wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","FORMAT", "FORMAT is invalid for LAYER");
             }
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","FORMAT", "Missing FORMAT parameter");
         }
 
         const char *tilematrixset = NULL;
-        if (strlen(param = apr_table_get(args_table, "TILEMATRIXSET"))) {
+        if ((param = apr_table_get(args_table, "TILEMATRIXSET")) && strlen(param)) {
             tilematrixset = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIXSET", "Missing TILEMATRIXSET parameter");
         }
 
         const char *tile_l = NULL;
-        if (strlen(param = apr_table_get(args_table, "TILEMATRIX"))) {
+        if ((param = apr_table_get(args_table, "TILEMATRIX")) && strlen(param)) {
             tile_l = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEMATRIX", "Missing TILEMATRIX parameter");
         }
 
         const char *tile_x = NULL;
-        if (strlen(param = apr_table_get(args_table, "TILEROW"))) {
+        if ((param = apr_table_get(args_table, "TILEROW")) && strlen(param)) {
             tile_x = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILEROW", "Missing TILEROW parameter");
         }
 
         const char *tile_y = NULL;
-        if (strlen(param = apr_table_get(args_table, "TILECOL"))) {
+        if ((param = apr_table_get(args_table, "TILECOL")) && strlen(param)) {
             tile_y = param;
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"MissingParameterValue","TILECOL", "Missing TILECOL parameter");
@@ -341,12 +369,15 @@ static int handleKvP(request_rec *r)
         apr_table_set(r->notes, "mod_onearth_handled", "true");
         ap_internal_redirect(out_uri, r);
         return DECLINED;
-    } else if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
+    } else if (request && apr_strnatcasecmp(request, "GetCapabilities") == 0) {
         ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getCapabilities.xml"), r);
         return DECLINED;    
-    } else if (apr_strnatcasecmp(request, "GetTileService") == 0) {
+    } else if (request && apr_strnatcasecmp(request, "GetTileService") == 0) {
         ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getTileService.xml"), r);
         return DECLINED;    
+    }
+    if (errors) {
+        return wmts_return_all_errors(r, errors, wmts_errors);
     }
     return DECLINED;
 }
@@ -380,6 +411,8 @@ This is possible because we're grabbing the mod_reproject configuration and gett
 */
 static int pre_hook(request_rec *r)
 {
+    char *err_msg;
+
     // If mod_onearth is configured for this endpoint and hasn't handled the request yet, ignore it.
     if (module *onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
         wms_cfg *onearth_config = (wms_cfg *)ap_get_module_config(r->per_dir_config, onearth_module);
@@ -434,11 +467,20 @@ static int pre_hook(request_rec *r)
             ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")
             : "default";
 
-        // Start by getting the requested tile coordinates from the failed URI.
+        // Start by verifying the requested tile coordinates/format from the URI against the mod_reproject configuration for this endpoint
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *dim;
 
         dim = *(char **)apr_array_pop(tokens);
+
+        const char *extension = ap_strchr(dim, '.');
+        if  (extension && cfg->mime_type) {
+            if (!check_valid_extension(cfg, extension)) {
+                err_msg = "FORMAT is invalid for LAYER";
+                wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue","FORMAT", err_msg);
+            }
+        }
+
         if (!isdigit(*dim)) wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue","TILECOL", "TILECOL is not a valid integer");
         int tile_x = apr_atoi64(dim);
 
@@ -454,10 +496,8 @@ static int pre_hook(request_rec *r)
         repro_conf *reproject_config = (repro_conf *)ap_get_module_config(r->per_dir_config, reproject_module);
         if (reproject_config->source) {
             // Get the tile grid bounds from mod_reproject config and comapre them with the requested tile.
-            char *err_msg;
             if (tile_l > reproject_config->raster.n_levels || tile_l < 0) {
-                err_msg = apr_psprintf(r->pool, "TILEMATRIX is out of range, maximum value is %d", reproject_config->raster.n_levels - 1);
-                wmts_errors[errors++] = wmts_make_error(400, "TileOutOfRange","TILEMATRIX", err_msg);
+                wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue","TILEMATRIX", "Invalid TILEMATRIX");
             } else if (tile_x >= reproject_config->raster.rsets[tile_l].width || tile_x < 0) {
                 err_msg = apr_psprintf(r->pool, "TILECOL is out of range, maximum value is %d", reproject_config->raster.rsets[tile_l].width - 1);
                 wmts_errors[errors++] = wmts_make_error(400, "TileOutOfRange","TILECOL", err_msg);
@@ -514,7 +554,8 @@ static int post_hook(request_rec *r)
         return wmts_return_all_errors(r, errors, wmts_errors);
     } 
     if (!apr_strnatcasecmp(cfg->role, "layer")) {
-        if (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")) {
+        // If we've already handled a date for this request, we know that it's a TMS error and not a STYLE error
+        if (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") && !r->prev->args) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
         } else {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","STYLE", "STYLE is invalid for LAYER");
@@ -551,6 +592,13 @@ static const char *enable_time(cmd_parms *cmd, void *dconf, int arg)
     return NULL;
 }
 
+static const char *set_mime_type(cmd_parms *cmd, void *dconf, const char *format)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    cfg->mime_type = apr_pstrdup(cmd->pool, format);
+    return NULL;
+}
+
 static void *create_dir_config(apr_pool_t *p, char *unused)
 {
     return apr_pcalloc(p, sizeof(wmts_wrapper_conf));
@@ -563,6 +611,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->role = ( add->role == NULL ) ? base->role : add->role;
     cfg->time = ( add->time == NULL ) ? base->time : add->time;
     cfg->date_regexp = ( add->date_regexp == NULL ) ? base->date_regexp : add->date_regexp;
+    cfg->mime_type = ( add->mime_type == NULL ) ? base->mime_type : add->mime_type;
     return cfg;
 }
 
@@ -591,6 +640,13 @@ static const command_rec cmds[] =
         "Enable Time handling for WMTS wrapper module for this layer directory"
     ),
 
+    AP_INIT_TAKE1(
+        "WMTSWrapperMimeType",
+        (cmd_func) set_mime_type, // Callback
+        0, // Self pass argument
+        ACCESS_CONF,
+        "Set MIME for the WMTS module in this <Directory> block"
+    ),
     {NULL}
 };
 

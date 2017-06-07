@@ -37,6 +37,7 @@ typedef struct {
     const char *role;
     int time;
     ap_regex_t *date_regexp;
+    const char *mime_type;
 } wmts_wrapper_conf;
 
 // WMTS error handling
