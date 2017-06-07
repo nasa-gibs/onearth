@@ -45,6 +45,8 @@ import urllib2
 import StringIO
 import gzip
 import mapbox_vector_tile
+from lxml import etree
+import requests
 
 
 def add_trailing_slash(directory_path):
@@ -564,3 +566,55 @@ def check_valid_mvt(file, warn_if_empty=False):
         except IndexError:
             return False
     return True
+
+
+def test_wmts_error(test_obj, test_url, error_code_expected, exception_code_expected, locator_expected, exception_text_expected):
+    r = requests.get(test_url)
+    test_obj.assertEqual(error_code_expected, r.status_code, msg='Unexpected error code -- should be {0}, is {1}'.format(error_code_expected, str(r.status_code)))
+    content_type = r.headers.get('content-type')
+    test_obj.assertEqual('text/xml', content_type, msg='Unexpected content type, should be {0}, is {1}'.format('text/xml', content_type))        
+    try:
+        err_xml = etree.fromstring(r.content)
+    except etree.XMLSyntaxError:
+        test_obj.fail('Invalid XML returned for error message')
+    
+    # Check root element attributes
+    expected_namespace = '{http://www.opengis.net/ows/1.1}'
+    root_element_expected_value = expected_namespace + 'ExceptionReport'
+    test_obj.assertEqual(root_element_expected_value, err_xml.tag, msg='Invalid root element or namespace, should be {0}, is {1}'.format(root_element_expected_value, err_xml.tag))
+
+    schema_location_found = err_xml.attrib.get('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation')
+    test_obj.assertIsNotNone(schema_location_found, msg='Missing schemaLocation attribute from ExceptionReport element')
+    schema_location_expected = 'http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd'
+    test_obj.assertEqual(schema_location_expected, schema_location_found, msg='Invalid schemaLocation attribute for ExceptionReport element, should be {0}, is {1}'.format(schema_location_expected, schema_location_found))
+    
+    version_found = err_xml.attrib.get('version')
+    test_obj.assertIsNotNone(version_found, msg='Missing version attribute for ExceptionReport element')
+    version_expected = '1.1.0'
+    test_obj.assertEqual(version_expected, version_found, msg='Invalid version attribute for ExceptionReport element, should be {0}, is {1}'.format(version_expected, version_found))
+    
+    lang_found = err_xml.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
+    test_obj.assertIsNotNone(lang_found, msg='Missing xml:lang attribute from ExceptionReport element')
+    lang_expected = 'en'
+    test_obj.assertEqual(lang_expected, lang_found, msg='Invalid xml:lang attribute for ExceptionReport element, should be {0}, is {1}'.format(lang_expected, lang_found))
+    
+    # Check <Exception> content
+    exception_element = err_xml.find(expected_namespace + 'Exception')
+    test_obj.assertIsNotNone(exception_element, msg='Missing Exception element')
+    
+    exception_code_found = exception_element.attrib.get('exceptionCode')
+    test_obj.assertIsNotNone(exception_code_found, msg='Mising exceptionCode attribute for Exception element')
+    test_obj.assertEqual(exception_code_expected, exception_code_found, msg='Invalid exceptionCode attribute for Exception element, should be {0}, is {1}'.format(exception_code_expected, exception_code_found))
+
+    locator_found = exception_element.attrib.get('locator')
+    test_obj.assertIsNotNone(locator_found, msg='Mising locator attribute for Exception element')
+    # locator_expected = 'LAYER'
+    test_obj.assertEqual(locator_expected, locator_found, msg='Invalid locator attribute for Exception element, should be {0}, is {1}'.format(locator_expected, locator_found))
+
+    # Check <ExceptionText> content
+    exception_text_element = exception_element.find(expected_namespace + 'ExceptionText')
+    test_obj.assertIsNotNone(exception_text_element, msg='Missing ExceptionText element')
+
+    exception_text_found = exception_text_element.text
+    test_obj.assertIsNotNone(exception_text_found, msg='Missing ExceptionText text content')
+    test_obj.assertEqual(exception_text_expected, exception_text_found, msg='Invalid text content for ExceptionText element, should be {0}, is {1}'.format(exception_text_expected, exception_text_found))

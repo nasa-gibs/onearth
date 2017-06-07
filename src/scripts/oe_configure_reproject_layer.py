@@ -369,6 +369,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 tms_path = os.path.join(layer_style_endpoint, dest_tilematrixset_name)
                 tms_apache_config = '<Directory {0}>\n'.format(tms_path)
                 tms_apache_config += '\tWMTSWrapperRole tilematrixset\n'
+                tms_apache_config += '\tWMTSWrapperMimeType {0}\n'.format(src_format)
                 regexp_str = dest_tilematrixset_name + '/\d{1,2}/\d{1,3}/\d{1,3}' + dest_file_ext
                 tms_apache_config += '\tReproject_RegExp {0}\n'.format(regexp_str)
                 tms_apache_config += '\tReproject_ConfigurationFiles {0} {1}\n'.format(os.path.join(tms_path, src_cfg_filename), os.path.join(tms_path, dest_cfg_filename))
