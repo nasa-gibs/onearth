@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
 
-versionNumber = '1.3.0'
+versionNumber = '1.3.1'
 current_conf = None
 
 class WMTSEndPoint:
@@ -1415,8 +1415,10 @@ for conf in conf_files:
             base_twms_gc = lcdir + '/conf/getcapabilities_base_twms.xml'
             base_twms_get_tile_service = lcdir + '/conf/gettileservice_base.xml'
             base_wmts_gc = lcdir + '/conf/getcapabilities_base_wmts.xml'
-            build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, sigevent_url=sigevent_url, base_wmts_gc=base_wmts_gc,
+            reproject_warnings, reproject_errors = build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, sigevent_url=sigevent_url, base_wmts_gc=base_wmts_gc,
                                     base_twms_gc=base_twms_gc, base_twms_get_tile_service=base_twms_get_tile_service)
+            warnings += reproject_warnings
+            errors += reproject_errors
             wmtsEndPoint = environment.wmts_dir
             twmsEndPoint = environment.twms_dir
             wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, None, None, wmts_getCapabilities, projection)
