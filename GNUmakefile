@@ -44,16 +44,19 @@ MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
 MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
 
+LXML_VERSION=3.8.0
+LXML_ARTIFACT=lxml-$(LXML_VERSION).tar.gz
+
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack spatialindex-unpack httpd-unpack mapserver-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack spatialindex-unpack httpd-unpack mapserver-unpack lxml-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download spatialindex-download httpd-download mapserver-download
+download: mpl-download cgicc-download spatialindex-download httpd-download mapserver-download lxml-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -94,6 +97,14 @@ upstream/$(MAPSERVER_ARTIFACT).downloaded:
 	rm -rf upstream/$(MAPSERVER_ARTIFACT)
 	( cd upstream ; wget $(MAPSERVER_URL) )
 	touch upstream/$(MAPSERVER_ARTIFACT).downloaded
+	
+lxml-download: upstream/$(LXML_ARTIFACT).downloaded
+
+upstream/$(LXML_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -rf upstream/$(LXML_ARTIFACT)
+	pip install --download upstream lxml==$(LXML_VERSION)
+	touch upstream/$(LXML_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
@@ -140,6 +151,12 @@ build/mapserver/VERSION:
 	mkdir -p build/mapserver
 	tar xf upstream/$(MAPSERVER_ARTIFACT) -C build/mapserver \
 		--strip-components=1 --exclude=.gitignore
+		
+lxml-unpack: build/lxml/VERSION
+
+build/lxml/VERSION:
+	mkdir -p build/lxml
+	tar xf upstream/$(LXML_ARTIFACT) -C build/lxml
 
 onearth-compile:
 	# Handle external headers
@@ -272,6 +289,8 @@ onearth-install:
 	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/lxml
+	cp -r build/lxml/* $(DESTDIR)/$(PREFIX)/share/lxml
 
 	install -m 755 src/scripts/oe_utils.py \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
@@ -328,6 +347,7 @@ onearth-rpm: onearth-artifact
 		upstream/$(SPATIALINDEX_ARTIFACT) \
 		upstream/$(HTTPD_ARTIFACT) \
 		upstream/$(MAPSERVER_ARTIFACT) \
+		upstream/$(LXML_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \

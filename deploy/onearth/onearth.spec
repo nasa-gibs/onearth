@@ -16,6 +16,7 @@ Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
 %if 0%{?centos}  == 7
 Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 %endif
+Source6:	https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -27,6 +28,7 @@ BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:	cmake
 BuildRequires:  turbojpeg-devel
+BuildRequires:  python-pip
 %if 0%{?centos}  == 6
 BuildRequires:  centos-release-scl
 BuildRequires:  devtoolset-3-toolchain
@@ -109,6 +111,7 @@ Requires:	python-dateutil
 Requires:	python-lxml
 Requires:   python-unittest2
 Requires:   python-requests
+Requires:	python-pip
 BuildArch:	noarch
 
 %description config
@@ -133,6 +136,7 @@ cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
 cp %{SOURCE4} upstream
 cp %{SOURCE5} upstream
+cp %{SOURCE6} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -278,6 +282,12 @@ python setup.py install
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_configure_reproject_layer.py
 %{_bindir}/oe_utils.py
+%{_datadir}/lxml
+
+%post config
+cd %{_datadir}/lxml
+tar -czvf lxml-3.8.0.tar.gz lxml-3.8.0
+pip install --no-index --find-links %{_datadir}/lxml lxml 
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
@@ -339,9 +349,12 @@ ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-webmerc/
 
 %post vectorgen
 /sbin/ldconfig
-pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.6.1
+pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 %changelog
+* Tue Jun 13 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-1
+- Added python xml install to post config
+
 * Thu Nov 03 2016 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.1.2-1
 - Added onearth-tools package and reorganized files for several packages
 
