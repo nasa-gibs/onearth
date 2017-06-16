@@ -465,7 +465,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             for layer_config in layer_tms_apache_configs:
                 layer_apache_config += layer_config
 
-            layer_apache_config_filename = identifier + 'reproject.conf'
+            layer_apache_config_filename = identifier + '_reproject.conf'
             layer_apache_config_path = os.path.join(wmts_staging_location, layer_apache_config_filename)
             try:
                 with open(layer_apache_config_path, 'w+') as f:
