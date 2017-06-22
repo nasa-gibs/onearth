@@ -16,7 +16,20 @@ If a new RPM build is desired, these instructions describe how to build the foll
 * onearth-vectorgen: A tool used to help organize vectors files and generate vector tiles
 * onearth-tools: Auxiliary tools for OnEarth such as a legend generator
 
-## Quick Build
+## Quick Build Instructions (using Docker)
+
+These instructions assume that Docker is installed and running.  On a Mac, you
+can easily install Docker using [Docker Community Edition for Mac](https://store.docker.com/editions/community/docker-ce-desktop-mac).
+
+Once Docker is installed and running, the Enterprise Linux 6 RPMs can be built with:
+
+```
+./bin/build_el6_rpms_in_docker.sh
+```
+
+The generated RPMs will be written to the `dist` directory.
+
+## Verbose Build Instructions
 
 Some build and runtime dependencies require access to the Extra Packages for Enterprise Linux (EPEL) repository. Install the latest repository definition using the RPM found at the following location:
 

@@ -5,4 +5,4 @@
 .pydevproject
 upstream
 build
-dist
+/dist/
