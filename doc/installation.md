@@ -29,7 +29,15 @@ Install OnEarth packages
 sudo yum -y install onearth-*
 ```
 
-If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing the Postgres Repository RPM
+If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing,
+
+EPEL Repository.
+
+```
+sudo yum -y install epel-release
+```
+
+Postgres Repository RPM.
 
 ```
 sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
