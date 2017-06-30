@@ -46,6 +46,8 @@ rsync -av \
   --exclude src/modules/mod_twms \
   /source/ /build/
 
+chown -R root:root /build
+
 (
   set -evx
   cd /build
