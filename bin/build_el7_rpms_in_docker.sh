@@ -12,6 +12,9 @@ fi
 
 mkdir -p dist
 
+DOCKER_UID=$(id -u)
+DOCKER_GID=$(id -g)
+
 cat > dist/build_rpms.sh <<EOS
 #!/bin/sh
 
@@ -59,8 +62,6 @@ chmod +x dist/build_rpms.sh
 
 docker run \
   --rm \
-  --env "DOCKER_UID=$(id -u)" \
-  --env "DOCKER_GID=$(id -g)" \
   --volume "$(pwd):/source:ro" \
   --volume "$(pwd)/dist:/dist" \
   "$DOCKER_IMAGE" /dist/build_rpms.sh
