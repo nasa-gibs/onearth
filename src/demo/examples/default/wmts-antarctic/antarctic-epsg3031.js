@@ -21,13 +21,10 @@
 window.onload = function() {
     //CONFIGURATION
     //Set the EPSG projection here. EPSG:4326, 3857, 3413, and 3031 are supported.
-    var EPSGProjection = "EPSG:3857";
+    var EPSGProjection = "EPSG:3031";
 
     //Set the maximum number of zoom levels. This will depend on the average number of TileMatrixSets for each layer at this endpoint.
     var maxZoomLevels = 7;
-
-    //If using vector tiles, specify their identifiers
-    var vectorLayers = ["Terra_Orbit_Dsc_Dots"];
 
     //Set locations for endpoint and getCapabilities
     var endpointUrl = "./wmts.cgi?";
@@ -45,26 +42,6 @@ window.onload = function() {
     var mapProjection = ol.proj.get(EPSGProjection);
     var maxRes;
     var extents;
-
-    var testVectorLayerStyle = new ol.style.Style({
-        fill: new ol.style.Fill({
-          color: 'blue'
-        }),
-        stroke: new ol.style.Stroke({
-          color: 'blue',
-          width: 1
-        }),
-        image: new ol.style.Circle({
-            radius: 1,
-            fill: new ol.style.Fill({
-                color: 'blue'
-            }),
-            stroke: new ol.style.Stroke({
-                color: 'blue',
-                width: 1
-            })
-        })
-    });
     
     //Extents and resolution info from: https://wiki.earthdata.nasa.gov/display/GIBS/GIBS+API+for+Developers
     switch (EPSGProjection) {
@@ -95,13 +72,6 @@ window.onload = function() {
         renderer: ["canvas", "dom"]
     });
 
-    var layer = new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            url: "http://localhost/onearth/wmts/epsg3857/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg"
-        })
-    })
-
-    map.addLayer(layer);
     var req = new XMLHttpRequest();
     //Callback to handle getCapabilities and build layers
     req.onreadystatechange = function() {
@@ -132,21 +102,7 @@ window.onload = function() {
     					}
     				}
     			}
-
-                if(vectorLayers.includes(layerName)) {
-                    var tms = layers[i].TileMatrixSetLink[0].TileMatrixSet;
-                    var source = new ol.source.VectorTile({
-                        format: new ol.format.MVT(),
-                        tileGrid: ol.tilegrid.createXYZ({maxZoom: parseInt(tms.match(/^GoogleMapsCompatible_Level(\d)/)[1]) - 1}),
-                        tilePixelRatio: 16,
-                        url: `/onearth/wmts/epsg3857/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix={z}&TileCol={x}&TileRow={y}`
-                    });
-                    var newLayer = new ol.layer.VectorTile({
-                        source,
-                        style: testVectorLayerStyle,
-                    });
-                } else {
-        			var source = new ol.source.WMTS({
+    			var newLayerSource = new ol.source.WMTS({
     		            url: endpointUrl,
           			    layer: layerName,
     			        format: layers[i].Format[0],
@@ -157,13 +113,11 @@ window.onload = function() {
     			            tileSize: tileMatrixSet.TileMatrix[0].TileHeight,
     				    resolutions: resolutions
     			        })
-        		   	 });
-        			var newLayer = new ol.layer.Tile({
-        				source,
-        			});
-                }
-                newLayer.set('id', layerName);
-                newLayer.setVisible(false);
+    		   	 });
+    			var newLayer = new ol.layer.Tile({
+    				source: newLayerSource,
+    				visible: false
+    			});
     			map.addLayer(newLayer);
     			var dropDown = document.getElementById("layer-select");
                 //Add string for new checkbox to dropdown div
@@ -184,15 +138,16 @@ window.onload = function() {
         //For a layer that is selected, remove it and then put it at the highest index. If deselected, just make it invisible.
     	for(var i=0; i<layerCollection.getLength(); i++) {
     		var layer = layerCollection.item(i);
-    		var layerName = layer.get('id');
-    		if(layerName !== pickedLayerName) continue;
-			if(evt.target.checked) {
-				map.getLayers().removeAt(i);
-				map.getLayers().insertAt(layerCollection.getLength(), layer);
-				layer.setVisible(true);
-			} else {
-				layer.setVisible(false);
-			}
+    		var layerName = layer.Hd.B.source.C;
+    		if(layerName == pickedLayerName) {
+    			if(evt.target.checked) {
+    				map.getLayers().removeAt(i);
+    				map.getLayers().insertAt(1, layer);
+    				layer.setVisible(true);
+    			} else {
+    				layer.setVisible(false);
+    			}
+    		}
     	}
     });
 };

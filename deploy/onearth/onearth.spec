@@ -200,7 +200,7 @@ ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
    %{buildroot}/%{_datadir}/onearth/demo/twms-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
-mv %{buildroot}/%{_datadir}/onearth/demo/onearth-demo.conf \
+mv %{buildroot}/%{_datadir}/onearth/demo/examples/default/onearth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
 
 ( cd build/mapserver/build; DESTDIR=%{buildroot} make install )
@@ -314,13 +314,13 @@ pip install --no-index --find-links %{_datadir}/lxml lxml
 cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
-   %{_datadir}/onearth/demo/twms-geo
-mkdir %{_datadir}/onearth/demo/wms/epsg4326
+   %{_datadir}/onearth/demo/examples/default/twms-geo
+mkdir %{_datadir}/onearth/demo/examples/default/wms/epsg4326
 mkdir %{_datadir}/onearth/demo/data/EPSG3857
-ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/wms/epsg4326
-ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wms/
-ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-geo/
-ln -s %{_datadir}/onearth/demo/ol/* %{_datadir}/onearth/demo/wmts-webmerc/
+ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg4326
+ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wms/
+ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wmts-geo/
+ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wmts-webmerc/
 
 %files mapserver
 %defattr(755,root,root,-)
