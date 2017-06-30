@@ -1,6 +1,14 @@
 #!/bin/sh
 
-set -evx
+set -e
+
+SCRIPT_NAME=$(basename "$0")
+DOCKER_IMAGE="$1"
+
+if [ -z "$DOCKER_IMAGE" ]; then
+  echo "Usage: ${SCRIPT_NAME} DOCKER_IMAGE" >&2
+  exit 1
+fi
 
 mkdir -p dist
 
@@ -55,6 +63,6 @@ docker run \
   --env "DOCKER_GID=$(id -g)" \
   --volume "$(pwd):/source:ro" \
   --volume "$(pwd)/dist:/dist" \
-  gibs-gdal:centos7-1 /dist/build_rpms.sh
+  "$DOCKER_IMAGE" /dist/build_rpms.sh
 
 rm dist/build_rpms.sh
