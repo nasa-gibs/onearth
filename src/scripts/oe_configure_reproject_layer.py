@@ -154,17 +154,17 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         warnings.append(asctime() + " " + mssg)
         log_sig_warn(mssg, sigevent_url)
 
-    wmts_base_endpoint = next(elem.text for elem in environment_xml.findall('GetCapabilitiesLocation') if elem.get('service') == 'wmts')
+    wmts_base_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectLayerConfigLocation') if elem.get('service') == 'wmts')
     if not wmts_base_endpoint:
         mssg = 'no wmts GC URL specified'
         warnings.append(asctime() + " " + mssg)
         log_sig_warn(mssg, sigevent_url)
 
-    if len(environment_xml.findall('ApacheConfigLocation')) > 1:
-        wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'wmts')
-        twms_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'twms')
+    if len(environment_xml.findall('ReprojectApacheConfigLocation')) > 1:
+        wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall('ReprojectApacheConfigLocation') if elem.get('service') == 'wmts')
+        twms_apache_config_location_elem = next(elem for elem in environment_xml.findall('ReprojectApacheConfigLocation') if elem.get('service') == 'twms')
     else:
-        log_sig_exit('ERROR', 'ApacheConfigLocation missing in ' + environment_config_path, sigevent_url)
+        log_sig_exit('ERROR', 'ReprojectApacheConfigLocation missing in ' + environment_config_path, sigevent_url)
     wmts_apache_config_location = wmts_apache_config_location_elem.text
     if not wmts_apache_config_location:
         mssg = 'no wmts Apache config location specified'
@@ -176,7 +176,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         warnings.append(asctime() + " " + mssg)
         log_sig_warn(mssg, sigevent_url)
 
-    twms_base_endpoint = next(elem.text for elem in environment_xml.findall('GetCapabilitiesLocation') if elem.get('service') == 'twms')
+    twms_base_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectLayerConfigLocation') if elem.get('service') == 'twms')
     if not twms_base_endpoint:
         mssg = 'no twms GC URL specified'
         warnings.append(asctime() + " " + mssg)
