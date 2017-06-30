@@ -15,3 +15,4 @@ build
 /src/test/legends_test_data/new_colormaps.json
 /src/test/results/
 /src/test/test_*_results.xml
+/tmp/
