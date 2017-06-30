@@ -176,22 +176,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         warnings.append(asctime() + " " + mssg)
         log_sig_warn(mssg, sigevent_url)
 
-    if len(environment_xml.findall('ApacheConfigHeaderLocation')) > 1:
-        wmts_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'wmts')
-        twms_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'twms')
-    else:
-        log_sig_exit('ERROR', 'ApacheConfigHeaderLocation missing in ' + environment_config_path, sigevent_url)
-    wmts_apache_config_header_location = wmts_apache_config_header_location_elem.text
-    if not wmts_apache_config_header_location:
-        mssg = 'no wmts Apache header location specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-    wmts_apache_config_header_basename = wmts_apache_config_header_location_elem.get('basename')
-    if not wmts_apache_config_header_basename:
-        mssg = 'no wmts Apache header basename specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-
     twms_base_endpoint = next(elem.text for elem in environment_xml.findall('GetCapabilitiesLocation') if elem.get('service') == 'twms')
     if not twms_base_endpoint:
         mssg = 'no twms GC URL specified'
@@ -208,17 +192,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     twms_apache_config_basename = twms_apache_config_location_elem.get('basename')
     if not twms_apache_config_basename:
         mssg = 'no twms Apache config basename specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-
-    twms_apache_config_header_location = twms_apache_config_header_location_elem.text
-    if not twms_apache_config_header_location:
-        mssg = 'no twms Apache header location specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-    twms_apache_config_header_basename = twms_apache_config_header_location_elem.get('basename')
-    if not twms_apache_config_header_basename:
-        mssg = 'no twms Apache header basename specified'
         warnings.append(asctime() + " " + mssg)
         log_sig_warn(mssg, sigevent_url)
 
@@ -480,15 +453,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             apache_staging_conf_path = os.path.join(wmts_staging_location, wmts_apache_config_basename + '.conf')
             try:
                 with open(apache_staging_conf_path, 'w+') as wmts_apache_config_file:
-                    # Write header to Apache config
-                    wmts_apache_header_path = os.path.join(wmts_apache_config_header_location, wmts_apache_config_header_basename + '.conf')
-                    try:
-                        with open(wmts_apache_header_path, 'r') as header:
-                            wmts_apache_config_file.write(header.read())
-                    except IOError:
-                        mssg = "Can't open WMTS reproject Apache header file: " + wmts_apache_header_path
-                        warnings.append(asctime() + " " + mssg)
-                        log_sig_warn(mssg, sigevent_url)
 
                     # Write endpoint Apache stuff
                     wmts_apache_config_file.write(endpoint_apache_config)
@@ -722,14 +686,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         twms_apache_staging_conf_path = os.path.join(twms_staging_location, twms_apache_config_basename + '.conf')
         try:
             with open(twms_apache_staging_conf_path, 'w+') as twms_apache_config_file:
-                # Write header to Apache config
-                try:
-                    with open(os.path.join(twms_apache_config_header_location, twms_apache_config_header_basename + '.conf'), 'r') as header:
-                        twms_apache_config_file.write(header.read())
-                except IOError:
-                    mssg = "Can't find TWMS reproject Apache header file: " + twms_apache_staging_conf_path
-                    warnings.append(asctime() + " " + mssg)
-                    log_sig_warn(mssg, sigevent_url)
 
                 # Write endpoint Apache stuff
                 twms_apache_config_file.write(twms_endpoint_apache_config)
