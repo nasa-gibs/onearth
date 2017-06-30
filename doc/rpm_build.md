@@ -27,6 +27,12 @@ Once Docker is installed and running, the Enterprise Linux 6 RPMs can be built w
 ./bin/build_el6_rpms_in_docker.sh
 ```
 
+The Enterprise Linux 7 RPMs can be built with:
+
+```
+./bin/build_el7_rpms_in_docker.sh
+```
+
 The generated RPMs will be written to the `dist` directory.
 
 ## Verbose Build Instructions
@@ -79,7 +85,7 @@ sudo yum -y install dist/gibs-gdal-*.el6.x86_64.rpm
 The development package needs to be installed to build the remaining packages. This RPM should not be installed on production systems:
 
 ```Shell
-sudo yum -y install dist/gibs-gdal-devel-*.el6.x86_64.rpm 
+sudo yum -y install dist/gibs-gdal-devel-*.el6.x86_64.rpm
 ```
 
 Initialize onearth submodules:
@@ -99,7 +105,7 @@ Enable newer gcc compiler if using CentOS 6
 
 ```Shell
 scl enable devtoolset-3 bash
-``` 
+```
 
 Build the RPM:
 
