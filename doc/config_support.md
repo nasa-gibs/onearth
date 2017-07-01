@@ -75,8 +75,8 @@ The environment configuration file contains information that the OnEarth layer c
 * **MapfileStagingLocation** (Optional) The location to stage configuration files for MapServer.
 * **MapfileConfigLocation** (Optional) The location of configuration files for MapServer.
 * **ReprojectEndpoint** (Optional) Used for reprojected layers. The endpoint location relative to the base server URL for accessing reprojected layers.
-* **ApacheConfigLocation** (Optional) Used for reprojected layers, this location is where Apache configuration files for reprojected layers are stored. As such, this must be a location Apache is configured to read upon startup (for example `/etc/httpd/conf.d`, or a location specified by an `Includes` directive in your Apache config).
-* **ApacheConfigHeaderLocation** (Optional) Also used for reprojected layers, this location should contain any header files for the generated Apache configs. (See [here](../src/layer_config/reproject) for a couple of example headers)
+* **ReprojectApacheConfigLocation** (Optional) Used for reprojected layers. This location is where Apache configuration files for reprojected layers are stored. As such, this must be a location Apache is configured to read upon startup (for example `/etc/httpd/conf.d`, or a location specified by an `Includes` directive in your Apache config).
+* **ReprojectLayerConfigLocation** (Optional) Used for reprojected layers. This is the base Apache configuration directory location for reprojected layers.
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
 
@@ -103,10 +103,10 @@ The environment configuration does not have unique identifier.  Reference to the
     <MapfileConfigLocation basename="EPSG3857">/etc/onearth/config/mapserver/</MapfileConfigLocation>
     <ReprojectEndpoint service="wmts">/wmts/epsg3857</ReprojectEndpoint>
     <ReprojectEndpoint service="twms">/twms/epsg3857</ReprojectEndpoint>
-    <ApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ApacheConfigLocation>
-    <ApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ApacheConfigLocation>
-    <ApacheConfigHeaderLocation service="twms" basename="webmerc-reproject-twms">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
-    <ApacheConfigHeaderLocation service="wmts" basename="webmerc-reproject-wmts">/etc/onearth/config/reproject/</ApacheConfigHeaderLocation>
+    <ReprojectApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ReprojectApacheConfigLocation>
+    <ReprojectApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ReprojectApacheConfigLocation>
+    <ReprojectLayerConfigLocation service="wmts">/srv/www/onearth/wmts/epsg3857/</GetCapabilitiesLocation>
+    <ReprojectLayerConfigLocation service="twms">/srv/www/onearth/twms/epsg3857/</GetCapabilitiesLocation>
 </EnvironmentConfiguration>
 ```
 
