@@ -2,14 +2,6 @@
 
 set -e
 
-SCRIPT_NAME=$(basename "$0")
-DOCKER_IMAGE="$1"
-
-if [ -z "$DOCKER_IMAGE" ]; then
-  echo "Usage: ${SCRIPT_NAME} DOCKER_IMAGE" >&2
-  exit 1
-fi
-
 mkdir -p dist
 
 DOCKER_UID=$(id -u)
@@ -66,6 +58,6 @@ docker run \
   --rm \
   --volume "$(pwd):/source:ro" \
   --volume "$(pwd)/dist:/dist" \
-  "$DOCKER_IMAGE" /dist/build_rpms.sh
+  "$(cat docker/el7/gibs-gdal-image.txt)" /dist/build_rpms.sh
 
 rm dist/build_rpms.sh
