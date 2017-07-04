@@ -136,6 +136,8 @@ Options:
   -w, --no_wmts         Do not use configurations for WMTS.
   -x, --no_xml          Do not generate getCapabilities and getTileService
                         XML.
+  -z, --stage_only      Do not move configurations to final location; keep
+                        configurations in staging location only.
   --debug               Produce verbose debug messages
 ```
 
