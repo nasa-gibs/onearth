@@ -24,28 +24,19 @@ window.onload = function() {
           view: new ol.View({
     center: [0,0],
     zoom: 2,
-projection: ol.proj.get("EPSG:4326"),
+projection: ol.proj.get("EPSG:3857"),
   }),
 	target: "map",
         renderer: ["canvas", "dom"]
     });
 
     var blue_marble = new ol.layer.Image({
-	extent: [-180,-90,180,90],
+	extent: [-20037508.34, -20037508.34, 20037508.34, 20037508.34],
 	source: new ol.source.ImageWMS({
-	  url: '../wms/epsg4326/wms.cgi',
+	  url: '../wms/epsg3857/wms.cgi',
 	  params: {'LAYERS': 'blue_marble', 'FORMAT': 'image/jpeg'}
 	})
     })
     
-    var modis_layer = new ol.layer.Image({
-        extent: [-180,-90,180,90],
-        source: new ol.source.ImageWMS({
-          url: '../wms/epsg4326/wms.cgi',
-          params: {'LAYERS': 'MYR4ODLOLLDY_global_10km', 'FORMAT': 'image/png'}
-        })
-    })
-
 map.addLayer(blue_marble);
-map.addLayer(modis_layer); 
 };

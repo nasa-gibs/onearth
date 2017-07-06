@@ -19,33 +19,28 @@
  */
 
 window.onload = function() {
+    proj4.defs("EPSG:3031",
+        "+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 " +
+        "+datum=WGS84 +units=m +no_defs");
+    ol.proj.get("EPSG:3031").setExtent([-4194304, -4194304, 4194304, 4194304]);
 
     var map = new ol.Map({
           view: new ol.View({
     center: [0,0],
     zoom: 2,
-projection: ol.proj.get("EPSG:4326"),
+    projection: ol.proj.get("EPSG:3031"),
   }),
 	target: "map",
         renderer: ["canvas", "dom"]
     });
 
     var blue_marble = new ol.layer.Image({
-	extent: [-180,-90,180,90],
+	extent: [-4194304, -4194304, 4194304, 4194304],
 	source: new ol.source.ImageWMS({
-	  url: '../wms/epsg4326/wms.cgi',
+	  url: '../wms/epsg3031/wms.cgi',
 	  params: {'LAYERS': 'blue_marble', 'FORMAT': 'image/jpeg'}
 	})
     })
     
-    var modis_layer = new ol.layer.Image({
-        extent: [-180,-90,180,90],
-        source: new ol.source.ImageWMS({
-          url: '../wms/epsg4326/wms.cgi',
-          params: {'LAYERS': 'MYR4ODLOLLDY_global_10km', 'FORMAT': 'image/png'}
-        })
-    })
-
 map.addLayer(blue_marble);
-map.addLayer(modis_layer); 
 };
