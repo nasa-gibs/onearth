@@ -224,6 +224,8 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_utils.py
 	install -m 755 src/scripts/oe_configure_reproject_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_reproject_layer.py
+	install -m 755 src/scripts/oe_validate_configs.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_configs.py
 	install -m 755 src/scripts/read_idx.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/read_idx.py
 	install -m 755 src/scripts/read_mrf.py  \

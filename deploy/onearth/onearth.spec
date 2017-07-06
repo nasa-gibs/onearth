@@ -281,13 +281,16 @@ python setup.py install
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_configure_reproject_layer.py
+%{_bindir}/oe_validate_configs.py
 %{_bindir}/oe_utils.py
 %{_datadir}/lxml
 
 %post config
 cd %{_datadir}/lxml
 tar -czvf lxml-3.8.0.tar.gz lxml-3.8.0
-pip install --no-index --find-links %{_datadir}/lxml lxml 
+pip install --no-index --find-links %{_datadir}/lxml lxml
+pip install --upgrade pyparsing
+pip install parse_apache_configs
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)

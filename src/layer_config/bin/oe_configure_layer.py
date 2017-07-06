@@ -1276,7 +1276,7 @@ parser.add_option("-y", "--generate_links",
                   default=False, help="Generate default/current day links in the archive for time varying layers.")
 parser.add_option("-z", "--no_cache",
                   action="store_true", dest="no_cache", 
-                  default=False, help="Do not copy cache configuration files to cache location.")
+                  default=False, help="Do not copy cache configuration files and Apache configs to final location.")
 parser.add_option("--create_mapfile",
                   action="store_true", dest="create_mapfile", 
                   default=False, help="Create MapServer configuration.")
@@ -1415,7 +1415,7 @@ for conf in conf_files:
             base_twms_gc = lcdir + '/conf/getcapabilities_base_twms.xml'
             base_twms_get_tile_service = lcdir + '/conf/gettileservice_base.xml'
             base_wmts_gc = lcdir + '/conf/getcapabilities_base_wmts.xml'
-            reproject_warnings, reproject_errors = build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, sigevent_url=sigevent_url, base_wmts_gc=base_wmts_gc,
+            reproject_warnings, reproject_errors = build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, create_gc=not no_xml, sigevent_url=sigevent_url, stage_only=no_cache, base_wmts_gc=base_wmts_gc,
                                     base_twms_gc=base_twms_gc, base_twms_get_tile_service=base_twms_get_tile_service)
             warnings += reproject_warnings
             errors += reproject_errors
