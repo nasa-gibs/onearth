@@ -15,7 +15,7 @@ do
 	mkdir -p /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/{source_images,working_dir,logfile_dir,output_dir,empty_tiles}
 	cp /usr/share/onearth/demo/source_images/blue_marble.* /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/source_images/
 	cp /usr/share/onearth/demo/mrf_configs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}_config.xml /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/
-	cp /usr/share/onearth/demo/wmts-geo/black.jpg /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/empty_tiles/
+	cp /usr/share/onearth/demo/examples/default/wmts-geo/black.jpg /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/empty_tiles/
 	cd /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/
 
 	mrfgen -c /usr/share/onearth/demo/generated_mrfs/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}/blue_marble_${MARBLE_PROJECTIONS[$INDEX]}_config.xml
@@ -35,7 +35,7 @@ do
 	mkdir -p /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/{source_images,working_dir,logfile_dir,output_dir,empty_tiles}
 	cp /usr/share/onearth/demo/source_images/MYR4ODLOLLDY_global_2014277_10km.* /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/source_images/
 	cp /usr/share/onearth/demo/mrf_configs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}_config.xml /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/
-	cp /usr/share/onearth/demo/wmts-geo/transparent.png /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/empty_tiles/
+	cp /usr/share/onearth/demo/examples/default/wmts-geo/transparent.png /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/empty_tiles/
 	cd /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/
 
 	mrfgen -c /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}_config.xml
