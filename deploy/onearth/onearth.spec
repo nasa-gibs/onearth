@@ -281,6 +281,7 @@ python setup.py install
 %defattr(755,root,root,-)
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_configure_reproject_layer.py
+%{_bindir}/oe_validate_configs.py
 %{_bindir}/oe_utils.py
 %{_datadir}/lxml
 

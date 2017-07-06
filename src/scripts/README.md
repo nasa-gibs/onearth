@@ -141,6 +141,32 @@ Options:
   --debug               Produce verbose debug messages
 ```
 
+
+## oe_validate_configs.py
+
+Utility script to validate OnEarth layer and Apache configurations.
+
+```
+Usage: oe_validate_configs.py --input [input file] --sigevent_url [url] --verbose
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -d DIFF_FILENAME, --diff_file=DIFF_FILENAME
+                        Full path existing configuration file to diff
+  -e ENVIRONMENT_FILENAME, --environment=ENVIRONMENT_FILENAME
+                        Full path of OnEarth environment configuration file
+  -i INPUT_FILENAME, --input=INPUT_FILENAME
+                        Full path of input configuration file
+  -r, --replace         Replace diff_file (after backup) with input if no
+                        errors are reported
+  -t CONFIG_TYPE, --type=CONFIG_TYPE
+                        Type of input file: apache or oe_layer
+  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
+                        Default:  http://localhost:8100/sigevent/events/create
+  -v, --verbose         Print out detailed log messages
+```
+
 ## Contact
 
 Contact us by sending an email to
