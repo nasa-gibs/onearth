@@ -122,8 +122,6 @@ cp /usr/share/onearth/demo/styles/* /etc/onearth/config/styles
 
 chmod +x /usr/share/onearth/demo/examples/default/wms/wms.cgi
 
-printf "I'm HERE\n"
-
 mkdir -p /usr/share/onearth/demo/examples/default/wms
 mkdir -p /usr/share/onearth/demo/examples/default/wfs
 mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg4326
@@ -143,8 +141,6 @@ cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/
 /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
 /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
 
-printf "I'm HERE 2\n"
-
 #Compile the KML script and copy to TWMS dirs
 cd /usr/share/onearth/apache/kml
 for PROJECTION in "${PROJECTIONS[@]}"
@@ -153,8 +149,6 @@ do
 	 cp kmlgen.cgi /usr/share/onearth/demo/examples/default/twms-$PROJECTION
 	 rm -f kmlgen.cgi
 done
-
-printf "I'm HERE 3\n"
 
 #Copy layer config files, run config tool
 cp /usr/share/onearth/demo/layer_configs/* /etc/onearth/config/layers/
