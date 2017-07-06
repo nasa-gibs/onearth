@@ -177,28 +177,28 @@ make %{?smp_flags}
 %install
 rm -rf %{buildroot}
 make onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/
 ln -s %{_datadir}/onearth/apache/wmts.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/black.jpg
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/transparent.png
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-geo/1.0.0
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/1.0.0
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/black.jpg
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/transparent.png
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/wmts-webmerc/1.0.0
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/twms-geo/.lib
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc/1.0.0
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo/.lib
 ln -s %{_datadir}/onearth/apache/twms.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/twms-geo
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/twms-geo/black.jpg
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo/black.jpg
 ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/twms-geo/transparent.png
+   %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo/transparent.png
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/examples/default/onearth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
