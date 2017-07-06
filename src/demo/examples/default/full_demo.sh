@@ -119,37 +119,42 @@ done
 #Install and copy the Mapserver config files and endpoints
 mkdir -p /etc/onearth/config/styles
 cp /usr/share/onearth/demo/styles/* /etc/onearth/config/styles
-mkdir -p /usr/share/onearth/demo/mapserver
-cp /usr/share/onearth/demo/mapserver_config/* /usr/share/onearth/demo/mapserver
-chmod +x /usr/share/onearth/demo/mapserver/wms.cgi
 
-mkdir -p /usr/share/onearth/demo/wms
-mkdir -p /usr/share/onearth/demo/wfs
-mkdir -p /usr/share/onearth/demo/wms/epsg4326
-mkdir -p /usr/share/onearth/demo/wfs/epsg4326
-mkdir -p /usr/share/onearth/demo/wms/epsg3857
-mkdir -p /usr/share/onearth/demo/wfs/epsg3857
-mkdir -p /usr/share/onearth/demo/wms/epsg3031
-mkdir -p /usr/share/onearth/demo/wfs/epsg3031
-mkdir -p /usr/share/onearth/demo/wms/epsg3413
-mkdir -p /usr/share/onearth/demo/wfs/epsg3413
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wms/sepsg4326
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wms/epsg3857
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wms/epsg3031
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wms/epsg3413
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wfs/epsg4326/wfs.cgi
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wfs/epsg3857/wfs.cgi
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wfs/epsg3031/wfs.cgi
-cp /usr/share/onearth/demo/mapserver/wms.cgi /usr/share/onearth/demo/wfs/epsg3413/wfs.cgi
+chmod +x /usr/share/onearth/demo/examples/default/wms/wms.cgi
+
+printf "I'm HERE\n"
+
+mkdir -p /usr/share/onearth/demo/examples/default/wms
+mkdir -p /usr/share/onearth/demo/examples/default/wfs
+mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg4326
+mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg4326
+mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg3857
+mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg3857
+mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg3031
+mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg3031
+mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg3413
+mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg3413
+cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/sepsg4326
+cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg3857
+cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg3031
+cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg3413
+/usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg4326/wfs.cgi
+/usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
+/usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
+/usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
+
+printf "I'm HERE 2\n"
 
 #Compile the KML script and copy to TWMS dirs
 cd /usr/share/onearth/apache/kml
 for PROJECTION in "${PROJECTIONS[@]}"
 do
-	 make WEB_HOST=localhost:$HOST_PORT/onearth/demo/twms/$PROJECTION
-	 cp kmlgen.cgi /usr/share/onearth/demo/twms-$PROJECTION
+	 make WEB_HOST=localhost:$HOST_PORT/onearth/demo/examples/default/twms/$PROJECTION
+	 cp kmlgen.cgi /usr/share/onearth/demo/examples/default/twms-$PROJECTION
 	 rm -f kmlgen.cgi
 done
+
+printf "I'm HERE 3\n"
 
 #Copy layer config files, run config tool
 cp /usr/share/onearth/demo/layer_configs/* /etc/onearth/config/layers/
