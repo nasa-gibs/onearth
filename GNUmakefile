@@ -48,9 +48,9 @@ LXML_VERSION=3.8.0
 LXML_ARTIFACT=lxml-$(LXML_VERSION).tar.gz
 
 PYPARSING_VERSION=2.2.0
-PYPARSING_ARTIFACT=pyparsing-$(PYPARSING_VERSION).tar.gz
+PYPARSING_ARTIFACT=pyparsing-$(PYPARSING_VERSION)-py2.py3-none-any.whl
 
-PARSE_APACHE_CONFIGS_VERSION=2.2.0
+PARSE_APACHE_CONFIGS_VERSION=0.0.2
 PARSE_APACHE_CONFIGS_ARTIFACT=parse_apache_configs-$(PARSE_APACHE_CONFIGS_VERSION).tar.gz
 
 all: 
@@ -184,7 +184,7 @@ pyparsing-unpack: build/pyparsing/VERSION
 
 build/pyparsing/VERSION:
 	mkdir -p build/pyparsing
-	tar xf upstream/$(PYPARSING_ARTIFACT) -C build/pyparsing
+	mv upstream/$(PYPARSING_ARTIFACT) build/pyparsing
 	
 parse_apache_configs-unpack: build/parse_apache_configs/VERSION
 

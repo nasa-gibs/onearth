@@ -17,7 +17,7 @@ Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
 Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 %endif
 Source6:	https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
-Source7:	https://pypi.python.org/packages/3c/ec/a94f8cf7274ea60b5413df054f82a8980523efd712ec55a59e7c3357cf7c/pyparsing-2.2.0.tar.gz
+Source7:	https://pypi.python.org/packages/6a/8a/718fd7d3458f9fab8e67186b00abdd345b639976bc7fb3ae722e1b026a50/pyparsing-2.2.0-py2.py3-none-any.whl
 Source8:	https://pypi.python.org/packages/3a/59/bfb842d06d90d3c1b55e097726061eb51da34dc4b23b6591c202094318cf/parse_apache_configs-0.0.2.tar.gz
 
 BuildRequires:	httpd-devel
@@ -296,8 +296,7 @@ cd %{_datadir}/lxml
 tar -czvf lxml-3.8.0.tar.gz lxml-3.8.0
 pip install --no-index --find-links %{_datadir}/lxml lxml
 cd %{_datadir}/pyparsing
-tar -czvf pyparsing-2.2.0.tar.gz pyparsing-2.2.0
-pip install --no-index --find-links %{_datadir}/pyparsing pyparsing
+pip install --upgrade --no-index --find-links %{_datadir}/pyparsing pyparsing
 cd %{_datadir}/parse_apache_configs
 tar -czvf parse_apache_configs-0.0.2.tar.gz parse_apache_configs-0.0.2
 pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apache_configs
@@ -375,6 +374,9 @@ sh %{_datadir}/onearth/demo/examples/default/configure_reproject.sh
 pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 %changelog
+* Fri Jul 07 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-2
+- Updated demo package; added pyparsing and parse_apache_configs install to post config
+
 * Tue Jun 13 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-1
 - Added python xml install to post config
 
