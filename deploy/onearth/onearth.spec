@@ -319,8 +319,16 @@ make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/examples/default/twms-geo
 mkdir %{_datadir}/onearth/demo/examples/default/wms/epsg4326
-ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg4326
+ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg4326/wms.cgi
+ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3857/wms.cgi
+ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3413/wms.cgi
+ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3031/wms.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg4326/wfs.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
 ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wms/
+ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wfs/
 ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wmts-geo/
 ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/wmts-webmerc/
 
