@@ -301,6 +301,9 @@ cd %{_datadir}/parse_apache_configs
 tar -czvf parse_apache_configs-0.0.2.tar.gz parse_apache_configs-0.0.2
 pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apache_configs
 
+%postun config
+rm /etc/httpd/conf.d/reproject-demo.conf
+
 %files mrfgen
 %defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/mrfgen
