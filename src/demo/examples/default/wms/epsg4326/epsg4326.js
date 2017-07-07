@@ -33,7 +33,7 @@ projection: ol.proj.get("EPSG:4326"),
     var blue_marble = new ol.layer.Image({
 	extent: [-180,-90,180,90],
 	source: new ol.source.ImageWMS({
-	  url: '../wms/epsg4326/wms.cgi',
+	  url: 'wms.cgi',
 	  params: {'LAYERS': 'blue_marble', 'FORMAT': 'image/jpeg'}
 	})
     })
@@ -41,7 +41,7 @@ projection: ol.proj.get("EPSG:4326"),
     var modis_layer = new ol.layer.Image({
         extent: [-180,-90,180,90],
         source: new ol.source.ImageWMS({
-          url: '../wms/epsg4326/wms.cgi',
+          url: 'wms.cgi',
           params: {'LAYERS': 'MYR4ODLOLLDY_global_10km', 'FORMAT': 'image/png'}
         })
     })

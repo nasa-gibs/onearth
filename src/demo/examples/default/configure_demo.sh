@@ -43,7 +43,7 @@ do
 	#Create data archive directories and copy MRF files
 	 mkdir -p /usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km
 	 mkdir -p /usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/{2014,YYYY}
-	 /bin/cp /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/output_dir/MYR4ODLOLLDY2014277_.* /usr/share/onearth/demo/data/${PROJEPSGS[$INDEX]}/MYR4ODLOLLDY_global_10km/2014/
+	 /bin/cp /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/output_dir/MYR4ODLOLLDY2014277_.* /usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/2014/
 	 find /usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/2014 -name 'MYR4ODLOLLDY2014277*' -type f -exec bash -c 'ln -s "$1" "${1/2014277/TTTTTTT}"' -- {} \;
 	 find /usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/2014 -name 'MYR4ODLOLLDYTTTTTTT*' -type l -exec bash -c 'mv "$1" "/usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/YYYY/"' -- {} \;
 	 /bin/cp /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/output_dir/MYR4ODLOLLDY2014277_.mrf /etc/onearth/config/headers/MYR4ODLOLLDY_${MODIS_PROJECTIONS[$INDEX]}.mrf
@@ -151,4 +151,4 @@ done
 
 #Copy layer config files, run config tool
 /bin/cp /usr/share/onearth/demo/layer_configs/* /etc/onearth/config/layers/
-LCDIR=/etc/onearth/config oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/
+LCDIR=/etc/onearth/config oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --skip_empty_tiles --generate_links --restart_apache

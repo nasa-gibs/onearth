@@ -314,13 +314,16 @@ pip install parse_apache_configs
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/onearth-demo.conf
 
 %post demo
+%if 0%{?centos}  == 7
+sed -i 's/#Require/Require/g' /etc/httpd/conf.d/onearth-demo.conf
+%endif
 cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/demo-twms
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
    %{_datadir}/onearth/demo/examples/default/twms-geo
 mkdir %{_datadir}/onearth/demo/examples/default/lib
-cp -r %{_datadir}/onearth/demo/examples/default/wms/ %{_datadir}/onearth/demo/examples/default/wfs/
 ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/lib/
+cp -r %{_datadir}/onearth/demo/examples/default/wms/ %{_datadir}/onearth/demo/examples/default/wfs/
 ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg4326/wms.cgi
 ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3857/wms.cgi
 ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3413/wms.cgi
@@ -329,6 +332,8 @@ ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/defau
 ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
 ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
 ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
+sh %{_datadir}/onearth/demo/examples/default/configure_demo.sh
+sh %{_datadir}/onearth/demo/examples/default/configure_reproject.sh
 
 %files mapserver
 %defattr(755,root,root,-)
