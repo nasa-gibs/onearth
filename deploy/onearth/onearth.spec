@@ -17,6 +17,8 @@ Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
 Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 %endif
 Source6:	https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
+Source7:	https://pypi.python.org/packages/3c/ec/a94f8cf7274ea60b5413df054f82a8980523efd712ec55a59e7c3357cf7c/pyparsing-2.2.0.tar.gz
+Source8:	https://pypi.python.org/packages/3a/59/bfb842d06d90d3c1b55e097726061eb51da34dc4b23b6591c202094318cf/parse_apache_configs-0.0.2.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -137,6 +139,8 @@ cp %{SOURCE3} upstream
 cp %{SOURCE4} upstream
 cp %{SOURCE5} upstream
 cp %{SOURCE6} upstream
+cp %{SOURCE7} upstream
+cp %{SOURCE8} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -284,13 +288,19 @@ python setup.py install
 %{_bindir}/oe_validate_configs.py
 %{_bindir}/oe_utils.py
 %{_datadir}/lxml
+%{_datadir}/pyparsing
+%{_datadir}/parse_apache_configs
 
 %post config
 cd %{_datadir}/lxml
 tar -czvf lxml-3.8.0.tar.gz lxml-3.8.0
 pip install --no-index --find-links %{_datadir}/lxml lxml
-pip install --upgrade pyparsing
-pip install parse_apache_configs
+cd %{_datadir}/pyparsing
+tar -czvf pyparsing-2.2.0.tar.gz pyparsing-2.2.0
+pip install --no-index --find-links %{_datadir}/pyparsing pyparsing
+cd %{_datadir}/parse_apache_configs
+tar -czvf parse_apache_configs-0.0.2.tar.gz parse_apache_configs-0.0.2
+pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apache_configs
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
