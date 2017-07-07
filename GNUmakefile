@@ -46,6 +46,7 @@ MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
 
 LXML_VERSION=3.8.0
 LXML_ARTIFACT=lxml-$(LXML_VERSION).tar.gz
+LXML_URL=https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
 
 PYPARSING_VERSION=2.2.0
 PYPARSING_ARTIFACT=pyparsing-$(PYPARSING_VERSION)-py2.py3-none-any.whl
@@ -109,7 +110,7 @@ lxml-download: upstream/$(LXML_ARTIFACT).downloaded
 upstream/$(LXML_ARTIFACT).downloaded:
 	mkdir -p upstream
 	rm -rf upstream/$(LXML_ARTIFACT)
-	pip install --download upstream lxml==$(LXML_VERSION)
+	( cd upstream ; wget $(LXML_URL) )
 	touch upstream/$(LXML_ARTIFACT).downloaded
 	
 pyparsing-download: upstream/$(PYPARSING_ARTIFACT).downloaded

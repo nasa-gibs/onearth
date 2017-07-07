@@ -2,6 +2,8 @@
 
 This package includes a pair of pre-configured endpoints for OnEarth that feature the Blue Marble imagery layer.
 
+The ``examples/`` directory contains demos with more advanced features. For each demo, execute `configure_demo.sh` as a privileged user to install. Installations may take a long time to configure imagery.
+
 ### WMTS endpoint
 A WMTS endpoint is included with an OpenLayers demo. It's located at:
 

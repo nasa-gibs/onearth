@@ -1,5 +1,9 @@
 #!/bin/sh
 
+#Projections and their EPSG equivalents
+declare -a PROJECTIONS=(geo webmerc arctic antarctic)
+declare -a PROJEPSGS=(EPSG4326 EPSG3857 EPSG3413 EPSG3031)
+
 #Download image files
 curl -# -o /usr/share/onearth/demo/source_images/blue_marble.jpg https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73776/world.topo.bathy.200408.3x21600x10800.jpg \
 				 --progress-bar

@@ -341,8 +341,6 @@ ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/defau
 ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
 ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
 ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
-sh %{_datadir}/onearth/demo/examples/default/configure_demo.sh
-sh %{_datadir}/onearth/demo/examples/default/configure_reproject.sh
 
 %files mapserver
 %defattr(755,root,root,-)
