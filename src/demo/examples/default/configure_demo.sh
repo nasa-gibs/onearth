@@ -41,6 +41,7 @@ do
 	mrfgen -c /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}_config.xml
 
 	#Create data archive directories and copy MRF files
+	 mkdir -p /usr/share/onearth/demo/data/${PROJEPSGS[$INDEX]}/MYR4ODLOLLDY_global_10km
 	 mkdir -p /usr/share/onearth/demo/data/${PROJEPSGS[$INDEX]}/MYR4ODLOLLDY_global_10km/{2014,YYYY}
 	 /bin/cp /usr/share/onearth/demo/generated_mrfs/MYR4ODLOLLDY_global_2014277_10km_${MODIS_PROJECTIONS[$INDEX]}/output_dir/MYR4ODLOLLDY2014277_.* /usr/share/onearth/demo/data/${PROJEPSGS[$INDEX]}/MYR4ODLOLLDY_global_10km/2014/
 	 find /usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/2014 -name 'MYR4ODLOLLDY2014277*' -type f -exec bash -c 'ln -s "$1" "${1/2014277/TTTTTTT}"' -- {} \;
@@ -98,20 +99,17 @@ declare -a MRF_EPSGS=(EPSG3413 EPSG3031)
 for INDEX in {0..1}
 do
 	 mkdir -p /usr/share/onearth/demo/data/${MRF_EPSGS[$INDEX]}/blue_marble
-	 /bin/cp /usr/share/onearth/demo/mrfs/blue_marble_${MRF_PROJS[$INDEX]}/* /usr/share/onearth/demo/data/${MRF_EPSGS[$INDEX]}/blue_marble/
-	 /bin/cp /usr/share/onearth/demo/mrfs/blue_marble_${MRF_PROJS[$INDEX]}/blue_marble.mrf /etc/onearth/config/headers/blue_marble_${MRF_PROJS[$INDEX]}.mrf
+	 /bin/cp /usr/share/onearth/demo/data/${MRF_EPSGS[$INDEX]}/blue_marble/blue_marble.mrf /etc/onearth/config/headers/blue_marble_${MRF_PROJS[$INDEX]}.mrf
 done
 
 #ASCAT-L2-25km
-	mkdir -p /usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/{2016,YYYY}
-	/bin/cp /usr/share/onearth/demo/mrfs/ASCATA-L2-25km/ASCATA-L2-25km2016188010000_.* /usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/2016/
+	mkdir -p /usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/YYYY
 	find /usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/2016 -name 'ASCATA-L2-25km2016188010000*' -type f -exec bash -c 'ln -s "$1" "${1/2016188010000/TTTTTTTTTTTTT}"' -- {} \;
 	find /usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/2016 -name 'ASCATA-L2-25kmTTTTTTTTTTTTT*' -type l -exec bash -c 'mv "$1" "/usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/YYYY/"' -- {} \;
 	/bin/cp /usr/share/onearth/demo/data/EPSG3857/ASCATA-L2-25km/2016/ASCATA-L2-25km2016188010000_.mrf /etc/onearth/config/headers/ASCATA-L2-25kmTTTTTTTTTTTTT_.mrf
 
 #OSCAR
-	mkdir -p /usr/share/onearth/demo/data/EPSG3857/oscar/{2016,YYYY}
-	/bin/cp /usr/share/onearth/demo/mrfs/oscar/oscar2016189_.* /usr/share/onearth/demo/data/EPSG3857/oscar/2016/
+	mkdir -p /usr/share/onearth/demo/data/EPSG3857/oscar/YYYY
 	find /usr/share/onearth/demo/data/EPSG3857/oscar/2016 -name 'oscar2016189*' -type f -exec bash -c 'ln -s "$1" "${1/2016189/TTTTTTT}"' -- {} \;
 	find /usr/share/onearth/demo/data/EPSG3857/oscar/2016 -name 'oscarTTTTTTT*' -type l -exec bash -c 'mv "$1" "/usr/share/onearth/demo/data/EPSG3857/oscar/YYYY/"' -- {} \;
 	/bin/cp /usr/share/onearth/demo/data/EPSG3857/oscar/2016/oscar2016189_.mrf /etc/onearth/config/headers/oscarTTTTTTT_.mrf
