@@ -105,8 +105,8 @@ The environment configuration does not have unique identifier.  Reference to the
     <ReprojectEndpoint service="twms">/twms/epsg3857</ReprojectEndpoint>
     <ReprojectApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/etc/httpd/conf.d/</ReprojectApacheConfigLocation>
     <ReprojectApacheConfigLocation service="twms" basename="onearth-reproject-twms">/etc/httpd/conf.d/</ReprojectApacheConfigLocation>
-    <ReprojectLayerConfigLocation service="wmts">/srv/www/onearth/wmts/epsg3857/</GetCapabilitiesLocation>
-    <ReprojectLayerConfigLocation service="twms">/srv/www/onearth/twms/epsg3857/</GetCapabilitiesLocation>
+    <ReprojectLayerConfigLocation service="wmts">/srv/www/onearth/wmts/epsg3857/</ReprojectLayerConfigLocation>
+    <ReprojectLayerConfigLocation service="twms">/srv/www/onearth/twms/epsg3857/</ReprojectLayerConfigLocation>
 </EnvironmentConfiguration>
 ```
 
