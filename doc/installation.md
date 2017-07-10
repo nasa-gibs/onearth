@@ -21,10 +21,16 @@ Postgres Repository RPM
 sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
 ```
 
-Python packages via pip (included in RPMs)
+Python packages via pip (required for OnEarth configuration tools, included in onearth-config RPM)
 
 ```
-sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
+sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
+```
+
+Python packages via pip (required for OnEarth vectorgen, included in onearth-vector RPM)
+
+```
+sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 ```
 
 ## RPM Installation
