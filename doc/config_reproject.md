@@ -26,7 +26,7 @@ To use the tool, configure a reprojection configuration XML file (details below)
 
 
 ### Environment Config
-Make sure that the `<ApacheConfigLocation>` and `<ApacheConfigHeaderLocation>` elements are located in the environment config file you'll be using, and that there's one for each service (wmts or twms) that you wish to configure for. See [config support](config_support.md) for more information.
+Make sure that the `<ReprojectApacheConfigLocation>` and `<ReprojectLayerConfigLocation>` elements are located in the environment config file you'll be using, and that there's one for each service (wmts or twms) that you wish to configure for. See [config support](config_support.md) for more information.
 
 ### Layer Config File
 Reprojected layers require a differently-structured XML file from the normal OnEarth layer config. 
