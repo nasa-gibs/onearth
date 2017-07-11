@@ -43,6 +43,7 @@ import filecmp
 import re
 import hashlib
 import json
+import platform
 from optparse import OptionParser
 from oe_test_utils import mrfgen_run_command as run_command
 
@@ -50,12 +51,14 @@ DEBUG = False
 
 oe_generate_legend = "oe_generate_legend.py"
 
-
 class TestOELegends(unittest.TestCase):
     
     def setUp(self):
+        self.colormaps_json = "colormaps.el6.json"
+        if "el7" in platform.release(): # Result varies on release
+            self.colormaps_json = self.colormaps_json.replace("el6","el7")
         self.testdata_path = os.path.join(os.getcwd(), 'legends_test_data/')
-        test_config = open(self.testdata_path + "colormaps.json", "r")
+        test_config = open(self.testdata_path + self.colormaps_json, "r")
         self.colormaps = eval(test_config.read())
         self.colormap_files = []
         test_config.close()
@@ -121,10 +124,10 @@ class TestOELegends(unittest.TestCase):
         new_config = open(self.testdata_path + 'new_colormaps.json', 'w')
         json.dump(new_colormaps, new_config, sort_keys=True, indent=4)
         new_config.close()
-        self.assertTrue(filecmp.cmp(self.testdata_path + "colormaps.json", self.testdata_path + 'new_colormaps.json'), 'Inconsistent legends found')
+        self.assertTrue(filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'), 'Inconsistent legends found')
 
     def tearDown(self):
-        if filecmp.cmp(self.testdata_path + "colormaps.json", self.testdata_path + 'new_colormaps.json'):
+        if filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'):
             os.remove(self.testdata_path + 'new_colormaps.json')
 
 if __name__ == '__main__':
