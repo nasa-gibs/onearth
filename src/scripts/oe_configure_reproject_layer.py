@@ -105,10 +105,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     except etree.XMLSyntaxError:
         log_sig_exit('ERROR', "Can't parse reproject layer config file: {0}".format(layer_config_path), sigevent_url)
 
-    src_locations = config_xml.findall('SrcLocation')
-    gc_uri = config_xml.findtext('GetCapabilitiesURI')
+    src_locations = config_xml.findall('SrcLocationRewrite')
+    gc_uri = config_xml.findtext('SrcWMTSGetCapabilitiesURI')
     if not gc_uri:
-        log_sig_exit('ERROR:', '<GetCapabilitiesURI> not present in reprojection config file: {0}'.format(layer_config_path), sigevent_url)
+        log_sig_exit('ERROR:', '<SrcWMTSGetCapabilitiesURI> not present in reprojection config file: {0}'.format(layer_config_path), sigevent_url)
     layer_exclude_list = [name.text for name in config_xml.findall('ExcludeLayer')]
     layer_include_list = [name.text for name in config_xml.findall('IncludeLayer')]
 
