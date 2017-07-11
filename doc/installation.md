@@ -4,8 +4,34 @@ This are instructions on how to install OnEarth on CentOS/RedHat Linux 6.4 or gr
 
 ## Preconditions
 
-* Apache 2.2 or greater
+* Apache 2.2 or 2.4
 * Python 2.6 or 2.7
+
+If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing:
+
+EPEL Repository
+
+```
+sudo yum -y install epel-release
+```
+
+Postgres Repository RPM
+
+```
+sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+```
+
+Python packages via pip (required for OnEarth configuration tools, included in onearth-config RPM)
+
+```
+sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
+```
+
+Python packages via pip (required for OnEarth vectorgen, included in onearth-vector RPM)
+
+```
+sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
+```
 
 ## RPM Installation
 
@@ -29,12 +55,6 @@ Install OnEarth packages
 sudo yum -y install onearth-*
 ```
 
-If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing the Postgres Repository RPM
-
-```
-sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
-```
-
 For manual installation or to install or another OS, please refer to the specific component:
 
 * [mod_onearth](../src/modules/mod_onearth/README.md)
@@ -54,7 +74,7 @@ These are the default install locations.
 mod_onearth
 ```
 /etc/httpd/modules/mod_onearth.so
-/usr/bin//oe_create_cache_config
+/usr/bin/oe_create_cache_config
 /usr/share/onearth/apache/*
 /usr/share/onearth/apache/kml/*
 ```

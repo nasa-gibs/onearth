@@ -29,8 +29,8 @@ limitations under the License.
         <xs:element ref="MapfileStagingLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileConfigLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="ReprojectEndpoint" maxOccurs="2" minOccurs="0"/>
-        <xs:element ref="ApacheConfigLocation" maxOccurs="2" minOccurs="0"/>
-        <xs:element ref="ApacheConfigHeaderLocation" maxOccurs="2" minOccurs="0"/>
+        <xs:element ref="ReprojectApacheConfigLocation" maxOccurs="2" minOccurs="0"/>
+        <xs:element ref="ReprojectLayerConfigLocation" maxOccurs="2" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -122,13 +122,13 @@ limitations under the License.
       <xs:attribute name="service" use="required" type="xs:string"/>
     </xs:complexType>
   </xs:element>
-  <xs:element name="ApacheConfigLocation">
+  <xs:element name="ReprojectApacheConfigLocation">
     <xs:complexType mixed="true">
       <xs:attribute name="basename" use="required" type="xs:string"/>
       <xs:attribute name="service" use="required" type="xs:string"/>
     </xs:complexType>
   </xs:element>
-  <xs:element name="ApacheConfigHeaderLocation">
+  <xs:element name="ReprojectLayerConfigLocation">
     <xs:complexType mixed="true">
       <xs:attribute name="basename" use="required" type="xs:string"/>
       <xs:attribute name="service" use="required" type="xs:string"/>

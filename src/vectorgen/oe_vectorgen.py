@@ -222,11 +222,9 @@ if __name__ == '__main__':
             except ValueError:
                 log_sig_exit('ERROR', 'Invalid <tile_size> specified', sigevent_url)
             try:
-                overview_levels_str = get_dom_tag_value(dom, '<overview_levels>')
-                if ',' in overview_levels_str:
-                    overview_levels = overview_levels_str.split(',')
-                else:
-                    overview_levels = overview_levels_str.split(' ')
+                overview_levels_str = get_dom_tag_value(dom, 'overview_levels')
+                sep = ',' if ',' in overview_levels_str else ' '
+                overview_levels = [int(level) for level in overview_levels_str.split(sep)]
             except IndexError:
                 overview_levels = None
         # Close file.

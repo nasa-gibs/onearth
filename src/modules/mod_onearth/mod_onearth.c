@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.3.0
+ * Version 1.3.1
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -1821,7 +1821,7 @@ char *order_args(request_rec *r) {
 	return args;
 }
 
-static void specify_error(request_rec *r)
+static int specify_error(request_rec *r)
 {
 	wms_cfg  *cfg;
 	WMSCache *cache;
@@ -1831,6 +1831,7 @@ static void specify_error(request_rec *r)
 	ap_get_module_config(r->per_dir_config,&onearth_module);
 
 	// url params
+	const char *args_backup = apr_pstrdup(r->pool, r->args);
 	char *args = r->args;
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
@@ -1934,6 +1935,11 @@ static void specify_error(request_rec *r)
 	}
 	else if (layer_match==0) {
 		layer_mes = apr_psprintf(r->pool, "LAYER does not exist");
+		// If OnEarth can't handle this layer and this endpoint 
+		if (apr_table_get(r->notes, "mod_wmts_wrapper_enabled")) {
+			r->args = args_backup;
+			return 0;
+		}
 		wmts_add_error(r,400,"InvalidParameterValue","LAYER", layer_mes);
 	}
 	else if (version[0]!='\0' && layer_version_match==0 && layer_match>0 && version_match>0) {
@@ -1988,7 +1994,7 @@ static void specify_error(request_rec *r)
 	  } else
 		  ++tilecol;
    }
-
+   return 1;
 }
 
 static int mrf_handler(request_rec *r)
@@ -2097,22 +2103,23 @@ static int mrf_handler(request_rec *r)
 		}
 	}
 
-    if (r->connection->local_addr->port==80) {
+    // if (r->connection->local_addr->port==80) {
     	if (ap_strcasecmp_match(r->args, "request=GetCapabilities") == 0) {
         	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
     	} else {
-			specify_error(r);
+			int err_status = specify_error(r);
+			if (!err_status) return DECLINED;
     		if (errors > 0) {
     			ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
         			"Unhandled %s%s?%s",r->hostname,r->uri,r->args);
             	return wmts_return_all_errors(r);
     		}
     	}
-    }
-	else
-	ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
-      "Unhandled %s:%d%s?%s",r->hostname,r->connection->local_addr->port,r->uri,r->args);
-    return DECLINED; // No cache pattern match, pass it to the real wms server
+ //    }
+	// else
+	// ap_log_error(APLOG_MARK,LOG_LEVEL,0,r->server,
+ //      "Unhandled %s:%d%s?%s",r->hostname,r->connection->local_addr->port,r->uri,r->args);
+ //    return DECLINED; // No cache pattern match, pass it to the real wms server
   }
 
   // ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Request: <%s>",r->the_request);
@@ -2502,6 +2509,7 @@ int rewrite_rest_uri(request_rec *r) {
 	// Try to get image, otherwise redirect to cgi to handle error
 	if (mrf_handler(r) < 0) {
 //		ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"REST redirect -> %s/wmts.cgi?%s",r->uri,r->args);
+		apr_table_set(r->notes, "mod_onearth_handled", "true");
 		ap_internal_redirect(apr_psprintf(r->pool,"%s/wmts.cgi?%s",r->uri,r->args),r);
 	}
 	return 0;
@@ -2510,7 +2518,7 @@ int rewrite_rest_uri(request_rec *r) {
 static int handler(request_rec *r) {
   // Easy cases first, Has to be a get with arguments
   if (r->method_number != M_GET) return DECLINED;
-  if (r->prev && apr_table_get(r->prev->notes, "mod_onearth_ignore")) return DECLINED;
+  if (r->prev && apr_table_get(r->prev->notes, "mod_onearth_handled")) return DECLINED;
   if (!(r->args)) {
 	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
 		  if (rewrite_rest_uri(r) < 0)

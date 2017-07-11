@@ -78,13 +78,13 @@ make download gdal-rpm
 Install the RPM:
 
 ```Shell
-sudo yum -y install dist/gibs-gdal-*.el6.x86_64.rpm
+sudo yum -y install dist/gibs-gdal-*.x86_64.rpm
 ```
 
 The development package needs to be installed to build the remaining packages. This RPM should not be installed on production systems:
 
 ```Shell
-sudo yum -y install dist/gibs-gdal-devel-*.el6.x86_64.rpm
+sudo yum -y install dist/gibs-gdal-devel-*.x86_64.rpm
 ```
 
 Initialize onearth submodules:
@@ -115,5 +115,5 @@ make download onearth-rpm
 To install the OnEarth RPMs:
 
 ```Shell
-sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-metrics-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm dist/onearth-mapserver-*.el6.x86_64.rpm dist/onearth-vectorgen-*.el6.x86_64.rpm dist/onearth-tools-*.el6.noarch.rpm
+sudo yum -y install dist/onearth-*.x86_64.rpm dist/onearth-config-*.noarch.rpm dist/onearth-demo-*.noarch.rpm dist/onearth-metrics-*.noarch.rpm dist/onearth-mrfgen-*.x86_64.rpm dist/onearth-mapserver-*.x86_64.rpm dist/onearth-vectorgen-*.x86_64.rpm dist/onearth-tools-*.noarch.rpm
 ```

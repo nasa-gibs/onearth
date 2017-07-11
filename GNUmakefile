@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.3.0
+ONEARTH_VERSION=1.3.1
 
 PREFIX=/usr/local
 LIB_PREFIX=/usr
@@ -44,16 +44,26 @@ MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
 MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
 
+LXML_VERSION=3.8.0
+LXML_ARTIFACT=lxml-$(LXML_VERSION).tar.gz
+LXML_URL=https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
+
+PYPARSING_VERSION=2.2.0
+PYPARSING_ARTIFACT=pyparsing-$(PYPARSING_VERSION)-py2.py3-none-any.whl
+
+PARSE_APACHE_CONFIGS_VERSION=0.0.2
+PARSE_APACHE_CONFIGS_ARTIFACT=parse_apache_configs-$(PARSE_APACHE_CONFIGS_VERSION).tar.gz
+
 all: 
 	@echo "Use targets onearth-rpm"
 
-onearth: mpl-unpack cgicc-unpack spatialindex-unpack httpd-unpack mapserver-unpack onearth-compile
+onearth: mpl-unpack cgicc-unpack spatialindex-unpack httpd-unpack mapserver-unpack lxml-unpack pyparsing-unpack parse_apache_configs-unpack onearth-compile
 
 #-----------------------------------------------------------------------------
 # Download
 #-----------------------------------------------------------------------------
 
-download: mpl-download cgicc-download spatialindex-download httpd-download mapserver-download
+download: mpl-download cgicc-download spatialindex-download httpd-download mapserver-download lxml-download pyparsing-download parse_apache_configs-download
 	
 mpl-download: upstream/$(MPL_ARTIFACT).downloaded
 
@@ -94,6 +104,30 @@ upstream/$(MAPSERVER_ARTIFACT).downloaded:
 	rm -rf upstream/$(MAPSERVER_ARTIFACT)
 	( cd upstream ; wget $(MAPSERVER_URL) )
 	touch upstream/$(MAPSERVER_ARTIFACT).downloaded
+	
+lxml-download: upstream/$(LXML_ARTIFACT).downloaded
+
+upstream/$(LXML_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -rf upstream/$(LXML_ARTIFACT)
+	( cd upstream ; wget $(LXML_URL) )
+	touch upstream/$(LXML_ARTIFACT).downloaded
+	
+pyparsing-download: upstream/$(PYPARSING_ARTIFACT).downloaded
+
+upstream/$(PYPARSING_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -rf upstream/$(PYPARSING_ARTIFACT)
+	pip install --download upstream pyparsing==$(PYPARSING_VERSION)
+	touch upstream/$(PYPARSING_ARTIFACT).downloaded
+	
+parse_apache_configs-download: upstream/$(PARSE_APACHE_CONFIGS_ARTIFACT).downloaded
+
+upstream/$(PARSE_APACHE_CONFIGS_ARTIFACT).downloaded:
+	mkdir -p upstream
+	rm -rf upstream/$(PARSE_APACHE_CONFIGS_ARTIFACT)
+	pip install --download upstream parse_apache_configs==$(PARSE_APACHE_CONFIGS_VERSION)
+	touch upstream/$(PARSE_APACHE_CONFIGS_ARTIFACT).downloaded
 
 #-----------------------------------------------------------------------------
 # Compile
@@ -140,6 +174,24 @@ build/mapserver/VERSION:
 	mkdir -p build/mapserver
 	tar xf upstream/$(MAPSERVER_ARTIFACT) -C build/mapserver \
 		--strip-components=1 --exclude=.gitignore
+		
+lxml-unpack: build/lxml/VERSION
+
+build/lxml/VERSION:
+	mkdir -p build/lxml
+	tar xf upstream/$(LXML_ARTIFACT) -C build/lxml
+	
+pyparsing-unpack: build/pyparsing/VERSION
+
+build/pyparsing/VERSION:
+	mkdir -p build/pyparsing
+	mv upstream/$(PYPARSING_ARTIFACT) build/pyparsing
+	
+parse_apache_configs-unpack: build/parse_apache_configs/VERSION
+
+build/parse_apache_configs/VERSION:
+	mkdir -p build/parse_apache_configs
+	tar xf upstream/$(PARSE_APACHE_CONFIGS_ARTIFACT) -C build/parse_apache_configs
 
 onearth-compile:
 	# Handle external headers
@@ -207,6 +259,8 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_utils.py
 	install -m 755 src/scripts/oe_configure_reproject_layer.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_reproject_layer.py
+	install -m 755 src/scripts/oe_validate_configs.py  \
+		-D $(DESTDIR)/$(PREFIX)/bin/oe_validate_configs.py
 	install -m 755 src/scripts/read_idx.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/read_idx.py
 	install -m 755 src/scripts/read_mrf.py  \
@@ -272,6 +326,12 @@ onearth-install:
 	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/cgicc
 	cp -r build/cgicc/* $(DESTDIR)/$(PREFIX)/share/cgicc
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/lxml
+	cp -r build/lxml/* $(DESTDIR)/$(PREFIX)/share/lxml
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/pyparsing
+	cp -r build/pyparsing/* $(DESTDIR)/$(PREFIX)/share/pyparsing
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/parse_apache_configs
+	cp -r build/parse_apache_configs/* $(DESTDIR)/$(PREFIX)/share/parse_apache_configs
 
 	install -m 755 src/scripts/oe_utils.py \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
@@ -328,6 +388,9 @@ onearth-rpm: onearth-artifact
 		upstream/$(SPATIALINDEX_ARTIFACT) \
 		upstream/$(HTTPD_ARTIFACT) \
 		upstream/$(MAPSERVER_ARTIFACT) \
+		upstream/$(LXML_ARTIFACT) \
+		upstream/$(PYPARSING_ARTIFACT) \
+		upstream/$(PARSE_APACHE_CONFIGS_ARTIFACT) \
 		dist/onearth-$(ONEARTH_VERSION).tar.bz2 \
 		build/rpmbuild/SOURCES
 	rpmbuild \
