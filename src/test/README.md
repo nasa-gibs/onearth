@@ -4,7 +4,7 @@
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
 * `test_mod_onearth.py` -- tests the OnEarth Apache module (requires `sudo`)
-* `test_mod_oems` -- tests the mod_oems and mod_oemstime modules (requires `sudo`)
+* `test_mod_oems.py` -- tests the mod_oems and mod_oemstime modules (requires `sudo`)
 * `test_layer_config.py` -- tests the Layer Config tool
 * `test_mrfgen.py` -- tests MRFgen
 * `test_vectorgen.py` -- tests oe_vectorgen
