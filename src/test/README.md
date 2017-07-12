@@ -10,6 +10,15 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_vectorgen.py` -- tests oe_vectorgen
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 
+## Running tests in Docker
+
+There are Docker wrappers for a number of the test scripts.  They are:
+
+* test_mod_onearth_in_docker.sh
+
+These scripts need to be run from within the `src/test` directory.  After running,
+the results will be written to a file in the `results` directory.
+
 ##Setup
 These tests assume that OnEarth and its associated utilities are installed. **Test files for mod_onearth tests must be copied to a directory that Apache has permission to access.**
 
