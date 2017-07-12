@@ -1,1 +1,1 @@
-gibs/gibs-gdal:latest
+985962406024.dkr.ecr.us-east-1.amazonaws.com/gibs/gibs-gdal:latest
