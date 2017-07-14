@@ -146,6 +146,15 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
     if len(environment_xml.findall('ReprojectEndpoint')) > 0:
         wmts_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'wmts')
+        twms_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'twms')
+        if not wmts_reproject_endpoint:
+            mssg = 'no wmts reproject endpoint specified'
+            errors.append(asctime() + " " + mssg)
+            log_sig_err(mssg, sigevent_url)
+        if not twms_reproject_endpoint:
+            mssg = 'no twms reproject endpoint specified'
+            errors.append(asctime() + " " + mssg)
+            log_sig_err(mssg, sigevent_url)
     else:
         log_sig_exit('ERROR', 'no ReprojectEndpoint specified in ' + environment_config_path, sigevent_url)
 
@@ -429,7 +438,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         
         if wmts:
             # Finish building the layer Apache config
-            layer_apache_config = '<Directory {0}>\n'.format(layer_endpoint)
+            layer_apache_config = 'Alias {0}/{1} {2}\n'.format(wmts_reproject_endpoint, identifier, layer_endpoint)
+            layer_apache_config += '<Directory {0}>\n'.format(layer_endpoint)
             layer_apache_config += '\tWMTSWrapperRole layer\n'
             layer_apache_config += '\tWMTSWrapperEnableTime on\n'
             layer_apache_config += '</Directory>\n'
@@ -448,7 +458,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 log_sig_exit('ERROR', 'Cannot write layer config file: ' + layer_apache_config_path, sigevent_url)
 
             # Create final Apache configs (WMTS)
-            endpoint_apache_config = '<Directory {0}>\n'.format(wmts_base_endpoint)
+            endpoint_apache_config = 'Alias {0}/wmts.cgi {1}/wmts.cgi\n'.format(wmts_reproject_endpoint, wmts_base_endpoint)
+            endpoint_apache_config += '<Directory {0}>\n'.format(wmts_base_endpoint)
             endpoint_apache_config += '\tWMTSWrapperRole root\n'
             endpoint_apache_config += '</Directory>\n'
             apache_staging_conf_path = os.path.join(wmts_staging_location, wmts_apache_config_basename + '.conf')
@@ -691,7 +702,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if twms:
         # Create final Apache configs (TWMS)
         twms_apache_conf_path_template = os.path.join(twms_base_endpoint, '${layer}/twms.config')
-        twms_endpoint_apache_config = '<Directory {0}>\n'.format(twms_base_endpoint)
+        twms_endpoint_apache_config = 'Alias {0} {1}\n'.format(twms_reproject_endpoint, twms_base_endpoint)
+        twms_endpoint_apache_config += '<Directory {0}>\n'.format(twms_base_endpoint)
         twms_endpoint_apache_config += '\ttWMS_RegExp twms.cgi\n'
         twms_endpoint_apache_config += '\ttWMS_ConfigurationFile {0}\n'.format(twms_apache_conf_path_template)
         twms_endpoint_apache_config += '</Directory>\n'
