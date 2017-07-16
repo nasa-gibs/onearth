@@ -163,9 +163,9 @@ def eval_top_directive (directive, env, service_type, sigevent_url, verbose, all
                 print "Validating " + directive.open_tag
             directory = add_trailing_slash(directive.open_tag.replace("<Directory ","").replace(">",""))
             if service_type == "wmts":
-                if directory.startswith(env.reprojectLayerConfigLocation_wmts) == False:
+                if directory.startswith(str(env.reprojectLayerConfigLocation_wmts)) == False:
                     errors += 1
-                    error_msg = directory + " does not match ReprojectLayerConfigLocation: " + env.reprojectLayerConfigLocation_wmts
+                    error_msg = directory + " does not match ReprojectLayerConfigLocation: " + str(env.reprojectLayerConfigLocation_wmts)
                     msg.append(error_msg)
                     log_sig_err(error_msg, sigevent_url)
                 else:
@@ -174,9 +174,9 @@ def eval_top_directive (directive, env, service_type, sigevent_url, verbose, all
                         errors += result[0]
                         msg += result[1]
             else:
-                if directory.startswith(env.reprojectLayerConfigLocation_twms.replace("/.lib", "")) == False:
+                if directory.startswith(str(env.reprojectLayerConfigLocation_twms).replace("/.lib", "")) == False:
                     errors += 1
-                    error_msg = directory + " does not match ReprojectLayerConfigLocation: " + env.reprojectLayerConfigLocation_twms
+                    error_msg = directory + " does not match ReprojectLayerConfigLocation: " + str(env.reprojectLayerConfigLocation_twms)
                     msg.append(error_msg)
                     log_sig_err(error_msg, sigevent_url)
                 else:
@@ -185,11 +185,52 @@ def eval_top_directive (directive, env, service_type, sigevent_url, verbose, all
                         errors += result[0]
                         msg += result[1]
     
-    elif hasattr(directive, "name"): # directives outside of Directory are not allowed
-        errors += 1
-        error_msg = directive.name + " directive is not allowed - directives must be in <Directory>"
-        msg.append(error_msg)
-        log_sig_err(error_msg, sigevent_url)
+    elif hasattr(directive, "name"): # directives outside of Directory are not allowed, except for Alias
+        if directive.name == "Alias":
+            if len(directive.args.split(" ")) == 2:
+                alias_dest, alias_source = directive.args.split(" ")
+                # get the layer name
+                layer_name = os.path.basename(os.path.normpath(alias_source)).strip("/")
+                if service_type == "wmts":
+                    # check alias locations match what's expected
+                    if alias_dest != add_trailing_slash(str(env.reprojectEndpoint_wmts)) + layer_name:
+                        errors += 1
+                        error_msg = "Alias destination " + alias_dest + " does not match expected " + add_trailing_slash(str(env.reprojectEndpoint_wmts)) + layer_name
+                        msg.append(error_msg)
+                        log_sig_err(error_msg, sigevent_url)
+                    if alias_source != add_trailing_slash(str(env.reprojectLayerConfigLocation_wmts)) + layer_name:
+                        errors += 1
+                        error_msg = "Alias source " + alias_source + " does not match expected " + add_trailing_slash(str(env.reprojectLayerConfigLocation_wmts)) + layer_name
+                        msg.append(error_msg)
+                        log_sig_err(error_msg, sigevent_url)
+                else:
+                    if alias_dest != str(env.reprojectEndpoint_twms):
+                        errors += 1
+                        error_msg = "Alias destination " + alias_dest + " does not match expected " + str(env.reprojectEndpoint_twms)
+                        msg.append(error_msg)
+                        log_sig_err(error_msg, sigevent_url)
+                    if alias_source != str(env.reprojectLayerConfigLocation_twms):
+                        errors += 1
+                        error_msg = "Alias source " + alias_source + " does not match expected " + str(env.reprojectLayerConfigLocation_twms)
+                        msg.append(error_msg)
+                        log_sig_err(error_msg, sigevent_url)
+                # make sure source actually exists
+                if not alias_source.endswith("wmts.cgi"):
+                    if not os.path.isdir(alias_source):
+                        errors += 1
+                        error_msg = alias_source + " is not an accessible directory"
+                        msg.append(error_msg)
+                        log_sig_err(error_msg, sigevent_url)
+            else:
+                errors += 1
+                error_msg = directive.name + " " + directive.args + " does not contain two parameters"
+                msg.append(error_msg)
+                log_sig_err(error_msg, sigevent_url)
+        else:
+            errors += 1
+            error_msg = directive.name + " directive is not allowed - directives must be in <Directory>"
+            msg.append(error_msg)
+            log_sig_err(error_msg, sigevent_url)
         
     return errors, msg
         

@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
+from oe_utils import add_trailing_slash, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
 import requests
 import math
 import functools
@@ -438,7 +438,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         
         if wmts:
             # Finish building the layer Apache config
-            layer_apache_config = 'Alias {0}/{1} {2}\n'.format(wmts_reproject_endpoint, identifier, layer_endpoint)
+            layer_apache_config = 'Alias {0}{1} {2}\n'.format(add_trailing_slash(wmts_reproject_endpoint), identifier, layer_endpoint)
             layer_apache_config += '<Directory {0}>\n'.format(layer_endpoint)
             layer_apache_config += '\tWMTSWrapperRole layer\n'
             layer_apache_config += '\tWMTSWrapperEnableTime on\n'
@@ -458,7 +458,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 log_sig_exit('ERROR', 'Cannot write layer config file: ' + layer_apache_config_path, sigevent_url)
 
             # Create final Apache configs (WMTS)
-            endpoint_apache_config = 'Alias {0}/wmts.cgi {1}/wmts.cgi\n'.format(wmts_reproject_endpoint, wmts_base_endpoint)
+            endpoint_apache_config = 'Alias {0}wmts.cgi {1}wmts.cgi\n'.format(add_trailing_slash(wmts_reproject_endpoint), add_trailing_slash(wmts_base_endpoint))
             endpoint_apache_config += '<Directory {0}>\n'.format(wmts_base_endpoint)
             endpoint_apache_config += '\tWMTSWrapperRole root\n'
             endpoint_apache_config += '</Directory>\n'
