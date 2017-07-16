@@ -169,8 +169,8 @@ def log_sig_err(mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Send to log.
-    logging.warning(time.asctime())
-    logging.warning(mssg)
+    logging.error(time.asctime())
+    logging.error(mssg)
     # Send to sigevent.
     try:
         sent=sigevent('ERROR', mssg, sigevent_url)
