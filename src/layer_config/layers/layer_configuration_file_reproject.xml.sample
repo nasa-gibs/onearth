@@ -1,5 +1,5 @@
 <ReprojectLayerConfig>
-	<GetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</GetCapabilitiesURI>
-	<SrcLocation internal="/outside" external="https://gibs.earthdata.nasa.gov" />
+	<SrcWMTSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcWMTSGetCapabilitiesURI>
+	<SrcLocationRewrite internal="/outside" external="https://gibs.earthdata.nasa.gov" />
 	<EnvironmentConfig>/etc/onearth/config/conf/environment_webmercator.xml</EnvironmentConfig>
 </ReprojectLayerConfig>

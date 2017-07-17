@@ -366,7 +366,7 @@ static void *r_file_pread(request_rec *r, char *fname,
   char *new_uri = 0;
   int max_size = 0;
   if (r->prev != 0) {
-  			if (ap_strstr(r->prev->args, "&MAP=") != 0) {
+  			if (r->prev->args && ap_strstr(r->prev->args, "&MAP=") != 0) {
 				layer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
 				layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
 				prev_time = (char *) apr_table_get(r->prev->notes, "oems_time");
@@ -597,7 +597,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 	  }
   } else {
 	  if (r->prev != 0) {
-			if (ap_strstr(r->prev->args, "&MAP=") != 0) { // no time-snapping for Mapserver, so redirect back
+			if (r->prev->args && ap_strstr(r->prev->args, "&MAP=") != 0) { // no time-snapping for Mapserver, so redirect back
 				new_uri = apr_psprintf(r->pool, "%s?TIME=%s&%s", r->prev->uri, prev_time, r->prev->args);
 				ap_internal_redirect(new_uri, r);
 			}

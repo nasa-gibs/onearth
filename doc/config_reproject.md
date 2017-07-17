@@ -48,11 +48,11 @@ The reprojected layer config tool scrapes data from the GetCapabilities file of 
 
 `<ReprojectLayerConfig>` (required) -- Base element that contains all the layer reproject information. When it encounters this element, oe_configure_layer will process this layer for mod_reproject.
 
-`<GetCapabilitiesURI>` (required) -- Specifies the GetCapabilities file that oe_configure_layer will use to build the layer configs, including source URL info.
+`<SrcWMTSGetCapabilitiesURI>` (required) -- Specifies the GetCapabilities file that oe_configure_layer will use to build the layer configs, including source URL info.
 
 -----
 
-`<SrcLocation>` (required) -- This specifies the source endpoint.
+`<SrcLocationRewrite>` (required) -- This specifies the source endpoint.
 
 ##### Attributes:
 

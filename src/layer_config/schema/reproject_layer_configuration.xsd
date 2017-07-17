@@ -16,7 +16,7 @@ limitations under the License.
   <xs:element name="ReprojectLayerConfig">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="GetCapabilitiesURI"/>
+        <xs:element ref="SrcWMTSGetCapabilitiesURI"/>
         <xs:element ref="SrcLocation"/>
         <xs:element ref="EnvironmentConfig"/>
         <xs:element ref="IncludeLayer" minOccurs="0"/>
@@ -25,7 +25,7 @@ limitations under the License.
     </xs:complexType>
   </xs:element>
   <xs:element name="GetCapabilitiesURI" type="xs:string"/>
-  <xs:element name="SrcLocation">
+  <xs:element name="SrcLocationRewrite">
     <xs:complexType>
       <xs:attribute name="internal" use="required" type="xs:string"/>
       <xs:attribute name="external" use="required" type="xs:string"/>

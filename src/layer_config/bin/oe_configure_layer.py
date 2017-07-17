@@ -1421,8 +1421,12 @@ for conf in conf_files:
             errors += reproject_errors
             wmtsEndPoint = environment.wmts_dir
             twmsEndPoint = environment.twms_dir
-            wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, None, None, wmts_getCapabilities, projection)
-            twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, None, None, twms_getCapabilities, getTileService, projection)
+            cacheLocation_wmts = environment.cacheLocation_wmts
+            cacheBasename_wmts = environment.cacheBasename_wmts
+            cacheLocation_twms = environment.cacheLocation_twms
+            cacheBasename_twms = environment.cacheBasename_twms
+            wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
+            twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
             continue
         
         #Vector parameters
@@ -2678,8 +2682,8 @@ else:
 if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
-        print "\nRunning commands for endpoint: " + twms_endpoint.path
         if twms_endpoint.cacheConfigBasename:
+            print "\nRunning commands for endpoint: " + twms_endpoint.path
             cmd = depth + '/oe_create_cache_config -cbd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
             run_command(cmd, sigevent_url)
             cmd = depth + '/oe_create_cache_config -cxd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'
