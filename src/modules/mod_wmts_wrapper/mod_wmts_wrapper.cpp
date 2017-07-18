@@ -294,7 +294,7 @@ static int handleKvP(request_rec *r)
     }
 
     const char *service = NULL;
-    if ((param = apr_table_get(args_table, "SERVICE")) && strlen(param)) {
+    if (((param = apr_table_get(args_table, "SERVICE")) || (param = apr_table_get(args_table, "wmts.cgi?SERVICE"))) && strlen(param)) { // mod_onearth is doing weird things with the arguments list
         if (apr_strnatcasecmp(param, "WMTS"))
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","SERVICE", "Unrecognized service");
     } else {
@@ -411,9 +411,6 @@ This is possible because we're grabbing the mod_reproject configuration and gett
 */
 static int pre_hook(request_rec *r)
 {
-    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
-    if (!cfg->role) return DECLINED;
-    
     char *err_msg;
 
     // If mod_onearth is configured for this endpoint and hasn't handled the request yet, ignore it.
@@ -432,7 +429,8 @@ static int pre_hook(request_rec *r)
 
     wmts_error wmts_errors[5];
     int errors = 0;
-
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
+    if (!cfg->role) return DECLINED;
 
     if (apr_strnatcasecmp(cfg->role, "root") == 0) {
         return DECLINED;
