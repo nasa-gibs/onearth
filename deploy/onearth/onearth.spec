@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.3.1
-Release:	2%{?dist}
+Release:	4%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -128,6 +128,19 @@ Obsoletes:	mapserver < 7.0.1
 %description mapserver
 Mapserver package utilized by OnEarth for WMS and WFS services
 
+%package test
+Summary:	Test tools for OnEarth
+Requires:   onearth
+Requires:   onearth-config
+Requires:   onearth-mapserver
+Requires:   onearth-mrfgen
+Requires:   onearth-tools
+Requires:   onearth-vectorgen
+Autoreq: 	0
+
+%description test
+Test tools for OnEarth
+
 %global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 
 %prep
@@ -181,32 +194,71 @@ make %{?smp_flags}
 %install
 rm -rf %{buildroot}
 make onearth-install PREFIX=%{_prefix} DESTDIR=%{buildroot}
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/
-ln -s %{_datadir}/onearth/apache/wmts.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo
-ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/black.jpg
-ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/transparent.png
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-geo/1.0.0
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc
-ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc/black.jpg
-ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc/transparent.png
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts-webmerc/1.0.0
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo
-install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo/.lib
-ln -s %{_datadir}/onearth/apache/twms.cgi \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo
-ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo/black.jpg
-ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png \
-   %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms-geo/transparent.png
+
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3031
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3031/1.0.0
+ln -s %{_datadir}/onearth/apache/wmts.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3031
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3031/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3031/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3413
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3413/1.0.0
+ln -s %{_datadir}/onearth/apache/wmts.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3413
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3413/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3413/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3857
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3857/1.0.0
+ln -s %{_datadir}/onearth/apache/wmts.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3857
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3857/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg3857/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg4326
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg4326/1.0.0
+ln -s %{_datadir}/onearth/apache/wmts.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg4326
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg4326/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/wmts/epsg4326/transparent.png
+
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3031
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3031/.lib
+ln -s %{_datadir}/onearth/apache/twms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3031
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3031/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3031/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3413
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3413/.lib
+ln -s %{_datadir}/onearth/apache/twms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3413
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3413/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3413/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3857
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3857/.lib
+ln -s %{_datadir}/onearth/apache/twms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3857
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3857/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg3857/transparent.png
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg4326
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg4326/.lib
+ln -s %{_datadir}/onearth/apache/twms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg4326
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGB_512.jpg %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg4326/black.jpg
+ln -s %{_datadir}/onearth/empty_tiles/Blank_RGBA_512.png %{buildroot}/%{_datadir}/onearth/demo/examples/default/twms/epsg4326/transparent.png
+
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg3031
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg3413
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg3857
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg4326
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/wfs/
+cp -r %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/* %{buildroot}/%{_datadir}/onearth/demo/examples/default/wfs/
+ln -s %{_datadir}/onearth/apache/wms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg3031/wms.cgi
+ln -s %{_datadir}/onearth/apache/wms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg3413/wms.cgi
+ln -s %{_datadir}/onearth/apache/wms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg3857/wms.cgi
+ln -s %{_datadir}/onearth/apache/wms.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wms/epsg4326/wms.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wfs/epsg4326/wfs.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
+ln -s %{_datadir}/onearth/apache/wfs.cgi %{buildroot}/%{_datadir}/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
+
+install -m 755 -d %{buildroot}/%{_datadir}/onearth/demo/examples/default/lib
 install -m 755 -d %{buildroot}/%{_sysconfdir}/httpd/conf.d
 mv %{buildroot}/%{_datadir}/onearth/demo/examples/default/onearth-demo.conf \
    %{buildroot}/%{_sysconfdir}/httpd/conf.d
-
 ( cd build/mapserver/build; DESTDIR=%{buildroot} make install )
 mv %{buildroot}/%{_libdir}/../lib/* %{buildroot}/%{_libdir}/
 chrpath --delete %{buildroot}/%{_bindir}/legend
@@ -239,8 +291,9 @@ rm -rf %{buildroot}
 
 %post
 cd %{_datadir}/cgicc/
-%{_datadir}/cgicc/configure --prefix=/usr
+%{_datadir}/cgicc/configure --prefix=%{_prefix} --libdir=%{_libdir}
 make install
+/sbin/ldconfig
 
 cd %{_libdir}/httpd/modules/
 for file in %{_libdir}/httpd/modules/mod_proxy/*.so; do
@@ -301,9 +354,6 @@ cd %{_datadir}/parse_apache_configs
 tar -czvf parse_apache_configs-0.0.2.tar.gz parse_apache_configs-0.0.2
 pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apache_configs
 
-%postun config
-rm /etc/httpd/conf.d/reproject-demo.conf
-
 %files mrfgen
 %defattr(664,gibs,gibs,775)
 %{_datadir}/onearth/mrfgen
@@ -330,20 +380,14 @@ rm /etc/httpd/conf.d/reproject-demo.conf
 sed -i 's/#Require/Require/g' /etc/httpd/conf.d/onearth-demo.conf
 %endif
 cd %{_datadir}/onearth/apache/kml
-make WEB_HOST=localhost/onearth/demo-twms
+make WEB_HOST=localhost/onearth/twms/epsg4326
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \
-   %{_datadir}/onearth/demo/examples/default/twms-geo
-mkdir %{_datadir}/onearth/demo/examples/default/lib
+   %{_datadir}/onearth/demo/examples/default/twms/epsg4326
 ln -s %{_datadir}/onearth/demo/html_lib/* %{_datadir}/onearth/demo/examples/default/lib/
-cp -r %{_datadir}/onearth/demo/examples/default/wms/ %{_datadir}/onearth/demo/examples/default/wfs/
-ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg4326/wms.cgi
-ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3857/wms.cgi
-ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3413/wms.cgi
-ln -s %{_datadir}/onearth/apache/wms.cgi %{_datadir}/onearth/demo/examples/default/wms/epsg3031/wms.cgi
-ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg4326/wfs.cgi
-ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
-ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
-ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
+
+%postun demo
+rm %{_datadir}/onearth/demo/examples/default/lib/*
+if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/reproject-demo.conf; fi
 
 %files mapserver
 %defattr(755,root,root,-)
@@ -364,6 +408,7 @@ ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/defau
 
 %files vectorgen
 %defattr(755,root,root,-)
+%{_datadir}/onearth/vectorgen
 %{_libdir}/libspatialindex*
 %{_libdir}/pkgconfig/libspatialindex.pc
 %{_includedir}/spatialindex/*
@@ -374,7 +419,14 @@ ln -s %{_datadir}/onearth/apache/wfs.cgi %{_datadir}/onearth/demo/examples/defau
 /sbin/ldconfig
 pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
+%files test
+%defattr(-,gibs,gibs,-)
+%{_datadir}/onearth/test
+
 %changelog
+* Mon Jul 17 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-3
+- Added test package and cleaned up demo
+
 * Fri Jul 07 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-2
 - Updated demo package; added pyparsing and parse_apache_configs install to post config
 

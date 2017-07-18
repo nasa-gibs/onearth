@@ -5,7 +5,7 @@
  <input_dir>source_images</input_dir> 
  <output_dir>output_dir</output_dir>
  <working_dir>working_dir</working_dir>
- <mrf_empty_tile_filename>empty_tiles/black.jpg</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>/usr/share/onearth/empty_tiles/Blank_RGB_512.jpg</mrf_empty_tile_filename>
  <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>

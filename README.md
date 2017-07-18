@@ -16,6 +16,7 @@ For more information, visit https://earthdata.nasa.gov/gibs
 ## Setup
 
 * [RPM Build](doc/rpm_build.md)
+* [Docker Image Build](doc/docker_image_build.md)
 * [Installation](doc/installation.md)
 * [Configuration](doc/configuration.md)
 * [Creating Image Archive](doc/archive.md)

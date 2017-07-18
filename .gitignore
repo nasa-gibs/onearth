@@ -5,4 +5,14 @@
 .pydevproject
 upstream
 build
-dist
+/dist/
+/docker/el6/rpms/
+/docker/el7/rpms/
+/src/test/*.pyc
+/src/test/legends_test_data/*.png
+/src/test/legends_test_data/*.svg
+/src/test/legends_test_data/*.xml
+/src/test/legends_test_data/new_colormaps.json
+/src/test/results/
+/src/test/test_*_results.xml
+/tmp/

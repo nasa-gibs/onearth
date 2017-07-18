@@ -289,6 +289,8 @@ onearth-install:
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	install -m 755 src/cgi/wms.cgi \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
+	install -m 755 src/cgi/wfs.cgi \
+		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache
 	cp src/cgi/kml/* \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/apache/kml
 	cp src/cgi/index.html \
@@ -321,6 +323,9 @@ onearth-install:
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
+	
+	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/test
+	cp -rL ../../../../src/test/* $(DESTDIR)/$(PREFIX)/share/onearth/test
 
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/mpl
 	cp -r build/mpl/* $(DESTDIR)/$(PREFIX)/share/mpl
@@ -370,7 +375,8 @@ onearth-artifact: onearth-clean
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
 		src/modules/mod_onearth src/modules/mod_oetwms src/modules/mod_oems src/modules/mod_oemstime \
 		src/modules/mod_receive/src src/modules/mod_reproject/src src/modules/mod_twms/src src/modules/mod_wmts_wrapper \
-		src/scripts src/colormaps src/vectorgen src/layer_config src/mrfgen src/cgi src/demo src/onearth_logs src/generate_legend src/empty_tile GNUmakefile
+		src/scripts src/colormaps src/vectorgen src/layer_config src/mrfgen src/cgi src/demo src/test src/onearth_logs \
+		src/generate_legend src/empty_tile GNUmakefile
 
 #-----------------------------------------------------------------------------
 # RPM

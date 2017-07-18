@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Projections and their EPSG equivalents
-declare -a PROJECTIONS=(geo webmerc arctic antarctic)
+declare -a PROJECTIONS=(epsg4326 epsg3857 epsg3413 epsg3031)
 declare -a PROJEPSGS=(EPSG4326 EPSG3857 EPSG3413 EPSG3031)
 
 #Download image files
@@ -122,28 +122,6 @@ done
 mkdir -p /etc/onearth/config/styles
 /bin/cp /usr/share/onearth/demo/styles/* /etc/onearth/config/styles
 
-chmod +x /usr/share/onearth/demo/examples/default/wms/wms.cgi
-
-mkdir -p /usr/share/onearth/demo/examples/default/wms
-mkdir -p /usr/share/onearth/demo/examples/default/wfs
-mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg4326
-mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg4326
-mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg3857
-mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg3857
-mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg3031
-mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg3031
-mkdir -p /usr/share/onearth/demo/examples/default/wms/epsg3413
-mkdir -p /usr/share/onearth/demo/examples/default/wfs/epsg3413
-
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg4326
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg3857
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg3031
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wms/epsg3413
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg4326/wfs.cgi
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3857/wfs.cgi
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3031/wfs.cgi
-/bin/cp /usr/share/onearth/demo/examples/default/wms/wms.cgi /usr/share/onearth/demo/examples/default/wfs/epsg3413/wfs.cgi
-
 #Compile the KML script and copy to TWMS dirs
 cd /usr/share/onearth/apache/kml
 for PROJECTION in "${PROJECTIONS[@]}"
@@ -153,6 +131,11 @@ do
 	 rm -f kmlgen.cgi
 done
 
+#Activate index.html and cache configurations
+/bin/cp /usr/share/onearth/demo/examples/default/index.html.sample /usr/share/onearth/demo/examples/default/index.html
+sed -i 's/#WMSCache/WMSCache/g' /etc/httpd/conf.d/onearth-demo.conf
+
 #Copy layer config files, run config tool
 /bin/cp /usr/share/onearth/demo/layer_configs/* /etc/onearth/config/layers/
-LCDIR=/etc/onearth/config oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --skip_empty_tiles --generate_links --restart_apache
+LCDIR=/etc/onearth/config oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --skip_empty_tiles --generate_links
+apachectl restart

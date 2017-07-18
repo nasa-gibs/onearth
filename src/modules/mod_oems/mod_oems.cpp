@@ -532,7 +532,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    		subdaily = layer_subdaily_value;
 	    	}
 	    	// set to default if no time
-    		if (strlen(doytime) == 0) {
+	    	if (strlen(doytime) == 0 || ap_strstr(doytime, "TTTTTTT") != 0) {
     			doytime = "TTTTTTT";
     			productyear = "YYYY";
     		} else {

@@ -21,18 +21,6 @@ Postgres Repository RPM
 sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
 ```
 
-Python packages via pip (required for OnEarth configuration tools, included in onearth-config RPM)
-
-```
-sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
-```
-
-Python packages via pip (required for OnEarth vectorgen, included in onearth-vector RPM)
-
-```
-sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
-```
-
 ## RPM Installation
 
 Download the latest OnEarth release (https://github.com/nasa-gibs/onearth/releases)
@@ -43,10 +31,22 @@ Unpackage the release .tar.gz file
 tar -zxvf onearth-*.tar.gz
 ```
 
-Install GIBS GDAL with the MRF driver
+GIBS GDAL with the MRF driver
 
 ```
 sudo yum -y install gibs-gdal-*
+```
+
+Optional Python packages via pip (included in onearth-config RPM); required for OnEarth configuration tools if RPM cannot run pip
+
+```
+sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
+```
+
+Optional Python packages via pip (included in onearth-vector RPM); required for OnEarth vectorgen if RPM cannot run pip
+
+```
+sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 ```
 
 Install OnEarth packages
@@ -172,8 +172,14 @@ vectorgen
 /usr/lib64/pkgconfig/libspatialindex.pc
 ```
 
+OnEarth Tests
+```
+/usr/share/onearth/test*
+```
+
 ## Next Steps
 
+* [Run Demo](../src/demo/README.md)
 * [Configuration](configuration.md)
 * [Creating Image Archive](archive.md)
 
