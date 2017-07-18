@@ -10,6 +10,8 @@ Example:
 
 ``sudo /usr/share/onearth/test/examples/default/configure_demo.sh``
 
+The `default` example must first be configured before installing other examples.
+
 ### WMTS endpoint
 A WMTS endpoint is included with an OpenLayers demo. It's located at:
 
