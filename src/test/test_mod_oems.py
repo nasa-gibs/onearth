@@ -471,6 +471,18 @@ class TestModOEMS(unittest.TestCase):
             print 'URL: ' + req_url
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Request missing layers via WMS does not match what\'s expected. URL: ' + req_url)
+        
+    def test_request_wms_multilayer(self):
+        """
+        30. Request multiple layers in one request with no time
+        """
+        ref_hash = '7ab0448e44502c7f5beea7fc2c8bd482'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3b&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
+        if DEBUG:
+            print '\nTesting: Request multiple layers in one request with no time via WMS'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS multiple layers with no time does not match what\'s expected. URL: ' + req_url)
 
     # TEARDOWN
 
