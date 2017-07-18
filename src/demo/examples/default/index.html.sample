@@ -84,6 +84,8 @@
 
 		<h3>Sample WFS getCapabilities request</h3>
 		<p><a href="/onearth/wfs/epsg4326/wfs.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities">/onearth/wfs/epsg4326/wfs.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities</a></p>
+		
+		<hr>
 	
 		<a href="/onearth/onearth-vector-dev/index.html"><h2>Vector Visualization Client</h2></a>
 		<p>This client is for the visualization of vector data sets</p>

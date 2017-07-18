@@ -116,7 +116,7 @@ window.onload = function() {
     		   	 });
     			var newLayer = new ol.layer.Tile({
     				source: newLayerSource,
-    				visible: false
+    				visible: true
     			});
     			map.addLayer(newLayer);
     			var dropDown = document.getElementById("layer-select");

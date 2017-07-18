@@ -6,7 +6,7 @@
  <output_dir>output_dir</output_dir>
  <working_dir>working_dir</working_dir>
  <logfile_dir>logfile_dir</logfile_dir>
- <mrf_empty_tile_filename>empty_tiles/transparent.png</mrf_empty_tile_filename>
+ <mrf_empty_tile_filename>/usr/share/onearth/empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
 </mrfgen_configuration>
