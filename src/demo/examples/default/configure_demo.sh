@@ -138,4 +138,4 @@ sed -i 's/#WMSCache/WMSCache/g' /etc/httpd/conf.d/onearth-demo.conf
 #Copy layer config files, run config tool
 /bin/cp /usr/share/onearth/demo/layer_configs/* /etc/onearth/config/layers/
 LCDIR=/etc/onearth/config oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --skip_empty_tiles --generate_links
-apachectl restart
+/usr/sbin/httpd -k restart

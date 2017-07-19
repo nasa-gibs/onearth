@@ -423,6 +423,9 @@ pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 
 %defattr(-,gibs,gibs,-)
 %{_datadir}/onearth/test
 
+%post test
+pip install unittest2 unittest-xml-reporting==1.14.0 requests
+
 %changelog
 * Mon Jul 17 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-3
 - Added test package and cleaned up demo
