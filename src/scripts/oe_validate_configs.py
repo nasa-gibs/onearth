@@ -240,11 +240,18 @@ def eval_top_directive (directive, env, service_type, origin_file, sigevent_url,
                         log_sig_err(error_msg, sigevent_url)
                 # make sure source actually exists
                 if not alias_source.endswith("wmts.cgi"):
-                    if not os.path.isdir(alias_source):
-                        errors += 1
-                        error_msg = alias_source + " is not an accessible directory in " + origin_file
-                        msg.append(error_msg)
-                        log_sig_err(error_msg, sigevent_url)
+                    if eval_final_location: # final location must exist to evaluate
+                        if not os.path.isdir(alias_source):
+                            errors += 1
+                            error_msg = alias_source + " is not an accessible directory in " + origin_file
+                            msg.append(error_msg)
+                            log_sig_err(error_msg, sigevent_url)
+                    else:
+                        if not os.path.isdir(alias_source.replace(add_trailing_slash(str(env.reprojectLayerConfigLocation_wmts)), add_trailing_slash(str(env.wmts_dir)))): # evaluate staging location instead
+                            errors += 1
+                            error_msg = alias_source + " is not an accessible directory in " + origin_file
+                            msg.append(error_msg)
+                            log_sig_err(error_msg, sigevent_url)
             else:
                 errors += 1
                 error_msg = directive.name + " " + directive.args + " does not contain two parameters in " + origin_file
@@ -631,8 +638,8 @@ if diff_filename is not None:
             print ('Reading config file: ' + diff_filename)
         diff = difflib.ndiff(apache_config.readlines(), diff_config.readlines())
         # print '\n'.join(diff)
-        delta = ''.join(x[2:] for x in diff if x.startswith('- '))
-        print delta
+        delta = ''.join(x for x in diff if x.startswith('- ') or x.startswith('+ '))
+        print '\n' + delta
         apache_config.close()
         diff_config.close()
     except IOError:
