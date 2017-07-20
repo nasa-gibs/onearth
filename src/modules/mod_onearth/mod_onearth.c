@@ -69,6 +69,8 @@
 #include <unistd.h>
 #include <math.h>
 
+#include "mod_wmts_wrapper.h"
+
 // Use APLOG_WARNING APLOG_DEBUG or APLOG_ERR.  Sets the level for the "Unhandled .." 
 #define LOG_LEVEL APLOG_ERR
 
@@ -1935,10 +1937,14 @@ static int specify_error(request_rec *r)
 	}
 	else if (layer_match==0) {
 		layer_mes = apr_psprintf(r->pool, "LAYER does not exist");
-		// If OnEarth can't handle this layer and this endpoint 
-		if (apr_table_get(r->notes, "mod_wmts_wrapper_enabled")) {
-			r->args = args_backup;
-			return 0;
+		// If OnEarth can't handle this layer and mod_wmts_wrapper is active on this endpoint, let the request pass through.
+		module *wmts_wrapper_module = (ap_find_linked_module("mod_wmts_wrapper.cpp"));
+		if (wmts_wrapper_module) {
+			wmts_wrapper_conf *wmts_wrapper_config = ap_get_module_config(r->per_dir_config, wmts_wrapper_module);
+			if (wmts_wrapper_config->role) {
+				r->args = args_backup;
+				return 0;				
+			}
 		}
 		wmts_add_error(r,400,"InvalidParameterValue","LAYER", layer_mes);
 	}
