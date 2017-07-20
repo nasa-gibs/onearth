@@ -168,7 +168,7 @@ def eval_top_directive (directive, env, service_type, origin_file, sigevent_url,
                     error_msg = directory + " does not match ReprojectLayerConfigLocation: " + str(env.reprojectLayerConfigLocation_wmts) + " in " + origin_file
                     msg.append(error_msg)
                     log_sig_err(error_msg, sigevent_url)
-                elif '/.' in directory:
+                elif '..' in directory:
                     errors += 1
                     error_msg = "Incorrect pattern found for " + directive.open_tag + " in " + origin_file
                     msg.append(error_msg)
@@ -198,7 +198,7 @@ def eval_top_directive (directive, env, service_type, origin_file, sigevent_url,
                     error_msg = directory + " does not match ReprojectLayerConfigLocation: " + str(env.reprojectLayerConfigLocation_twms) + " in " + origin_file
                     msg.append(error_msg)
                     log_sig_err(error_msg, sigevent_url)
-                elif '/.' in directory:
+                elif '..' in directory:
                     errors += 1
                     error_msg = "Incorrect pattern found for " + directive.open_tag + " in " + origin_file
                     msg.append(error_msg)
@@ -603,6 +603,13 @@ sigevent_url = options.sigevent_url
 
 # Parse environment
 env = get_environment(environment_filename, sigevent_url)
+# Add leading slashes to reproject endpoints
+if env.reprojectEndpoint_wmts is not None:
+    if not env.reprojectEndpoint_wmts.startswith('/'):
+        env.reprojectEndpoint_wmts = '/' + env.reprojectEndpoint_wmts
+if env.reprojectEndpoint_twms is not None:
+    if not env.reprojectEndpoint_twms.startswith('/'):
+        env.reprojectEndpoint_twms = '/' + env.reprojectEndpoint_twms
 
 # count errors for return status
 errors = 0
@@ -613,7 +620,7 @@ if config_type == "oe_layer":
 else: # default apache
     errors, error_msg = parse_apache_config(input_filename, env, sigevent_url, options.verbose, eval_final_location = not options.ignore_final_files, eval_staging_location = not options.ignore_staged_files)
     
-if diff_filename != None:
+if diff_filename is not None:
     print "\nExecuting diff with: " + diff_filename + "\n"
     try:
         apache_config = open(input_filename, 'r')
@@ -646,4 +653,7 @@ if replace:
         log_sig_err("\nUnable to replace " + diff_filename + " with " + input_filename + " due to unsuccessful validation\n", sigevent_url)
 
 print 'oe_validate_configs completed'
-sys.exit(errors)
+if errors == 0:
+    sys.exit(0)
+else:
+    sys.exit(1)

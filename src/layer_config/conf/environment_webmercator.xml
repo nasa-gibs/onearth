@@ -36,5 +36,5 @@ limitations under the License.
     <ReprojectApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">/usr/share/onearth/demo/data/EPSG3857/</ReprojectApacheConfigLocation>
     <ReprojectApacheConfigLocation service="twms" basename="onearth-reproject-twms">/usr/share/onearth/demo/data/EPSG3857/</ReprojectApacheConfigLocation>
     <ReprojectLayerConfigLocation service="wmts">/usr/share/onearth/demo/examples/default/wmts/epsg3857/</ReprojectLayerConfigLocation>
-    <ReprojectLayerConfigLocation service="twms">/usr/share/onearth/demo/examples/default/twms/epsg3857/.lib/</ReprojectLayerConfigLocation>
+    <ReprojectLayerConfigLocation service="twms">/usr/share/onearth/demo/examples/default/twms/epsg3857/</ReprojectLayerConfigLocation>
 </EnvironmentConfiguration>

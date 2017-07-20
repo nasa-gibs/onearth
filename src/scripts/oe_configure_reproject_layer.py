@@ -147,10 +147,14 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     if len(environment_xml.findall('ReprojectEndpoint')) > 0:
         try:
             wmts_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'wmts')
+            if not wmts_reproject_endpoint.startswith('/'):
+                wmts_reproject_endpoint = '/' + wmts_reproject_endpoint
         except StopIteration:
             wmts_reproject_endpoint = None
         try:
             twms_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'twms')
+            if not twms_reproject_endpoint.startswith('/'):
+                twms_reproject_endpoint = '/' + twms_reproject_endpoint
         except StopIteration:
             twms_reproject_endpoint = None
         if not wmts_reproject_endpoint:
@@ -339,7 +343,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             dest_resource_url_elem = layer.find('{*}ResourceURL')
             dest_url = dest_resource_url_elem.get('template')
             for location in src_locations:
-                dest_url = dest_url.replace(location.get('external'), location.get('internal'))
+                dest_url = dest_url.replace(location.get('external'), location.get('internal')).replace('//','/')
+                if not dest_url.startswith('/'):
+                    dest_url = '/' + dest_url
             dest_url = re.match('(.*default)', dest_url).group()
             dest_dim_elem = layer.find('{*}Dimension')
             if dest_dim_elem is not None and dest_dim_elem.findtext(ows + 'Identifier') == 'time':
