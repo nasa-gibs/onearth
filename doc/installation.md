@@ -172,8 +172,14 @@ vectorgen
 /usr/lib64/pkgconfig/libspatialindex.pc
 ```
 
+OnEarth Tests
+```
+/usr/share/onearth/test*
+```
+
 ## Next Steps
 
+* [Run Demo](../src/demo/README.md)
 * [Configuration](configuration.md)
 * [Creating Image Archive](archive.md)
 

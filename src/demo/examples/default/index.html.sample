@@ -14,7 +14,7 @@
 
 		<h2>Endpoint Configuration</h2>
 		<p>This package has four endpoints configured for the following EPSG projections: 4326 (geographic), 3857 (webmercator), 3413 (arctic), and 3857 (antarctic).</p>
-		<p>Each endpoint is configured with NASA's Blue Marble imagery. The EPSG:3857 endpoint reprojects imagery from the GIBS EPSG:4326 endpoint if the "reproject" demo is installed.</p>
+		<p>Each endpoint is configured with NASA's Blue Marble imagery and a few additional layers. The EPSG:3857 endpoint reprojects imagery from the GIBS EPSG:4326 endpoint if the "reproject" demo is installed.</p>
 		<p>For ease of use, each WMTS endpoint has an OpenLayers client for browsing the imagery.</p>
 
 		<p>This demo also includes a Mapserver configuration that can be used to access the demo imagery. OpenLayers endpoints are included that use Mapserver as a WMS service.</p>
@@ -42,6 +42,10 @@
 		<h4>Sample KML Generation Requests</h4>
 		<p>Blue Marble <a href="/onearth/twms/epsg4326/kmlgen.cgi?layers=blue_marble&TIME=2014-10-04">/onearth/twms/epsg4326/kmlgen.cgi?layers=blue_marble&TIME=2014-01-01</a></p>
 		<p>MODIS Aerosol <a href="/onearth/twms/epsg4326/kmlgen.cgi?layers=MYR4ODLOLLDY_global_10km&TIME=2014-10-04">/onearth/twms/epsg4326/kmlgen.cgi?layers=MYR4ODLOLLDY_global_10km&TIME=2014-10-04</a></p>
+		
+		<p><strong>Sample TWMS tile request: </strong><a href="/onearth/twms/epsg4326/twms.cgi?request=GetMap&layers=blue_marble&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90">/onearth/twms/epsg4326/twms.cgi?request=GetMap&layers=blue_marble&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90</a></p>
+		
+		<p><strong>Sample TWMS tile request reprojected from GIBS to EPSG:3857 (requires reproject demo installed): </strong><a href="/onearth/twms/epsg3857/twms.cgi?request=GetMap&layers=VIIRS_Black_Marble&srs=EPSG:3857&format=image/png&styles=&width=256&height=256&bbox=-20037508.3428,-20037508.3428,20037508.3428,20037508.3428">/onearth/twms/epsg3857/twms.cgi?request=GetMap&layers=VIIRS_Black_Marble&srs=EPSG:3857&format=image/png&styles=&width=256&height=256&bbox=-20037508.3428,-20037508.3428,20037508.3428,20037508.3428</a></p>
 		
 		<p><strong>Sample TWMS GetCapabilities request: </strong><a href="/onearth/twms/epsg4326/twms.cgi?Request=GetCapabilities">/onearth/twms/epsg4326/twms.cgi?Request=GetCapabilities</a>
 		
@@ -84,6 +88,8 @@
 
 		<h3>Sample WFS getCapabilities request</h3>
 		<p><a href="/onearth/wfs/epsg4326/wfs.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities">/onearth/wfs/epsg4326/wfs.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities</a></p>
+		
+		<hr>
 	
 		<a href="/onearth/onearth-vector-dev/index.html"><h2>Vector Visualization Client</h2></a>
 		<p>This client is for the visualization of vector data sets</p>
