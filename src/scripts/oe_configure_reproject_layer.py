@@ -51,6 +51,7 @@ import png
 from io import BytesIO
 from time import asctime
 import cgi
+import hashlib
 
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
@@ -381,6 +382,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     pass
 
                 src_cfg_filename = identifier + '_source.config'
+                hasher = hashlib.md5()
                 with open(os.path.join(wmts_staging_path, src_cfg_filename), 'w+') as src_cfg:
                     if 'image/png' in src_format:
                         src_cfg.write('Size {0} {1} 1 {2}\n'.format(src_width, src_height, png_bands))
@@ -390,6 +392,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     src_cfg.write('Projection {0}\n'.format('EPSG:4326'))
                     src_cfg.write('SkippedLevels 1\n')
                     src_cfg.write('BoundingBox {0}\n'.format(src_bbox))
+                    src_cfg.seek(0)
+                    hasher.update(src_cfg.read())
 
                 dest_cfg_filename = identifier + '_reproject.config'
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
@@ -406,6 +410,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_cfg.write('MimeType {0}\n'.format(src_format))
                     dest_cfg.write('Oversample On\n')
                     dest_cfg.write('ExtraLevels 1\n')
+                    dest_cfg.seek(0)
+                    hasher.update(dest_cfg.read())
+                    dest_cfg.write('ETagSeed {0}\n'.format(hasher.hexdigest()))
                     # dest_cfg.write('SkippedLevels 1\n')
 
                 # Build Apache config snippet for TMS
