@@ -53,7 +53,7 @@ allowed_apache_directives = ["WMTSWrapperRole", "WMTSWrapperEnableTime", "WMTSWr
 WMTSWrapperRole = re.compile(r"^(root|layer|style|tilematrixset)$")
 WMTSWrapperEnableTime = re.compile(r"^(on|off)$")
 WMTSWrapperMimeType = re.compile(r"^image/(png|jpeg|tiff|lerc)$")
-ReprojectRegExp = re.compile(r"^GoogleMapsCompatible_Level[0-9]{1,2}/\\d\{1,2\}/\\d\{1,3\}/\\d\{1,3\}\.(png|\(jpg\|jpeg\)|tiff|lerc)\$")
+ReprojectRegExp = re.compile(r"^GoogleMapsCompatible_Level[0-9]{1,2}/\\d\{1,2\}/\\d\{1,5\}/\\d\{1,5\}\.(png|\(jpg\|jpeg\)|tiff|lerc)\$$")
 ReprojectConfigurationFiles = re.compile(r"^.+_source\.config .+_reproject\.config$")
 tWMSRegExp = re.compile(r"^twms\.cgi$")
 tWMSConfigurationFile = re.compile(r".+/\${layer}/twms\.config$")
@@ -69,6 +69,7 @@ MimeType = re.compile(r"^image/(png|jpeg|tiff|lerc)$")
 Oversample = re.compile(r"^(On|Off)$")
 ExtraLevels = re.compile(r"^[0-9]{1,2}$")
 Quality = re.compile(r"^([0-9]{1,2}|100)$")
+ETagSeed = re.compile(r"^[0-9a-f]{32}$")
 
 # Add regular expressions to lookup dictionary
 directive_rules = {}
@@ -450,7 +451,7 @@ def evaluate_ReprojectConfigurationFiles (source_config, reproject_config, env, 
     reproject_apache_config = apache_parse_obj.parse_config()
     
     # List of allowed reproject config directives
-    allowed_reproject_directives = ["Size", "PageSize", "BoundingBox", "Projection", "Nearest", "SourcePath", "SourcePostfix", "MimeType", "Oversample", "ExtraLevels", "Quality"]
+    allowed_reproject_directives = ["Size", "PageSize", "BoundingBox", "Projection", "Nearest", "SourcePath", "SourcePostfix", "MimeType", "Oversample", "ExtraLevels", "Quality", "ETagSeed"]
 
     # Add regular expressions to lookup dictionary
     reproject_directive_rules = {}
@@ -465,6 +466,7 @@ def evaluate_ReprojectConfigurationFiles (source_config, reproject_config, env, 
     reproject_directive_rules["Oversample"] = Oversample
     reproject_directive_rules["ExtraLevels"] = ExtraLevels
     reproject_directive_rules["Quality"] = Quality
+    reproject_directive_rules["ETagSeed"] = ETagSeed
     
     # Evaluate directives
     for directive in reproject_apache_config:
