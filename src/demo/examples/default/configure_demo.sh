@@ -126,7 +126,7 @@ mkdir -p /etc/onearth/config/styles
 cd /usr/share/onearth/apache/kml
 for PROJECTION in "${PROJECTIONS[@]}"
 do
-	 make WEB_HOST=localhost:$HOST_PORT/onearth/demo/examples/default/twms/$PROJECTION
+	 make WEB_HOST=localhost:${HOST_PORT:-80}/onearth/twms/$PROJECTION
 	 /bin/cp kmlgen.cgi /usr/share/onearth/demo/examples/default/twms/$PROJECTION/kmlgen.cgi
 	 rm -f kmlgen.cgi
 done
