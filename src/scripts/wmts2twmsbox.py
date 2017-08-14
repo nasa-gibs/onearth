@@ -40,10 +40,11 @@
 
 import string
 from optparse import OptionParser
+from decimal import Decimal
 
-units = 111319.490793274 # meters/degree
-tilesize = 512 # pixels
-pixelsize = 0.00028 # meters
+units = Decimal(111319.490793274) # meters/degree
+tilesize = Decimal(512) # pixels
+pixelsize = Decimal(0.00028) # meters
 
 def wmts2twmsbox(top_left_bbox, col, row):
     """
@@ -60,10 +61,10 @@ def wmts2twmsbox(top_left_bbox, col, row):
 
     # parse top_left_bbox to individual values
     top_left_bbox = top_left_bbox.split(",")
-    top_left_minx = float(top_left_bbox[0])
-    top_left_miny = float(top_left_bbox[1])
-    top_left_maxx = float(top_left_bbox[2])
-    top_left_maxy = float(top_left_bbox[3])
+    top_left_minx = Decimal(top_left_bbox[0])
+    top_left_miny = Decimal(top_left_bbox[1])
+    top_left_maxx = Decimal(top_left_bbox[2])
+    top_left_maxy = Decimal(top_left_bbox[3])
     
     # get dimensions of bounding box
     x_size = top_left_maxx - top_left_minx
@@ -77,9 +78,9 @@ def wmts2twmsbox(top_left_bbox, col, row):
     
     # calculate scale denominator for reference
     scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
-    print "Scale Denominator:", str(round(scale_denominator,10))
+    print "Scale Denominator: %f" % round(scale_denominator,10)
     
-    return "Request BBOX: " + str(request_minx)+","+str(request_miny)+","+str(request_maxx)+","+str(request_maxy)
+    return "Request BBOX: " + str(round(request_minx,10))+","+str(round(request_miny,10))+","+str(round(request_maxx,10))+","+str(round(request_maxy,10))
 
 def wmts2twmsbox_scale(scale_denominator, col, row):
     """
@@ -122,6 +123,10 @@ parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-c', '--col',
                   action='store', type='string', dest='col',
                   help='WMTS TILECOL value.')
+parser.add_option('-e', '--epsg',
+                  action='store', type='string', dest='epsg',
+                  default='4326',
+                  help='The EPSG code of the projection')
 parser.add_option('-r', '--row',
                   action='store', type='string', dest='row',
                   help='WMTS TILEROW value.')
@@ -138,6 +143,14 @@ if not options.col:
     parser.error('col is required')
 if not options.row:
     parser.error('row is required')
+    
+if options.epsg == "3857":
+    print "Using EPSG:3857"
+    units = Decimal(1)
+    tilesize = Decimal(256)
+    pixelsize = Decimal(0.00028)
+else:
+    print "Using EPSG:4326"
 
 # Run translation based on given parameters
 if options.scale_denominator:
