@@ -16,7 +16,25 @@ If a new RPM build is desired, these instructions describe how to build the foll
 * onearth-vectorgen: A tool used to help organize vectors files and generate vector tiles
 * onearth-tools: Auxiliary tools for OnEarth such as a legend generator
 
-## Quick Build
+## Quick Build Instructions (using Docker)
+
+These instructions assume that Docker is installed and running.  On a Mac, you
+can easily install Docker using [Docker Community Edition for Mac](https://store.docker.com/editions/community/docker-ce-desktop-mac).
+
+The onearth RPMs are built inside of a Docker container which manages all of the
+dependencies required in order to build the RPMs.  It is expected that the container
+will be started from a Docker image that has the gibs-gdal RPMs installed already.
+The name of that image is set in the **docker/el7/gibs-gdal-image.txt** file.
+
+Once Docker is installed and running, the Enterprise Linux 7 RPMs can be built with:
+
+```
+./bin/build_el7_rpms_in_docker.sh
+```
+
+The generated RPMs will be written to the `dist` directory.
+
+## Verbose Build Instructions
 
 Some build and runtime dependencies require access to the Extra Packages for Enterprise Linux (EPEL) repository. Install the latest repository definition using the RPM found at the following location:
 
@@ -60,13 +78,13 @@ make download gdal-rpm
 Install the RPM:
 
 ```Shell
-sudo yum -y install dist/gibs-gdal-*.el6.x86_64.rpm
+sudo yum -y install dist/gibs-gdal-*.x86_64.rpm
 ```
 
 The development package needs to be installed to build the remaining packages. This RPM should not be installed on production systems:
 
 ```Shell
-sudo yum -y install dist/gibs-gdal-devel-*.el6.x86_64.rpm 
+sudo yum -y install dist/gibs-gdal-devel-*.x86_64.rpm
 ```
 
 Initialize onearth submodules:
@@ -86,7 +104,7 @@ Enable newer gcc compiler if using CentOS 6
 
 ```Shell
 scl enable devtoolset-3 bash
-``` 
+```
 
 Build the RPM:
 
@@ -97,5 +115,5 @@ make download onearth-rpm
 To install the OnEarth RPMs:
 
 ```Shell
-sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-metrics-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm dist/onearth-mapserver-*.el6.x86_64.rpm dist/onearth-vectorgen-*.el6.x86_64.rpm dist/onearth-tools-*.el6.noarch.rpm
+sudo yum -y install dist/onearth-*.x86_64.rpm dist/onearth-config-*.noarch.rpm dist/onearth-demo-*.noarch.rpm dist/onearth-metrics-*.noarch.rpm dist/onearth-mrfgen-*.x86_64.rpm dist/onearth-mapserver-*.x86_64.rpm dist/onearth-vectorgen-*.x86_64.rpm dist/onearth-tools-*.noarch.rpm
 ```

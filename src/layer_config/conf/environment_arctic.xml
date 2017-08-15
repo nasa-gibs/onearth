@@ -13,15 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <EnvironmentConfiguration>
-    <GetCapabilitiesLocation service="wmts">/usr/share/onearth/demo/wmts-arctic/</GetCapabilitiesLocation>
-    <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/twms-arctic/.lib/</GetCapabilitiesLocation>
-    <GetTileServiceLocation>/usr/share/onearth/demo/twms-arctic/.lib/</GetTileServiceLocation>
+    <GetCapabilitiesLocation service="wmts">/usr/share/onearth/demo/examples/default/wmts/epsg3413/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">/usr/share/onearth/demo/examples/default/twms/epsg3413/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>/usr/share/onearth/demo/examples/default/twms/epsg3413/.lib/</GetTileServiceLocation>
     <CacheLocation service="wmts" basename="cache_all_wmts">/usr/share/onearth/demo/data/EPSG3413/</CacheLocation>
     <CacheLocation service="twms" basename="cache_all_twms">/usr/share/onearth/demo/data/EPSG3413/</CacheLocation>
     <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/EPSG3413/</StagingLocation>
     <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/EPSG3413/</StagingLocation>
-    <ServiceURL service="wmts">http://localhost/wmts-arctic/</ServiceURL>
-    <ServiceURL service="twms">http://localhost/twms-arctic/</ServiceURL>
+    <ServiceURL service="wmts">http://localhost/wmts/epsg3413/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/twms/epsg3413/</ServiceURL>
     <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>

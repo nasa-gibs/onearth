@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LayerConfiguration>
+ <Identifier>ASCATA-L2-25km</Identifier>
+ <Title>ASCATA-L2-25km</Title>
+ <FileNamePrefix>ASCATA-L2-25km</FileNamePrefix>
+ <HeaderFileName>/etc/onearth/config/headers/ASCATA-L2-25kmTTTTTTTTTTTTT_.mrf</HeaderFileName>
+ <Compression>PBF</Compression>
+ <TileMatrixSet>GoogleMapsCompatible_Level3</TileMatrixSet>
+ <EmptyTileSize offset="0">0</EmptyTileSize>
+ <Projection>EPSG:3857</Projection> 
+ <EnvironmentConfig>/etc/onearth/config/conf/environment_webmercator.xml</EnvironmentConfig>
+ <ArchiveLocation static="false" year="true" subdaily="true">ASCATA-L2-25km</ArchiveLocation>
+ <Time>DETECT/PT1M</Time>
+</LayerConfiguration>

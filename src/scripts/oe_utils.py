@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -45,8 +45,45 @@ import datetime
 import socket
 import urllib
 import urllib2
+import xml.dom.minidom
 
 basename = None
+
+class Environment:
+    """Environment information for layer(s)"""
+    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, 
+        mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
+        reprojectEndpoint_wmts, reprojectEndpoint_twms, reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms):
+        self.cacheLocation_wmts = cacheLocation_wmts
+        self.cacheLocation_twms = cacheLocation_twms
+        self.cacheBasename_wmts = cacheBasename_wmts
+        self.cacheBasename_twms = cacheBasename_twms
+        self.getCapabilities_wmts = getCapabilities_wmts
+        self.getCapabilities_twms = getCapabilities_twms
+        self.getTileService = getTileService
+        self.wmtsServiceUrl = wmtsServiceUrl
+        self.twmsServiceUrl = twmsServiceUrl
+        self.wmts_dir = projection_wmts_dir
+        self.twms_dir = projection_twms_dir
+        self.legend_dir = legend_dir
+        self.legendUrl = legendUrl
+        self.colormap_dirs = colormap_dirs
+        self.colormapUrls = colormapUrls
+        self.stylejson_dirs = stylejson_dirs
+        self.stylejsonUrls = stylejsonUrls
+        self.mapfileStagingLocation = mapfileStagingLocation
+        self.mapfileLocation = mapfileLocation
+        self.mapfileLocationBasename = mapfileLocationBasename
+        self.mapfileConfigLocation = mapfileConfigLocation
+        self.mapfileConfigBasename = mapfileConfigBasename
+        self.reprojectEndpoint_wmts = reprojectEndpoint_wmts
+        self.reprojectEndpoint_twms = reprojectEndpoint_twms
+        self.reprojectApacheConfigLocation_wmts = reprojectApacheConfigLocation_wmts
+        self.reprojectApacheConfigLocation_twms = reprojectApacheConfigLocation_twms
+        self.reprojectLayerConfigLocation_wmts = reprojectLayerConfigLocation_wmts
+        self.reprojectLayerConfigLocation_twms = reprojectLayerConfigLocation_twms
+        # root directory based on location of service GetCapabilities
 
 def sigevent(type, mssg, sigevent_url):
     """
@@ -132,8 +169,8 @@ def log_sig_err(mssg, sigevent_url):
         sigevent_url -- Example:  'http://[host]/sigevent/events/create'
     """
     # Send to log.
-    logging.warning(time.asctime())
-    logging.warning(mssg)
+    logging.error(time.asctime())
+    logging.error(mssg)
     # Send to sigevent.
     try:
         sent=sigevent('ERROR', mssg, sigevent_url)
@@ -310,3 +347,244 @@ def run_command(cmd, sigevent_url):
             log_sig_err(error.strip(), sigevent_url)
             raise Exception(error.strip())
     
+def get_environment(environmentConfig, sigevent_url):
+    """
+    Gets environment metadata from an environment configuration file.
+    Arguments:
+        environmentConfig -- the location of the projection configuration file
+    """
+    try:
+        # Open file.
+        environment_config=open(environmentConfig, 'r')
+        print ('\nUsing environment config: ' + environmentConfig + '\n')
+    except IOError:
+        mssg=str().join(['Cannot read environment configuration file:  ', environmentConfig])
+        raise Exception(mssg)
+        
+    dom = xml.dom.minidom.parse(environment_config)
+    
+    # Caches
+    try:
+        cacheLocationElements = dom.getElementsByTagName('CacheLocation')
+        cacheLocation_wmts = None
+        cacheLocation_twms = None
+        cacheBasename_wmts = None
+        cacheBasename_twms = None
+        for cacheLocation in cacheLocationElements:
+            try:
+                if str(cacheLocation.attributes['service'].value).lower() == "wmts":
+                    cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
+                    cacheBasename_wmts = cacheLocation.attributes['basename'].value
+                elif str(cacheLocation.attributes['service'].value).lower() == "twms":
+                    cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
+                    cacheBasename_twms = cacheLocation.attributes['basename'].value
+            except KeyError:
+                # Set to defaults
+                cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
+                cacheBasename_wmts = "cache_all_wmts" 
+                cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
+                cacheBasename_twms = "cache_all_twms"                
+                log_sig_warn("'service' or 'basename' not defined in <CacheLocation>"+cacheLocation_wmts+"</CacheLocation> Using defaults TWMS:'cache_all_twms', WMTS:'cache_all_wmts'", sigevent_url)    
+    except IndexError:
+        raise Exception('Required <CacheLocation> element is missing in ' + environmentConfig)
+        
+    # Services
+    try:
+        getTileService = get_dom_tag_value(dom, 'GetTileServiceLocation')
+    except IndexError:
+        getTileService = None
+    
+    getCapabilitiesElements = dom.getElementsByTagName('GetCapabilitiesLocation')
+    wmts_getCapabilities = None
+    twms_getCapabilities = None
+    for getCapabilities in getCapabilitiesElements:
+        try:
+            if str(getCapabilities.attributes['service'].value).lower() == "wmts":
+                wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+            elif str(getCapabilities.attributes['service'].value).lower() == "twms":
+                twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
+        except KeyError:
+            raise Exception('service is not defined in <GetCapabilitiesLocation>')
+            
+    serviceUrlElements = dom.getElementsByTagName('ServiceURL')
+    wmtsServiceUrl = None
+    twmsServiceUrl = None
+    for serviceUrl in serviceUrlElements:
+        try:
+            if str(serviceUrl.attributes['service'].value).lower() == "wmts":
+                wmtsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
+            elif str(serviceUrl.attributes['service'].value).lower() == "twms":
+                twmsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
+        except KeyError:
+            raise Exception('service is not defined in <ServiceURL>')      
+ 
+    stagingLocationElements = dom.getElementsByTagName('StagingLocation')
+    wmtsStagingLocation = None
+    twmsStagingLocation = None
+    for stagingLocation in stagingLocationElements:
+        try:
+            if str(stagingLocation.attributes['service'].value).lower() == "wmts":
+                wmtsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
+            elif str(stagingLocation.attributes['service'].value).lower() == "twms":
+                twmsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
+        except KeyError:
+            raise Exception('service is not defined in <StagingLocation>') 
+    
+    if twmsStagingLocation != None:
+        add_trailing_slash(twmsStagingLocation)
+#         if not os.path.exists(twmsStagingLocation):
+#             os.makedirs(twmsStagingLocation)
+    if wmtsStagingLocation != None:
+        add_trailing_slash(wmtsStagingLocation)
+#         if not os.path.exists(wmtsStagingLocation):
+#             os.makedirs(wmtsStagingLocation) 
+    try:
+        legendLocation = add_trailing_slash(get_dom_tag_value(dom, 'LegendLocation'))
+    except IndexError:
+        legendLocation = None
+    try:
+        legendUrl = add_trailing_slash(get_dom_tag_value(dom, 'LegendURL'))
+    except IndexError:
+        legendUrl = None
+
+    # Modified in 0.9 to allow for multiple versioned colormap locations and URLs
+    try:
+        colormapLocations = dom.getElementsByTagName('ColorMapLocation')
+        for location in colormapLocations:
+            if 'version' not in location.attributes.keys():
+                if len(colormapLocations) > 1:
+                    log_sig_err('Multiple <ColorMapLocation> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    location.attributes['version'] = ''
+    except KeyError:
+        colormapLocations = None
+
+    try:
+        colormapUrls = dom.getElementsByTagName('ColorMapURL')
+        for url in colormapUrls:
+            if 'version' not in url.attributes.keys():
+                if len(colormapUrls) > 1:
+                    log_sig_err('Multiple <ColorMapURL> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    url.attributes['version'] = ''
+    except KeyError:
+        colormapUrls = None
+        
+    # Same deal as colormaps for style JSON files
+    try:
+        stylejsonLocations = dom.getElementsByTagName('StyleJSONLocation')
+        for location in stylejsonLocations:
+            if 'version' not in location.attributes.keys():
+                if len(stylejsonLocations) > 1:
+                    log_sig_err('Multiple <StyleJSONLocation> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    location.attributes['version'] = ''
+    except KeyError:
+        stylejsonLocations = None
+
+    try:
+        stylejsonUrls = dom.getElementsByTagName('StyleJSONURL')
+        for url in stylejsonUrls:
+            if 'version' not in url.attributes.keys():
+                if len(stylejsonUrls) > 1:
+                    log_sig_err('Multiple <StyleJSONURL> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    url.attributes['version'] = ''
+    except KeyError:
+        stylejsonUrls = None
+
+    # Get mapfile parameters from environment config file
+    # Get/create mapfile staging location
+    try:
+        mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
+    except IndexError:
+        mapfileStagingLocation = None
+#     if mapfileStagingLocation is not None:
+#         try:
+#             os.makedirs(mapfileStagingLocation)
+#         except OSError:
+#             if not os.path.exists(mapfileStagingLocation):
+#                 log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
+#                 mapfileStagingLocation = None
+#             pass
+
+    # Get output mapfile location
+    try:
+        mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
+        mapfileLocation = mapfileLocationElement.firstChild.nodeValue
+    except IndexError:
+        mapfileLocation = None
+        mapfileLocationBasename = None
+
+    if mapfileLocation is not None:
+        try:
+            mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
+        except KeyError:
+            log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
+            mapfileLocationBasename = None
+
+    # Get output mapfile config location
+    try:
+        mapfileConfigLocation = get_dom_tag_value(dom, 'MapfileConfigLocation')
+    except IndexError:
+        mapfileConfigLocation = '/etc/onearth/config/mapserver/'
+    try:
+        mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
+    except:
+        mapfileConfigBasename = None
+        
+    # Get reproject config locations
+    reprojectEndpointElements = dom.getElementsByTagName('ReprojectEndpoint')
+    reprojectEndpoint_wmts = None
+    reprojectEndpoint_twms = None
+    for reprojectEndpoint in reprojectEndpointElements:
+        try:
+            if str(reprojectEndpoint.attributes['service'].value).lower() == "wmts":
+                reprojectEndpoint_wmts = reprojectEndpoint.firstChild.nodeValue.strip()
+            elif str(reprojectEndpoint.attributes['service'].value).lower() == "twms":
+                reprojectEndpoint_twms = reprojectEndpoint.firstChild.nodeValue.strip()
+        except KeyError:
+            print '<ReprojectEndpoint> not found in environment configuration'
+            
+    reprojectApacheConfigLocationElements = dom.getElementsByTagName('ReprojectApacheConfigLocation')
+    reprojectApacheConfigLocation_wmts = None
+    reprojectApacheConfigLocation_twms = None
+    for reprojectApacheConfigLocation in reprojectApacheConfigLocationElements:
+        try:
+            if str(reprojectApacheConfigLocation.attributes['service'].value).lower() == "wmts":
+                reprojectApacheConfigLocation_wmts = reprojectApacheConfigLocation.firstChild.nodeValue.strip()
+            elif str(reprojectApacheConfigLocation.attributes['service'].value).lower() == "twms":
+                reprojectApacheConfigLocation_twms = reprojectApacheConfigLocation.firstChild.nodeValue.strip()
+        except KeyError:
+            print '<ReprojectApacheConfigLocation> not found in environment configuration'
+
+    reprojectLayerConfigLocationElements = dom.getElementsByTagName('ReprojectLayerConfigLocation')
+    reprojectLayerConfigLocation_wmts = None
+    reprojectLayerConfigLocation_twms = None
+    for reprojectLayerConfigLocation in reprojectLayerConfigLocationElements:
+        try:
+            if str(reprojectLayerConfigLocation.attributes['service'].value).lower() == "wmts":
+                reprojectLayerConfigLocation_wmts = reprojectLayerConfigLocation.firstChild.nodeValue.strip()
+            elif str(reprojectLayerConfigLocation.attributes['service'].value).lower() == "twms":
+                reprojectLayerConfigLocation_twms = reprojectLayerConfigLocation.firstChild.nodeValue.strip()
+        except KeyError:
+            print '<ReprojectLayerConfigLocation> not found in environment configuration'
+        
+    return Environment(add_trailing_slash(cacheLocation_wmts),
+                       add_trailing_slash(cacheLocation_twms),
+                       cacheBasename_wmts, cacheBasename_twms,
+                       add_trailing_slash(wmts_getCapabilities), 
+                       add_trailing_slash(twms_getCapabilities), 
+                       add_trailing_slash(getTileService),
+                       add_trailing_slash(wmtsServiceUrl), 
+                       add_trailing_slash(twmsServiceUrl),
+                       wmtsStagingLocation, twmsStagingLocation,
+                       legendLocation, legendUrl,
+                       colormapLocations, colormapUrls,
+                       stylejsonLocations, stylejsonUrls,
+                       mapfileStagingLocation, mapfileLocation,
+                       mapfileLocationBasename, mapfileConfigLocation,
+                       mapfileConfigBasename, 
+                       reprojectEndpoint_wmts, reprojectEndpoint_twms, 
+                       reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, 
+                       reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms)

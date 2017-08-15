@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
+from oe_utils import add_trailing_slash, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
 import requests
 import math
 import functools
@@ -49,6 +49,10 @@ from optparse import OptionParser
 from osgeo import osr
 import png
 from io import BytesIO
+from time import asctime
+import cgi
+import hashlib
+from decimal import Decimal
 
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
@@ -60,6 +64,7 @@ MIME_TO_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
+versionNumber = '1.3.1'
 
 def sort_tilematrixset(tilematrixset):
     return sorted([elem for elem in tilematrixset.findall('{*}TileMatrix')], key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator')))
@@ -89,8 +94,12 @@ def get_max_scale_dem(tilematrixset):
     return float(sort_tilematrixset(tilematrixset)[0].findtext('{*}ScaleDenominator'))
 
 
-def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=True, twms=True, create_gc=True, sigevent_url=None, debug=False, base_wmts_gc=None,
+def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=True, twms=True, create_gc=True, sigevent_url=None, stage_only=False, debug=False, base_wmts_gc=None,
                             base_twms_gc=None, base_twms_get_tile_service=None):
+    # Track errors and warnings
+    warnings = []
+    errors = []
+    
     # Parse the config XML
     try:
         config_xml = etree.parse(layer_config_path)
@@ -99,10 +108,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     except etree.XMLSyntaxError:
         log_sig_exit('ERROR', "Can't parse reproject layer config file: {0}".format(layer_config_path), sigevent_url)
 
-    src_locations = config_xml.findall('SrcLocation')
-    gc_uri = config_xml.findtext('GetCapabilitiesURI')
+    src_locations = config_xml.findall('SrcLocationRewrite')
+    gc_uri = config_xml.findtext('SrcWMTSGetCapabilitiesURI')
     if not gc_uri:
-        log_sig_exit('ERROR:', '<GetCapabilitiesURI> not present in reprojection config file: {0}'.format(layer_config_path), sigevent_url)
+        log_sig_exit('ERROR:', '<SrcWMTSGetCapabilitiesURI> not present in reprojection config file: {0}'.format(layer_config_path), sigevent_url)
     layer_exclude_list = [name.text for name in config_xml.findall('ExcludeLayer')]
     layer_include_list = [name.text for name in config_xml.findall('IncludeLayer')]
 
@@ -127,76 +136,101 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
      
     wmts_staging_location = next(elem.text for elem in environment_xml.findall('StagingLocation') if elem.get('service') == 'wmts')
     if not wmts_staging_location:
-        log_sig_warn('no wmts staging location specified', sigevent_url)
+        mssg = 'no wmts staging location specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
     twms_staging_location = next(elem.text for elem in environment_xml.findall('StagingLocation') if elem.get('service') == 'twms')
     if not twms_staging_location:
-        log_sig_warn('no twms staging location specified', sigevent_url)
+        mssg = 'no twms staging location specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
     if len(environment_xml.findall('ReprojectEndpoint')) > 0:
-        wmts_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'wmts')
+        try:
+            wmts_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'wmts')
+            if not wmts_reproject_endpoint.startswith('/'):
+                wmts_reproject_endpoint = '/' + wmts_reproject_endpoint
+        except StopIteration:
+            wmts_reproject_endpoint = None
+        try:
+            twms_reproject_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectEndpoint') if elem.get('service') == 'twms')
+            if not twms_reproject_endpoint.startswith('/'):
+                twms_reproject_endpoint = '/' + twms_reproject_endpoint
+        except StopIteration:
+            twms_reproject_endpoint = None
+        if not wmts_reproject_endpoint:
+            mssg = 'no wmts reproject endpoint specified in ' + environment_config_path
+            errors.append(asctime() + " " + mssg)
+            if twms: # TWMS requires the WMTS reproject endpoint to be defined
+                log_sig_exit('ERROR', mssg, sigevent_url)
+            else:
+                log_sig_err(mssg, sigevent_url)
+        if not twms_reproject_endpoint:
+            mssg = 'no twms reproject endpoint specified in ' + environment_config_path
+            errors.append(asctime() + " " + mssg)
+            log_sig_err(mssg, sigevent_url)
     else:
         log_sig_exit('ERROR', 'no ReprojectEndpoint specified in ' + environment_config_path, sigevent_url)
 
     wmts_service_url = next(elem.text for elem in environment_xml.findall('ServiceURL') if elem.get('service') == 'wmts')
     if not wmts_service_url:
-        log_sig_warn('no wmts service URL specified', sigevent_url)
+        mssg = 'no wmts service URL specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
-    wmts_base_endpoint = next(elem.text for elem in environment_xml.findall('GetCapabilitiesLocation') if elem.get('service') == 'wmts')
+    wmts_base_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectLayerConfigLocation') if elem.get('service') == 'wmts')
     if not wmts_base_endpoint:
-        log_sig_warn('no wmts GC URL specified', sigevent_url)
+        mssg = 'no wmts GC URL specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
-    if len(environment_xml.findall('ApacheConfigLocation')) > 1:
-        wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'wmts')
-        twms_apache_config_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigLocation') if elem.get('service') == 'twms')
+    if len(environment_xml.findall('ReprojectApacheConfigLocation')) > 1:
+        wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall('ReprojectApacheConfigLocation') if elem.get('service') == 'wmts')
+        twms_apache_config_location_elem = next(elem for elem in environment_xml.findall('ReprojectApacheConfigLocation') if elem.get('service') == 'twms')
     else:
-        log_sig_exit('ERROR', 'ApacheConfigLocation missing in ' + environment_config_path, sigevent_url)
+        log_sig_exit('ERROR', 'ReprojectApacheConfigLocation missing in ' + environment_config_path, sigevent_url)
     wmts_apache_config_location = wmts_apache_config_location_elem.text
     if not wmts_apache_config_location:
-        log_sig_warn('no wmts Apache config location specified', sigevent_url)
+        mssg = 'no wmts Apache config location specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
     wmts_apache_config_basename = wmts_apache_config_location_elem.get('basename')
     if not wmts_apache_config_basename:
-        log_sig_warn('no wmts Apache config basename specified', sigevent_url)
+        mssg = 'no wmts Apache config basename specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
-    if len(environment_xml.findall('ApacheConfigHeaderLocation')) > 1:
-        wmts_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'wmts')
-        twms_apache_config_header_location_elem = next(elem for elem in environment_xml.findall('ApacheConfigHeaderLocation') if elem.get('service') == 'twms')
-    else:
-        log_sig_exit('ERROR', 'ApacheConfigHeaderLocation missing in ' + environment_config_path, sigevent_url)
-    wmts_apache_config_header_location = wmts_apache_config_header_location_elem.text
-    if not wmts_apache_config_header_location:
-        log_sig_warn('no wmts Apache header location specified', sigevent_url)
-    wmts_apache_config_header_basename = wmts_apache_config_header_location_elem.get('basename')
-    if not wmts_apache_config_header_basename:
-        log_sig_warn('no wmts Apache header basename specified', sigevent_url)
-
-    twms_base_endpoint = next(elem.text for elem in environment_xml.findall('GetCapabilitiesLocation') if elem.get('service') == 'twms')
+    twms_base_endpoint = next(elem.text for elem in environment_xml.findall('ReprojectLayerConfigLocation') if elem.get('service') == 'twms')
     if not twms_base_endpoint:
-        log_sig_warn('no twms GC URL specified', sigevent_url)
+        mssg = 'no twms GC URL specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
     if os.path.split(os.path.dirname(twms_base_endpoint))[1] == '.lib':
         twms_base_endpoint = os.path.split(os.path.dirname(twms_base_endpoint))[0]
 
     twms_apache_config_location = twms_apache_config_location_elem.text
     if not twms_apache_config_location:
-        log_sig_warn('no twms Apache config location specified', sigevent_url)
+        mssg = 'no twms Apache config location specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
     twms_apache_config_basename = twms_apache_config_location_elem.get('basename')
     if not twms_apache_config_basename:
-        log_sig_warn('no twms Apache config basename specified', sigevent_url)
-
-    twms_apache_config_header_location = twms_apache_config_header_location_elem.text
-    if not twms_apache_config_header_location:
-        log_sig_warn('no twms Apache header location specified', sigevent_url)
-    twms_apache_config_header_basename = twms_apache_config_header_location_elem.get('basename')
-    if not twms_apache_config_header_basename:
-        log_sig_warn('no twms Apache header basename specified', sigevent_url)
+        mssg = 'no twms Apache config basename specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
     wmts_service_url = next(elem.text for elem in environment_xml.findall('ServiceURL') if elem.get('service') == 'wmts')
     if not wmts_service_url and create_gc:
-        log_sig_warn('no WMTS ServiceURL specified', sigevent_url)
+        mssg = 'no WMTS ServiceURL specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
     twms_service_url = next(elem.text for elem in environment_xml.findall('ServiceURL') if elem.get('service') == 'twms')
     if not twms_service_url and create_gc:
-        log_sig_warn('no TWMS ServiceURL specified', sigevent_url)
+        mssg = 'no TWMS ServiceURL specified'
+        warnings.append(asctime() + " " + mssg)
+        log_sig_warn(mssg, sigevent_url)
 
     # Get all the TMSs for this projection
     available_tilematrixsets = []
@@ -221,6 +255,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
     tilematrixsets = gc_xml.find('{*}Contents').findall('{*}TileMatrixSet')
     ows = '{' + gc_xml.nsmap['ows'] + '}'
     xlink = '{http://www.w3.org/1999/xlink}'
+    apache_staging_conf_path = ""
 
     for layer in gc_layers:
         identifier = layer.findtext(ows + 'Identifier')
@@ -263,14 +298,18 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 print 'Checking for palette for PNG layer: ' + identifier
                 r = requests.get(sample_tile_url)
                 if r.status_code != 200:
-                    if "Invalid time format" in r.text: # Try taking out TIME if server doesn't like the request
+                    if "Invalid time format" in r.text:  # Try taking out TIME if server doesn't like the request
                         sample_tile_url = sample_tile_url.replace('default/default', 'default')
                         r = requests.get(sample_tile_url)
                         if r.status_code != 200:
-                            log_sig_err('Can\'t get sample PNG tile from URL: ' + sample_tile_url, sigevent_url)
+                            mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
+                            errors.append(asctime() + " " + mssg)
+                            log_sig_err(mssg, sigevent_url)
                             continue
                     else:
-                        log_sig_err('Can\'t get sample PNG tile from URL: ' + sample_tile_url, sigevent_url)
+                        mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
+                        errors.append(asctime() + " " + mssg)
+                        log_sig_err(mssg, sigevent_url)
                         continue
                 sample_png = png.Reader(BytesIO(r.content))
                 sample_png.read()
@@ -280,11 +319,11 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                         print identifier + ' contains palette'
                 except png.FormatError:
                     # No palette, check for greyscale
-                    if sample_png.asDirect()[3]['greyscale'] == True:
+                    if sample_png.asDirect()[3]['greyscale'] is True:
                         png_bands = 1
                         print identifier + ' is greyscale'
-                    else: # Check for alpha
-                        if sample_png.asDirect()[3]['alpha'] == True:
+                    else:  # Check for alpha
+                        if sample_png.asDirect()[3]['alpha'] is True:
                             png_bands = 4
                             print identifier + ' is RGBA'
                         else:
@@ -301,12 +340,14 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             dest_levels = len(dest_tilematrixset.findall('{*}TileMatrix'))
             dest_pagesize_width = sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TileWidth')
             dest_pagesize_height = sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TileHeight')
-            dest_top_left_corner = [float(value) for value in sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TopLeftCorner').split(' ')]
+            dest_top_left_corner = [Decimal(value) for value in sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TopLeftCorner').split(' ')]
             dest_bbox = '{0},{1},{2},{3}'.format(dest_top_left_corner[0], dest_top_left_corner[0], -dest_top_left_corner[0], -dest_top_left_corner[0])
             dest_resource_url_elem = layer.find('{*}ResourceURL')
             dest_url = dest_resource_url_elem.get('template')
             for location in src_locations:
-                dest_url = dest_url.replace(location.get('external'), location.get('internal'))
+                dest_url = dest_url.replace(location.get('external'), location.get('internal')).replace('//','/')
+                if not dest_url.startswith('/'):
+                    dest_url = '/' + dest_url
             dest_url = re.match('(.*default)', dest_url).group()
             dest_dim_elem = layer.find('{*}Dimension')
             if dest_dim_elem is not None and dest_dim_elem.findtext(ows + 'Identifier') == 'time':
@@ -318,10 +359,14 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             dest_file_type = dest_resource_url_elem.get('format')
             dest_file_ext = get_ext_for_file_type(dest_file_type)
             if dest_file_ext is None:
-                log_sig_warn("File type is not supported for OnEarth: " + dest_file_type, sigevent_url)
+                mssg = identifier + " file type is not supported for OnEarth: " + dest_file_type
+                warnings.append(asctime() + " " + mssg)
+                log_sig_warn(mssg, sigevent_url)
                 break
             if dest_file_ext in ['.tif', '.lerc', '.mvt', '.pbf']:
-                log_sig_warn("File type is not supported for reproject: " + dest_file_type, sigevent_url)
+                mssg = identifier + " file type is not supported for reproject: " + dest_file_type
+                warnings.append(asctime() + " " + mssg)
+                log_sig_warn(mssg, sigevent_url)
                 break
 
             if wmts:
@@ -338,6 +383,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     pass
 
                 src_cfg_filename = identifier + '_source.config'
+                hasher = hashlib.md5()
                 with open(os.path.join(wmts_staging_path, src_cfg_filename), 'w+') as src_cfg:
                     if 'image/png' in src_format:
                         src_cfg.write('Size {0} {1} 1 {2}\n'.format(src_width, src_height, png_bands))
@@ -347,6 +393,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     src_cfg.write('Projection {0}\n'.format('EPSG:4326'))
                     src_cfg.write('SkippedLevels 1\n')
                     src_cfg.write('BoundingBox {0}\n'.format(src_bbox))
+                    src_cfg.seek(0)
+                    hasher.update(src_cfg.read())
 
                 dest_cfg_filename = identifier + '_reproject.config'
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
@@ -363,13 +411,18 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_cfg.write('MimeType {0}\n'.format(src_format))
                     dest_cfg.write('Oversample On\n')
                     dest_cfg.write('ExtraLevels 1\n')
+                    dest_cfg.seek(0)
+                    hasher.update(dest_cfg.read())
+                    dest_cfg.write('ETagSeed {0}\n'.format(hasher.hexdigest()))
                     # dest_cfg.write('SkippedLevels 1\n')
 
                 # Build Apache config snippet for TMS
                 tms_path = os.path.join(layer_style_endpoint, dest_tilematrixset_name)
                 tms_apache_config = '<Directory {0}>\n'.format(tms_path)
                 tms_apache_config += '\tWMTSWrapperRole tilematrixset\n'
-                regexp_str = dest_tilematrixset_name + '/\d{1,2}/\d{1,3}/\d{1,3}' + dest_file_ext
+                tms_apache_config += '\tWMTSWrapperMimeType {0}\n'.format(src_format)
+                regexp_file_ext = dest_file_ext if dest_file_type != 'image/jpeg' else '.(jpg|jpeg)'
+                regexp_str = dest_tilematrixset_name + '/\d{1,2}/\d{1,5}/\d{1,5}' + regexp_file_ext + '$'
                 tms_apache_config += '\tReproject_RegExp {0}\n'.format(regexp_str)
                 tms_apache_config += '\tReproject_ConfigurationFiles {0} {1}\n'.format(os.path.join(tms_path, src_cfg_filename), os.path.join(tms_path, dest_cfg_filename))
                 tms_apache_config += '</Directory>\n'
@@ -408,7 +461,11 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         
         if wmts:
             # Finish building the layer Apache config
-            layer_apache_config = '<Directory {0}>\n'.format(layer_endpoint)
+            if wmts_reproject_endpoint is not None:
+                layer_apache_config = 'Alias {0}{1} {2}\n'.format(add_trailing_slash(wmts_reproject_endpoint), identifier, layer_endpoint)
+            else:
+                layer_apache_config = ''
+            layer_apache_config += '<Directory {0}>\n'.format(layer_endpoint)
             layer_apache_config += '\tWMTSWrapperRole layer\n'
             layer_apache_config += '\tWMTSWrapperEnableTime on\n'
             layer_apache_config += '</Directory>\n'
@@ -418,7 +475,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             for layer_config in layer_tms_apache_configs:
                 layer_apache_config += layer_config
 
-            layer_apache_config_filename = identifier + 'reproject.conf'
+            layer_apache_config_filename = identifier + '_reproject.conf'
             layer_apache_config_path = os.path.join(wmts_staging_location, layer_apache_config_filename)
             try:
                 with open(layer_apache_config_path, 'w+') as f:
@@ -427,19 +484,16 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 log_sig_exit('ERROR', 'Cannot write layer config file: ' + layer_apache_config_path, sigevent_url)
 
             # Create final Apache configs (WMTS)
-            endpoint_apache_config = '<Directory {0}>\n'.format(wmts_base_endpoint)
+            if wmts_reproject_endpoint is not None:
+                endpoint_apache_config = 'Alias {0}wmts.cgi {1}wmts.cgi\n'.format(add_trailing_slash(wmts_reproject_endpoint), add_trailing_slash(wmts_base_endpoint))
+            else:
+                endpoint_apache_config = ''
+            endpoint_apache_config += '<Directory {0}>\n'.format(wmts_base_endpoint)
             endpoint_apache_config += '\tWMTSWrapperRole root\n'
             endpoint_apache_config += '</Directory>\n'
             apache_staging_conf_path = os.path.join(wmts_staging_location, wmts_apache_config_basename + '.conf')
             try:
                 with open(apache_staging_conf_path, 'w+') as wmts_apache_config_file:
-                    # Write header to Apache config
-                    wmts_apache_header_path = os.path.join(wmts_apache_config_header_location, wmts_apache_config_header_basename + '.conf')
-                    try:
-                        with open(wmts_apache_header_path, 'r') as header:
-                            wmts_apache_config_file.write(header.read())
-                    except IOError:
-                        log_sig_warn("Can't open WMTS reproject Apache header file: " + wmts_apache_header_path, sigevent_url)
 
                     # Write endpoint Apache stuff
                     wmts_apache_config_file.write(endpoint_apache_config)
@@ -519,11 +573,12 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 if '</Layer>' in line:
                     line = ' '+line+'\n'  
                 if '$Identifier' in line:
-                    line = line.replace("$Identifier",identifier)              
+                    line = line.replace("$Identifier", identifier)
                 if '$Title' in line:
-                    line = line.replace("$Title", src_title)
-                # if '$Abstract' in line:
-                #     line = line.replace("$Abstract", abstract)
+                    line = line.replace("$Title", cgi.escape(src_title))
+                if '$Abstract' in line:
+                    abstract = identifier + ' abstract'
+                    line = line.replace("$Abstract", abstract)
                 if '$minx' in line:
                     line = line.replace("$minx", str(-dest_top_left_corner[0]))
                 if '$miny' in line:
@@ -566,11 +621,13 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 if '</TiledGroup>' in line:
                     line = ' '+line+'\n'              
                 if '$TiledGroupName' in line:
-                    line = line.replace('$TiledGroupName', identifier + 'tileset')
+                    formatted_identifier = identifier.replace('_', ' ')
+                    line = line.replace('$TiledGroupName', formatted_identifier + ' tileset')
                 if '$Title' in line:
-                    line = line.replace("$Title", src_title)
+                    line = line.replace("$Title", cgi.escape(src_title))
                 if '$Abstract' in line:
-                    # line = line.replace("$Abstract",abstract)
+                    abstract = identifier + ' abstract'
+                    line = line.replace("$Abstract", abstract)
                     line = line.replace("$Abstract", '')
                 if '$Projection' in line:
                     line = line.replace("$Projection", proj.ExportToWkt())
@@ -580,105 +637,111 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     else:
                         line = line.replace("$Bands","3")
                 if '$minx' in line:
-                    line = line.replace("$minx", str(-dest_top_left_corner[0]))
+                    line = line.replace("$minx", str(dest_top_left_corner[0]))
                 if '$miny' in line:
-                    line = line.replace("$miny", str(-dest_top_left_corner[0]))
+                    line = line.replace("$miny", str(dest_top_left_corner[0]))
                 if '$maxx' in line:
-                    line = line.replace("$maxx", str(dest_top_left_corner[0]))
+                    line = line.replace("$maxx", str(-dest_top_left_corner[0]))
                 if '$maxy' in line:
-                    line = line.replace("$maxy", str(dest_top_left_corner[0]))
+                    line = line.replace("$maxy", str(-dest_top_left_corner[0]))
                 if '$Patterns' in line:
-                    patterns = ""
-                #     cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
-                #     try:
-                #         print '\nRunning command: ' + cmd
-                #         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                #         process.wait()
-                #         for output in process.stdout:
-                #             patterns = patterns + output
-                #     except:
-                #         log_sig_err("Error running command " + cmd, sigevent_url)
-                    line = line.replace("$Patterns",patterns)
+                    patterns = ''
+                    for tilematrix in sorted(out_tilematrixsets[0].findall('{*}TileMatrix'), key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator'))):
+                        resx = (dest_top_left_corner[1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixWidth'))
+                        resy = (dest_top_left_corner[1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixHeight'))
+                        local_xmax = dest_top_left_corner[0] + resx
+                        local_xmax_str = str(local_xmax) if local_xmax else '0'
+                        local_ymax = dest_top_left_corner[1] - resy
+                        local_ymax_str = str(local_ymax) if local_ymax else '0'
+                        prefix = '<TilePattern><![CDATA['
+                        postfix = ']]></TilePattern>\n'
+                        time_str = 'request=GetMap&layers={0}&srs=EPSG:3857&format={1}&styles=&time={2}&width=256&height=256&bbox={3},{4},{5},{6}\n'.format(identifier, dest_file_type, "${time}", dest_top_left_corner[0], local_ymax_str, local_xmax_str, dest_top_left_corner[1])
+                        no_time_str = 'request=GetMap&layers={0}&srs=EPSG:3857&format={1}&styles=&width=256&height=256&bbox={2},{3},{4},{5}\n'.format(identifier, dest_file_type, dest_top_left_corner[0], local_ymax_str, local_xmax_str, dest_top_left_corner[1])
+                        if static:
+                            patterns += prefix + no_time_str + postfix
+                        else:
+                            patterns += prefix + time_str + no_time_str + postfix
+                    line = line.replace("$Patterns", patterns)
                 layer_output = layer_output + line
             twms_gts_xml.writelines(layer_output)
             twms_gts_xml.close()
 
     # Final routines (after all layers have been processed)
     if wmts:
-        # Copy all the WMTS config files to the endpoint
-        layer_dirs = [subdir for subdir in os.listdir(wmts_staging_location) if os.path.isdir(os.path.join(wmts_staging_location, subdir))]
-        for layer_dir in layer_dirs:
-            layer_endpoint = os.path.join(wmts_base_endpoint, layer_dir)
-            if os.path.exists(layer_endpoint):
-                shutil.rmtree(layer_endpoint)
-            layer_staging_path = os.path.join(wmts_staging_location, layer_dir)
-            print '\nCopying reprojected WMTS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
-            shutil.copytree(layer_staging_path, layer_endpoint)
+        if not stage_only:
+            # Copy all the WMTS config files to the endpoint
+            layer_dirs = [subdir for subdir in os.listdir(wmts_staging_location) if os.path.isdir(os.path.join(wmts_staging_location, subdir))]
+            for layer_dir in layer_dirs:
+                layer_endpoint = os.path.join(wmts_base_endpoint, layer_dir)
+                if os.path.exists(layer_endpoint):
+                    shutil.rmtree(layer_endpoint)
+                layer_staging_path = os.path.join(wmts_staging_location, layer_dir)
+                print '\nCopying reprojected WMTS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+                shutil.copytree(layer_staging_path, layer_endpoint)
+    
+            # Copy the WMTS Apache config to the specified directory (like conf.d)
+            apache_conf_path = os.path.join(wmts_apache_config_location, wmts_apache_config_basename + '.conf')
+            print '\nCopying reprojected WMTS layer Apache config {0} -> {1}'.format(apache_staging_conf_path, apache_conf_path)
+            try:
+                shutil.copyfile(apache_staging_conf_path, apache_conf_path)
+            except IOError, e: # Try with sudo if permission denied
+                if 'Permission denied' in str(e):
+                    cmd = ['sudo', 'cp', apache_staging_conf_path, apache_conf_path]
+                    try:
+                        run_command(cmd, sigevent_url)
+                    except Exception, e:
+                        log_sig_exit('ERROR', str(e), sigevent_url)
 
-        # Copy the WMTS Apache config to the specified directory (like conf.d)
-        apache_conf_path = os.path.join(wmts_apache_config_location, wmts_apache_config_basename + '.conf')
-        print '\nCopying reprojected WMTS layer Apache config {0} -> {1}'.format(apache_staging_conf_path, apache_conf_path)
-        try:
-            shutil.copyfile(apache_staging_conf_path, apache_conf_path)
-        except IOError, e: # Try with sudo if permission denied
-            if 'Permission denied' in str(e):
-                cmd = ['sudo', 'cp', apache_staging_conf_path, apache_conf_path]
-                try:
-                    run_command(cmd, sigevent_url)
-                except Exception, e:
-                    log_sig_exit('ERROR', str(e), sigevent_url)
-
-        # Configure GetCapabilties (routine copied from oe_configure_layer)
-        try:
-            # Copy and open base GetCapabilities.
-            getCapabilities_file = os.path.join(wmts_staging_location, 'getCapabilities.xml')
-            if not base_wmts_gc:
-                log_sig_exit('ERROR', 'WMTS GetCapabilities creation selected but no base GC file specified.', sigevent_url)
-            shutil.copyfile(base_wmts_gc, getCapabilities_file)
-            getCapabilities_base = open(getCapabilities_file, 'r+')
-        except IOError:
-            log_sig_exit('ERROR', 'Cannot read getcapabilities_base_wmts.xml file: ' + base_wmts_gc, sigevent_url)
-        else:
-            lines = getCapabilities_base.readlines()
-            for idx in range(0, len(lines)):
-                if '<ows:Get' in lines[idx]:
-                    spaces = lines[idx].index('<')
-                    getUrlLine = lines[idx].replace('ows:Get','Get xmlns:xlink="http://www.w3.org/1999/xlink"').replace('>','/>')
-                    getUrl = etree.fromstring(getUrlLine)
-                    if '1.0.0/WMTSCapabilities.xml' in lines[idx]:
-                        getUrl.attrib[xlink + 'href'] = wmts_service_url + '1.0.0/WMTSCapabilities.xml'
-                    elif 'wmts.cgi?' in lines[idx]:
-                        getUrl.attrib[xlink + 'href'] = wmts_service_url + 'wmts.cgi?'
-                    else:
-                        getUrl.attrib[xlink + 'href'] = wmts_service_url
-                    lines[idx] = (' '*spaces) + etree.tostring(getUrl, pretty_print=True).replace('Get','ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','').replace('/>','>')
-                if 'ServiceMetadataURL' in lines[idx]:
-                    spaces = lines[idx].index('<')
-                    serviceMetadataUrlLine = lines[idx].replace('ServiceMetadataURL','ServiceMetadataURL xmlns:xlink="http://www.w3.org/1999/xlink"')
-                    serviceMetadataUrl = etree.fromstring(serviceMetadataUrlLine)
-                    serviceMetadataUrl.attrib[xlink + 'href'] = wmts_service_url + '1.0.0/WMTSCapabilities.xml'
-                    lines[idx] = (' '*spaces) + etree.tostring(serviceMetadataUrl, pretty_print=True).replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','')
-            getCapabilities_base.seek(0)
-            getCapabilities_base.truncate()
-            getCapabilities_base.writelines(lines)
-            getCapabilities_base.close()   
+        if create_gc:
+            # Configure GetCapabilties (routine copied from oe_configure_layer)
+            try:
+                # Copy and open base GetCapabilities.
+                getCapabilities_file = os.path.join(wmts_staging_location, 'getCapabilities.xml')
+                if not base_wmts_gc:
+                    log_sig_exit('ERROR', 'WMTS GetCapabilities creation selected but no base GC file specified.', sigevent_url)
+                shutil.copyfile(base_wmts_gc, getCapabilities_file)
+                getCapabilities_base = open(getCapabilities_file, 'r+')
+            except IOError:
+                log_sig_exit('ERROR', 'Cannot read getcapabilities_base_wmts.xml file: ' + base_wmts_gc, sigevent_url)
+            else:
+                lines = getCapabilities_base.readlines()
+                for idx in range(0, len(lines)):
+                    if '<ows:Get' in lines[idx]:
+                        spaces = lines[idx].index('<')
+                        getUrlLine = lines[idx].replace('ows:Get','Get xmlns:xlink="http://www.w3.org/1999/xlink"').replace('>','/>')
+                        getUrl = etree.fromstring(getUrlLine)
+                        if '1.0.0/WMTSCapabilities.xml' in lines[idx]:
+                            getUrl.attrib[xlink + 'href'] = wmts_service_url + '1.0.0/WMTSCapabilities.xml'
+                        elif 'wmts.cgi?' in lines[idx]:
+                            getUrl.attrib[xlink + 'href'] = wmts_service_url + 'wmts.cgi?'
+                        else:
+                            getUrl.attrib[xlink + 'href'] = wmts_service_url
+                        lines[idx] = (' '*spaces) + etree.tostring(getUrl, pretty_print=True).replace('Get','ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','').replace('/>','>')
+                    if 'ServiceMetadataURL' in lines[idx]:
+                        spaces = lines[idx].index('<')
+                        serviceMetadataUrlLine = lines[idx].replace('ServiceMetadataURL','ServiceMetadataURL xmlns:xlink="http://www.w3.org/1999/xlink"')
+                        serviceMetadataUrl = etree.fromstring(serviceMetadataUrlLine)
+                        serviceMetadataUrl.attrib[xlink + 'href'] = wmts_service_url + '1.0.0/WMTSCapabilities.xml'
+                        lines[idx] = (' '*spaces) + etree.tostring(serviceMetadataUrl, pretty_print=True).replace(' xmlns:xlink="http://www.w3.org/1999/xlink"','')
+                getCapabilities_base.seek(0)
+                getCapabilities_base.truncate()
+                getCapabilities_base.writelines(lines)
+                getCapabilities_base.close()   
 
     if twms:
         # Create final Apache configs (TWMS)
         twms_apache_conf_path_template = os.path.join(twms_base_endpoint, '${layer}/twms.config')
-        twms_endpoint_apache_config = '<Directory {0}>\n'.format(twms_base_endpoint)
+        if twms_reproject_endpoint is not None:
+            twms_endpoint_apache_config = 'Alias {0} {1}\n'.format(twms_reproject_endpoint, twms_base_endpoint)
+        else:
+            twms_endpoint_apache_config = ''
+        twms_endpoint_apache_config += '<Directory {0}>\n'.format(twms_base_endpoint)
         twms_endpoint_apache_config += '\ttWMS_RegExp twms.cgi\n'
         twms_endpoint_apache_config += '\ttWMS_ConfigurationFile {0}\n'.format(twms_apache_conf_path_template)
         twms_endpoint_apache_config += '</Directory>\n'
         twms_apache_staging_conf_path = os.path.join(twms_staging_location, twms_apache_config_basename + '.conf')
         try:
             with open(twms_apache_staging_conf_path, 'w+') as twms_apache_config_file:
-                # Write header to Apache config
-                try:
-                    with open(os.path.join(twms_apache_config_header_location, twms_apache_config_header_basename + '.conf'), 'r') as header:
-                        twms_apache_config_file.write(header.read())
-                except IOError:
-                    log_sig_warn("Can't find TWMS reproject Apache header file: " + twms_apache_staging_conf_path)
 
                 # Write endpoint Apache stuff
                 twms_apache_config_file.write(twms_endpoint_apache_config)
@@ -686,28 +749,29 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         except IOError:
             log_sig_exit('ERROR', "Can't write TWMS staging apache conf: " + twms_apache_staging_conf_path, sigevent_url)
 
-        # Copy all the TWMS config files to the endpoint
-        layer_dirs = [subdir for subdir in os.listdir(twms_staging_location) if os.path.isdir(os.path.join(twms_staging_location, subdir))]
-        for layer_dir in layer_dirs:
-            layer_endpoint = os.path.join(twms_base_endpoint, layer_dir)
-            if os.path.exists(layer_endpoint):
-                shutil.rmtree(layer_endpoint)
-            layer_staging_path = os.path.join(twms_staging_location, layer_dir)
-            print '\nCopying reprojected TWMS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
-            shutil.copytree(layer_staging_path, layer_endpoint)
-
-        # Copy the TWMS Apache config to the specified directory (like conf.d)
-        twms_apache_conf_path = os.path.join(twms_apache_config_location, twms_apache_config_basename + '.conf')
-        print '\nCopying reprojected TWMS layer Apache config {0} -> {1}'.format(twms_apache_staging_conf_path, twms_apache_conf_path)
-        try:
-            shutil.copyfile(twms_apache_staging_conf_path, twms_apache_conf_path)
-        except IOError, e: # Try with sudo if permission denied
-            if 'Permission denied' in str(e):
-                cmd = ['sudo', 'cp', twms_apache_staging_conf_path, twms_apache_conf_path]
-                try:
-                    run_command(cmd, sigevent_url)
-                except Exception, e:
-                    log_sig_exit('ERROR', str(e), sigevent_url)
+        if not stage_only:
+            # Copy all the TWMS config files to the endpoint
+            layer_dirs = [subdir for subdir in os.listdir(twms_staging_location) if os.path.isdir(os.path.join(twms_staging_location, subdir))]
+            for layer_dir in layer_dirs:
+                layer_endpoint = os.path.join(twms_base_endpoint, layer_dir)
+                if os.path.exists(layer_endpoint):
+                    shutil.rmtree(layer_endpoint)
+                layer_staging_path = os.path.join(twms_staging_location, layer_dir)
+                print '\nCopying reprojected TWMS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+                shutil.copytree(layer_staging_path, layer_endpoint)
+    
+            # Copy the TWMS Apache config to the specified directory (like conf.d)
+            twms_apache_conf_path = os.path.join(twms_apache_config_location, twms_apache_config_basename + '.conf')
+            print '\nCopying reprojected TWMS layer Apache config {0} -> {1}'.format(twms_apache_staging_conf_path, twms_apache_conf_path)
+            try:
+                shutil.copyfile(twms_apache_staging_conf_path, twms_apache_conf_path)
+            except IOError, e: # Try with sudo if permission denied
+                if 'Permission denied' in str(e):
+                    cmd = ['sudo', 'cp', twms_apache_staging_conf_path, twms_apache_conf_path]
+                    try:
+                        run_command(cmd, sigevent_url)
+                    except Exception, e:
+                        log_sig_exit('ERROR', str(e), sigevent_url)
 
         # Configure base GC file for TWMS
         if create_gc:
@@ -766,7 +830,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 getTileService_base.truncate()
                 getTileService_base.writelines(lines)
                 getTileService_base.close()
-    return
+    return (warnings, errors)
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
@@ -778,10 +842,10 @@ if __name__ == '__main__':
     else:
         lcdir = os.environ['LCDIR']
 
-    usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --sigevent_url [url] --no_twms --no_wmts'
+    usageText = 'oe_configure_reproject_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --sigevent_url [url] --no_twms --no_wmts'
 
     # Define command line options and args.
-    parser = OptionParser(usage=usageText)
+    parser = OptionParser(usage=usageText, version=versionNumber)
     parser.add_option('-c', '--conf_file',
                       action='store', type='string', dest='layer_config_path',
                       help='Full path of layer configuration filename.')
@@ -805,6 +869,9 @@ if __name__ == '__main__':
     parser.add_option("-x", "--no_xml",
                       action="store_true", dest="no_xml",
                       default=False, help="Do not generate getCapabilities and getTileService XML.")
+    parser.add_option("-z", "--stage_only",
+                      action="store_true", dest="stage_only",
+                      default=False, help="Do not move configurations to final location; keep configurations in staging location only.")
     parser.add_option("--debug",
                       action="store_true", dest="debug",
                       default=False, help="Produce verbose debug messages")
@@ -843,4 +910,4 @@ if __name__ == '__main__':
         log_info_mssg("no_xml specified, getCapabilities and getTileService files will be staged only")
 
     build_reproject_configs(layer_config_path, tilematrixsets_config_path, base_wmts_gc=base_wmts_gc, base_twms_gc=base_twms_gc,
-                            base_twms_get_tile_service=base_twms_get_tile_service, wmts=wmts, twms=twms, xml=xml, sigevent_url=sigevent_url, debug=options.debug)
+                            base_twms_get_tile_service=base_twms_get_tile_service, wmts=wmts, twms=twms, xml=xml, sigevent_url=sigevent_url, stage_only=options.stage_only, debug=options.debug)

@@ -4,8 +4,22 @@ This are instructions on how to install OnEarth on CentOS/RedHat Linux 6.4 or gr
 
 ## Preconditions
 
-* Apache 2.2 or greater
+* Apache 2.2 or 2.4
 * Python 2.6 or 2.7
+
+If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing:
+
+EPEL Repository
+
+```
+sudo yum -y install epel-release
+```
+
+Postgres Repository RPM
+
+```
+sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+```
 
 ## RPM Installation
 
@@ -17,22 +31,28 @@ Unpackage the release .tar.gz file
 tar -zxvf onearth-*.tar.gz
 ```
 
-Install GIBS GDAL with the MRF driver
+GIBS GDAL with the MRF driver
 
 ```
 sudo yum -y install gibs-gdal-*
+```
+
+Optional Python packages via pip (included in onearth-config RPM); required for OnEarth configuration tools if RPM cannot run pip
+
+```
+sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
+```
+
+Optional Python packages via pip (included in onearth-vector RPM); required for OnEarth vectorgen if RPM cannot run pip
+
+```
+sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 ```
 
 Install OnEarth packages
 
 ```
 sudo yum -y install onearth-*
-```
-
-If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing the Postgres Repository RPM
-
-```
-sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
 ```
 
 For manual installation or to install or another OS, please refer to the specific component:
@@ -54,7 +74,7 @@ These are the default install locations.
 mod_onearth
 ```
 /etc/httpd/modules/mod_onearth.so
-/usr/bin//oe_create_cache_config
+/usr/bin/oe_create_cache_config
 /usr/share/onearth/apache/*
 /usr/share/onearth/apache/kml/*
 ```
@@ -152,8 +172,14 @@ vectorgen
 /usr/lib64/pkgconfig/libspatialindex.pc
 ```
 
+OnEarth Tests
+```
+/usr/share/onearth/test*
+```
+
 ## Next Steps
 
+* [Run Demo](../src/demo/README.md)
 * [Configuration](configuration.md)
 * [Creating Image Archive](archive.md)
 

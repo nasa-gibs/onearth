@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LayerConfiguration>
+ <Identifier>blue_marble</Identifier>
+ <Title>Blue Marble Demo Imagery</Title>
+ <FileNamePrefix>blue_marble</FileNamePrefix>
+ <TiledGroupName>Blue Marble tileset</TiledGroupName>
+ <HeaderFileName>/etc/onearth/config/headers/blue_marble_arctic.mrf</HeaderFileName>
+ <Compression>JPG</Compression>
+ <TileMatrixSet>EPSG3031_500m</TileMatrixSet>
+ <EmptyTileSize offset="0">0</EmptyTileSize>
+ <Projection>EPSG:3031</Projection> 
+ <EnvironmentConfig>/etc/onearth/config/conf/environment_antarctic.xml</EnvironmentConfig>
+ <ArchiveLocation static="true" year="false" root="antarctic">blue_marble</ArchiveLocation>
+</LayerConfiguration>

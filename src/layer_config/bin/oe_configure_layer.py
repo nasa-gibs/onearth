@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
 
-versionNumber = '1.3.0'
+versionNumber = '1.3.1'
 current_conf = None
 
 class WMTSEndPoint:
@@ -1276,7 +1276,7 @@ parser.add_option("-y", "--generate_links",
                   default=False, help="Generate default/current day links in the archive for time varying layers.")
 parser.add_option("-z", "--no_cache",
                   action="store_true", dest="no_cache", 
-                  default=False, help="Do not copy cache configuration files to cache location.")
+                  default=False, help="Do not copy cache configuration files and Apache configs to final location.")
 parser.add_option("--create_mapfile",
                   action="store_true", dest="create_mapfile", 
                   default=False, help="Create MapServer configuration.")
@@ -1415,12 +1415,18 @@ for conf in conf_files:
             base_twms_gc = lcdir + '/conf/getcapabilities_base_twms.xml'
             base_twms_get_tile_service = lcdir + '/conf/gettileservice_base.xml'
             base_wmts_gc = lcdir + '/conf/getcapabilities_base_wmts.xml'
-            build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, sigevent_url=sigevent_url, base_wmts_gc=base_wmts_gc,
+            reproject_warnings, reproject_errors = build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, create_gc=not no_xml, sigevent_url=sigevent_url, stage_only=no_cache, base_wmts_gc=base_wmts_gc,
                                     base_twms_gc=base_twms_gc, base_twms_get_tile_service=base_twms_get_tile_service)
+            warnings += reproject_warnings
+            errors += reproject_errors
             wmtsEndPoint = environment.wmts_dir
             twmsEndPoint = environment.twms_dir
-            wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, None, None, wmts_getCapabilities, projection)
-            twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, None, None, twms_getCapabilities, getTileService, projection)
+            cacheLocation_wmts = environment.cacheLocation_wmts
+            cacheBasename_wmts = environment.cacheBasename_wmts
+            cacheLocation_twms = environment.cacheLocation_twms
+            cacheBasename_twms = environment.cacheBasename_twms
+            wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
+            twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
             continue
         
         #Vector parameters
@@ -2713,8 +2719,8 @@ else:
 if no_twms == False:
     for key, twms_endpoint in twms_endpoints.iteritems():
         #twms
-        print "\nRunning commands for endpoint: " + twms_endpoint.path
         if twms_endpoint.cacheConfigBasename:
+            print "\nRunning commands for endpoint: " + twms_endpoint.path
             cmd = depth + '/oe_create_cache_config -cbd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.config'
             run_command(cmd, sigevent_url)
             cmd = depth + '/oe_create_cache_config -cxd '+ twms_endpoint.path + " " + twms_endpoint.path+'/' + twms_endpoint.cacheConfigBasename + '.xml'

@@ -1,0 +1,133 @@
+MAP
+  Name                  "NASA_GIBS_3031"
+  UNITS                 meters
+  MAXSIZE               20000
+  SIZE                  1600 1200
+  Extent                -4194300.000 -4194200.000 4194200.000 4194300.000
+  ImageColor            0 0 0
+
+  OUTPUTFORMAT
+    NAME                "png"
+    DRIVER              AGG/PNG
+    MIMETYPE            "image/png"
+    IMAGEMODE           RGBA
+    EXTENSION           "png"
+    FORMATOPTION        "GAMMA=0.75"
+  END
+
+  OUTPUTFORMAT
+    NAME "jpeg"
+    DRIVER AGG/JPEG
+    MIMETYPE "image/jpeg"
+    IMAGEMODE RGB
+    EXTENSION "jpg"
+    FORMATOPTION "GAMMA=0.75"
+  END
+  
+  OUTPUTFORMAT
+    NAME        "kml"
+    DRIVER      KML
+    MIMETYPE    "application/vnd.google-earth.kml.xml"
+    IMAGEMODE   RGB
+    EXTENSION   "kml"
+  END
+
+  OUTPUTFORMAT
+    NAME        "kmz"
+    DRIVER      KMZ
+    MIMETYPE    "application/vnd.google-earth.kmz"
+    IMAGEMODE   RGB
+    EXTENSION   "kmz"
+  END
+
+  OUTPUTFORMAT
+    NAME "csv"
+    DRIVER "OGR/CSV"
+    MIMETYPE "text/csv"
+    FORMATOPTION "LCO:GEOMETRY=AS_WKT"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "FILENAME=result.csv"
+  END
+
+  OUTPUTFORMAT
+    NAME "geojson"
+    DRIVER "OGR/GEOJSON"
+    FORMATOPTION "STORAGE=stream"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "LCO:COORDINATE_PRECISION=3"
+    FORMATOPTION "LCO:WRITE_BBOX=YES"
+    MIMETYPE "application/json; subtype=geojson"
+  END
+
+  Projection  #Output Projection
+    "init=epsg:3031"
+  End
+
+  WEB
+    METADATA
+      "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:3031)"
+      "wfs_onlineresource" 		"http://gibs.earthdata.nasa.gov/wfs/mapserv"
+      "wfs_keywordlist"			"GIBS,NASA,WFS,Earth"
+      "wfs_fees"				"NONE"
+      "wfs_accessconstraints" 	"NONE"
+      "wfs_contactorganization"	"NASA Global Imagery Browse Services"
+      "wfs_service_onlineresource"	"http://gibs.earthdata.nasa.gov/wfs/mapserv"
+      "wfs_contactperson"		"GIBS User Support"
+      "wfs_contactorganization"	"GIBS User Support"
+      "wfs_contactposition"		"GIBS User Support"
+      "wfs_contactelectronicmailaddress"	"support@earthdata.nasa.gov"     
+      "wfs_srs"            		"EPSG:3031"
+      "wfs_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
+      "wfs_enable_request" 		"*"
+      "wms_title"               "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:3031)"
+      "wms_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
+      "wms_onlineresource"      "http://gibs.earthdata.nasa.gov/wms/epsg3031/"
+      "wms_keywordlist"			"GIBS,NASA,WMS,Earth"
+      "wms_contactperson"		"GIBS User Support"
+      "wms_contactorganization"	"GIBS User Support"
+      "wms_contactposition"		"GIBS User Support"
+      "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
+      "wms_enable_request"      "GetMap GetCapabilities"
+      "wms_srs"                 "EPSG:3031"
+      "wms_connectiontimeout"   "180"
+      "wms_layerlimit"			"5"
+    END
+    VALIDATION
+      "default_TIME"            "TTTTTTT"
+      "default_PRODUCTYEAR"     "YYYY"
+      "default_PRODUCTMONTH"    "MM"
+      "default_PRODUCTDAY"      "DD"
+      "TIME"                    "^[0-9]{7}$"
+      "PRODUCTYEAR"             "^[0-9]{4}$"
+      "PRODUCTMONTH"            "^[0-9]{2}$"
+      "PRODUCTDAY"              "^[0-9]{2}$"
+     END
+  END
+
+  SYMBOL
+        NAME "circle"
+        TYPE ellipse
+        FILLED true
+        POINTS
+                1 1
+        END
+  END
+
+LAYER
+	NAME	"blue_marble"
+	TYPE	RASTER
+	STATUS	ON
+	VALIDATION
+	END
+	METADATA
+		"wms_title"		"blue_marble"
+		"wms_extent"		"-4194304 -4194304 4194304 4194304"
+	END
+	DATA	"/usr/share/onearth/demo/data/EPSG3031/blue_marble//blue_marble.mrf"
+	PROJECTION
+		"init=epsg:3031"
+	END
+END
+
+END

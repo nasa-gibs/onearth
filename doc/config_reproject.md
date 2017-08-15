@@ -26,7 +26,7 @@ To use the tool, configure a reprojection configuration XML file (details below)
 
 
 ### Environment Config
-Make sure that the `<ApacheConfigLocation>` and `<ApacheConfigHeaderLocation>` elements are located in the environment config file you'll be using, and that there's one for each service (wmts or twms) that you wish to configure for. See [config support](config_support.md) for more information.
+Make sure that the `<ReprojectApacheConfigLocation>` and `<ReprojectLayerConfigLocation>` elements are located in the environment config file you'll be using, and that there's one for each service (wmts or twms) that you wish to configure for. See [config support](config_support.md) for more information.
 
 ### Layer Config File
 Reprojected layers require a differently-structured XML file from the normal OnEarth layer config. 
@@ -48,11 +48,11 @@ The reprojected layer config tool scrapes data from the GetCapabilities file of 
 
 `<ReprojectLayerConfig>` (required) -- Base element that contains all the layer reproject information. When it encounters this element, oe_configure_layer will process this layer for mod_reproject.
 
-`<GetCapabilitiesURI>` (required) -- Specifies the GetCapabilities file that oe_configure_layer will use to build the layer configs, including source URL info.
+`<SrcWMTSGetCapabilitiesURI>` (required) -- Specifies the GetCapabilities file that oe_configure_layer will use to build the layer configs, including source URL info.
 
 -----
 
-`<SrcLocation>` (required) -- This specifies the source endpoint.
+`<SrcLocationRewrite>` (required) -- This specifies the source endpoint.
 
 ##### Attributes:
 

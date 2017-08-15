@@ -33,7 +33,7 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.3.0
+ * Version 1.3.1
  */
 
 #include "mod_oems.h"
@@ -384,11 +384,27 @@ char *validate_args(request_rec *r, char *mapfile) {
 		}
 		if (ap_strstr(times[2],"T") != 0) {
 			subdaily = times[2];
-			t = apr_strtok(subdaily,"T:",&last);
-			i = 2;
-			while (t != NULL && i < 6) {
-				times[i++] = t;
-				t = apr_strtok(NULL,"T:",&last);
+			// Check for subdaily delimiters
+			if (ap_strstr(subdaily,":") != 0) {
+				t = apr_strtok(subdaily,"T:",&last);
+				i = 2;
+				while (t != NULL && i < 6) {
+					times[i++] = t;
+					t = apr_strtok(NULL,"T:",&last);
+				}
+			} else if (ap_strstr(subdaily,"%3A") != 0) {
+				t = apr_strtok(subdaily,"T%",&last);
+				i = 2;
+				while (t != NULL && i < 6) {
+					times[i++] = t;
+					t = apr_strtok(NULL,"T%",&last);
+				}
+				if (ap_strstr(times[4],"3A") != 0) {
+					times[4] += 2;
+				}
+				if (ap_strstr(times[5],"3A") != 0) {
+					times[5] += 2;
+				}
 			}
 		}
 		if (subdaily == 0) {
@@ -532,7 +548,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    		subdaily = layer_subdaily_value;
 	    	}
 	    	// set to default if no time
-    		if (strlen(doytime) == 0) {
+	    	if (strlen(doytime) == 0 || ap_strstr(doytime, "TTTTTTT") != 0) {
     			doytime = "TTTTTTT";
     			productyear = "YYYY";
     		} else {
