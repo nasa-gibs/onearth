@@ -47,6 +47,7 @@ import gzip
 import mapbox_vector_tile
 from lxml import etree
 import requests
+import sys
 
 
 def add_trailing_slash(directory_path):
@@ -65,10 +66,14 @@ def add_trailing_slash(directory_path):
 def restart_apache():
     try:
         check_apache_running()
-        apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     except ValueError:
-        apache = subprocess.Popen(['apachectl', 'start'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    apache.communicate()
+        apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    (stdout, stderr) = apache.communicate()
+    if stdout != None and len(stdout) != 0:
+        sys.stderr.write("\n=== STDOUT from restart_apache():\n%s\n===\n" % stdout.rstrip())
+    if stderr != None and len(stderr) != 0:
+        sys.stderr.write("\n=== STDERR from restart_apache():\n%s\n===\n" % stderr.rstrip())
     subprocess.call(['sleep', '3'])
 
 

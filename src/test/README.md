@@ -1,5 +1,5 @@
 
-#OnEarth CI Test Scripts
+# OnEarth CI Test Scripts
 
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
@@ -10,12 +10,26 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_vectorgen.py` -- tests oe_vectorgen
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 
-##Setup
+## Running tests in Docker
+
+There is a script called `bin/run_test_in_docker.sh` that will run a test script
+inside of a Docker container.  It takes two parameters, the name of the onearth
+Docker image to run the test in, and the name of the test script.  After
+running, the results will be written to a file in the `src/test/results`
+directory.
+
+Example:
+
+```
+./bin/run_test_in_docker.sh gibs/onearth:latest test_mod_onearth.py
+```
+
+## Setup
 These tests assume that OnEarth and its associated utilities are installed. **Test files for mod_onearth tests must be copied to a directory that Apache has permission to access.**
 
 The tests have additional dependencies from the rest of OnEarth. To install the Python dependencies required by the test scripts, run `sudo pip install -r requirements.txt`.
 
-##Running the Tests
+## Running the Tests
 Each test script will output a JUnit XML results file. By default, these files are named `test_layer_config_results.xml` and `test_mod_onearth_results.xml`. A different output filename can be specified with the `-o` option, i.e. `sudo python test_mod_onearth.py -o output_file.xml`.
 
 **Note that the included `mod_onearth_test_data/twms_endpoint/kmlgen.cgi` has been compiled for use in CentOS 6. It may need to be recompiled for other systems. For more information, see [OnEarth Endpoint Configuration](doc/config_endpoint.md).**
@@ -23,30 +37,30 @@ Each test script will output a JUnit XML results file. By default, these files a
 **Note also that the mrfgen tests involve the downloading and processing of imagery, so they may take a while to complete. You may experience 'out of memory' errors if running these tests in a VM without enough memory configured.**
 
 
-###Additional Test Options
-####test_mod_onearth.py
+### Additional Test Options
+#### test_mod_onearth.py
 * `-d, --debug` -- This will output verbose messages on the test operations to the output file.
 * `-s, --start_server` -- This will load the test Apache configuration for manual testing purposes (normally the script deletes it when the tests are over.)
 
-####test_mod_oems.py
+#### test_mod_oems.py
 * `-d, --debug` -- This will output verbose messages on the test operations to the output file.
 * `-s, --start_server` -- This will load the test Apache configuration for manual testing purposes (normally the script deletes it when the tests are over.)
 
-####test_layer_config.py
+#### test_layer_config.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
-####test_mrfgen.py
+#### test_mrfgen.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
-####test_vectorgen.py
+#### test_vectorgen.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
-####test_legends.py
+#### test_legends.py
 * `-d, --debug` -- This will display verbose messages about the files the script is creating and text it's searching for in the config tool output files.
 
 
 --------
-##List of test_layer_config tests:
+## List of test_layer_config tests:
 
 1.  Configure a static layer for WMTS
 2.  Configure a daily layer with no year for WMTS
@@ -85,7 +99,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 36. Generate empty tile
 37. Support for versioned color maps
 
-##List of mod_onearth tests:
+## List of mod_onearth tests:
 1. Request current (no time) JPEG tile via WMTS
 2. Request current (no time) PNG tile via WMTS
 3. Request current (time=default) JPEG tile via WMTS
@@ -94,7 +108,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 6. Request current (no time) PNG tile via TWMS
 7. Request tile with date from “year” layer via WMTS
 8. Request tile with date  from “non-year” layer via WMTS
-9. Request tile with date and time (sub-daily) from “year” layer via WMTS 
+9. Request tile with date and time (sub-daily) from “year” layer via WMTS
 10. Request tile with date and time (z-level) from “year” layer via WMTS
 11. Request tile with date and time (z-level) from “year” layer via TWMS
 11. Request tile from static layer with no time via WMTS
@@ -108,7 +122,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 19. WMTS Error handling
 20. WMTS REST requests
 
-####Date Snapping Tests
+#### Date Snapping Tests
 
 1.  **Regular Daily date (P1D)**
 
@@ -128,7 +142,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 
         ii. 2015-01-11 -> Blank Tile
 
-        iii. 2015-01-12 -> 2015-01-12 
+        iii. 2015-01-12 -> 2015-01-12
 
         iv. 2015-02-01 -> Blank Tile
 
@@ -245,8 +259,8 @@ Each test script will output a JUnit XML results file. By default, these files a
         vi. 2003-01-01 -> 2002-12-27
 
         vii. 2003-01-04 -> Blank Tile
-        
-##List of mod_oems tests:
+
+## List of mod_oems tests:
 
 1. Request current (no time) JPEG via WMS
 2. Request current (no time) PNG via WMS
@@ -274,20 +288,20 @@ Each test script will output a JUnit XML results file. By default, these files a
 24. Request GeoJSON from vector source file with time via WFS
 25. Request CSV from vector source file with time via WFS
 
-##List of mrfgen tests:
+## List of mrfgen tests:
 1. Global geographic PNG-MRF
 	* Global input image
 	* Geographic projection
 	* Paletted PNG input image
-	* Paletted MRF-PNG output image	
+	* Paletted MRF-PNG output image
 2. Tiled polar north JPEG-MRF
 	* Tiled input images
 	* Stereographic Polar North projection
 	* JPEG input images
-	* MRF-JPEG output image	
+	* MRF-JPEG output image
 3. Global web mercator JPEG-MRF
 	* Global input image in geographic projection
-	* Reprojection to web mercator	
+	* Reprojection to web mercator
 4. Geographic PNG-MRF using granule input files
  	* Granule input images with global coverage
  	* Input images cross antimeridian
@@ -312,11 +326,11 @@ Each test script will output a JUnit XML results file. By default, these files a
 	* Use single z-level
 	* Use time (hh:mm:ss)
 	* Use zdb lookup
-	
-##List of vectorgen tests:
+
+## List of vectorgen tests:
 1. MVT MRF generation
 2. Shapefile generation
-	
-##List of legend tests:
+
+## List of legend tests:
 
 Tests legends in horizontal and vertical formats as PNGs and SVGs using various GIBS colormaps. The list of colormaps are configured in this [file](legends_test_data/colormaps.json).

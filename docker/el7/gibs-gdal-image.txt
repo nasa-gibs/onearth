@@ -1,1 +1,1 @@
-gibs/gibs-gdal:latest
+amofnv/gibs-gdal:2.1.3-1
