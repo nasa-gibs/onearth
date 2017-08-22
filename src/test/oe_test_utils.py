@@ -20,9 +20,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,6 +47,7 @@ import gzip
 import mapbox_vector_tile
 from lxml import etree
 import requests
+import sys
 
 
 def add_trailing_slash(directory_path):
@@ -65,10 +66,14 @@ def add_trailing_slash(directory_path):
 def restart_apache():
     try:
         check_apache_running()
-        apache = subprocess.Popen(['/usr/sbin/httpd', '-k', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     except ValueError:
-        apache = subprocess.Popen(['/usr/sbin/httpd', '-k', 'start'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    apache.communicate()
+        apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    (stdout, stderr) = apache.communicate()
+    if stdout != None and len(stdout) != 0:
+        sys.stderr.write("\n=== STDOUT from restart_apache():\n%s\n===\n" % stdout.rstrip())
+    if stderr != None and len(stderr) != 0:
+        sys.stderr.write("\n=== STDERR from restart_apache():\n%s\n===\n" % stderr.rstrip())
     subprocess.call(['sleep', '3'])
 
 
@@ -183,7 +188,7 @@ def create_continuous_period_test_files(path, period_units, period_length, num_p
             subdaily = True
         else:
             subdaily = False
-        
+
         if not no_files:
             # Create year directory if requested
             if make_year_dirs and (not x or test_dates[-1].year != date.year):
@@ -287,7 +292,7 @@ def read_zkey(zdb, sort):
         else:
             con = sqlite3.connect(zdb, timeout=60)  # 1 minute timeout
             cur = con.cursor()
-            
+
             # Check for existing key
             cur.execute("SELECT key_str FROM ZINDEX ORDER BY key_str " + sort + " LIMIT 1;")
             try:
@@ -297,7 +302,7 @@ def read_zkey(zdb, sort):
             if con:
                 con.close()
             return key
-        
+
     except sqlite3.Error, e:
         if con:
             con.rollback()
@@ -324,7 +329,7 @@ def get_layer_config(filepath, archive_config):
         archive config -- path to the archive config file
     """
     config = {}
-    
+
     # Get the layer, environment, and archive config DOMs
     with open(filepath, "r") as lc:
         config_dom = xml.dom.minidom.parse(lc)
@@ -572,12 +577,12 @@ def test_wmts_error(test_obj, test_url, error_code_expected, exception_code_expe
     r = requests.get(test_url)
     test_obj.assertEqual(error_code_expected, r.status_code, msg='Unexpected error code -- should be {0}, is {1}'.format(error_code_expected, str(r.status_code)))
     content_type = r.headers.get('content-type')
-    test_obj.assertEqual('text/xml', content_type, msg='Unexpected content type, should be {0}, is {1}'.format('text/xml', content_type))        
+    test_obj.assertEqual('text/xml', content_type, msg='Unexpected content type, should be {0}, is {1}'.format('text/xml', content_type))
     try:
         err_xml = etree.fromstring(r.content)
     except etree.XMLSyntaxError:
         test_obj.fail('Invalid XML returned for error message')
-    
+
     # Check root element attributes
     expected_namespace = '{http://www.opengis.net/ows/1.1}'
     root_element_expected_value = expected_namespace + 'ExceptionReport'
@@ -587,21 +592,21 @@ def test_wmts_error(test_obj, test_url, error_code_expected, exception_code_expe
     test_obj.assertIsNotNone(schema_location_found, msg='Missing schemaLocation attribute from ExceptionReport element')
     schema_location_expected = 'http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd'
     test_obj.assertEqual(schema_location_expected, schema_location_found, msg='Invalid schemaLocation attribute for ExceptionReport element, should be {0}, is {1}'.format(schema_location_expected, schema_location_found))
-    
+
     version_found = err_xml.attrib.get('version')
     test_obj.assertIsNotNone(version_found, msg='Missing version attribute for ExceptionReport element')
     version_expected = '1.1.0'
     test_obj.assertEqual(version_expected, version_found, msg='Invalid version attribute for ExceptionReport element, should be {0}, is {1}'.format(version_expected, version_found))
-    
+
     lang_found = err_xml.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
     test_obj.assertIsNotNone(lang_found, msg='Missing xml:lang attribute from ExceptionReport element')
     lang_expected = 'en'
     test_obj.assertEqual(lang_expected, lang_found, msg='Invalid xml:lang attribute for ExceptionReport element, should be {0}, is {1}'.format(lang_expected, lang_found))
-    
+
     # Check <Exception> content
     exception_element = err_xml.find(expected_namespace + 'Exception')
     test_obj.assertIsNotNone(exception_element, msg='Missing Exception element')
-    
+
     exception_code_found = exception_element.attrib.get('exceptionCode')
     test_obj.assertIsNotNone(exception_code_found, msg='Mising exceptionCode attribute for Exception element')
     test_obj.assertEqual(exception_code_expected, exception_code_found, msg='Invalid exceptionCode attribute for Exception element, should be {0}, is {1}'.format(exception_code_expected, exception_code_found))
