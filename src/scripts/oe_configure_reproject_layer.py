@@ -52,6 +52,7 @@ from io import BytesIO
 from time import asctime
 import cgi
 import hashlib
+from decimal import Decimal
 
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
@@ -339,7 +340,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             dest_levels = len(dest_tilematrixset.findall('{*}TileMatrix'))
             dest_pagesize_width = sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TileWidth')
             dest_pagesize_height = sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TileHeight')
-            dest_top_left_corner = [float(value) for value in sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TopLeftCorner').split(' ')]
+            dest_top_left_corner = [Decimal(value) for value in sort_tilematrixset(dest_tilematrixset)[0].findtext('{*}TopLeftCorner').split(' ')]
             dest_bbox = '{0},{1},{2},{3}'.format(dest_top_left_corner[0], dest_top_left_corner[0], -dest_top_left_corner[0], -dest_top_left_corner[0])
             dest_resource_url_elem = layer.find('{*}ResourceURL')
             dest_url = dest_resource_url_elem.get('template')
@@ -646,8 +647,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 if '$Patterns' in line:
                     patterns = ''
                     for tilematrix in sorted(out_tilematrixsets[0].findall('{*}TileMatrix'), key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator'))):
-                        resx = (dest_top_left_corner[1] - dest_top_left_corner[0]) / float(tilematrix.findtext('MatrixWidth'))
-                        resy = (dest_top_left_corner[1] - dest_top_left_corner[0]) / float(tilematrix.findtext('MatrixHeight'))
+                        resx = (dest_top_left_corner[1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixWidth'))
+                        resy = (dest_top_left_corner[1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixHeight'))
                         local_xmax = dest_top_left_corner[0] + resx
                         local_xmax_str = str(local_xmax) if local_xmax else '0'
                         local_ymax = dest_top_left_corner[1] - resy
