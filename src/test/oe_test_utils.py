@@ -90,9 +90,12 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     if wait:
         process.wait()
     if not ignore_warnings:
+        output_err = open(cmd.split(' ')[0] + '.err', 'a')
         for error in process.stderr:
             if not ignore_warnings or "WARNING" not in error:
                 print error
+                output_err.write(error)
+        output_err.close
     return None
 
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):

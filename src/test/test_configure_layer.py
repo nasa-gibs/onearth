@@ -763,9 +763,10 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(type_string_exists, 'Style file stuff not found in output mapfile')
 
     def test_invalid_config(self):
-        # Set config files and reference hash for invalid compression
+        # Set config files for invalid compression
+        if DEBUG:
+            print '\nTESTING INVALID COMPRESSION...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_compression.xml')
-        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
         # Create paths for data and GC
@@ -781,9 +782,11 @@ class TestLayerConfig(unittest.TestCase):
         cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
-        # Verify hash
-        with open(config['empty_tile'], 'r') as f:
-            tile_hash = testutils.get_file_hash(f)
+        # Verify error
+        if os.path.isfile('oe_configure_layer.err'):
+            search_string = 'Compression> must be either JPEG, PNG, TIF, LERC, PBF, or MVT'
+            contains_error = find_string('oe_configure_layer.err', search_string)
+
 
         # Cleanup -- make sure to get rid of staging files
         rmtree(config['wmts_gc_path'])
@@ -791,14 +794,15 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['twms_staging_location'])
         rmtree(config['colormap_locations'][0].firstChild.nodeValue)
         rmtree(config['archive_location'])
-        os.remove(config['empty_tile'])
+        os.remove('oe_configure_layer.err')
 
         # Check result
-        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+        self.assertTrue(contains_error, 'Invalid config test -- Unsupported compression type is specified')
 
-        # Set config files and reference hash for invalid file path
+        # Set config files for invalid file path
+        if DEBUG:
+            print '\nTESTING INVALID FILE PATH1...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path1.xml')
-        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
         # Create paths for data and GC
@@ -814,9 +818,10 @@ class TestLayerConfig(unittest.TestCase):
         cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
-        # Verify hash
-        with open(config['empty_tile'], 'r') as f:
-            tile_hash = testutils.get_file_hash(f)
+        # Verify error
+        if os.path.isfile('oe_configure_layer.err'):
+            search_string = 'No such file or directory'
+            contains_error = find_string('oe_configure_layer.err', search_string)
 
         # Cleanup -- make sure to get rid of staging files
         rmtree(config['wmts_gc_path'])
@@ -824,14 +829,15 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['twms_staging_location'])
         rmtree(config['colormap_locations'][0].firstChild.nodeValue)
         rmtree(config['archive_location'])
-        os.remove(config['empty_tile'])
+        os.remove('oe_configure_layer.err')
 
         # Check result
-        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+        self.assertTrue(contains_error, 'Invalid config test -- Empty tile path does not exist')
 
-        # Set config files and reference hash for invalid file path
+        # Set config files for invalid file path
+        if DEBUG:
+            print '\nTESTING INVALID FILE PATH2...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path2.xml')
-        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
         # Create paths for data and GC
@@ -847,9 +853,10 @@ class TestLayerConfig(unittest.TestCase):
         cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
-        # Verify hash
-        with open(config['empty_tile'], 'r') as f:
-            tile_hash = testutils.get_file_hash(f)
+        # Verify error
+        if os.path.isfile('oe_configure_layer.err'):
+            search_string = 'No such file or directory'
+            contains_error = find_string('oe_configure_layer.err', search_string)
 
         # Cleanup -- make sure to get rid of staging files
         rmtree(config['wmts_gc_path'])
@@ -857,12 +864,14 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['twms_staging_location'])
         rmtree(config['colormap_locations'][0].firstChild.nodeValue)
         rmtree(config['archive_location'])
-        os.remove(config['empty_tile'])
+        os.remove('oe_configure_layer.err')
 
         # Check result
-        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+        self.assertTrue(contains_error, 'Invalid config test -- Environment file path does not exist')
 
-        # Set config files and reference hash for invalid tilematrixset
+        # Set config files for invalid tilematrixset
+        if DEBUG:
+            print '\nTESTING INVALID TILEMATRIXSET...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
@@ -897,7 +906,9 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_mrf_configuration(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'conf/test_.xml')
+        if DEBUG:
+            print '\nTESTING MRF CONFIGURATION...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_mrf_configuration.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -931,7 +942,9 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_mrf_header(self):
         # Set config files and reference hash for checking empty tile
-        layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
+        if DEBUG:
+            print '\nTESTING MRF HEADER...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_mrf_header.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 

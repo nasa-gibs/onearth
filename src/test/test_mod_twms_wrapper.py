@@ -32,7 +32,7 @@
 # limitations under the License.
 
 """
-Test suite to make sure that mod_twms_wrapper is properly handling WMTS errors.
+Test suite to make sure that mod_twms_wrapper is properly handling TWMS errors.
 """
 
 import os
@@ -62,145 +62,100 @@ class TestModTwmsWrapperErrorHandling(unittest.TestCase):
 
         restart_apache()
 
-    # REST tests
-    def test_REST_bad_layer(self):
-        test_url = base_url + '/test_mod_twms_err/bogus_layer/default/default/0/0/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'LAYER', 'LAYER does not exist')
-
-    def test_REST_bad_style(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/bogus_style/default/0/0/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'STYLE', 'STYLE is invalid for LAYER')
-
-    def test_REST_bad_tilematrixset_date(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/default/bogus_tilematrixset/0/0/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIXSET', 'TILEMATRIXSET is invalid for LAYER')
-
-    def test_REST_bad_tilematrixset_nodate(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/bogus_tilematrixset/0/0/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIXSET', 'TILEMATRIXSET is invalid for LAYER')
-
-    def test_REST_invalid_tilematrix(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/10/0/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIX', 'Invalid TILEMATRIX')
-
-    def test_REST_bad_tilematrix_value(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/bogus/0/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIX', 'TILEMATRIX is not a valid integer')
-
-    def test_REST_row_out_of_range(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/0/1/0.png'
-        test_wmts_error(self, test_url, 400, 'TileOutOfRange', 'TILEROW', 'TILEROW is out of range, maximum value is 0')
-
-    def test_REST_bad_tilerow_value(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/0/bogus/0.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEROW', 'TILEROW is not a valid integer')
-
-    def test_REST_tilecol_out_of_range(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/0/0/1.png'
-        test_wmts_error(self, test_url, 400, 'TileOutOfRange', 'TILECOL', 'TILECOL is out of range, maximum value is 0')
-
-    def test_REST_bad_tilecol_value(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/0/0/bogus.png'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILECOL', 'TILECOL is not a valid integer')
-
-    def test_REST_bad_date_format(self):
-        test_url = base_url + '/test_mod_twms_err/test_layer/default/GoogleMapsCompatible_Level6/0/0/1.bogus'
-        test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'FORMAT', 'FORMAT is invalid for LAYER')
-
     # KVP Tests
-
+    # http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29
     # Missing parameters
     def test_kvp_missing_request(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layers=test_layer&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'REQUEST', 'Missing REQUEST parameter')
 
     def test_kvp_missing_service(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'SERVICE', 'Missing SERVICE parameter')
 
     def test_kvp_missing_version(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'VERSION', 'Missing VERSION parameter')
 
     def test_kvp_missing_layer(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'LAYER', 'Missing LAYER parameter')
 
     def test_kvp_missing_format(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'FORMAT', 'Missing FORMAT parameter')
 
     def test_kvp_missing_tilematrixset(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'TILEMATRIXSET', 'Missing TILEMATRIXSET parameter')
 
     def test_kvp_missing_tilematrix(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'TILEMATRIX', 'Missing TILEMATRIX parameter')
 
     def test_kvp_missing_tilerow(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'TILEROW', 'Missing TILEROW parameter')
 
     def test_kvp_missing_tilecol(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0'
         test_wmts_error(self, test_url, 400, 'MissingParameterValue', 'TILECOL', 'Missing TILECOL parameter')
 
     # Invalid parameters
     def test_kvp_bad_service(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=tmnt&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=tmnt&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'SERVICE', 'Unrecognized service')
 
     def test_kvp_bad_request(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=getschwifty&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=getschwifty&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 501, 'OperationNotSupported', 'REQUEST', 'The request type is not supported')
 
     def test_kvp_bad_version(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=3.2.1&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=3.2.1&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'VERSION', 'VERSION is invalid')
 
     def test_kvp_bad_layer(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=bogus_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=bogus_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'LAYER', 'LAYER does not exist')
 
     def test_kvp_bad_style(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0&style=shaolin'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0&style=shaolin'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'STYLE', 'STYLE is invalid for LAYER')
 
     def test_kvp_bad_format(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/jpeg&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/jpeg&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'FORMAT', 'FORMAT is invalid for LAYER')
 
     def test_kvp_bad_tilematrixset(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level43&tilematrix=0&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level43&tilematrix=0&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIXSET', 'TILEMATRIXSET is invalid for LAYER')
 
     def test_kvp_bad_tilematrix_value(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=morpheus&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=morpheus&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIX', 'TILEMATRIX is not a valid integer')
 
     def test_kvp_bad_tilerow_value(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=rowrowyourboat&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=rowrowyourboat&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEROW', 'TILEROW is not a valid integer')
 
     def test_kvp_bad_tilecol_value(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=infirth'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=infirth'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILECOL', 'TILECOL is not a valid integer')
 
     def test_kvp_invalid_tilematrix_(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=43&tilerow=0&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=43&tilerow=0&tilecol=0'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TILEMATRIX', 'Invalid TILEMATRIX')
 
     def test_kvp_tilerow_out_of_range(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=5&tilecol=0'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=5&tilecol=0'
         test_wmts_error(self, test_url, 400, 'TileOutOfRange', 'TILEROW', 'TILEROW is out of range, maximum value is 0')
 
     def test_kvp_tilecol_out_of_range(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=5'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=5'
         test_wmts_error(self, test_url, 400, 'TileOutOfRange', 'TILECOL', 'TILECOL is out of range, maximum value is 0')
 
     def test_kvp_bad_time_format(self):
-        test_url = base_url + '/test_mod_twms_err/wmts.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0&time=86753-09'
+        test_url = base_url + '/test_mod_twms_err/twms.cgi?layer=test_layer&version=1.0.0&service=wmts&request=gettile&format=image/png&tilematrixset=GoogleMapsCompatible_Level6&tilematrix=0&tilerow=0&tilecol=0&time=86753-09'
         test_wmts_error(self, test_url, 400, 'InvalidParameterValue', 'TIME', 'Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ')
 
     @classmethod
@@ -212,8 +167,8 @@ class TestModTwmsWrapperErrorHandling(unittest.TestCase):
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mod_wmts_wrapper_err_results.xml',
-                      help='Specify XML output file (default is test_mod_wmts_wrapper_err_results.xml')
+    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mod_twms_wrapper_err_results.xml',
+                      help='Specify XML output file (default is test_mod_twms_wrapper_err_results.xml')
     parser.add_option('-s', '--start_server', action='store_true', dest='start_server', help='Load test configuration into Apache and quit (for debugging)')
     parser.add_option('-l', '--conf_location', action='store', dest='apache_conf_dir',
                       help='Apache config location to install test files to (default is /etc/httpd/conf.d)',
@@ -228,7 +183,7 @@ if __name__ == '__main__':
 
     # --start_server option runs the test Apache setup, then quits.
     if options.start_server:
-        TestModWmtsWrapperErrorHandling.setUpClass(options.conf_location)
+        TestModTwmsWrapperErrorHandling.setUpClass()
         sys.exit('Apache has been loaded with the test configuration. No tests run.')
 
     # Have to delete the arguments as they confuse unittest

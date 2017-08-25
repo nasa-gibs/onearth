@@ -322,7 +322,7 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_wmts_get_capabilities(self):
         """
-        14. Request WMTS GetCapabilities
+        14. ERROR!!! Request WMTS GetCapabilities
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
@@ -334,7 +334,7 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_twms_get_capabilities(self):
         """
-        15. Request TWMS GetCapabilities
+        15. ERROR!!! Request TWMS GetCapabilities
         """
         ref_hash = 'd2536cb2c0681c56b005eb9d60336326'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
@@ -346,7 +346,7 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_twms_get_tile_service(self):
         """
-        16. Request TWMS GetTileService
+        16. XMLDIFF!!! Request TWMS GetTileService
         """
         ref_hash = '7555d5ad3cca96aa8cbc8a36f5e04f19'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetTileService'
