@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2014, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -36,15 +36,17 @@
 
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2014
 
 import string
 from optparse import OptionParser
 from decimal import Decimal
 
+# Default EPSG:4236 values
 units = Decimal(111319.490793274) # meters/degree
 tilesize = Decimal(512) # pixels
 pixelsize = Decimal(0.00028) # meters
+top_left_minx = Decimal(-180)
+top_left_maxy = Decimal(90)
 
 def wmts2twmsbox(top_left_bbox, col, row):
     """
@@ -97,14 +99,10 @@ def wmts2twmsbox_scale(scale_denominator, col, row):
     
     size = ((tilesize*2)*scale_denominator/units)*(pixelsize/2)
     
-    # set top_left values
-    top_left_minx = -180
-    top_left_maxy = 90
-    
     # calculate additional top_left values for reference
-    top_left_maxx = -180 + size
-    top_left_miny = 90 - size
-    print "Top Left BBOX: " + str(top_left_minx)+","+str(top_left_miny)+","+str(top_left_maxx)+","+str(top_left_maxy)
+    top_left_maxx = top_left_minx + size
+    top_left_miny = top_left_maxy - size
+    print "Top Left BBOX: " + format(round(top_left_minx,10),'f')+","+format(round(top_left_miny,10),'f') +","+format(round(top_left_maxx,10),'f')+","+format(round(top_left_maxy,10),'f')
     
     # calculate new bounding box based on col and row
     request_minx = top_left_minx + (col*size) 
@@ -112,10 +110,10 @@ def wmts2twmsbox_scale(scale_denominator, col, row):
     request_maxx = top_left_minx + (col*size) + size
     request_maxy = top_left_maxy - (row*size)
     
-    return "Request BBOX: " + str(round(request_minx,10))+","+str(round(request_miny,10))+","+str(round(request_maxx,10))+","+str(round(request_maxy,10))
+    return "Request BBOX: " + format(round(request_minx,10),'f')+","+format(round(request_miny,10),'f')+","+format(round(request_maxx,10),'f')+","+format(round(request_maxy,10),'f')
 
 
-versionNumber = '1.3.1'
+versionNumber = '1.3.2'
 usageText = 'wmts2twmsbox.py --col [TILECOL] --row [TILEROW] --scale_denominator [value] OR --top_left_bbox [bbox]'
 
 # Define command line options and args.
@@ -136,6 +134,9 @@ parser.add_option('-s', '--scale_denominator',
 parser.add_option('-t', '--top_left_bbox',
                   action='store', type='string', dest='top_left_bbox',
                   help='The TWMS bounding box for the top-left corner tile (e.g., "-180,81,-171,90").')
+parser.add_option('-T', '--tilesize',
+                  action='store', type='string', dest='tilesize',
+                  help='Override the tilesize value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -144,17 +145,44 @@ if not options.col:
 if not options.row:
     parser.error('row is required')
     
-if options.epsg == "3857":
+if options.epsg == "4326":
+    print "Using EPSG:4326"
+    units = Decimal(111319.490793274)
+    tilesize = Decimal(512)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-180)
+    top_left_maxy = Decimal(90)
+elif options.epsg == "3857":
     print "Using EPSG:3857"
     units = Decimal(1)
     tilesize = Decimal(256)
     pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-20037508.34278925)
+    top_left_maxy = Decimal(20037508.34278925)
+elif options.epsg == "3031":
+    print "Using EPSG:3031"
+    units = Decimal(1)
+    tilesize = Decimal(512)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-4194304)
+    top_left_maxy = Decimal(4194304)
+elif options.epsg == "3413":
+    print "Using EPSG:3413"
+    units = Decimal(1)
+    tilesize = Decimal(512)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-4194304)
+    top_left_maxy = Decimal(4194304)
 else:
-    print "Using EPSG:4326"
+    parser.error('Projection is not supported')
+    
+if options.tilesize:
+    print "Using tilesize: " + str(options.tilesize)
+    tilesize = Decimal(options.tilesize)
 
 # Run translation based on given parameters
 if options.scale_denominator:
-    print (wmts2twmsbox_scale(float(options.scale_denominator),int(options.col),int(options.row)))
+    print (wmts2twmsbox_scale(Decimal(options.scale_denominator),int(options.col),int(options.row)))
 elif options.top_left_bbox:
     print (wmts2twmsbox(options.top_left_bbox,int(options.col),int(options.row)))
 else:
