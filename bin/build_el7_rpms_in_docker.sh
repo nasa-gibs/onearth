@@ -2,7 +2,7 @@
 
 set -e
 
-mkdir -p dist
+rm -rf dist && mkdir -p dist
 
 DOCKER_UID=$(id -u)
 DOCKER_GID=$(id -g)
