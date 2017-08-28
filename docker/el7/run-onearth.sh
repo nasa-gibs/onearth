@@ -7,17 +7,18 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-for DIR in /mnt/config /oe_layers_config; do
-  if [ ! -d "$DIR" ]; then
-    echo "${DIR} does not exist" >&2
-    exit 1
-  fi
-done
-
 # Copy the config to the image
+if [ ! -d "/mnt/config" ]; then
+  echo "The /mnt/config directory does not exist" >&2
+  exit 1
+fi
 rsync -av /mnt/config/ /
 
 echo 'Running Initial Layer Configuration for OnEarth'
+if [ ! -d "/oe_layers_config" ]; then
+  echo "The /oe_layers_config directory does not exist" >&2
+  exit 1
+fi
 /usr/bin/oe_configure_layer --lcdir /oe_layers_config
 
 echo 'Starting Apache server'
