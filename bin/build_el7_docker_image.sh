@@ -32,7 +32,7 @@ grep -Ev '^FROM' docker/el7/Dockerfile >> tmp/docker/Dockerfile
 (
   set -e
   cd tmp/docker
-  docker build -t "$TAG" .
+  docker build --no-cache -t "$TAG" .
 )
 
 rm -rf tmp/docker
