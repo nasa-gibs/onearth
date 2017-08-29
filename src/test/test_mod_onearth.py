@@ -347,7 +347,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
-     def test_request_wmts_rest_date_from_year_layer(self):
+    def test_request_wmts_rest_date_from_year_layer(self):
         """
         10B. Request tile with date from "year" layer via WMTS (REST)
         """
@@ -371,7 +371,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
-   def test_request_wmts_date_from_noyear_layer(self):
+    def test_request_wmts_date_from_noyear_layer(self):
         """
         11. Request tile with date  from "non-year" layer via WMTS
         """
@@ -383,7 +383,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
-   def test_request_wmts_rest_date_from_noyear_layer(self):
+    def test_request_wmts_rest_date_from_noyear_layer(self):
         """
         11B. Request tile with date  from "non-year" layer via WMTS (REST)
         """
@@ -395,7 +395,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
-   def test_request_twms_date_from_noyear_layer(self):
+    def test_request_twms_date_from_noyear_layer(self):
         """
         11C. Request tile with date from "non-year" layer via TWMS
         """
@@ -488,7 +488,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
-     def test_request_wmts_rest_nodate_from_year_layer(self):
+    def test_request_wmts_rest_nodate_from_year_layer(self):
         """
         14B. Request tile with no date from "year" layer via WMTS (REST)
         """
@@ -512,7 +512,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
-   def test_request_wmts_nodate_from_noyear_layer(self):
+    def test_request_wmts_nodate_from_noyear_layer(self):
         """
         15. NOT FOUND!!! Request tile with no date from "non-year" layer via WMTS
         """
@@ -524,7 +524,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
-   def test_request_wmts_rest_no date_from_noyear_layer(self):
+    def test_request_wmts_rest_no_date_from_noyear_layer(self):
         """
         15B. NOT FOUND!!! Request tile with no date from "non-year" layer via WMTS (REST)
         """
@@ -536,7 +536,7 @@ class TestModOnEarth(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
-   def test_request_twms_nodate_from_noyear_layer(self):
+    def test_request_twms_nodate_from_noyear_layer(self):
         """
         15C. NOT FOUND!!! Request tile with no date from "non-year" layer via TWMS
         """
@@ -999,7 +999,7 @@ class TestModOnEarth(unittest.TestCase):
                  ('2015-01-11', 'black'),
                  ('2015-01-12', '2015-01-12'),
                  ('2015-02-01', 'black'),
-                 9'2014-12-31', 'black'))
+                 ('2014-12-31', 'black'))
         if DEBUG:
             print '\nTesting Date Snapping: Irregular Daily date (PID with gaps)'
             print 'Time Period 2a: 2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D'
