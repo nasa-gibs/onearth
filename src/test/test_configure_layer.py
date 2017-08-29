@@ -72,6 +72,7 @@ class TestLayerConfig(unittest.TestCase):
         self.archive_config = os.path.join(self.testfiles_path, 'conf/test_archive_config.xml')
         self.projection_config = os.path.join(self.testfiles_path, 'conf/projection.xml')
         self.tilematrixset_config = os.path.join(self.testfiles_path, 'conf/tilematrixsets.xml')
+        self.badtilematrixset_config = os.path.join(self.testfiles_path, 'conf/badtilematrixsets.xml')
 
     def test_layer_config_default(self):
         # Set config files and reference hash for checking empty tile
@@ -760,6 +761,288 @@ class TestLayerConfig(unittest.TestCase):
             mapfile_type_string = str('TYPE\t' + config['vector_type'].upper())
             type_string_exists = mapfile_type_string in mapfile.read()
         self.assertTrue(type_string_exists, 'Style file stuff not found in output mapfile')
+
+    def test_invalid_config(self):
+        # Set config files for invalid compression
+        if DEBUG:
+            print '\nTESTING INVALID COMPRESSION...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_compression.xml')
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify error
+        if os.path.isfile('oe_configure_layer.err'):
+            search_string = 'Compression> must be either JPEG, PNG, TIF, LERC, PBF, or MVT'
+            contains_error = find_string('oe_configure_layer.err', search_string)
+
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove('oe_configure_layer.err')
+
+        # Check result
+        self.assertTrue(contains_error, 'Invalid config test -- Unsupported compression type is specified')
+
+        # Set config files for invalid file path
+        if DEBUG:
+            print '\nTESTING INVALID FILE PATH1...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path1.xml')
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify error
+        if os.path.isfile('oe_configure_layer.err'):
+            search_string = 'No such file or directory'
+            contains_error = find_string('oe_configure_layer.err', search_string)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove('oe_configure_layer.err')
+
+        # Check result
+        self.assertTrue(contains_error, 'Invalid config test -- Empty tile path does not exist')
+
+        # EXPECTED ERROR??? Set config files for invalid file path
+        if DEBUG:
+            print '\nTESTING INVALID FILE PATH2...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path2.xml')
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify error
+        if os.path.isfile('oe_configure_layer.err'):
+            search_string = 'No such file or directory'
+            contains_error = find_string('oe_configure_layer.err', search_string)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove('oe_configure_layer.err')
+
+        # Check result
+        self.assertTrue(contains_error, 'Invalid config test -- Environment file path does not exist')
+
+        # TORHT??? Set config files for invalid tilematrixset
+        if DEBUG:
+            print '\nTESTING INVALID TILEMATRIXSET...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
+        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.badtilematrixset_config)
+        run_command(cmd)
+
+        # Verify hash
+        with open(config['empty_tile'], 'r') as f:
+            tile_hash = testutils.get_file_hash(f)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove(config['empty_tile'])
+
+        # Check result
+        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+
+    def test_mrf_configuration(self):
+        # Set config files and reference hash for checking empty tile
+        if DEBUG:
+            print '\nTESTING MRF CONFIGURATION...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_mrf_configuration.xml')
+        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify hash
+        with open(config['empty_tile'], 'r') as f:
+            tile_hash = testutils.get_file_hash(f)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove(config['empty_tile'])
+
+        # Check result
+        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+
+    def test_mrf_header(self):
+        # Set config files and reference hash for checking empty tile
+        if DEBUG:
+            print '\nTESTING MRF HEADER...'
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_mrf_header.xml')
+        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify hash
+        with open(config['empty_tile'], 'r') as f:
+            tile_hash = testutils.get_file_hash(f)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove(config['empty_tile'])
+
+        # Check result
+        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+
+    def test_empty_tile_generation(self):
+        # Set config files and reference hash for checking empty tile
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
+        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify hash
+        with open(config['empty_tile'], 'r') as f:
+            tile_hash = testutils.get_file_hash(f)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove(config['empty_tile'])
+
+        # Check result
+        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+
+    def test_empty_tile_generation(self):
+        # Set config files and reference hash for checking empty tile
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
+        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Verify hash
+        with open(config['empty_tile'], 'r') as f:
+            tile_hash = testutils.get_file_hash(f)
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove(config['empty_tile'])
+
+        # Check result
+        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
 
     def tearDown(self):
         rmtree(self.testfiles_path)

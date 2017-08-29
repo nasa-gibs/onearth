@@ -197,7 +197,7 @@ class TestModOEMS(unittest.TestCase):
         
     def test_wms_get_capabilities_1_1_1(self):
         """
-        8. Request WMS GetCapabilities 1.1.1
+        8. FAIL!!! Request WMS GetCapabilities 1.1.1
         """
         ref_hash = '91d5f50860dc4324a805791191683588'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities'
@@ -209,7 +209,7 @@ class TestModOEMS(unittest.TestCase):
         
     def test_wms_get_capabilities_1_3_0(self):
         """
-        9. Request WMS GetCapabilities 1.3.0
+        9. FAIL!!! Request WMS GetCapabilities 1.3.0
         """
         ref_hash = 'dfbd4b79796c78db32df08eddc8ff14c'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities'
@@ -221,7 +221,7 @@ class TestModOEMS(unittest.TestCase):
         
     def test_wfs_get_capabilities_2_0_0(self):
         """
-        10. Request WFS GetCapabilities 2.0.0
+        10. FAIL!!! Request WFS GetCapabilities 2.0.0
         """
         ref_hash = '74541c28d6b94185c1139073b309dd29'
         req_url = 'http://localhost/onearth/test/wfs/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
@@ -378,7 +378,7 @@ class TestModOEMS(unittest.TestCase):
 
     def test_request_wfs_geojson(self):
         """
-        22. Request GeoJSON from vector source file via WFS
+        22. JSONDIFF!!! Request GeoJSON from vector source file via WFS
         """
         ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson'
@@ -402,7 +402,7 @@ class TestModOEMS(unittest.TestCase):
         
     def test_request_wfs_geojson_with_time(self):
         """
-        24. Request GeoJSON from vector source file with time via WFS
+        24. JSONDIFF!!! Request GeoJSON from vector source file with time via WFS
         """
         ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson&TIME=2016-03-05'

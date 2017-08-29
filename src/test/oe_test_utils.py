@@ -49,7 +49,6 @@ from lxml import etree
 import requests
 import sys
 
-
 def add_trailing_slash(directory_path):
     """
     Add trailing slash if one is not already present.
@@ -90,9 +89,12 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     if wait:
         process.wait()
     if not ignore_warnings:
+        output_err = open(cmd.split(' ')[0] + '.err', 'a')
         for error in process.stderr:
             if not ignore_warnings or "WARNING" not in error:
                 print error
+                output_err.write(error)
+        output_err.close
     return None
 
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
@@ -469,6 +471,31 @@ def check_apache_running():
     if not check.stdout.read():
         raise ValueError('Apache does not appear to be running.')
     return True
+
+
+def ordered_d(obj): 
+    """
+    Recursively sort any lists it finds (and convert dictionaries to lists of (key, value) pairs 
+    """
+    if isinstance(obj, dict):
+        return sorted((k, ordered_d(v)) for k, v in obj.items())
+    if isinstance(obj, list):
+        return sorted(ordered_d(x) for x in obj)
+    else:
+        return obj
+
+
+def check_dicts(d, ref_d):
+    """
+    Checks to see if dict d is equivalent to dict ref_d.
+    Arguments:
+        d -- dict to compare
+        ref_d -- reference dict being compared against
+    """
+    if ordered_d(ref_d) == ordered_d(d) :
+        return True
+    else:
+        return False
 
 
 def check_tile_request(url, ref_hash):
