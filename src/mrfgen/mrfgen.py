@@ -286,6 +286,11 @@ def check_abs_path(directory_path):
         Argument:
             directory_path -- path to check if absolute
     """
+    # Check if already cwd
+    if directory_path[:2] == './':
+        directory_path = directory_path[2:]
+    
+    # Convert relative path to absolute
     if directory_path[0] != '/':
         directory_path = os.getcwd() +'/' + directory_path
     
@@ -299,7 +304,11 @@ def add_trailing_slash(directory_path):
     """
     # Add trailing slash.
     if directory_path[-1] != '/':
-        directory_path=str().join([directory_path, '/'])
+        directory_path = str().join([directory_path, '/'])
+        
+    # Make sure there are no double slashes anywhere
+    directory_path = directory_path.replace('//', '/')
+    
     # Return directory_path with trailing slash.
     return directory_path
 
