@@ -834,7 +834,7 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertTrue(contains_error, 'Invalid config test -- Empty tile path does not exist')
 
-        # Set config files for invalid file path
+        # EXPECTED ERROR??? Set config files for invalid file path
         if DEBUG:
             print '\nTESTING INVALID FILE PATH2...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path2.xml')
@@ -869,7 +869,7 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertTrue(contains_error, 'Invalid config test -- Environment file path does not exist')
 
-        # Set config files for invalid tilematrixset
+        # TORHT??? Set config files for invalid tilematrixset
         if DEBUG:
             print '\nTESTING INVALID TILEMATRIXSET...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')

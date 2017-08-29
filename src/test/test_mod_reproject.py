@@ -308,21 +308,9 @@ class TestModReproject(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
 
-    def test_request_twms_rest_notime_jpg(self):
-        """
-        7B. Request current (no time) JPEG tile via TWMS REST
-        """
-        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
-        if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
-
     def test_request_twms_notime_png(self):
         """
-        6. Request current (no time) PNG tile via TWMS
+        8. Request current (no time) PNG tile via TWMS
         """
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
@@ -332,11 +320,23 @@ class TestModReproject(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + req_url)
 
+    def test_request_twms_notime_ppng(self):
+        """
+        9. Request current (no time) PPNG tile via TWMS
+        """
+        ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_ppng&amp;srs=EPSG:4326&amp;format=image%2Fppng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        if DEBUG:
+            print '\nTesting: Request current (no TIME) PPNG tile via TWMS'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'TWMS current PPNG request does not match what\'s expected. URL: ' + req_url)
+
     # REQUEST WITH DATE/TIME AND STATIC TESTS
 
     def test_request_wmts_date_from_year_layer(self):
         """
-        7. Request tile with date from "year" layer via WMTS
+        10. Request tile with date from "year" layer via WMTS
         """
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
