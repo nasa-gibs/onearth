@@ -834,20 +834,11 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertTrue(contains_error, 'Invalid config test -- Empty tile path does not exist')
 
-        # EXPECTED ERROR??? Set config files for invalid file path
+        # Set config files for invalid file path
         if DEBUG:
             print '\nTESTING INVALID FILE PATH2...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path2.xml')
         config = get_layer_config(layer_config, self.archive_config)
-
-        # Create paths for data and GC
-        make_dir_tree(config['wmts_gc_path'])
-        make_dir_tree(config['twms_gc_path'])
-        make_dir_tree(config['archive_location'])
-
-        # Copy the demo colormap
-        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
-        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
         # Run layer config tool
         cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
@@ -855,21 +846,16 @@ class TestLayerConfig(unittest.TestCase):
 
         # Verify error
         if os.path.isfile('oe_configure_layer.err'):
-            search_string = 'No such file or directory'
+            search_string = 'Cannot read environment configuration file'
             contains_error = find_string('oe_configure_layer.err', search_string)
 
         # Cleanup -- make sure to get rid of staging files
-        rmtree(config['wmts_gc_path'])
-        rmtree(config['wmts_staging_location'])
-        rmtree(config['twms_staging_location'])
-        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
-        rmtree(config['archive_location'])
         os.remove('oe_configure_layer.err')
 
         # Check result
         self.assertTrue(contains_error, 'Invalid config test -- Environment file path does not exist')
 
-        # TORHT??? Set config files for invalid tilematrixset
+        # Set config files for invalid tilematrixset
         if DEBUG:
             print '\nTESTING INVALID TILEMATRIXSET...'
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')

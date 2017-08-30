@@ -24,6 +24,7 @@ limitations under the License.
  <EnvironmentConfig>{testfile_dir}/conf/test_empty_environment.xml</EnvironmentConfig>
  <ArchiveLocation static="true" year="false" root="test">test_empty</ArchiveLocation>
  <Time>P1D</Time>
+ <HeaderFileName type="prefix">test_empty</HeaderFileName>
  <ColorMap>MODIS_Aqua_Aerosol-GIBS_colormap.xml</ColorMap>
   <Raster>
     <Size x="20480" y="10240" c="1"/>
