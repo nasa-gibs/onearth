@@ -44,8 +44,10 @@ import xml.dom.minidom
 from shutil import rmtree
 from optparse import OptionParser
 import datetime
+import json
+from xml.etree import cElementTree as ElementTree
 
-from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url
+from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts
 
 DEBUG = False
 
@@ -197,14 +199,29 @@ class TestModOEMS(unittest.TestCase):
         
     def test_wms_get_capabilities_1_1_1(self):
         """
-        8. FAIL!!! Request WMS GetCapabilities 1.1.1
+        8. Request WMS GetCapabilities 1.1.1
         """
         ref_hash = '91d5f50860dc4324a805791191683588'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WMS GetCapablities 1.1.1'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except ElementTree.ParseError:
+            xml_check = False
+        self.assertTrue(xml_check, 'WMS GetCapabilities 1.1.1 response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.1.1.1.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'WMS Get GetCapabilities 1.1.1 Request does not match what\'s expected. URL: ' + req_url)
         
     def test_wms_get_capabilities_1_3_0(self):
@@ -216,7 +233,22 @@ class TestModOEMS(unittest.TestCase):
         if DEBUG:
             print '\nTesting WMS GetCapablities 1.3.0'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except ElementTree.ParseError:
+            xml_check = False
+        self.assertTrue(xml_check, 'WMS GetCapabilities 1.3.0 response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.1.3.0.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'WMS Get GetCapabilities Request 1.3.0 does not match what\'s expected. URL: ' + req_url)
         
     def test_wfs_get_capabilities_2_0_0(self):
@@ -228,7 +260,22 @@ class TestModOEMS(unittest.TestCase):
         if DEBUG:
             print '\nTesting WFS GetCapablities 2.0.0'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except ElementTree.ParseError:
+            xml_check = False
+        self.assertTrue(xml_check, 'WMS GetCapabilities 2.0.0 response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.2.0.0.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'WFS Get GetCapabilities Request 2.0.0 does not match what\'s expected. URL: ' + req_url)
  
     def test_request_wms_layer_error(self):
@@ -378,14 +425,27 @@ class TestModOEMS(unittest.TestCase):
 
     def test_request_wfs_geojson(self):
         """
-        22. JSONDIFF!!! Request GeoJSON from vector source file via WFS
+        22. Request GeoJSON from vector source file via WFS
         """
         ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson'
         if DEBUG:
             print '\nTesting: Request GeoJSON from vector source file via WFS'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid JSON
+        try:
+            JSONdict = json.loads(response.read())
+            JSON_check = True
+        except Error:
+            JSON_check = False
+        self.assertTrue(JSON_check, 'WFS GeoJSON response is not a valid JSON file. URL: ' + req_url)
+
+        with open(os.path.join(os.getcwd(), 'mod_onearth_test_data/wfs_geojson.txt')) as JSONfile:
+            refJSONdict = json.load(JSONfile)
+
+        check_result = check_dicts(JSONdict, refJSONdict)
         self.assertTrue(check_result, 'WMS request GeoJSON from vector source file via WFS does not match what\'s expected. URL: ' + req_url)
         
     def test_request_wfs_csv(self):
@@ -402,14 +462,27 @@ class TestModOEMS(unittest.TestCase):
         
     def test_request_wfs_geojson_with_time(self):
         """
-        24. JSONDIFF!!! Request GeoJSON from vector source file with time via WFS
+        24. Request GeoJSON from vector source file with time via WFS
         """
         ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson&TIME=2016-03-05'
         if DEBUG:
             print '\nTesting: Request GeoJSON from vector source file with time via WFS'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid JSON
+        try:
+            JSONdict = json.loads(response.read())
+            JSON_check = True
+        except Error:
+            JSON_check = False
+        self.assertTrue(JSON_check, 'WFS with time GeoJSON response is not a valid JSON file. URL: ' + req_url)
+
+        with open(os.path.join(os.getcwd(), 'mod_onearth_test_data/wfs_geojson_time.txt')) as JSONfile:
+            refJSONdict = json.load(JSONfile)
+
+        check_result = check_dicts(JSONdict, refJSONdict)
         self.assertTrue(check_result, 'WMS request GeoJSON from vector source file with time via WFS does not match what\'s expected. URL: ' + req_url)
         
     def test_request_wfs_csv_with_time(self):

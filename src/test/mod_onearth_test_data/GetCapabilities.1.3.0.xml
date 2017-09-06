@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WMS_Capabilities version="1.3.0" xsi:schemaLocation="http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd
+ http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/sld_capabilities.xsd
+ http://mapserver.gis.umn.edu/mapserver http://localhost/wms/epsg4326/?service=WMS&amp;version=1.3.0&amp;request=GetSchemaExtension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wims" xmlns:ms="http://mapserver.gis.umn.edu/mapserver" xmlns:sld="http://www.opengis.net/sld">
+<!-- MapServer version 7.0.1 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=THREADS SUPPORTS=GEOS INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
+<Service>
+<Name>WMS</Name>
+<Title>NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)</Title>
+<Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services. These services are designed with the goal of advancing user interactions with EOSDIS' inter-disciplinary data through enhanced visual representation and discovery.</Abstract>
+<KeywordList>
+<Keyword>GIBS</Keyword>
+<Keyword>NASA</Keyword>
+<Keyword>WMS</Keyword>
+<Keyword>Earth</Keyword>
+</KeywordList>i
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/>
+<ContactInformation>
+<ContactPersonPrimary>
+<ContactPerson>GIBS User Support</ContactPerson>
+<ContactOrganization>GIBS User Support</ContactOrganization>
+</ContactPersonPrimary>
+<ContactPosition>GIBS User Support</ContactPosition>
+<ContactElectronicMailAddress>support@earthdata.nasa.gov</ContactElectronicMailAddress>
+</ContactInformation>
+<LayerLimit>5</LayerLimit>
+<MaxWidth>20000</MaxWidth>
+<MaxHeight>20000</MaxHeight>
+</Service>
+<Capability>
+<Request>
+<GetCapabilities>
+<Format>text/xml</Format>
+<DCPType>
+<HTTP>
+<Get>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/>
+</Get>
+<Post>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/>
+</Post>
+</HTTP>
+</DCPType>
+</GetCapabilities>
+<GetMap>
+<Format>image/png</Format>
+<Format>image/jpeg</Format>
+<Format>application/vnd.google-earth.kml.xml</Format>
+<Format>application/vnd.google-earth.kmz</Format>
+<Format>image/png; mode=8bit</Format>
+<Format>image/tiff</Format>
+<DCPType>
+<HTTP>
+<Get>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/>
+</Get>
+<Post>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/>
+</Post>
+</HTTP>
+</DCPType>
+</GetMap>
+</Request>
+<Exception>
+<Format>XML</Format>
+<Format>INIMAGE</Format>
+<Format>BLANK</Format>
+</Exception>
+<sld:UserDefinedSymbolization RemoteWCS="0" InlineFeature="0" RemoteWFS="0" UserStyle="1" UserLayer="0" SupportSLD="1"/>
+<Layer>
+<Name>NASA_GIBS_4326</Name>
+<Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services. These services are designed with the goal of advancing user interactions with EOSDIS' inter-disciplinary data through enhanced visual representation and discovery.</Abstract>
+<KeywordList>
+<Keyword>GIBS</Keyword>
+<Keyword>NASA</Keyword>
+<Keyword>WMS</Keyword>
+<Keyword>Earth</Keyword>
+</KeywordList>
+<CRS>EPSG:4326</CRS>
+<CRS>EPSG:3857</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>test_legacy_subdaily_jpg</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Dimension name="time" nearestValue="1" default="2012-02-29T14:00:00Z" units="ISO8601">2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Dimension>
+</Layer>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>test_weekly_jpg</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Dimension name="time" nearestValue="1" default="2012-02-29" units="ISO8601">2012-02-22/2012-02-29/P7D</Dimension>
+</Layer>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>test_nonyear_jpg</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Dimension name="time" nearestValue="1" default="2016-02-29" units="ISO8601">2016-05-01/2016-02-29/P1D</Dimension>
+</Layer>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>snap_test_3a</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Dimension name="time" nearestValue="1" default="2016-01-01" units="ISO8601">2015-01-01/2016-01-01/P1M</Dimension>
+</Layer>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>snap_test_3b</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Dimension name="time" nearestValue="1" default="2016-01-01" units="ISO8601">2015-01-01/2016-01-01/P3M</Dimension>
+</Layer>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>test_static_jpg</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+</Layer>
+<Layer cascaded="0" opaque="0" queryable="0">
+<Name>Terra_Orbit_Dsc_Dots</Name>
+<CRS>EPSG:4326</CRS>
+<EX_GeographicBoundingBox>
+<westBoundLongitude>-180</westBoundLongitude>
+<eastBoundLongitude>180</eastBoundLongitude>
+<southBoundLatitude>-90</southBoundLatitude>
+<northBoundLatitude>90</northBoundLatitude>
+</EX_GeographicBoundingBox>
+<BoundingBox maxy="180" maxx="90" miny="-180" minx="-90" CRS="EPSG:4326"/>
+<Dimension name="time" nearestValue="1" default="2016-03-05" units="ISO8601">2016-03-05/2016-03-05/P1D</Dimension>
+<Style>
+<Name>default</Name>
+<LegendURL height="35" width="113">
+<Format>image/png</Format>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?version=1.3.0&amp;service=WMS&amp;request=GetLegendGraphic&amp;sld_version=1.1.0&amp;layer=Terra_Orbit_Dsc_Dots&amp;format=image/png&amp;STYLE=default" xlink:type="simple"/>
+</LegendURL>
+</Style>
+</Layer>
+</Layer>
+</Capability>
+</WMS_Capabilities>
