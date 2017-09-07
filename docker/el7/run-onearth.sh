@@ -8,8 +8,9 @@ fi
 echo 'Starting Apache server'
 /usr/sbin/apachectl
 
-# Make sure that the Apache logs exist before tailing them
-touch /etc/httpd/logs/access.log /etc/httpd/logs/error.log
-
 # Tail the apache logs
-exec tail -qF /etc/httpd/logs/access.log /etc/httpd/logs/error.log
+exec tail -qF \
+  /etc/httpd/logs/access.log \
+  /etc/httpd/logs/error.log \
+  /etc/httpd/logs/access_log \
+  /etc/httpd/logs/error_log
