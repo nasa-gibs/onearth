@@ -1,5 +1,7 @@
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Note: Do not use this Dockerfile directly to create an image.  Instead, run
+# ./bin/build_el7_demo_docker_image.sh.  That script will set the correct FROM
+# image based on its arguments
+FROM onearth
 
 COPY rpms/*.rpm /rpms/
 RUN yum install -y /rpms/*.rpm && yum clean all

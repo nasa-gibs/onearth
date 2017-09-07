@@ -25,10 +25,12 @@ rm -f \
   tmp/docker/rpms/onearth-test-*.el7.centos.x86_64.rpm \
   tmp/docker/rpms/onearth-vectorgen-*.el7.centos.x86_64.rpm
 cp docker/el7/run-onearth.sh tmp/docker/run-onearth.sh
-cp docker/el7/Dockerfile tmp/docker/Dockerfile
+
+BASE_IMAGE=$(cat ./docker/el7/gibs-gdal-image.txt)
+echo "FROM ${BASE_IMAGE}" > tmp/docker/Dockerfile
+egrep -v '^FROM ' < docker/el7/Dockerfile >> tmp/docker/Dockerfile
 
 docker build \
-  --build-arg "BASE_IMAGE=$(cat ./docker/el7/gibs-gdal-image.txt)" \
   --no-cache \
   --tag "$TAG" \
   tmp/docker

@@ -19,10 +19,11 @@ fi
 rm -rf tmp/docker
 mkdir -p tmp/docker/rpms
 cp dist/onearth-demo-*.el7.centos.noarch.rpm tmp/docker/rpms/
-cp docker/el7-demo/Dockerfile tmp/docker/Dockerfile
+
+echo "FROM ${BASE_IMAGE}" > tmp/docker/Dockerfile
+egrep -v '^FROM ' < docker/el7-demo/Dockerfile >> tmp/docker/Dockerfile
 
 docker build \
-  --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
   --no-cache \
   --tag "$TAG" \
   tmp/docker
