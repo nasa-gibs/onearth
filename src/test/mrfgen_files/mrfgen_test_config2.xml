@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mrfgen_configuration>
- <date_of_data>20140722</date_of_data>
+ <date_of_data>20170905</date_of_data>
  <parameter_name>MORCR143ARDY</parameter_name>
  <input_dir>mrfgen_files/MORCR143ARDY</input_dir>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
@@ -12,5 +12,5 @@
  <mrf_compression_type>JPEG</mrf_compression_type>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <extents>-4194304,-4194304,4194304,4194304</extents>
- <target_x>4096</target_x>
+ <target_x>2048</target_x>
 </mrfgen_configuration>

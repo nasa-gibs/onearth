@@ -184,27 +184,11 @@ class TestMRFGeneration_polar(unittest.TestCase):
         # Copy empty output tile
         shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
 
-        self.output_mrf = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.mrf")
-        self.output_pjg = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.pjg")
-        self.output_idx = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.idx")
-        self.output_img = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.jpg")
-        self.compare_img = os.path.join(testdata_path, "test_comp2.png")
-
-        #pdb.set_trace()
-        # download tiles
-        for r in range(0,8):
-            for c in range(0,8):
-                try:
-                    image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%03d/Arctic_r%02dc%02d.%s%03d.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
-                    world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%03d/Arctic_r%02dc%02d.%s%03d.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
-                    if DEBUG:
-                        print "Downloading", image_url
-                    run_command('wget -nc -T 60 -P ' + input_dir + ' ' + image_url, ignore_warnings=True, show_output=DEBUG)
-                    if DEBUG:
-                        print "Downloading", world_url
-                    run_command('wget -nc -T 60 -P ' + input_dir + ' ' + world_url, ignore_warnings=True, show_output=DEBUG)
-                except Exception,e:
-                    print str(e)
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.mrf")
+        self.output_pjg = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.pjg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.idx")
+        self.output_img = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.jpg")
+        self.compare_img = os.path.join(testdata_path, "test_comp2.jpg")
             
         # generate MRF
         run_command("mrfgen -c " + test_config)
@@ -232,8 +216,8 @@ class TestMRFGeneration_polar(unittest.TestCase):
         
         if DEBUG:
             print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
-        self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
-        self.assertEqual(dataset.RasterYSize, 4096, "Size does not match")
+        self.assertEqual(dataset.RasterXSize, 2048, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
@@ -243,13 +227,13 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.assertEqual(geotransform[3], 4194304, "Origin does not match")
         if DEBUG:
             print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
-        self.assertEqual(int(geotransform[1]), 2048, "Pixel size does not match")
-        self.assertEqual(int(geotransform[5]), -2048, "Pixel size does not match")
+        self.assertEqual(int(geotransform[1]), 4096, "Pixel size does not match")
+        self.assertEqual(int(geotransform[5]), -4096, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
             print 'Overviews:', band.GetOverviewCount()
-        self.assertEqual(band.GetOverviewCount(), 3, "Overview count does not match")
+        self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
         
         # Convert and compare MRF
         mrf = gdal.Open(self.output_mrf)
@@ -263,9 +247,9 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
-#         filesize = os.path.getsize(self.output_img)
-#         print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
-#         self.assertEqual(filesize, 3891603, "Output image does not match")
+        filesize = os.path.getsize(self.output_img)
+        print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
+        self.assertEqual(filesize, 758400, "Output image does not match")
         
         img = None
         mrf = None
