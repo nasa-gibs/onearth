@@ -385,9 +385,9 @@ class TestMRFGeneration_OBPG(unittest.TestCase):
         # download tiles
         # Note that there are weird hang-up issues running these processes in shell mode.
         #pdb.set_trace()
-        quiet = '' if DEBUG else '-q'
-        cmd = 'wget -r ' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
-        run_command(cmd, show_output=DEBUG)
+#         quiet = '' if DEBUG else '-q'
+#         cmd = 'wget -r ' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' https://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
+#         run_command(cmd, show_output=DEBUG)
 
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
@@ -618,7 +618,7 @@ class TestMRFGeneration_OBPG_webmerc(unittest.TestCase):
 
         # download tiles
         #pdb.set_trace()
-        run_command('wget -r --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -q -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/', show_output=DEBUG)
+#         run_command('wget -r --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -q -T 60 -P ' + self.input_dir + ' https://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/', show_output=DEBUG)
             
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
@@ -830,8 +830,8 @@ if __name__ == '__main__':
     available_tests = {'mrf_generation': TestMRFGeneration,
                        'polar_mrf': TestMRFGeneration_polar,
                        'mercator_mrf': TestMRFGeneration_mercator,
-                       'obpg': TestMRFGeneration_OBPG,
-                       'webmerc': TestMRFGeneration_OBPG_webmerc,
+                       'geo_granule': TestMRFGeneration_OBPG,
+                       'mercator_granule': TestMRFGeneration_OBPG_webmerc,
                        'tiled_z': TestMRFGeneration_tiled_z
                        }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(available_tests.keys())

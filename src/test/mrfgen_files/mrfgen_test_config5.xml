@@ -16,9 +16,9 @@ limitations under the License.
  <date_of_data>20151202</date_of_data>
  <parameter_name>OBPG_webmerc</parameter_name>
  <input_files>
-  <file>mrfgen_files/obpg/A2015336075500.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
-  <file>mrfgen_files/obpg/A2015336080000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
-  <file>mrfgen_files/obpg/A2015336080500.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
+  <file>mrfgen_files/obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
+  <file>mrfgen_files/obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
+  <file>mrfgen_files/obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
  </input_files>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
