@@ -184,27 +184,11 @@ class TestMRFGeneration_polar(unittest.TestCase):
         # Copy empty output tile
         shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
 
-        self.output_mrf = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.mrf")
-        self.output_pjg = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.pjg")
-        self.output_idx = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.idx")
-        self.output_img = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2014203_.jpg")
-        self.compare_img = os.path.join(testdata_path, "test_comp2.png")
-
-        #pdb.set_trace()
-        # download tiles
-        for r in range(0,8):
-            for c in range(0,8):
-                try:
-                    image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%03d/Arctic_r%02dc%02d.%s%03d.aqua.250m.jpg" % (r,c,year,doy,r,c,year,doy)
-                    world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/subsets/Arctic_r%02dc%02d/%s%03d/Arctic_r%02dc%02d.%s%03d.aqua.250m.jgw" % (r,c,year,doy,r,c,year,doy)
-                    if DEBUG:
-                        print "Downloading", image_url
-                    run_command('wget -nc -T 60 -P ' + input_dir + ' ' + image_url, ignore_warnings=True, show_output=DEBUG)
-                    if DEBUG:
-                        print "Downloading", world_url
-                    run_command('wget -nc -T 60 -P ' + input_dir + ' ' + world_url, ignore_warnings=True, show_output=DEBUG)
-                except Exception,e:
-                    print str(e)
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.mrf")
+        self.output_pjg = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.pjg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.idx")
+        self.output_img = os.path.join(self.staging_area, "output_dir/MORCR143ARDY2017248_.jpg")
+        self.compare_img = os.path.join(testdata_path, "test_comp2.jpg")
             
         # generate MRF
         run_command("mrfgen -c " + test_config)
@@ -232,8 +216,8 @@ class TestMRFGeneration_polar(unittest.TestCase):
         
         if DEBUG:
             print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
-        self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
-        self.assertEqual(dataset.RasterYSize, 4096, "Size does not match")
+        self.assertEqual(dataset.RasterXSize, 2048, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
@@ -243,13 +227,13 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.assertEqual(geotransform[3], 4194304, "Origin does not match")
         if DEBUG:
             print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
-        self.assertEqual(int(geotransform[1]), 2048, "Pixel size does not match")
-        self.assertEqual(int(geotransform[5]), -2048, "Pixel size does not match")
+        self.assertEqual(int(geotransform[1]), 4096, "Pixel size does not match")
+        self.assertEqual(int(geotransform[5]), -4096, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
             print 'Overviews:', band.GetOverviewCount()
-        self.assertEqual(band.GetOverviewCount(), 3, "Overview count does not match")
+        self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
         
         # Convert and compare MRF
         mrf = gdal.Open(self.output_mrf)
@@ -263,9 +247,9 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
-#         filesize = os.path.getsize(self.output_img)
-#         print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
-#         self.assertEqual(filesize, 3891603, "Output image does not match")
+        filesize = os.path.getsize(self.output_img)
+        print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
+        self.assertEqual(filesize, 758400, "Output image does not match")
         
         img = None
         mrf = None
@@ -293,7 +277,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         self.output_pjg = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.pjg")
         self.output_idx = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.idx")
         self.output_img = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.jpg")
-        self.compare_img = os.path.join(testdata_path, "test_comp3.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp3.jpg")
             
         # generate MRF
         #pdb.set_trace()
@@ -348,7 +332,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         
         # Convert and compare MRF
         mrf = gdal.Open(self.output_mrf)
-        driver = gdal.GetDriverByName("PNG")       
+        driver = gdal.GetDriverByName("JPEG")       
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
@@ -401,9 +385,9 @@ class TestMRFGeneration_OBPG(unittest.TestCase):
         # download tiles
         # Note that there are weird hang-up issues running these processes in shell mode.
         #pdb.set_trace()
-        quiet = '' if DEBUG else '-q'
-        cmd = 'wget -r ' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
-        run_command(cmd, show_output=DEBUG)
+#         quiet = '' if DEBUG else '-q'
+#         cmd = 'wget -r ' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' https://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
+#         run_command(cmd, show_output=DEBUG)
 
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
@@ -634,7 +618,7 @@ class TestMRFGeneration_OBPG_webmerc(unittest.TestCase):
 
         # download tiles
         #pdb.set_trace()
-        run_command('wget -r --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -q -T 60 -P ' + self.input_dir + ' http://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/', show_output=DEBUG)
+#         run_command('wget -r --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -q -T 60 -P ' + self.input_dir + ' https://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/', show_output=DEBUG)
             
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
@@ -757,10 +741,10 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
 
         #pdb.set_trace()
         # Get sample input tiles (if they haven't been created yet)
-        if not os.path.isfile(os.path.join(testdata_path, 'MORCR143LLDY\MODIS_Terra_CorrectedReflectance_TrueColor_0.tif')):
-            run_command('gdal_translate -of GTiff -projwin -90 45 -81 36 \'<GDAL_WMS><Service name="TMS"><ServerUrl>http://map1.vis.earthdata.nasa.gov/wmts-geo/MODIS_Terra_CorrectedReflectance_TrueColor/default/2016-01-24/EPSG4326_250m/${z}/${y}/${x}.jpg</ServerUrl></Service><DataWindow><UpperLeftX>-180.0</UpperLeftX><UpperLeftY>90</UpperLeftY><LowerRightX>396.0</LowerRightX><LowerRightY>-198</LowerRightY><TileLevel>8</TileLevel><TileCountX>2</TileCountX><TileCountY>1</TileCountY><YOrigin>top</YOrigin></DataWindow><Projection>EPSG:4326</Projection><BlockSizeX>512</BlockSizeX><BlockSizeY>512</BlockSizeY><BandsCount>3</BandsCount></GDAL_WMS>\' ' + os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.tif'), show_output=DEBUG)
-        if not os.path.isfile(os.path.join(testdata_path, 'MORCR143LLDY\MODIS_Terra_CorrectedReflectance_TrueColor_1.tif')):
-            run_command('gdal_translate -of GTiff -projwin -81 45 -72 36 \'<GDAL_WMS><Service name="TMS"><ServerUrl>http://map1.vis.earthdata.nasa.gov/wmts-geo/MODIS_Terra_CorrectedReflectance_TrueColor/default/2016-01-24/EPSG4326_250m/${z}/${y}/${x}.jpg</ServerUrl></Service><DataWindow><UpperLeftX>-180.0</UpperLeftX><UpperLeftY>90</UpperLeftY><LowerRightX>396.0</LowerRightX><LowerRightY>-198</LowerRightY><TileLevel>8</TileLevel><TileCountX>2</TileCountX><TileCountY>1</TileCountY><YOrigin>top</YOrigin></DataWindow><Projection>EPSG:4326</Projection><BlockSizeX>512</BlockSizeX><BlockSizeY>512</BlockSizeY><BandsCount>3</BandsCount></GDAL_WMS>\' ' + os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.tif'), show_output=DEBUG)
+        if not os.path.isfile(os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.jpg')):
+            run_command('gdal_translate -of JPEG -co WORLDFILE=YES -outsize 512 512 -projwin -90 45 -81 36 \'<GDAL_WMS><Service name="TMS"><ServerUrl>http://map1.vis.earthdata.nasa.gov/wmts-geo/MODIS_Terra_CorrectedReflectance_TrueColor/default/2016-01-24/EPSG4326_250m/${z}/${y}/${x}.jpg</ServerUrl></Service><DataWindow><UpperLeftX>-180.0</UpperLeftX><UpperLeftY>90</UpperLeftY><LowerRightX>396.0</LowerRightX><LowerRightY>-198</LowerRightY><TileLevel>8</TileLevel><TileCountX>2</TileCountX><TileCountY>1</TileCountY><YOrigin>top</YOrigin></DataWindow><Projection>EPSG:4326</Projection><BlockSizeX>512</BlockSizeX><BlockSizeY>512</BlockSizeY><BandsCount>3</BandsCount></GDAL_WMS>\' ' + os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.jpg'), show_output=DEBUG)
+        if not os.path.isfile(os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.jpg')):
+            run_command('gdal_translate -of JPEG -co WORLDFILE=YES -outsize 512 512 -projwin -81 45 -72 36 \'<GDAL_WMS><Service name="TMS"><ServerUrl>http://map1.vis.earthdata.nasa.gov/wmts-geo/MODIS_Terra_CorrectedReflectance_TrueColor/default/2016-01-24/EPSG4326_250m/${z}/${y}/${x}.jpg</ServerUrl></Service><DataWindow><UpperLeftX>-180.0</UpperLeftX><UpperLeftY>90</UpperLeftY><LowerRightX>396.0</LowerRightX><LowerRightY>-198</LowerRightY><TileLevel>8</TileLevel><TileCountX>2</TileCountX><TileCountY>1</TileCountY><YOrigin>top</YOrigin></DataWindow><Projection>EPSG:4326</Projection><BlockSizeX>512</BlockSizeX><BlockSizeY>512</BlockSizeY><BandsCount>3</BandsCount></GDAL_WMS>\' ' + os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.jpg'), show_output=DEBUG)
 
         #generate MRF
         run_command("mrfgen -c " + test_config, show_output=DEBUG)
@@ -846,8 +830,8 @@ if __name__ == '__main__':
     available_tests = {'mrf_generation': TestMRFGeneration,
                        'polar_mrf': TestMRFGeneration_polar,
                        'mercator_mrf': TestMRFGeneration_mercator,
-                       'obpg': TestMRFGeneration_OBPG,
-                       'webmerc': TestMRFGeneration_OBPG_webmerc,
+                       'geo_granule': TestMRFGeneration_OBPG,
+                       'mercator_granule': TestMRFGeneration_OBPG_webmerc,
                        'tiled_z': TestMRFGeneration_tiled_z
                        }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(available_tests.keys())

@@ -1109,6 +1109,8 @@ def generate_empty_tile(colormap, output, width, height):
     print "Color Map: " + colormap
     print "Width: " + str(width)
     print "Height: " + str(height)
+
+    empty_size = 0
     
     try:
         cmd = 'oe_generate_empty_tile.py -c '+colormap+' -o ' + output + ' -x ' + str(width) + ' -y ' + str(height)

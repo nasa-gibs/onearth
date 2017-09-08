@@ -48,7 +48,90 @@ import mapbox_vector_tile
 from lxml import etree
 import requests
 import sys
+# cElementTree deprecated in python 3.3
+from xml.etree import cElementTree as ElementTree
 
+class XmlListConfig(list):
+    def __init__(self, aList):
+        for element in aList:
+            if element:
+                # treat like dict
+                if len(element) == 1 or element[0].tag != element[1].tag:
+                    self.append(XmlDictConfig(element))
+                # treat like list
+                elif element[0].tag == element[1].tag:
+                    self.append(XmlListConfig(element))
+            elif element.text:
+                text = element.text.strip()
+                if text:
+                    self.append(text)
+
+class XmlDictConfig(dict):
+    '''
+    Example usage:
+
+    >>> tree = ElementTree.parse('your_file.xml')
+    >>> root = tree.getroot()
+    >>> xmldict = XmlDictConfig(root)
+
+    Or, if you want to use an XML string:
+
+    >>> root = ElementTree.XML(xml_string)
+    >>> xmldict = XmlDictConfig(root)
+
+    And then use xmldict for what it is... a dict.
+    '''
+    def __init__(self, parent_element):
+        childrenNames = [child.tag for child in parent_element.getchildren()]
+
+        if parent_element.items():
+            self.update(dict(parent_element.items()))
+        for element in parent_element:
+            if element:
+                # treat like dict - we assume that if the first two tags
+                # in a series are different, then they are all different.
+                if len(element) == 1 or element[0].tag != element[1].tag:
+                    aDict = XmlDictConfig(element)
+                # treat like list - we assume that if the first two tags
+                # in a series are the same, then the rest are the same.
+                else:
+                    # here, we put the list in dictionary; the key is the
+                    # tag name the list elements all share in common, and
+                    # the value is the list itself
+                    aDict = {element[0].tag: XmlListConfig(element)}
+                # if the tag has attributes, add those to the dict
+                if element.items():
+                    aDict.update(dict(element.items()))
+
+                if childrenNames.count(element.tag) > 1:
+                    try:
+                        currentValue = self[element.tag]
+                        currentValue.append(aDict)
+                        self.update({element.tag: currentValue})
+                    except: #the first of its kind, an empty list must be created
+                        self.update({element.tag: [aDict]}) #aDict is written in [], i.e. it will be a list
+
+                else:
+                    self.update({element.tag: aDict})
+            # this assumes that if you've got an attribute in a tag,
+            # you won't be having any text. This may or may not be a
+            # good idea -- time will tell. It works for the way we are
+            # currently doing XML configuration files...
+            elif element.items():
+                self.update({element.tag: dict(element.items())})
+                #self[element.tag].update({"__Content__":element.text})
+            # finally, if there are no child tags and no attributes, extract
+            # the text
+            else:
+                if childrenNames.count(element.tag) > 1:
+                    try:
+                        currentValue = self[element.tag]
+                        currentValue.append(element.text)
+                        self.update({element.tag: currentValue})
+                    except: #the first of its kind, an empty list must be created
+                        self.update({element.tag: [element.text]}) # text is written in [], i.e. it will be a list
+
+                #self.update({element.tag: element.text})
 
 def add_trailing_slash(directory_path):
     """
@@ -90,9 +173,12 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     if wait:
         process.wait()
     if not ignore_warnings:
+        output_err = open(cmd.split(' ')[0] + '.err', 'a')
         for error in process.stderr:
             if not ignore_warnings or "WARNING" not in error:
                 print error
+                output_err.write(error)
+        output_err.close
     return None
 
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
@@ -331,34 +417,24 @@ def get_layer_config(filepath, archive_config):
     config = {}
 
     # Get the layer, environment, and archive config DOMs
-    with open(filepath, "r") as lc:
-        config_dom = xml.dom.minidom.parse(lc)
-        env_config = config_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
-    with open(env_config, "r") as env:
-        env_dom = xml.dom.minidom.parse(env)
-    with open(archive_config, "r") as archive:
-        archive_dom = xml.dom.minidom.parse(archive)
+    try:
+        with open(filepath, "r") as lc:
+            config_dom = xml.dom.minidom.parse(lc)
+            env_config = config_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
+    except IOError:
+        print "Cannot read file " + filepath
+        return config
+    try:
+        with open(archive_config, "r") as archive:
+            archive_dom = xml.dom.minidom.parse(archive)
+    except IOError:
+        print "Cannot read file " + archive_config
+        return config 
 
     # Get archive root path and the archive location
     archive_root = config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value
     config['archive_basepath'] = next(loc.getElementsByTagName('Location')[0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
     config['archive_location'] = os.path.join(config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
-
-    # Add everything we need from the environment config
-    staging_locations = env_dom.getElementsByTagName('StagingLocation')
-    config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
-    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
-    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
-    config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
-    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
-    try:
-        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[0].firstChild.nodeValue
-        config['mapfile_location_basename'] = env_dom.getElementsByTagName('MapfileLocation')[0].attributes["basename"].value
-        config['mapfile_staging_location'] = env_dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
-    except (IndexError, KeyError):
-        pass
 
     # Add everything we need from the layer config
     config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
@@ -380,6 +456,28 @@ def get_layer_config(filepath, archive_config):
         config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
         config['vector_style_file'] = config_dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
     except IndexError:
+        pass
+    
+    try:
+        with open(env_config, "r") as env:
+            env_dom = xml.dom.minidom.parse(env)
+    except IOError:
+        print "Cannot read file " + env_config
+        return config
+    # Add everything we need from the environment config
+    staging_locations = env_dom.getElementsByTagName('StagingLocation')
+    config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
+    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
+    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
+    config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
+    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
+    try:
+        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[0].firstChild.nodeValue
+        config['mapfile_location_basename'] = env_dom.getElementsByTagName('MapfileLocation')[0].attributes["basename"].value
+        config['mapfile_staging_location'] = env_dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
+    except (IndexError, KeyError):
         pass
 
     return config
@@ -469,6 +567,31 @@ def check_apache_running():
     if not check.stdout.read():
         raise ValueError('Apache does not appear to be running.')
     return True
+
+
+def ordered_d(obj): 
+    """
+    Recursively sort any lists it finds (and convert dictionaries to lists of (key, value) pairs 
+    """
+    if isinstance(obj, dict):
+        return sorted((k, ordered_d(v)) for k, v in obj.items())
+    if isinstance(obj, list):
+        return sorted(ordered_d(x) for x in obj)
+    else:
+        return obj
+
+
+def check_dicts(d, ref_d):
+    """
+    Checks to see if dict d is equivalent to dict ref_d.
+    Arguments:
+        d -- dict to compare
+        ref_d -- reference dict being compared against
+    """
+    if ordered_d(ref_d) == ordered_d(d) :
+        return True
+    else:
+        return False
 
 
 def check_tile_request(url, ref_hash):
