@@ -277,7 +277,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         self.output_pjg = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.pjg")
         self.output_idx = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.idx")
         self.output_img = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.jpg")
-        self.compare_img = os.path.join(testdata_path, "test_comp3.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp3.jpg")
             
         # generate MRF
         #pdb.set_trace()
@@ -332,7 +332,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         
         # Convert and compare MRF
         mrf = gdal.Open(self.output_mrf)
-        driver = gdal.GetDriverByName("PNG")       
+        driver = gdal.GetDriverByName("JPEG")       
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
