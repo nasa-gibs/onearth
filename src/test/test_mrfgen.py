@@ -249,7 +249,7 @@ class TestMRFGeneration_polar(unittest.TestCase):
         
         filesize = os.path.getsize(self.output_img)
         print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
-        self.assertEqual(filesize, 758400, "Output image does not match")
+        self.assertEqual(filesize, 758628, "Output image does not match")
         
         img = None
         mrf = None
