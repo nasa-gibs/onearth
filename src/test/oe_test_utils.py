@@ -48,6 +48,7 @@ import mapbox_vector_tile
 from lxml import etree
 import requests
 import sys
+import platform
 # cElementTree deprecated in python 3.3
 from xml.etree import cElementTree as ElementTree
 
@@ -149,7 +150,10 @@ def add_trailing_slash(directory_path):
 def restart_apache():
     try:
         check_apache_running()
-        apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        if "el7" in platform.release():
+            apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        else:
+            apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     except ValueError:
         apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     (stdout, stderr) = apache.communicate()
