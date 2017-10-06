@@ -4,7 +4,7 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **Identifier** - A unique identifier used as the WMTS Layer/Identifier and TWMS TiledGroup/Name values in the service GetCapabilities document.  Ideally the identifier does not use any special characters as it is included in all WMTS and TWMS http requests.
 * **Title** - A human readable title used as the WMTS Layer/Title and TWMS TiledGroup/Title values in the service GetCapabilities document.
 * **FileNamePrefix** - An internal "short name" used as the prefix for MRF index, image, and metadata file names.
-* **HeaderFileName (optional)** - A file path to an existing MRF metadata file for the layer. If provided, this will also be used as the filename in the staging directories. If this file is not provided, see below for the additional tags required to complete the layer configuration.
+* **HeaderFileName** - A file path to an existing MRF metadata file for the layer. If the MRF metadata does not exist, use the "prefix" attribute to specify the filename to be used in the staging directories. When using "prefix", see below for the additional tags required to complete the layer configuration.
 * **DefaultDataFileName (optional)** - The file name of the MRF data file (e.g., \*.pjg, \*.ppg, \*.ptf, \*.pvt, \*.lrc) that will be used as the "default" for tile requests. 
 * **DefaultIndexFileName (optional)** - The file name of the MRF index file (i.e., \*.idx file) that will be used as the "default" for tile requests. 
 * **DefaultZIndexFileName (optional)** - The file name of the MRF Z index file (i.e., \*.zdb file) that will be used as the "default" for tile requests.

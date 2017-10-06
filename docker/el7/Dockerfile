@@ -4,8 +4,8 @@
 FROM gibs-gdal
 
 COPY rpms/onearth-*.el7.*.rpm /rpms/
+COPY run-onearth.sh /usr/local/bin/run-onearth.sh
 
-RUN yum install -y /rpms/onearth-*.el7.*.rpm
+RUN yum install -y /rpms/onearth-*.el7.*.rpm && yum clean all
 
-COPY run-onearth.sh /run-onearth.sh
-CMD ["/run-onearth.sh"]
+CMD ["/usr/local/bin/run-onearth.sh"]

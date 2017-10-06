@@ -66,6 +66,20 @@ MAP
 
   WEB
     METADATA
+      "wms_title"               "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:3031)"
+      "wms_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
+      "wms_onlineresource"      "http://gibs.earthdata.nasa.gov/wms/epsg3031/"
+      "wms_keywordlist"			"GIBS,NASA,WMS,Earth"
+      "wms_contactperson"		"GIBS User Support"
+      "wms_contactorganization"	"GIBS User Support"
+      "wms_contactposition"		"GIBS User Support"
+      "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
+      "wms_enable_request"      "GetMap GetCapabilities GetStyles"
+      "wms_srs"                 "EPSG:3031"
+      "wms_connectiontimeout"   "180"
+      "wms_layerlimit"			"5"
+      # Uncomment the line below to enable WFS
+      # "wfs_enable_request" "*"
       "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:3031)"
       "wfs_onlineresource" 		"http://gibs.earthdata.nasa.gov/wfs/mapserv"
       "wfs_keywordlist"			"GIBS,NASA,WFS,Earth"
@@ -79,19 +93,6 @@ MAP
       "wfs_contactelectronicmailaddress"	"support@earthdata.nasa.gov"     
       "wfs_srs"            		"EPSG:3031"
       "wfs_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
-      "wfs_enable_request" 		"*"
-      "wms_title"               "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:3031)"
-      "wms_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
-      "wms_onlineresource"      "http://gibs.earthdata.nasa.gov/wms/epsg3031/"
-      "wms_keywordlist"			"GIBS,NASA,WMS,Earth"
-      "wms_contactperson"		"GIBS User Support"
-      "wms_contactorganization"	"GIBS User Support"
-      "wms_contactposition"		"GIBS User Support"
-      "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
-      "wms_enable_request"      "GetMap GetCapabilities GetStyles"
-      "wms_srs"                 "EPSG:3031"
-      "wms_connectiontimeout"   "180"
-      "wms_layerlimit"			"5"
     END
     VALIDATION
       "default_TIME"            "TTTTTTT"
