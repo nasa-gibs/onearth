@@ -419,36 +419,26 @@ def get_layer_config(filepath, archive_config):
         archive config -- path to the archive config file
     """
     config = {}
-    
+
     # Get the layer, environment, and archive config DOMs
-    with open(filepath, "r") as lc:
-        config_dom = xml.dom.minidom.parse(lc)
-        env_config = config_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
-    with open(env_config, "r") as env:
-        env_dom = xml.dom.minidom.parse(env)
-    with open(archive_config, "r") as archive:
-        archive_dom = xml.dom.minidom.parse(archive)
+    try:
+        with open(filepath, "r") as lc:
+            config_dom = xml.dom.minidom.parse(lc)
+            env_config = config_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
+    except IOError:
+        print "Cannot read file " + filepath
+        return config
+    try:
+        with open(archive_config, "r") as archive:
+            archive_dom = xml.dom.minidom.parse(archive)
+    except IOError:
+        print "Cannot read file " + archive_config
+        return config 
 
     # Get archive root path and the archive location
     archive_root = config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value
     config['archive_basepath'] = next(loc.getElementsByTagName('Location')[0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
     config['archive_location'] = os.path.join(config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
-
-    # Add everything we need from the environment config
-    staging_locations = env_dom.getElementsByTagName('StagingLocation')
-    config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
-    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
-    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
-    config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
-    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
-    try:
-        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[0].firstChild.nodeValue
-        config['mapfile_location_basename'] = env_dom.getElementsByTagName('MapfileLocation')[0].attributes["basename"].value
-        config['mapfile_staging_location'] = env_dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
-    except (IndexError, KeyError):
-        pass
 
     # Add everything we need from the layer config
     config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
@@ -470,6 +460,28 @@ def get_layer_config(filepath, archive_config):
         config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
         config['vector_style_file'] = config_dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
     except IndexError:
+        pass
+    
+    try:
+        with open(env_config, "r") as env:
+            env_dom = xml.dom.minidom.parse(env)
+    except IOError:
+        print "Cannot read file " + env_config
+        return config
+    # Add everything we need from the environment config
+    staging_locations = env_dom.getElementsByTagName('StagingLocation')
+    config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
+    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
+    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
+    config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
+    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
+    try:
+        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[0].firstChild.nodeValue
+        config['mapfile_location_basename'] = env_dom.getElementsByTagName('MapfileLocation')[0].attributes["basename"].value
+        config['mapfile_staging_location'] = env_dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
+    except (IndexError, KeyError):
         pass
 
     return config
@@ -596,8 +608,6 @@ def check_tile_request(url, ref_hash):
     """
     check_apache_running()
     tile = get_url(url)
-    ##print get_file_hash(tile)
-    ##print ref_hash
     hash_check = get_file_hash(tile) == ref_hash
     return hash_check
 
