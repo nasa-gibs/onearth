@@ -44,7 +44,7 @@ from oe_utils import *
 from parse_apache_configs import parse_config
 from pyparsing import ParseException
 
-versionNumber = '1.3.1'
+versionNumber = '1.3.2'
 
 # List of allowed directives
 allowed_apache_directives = ["WMTSWrapperRole", "WMTSWrapperEnableTime", "WMTSWrapperMimeType", "Reproject_RegExp", "Reproject_ConfigurationFiles", "tWMS_RegExp", "tWMS_ConfigurationFile"]

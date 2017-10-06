@@ -94,7 +94,7 @@ import math
 from overtiffpacker import pack
 from decimal import *
 
-versionNumber = '1.3.1'
+versionNumber = '1.3.2'
 basename = None
 
 #-------------------------------------------------------------------------------
