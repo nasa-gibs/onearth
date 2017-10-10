@@ -2414,8 +2414,17 @@ static int mrf_handler(request_rec *r)
       }
       if (!this_data) { // No empty tile provided, let it pass
     	  miss_count--;
-    	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Record not present %s",r->args);
-    	  return DECLINED;
+    	  if ((apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf;type=mapbox-vector") == 0) || (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0)) {
+    		  // return default message with vector tiles
+    		  static char empty_json[]="{\"message\":\"Tile does not exist\"}";
+    		  ap_set_content_type(r,"application/json; charset=utf-8");
+    		  ap_rputs(empty_json, r);
+    		  r->status = 404;
+    		  return HTTP_NOT_FOUND;
+    	  } else {
+    		  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Record not present %s",r->args);
+        	  return DECLINED;
+    	  }
       }
     }
   }
