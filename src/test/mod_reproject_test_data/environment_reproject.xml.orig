@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EnvironmentConfiguration>
+    <GetCapabilitiesLocation service="wmts">{cache_path}/wmts_endpoint/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">{cache_path}/twms_endpoint/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>{cache_path}/twms_endpoint/.lib/</GetTileServiceLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">{cache_path}</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">{cache_path}</CacheLocation>
+    <StagingLocation service="wmts">/usr/share/onearth/layer_config/wmts/epsg3857/</StagingLocation>
+    <StagingLocation service="twms">/usr/share/onearth/layer_config/twms/epsg3857/</StagingLocation>
+    <ServiceURL service="wmts">http://localhost/reproject/test/wmts/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/reproject/test/twms/</ServiceURL>
+    <LegendLocation>/usr/share/onearth/demo/legends/</LegendLocation>
+    <LegendURL>http://localhost/legends/</LegendURL>
+    <ColorMapLocation>/usr/share/onearth/demo/colormaps/</ColorMapLocation>
+    <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
+    <MapfileLocation basename="epsg3857">/usr/share/onearth/demo/mapserver/</MapfileLocation>
+    <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG3857/</MapfileStagingLocation>
+    <MapfileConfigLocation basename="EPSG3857">/etc/onearth/config/mapserver/</MapfileConfigLocation>
+    <ReprojectEndpoint service="wmts">/reproject/test/wmts</ReprojectEndpoint>
+    <ReprojectEndpoint service="twms">/reproject/test/twms</ReprojectEndpoint>
+    <ReprojectApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">{cache_path}/</ReprojectApacheConfigLocation>
+    <ReprojectApacheConfigLocation service="twms" basename="onearth-reproject-twms">{cache_path}/</ReprojectApacheConfigLocation>
+    <ReprojectLayerConfigLocation service="wmts">{cache_path}/wmts_endpoint/</ReprojectLayerConfigLocation>
+    <ReprojectLayerConfigLocation service="twms">{cache_path}/twms_endpoint/</ReprojectLayerConfigLocation>    
+</EnvironmentConfiguration>
