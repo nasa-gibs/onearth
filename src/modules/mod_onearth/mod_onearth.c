@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.3.1
+ * Version 1.3.2
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -970,7 +970,7 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
       else if (ap_find_token(cfg->p,cache->prefix,"lerc"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/lerc");
-      else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf"))
+      else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf;type=mapbox-vector"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf;type=mapbox-vector");
       else if (ap_find_token(cfg->p,cache->prefix,"vnd.mapbox-vector-tile"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/vnd.mapbox-vector-tile");
@@ -1678,6 +1678,9 @@ char *order_args(request_rec *r) {
 	//use size of request args to prevent memory errors
 	max_chars = strlen(r->args) + 1;
 
+	// valid formats
+	char * formats [] = { "image%2Fpng", "image%2Fjpeg", "image%2Ftiff", "image%2Flerc", "application%2Fx-protobuf;type=mapbox-vector"};
+
 	// common args
 	char *service = apr_pcalloc(r->pool,max_chars);
 	char *request = apr_pcalloc(r->pool,max_chars);
@@ -1712,12 +1715,6 @@ char *order_args(request_rec *r) {
 	} else if (ap_strcasecmp_match(format, "application/x-protobuf;type=mapbox-vector") == 0) {
 		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
 		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
-	} else if (ap_strcasecmp_match(format, "application/x-protobuf") == 0) {
-		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
-		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
-	} else if (ap_strcasecmp_match(format, "application%2Fx-protobuf") == 0) {
-		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
-		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
 	} else if (ap_strcasecmp_match(format, "application/vnd.mapbox-vector-tile") == 0) {
 		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
 		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
@@ -1725,6 +1722,22 @@ char *order_args(request_rec *r) {
 		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
 		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
 	}
+
+	// make sure there are no extra characters in format
+	if (format[0] != NULL) {
+		int formats_len = sizeof(formats)/sizeof(formats[0]);
+		int f;
+		int f_match = 0;
+		for(f = 0; f < formats_len; ++f) {
+			if(!strcmp(formats[f], format)) {
+				f_match++;
+			}
+		}
+		if (f_match == 0) {
+			wmts_add_error(r,400,"InvalidParameterValue","FORMAT", "FORMAT is invalid");
+		}
+	}
+
 	// handle colons
 	if (ap_strchr(time, ':') != 0) {
 		int i; i= 0;
@@ -1805,7 +1818,7 @@ char *order_args(request_rec *r) {
 		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,"GetMap",layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
 
 	} else if (ap_strcasecmp_match(request, "GetCapabilities") == 0) { // getCapabilities
-		args = apr_psprintf(r->pool, "request=GetCapabilities");
+		args = apr_psprintf(r->pool, "request=GetCapabilities&=WMTS"); // Add WMTS marker to bypass unnecessary check down the chain
 	} else if (ap_strcasecmp_match(request, "GetTileService") == 0) { // getTileService
 		args = apr_psprintf(r->pool, "request=GetTileService");
 	} else if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // GetLegendGraphic is not supported

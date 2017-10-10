@@ -64,7 +64,7 @@ MIME_TO_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
-versionNumber = '1.3.1'
+versionNumber = '1.3.2'
 
 def sort_tilematrixset(tilematrixset):
     return sorted([elem for elem in tilematrixset.findall('{*}TileMatrix')], key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator')))
@@ -410,7 +410,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_cfg.write('SourcePostfix {0}\n'.format(dest_file_ext))
                     dest_cfg.write('MimeType {0}\n'.format(src_format))
                     dest_cfg.write('Oversample On\n')
-                    dest_cfg.write('ExtraLevels 1\n')
+                    dest_cfg.write('ExtraLevels 3\n')
                     dest_cfg.seek(0)
                     hasher.update(dest_cfg.read())
                     dest_cfg.write('ETagSeed {0}\n'.format(hasher.hexdigest()))

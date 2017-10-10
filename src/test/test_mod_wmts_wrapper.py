@@ -32,7 +32,7 @@
 # limitations under the License.
 
 """
-Test suite to make sure that mod_reproject is properly handling WMTS errors.
+Test suite to make sure that mod_wmts_wrapper is properly handling WMTS errors.
 """
 
 import os
@@ -228,7 +228,7 @@ if __name__ == '__main__':
 
     # --start_server option runs the test Apache setup, then quits.
     if options.start_server:
-        TestModWmtsWrapperErrorHandling.setUpClass(options.conf_location)
+        TestModWmtsWrapperErrorHandling.setUpClass()
         sys.exit('Apache has been loaded with the test configuration. No tests run.')
 
     # Have to delete the arguments as they confuse unittest

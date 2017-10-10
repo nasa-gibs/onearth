@@ -4,15 +4,8 @@
 FROM gibs-gdal
 
 COPY rpms/onearth-*.el7.*.rpm /rpms/
+COPY run-onearth.sh /usr/local/bin/run-onearth.sh
 
 RUN yum install -y /rpms/onearth-*.el7.*.rpm && yum clean all
 
-# Clean up config files that are going to be overwritten
-RUN rm -rf \
-  /run/httpd/* \
-  /tmp/httpd* \
-  /etc/httpd/conf.d/onearth-demo.conf \
-  /var/www/html/*
-
-COPY run-onearth.sh /run-onearth.sh
-CMD ["/run-onearth.sh"]
+CMD ["/usr/local/bin/run-onearth.sh"]

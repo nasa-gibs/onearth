@@ -80,7 +80,7 @@ from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
 
-versionNumber = '1.3.1'
+versionNumber = '1.3.2'
 current_conf = None
 
 class WMTSEndPoint:
@@ -1109,6 +1109,8 @@ def generate_empty_tile(colormap, output, width, height):
     print "Color Map: " + colormap
     print "Width: " + str(width)
     print "Height: " + str(height)
+
+    empty_size = 0
     
     try:
         cmd = 'oe_generate_empty_tile.py -c '+colormap+' -o ' + output + ' -x ' + str(width) + ' -y ' + str(height)

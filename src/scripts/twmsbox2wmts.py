@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2014, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -36,36 +36,36 @@
 
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2014
 
 import string
 from optparse import OptionParser
+from decimal import Decimal
 
-units = 111319.490793274 # meters/degree
-tilesize = 512 # pixels
-pixelsize = 0.00028 # meters
+# Default EPSG:4236 values
+units = Decimal(111319.490793274) # meters/degree
+tilesize = Decimal(512) # pixels
+pixelsize = Decimal(0.00028) # meters
+top_left_minx = Decimal(-180)
+top_left_maxy = Decimal(90)
 
-def twmsbox2wmts(request_bbox):
+def twmsbox2wmts(request_bbox, epsg):
     """
-    Returns WMTS equivalent TILECOL and TILEROW as string.  Assumes top left is -180 90.
+    Returns WMTS equivalent TILECOL and TILEROW as string.
     Arguments:
         request_bbox -- The requested TWMS bounding box to be translated (e.g., '-81,36,-72,45').
+        epsg -- The EPSG code for projection
     """
 
     request_bbox = request_bbox.split(",")
     
     # parse request_bbox to individual values
-    request_minx = float(request_bbox[0])
-    request_miny = float(request_bbox[1])
-    request_maxx = float(request_bbox[2])
-    request_maxy = float(request_bbox[3])
+    request_minx = Decimal(request_bbox[0])
+    request_miny = Decimal(request_bbox[1])
+    request_maxx = Decimal(request_bbox[2])
+    request_maxy = Decimal(request_bbox[3])
     
     x_size = request_maxx - request_minx
     y_size = request_maxy - request_miny
-    
-    # set top_left values
-    top_left_minx = -180
-    top_left_maxy = 90
     
     # calculate additional top_left values for reference
     top_left_maxx = top_left_minx + x_size
@@ -75,8 +75,8 @@ def twmsbox2wmts(request_bbox):
     print "Request BBOX:",str(request_minx)+","+str(request_miny)+","+str(request_maxx)+","+str(request_maxy)
     
     # calculate col and row
-    col = ((request_minx-top_left_minx)/x_size)
-    row = ((request_miny-top_left_miny)/y_size)
+    col = round((request_minx-top_left_minx)/x_size)
+    row = round((request_miny-top_left_miny)/y_size)
     
     # calculate scale denominator for reference
     scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
@@ -85,7 +85,7 @@ def twmsbox2wmts(request_bbox):
     return "TILECOL=" + str(abs(int(col))) + "\n" + "TILEROW="+str(abs(int(row)))
 
 
-versionNumber = '1.3.1'
+versionNumber = '1.3.2'
 usageText = 'twmsbox2wmts.py --bbox [bbox]'
 
 # Define command line options and args.
@@ -93,10 +93,52 @@ parser=OptionParser(usage=usageText, version=versionNumber)
 parser.add_option('-b', '--bbox',
                   action='store', type='string', dest='request_bbox',
                   help='The requested TWMS bounding box to be translated (e.g., "-81,36,-72,45").')
+parser.add_option('-e', '--epsg',
+                  action='store', type='string', dest='epsg',
+                  default='4326',
+                  help='The EPSG code of the projection')
+parser.add_option('-T', '--tilesize',
+                  action='store', type='string', dest='tilesize',
+                  help='Override the tilesize value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
 if not options.request_bbox:
     parser.error('bbox is required')
 
-print (twmsbox2wmts(options.request_bbox))
+if options.epsg == "4326":
+    print "Using EPSG:4326"
+    units = Decimal(111319.490793274)
+    tilesize = Decimal(512)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-180)
+    top_left_maxy = Decimal(90)
+elif options.epsg == "3857":
+    print "Using EPSG:3857"
+    units = Decimal(1)
+    tilesize = Decimal(256)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-20037508.34278925)
+    top_left_maxy = Decimal(20037508.34278925)
+elif options.epsg == "3031":
+    print "Using EPSG:3031"
+    units = Decimal(1)
+    tilesize = Decimal(512)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-4194304)
+    top_left_maxy = Decimal(4194304)
+elif options.epsg == "3413":
+    print "Using EPSG:3413"
+    units = Decimal(1)
+    tilesize = Decimal(512)
+    pixelsize = Decimal(0.00028)
+    top_left_minx = Decimal(-4194304)
+    top_left_maxy = Decimal(4194304)
+else:
+    parser.error('Projection is not supported')
+    
+if options.tilesize:
+    print "Using tilesize: " + str(options.tilesize)
+    tilesize = Decimal(options.tilesize)
+
+print (twmsbox2wmts(options.request_bbox, options.epsg))

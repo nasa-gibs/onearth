@@ -17,8 +17,8 @@ limitations under the License.
  <time_of_data>000000</time_of_data>
  <parameter_name>MORCR143LLDY</parameter_name>
  <input_files>
-  <file>mrfgen_files/MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.tif</file>
-  <file>mrfgen_files/MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.tif</file>
+  <file>mrfgen_files/MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.jpg</file>
+  <file>mrfgen_files/MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.jpg</file>
  </input_files>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
