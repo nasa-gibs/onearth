@@ -773,7 +773,7 @@ class TestModReproject(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
@@ -812,7 +812,7 @@ class TestModReproject(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'GetTileService response is not a valid XML file. URL: ' + req_url)
 
@@ -1028,7 +1028,7 @@ class TestModReproject(unittest.TestCase):
             try:
                 XMLroot = ElementTree.XML(response.read())
                 xml_check = True
-            except ElementTree.ParseError:
+            except:
                 xml_check = False
             self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
 
