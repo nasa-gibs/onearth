@@ -59,12 +59,30 @@ class TestModReproject(unittest.TestCase):
     def setUpClass(self):
         # Get the path of the test data -- we assume that the script is in the parent dir of the data dir
         oedata_path = os.path.join(os.getcwd(), 'mod_onearth_test_data')
-        testdata_path = os.path.join(os.getcwd(), 'mod_reproject_test_data')
+        layer_config_path = os.path.join(os.getcwd(), 'layer_config_files')
+        self.testdata_path = os.path.join(os.getcwd(), 'mod_reproject_test_data')
         wmts_configs = ('wmts_cache_configs', 'wmts_cache_staging', 'test_imagery/cache_all_wmts.config')
         twms_configs = ('twms_cache_configs', 'twms_cache_staging', 'test_imagery/cache_all_twms.config')
         self.image_files_path = os.path.join(oedata_path, 'test_imagery')
         self.test_oe_config = os.path.join(oedata_path, 'oe_test.conf')
-        self.test_apache_config = os.path.join(testdata_path, 'reproject_test.conf')
+        self.test_apache_config = os.path.join(self.testdata_path, 'reproject_test.conf')
+        
+        # Get the path of the test data -- we assume that the script is in layer_config_files
+        config_template_path = os.path.join(layer_config_path, 'config_templates')
+
+        # This is that path that will be created to hold all our dummy files
+        self.testfiles_path = os.path.join(os.getcwd(), 'mod_reproject_test_artifacts')
+        
+        # Make dir for the test config XML files and text-replace the templates with the proper location
+        make_dir_tree(os.path.join(self.testfiles_path, 'conf'))
+        for file in [f for f in os.listdir(config_template_path) if os.path.isfile(os.path.join(config_template_path, f))]:
+            file_text_replace(os.path.join(config_template_path, file), os.path.join(self.testfiles_path, 'conf/' + file),
+                              '{testfile_dir}', self.testfiles_path)
+
+        # Set the location of the archive XML config file used by all tests
+        self.archive_config = os.path.join(self.testfiles_path, 'conf/archive.xml')
+        self.projection_config = os.path.join(self.testfiles_path, 'conf/projection.xml')
+        self.tilematrixset_config = os.path.join(self.testfiles_path, 'conf/tilematrixsets.xml')
         
         for template_dir, staging_dir, cache_config in (wmts_configs, twms_configs):
             # Make staging cache files dir
@@ -89,22 +107,22 @@ class TestModReproject(unittest.TestCase):
         restart_apache()
 
         # Set reproject conf for Apache config (reproject_test.conf)
-        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)),                           '{cache_path}', testdata_path)
+        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)), '{cache_path}', self.testdata_path)
 
         # Update configuration for mod_reproject
         # remove .cgi
-        if os.path.isfile(os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi')):
-            move(os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi'), os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi.bak'))
-        #if os.path.isfile(os.path.join(testdata_path, 'twms_endpoint/twms.cgi')):
-            #move(os.path.join(testdata_path, 'twms_endpoint/twms.cgi'), os.path.join(testdata_path, 'twms_endpoint/twms.cgi.bak'))
+        if os.path.isfile(os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi')):
+            move(os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi'), os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi.bak'))
+        #if os.path.isfile(os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi')):
+            #move(os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi'), os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi.bak'))
 
         # Set reprojection layer
-        file_text_replace(os.path.join(testdata_path, 'layer_configuration_file_reproject.xml'), '/etc/onearth/config/layers/layer_configuration_file_reproject.xml', '{cache_path}', testdata_path)
-        #file_text_replace(os.path.join(testdata_path, 'environment_reproject.xml.orig'), os.path.join(testdata_path, 'environment_reproject.xml.oe'), '{cache_path}', oedata_path)
-        file_text_replace(os.path.join(testdata_path, 'environment_reproject.xml.orig'), os.path.join(testdata_path, 'environment_reproject.xml'), '{cache_path}', testdata_path)
+        file_text_replace(os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml.orig'), os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), '{cache_path}', self.testdata_path)
+        file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.orig'), os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), '{cache_path}', self.testdata_path)
+        file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), os.path.join(self.testdata_path, 'environment_reproject.xml'), '{testfile_dir}', self.testfiles_path)
 
         # Run oe_config_layer to make the cache config files
-        cmd = 'oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --lcdir=/etc/onearth/config --skip_empty_tiles --generate_links'
+        cmd = 'oe_configure_layer --create_mapfile --skip_empty_tiles --generate_links -l{0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         restart_apache()
@@ -1126,10 +1144,13 @@ class TestModReproject(unittest.TestCase):
         # Delete Apache test config
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_oe_config)))
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
-        restart_apache()
         os.remove(os.path.join(self.image_files_path, 'cache_all_wmts.config'))
         os.remove(os.path.join(self.image_files_path, 'cache_all_twms.config'))
-        ##move(os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi.bak'), os.path.join(oedata_path, 'wmts_endpoint/wmts.cgi'))
+        os.remove(os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'))
+        os.remove(os.path.join(self.testdata_path, 'environment_reproject.xml'))
+        os.remove(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'))
+        rmtree(self.testfiles_path)
+        restart_apache()
 
 
 if __name__ == '__main__':
