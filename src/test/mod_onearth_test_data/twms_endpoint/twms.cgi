@@ -44,10 +44,13 @@ then
   if [[ $QUERY_STRING == *jpeg* ]]
   then
     echo -e "Content-type: image/jpeg\n"
-    cat Blank_RGB_512.jpg
+    cat black.jpg
+  elif [[ $QUERY_STRING == *x-protobuf* ]]
+  then
+  	echo -e "Content-type: application/x-protobuf\n"
   else
     echo -e "Content-type: image/png\n"
-    cat Blank_RGBA_512.png
+    cat transparent.png
   fi
   exit
 else
@@ -55,8 +58,7 @@ else
   if [[ $QUERY_STRING == *GetCapabilities* ]]
   then
     echo -e "Content-type: text/xml\n"
-#    cat getCapabilities.xml
-    IFS= ct <.lib/getCapabilities.xml
+    cat .lib/getCapabilities.xml
     exit
   else
     # Don't believe this works as the file is located in .lib
