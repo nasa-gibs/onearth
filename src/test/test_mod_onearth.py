@@ -1051,10 +1051,10 @@ class TestModOnEarth(unittest.TestCase):
                 print '\nTesting WTMS REST Error Invalid Parameters'
                 print req_url
 
-                try:
-                    response = urllib2.urlopen(req_url)
-                except urllib2.HTTPError as e:
-                    response = e
+            try:
+                response = urllib2.urlopen(req_url)
+            except urllib2.HTTPError as e:
+                response = e
 
             # Check if the response is valid XML
             try:
