@@ -45,7 +45,7 @@ from shutil import rmtree
 from optparse import OptionParser
 import datetime
 from xml.etree import cElementTree as ElementTree
-
+import urllib2
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
 
 DEBUG = False
@@ -1028,19 +1028,19 @@ class TestModOnEarth(unittest.TestCase):
             # Bad LAYER value
             'http://localhost/onearth/test/wmts/bad_layer_value/default/default/EPSG4326_16km/0/0/0.jpeg',
             # Bad STYLE value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/bad_value/default/EPSG4326_16km/0/0/0.jpeg',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/bad_value/EPSG4326_16km/0/0/0.jpeg',
             # Bad FORMAT value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/0/0.fake',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/0/0.png',
             # Bad TILEMATRIXSET value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/fake_tilematrixset/0/0/0.jpeg',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/fake_tilematrixset/0/0/0.jpeg',
             # Bad (non-positive integer) TILEMATRIX value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/-20/0/0.jpeg',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/-20/0/0.jpeg',
             # Bad (non-positive integer) TILEROW value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/-20/0.jpeg',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/-20/0.jpeg',
             # Bad (non-positive integer) TILECOL value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/0/-20.jpeg',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/0/-20.jpeg',
             # Invalid TILEMATRIX value
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/20/0/0.jpeg',
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/20/0/0.jpeg',
             # Invalid TIME format
             'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-290/EPSG4326_16km/0/0/0.jpeg'
         )
@@ -1049,8 +1049,12 @@ class TestModOnEarth(unittest.TestCase):
                 #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             if DEBUG:
                 print '\nTesting WTMS REST Error Invalid Parameters'
+                print req_url
 
-            response = get_url(req_url)
+                try:
+                    response = urllib2.urlopen(req_url)
+                except urllib2.HTTPError as e:
+                    response = e
 
             # Check if the response is valid XML
             try:
@@ -1060,8 +1064,10 @@ class TestModOnEarth(unittest.TestCase):
                 xml_check = False
             self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
 
-            exception = XMLroot.find('exceptionCode').text
-            print exception
+            try:
+                exception = XMLroot.find('exceptionCode').text
+            except AttributeError:
+                exception = ''
             check_str = exception.find('InvalidParameterValue')
             error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
             self.assertTrue(check_str, error)
@@ -1091,7 +1097,7 @@ class TestModOnEarth(unittest.TestCase):
         empty_urls = (  # Date before range
             'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-01-01/EPSG4326_16km/0/0/0.jpeg',
             # Date after range
-            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-03-01/EPSG4326_16km/0/0/0.jpeg'
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-03-07/EPSG4326_16km/0/0/0.jpeg'
         )
         for url in empty_urls:
             if DEBUG:
@@ -1101,7 +1107,7 @@ class TestModOnEarth(unittest.TestCase):
 
         # Test if unknown parameter is ignored
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/0.jpeg/five'
+        req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/0/five.jpeg'
         if DEBUG:
             print 'Using URL: {0}, expecting bad parameter will be ignored'
         check_result = check_tile_request(req_url, ref_hash)
