@@ -44,8 +44,9 @@ import xml.dom.minidom
 from shutil import move, rmtree
 from optparse import OptionParser
 import datetime
+from xml.etree import cElementTree as ElementTree
 
-from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, check_valid_mvt
+from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
 
 DEBUG = False
 
@@ -58,12 +59,30 @@ class TestModReproject(unittest.TestCase):
     def setUpClass(self):
         # Get the path of the test data -- we assume that the script is in the parent dir of the data dir
         oedata_path = os.path.join(os.getcwd(), 'mod_onearth_test_data')
-        testdata_path = os.path.join(os.getcwd(), 'mod_reproject_test_data')
+        layer_config_path = os.path.join(os.getcwd(), 'layer_config_files')
+        self.testdata_path = os.path.join(os.getcwd(), 'mod_reproject_test_data')
         wmts_configs = ('wmts_cache_configs', 'wmts_cache_staging', 'test_imagery/cache_all_wmts.config')
         twms_configs = ('twms_cache_configs', 'twms_cache_staging', 'test_imagery/cache_all_twms.config')
         self.image_files_path = os.path.join(oedata_path, 'test_imagery')
         self.test_oe_config = os.path.join(oedata_path, 'oe_test.conf')
-        self.test_apache_config = os.path.join(testdata_path, 'reproject_test.conf')
+        self.test_apache_config = os.path.join(self.testdata_path, 'reproject_test.conf')
+        
+        # Get the path of the test data -- we assume that the script is in layer_config_files
+        config_template_path = os.path.join(layer_config_path, 'config_templates')
+
+        # This is that path that will be created to hold all our dummy files
+        self.testfiles_path = os.path.join(os.getcwd(), 'mod_reproject_test_artifacts')
+        
+        # Make dir for the test config XML files and text-replace the templates with the proper location
+        make_dir_tree(os.path.join(self.testfiles_path, 'conf'))
+        for file in [f for f in os.listdir(config_template_path) if os.path.isfile(os.path.join(config_template_path, f))]:
+            file_text_replace(os.path.join(config_template_path, file), os.path.join(self.testfiles_path, 'conf/' + file),
+                              '{testfile_dir}', self.testfiles_path)
+
+        # Set the location of the archive XML config file used by all tests
+        self.archive_config = os.path.join(self.testfiles_path, 'conf/archive.xml')
+        self.projection_config = os.path.join(self.testfiles_path, 'conf/projection.xml')
+        self.tilematrixset_config = os.path.join(self.testfiles_path, 'conf/tilematrixsets.xml')
         
         for template_dir, staging_dir, cache_config in (wmts_configs, twms_configs):
             # Make staging cache files dir
@@ -88,22 +107,22 @@ class TestModReproject(unittest.TestCase):
         restart_apache()
 
         # Set reproject conf for Apache config (reproject_test.conf)
-        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)),                           '{cache_path}', testdata_path)
+        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)), '{cache_path}', self.testdata_path)
 
         # Update configuration for mod_reproject
         # remove .cgi
-        if os.path.isfile(os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi')):
-            move(os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi'), os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi.bak'))
-        #if os.path.isfile(os.path.join(testdata_path, 'twms_endpoint/twms.cgi')):
-            #move(os.path.join(testdata_path, 'twms_endpoint/twms.cgi'), os.path.join(testdata_path, 'twms_endpoint/twms.cgi.bak'))
+        if os.path.isfile(os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi')):
+            move(os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi'), os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi.bak'))
+        #if os.path.isfile(os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi')):
+            #move(os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi'), os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi.bak'))
 
         # Set reprojection layer
-        file_text_replace(os.path.join(testdata_path, 'layer_configuration_file_reproject.xml'), '/etc/onearth/config/layers/layer_configuration_file_reproject.xml', '{cache_path}', testdata_path)
-        #file_text_replace(os.path.join(testdata_path, 'environment_reproject.xml.orig'), os.path.join(testdata_path, 'environment_reproject.xml.oe'), '{cache_path}', oedata_path)
-        file_text_replace(os.path.join(testdata_path, 'environment_reproject.xml.orig'), os.path.join(testdata_path, 'environment_reproject.xml'), '{cache_path}', testdata_path)
+        file_text_replace(os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml.orig'), os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), '{cache_path}', self.testdata_path)
+        file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.orig'), os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), '{cache_path}', self.testdata_path)
+        file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), os.path.join(self.testdata_path, 'environment_reproject.xml'), '{testfile_dir}', self.testfiles_path)
 
         # Run oe_config_layer to make the cache config files
-        cmd = 'oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --lcdir=/etc/onearth/config --skip_empty_tiles --generate_links'
+        cmd = 'oe_configure_layer --create_mapfile --skip_empty_tiles --generate_links -l{0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         restart_apache()
@@ -754,7 +773,7 @@ class TestModReproject(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
@@ -793,11 +812,11 @@ class TestModReproject(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'GetTileService response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetTileService.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/GetTileService.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -965,8 +984,9 @@ class TestModReproject(unittest.TestCase):
             param_list = list(params)
             param_list.pop(i)
             req_url = 'http://localhost/reproject/test/wmts/' + '/'.join(param_list)
-            response_code = 400
-            response_value = 'MissingParameterValue'
+            response_code = 404
+            #response_value = 'MissingParameterValue'
+            response_value = 'Not Found'
             if DEBUG:
                 print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             check_code = check_response_code(req_url, response_code, response_value)
@@ -997,11 +1017,30 @@ class TestModReproject(unittest.TestCase):
             'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-290/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         )
         for req_url in invalid_parameter_urls:
+            #if DEBUG:
+                #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
+                print '\nTesting WTMS REST Error Invalid Parameters'
+
+            response = get_url(req_url)
+
+            # Check if the response is valid XML
+            try:
+                XMLroot = ElementTree.XML(response.read())
+                xml_check = True
+            except:
+                xml_check = False
+            self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
+
+            exception = XMLroot.find('exceptionCode').text
+            print exception
+            check_str = exception.find('InvalidParameterValue')
+            error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
+            self.assertTrue(check_str, error)
+
+            #check_code = check_response_code(req_url, response_code, response_value)
+            #error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+            #self.assertTrue(check_code, error)
 
         # TileOutOfRange tests
         response_code = 400
@@ -1045,7 +1084,7 @@ class TestModReproject(unittest.TestCase):
         28. TWMS requests
         """
         # MissingParameterValue test
-#request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TME=2012-02-29
+#request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29
         params = ('layers=test_weekly_jpg', 'srs=EPSG:3857', 'format=image%2Fjpeg', 'styles=', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
         if DEBUG:
             print '\nTesting TWMS Error Handling'
@@ -1105,10 +1144,13 @@ class TestModReproject(unittest.TestCase):
         # Delete Apache test config
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_oe_config)))
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
-        restart_apache()
         os.remove(os.path.join(self.image_files_path, 'cache_all_wmts.config'))
         os.remove(os.path.join(self.image_files_path, 'cache_all_twms.config'))
-        ##move(os.path.join(testdata_path, 'wmts_endpoint/wmts.cgi.bak'), os.path.join(oedata_path, 'wmts_endpoint/wmts.cgi'))
+        os.remove(os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'))
+        os.remove(os.path.join(self.testdata_path, 'environment_reproject.xml'))
+        os.remove(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'))
+        rmtree(self.testfiles_path)
+        restart_apache()
 
 
 if __name__ == '__main__':

@@ -1,0 +1,867 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Capabilities xmlns="http://www.opengis.net/wmts/1.0"
+    xmlns:ows="http://www.opengis.net/ows/1.1"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:gml="http://www.opengis.net/gml"
+    xsi:schemaLocation="http://www.opengis.net/wmts/1.0
+    http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
+    version="1.0.0">
+    <ows:ServiceIdentification>
+        <ows:Title xml:lang="en">NASA Global Imagery Browse Services for EOSDIS</ows:Title>
+        <ows:Abstract xml:lang="en">
+            Near real time imagery from multiple NASA instruments
+        </ows:Abstract>
+        <ows:Keywords>
+            <ows:Keyword>World</ows:Keyword>
+            <ows:Keyword>Global</ows:Keyword>
+        </ows:Keywords>
+        <ows:ServiceType>OGC WMTS</ows:ServiceType>
+        <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+        <ows:Fees>none</ows:Fees>
+        <ows:AccessConstraints>none</ows:AccessConstraints>
+    </ows:ServiceIdentification>
+    <ows:ServiceProvider>
+        <ows:ProviderName>National Aeronautics and Space Administration</ows:ProviderName>
+        <ows:ProviderSite xlink:href="http://earthdata.nasa.gov/"/>
+        <ows:ServiceContact>
+            <ows:IndividualName></ows:IndividualName>
+            <ows:PositionName></ows:PositionName>
+            <ows:ContactInfo>
+                <ows:Address>
+                    <ows:DeliveryPoint></ows:DeliveryPoint>
+                    <ows:City></ows:City>
+                    <ows:AdministrativeArea></ows:AdministrativeArea>
+                    <ows:PostalCode></ows:PostalCode>
+                    <ows:Country></ows:Country>
+                    <ows:ElectronicMailAddress></ows:ElectronicMailAddress>
+                </ows:Address>
+            </ows:ContactInfo>
+        </ows:ServiceContact>
+    </ows:ServiceProvider>
+    <ows:OperationsMetadata>
+        <ows:Operation name="GetCapabilities">
+            <ows:DCP>
+                <ows:HTTP>
+                    <ows:Get xlink:href="http://localhost/onearth/test/wmts/1.0.0/WMTSCapabilities.xml">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>RESTful</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                    <ows:Get xlink:href="http://localhost/onearth/test/wmts/wmts.cgi?">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>KVP</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                </ows:HTTP>
+            </ows:DCP>
+        </ows:Operation>
+        <ows:Operation name="GetTile">
+            <ows:DCP>
+                <ows:HTTP>
+                    <ows:Get xlink:href="http://localhost/onearth/test/wmts/">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>RESTful</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                    <ows:Get xlink:href="http://localhost/onearth/test/wmts/wmts.cgi?">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>KVP</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                </ows:HTTP>
+            </ows:DCP>
+        </ows:Operation>
+    </ows:OperationsMetadata>
+    <Contents>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth MVT Tile Test</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>mvt_test</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+         </Style>
+         <Format>application/x-protobuf</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-01-01</Default>
+             <Current>false</Current>
+             <Value>2012-01-01/2012-01-01/P1D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="application/x-protobuf" resourceType="tile" template="http://localhost/onearth/test/wmts/mvt_test/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.pbf"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 1a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_1a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-12-31</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2016-12-31/P1D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_1a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 2a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_2a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2015-01-31</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2015-01-10/P1D</Value>
+             <Value>2015-01-12/2015-01-31/P1D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_2a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-01-01</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2016-01-01/P1M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3b</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3b</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-01-01</Default>
+             <Current>false</Current>
+             <Value>2015-01-01/2016-01-01/P3M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3c</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3c</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2016-01-01</Default>
+             <Current>false</Current>
+             <Value>1990-01-01/2016-01-01/P1Y</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3c/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 3d</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_3d</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-03-11</Default>
+             <Current>false</Current>
+             <Value>2010-01-01/2012-03-11/P8D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_3d/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 4a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_4a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2000-12-01</Default>
+             <Current>false</Current>
+             <Value>2000-01-01/2000-06-01/P1M</Value>
+             <Value>2000-07-03/2000-07-03/P1M</Value>
+             <Value>2000-08-01/2000-12-01/P1M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_4a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 4b</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_4b</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2002-12-27</Default>
+             <Current>false</Current>
+             <Value>2001-01-01/2001-12-27/P8D</Value>
+             <Value>2002-01-01/2002-12-27/P8D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_4b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 5a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_5a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2011-12-01</Default>
+             <Current>false</Current>
+             <Value>2002-12-01/2011-12-01/P1Y</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_5a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 6a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_6a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-03-11</Default>
+             <Current>false</Current>
+             <Value>2012-01-01/2012-03-11/P10D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_6a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario Year Boundary</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_year_boundary</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2000-09-03</Default>
+             <Current>false</Current>
+             <Value>2000-09-03/2000-09-03/P144D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_year_boundary/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">Blue Marble Demo Imagery - Daily PNG</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>test_daily_png</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/png</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-02-29</Default>
+             <Current>false</Current>
+             <Value>2012-02-29/2012-02-29/P1D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/png" resourceType="tile" template="http://localhost/onearth/test/wmts/test_daily_png/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>test_legacy_subdaily_jpg</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-02-29T14:00:00Z</Default>
+             <Current>false</Current>
+             <Value>2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/test_legacy_subdaily_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>test_nonyear_jpg</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-02-29</Default>
+             <Current>false</Current>
+             <Value>2012-02-29/2012-02-29/P1D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/test_nonyear_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>test_static_jpg</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/test_static_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>test_weekly_jpg</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-02-29</Default>
+             <Current>false</Current>
+             <Value>2012-02-22/2012-02-29/P7D</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/test_weekly_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <Layer>
+         <ows:Title xml:lang="en">Blue Marble Z-Index Test Imagery</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>test_zindex_jpg</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2012-02-29T16:00:00Z</Default>
+             <Current>false</Current>
+             <Value>2012-02-29T12:00:00Z/2012-02-29T16:00:00Z/P1H</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/test_zindex_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG4326_16km</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>223632905.6114871</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>1</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>111816452.8057436</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>3</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>55908226.40287178</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>5</MatrixWidth>
+            <MatrixHeight>3</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG4326_2km</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>223632905.6114871</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>1</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>111816452.8057436</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>3</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>55908226.40287178</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>5</MatrixWidth>
+            <MatrixHeight>3</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>27954113.20143589</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>10</MatrixWidth>
+            <MatrixHeight>5</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>4</ows:Identifier>
+            <ScaleDenominator>13977056.60071795</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>20</MatrixWidth>
+            <MatrixHeight>10</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>5</ows:Identifier>
+            <ScaleDenominator>6988528.300358973</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>40</MatrixWidth>
+            <MatrixHeight>20</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG4326_1km</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>223632905.6114871</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>1</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>111816452.8057436</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>3</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>55908226.40287178</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>5</MatrixWidth>
+            <MatrixHeight>3</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>27954113.20143589</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>10</MatrixWidth>
+            <MatrixHeight>5</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>4</ows:Identifier>
+            <ScaleDenominator>13977056.60071795</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>20</MatrixWidth>
+            <MatrixHeight>10</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>5</ows:Identifier>
+            <ScaleDenominator>6988528.300358973</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>40</MatrixWidth>
+            <MatrixHeight>20</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>6</ows:Identifier>
+            <ScaleDenominator>3494264.150179486</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>80</MatrixWidth>
+            <MatrixHeight>40</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG4326_500m</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>223632905.6114871</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>1</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>111816452.8057436</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>3</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>55908226.40287178</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>5</MatrixWidth>
+            <MatrixHeight>3</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>27954113.20143589</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>10</MatrixWidth>
+            <MatrixHeight>5</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>4</ows:Identifier>
+            <ScaleDenominator>13977056.60071795</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>20</MatrixWidth>
+            <MatrixHeight>10</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>5</ows:Identifier>
+            <ScaleDenominator>6988528.300358973</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>40</MatrixWidth>
+            <MatrixHeight>20</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>6</ows:Identifier>
+            <ScaleDenominator>3494264.150179486</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>80</MatrixWidth>
+            <MatrixHeight>40</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>7</ows:Identifier>
+            <ScaleDenominator>1747132.075089743</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>160</MatrixWidth>
+            <MatrixHeight>80</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+      <TileMatrixSet>
+         <ows:Identifier>EPSG4326_250m</ows:Identifier>
+         <ows:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ows:SupportedCRS>
+         <TileMatrix>
+            <ows:Identifier>0</ows:Identifier>
+            <ScaleDenominator>223632905.6114871</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>2</MatrixWidth>
+            <MatrixHeight>1</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>1</ows:Identifier>
+            <ScaleDenominator>111816452.8057436</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>3</MatrixWidth>
+            <MatrixHeight>2</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>2</ows:Identifier>
+            <ScaleDenominator>55908226.40287178</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>5</MatrixWidth>
+            <MatrixHeight>3</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>3</ows:Identifier>
+            <ScaleDenominator>27954113.20143589</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>10</MatrixWidth>
+            <MatrixHeight>5</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>4</ows:Identifier>
+            <ScaleDenominator>13977056.60071795</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>20</MatrixWidth>
+            <MatrixHeight>10</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>5</ows:Identifier>
+            <ScaleDenominator>6988528.300358973</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>40</MatrixWidth>
+            <MatrixHeight>20</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>6</ows:Identifier>
+            <ScaleDenominator>3494264.150179486</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>80</MatrixWidth>
+            <MatrixHeight>40</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>7</ows:Identifier>
+            <ScaleDenominator>1747132.075089743</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>160</MatrixWidth>
+            <MatrixHeight>80</MatrixHeight>
+         </TileMatrix>
+         <TileMatrix>
+            <ows:Identifier>8</ows:Identifier>
+            <ScaleDenominator>873566.0375448716</ScaleDenominator>
+            <TopLeftCorner>-180 90</TopLeftCorner>
+            <TileWidth>512</TileWidth>
+            <TileHeight>512</TileHeight>
+            <MatrixWidth>320</MatrixWidth>
+            <MatrixHeight>160</MatrixHeight>
+         </TileMatrix>
+      </TileMatrixSet>
+    </Contents>
+    <ServiceMetadataURL xlink:href="http://localhost/onearth/test/wmts/1.0.0/WMTSCapabilities.xml"/>
+</Capabilities>
