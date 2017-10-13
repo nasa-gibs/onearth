@@ -1118,73 +1118,65 @@ class TestModOnEarth(unittest.TestCase):
         31. TWMS requests
         """
         # MissingParameterValue test
-        params = ('layers=test_weekly_jpg', 'srs=EPSG:4326', 'format=image%2Fjpeg', 'styles=', 'width=512', 'height=512', 'bbox=-180,-198,108,90')
+        params = ('layers=test_weekly_jpg', 'srs=EPSG:4326', 'width=512', 'height=512', 'bbox=-180,-198,108,90')
         if DEBUG:
             print '\nTesting TWMS Error Handling'
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
-            req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&time=default&' + '&'.join(param_list)
+            req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&time=default&format=image%2Fjpeg&styles=&' + '&'.join(param_list)
 
-            response = get_url(req_url)
-
-            # Check if the response is valid XML
-            try:
-                XMLroot = ElementTree.XML(response.read())
-                xml_check = True
-            except:
-                xml_check = False
-            self.assertTrue(xml_check, 'TWMS response is not a valid XML file. URL: ' + req_url)
-
-            exception = XMLroot.find('exceptionCode').text
-            print exception
-            check_str = exception.find('MissingParameterValue')
-            error = 'The TWMS response does not match what\'s expected. URL: {0}'.format(req_url)
-            self.assertTrue(check_str, error)
-
-            #response_code = 400
-            #response_value = 'MissingParameterValue'
-            #if DEBUG:
-            #    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            #check_code = check_response_code(req_url, response_code, response_value)
-            #error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            #self.assertTrue(check_code, error)
+            # check for empty tile
+            ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+            if DEBUG:
+                print 'Using URL: {0}, expecting empty tile'.format(req_url)
+            if 'bbox' in req_url: #TODO: Validate XML for Missing BBOX request
+                check_result = check_tile_request(req_url, ref_hash)
+                self.assertTrue(check_result, 'The TWMS response for Missing Parameter does not match what\'s expected. URL: ' + req_url)
 
         # InvalidParameterValue tests
-        response_code = 400
-        response_value = 'InvalidParameterValue'
         invalid_parameter_urls = (
             # Bad LAYER value
             'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=bad_layer_value&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
             # Bad STYLE value
             'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=bad_value&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
-            # Bad FORMAT value
-            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=fake_image&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
             # Bad SRS value
             'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=fake_tilematrixset&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
             # Bad (non-positive integer) WIDTH value
             'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=-512&amp;height=512&amp;bbox=-180,-198,108,90',
             # Bad (non-positive integer) HEIGHT value
-            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=-512&amp;bbox=-180,-198,108,90',
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=-512&amp;bbox=-180,-198,108,90'
             # Bad (large integer) BBOX value
-            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,1080,900',
+#             'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,1080,900',
             # Invalid TIME format
-            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
+#             'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
         )
         for req_url in invalid_parameter_urls:
+            # check for empty tile
+            ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
+                print 'Using URL: {0}, expecting empty tile'.format(req_url)
+            check_result = check_tile_request(req_url, ref_hash)
+            self.assertTrue(check_result, 'The TWMS response for Invalid Parameter does not match what\'s expected. URL: ' + req_url)
 
-        # Test if empty tile is served for Bad Time
-        ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
+#         # Test if empty tile is served for Bad Time
+#         ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+#         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
+#         if DEBUG:
+#             print 'Using URL: {0}, expecting empty tile'.format(req_url)
+#         check_result = check_tile_request(req_url, ref_hash)
+#         self.assertTrue(check_result, 'The TWMS response for Bad Time does not match what\'s expected. URL: ' + req_url)
+        
+        # Test if PNG empty tile is served for Missing FORMAT Value
+        ref_hash = '8dd7e330d7ab0ead5ee71e7179c170d1'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print 'Using URL: {0}, expecting empty tile'.format(req_url)
+            print 'Using URL: {0}, expecting empty transparent tile'.format(req_url)
         check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'The TWMS response for Bad Time does not match what\'s expected. URL: ' + req_url)
+        self.assertTrue(check_result, 'The TWMS response for Missing FORMAT does not match what\'s expected. URL: ' + req_url)
+        
+        # TODO: Test format is Invalid for Bad FORMAT Value
+        
 
     # DATE/TIME SNAPPING REQUESTS
 
