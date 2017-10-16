@@ -45,7 +45,7 @@ from shutil import move, rmtree
 from optparse import OptionParser
 import datetime
 from xml.etree import cElementTree as ElementTree
-
+import urllib2
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
 
 DEBUG = False
@@ -747,14 +747,30 @@ class TestModReproject(unittest.TestCase):
 
     def test_wmts_get_capabilities(self):
         """
-        20. ERROR!!! Request WMTS GetCapabilities
+        20. Request WMTS GetCapabilities
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/GetCapabilities.1.0.0.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
+        #check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WTMTS Get GetCapabilities Request does not match what\'s expected. URL: ' + req_url)
 
     def test_wmts_rest_get_capabilities(self):
@@ -777,7 +793,7 @@ class TestModReproject(unittest.TestCase):
             xml_check = False
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/wmts_endpoint/1.0.0/WMTSCapabilities.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/wmts_endpoint/1.0.0/WMTSCapabilities.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -793,7 +809,23 @@ class TestModReproject(unittest.TestCase):
         if DEBUG:
             print '\nTesting TWMS GetCapablities'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/GetCapabilities.1.1.1.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
+        #check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS Get GetCapabilities Request does not match what\'s expected. URL: ' + req_url)
 
     def test_twms_get_tile_service(self):
@@ -952,11 +984,11 @@ class TestModReproject(unittest.TestCase):
             self.assertTrue(check_code, error)
 
         # Test if empty tile is served for out of time bounds request
-        ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+        ref_hash = 'e45470d7b683503c43ca819a674fdc9e'
         empty_urls = (  # Date before range
             'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-01-01',
             # Date after range
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-03-01'
+            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-03-07'
         )
         for url in empty_urls:
             if DEBUG:
@@ -984,14 +1016,34 @@ class TestModReproject(unittest.TestCase):
             param_list = list(params)
             param_list.pop(i)
             req_url = 'http://localhost/reproject/test/wmts/' + '/'.join(param_list)
-            response_code = 404
-            #response_value = 'MissingParameterValue'
-            response_value = 'Not Found'
+            #response_code = 400
+            response_value = 'InvalidParameterValue'
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
+                print 'Using URL: {0}, expecting response value of {1}'.format(req_url, response_value)
+            try:
+                response = urllib2.urlopen(req_url)
+            except urllib2.HTTPError as e:
+                response = e
+
+            # Check if the response is valid XML
+            try:
+                XMLroot = ElementTree.XML(response.read())
+                xml_check = True
+            except:
+                xml_check = False
+            self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
+
+            try:
+                exception = XMLroot.find('exceptionCode').text
+            except AttributeError:
+                exception = ''
+            check_str = exception.find(response_value)
+            error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
+            self.assertTrue(check_str, error)
+
+            #check_code = check_response_code(req_url, response_code, response_value)
+            #error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+            #self.assertTrue(check_code, error)
 
         # InvalidParameterValue tests
         response_code = 400
@@ -1002,17 +1054,17 @@ class TestModReproject(unittest.TestCase):
             # Bad STYLE value
             'http://localhost/reproject/test/wmts/test_weekly_jpg/bad_value/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
             # Bad FORMAT value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/0.fake',
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.fake',
             # Bad TILEMATRIXSET value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/fake_tilematrixset/0/0/0.jpeg',
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/fake_tilematrixset/0/0/0.jpeg',
             # Bad (non-positive integer) TILEMATRIX value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/-20/0/0.jpeg',
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/-20/0/0.jpeg',
             # Bad (non-positive integer) TILEROW value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/-20/0.jpeg',
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/-20/0.jpeg',
             # Bad (non-positive integer) TILECOL value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/-20.jpeg',
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/-20.jpeg',
             # Invalid TILEMATRIX value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/20/0/0.jpeg',
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/20/0/0.jpeg',
             # Invalid TIME format
             'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-290/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         )
@@ -1022,7 +1074,10 @@ class TestModReproject(unittest.TestCase):
             if DEBUG:
                 print '\nTesting WTMS REST Error Invalid Parameters'
 
-            response = get_url(req_url)
+            try:
+                response = urllib2.urlopen(req_url)
+            except urllib2.HTTPError as e:
+                response = e
 
             # Check if the response is valid XML
             try:
@@ -1032,8 +1087,10 @@ class TestModReproject(unittest.TestCase):
                 xml_check = False
             self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
 
-            exception = XMLroot.find('exceptionCode').text
-            print exception
+            try:
+                exception = XMLroot.find('exceptionCode').text
+            except AttributeError:
+                exception = ''
             check_str = exception.find('InvalidParameterValue')
             error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
             self.assertTrue(check_str, error)
@@ -1059,11 +1116,11 @@ class TestModReproject(unittest.TestCase):
             self.assertTrue(check_code, error)
 
         # Test if empty tile is served for out of time bounds request
-        ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+        ref_hash = 'e45470d7b683503c43ca819a674fdc9e'
         empty_urls = (  # Date before range
             'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-01-01/GoogleMapsCompatible_Level3/0/0/0.jpeg',
             # Date after range
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-03-01/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-03-07/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         )
         for url in empty_urls:
             if DEBUG:
@@ -1073,7 +1130,7 @@ class TestModReproject(unittest.TestCase):
 
         # Test if unknown parameter is ignored
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0.jpeg/five'
+        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
         if DEBUG:
             print 'Using URL: {0}, expecting bad parameter will be ignored'
         check_result = check_tile_request(req_url, ref_hash)
