@@ -553,7 +553,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16. Request tile with no date and time (sub-daily) from "year" layer via WMTS
         """
-        ref_hash = '5a39c4e335d05295160a7bec4961002d'
+        ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
@@ -565,7 +565,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16B. Request tile with no date and time (sub-daily) from "year" layer via WMTS (REST)
         """
-        ref_hash = '5a39c4e335d05295160a7bec4961002d'
+        ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/wmts/test_legacy_subdaily_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
@@ -577,7 +577,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16C. Request tile with no date and time (sub-daily) from "year" layer via TWMS
         """
-        ref_hash = '5a39c4e335d05295160a7bec4961002d'
+        ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
             print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS'
