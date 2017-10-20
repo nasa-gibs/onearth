@@ -1,0 +1,232 @@
+<?xml version='1.0' encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE WMT_MS_Capabilities SYSTEM "http://localhost/WMS_MS_Capabilities.dtd" [ <!ELEMENT VendorSpecificCapabilities EMPTY> ]>
+<WMT_MS_Capabilities version="1.1.1">
+  <Service>
+    <Name>OGC:WMS</Name>
+    <Title>NASA Global Imagery Browse Services for EOSDIS</Title>
+    <Abstract>Near real time imagery from multiple NASA instruments</Abstract>
+    <KeywordList>
+      <Keyword>GIBS</Keyword>
+      <Keyword>NASA</Keyword>
+      <Keyword>WMS</Keyword>
+      <Keyword>Earth</Keyword>
+    </KeywordList>
+    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/reproject/test/twms/"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson></ContactPerson>
+        <ContactOrganization></ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactElectronicMailAddress></ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>none</AccessConstraints>
+  </Service>
+  <Capability>
+    <Request>
+      <GetCapabilities>
+        <Format>application/vnd.ogc.wms_xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/reproject/test/twms/twms.cgi?"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetCapabilities>
+      <GetMap>
+        <Format>image/jpeg</Format>
+        <Format>image/png</Format>
+        <DCPType> <HTTP> <Get>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/reproject/test/twms/twms.cgi?"/>
+        </Get> </HTTP> </DCPType>
+      </GetMap>
+      <GetTileService>
+        <Format>text/xml</Format>
+        <DCPType><HTTP><Get>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/reproject/test/twms/twms.cgi?"/>
+        </Get></HTTP></DCPType>
+      </GetTileService>
+    </Request>
+    <Exception>
+      <Format>application/vnd.ogc.se_xml</Format>
+    </Exception>
+    <VendorSpecificCapabilities/>
+    <UserDefinedSymbolization SupportSLD="0" UserLayer="0" UserStyle="1" RemoteWFS="0" />
+  	<Layer queryable="0">
+      <Title>Global Imagery Browse Services</Title>
+      <SRS>EPSG:3857</SRS>
+      <CRS>EPSG:3857</CRS>
+<Layer queryable="0">
+            <Name>snap_test_1a</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 1a</Title>
+            <Abstract xml:lang="en">snap_test_1a abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_2a</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 2a</Title>
+            <Abstract xml:lang="en">snap_test_2a abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_3a</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3a</Title>
+            <Abstract xml:lang="en">snap_test_3a abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_3b</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3b</Title>
+            <Abstract xml:lang="en">snap_test_3b abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_3c</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3c</Title>
+            <Abstract xml:lang="en">snap_test_3c abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_3d</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3d</Title>
+            <Abstract xml:lang="en">snap_test_3d abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_4a</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 4a</Title>
+            <Abstract xml:lang="en">snap_test_4a abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_4b</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 4b</Title>
+            <Abstract xml:lang="en">snap_test_4b abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_5a</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 5a</Title>
+            <Abstract xml:lang="en">snap_test_5a abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_6a</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 6a</Title>
+            <Abstract xml:lang="en">snap_test_6a abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>snap_test_year_boundary</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario Year Boundary</Title>
+            <Abstract xml:lang="en">snap_test_year_boundary abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>test_daily_png</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - Daily PNG</Title>
+            <Abstract xml:lang="en">test_daily_png abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>test_legacy_subdaily_jpg</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_legacy_subdaily_jpg abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>test_nonyear_jpg</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_nonyear_jpg abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>test_static_jpg</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_static_jpg abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>test_weekly_jpg</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_weekly_jpg abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+<Layer queryable="0">
+            <Name>test_zindex_jpg</Name>
+            <Title xml:lang="en">Blue Marble Z-Index Test Imagery</Title>
+            <Abstract xml:lang="en">test_zindex_jpg abstract</Abstract>
+            <LatLonBoundingBox minx="20037508.34278925" miny="20037508.34278925" maxx="-20037508.34278925" maxy="-20037508.34278925"/>
+            <Style>
+                <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+            </Style>
+            <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+             </Layer>
+  	</Layer>
+  </Capability>
+</WMT_MS_Capabilities>

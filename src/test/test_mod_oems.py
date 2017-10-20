@@ -213,7 +213,7 @@ class TestModOEMS(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'WMS GetCapabilities 1.1.1 response is not a valid XML file. URL: ' + req_url)
 
@@ -240,7 +240,7 @@ class TestModOEMS(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'WMS GetCapabilities 1.3.0 response is not a valid XML file. URL: ' + req_url)
 
@@ -267,7 +267,7 @@ class TestModOEMS(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'WMS GetCapabilities 2.0.0 response is not a valid XML file. URL: ' + req_url)
 

@@ -32,7 +32,7 @@
 # limitations under the License.
 
 """
-Test suite to make sure that mod_reproject is properly handling WMTS errors.
+Test suite to make sure that mod_wmts_wrapper is properly handling WMTS errors.
 """
 
 import os

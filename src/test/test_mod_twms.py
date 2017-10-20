@@ -145,7 +145,7 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         try:
             XMLroot = ElementTree.XML(response.read())
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'TWMS response is not a valid XML file. URL: ' + test_url)
 
@@ -224,7 +224,7 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         try:
             XMLroot = ElementTree.XML(response.read())
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'TWMS response is not a valid XML file. URL: ' + test_url)
 

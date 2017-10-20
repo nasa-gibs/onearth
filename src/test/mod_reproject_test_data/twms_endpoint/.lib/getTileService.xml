@@ -1,0 +1,370 @@
+<WMS_Tile_Service version="0.1.0">
+  <Service>
+    <Name>GIBS:WMS:Tile</Name>
+    <Title>WMS Tile Service</Title>
+    <Abstract>Tiled WMS service, tiled in a global grid</Abstract>
+    <KeywordList>
+      <Keyword>WMS</Keyword>
+      <Keyword>Tile</Keyword>
+      <Keyword>GIBS</Keyword>
+      <Keyword>Global</Keyword>
+      <Keyword>Earth</Keyword>
+    </KeywordList>
+    <OnlineResource xlink:href="http://localhost/onearth/test/twms/" xlink:type="simple" xmlns:xlink="http://www.w3.orf/1999/xlink"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson></ContactPerson>
+        <ContactOrganization></ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactElectronicMailAddress></ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>none</AccessConstraints>
+  </Service>
+  <TiledPatterns>
+    <OnlineResource xlink:href="http://localhost/onearth/test/twms/twms.cgi?" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
+    <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+<TiledGroup>
+    <Name>OnEarth MVT Tile Test</Name>
+    <Title xml:lang="en">OnEarth MVT Tile Test</Title>
+    <Abstract xml:lang="en">mvt_test abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands></Bands>
+    <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&time=${time}&width=512&height=512&bbox=-180,30,-108,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&width=512&height=512&bbox=-180,30,-108,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&time=${time}&width=512&height=512&bbox=-180,-30,-36,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&width=512&height=512&bbox=-180,-30,-36,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&time=${time}&width=512&height=512&bbox=-180,-150,108,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&width=512&height=512&bbox=-180,-150,108,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 1a</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 1a</Title>
+    <Abstract xml:lang="en">snap_test_1a abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_1a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 2a</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 2a</Title>
+    <Abstract xml:lang="en">snap_test_2a abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_2a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 3a</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 3a</Title>
+    <Abstract xml:lang="en">snap_test_3a abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_3a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 3b</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 3b</Title>
+    <Abstract xml:lang="en">snap_test_3b abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_3b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 3c</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 3c</Title>
+    <Abstract xml:lang="en">snap_test_3c abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_3c&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 3d</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 3d</Title>
+    <Abstract xml:lang="en">snap_test_3d abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_3d&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 4a</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 4a</Title>
+    <Abstract xml:lang="en">snap_test_4a abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_4a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 4b</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 4b</Title>
+    <Abstract xml:lang="en">snap_test_4b abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_4b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 5a</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 5a</Title>
+    <Abstract xml:lang="en">snap_test_5a abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_5a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_5a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_5a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario 6a</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario 6a</Title>
+    <Abstract xml:lang="en">snap_test_6a abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_6a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_6a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_6a&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>OnEarth Date Snapping Scenario Year Boundary</Name>
+    <Title xml:lang="en">OnEarth Date Snapping Scenario Year Boundary</Title>
+    <Abstract xml:lang="en">snap_test_year_boundary abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=snap_test_year_boundary&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=snap_test_year_boundary&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=snap_test_year_boundary&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>Blue Marble tileset</Name>
+    <Title xml:lang="en">Blue Marble Demo Imagery - Daily PNG</Title>
+    <Abstract xml:lang="en">test_daily_png abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:4326&format=image%2Fpng&styles=&time=${time}&width=512&height=512&bbox=-180,18,-108,90 request=GetMap&layers=test_daily_png&srs=EPSG:4326&format=image%2Fpng&styles=&width=512&height=512&bbox=-180,18,-108,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:4326&format=image%2Fpng&styles=&time=${time}&width=512&height=512&bbox=-180,-54,-36,90 request=GetMap&layers=test_daily_png&srs=EPSG:4326&format=image%2Fpng&styles=&width=512&height=512&bbox=-180,-54,-36,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:4326&format=image%2Fpng&styles=&time=${time}&width=512&height=512&bbox=-180,-198,108,90 request=GetMap&layers=test_daily_png&srs=EPSG:4326&format=image%2Fpng&styles=&width=512&height=512&bbox=-180,-198,108,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>Blue Marble tileset</Name>
+    <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+    <Abstract xml:lang="en">test_legacy_subdaily_jpg abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,18,-108,90 request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,18,-108,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-54,-36,90 request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-54,-36,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-198,108,90 request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>Blue Marble tileset</Name>
+    <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+    <Abstract xml:lang="en">test_nonyear_jpg abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,18,-108,90 request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,18,-108,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-54,-36,90 request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-54,-36,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-198,108,90 request=GetMap&layers=test_nonyear_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>Blue Marble tileset</Name>
+    <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+    <Abstract xml:lang="en">test_static_jpg abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,18,-108,90 request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,18,-108,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-54,-36,90 request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-54,-36,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-198,108,90 request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>Blue Marble tileset</Name>
+    <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+    <Abstract xml:lang="en">test_weekly_jpg abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,18,-108,90 request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,18,-108,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-54,-36,90 request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-54,-36,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,-198,108,90 request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90]]>
+</TilePattern>
+</TiledGroup>
+<TiledGroup>
+    <Name>Blue Marble Z-Index Test tileset</Name>
+    <Title xml:lang="en">Blue Marble Z-Index Test Imagery</Title>
+    <Abstract xml:lang="en">test_zindex_jpg abstract</Abstract>
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+    <Pad>0</Pad>
+    <Bands>3</Bands>
+    <BoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <Key>\${time}</Key>
+ <TilePattern>
+  <![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,67.5,-157.5,90 request=GetMap&layers=test_zindex_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,67.5,-157.5,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,45,-135,90 request=GetMap&layers=test_zindex_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,45,-135,90]]>
+</TilePattern>
+<TilePattern>
+  <![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=${time}&width=512&height=512&bbox=-180,0,-90,90 request=GetMap&layers=test_zindex_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90]]>
+</TilePattern>
+</TiledGroup>
+  </TiledPatterns>
+</WMS_Tile_Service>

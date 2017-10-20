@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.3.1
+ * Version 1.3.2
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -1871,7 +1871,7 @@ char *order_args(request_rec *r) {
 		args = apr_psprintf(r->pool,"version=%s&request=%s&layers=%s&srs=%s&format=%s&styles=%s&width=%s&height=%s&bbox=%s&transparent=%s&bgcolor=%s&exceptions=%s&elevation=%s&time=%s",version,"GetMap",layers,srs,format,styles,width,height,bbox,transparent,bgcolor,exceptions,elevation,time);
 
 	} else if (ap_strcasecmp_match(request, "GetCapabilities") == 0) { // getCapabilities
-		args = apr_psprintf(r->pool, "request=GetCapabilities");
+		args = apr_psprintf(r->pool, "request=GetCapabilities&=WMTS"); // Add WMTS marker to bypass unnecessary check down the chain
 	} else if (ap_strcasecmp_match(request, "GetTileService") == 0) { // getTileService
 		args = apr_psprintf(r->pool, "request=GetTileService");
 	} else if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // GetLegendGraphic is not supported
@@ -2465,8 +2465,17 @@ static int mrf_handler(request_rec *r)
       }
       if (!this_data) { // No empty tile provided, let it pass
     	  miss_count--;
-    	  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Record not present %s",r->args);
-    	  return DECLINED;
+    	  if ((apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf;type=mapbox-vector") == 0) || (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0)) {
+    		  // return default message with vector tiles
+    		  static char empty_json[]="{\"message\":\"Tile does not exist\"}";
+    		  ap_set_content_type(r,"application/json; charset=utf-8");
+    		  ap_rputs(empty_json, r);
+    		  r->status = 404;
+    		  return HTTP_NOT_FOUND;
+    	  } else {
+    		  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server,"Record not present %s",r->args);
+        	  return DECLINED;
+    	  }
       }
     }
   }

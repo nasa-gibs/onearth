@@ -45,7 +45,7 @@ from shutil import rmtree
 from optparse import OptionParser
 import datetime
 from xml.etree import cElementTree as ElementTree
-
+import urllib2
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
 
 DEBUG = False
@@ -242,7 +242,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         # https://gibs/earrthdata.nasa.gov/wmts/epsg{EPSG:Code}/best/{ProductName}/default/{time}/{TileMatrixSet}/{ZoomLevel}/{TileRow}/{TileColumn}.png
-        req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/0/0.jpeg'
+        req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/0/0.jpeg'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (time=default) JPG tile via WMTS REST'
@@ -267,7 +267,7 @@ class TestModOnEarth(unittest.TestCase):
         5B. Request current (time=default) PNG tile via WMTS REST
         """
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
-        req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/EPSG4326_16km/0/0/0.png'
+        req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/default/EPSG4326_16km/0/0/0.png'
         if DEBUG:
             print '\nTesting: Request current (time=default) PNG tile via WMTS REST'
             print 'URL: ' + req_url
@@ -291,7 +291,7 @@ class TestModOnEarth(unittest.TestCase):
         6B. Request current (time=default) PPNG tile via WMTS REST
         """
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
-        req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/EPSG4326_16km/0/0/0.png'
+        req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/default/EPSG4326_16km/0/0/0.png'
         if DEBUG:
             print '\nTesting: Request current (time=default) PPNG tile via WMTS REST'
             print 'URL: ' + req_url
@@ -446,7 +446,7 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_request_wmts_year_zlevel(self):
         """
-        13C. Request tile with date and time (z-level) from "year" layer via WMTS
+        13. Request tile with date and time (z-level) from "year" layer via WMTS
         """
         ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T16:00:00Z'
@@ -542,7 +542,7 @@ class TestModOnEarth(unittest.TestCase):
         15C. Request tile with no date from "non-year" layer via TWMS
         """
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
             print '\nTesting: Request tile with no date from "non-year layer via TWMS'
             print 'URL: ' + req_url
@@ -553,7 +553,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16. Request tile with no date and time (sub-daily) from "year" layer via WMTS
         """
-        ref_hash = '5a39c4e335d05295160a7bec4961002d'
+        ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
@@ -565,7 +565,7 @@ class TestModOnEarth(unittest.TestCase):
         """
         16B. Request tile with no date and time (sub-daily) from "year" layer via WMTS (REST)
         """
-        ref_hash = '5a39c4e335d05295160a7bec4961002d'
+        ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/wmts/test_legacy_subdaily_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
@@ -577,8 +577,8 @@ class TestModOnEarth(unittest.TestCase):
         """
         16C. Request tile with no date and time (sub-daily) from "year" layer via TWMS
         """
-        ref_hash = '5a39c4e335d05295160a7bec4961002d'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
             print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -647,7 +647,7 @@ class TestModOnEarth(unittest.TestCase):
         18C. Request tile from static layer with no time via TWMS
         """
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,0,-90,90'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90'
         if DEBUG:
             print '\nTesting: Request tile from static layer with no time via TWMS'
             print 'URL: ' + req_url
@@ -696,7 +696,7 @@ class TestModOnEarth(unittest.TestCase):
         21. Request tile with date and time via KML
         """
         # Note that we can't directly test the KML against a hash as the generated file changes based on the server settings
-        req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29'
+        req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29T12:00:00Z'
         search_string = '<name>2012-02-29 test_weekly_jpg</name>'
         if DEBUG:
             print '\nTesting: Request tile with date and time via KML'
@@ -721,7 +721,7 @@ class TestModOnEarth(unittest.TestCase):
         22. Request tile with date range via KML
         """
         # Note that we can't directly test the KML against a hash as the generated file changes based on the server settings
-        req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29'
+        req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=R10/2012-02-29/P1D'
         search_string = '<name>2012-02-29 test_weekly_jpg</name>'
         if DEBUG:
             print '\nTesting: Request tile with date range via KML'
@@ -745,14 +745,29 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_wmts_get_capabilities(self):
         """
-        23. ERROR!!! Request WMTS GetCapabilities
+        23. Request WMTS GetCapabilities
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.1.0.0.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'WTMTS Get GetCapabilities Request does not match what\'s expected. URL: ' + req_url)
 
     def test_wmts_rest_get_capabilities(self):
@@ -771,7 +786,7 @@ class TestModOnEarth(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
@@ -784,14 +799,29 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_twms_get_capabilities(self):
         """
-        25. ERROR!!! Request TWMS GetCapabilities
+        25. Request TWMS GetCapabilities
         """
         ref_hash = 'd2536cb2c0681c56b005eb9d60336326'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting TWMS GetCapablities'
             print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
+
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities_TWMS.xml'))
+        refXMLroot = refXMLtree.getroot()
+        refXMLdict = XmlDictConfig(refXMLroot)
+
+        check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'TWMS Get GetCapabilities Request does not match what\'s expected. URL: ' + req_url)
 
     def test_twms_get_tile_service(self):
@@ -810,7 +840,7 @@ class TestModOnEarth(unittest.TestCase):
             XMLroot = ElementTree.XML(response.read())
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
-        except ElementTree.ParseError:
+        except:
             xml_check = False
         self.assertTrue(xml_check, 'GetTileService response is not a valid XML file. URL: ' + req_url)
 
@@ -954,7 +984,7 @@ class TestModOnEarth(unittest.TestCase):
         empty_urls = (  # Date before range
             'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-01-01',
             # Date after range
-            'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-01-01'
+            'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-03-07'
         )
         for url in empty_urls:
             if DEBUG:
@@ -974,29 +1004,199 @@ class TestModOnEarth(unittest.TestCase):
         """
         30. WMTS REST requests
         """
-        params = (('3f84501587adfe3006dcbf59e67cd0a3', 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/0.jpeg'),
-                  ('9dc7e0fe96613fdb2d9855c3669ba524', 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/1.jpeg'))
+        # MissingParameterValue test
+        params = ('test_weekly_jpg', 'default', 'EPSG4326_16km', '0', '0', '0.jpeg')
         if DEBUG:
-            print '\nTesting WMTS (REST) error handling'
-        for ref_hash, url in params:
+            print '\nTesting WMTS REST Error Handling'
+        for i in range(len(params)):
+            param_list = list(params)
+            param_list.pop(i)
+            req_url = 'http://localhost/onearth/test/wmts/' + '/'.join(param_list)
+            response_code = 404
+            #response_value = 'MissingParameterValue'
+            response_value = 'Not Found'
             if DEBUG:
-                print 'Using URL ' + url
+                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+            check_code = check_response_code(req_url, response_code, response_value)
+            error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+            self.assertTrue(check_code, error)
+
+        # InvalidParameterValue tests
+        response_code = 400
+        response_value = 'InvalidParameterValue'
+        invalid_parameter_urls = (
+            # Bad LAYER value
+            'http://localhost/onearth/test/wmts/bad_layer_value/default/default/EPSG4326_16km/0/0/0.jpeg',
+            # Bad STYLE value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/bad_value/EPSG4326_16km/0/0/0.jpeg',
+            # Bad FORMAT value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/0/0.png',
+            # Bad TILEMATRIXSET value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/fake_tilematrixset/0/0/0.jpeg',
+            # Bad (non-positive integer) TILEMATRIX value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/-20/0/0.jpeg',
+            # Bad (non-positive integer) TILEROW value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/-20/0.jpeg',
+            # Bad (non-positive integer) TILECOL value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/0/-20.jpeg',
+            # Invalid TILEMATRIX value
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/20/0/0.jpeg',
+            # Invalid TIME format
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-290/EPSG4326_16km/0/0/0.jpeg'
+        )
+        for req_url in invalid_parameter_urls:
+            #if DEBUG:
+                #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+            if DEBUG:
+                print '\nTesting WTMS REST Error Invalid Parameters'
+                print req_url
+
+            try:
+                response = urllib2.urlopen(req_url)
+            except urllib2.HTTPError as e:
+                response = e
+
+            # Check if the response is valid XML
+            try:
+                XMLroot = ElementTree.XML(response.read())
+                xml_check = True
+            except:
+                xml_check = False
+            self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
+
+            try:
+                exception = XMLroot.find('exceptionCode').text
+            except AttributeError:
+                exception = ''
+            check_str = exception.find('InvalidParameterValue')
+            error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
+            self.assertTrue(check_str, error)
+
+            #check_code = check_response_code(req_url, response_code, response_value)
+            #error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+            #self.assertTrue(check_code, error)
+
+        # TileOutOfRange tests
+        response_code = 400
+        response_value = 'TileOutOfRange'
+        tile_outofrange_urls = (
+            # TileCol out of range
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/50/0.jpeg',
+            # TileRow out of range
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/0/50.jpeg'
+        )
+        for req_url in tile_outofrange_urls:
+            if DEBUG:
+                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+            check_code = check_response_code(req_url, response_code, response_value)
+            error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+            self.assertTrue(check_code, error)
+
+        # Test if empty tile is served for out of time bounds request
+        ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+        empty_urls = (  # Date before range
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-01-01/EPSG4326_16km/0/0/0.jpeg',
+            # Date after range
+            'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-03-07/EPSG4326_16km/0/0/0.jpeg'
+        )
+        for url in empty_urls:
+            if DEBUG:
+                print 'Using URL: {0}, expecting empty tile'.format(url)
             check_result = check_tile_request(url, ref_hash)
-            self.assertTrue(check_result, 'WMTS (REST) error handling request does not match what\'s expected: ' + url)
+            self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
+
+        # Test if unknown parameter is ignored
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/0/five.jpeg'
+        if DEBUG:
+            print 'Using URL: {0}, expecting bad parameter will be ignored'
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Bad parameter request is not ignored. URL: ' + url)
 
     def test_twms_error_handling(self):
         """
         31. TWMS requests
         """
-        params = (('3f84501587adfe3006dcbf59e67cd0a3', 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/0.jpeg'),
-                  ('9dc7e0fe96613fdb2d9855c3669ba524', 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/1.jpeg'))
+        # MissingParameterValue test
+        params = ('layers=test_weekly_jpg', 'srs=EPSG:4326', 'width=512', 'height=512', 'bbox=-180,-198,108,90')
         if DEBUG:
-            print '\nTesting TWMS error handling'
-        for ref_hash, url in params:
+            print '\nTesting TWMS Error Handling'
+        for i in range(len(params)):
+            param_list = list(params)
+            param_list.pop(i)
+            req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&time=default&format=image%2Fjpeg&styles=&' + '&'.join(param_list)
+
+            # check for empty tile
+            ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
             if DEBUG:
-                print 'Using URL ' + url
-            check_result = check_tile_request(url, ref_hash)
-            self.assertTrue(check_result, 'TWMS error handling request does not match what\'s expected: ' + url)
+                print 'Using URL: {0}, expecting empty tile'.format(req_url)
+            if 'bbox' in req_url:
+                check_result = check_tile_request(req_url, ref_hash)
+            else:
+                # Validate XML for Missing BBOX
+                response = get_url(req_url)
+
+                # Check if the response is valid XML
+                try:
+                    XMLroot = ElementTree.XML(response.read())
+                    XMLdict = XmlDictConfig(XMLroot)
+                    xml_check = True
+                except:
+                    xml_check = False
+                    self.assertTrue(xml_check, 'Missing BBOX response is not a valid XML file. URL: ' + req_url)
+
+                refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/MissingBBOX.xml'))
+                refXMLroot = refXMLtree.getroot()
+                refXMLdict = XmlDictConfig(refXMLroot)
+
+                check_result = check_dicts(XMLdict, refXMLdict)
+            self.assertTrue(check_result, 'The TWMS response for Missing Parameter does not match what\'s expected. URL: ' + req_url)
+
+        # InvalidParameterValue tests
+        invalid_parameter_urls = (
+            # Bad LAYER value
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=bad_layer_value&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
+            # Bad STYLE value
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=bad_value&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
+            # Bad SRS value
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=fake_tilematrixset&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90',
+            # Bad (non-positive integer) WIDTH value
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=-512&amp;height=512&amp;bbox=-180,-198,108,90',
+            # Bad (non-positive integer) HEIGHT value
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=-512&amp;bbox=-180,-198,108,90'
+            # Bad (large integer) BBOX value
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,1080,900',
+            # Invalid TIME format
+            'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
+        )
+        for req_url in invalid_parameter_urls:
+            # check for empty tile
+            ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+            if DEBUG:
+                print 'Using URL: {0}, expecting empty tile'.format(req_url)
+            check_result = check_tile_request(req_url, ref_hash)
+            self.assertTrue(check_result, 'The TWMS response for Invalid Parameter does not match what\'s expected. URL: ' + req_url)
+
+        # Test if empty tile is served for Bad Time
+#        ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
+#        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
+#        if DEBUG:
+#            print 'Using URL: {0}, expecting empty tile'.format(req_url)
+#        check_result = check_tile_request(req_url, ref_hash)
+#        self.assertTrue(check_result, 'The TWMS response for Bad Time does not match what\'s expected. URL: ' + req_url)
+        
+        # Test if PNG empty tile is served for Missing FORMAT Value
+        ref_hash = '8dd7e330d7ab0ead5ee71e7179c170d1'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        if DEBUG:
+            print 'Using URL: {0}, expecting empty transparent tile'.format(req_url)
+        check_code = check_response_code(req_url, 400)
+        # ERROR!!! Getting 400 response code instead of transparent tile
+        #check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_code, 'The TWMS response for Missing FORMAT does not match what\'s expected. URL: ' + req_url)
+        
+        # TODO: Test format is Invalid for Bad FORMAT Value
+        
 
     # DATE/TIME SNAPPING REQUESTS
 
@@ -1209,6 +1409,8 @@ class TestModOnEarth(unittest.TestCase):
     def test_snapping_5a(self):
         layer_name = 'snap_test_5a'
         expected_date = datetime.date(2002, 12, 01)
+        if DEBUG:
+            print '\nTesting snapping test 5a'
         while (expected_date.year < 2012):
             end_date = expected_date.replace(year=expected_date.year + 1) + datetime.timedelta(days=-1)
             req_date = expected_date

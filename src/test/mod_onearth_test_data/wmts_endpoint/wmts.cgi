@@ -44,10 +44,13 @@ then
   if [[ $QUERY_STRING == *jpeg* ]]
   then
     echo -e "Content-type: image/jpeg\n"
-    cat Blank_RGB_512.jpg
+    cat black.jpg
+  elif [[ $QUERY_STRING == *x-protobuf* ]]
+  then
+  	echo -e "Content-type: application/x-protobuf\n"
   else
     echo -e "Content-type: image/png\n"
-    cat Blank_RGBA_512.png
+    cat transparent.png
   fi
   exit
 else
