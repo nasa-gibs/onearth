@@ -2437,7 +2437,7 @@ static int mrf_handler(request_rec *r)
     return DECLINED; // Can't read the data for some reason
   }
 
-  if (ap_strstr(r->args,WMTS_marker) && (errors > 0)) {
+  if (errors > 0) {
   	return wmts_return_all_errors(r);
   }
 
