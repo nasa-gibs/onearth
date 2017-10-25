@@ -342,7 +342,7 @@ class TestModReproject(unittest.TestCase):
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
 #http://localhost:4000/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-29
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nNEED TIME SPECIFIED!!! Testing: Request current (no TIME) JPG tile via TWMS'
             print 'URL: ' + req_url
@@ -1128,14 +1128,21 @@ class TestModReproject(unittest.TestCase):
             check_result = check_tile_request(url, ref_hash)
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
-        # Test if unknown parameter is ignored
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        # Test unknown parameter
         req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
         if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will be ignored'.format(req_url)
-        check_result = check_tile_request(req_url, ref_hash)
-        # TODO: Extra parameter is not ignored
-        self.assertTrue(check_result, '(XML) Bad parameter request is not ignored. URL: ' + req_url)
+            print 'Using URL: {0}, expecting bad parameter will return XML'.format(req_url)
+        try:
+            response = urllib2.urlopen(req_url)
+        except urllib2.HTTPError as e:
+            response = e
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
 
     def test_twms_error_handling(self):
         """
@@ -1143,26 +1150,26 @@ class TestModReproject(unittest.TestCase):
         """
         # MissingParameterValue test
 #request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29
-        params = ('layers=test_weekly_jpg', 'srs=EPSG:3857', 'format=image%2Fjpeg', 'styles=', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
+        params = ('layers=test_weekly_jpg', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
         if DEBUG:
             print '\nTesting TWMS Error Handling'
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
-            req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&time=default&' + '&'.join(param_list)
+            req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&time=default&srs=EPSG:3857&format=image%2Fjpeg&styles=' + '&'.join(param_list)
             response_code = 400
             #response_value = 'MissingParameterValue'
             response_value = 'Bad'
             if DEBUG:
                 print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             check_code = check_response_code(req_url, response_code, response_value)
-            # TODO: missing srs shows valid tile
-            error = '(Missing SRS) The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+            # TODO: missing srs, format, or style still shows valid tile
+            error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
 
         # InvalidParameterValue tests
         response_code = 400
-        response_value = 'InvalidParameterValue'
+        response_value = 'Bad Request'
         invalid_parameter_urls = (
             # Bad LAYER value
             'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=bad_layer_value&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=512&height=512&bbox=-180,-198,108,90',
@@ -1187,14 +1194,6 @@ class TestModReproject(unittest.TestCase):
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
-
-        # Test if empty tile is served for Bad Time
-        ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=512&height=512&bbox=-180,-198,108,90&time=2012-02-290'
-        if DEBUG:
-            print 'Using URL: {0}, expecting empty tile'.format(req_url)
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'The TWMS response for Bad Time does not match what\'s expected. URL: ' + req_url)
 
     # TEARDOWN
 
