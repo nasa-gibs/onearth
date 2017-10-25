@@ -50,14 +50,14 @@ luarocks make
 
 `layer:[layer_name]:default` -- A string with the current default date for the layer specified by `[layer_name]`. Should be in either `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS` format.
 
-`layer:[layer_name]:periods` -- A list of strings in the following format: `start_date/end_date/P[interval_number][interval_size]`. For example, `2012-01-01/2016-01-01/P1Y`.
+`layer:[layer_name]:periods` -- A set of strings in the following format: `start_date/end_date/P[interval_number][interval_size]`. For example, `2012-01-01/2016-01-01/P1Y`.
 
 ##### Example
 For testing, here's a fast way to set up a Redis database for testing.
 
 1. Enter the Redis CLI: `redis-cli`
-2. Add a default date: `set layer:test_layer:default "2015-06-01`
-3. Add some periods: `lpush layer:test_layer:periods "2012-01-01/2013-01-01/P1M" "2005-06-01/2005-12-01/P10D"`
+2. Add a default date: `SET layer:test_layer:default "2015-06-01`
+3. Add some periods: `SADD layer:test_layer:periods "2012-01-01/2013-01-01/P1M" "2005-06-01/2005-12-01/P10D"`
 
 
 ### Create the Lua configuration script

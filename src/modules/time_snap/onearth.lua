@@ -108,7 +108,7 @@ local function redisGetAllLayers (client)
             local layerName = split(":", value)[2]
             layers[layerName] = not layers[layerName] and {} or layers[layerName]
             layers[layerName].default = client:get("layer:" .. layerName .. ":default")
-            layers[layerName].periods = client:lrange("layer:" .. layerName .. ":periods", 0, -1)
+            layers[layerName].periods = client:smembers("layer:" .. layerName .. ":periods")
         end
     until cursor == "0"
     return layers
@@ -120,7 +120,7 @@ local function redisHandler (options)
     return function (layerName) 
         if layerName then
             local default = client:get("layer:" .. layerName .. ":default")
-            local periods = client:lrange("layer:" .. layerName .. ":periods", 0, -1)
+            local periods = client:smembers("layer:" .. layerName .. ":periods")
             if default and periods then
                 return {[layerName] = {
                         default = default,
