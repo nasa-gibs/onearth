@@ -45,7 +45,15 @@
 #include "mod_wmts_wrapper.h"
 #include "mod_reproject.h"
 #include "mod_mrf.h"
+#include "receive_context.h"
+#include <jansson.h>
 
+
+// If the condition is met, sends the message to the error log and returns HTTP INTERNAL ERROR
+#define SERR_IF(X, msg) if (X) { \
+    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, msg);\
+    return HTTP_INTERNAL_SERVER_ERROR; \
+}
 
 // Check a file extension against the specified MIME type
 int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
@@ -189,11 +197,11 @@ static apr_array_header_t* tokenize(apr_pool_t *p, const char *s, char sep)
 }
 
 
-static const char *add_date_to_uri(apr_pool_t *p, const char *source_str, const char *date_str)
+static const char *add_filename_to_string(apr_pool_t *p, const char *source_str, const char *date_str, const char *search_str)
 {
-    if (const char *datefield = ap_strstr(source_str, "${date}")) {
+    if (const char *datefield = ap_strstr(source_str, search_str)) {
         const char *prefix = apr_pstrmemdup(p, source_str, datefield - source_str);
-        return apr_pstrcat(p, prefix, date_str, datefield + strlen("${date}"), NULL);
+        return apr_pstrcat(p, prefix, date_str, datefield + strlen(search_str), NULL);
     }
     return source_str;
 }
@@ -376,7 +384,6 @@ static int handleKvP(request_rec *r)
                                         format
                                         );
         apr_table_set(r->notes, "mod_wmts_wrapper_date", time ? time : "default");
-        apr_table_set(r->notes, "mod_onearth_handled", "true");
         ap_internal_redirect(out_uri, r);
         return DECLINED;
     } else if (request && apr_strnatcasecmp(request, "GetCapabilities") == 0) {
@@ -423,20 +430,6 @@ static int pre_hook(request_rec *r)
 {
     char *err_msg;
 
-    // If mod_onearth is configured for this endpoint and hasn't handled the request yet, ignore it.
-    if (module *onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
-        wms_cfg *onearth_config = (wms_cfg *)ap_get_module_config(r->per_dir_config, onearth_module);
-        if (onearth_config->caches && (!r->prev || !apr_table_get(r->prev->notes, "mod_onearth_handled"))) {
-            apr_table_set(r->notes, "mod_wmts_wrapper_enabled", "true");
-            return DECLINED;
-        }
-    }
-
-    // Make sure that this note survives into the next request.
-    if (r->prev && apr_table_get(r->prev->notes, "mod_onearth_handled")) {
-        apr_table_set(r->notes, "mod_onearth_handled", "true");
-    }
-
     wmts_error wmts_errors[5];
     int errors = 0;
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
@@ -446,37 +439,55 @@ static int pre_hook(request_rec *r)
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "style") == 0 && cfg->time) {
         // If we've already handled the date, but are still getting stuck at the STYLE part of the REST request, we know the TMS is bad.
-        if (apr_table_get(r->notes, "mod_wmts_wrapper_date") || (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date"))) {
+        if (apr_table_get(r->notes, "mod_wmts_wrapper_filename") || (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date"))) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
             return wmts_return_all_errors(r, errors, wmts_errors);
         }
+
+        // This routine gets a snapped or default date from a lookup service, 
+        // adds it to the request notes, then strips the date and redirects the response
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         char *datetime_str = (char *)APR_ARRAY_IDX(tokens, tokens->nelts - 5, char *);
-
-        // Verify that the date is in the right format
-        if (ap_regexec(cfg->date_regexp, datetime_str, 0, NULL, 0) == AP_REG_NOMATCH 
-            && apr_strnatcasecmp(datetime_str, "default")) {
-            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
-            return wmts_return_all_errors(r, errors, wmts_errors);
-        }
+        char *layer_name = (char *)APR_ARRAY_IDX(tokens, tokens->nelts - 7, char *);
+        
         // Rewrite URI to exclude date and put the date in the notes for the redirect.
+        ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("Receive");
+        SERR_IF(!receive_filter, "Mod_wmts_wrapper needs mod_receive to be available to make time queries");
+
+        // Allocate buffer for JSON response
+        receive_ctx rctx;
+        rctx.maxsize = 1024*1024;
+        rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
+        rctx.size = 0;
+
+        const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
+        
+        ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
+        request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
+        int rr_status = ap_run_sub_req(rr);
+        ap_remove_output_filter(rf);
+        if (rr_status != APR_SUCCESS) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Time lookup failed for %s", time_request_uri);
+            return rr_status; // Pass status along
+        }
+
+        json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+        json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
+        const char *date_string;
+        const char *filename;
+        json_unpack(root, "{s:s, s:s}", "date", &date_string, "filename", &filename);
+
         const char *out_uri = remove_date_from_uri(r->pool, tokens);
-        // request_rec *rr = ap_sub_req_lookup_uri(out_uri, r, r->output_filters);   
-        apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);
-        // return ap_run_sub_req(rr);    
+        apr_table_set(r->notes, "mod_wmts_wrapper_filename", filename);
+        apr_table_set(r->notes, "mod_wmts_wrapper_date_string", date_string);
         ap_internal_redirect(out_uri, r);
+
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "tilematrixset") == 0) {
 
-        // If we get to this point, we know mod_reproject is configured for this endpoint, so keep mod_onearth from handling it
-        if (module *old_onearth_module = (module *)ap_find_linked_module("mod_onearth.c")) {
-            apr_table_set(r->notes, "mod_onearth_handled", "true");
-        }
+        const char *filename = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_filename") : NULL;
+        const char *date_string = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date_string") : NULL;
         
-        const char *datetime_str = r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")
-            ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date")
-            : "default";
-
         // Start by verifying the requested tile coordinates/format from the URI against the mod_reproject configuration for this endpoint
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *dim;
@@ -503,12 +514,18 @@ static int pre_hook(request_rec *r)
         int tile_l = apr_atoi64(dim);
 
         module *reproject_module = (module *)ap_find_linked_module("mod_reproject.cpp");
-        repro_conf *reproject_config = (repro_conf *)ap_get_module_config(r->per_dir_config, reproject_module);
+        repro_conf *reproject_config = reproject_module 
+            ? (repro_conf *)ap_get_module_config(r->per_dir_config, reproject_module)
+            : NULL;
 
         module *mrf_module = (module *)ap_find_linked_module("mod_mrf.cpp");
-        mrf_conf *mrf_config = (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module);
+        mrf_conf *mrf_config = mrf_module
+            ? (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module)
+            : NULL;
 
-        if (int n_levels = reproject_config->raster.n_levels || mrf_config->n_levels) {
+        int n_levels = reproject_config ? reproject_config->raster.n_levels 
+            : mrf_config ? mrf_config->n_levels : NULL;
+        if (n_levels) {
             // Get the tile grid bounds from the tile module config and compare them with the requested tile.
             char *err_msg;
             int max_width;
@@ -517,11 +534,11 @@ static int pre_hook(request_rec *r)
                 err_msg = apr_psprintf(r->pool, "TILEMATRIX is out of range, maximum value is %d", n_levels - 1);
                 wmts_errors[errors++] = wmts_make_error(400, "TileOutOfRange","TILEMATRIX", err_msg);
             } 
-            if (reproject_config->raster.rsets) {
+            if (reproject_config && reproject_config->raster.rsets) {
                 rset *rsets = reproject_config->raster.rsets;
                 max_width = rsets[tile_l].width;
                 max_height = rsets[tile_l].height;
-            } else if (mrf_config->rsets) {
+            } else if (mrf_config && mrf_config->rsets) {
                 tile_l += mrf_config->skip_levels;
                 mrf_rset *rsets = mrf_config->rsets;
                 max_width = rsets[tile_l].width;
@@ -539,16 +556,21 @@ static int pre_hook(request_rec *r)
             if (cfg->time) {
                 // If this is a directory that mod_reproject or mod_mrf is configured to run in, create a new configuration, replacing the 
                 // source URL ${date} field with the date for this request.
-                if (reproject_config->source) {
+                if (reproject_config && reproject_config->source) {
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
-                    out_cfg->source = add_date_to_uri(r->pool, reproject_config->source, datetime_str);
+                    out_cfg->source = add_filename_to_string(r->pool, reproject_config->source, date_string, "${date}");
                     ap_set_module_config(r->request_config, reproject_module, out_cfg);  
-                } else if (mrf_config->datafname) {
+                } else if (mrf_config) {
                     mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
                     memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
-                    out_cfg->datafname = (char *)add_date_to_filename(r->pool, mrf_config->datafname, datetime_str);
-                    out_cfg->idxfname = (char *)add_date_to_filename(r->pool, mrf_config->idxfname, datetime_str);
+                    if (mrf_config->datafname) {
+                        out_cfg->datafname = (char *)add_filename_to_string(r->pool, mrf_config->datafname, filename, "${filename}");    
+                    }
+                    if (mrf_config->redirect) {
+                        out_cfg->redirect = (char *)add_filename_to_string(r->pool, mrf_config->redirect, filename, "${filename}");               
+                    }
+                    out_cfg->idxfname = (char *)add_filename_to_string(r->pool, mrf_config->idxfname, filename, "${filename}");
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);  
                 }
             }
@@ -589,7 +611,19 @@ static int post_hook(request_rec *r)
         wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "LAYER", "LAYER does not exist");
         return wmts_return_all_errors(r, errors, wmts_errors);
     } 
+
+    if (!apr_strnatcasecmp(cfg->role, "style") && cfg->time) {
+
+
+
+        // const char *out_uri = remove_date_from_uri(r->pool, tokens);
+        // apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);
+        // ap_internal_redirect(out_uri, r);
+        // return DECLINED;
+    }
+
     if (!apr_strnatcasecmp(cfg->role, "layer")) {
+
         // If we've already handled a date for this request, we know that it's a TMS error and not a STYLE error
         if (r->prev && apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") && !r->prev->args) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
@@ -635,6 +669,13 @@ static const char *set_mime_type(cmd_parms *cmd, void *dconf, const char *format
     return NULL;
 }
 
+static const char *set_time_lookup(cmd_parms *cmd, void *dconf, const char *uri)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    cfg->time_lookup_uri = apr_pstrdup(cmd->pool, uri);
+    return NULL;
+}
+
 static void *create_dir_config(apr_pool_t *p, char *unused)
 {
     return apr_pcalloc(p, sizeof(wmts_wrapper_conf));
@@ -648,6 +689,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->time = ( add->time == NULL ) ? base->time : add->time;
     cfg->date_regexp = ( add->date_regexp == NULL ) ? base->date_regexp : add->date_regexp;
     cfg->mime_type = ( add->mime_type == NULL ) ? base->mime_type : add->mime_type;
+    cfg->time_lookup_uri = ( add->time_lookup_uri == NULL ) ? base->time_lookup_uri : add->time_lookup_uri;
     return cfg;
 }
 
@@ -683,6 +725,15 @@ static const command_rec cmds[] =
         ACCESS_CONF,
         "Set MIME for the WMTS module in this <Directory> block"
     ),
+
+    AP_INIT_TAKE1(
+        "WMTSWrapperTimeLookupUri",
+        (cmd_func) set_time_lookup, // Callback
+        0, // Self pass argument
+        ACCESS_CONF,
+        "Set URI for time lookup service"
+    ),
+
     {NULL}
 };
 

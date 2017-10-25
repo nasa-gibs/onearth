@@ -2,9 +2,6 @@
 * mod_mrf header file
 * Lucian Plesea
 * (C) 2016
-
-NOTE: This header has been slightly modified for use with mod_wmts_wrapper.
-
 */
 
 #if !defined(MOD_MRF_H)
@@ -80,7 +77,7 @@ typedef struct {
 
 typedef struct {
     // array of guard regexp, one of them has to match
-    apr_array_header_t *regexp;
+    apr_array_header_t *arr_rxp;
     // The mrf data file name
     char *datafname;     
     // The mrf index file name

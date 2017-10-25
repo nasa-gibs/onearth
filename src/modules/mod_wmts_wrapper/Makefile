@@ -15,10 +15,10 @@ TARGET = .libs/mod_wmts_wrapper.so
 # Can't use apxs to build c++ modules
 # The options used here might depend on how apache was built
 $(TARGET)       :       $(OBJECTS)
-	libtool --mode=link g++ -o mod_wmts_wrapper.la -rpath $(MOD_PATH) -module -avoid-version $^ $(LIBS)
+	libtool --mode=link g++ -o mod_wmts_wrapper.la -rpath $(MOD_PATH) -ljansson -module -avoid-version $^ $(LIBS)
 
 %.lo	:	%.cpp
-	libtool --mode=compile g++ -std=c++0x -prefer-pic -g -Wall $(DEFINES) $(INCLUDES) -pthread -c -o $@ $< && touch $(@:.lo=.slo)
+	libtool --mode=compile g++ -std=c++0x -prefer-pic -O2 -Wall $(DEFINES) $(INCLUDES) -pthread -c -o $@ $< && touch $(@:.lo=.slo)
 
 install : $(TARGET)
 	sudo cp $(TARGET) $(MOD_PATH)
