@@ -23,7 +23,7 @@ The service takes queries via URL query parameters and returns a JSON response.
 
 #### Lua dependencies
 - luaposix
-- redis-lua
+- redis-lua (forked in this repo)
 - json-lua
 
 ## Installation
@@ -40,6 +40,13 @@ The service takes queries via URL query parameters and returns a JSON response.
 
 ```
 luarocks make
+```
+
+6. Install the Lua Redis handler library: 
+
+```
+cd redis-lua
+luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 ```
 
 ## Configuration
