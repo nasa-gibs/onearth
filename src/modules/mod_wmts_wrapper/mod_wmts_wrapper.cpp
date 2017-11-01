@@ -80,6 +80,7 @@ int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
     if (apr_strnatcasecmp(cfg->mime_type, "image/lerc") == 0) {
         return (apr_strnatcasecmp(".lerc", extension) == 0);
     }
+    return NULL;
 }
 
 // argstr_to_table and argstr_to_table are taken from Apache 2.4
@@ -399,6 +400,34 @@ static int handleKvP(request_rec *r)
     return DECLINED;
 }
 
+static int get_filename_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **filename) {
+    // Rewrite URI to exclude date and put the date in the notes for the redirect.
+    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("Receive");
+    SERR_IF(!receive_filter, "Mod_wmts_wrapper needs mod_receive to be available to make time queries");
+
+    // Allocate buffer for JSON response
+    receive_ctx rctx;
+    rctx.maxsize = 1024*1024;
+    rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
+    rctx.size = 0;
+
+    const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
+    
+    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
+    request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
+    int rr_status = ap_run_sub_req(rr);
+    ap_remove_output_filter(rf);
+    if (rr_status != APR_SUCCESS) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Time lookup failed for %s", time_request_uri);
+        return rr_status; // Pass status along
+    }
+
+    json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
+    const char *date_string;
+    json_unpack(root, "{s:s, s:s}", "date", &date_string, "filename", filename);
+    return APR_SUCCESS;
+}
 
 // static const char *get_date_from_uri(apr_pool_t *p, wmts_wrapper_conf *cfg, const char *uri)
 // {
@@ -429,9 +458,11 @@ This is possible because we're grabbing the mod_reproject configuration and gett
 static int pre_hook(request_rec *r)
 {
     char *err_msg;
-
     wmts_error wmts_errors[5];
     int errors = 0;
+    int status;
+    const char *datetime_str;
+
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
     if (!cfg->role) return DECLINED;
 
@@ -444,56 +475,30 @@ static int pre_hook(request_rec *r)
             return wmts_return_all_errors(r, errors, wmts_errors);
         }
 
-        // This routine gets a snapped or default date from a lookup service, 
-        // adds it to the request notes, then strips the date and redirects the response
+        // Date handling -- verify date, then add it to the notes and re-issue the request sans date
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
-        char *datetime_str = (char *)APR_ARRAY_IDX(tokens, tokens->nelts - 5, char *);
-        char *layer_name = (char *)APR_ARRAY_IDX(tokens, tokens->nelts - 7, char *);
-        
-        // Rewrite URI to exclude date and put the date in the notes for the redirect.
-        ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("Receive");
-        SERR_IF(!receive_filter, "Mod_wmts_wrapper needs mod_receive to be available to make time queries");
-
-        // Allocate buffer for JSON response
-        receive_ctx rctx;
-        rctx.maxsize = 1024*1024;
-        rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
-        rctx.size = 0;
-
-        const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
-        
-        ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
-        request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
-        int rr_status = ap_run_sub_req(rr);
-        ap_remove_output_filter(rf);
-        if (rr_status != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Time lookup failed for %s", time_request_uri);
-            return rr_status; // Pass status along
+        datetime_str = (char *)APR_ARRAY_IDX(tokens, tokens->nelts - 5, char *);
+        if (ap_regexec(cfg->date_regexp, datetime_str, 0, NULL, 0) == AP_REG_NOMATCH 
+            && apr_strnatcasecmp(datetime_str, "default")) {
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
         }
 
-        json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
-        json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
-        const char *date_string;
-        const char *filename;
-        json_unpack(root, "{s:s, s:s}", "date", &date_string, "filename", &filename);
-
+        apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);        
+        if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
         const char *out_uri = remove_date_from_uri(r->pool, tokens);
-        apr_table_set(r->notes, "mod_wmts_wrapper_filename", filename);
-        apr_table_set(r->notes, "mod_wmts_wrapper_date_string", date_string);
         ap_internal_redirect(out_uri, r);
 
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "tilematrixset") == 0) {
 
         const char *filename = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_filename") : NULL;
-        const char *date_string = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date_string") : NULL;
+        datetime_str = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") : NULL;
         
         // Start by verifying the requested tile coordinates/format from the URI against the mod_reproject configuration for this endpoint
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *dim;
 
         dim = *(char **)apr_array_pop(tokens);
-
         const char *extension = ap_strchr(dim, '.');
         if  (extension && cfg->mime_type) {
             if (!check_valid_extension(cfg, extension)) {
@@ -513,6 +518,7 @@ static int pre_hook(request_rec *r)
         if (!isdigit(*dim)) wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue","TILEMATRIX", "TILEMATRIX is not a valid integer");
         int tile_l = apr_atoi64(dim);
 
+        // Get AHTSE module configs (if available)
         module *reproject_module = (module *)ap_find_linked_module("mod_reproject.cpp");
         repro_conf *reproject_config = reproject_module 
             ? (repro_conf *)ap_get_module_config(r->per_dir_config, reproject_module)
@@ -523,8 +529,8 @@ static int pre_hook(request_rec *r)
             ? (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module)
             : NULL;
 
-        int n_levels = reproject_config ? reproject_config->raster.n_levels 
-            : mrf_config ? mrf_config->n_levels : NULL;
+        int n_levels = (reproject_config && reproject_config->raster.n_levels) ? reproject_config->raster.n_levels 
+            : (mrf_config && mrf_config->n_levels) ? mrf_config->n_levels : NULL;
         if (n_levels) {
             // Get the tile grid bounds from the tile module config and compare them with the requested tile.
             char *err_msg;
@@ -554,14 +560,20 @@ static int pre_hook(request_rec *r)
             }
             if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
             if (cfg->time) {
-                // If this is a directory that mod_reproject or mod_mrf is configured to run in, create a new configuration, replacing the 
-                // source URL ${date} field with the date for this request.
                 if (reproject_config && reproject_config->source) {
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
-                    out_cfg->source = add_filename_to_string(r->pool, reproject_config->source, date_string, "${date}");
+                    out_cfg->source = add_filename_to_string(r->pool, reproject_config->source, datetime_str, "${date}");
                     ap_set_module_config(r->request_config, reproject_module, out_cfg);  
-                } else if (mrf_config) {
+                } else if (mrf_config && (mrf_config->datafname || mrf_config->redirect)) {
+                    apr_array_pop(tokens); // Discard TMS name
+                    apr_array_pop(tokens); // Discard style name
+                    // Get filename from date service and amend the mod_mrf config to point to it
+                    char *layer_name = *(char **)apr_array_pop(tokens);
+                    char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+                    status = get_filename_from_date_service(r, cfg, layer_name, datetime_str, &filename);
+                    if (status != APR_SUCCESS) return status;
+
                     mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
                     memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
                     if (mrf_config->datafname) {

@@ -13,7 +13,8 @@ description = {
 }
 dependencies = {
    "lua >= 5.1, < 5.4",
-   "luaposix == 34.0.1-3"
+   "luaposix == 34.0.1-3",
+   "json-lua == 0.1-3"
 }
 build = {
    type = "builtin",
