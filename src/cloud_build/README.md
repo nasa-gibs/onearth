@@ -4,7 +4,7 @@
 ```
 git clone https://github.com/nasa-gibs/onearth.git
 cd onearth
-checkout 2.0.0-cloud-setup
+checkout <0 class="0-cloud-setup"></0>
 git submodule init && git submodule update
 ```
 
