@@ -120,7 +120,7 @@ patch_apr() {
     wget http://apache.osuosl.org//apr/apr-1.6.3.tar.gz
     tar xf apr-1.6.3.tar.gz
     cd apr-1.6.3
-    patch  -p2 < /vagrant/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
+    patch  -p2 < $WORKING_DIR/../modules/mod_mrf/apr_FOPEN_RANDOM.patch
     ./configure --prefix=/lib64
     make && make install
     # TODO: how can we test for patched APR install?
