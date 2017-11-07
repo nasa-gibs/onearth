@@ -893,7 +893,11 @@ static int handler(request_rec *r)
     static coord_conv_f *cyf[P_COUNT] = { same_proj, wm2lat, lat2wm, m2wm, wm2m };
 
     // TODO: use r->header_only to verify ETags, assuming the subrequests are faster in that mode
-    repro_conf *cfg = (repro_conf *)ap_get_module_config(r->per_dir_config, &reproject_module);
+    // pick up a modified config if one exists in the notes for this request.
+    repro_conf *cfg = ap_get_module_config(r->request_config, &reproject_module)
+        ? (repro_conf *)ap_get_module_config(r->request_config, &reproject_module) :
+            (repro_conf *)ap_get_module_config(r->per_dir_config, &reproject_module);
+            
     if (!our_request(r, cfg)) return DECLINED;
 
     apr_array_header_t *tokens = tokenize(r->pool, r->uri);

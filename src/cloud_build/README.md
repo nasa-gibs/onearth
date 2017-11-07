@@ -1,11 +1,16 @@
 # Building and Installing OE2
 
+## Docker setup
+The included Dockerfile will build an image with OE2.
+To set up some sample layers, run (within the container) `/home/oe2/onearth/src/cloud_build/test_layer_setup.sh`
+
+## Setup without Docker
+
 ## Clone the repo and initialize the subrepos
 ```
 git clone https://github.com/nasa-gibs/onearth.git
 cd onearth
-checkout <0 class="0-cloud-setup"></0>
-git submodule init && git submodule update
+checkout 2.0.0-cloud-setup
 ```
 
 ## Install everything (requires sudo permissions)
