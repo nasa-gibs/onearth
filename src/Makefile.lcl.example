@@ -1,0 +1,4 @@
+INCLUDES = -I /usr/include/apache2 -I /usr/include/apr-1.0 -I /usr/include/lua5.1
+MOD_PATH = /usr/lib/apache2/modules
+HTTPD_INCLUDES_PATH = /usr/include/apache2
+LIBS = -llua5.1
