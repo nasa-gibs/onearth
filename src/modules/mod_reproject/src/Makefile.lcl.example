@@ -1,0 +1,3 @@
+INCLUDES = -I /usr/include/apache2 -I /usr/include/apr-1.0
+MOD_PATH = /usr/lib/apache2/modules
+
