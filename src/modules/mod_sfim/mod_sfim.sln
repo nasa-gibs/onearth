@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_sfim", "mod_sfim.vcxproj", "{064DF0E7-AA85-456A-980B-D309974D3291}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{064DF0E7-AA85-456A-980B-D309974D3291}.Debug|Win32.ActiveCfg = Debug|Win32
+		{064DF0E7-AA85-456A-980B-D309974D3291}.Debug|Win32.Build.0 = Debug|Win32
+		{064DF0E7-AA85-456A-980B-D309974D3291}.Release|Win32.ActiveCfg = Release|Win32
+		{064DF0E7-AA85-456A-980B-D309974D3291}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
