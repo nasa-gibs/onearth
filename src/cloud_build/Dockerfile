@@ -6,7 +6,6 @@ RUN yum install -y luarocks
 RUN yum install -y redis
 
 RUN mkdir /home/oe2
-WORKDIR /home/oe2
 
 # Install mod_proxy patch
 WORKDIR /tmp
@@ -27,6 +26,7 @@ RUN ./configure --prefix=/lib64
 RUN make && make install
 
 # Install Apache modules
+WORKDIR /home/oe2
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
 RUN git checkout 2.0.0-cloud-setup
