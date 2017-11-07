@@ -8,6 +8,24 @@ RUN yum install -y redis
 RUN mkdir /home/oe2
 WORKDIR /home/oe2
 
+# Install mod_proxy patch
+WORKDIR /tmp
+RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
+RUN tar xf httpd-2.4.6.tar.gz
+WORKDIR /tmp/httpd-2.4.6
+RUN patch -p0 < /home/oe2/onearth/src/cloud_build/mod_proxy_http.patch
+RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared 
+RUN make && make install
+
+# Install APR patch
+WORKDIR /tmp
+RUN wget http://apache.osuosl.org//apr/apr-1.6.3.tar.gz
+RUN tar xf apr-1.6.3.tar.gz
+WORKDIR /tmp/apr-1.6.3
+RUN patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
+RUN ./configure --prefix=/lib64
+RUN make && make install
+
 # Install Apache modules
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
@@ -44,22 +62,5 @@ RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
 
-# Install mod_proxy patch
-WORKDIR /tmp
-RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
-RUN tar xf httpd-2.4.6.tar.gz
-WORKDIR /tmp/httpd-2.4.6
-RUN patch -p0 < /home/oe2/onearth/src/cloud_build/mod_proxy_http.patch
-RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared 
-RUN make && make install
-
-# Install APR patch
-WORKDIR /tmp
-RUN wget http://apache.osuosl.org//apr/apr-1.6.3.tar.gz
-RUN tar xf apr-1.6.3.tar.gz
-WORKDIR /tmp/apr-1.6.3
-RUN patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
-RUN ./configure --prefix=/lib64
-RUN make && make install
-
 WORKDIR /home/oe2/onearth/src/cloud_build/
+CMD /home/oe2/onearth/src/cloud_build/test_layer_setup.sh
