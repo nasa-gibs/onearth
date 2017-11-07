@@ -1,0 +1,52 @@
+diff -rupN original/apr-1.5.2/file_io/unix/open.c mine/apr-1.5.2/file_io/unix/open.c
+--- original/apr-1.5.2/file_io/unix/open.c	2013-11-02 11:36:02.000000000 +0000
++++ mine/apr-1.5.2/file_io/unix/open.c	2016-08-07 02:46:02.021141363 +0000
+@@ -205,6 +205,12 @@ APR_DECLARE(apr_status_t) apr_file_open(
+         }
+     }
+ 
++#if defined(POSIX_FADV_RANDOM)
++    if (flag & APR_FOPEN_RANDOM) {
++        posix_fadvise(fd, 0, 0, POSIX_FADV_RANDOM | POSIX_FADV_NOREUSE);
++    }
++#endif
++
+     (*new) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
+     (*new)->pool = pool;
+     (*new)->flags = flag;
+diff -rupN original/apr-1.5.2/file_io/win32/open.c mine/apr-1.5.2/file_io/win32/open.c
+--- original/apr-1.5.2/file_io/win32/open.c	2014-02-12 19:22:47.000000000 +0000
++++ mine/apr-1.5.2/file_io/win32/open.c	2016-08-07 02:46:18.221038510 +0000
+@@ -403,6 +403,19 @@ APR_DECLARE(apr_status_t) apr_file_open(
+         attributes |= FILE_FLAG_OVERLAPPED;
+     }
+ 
++    if (flag & APR_FOPEN_RANDOM) {
++        /* Set the RANDOM_ACCESS_FLAG if requested,
++         * except if SENDFILE is also enabled,
++         * in which case SEQUENTIAL_SCAN will be set
++         */
++        if (flag & APR_FOPEN_SEND_FILE_ENABLED) {
++            flag &= ~APR_FOPEN_RANDOM;
++        }
++        else {
++            attributes |= FILE_FLAG_RANDOM_ACCESS;
++        }
++    }
++
+ #if APR_HAS_UNICODE_FS
+     IF_WIN_OS_IS_UNICODE
+     {
+diff -rupN original/apr-1.5.2/include/apr_file_io.h mine/apr-1.5.2/include/apr_file_io.h
+--- original/apr-1.5.2/include/apr_file_io.h	2013-11-17 20:31:58.000000000 +0000
++++ mine/apr-1.5.2/include/apr_file_io.h	2016-08-07 02:45:38.480918470 +0000
+@@ -85,6 +85,9 @@ extern "C" {
+ #define APR_FOPEN_SPARSE      0x08000 /**< Platform dependent flag to enable
+                                        * sparse file support, see WARNING below
+                                        */
++#define APR_FOPEN_RANDOM      0x10000 /**< Platform dependent flag to optimize
++                                       * file for random access
++                                       */
+ #define APR_FOPEN_NONBLOCK    0x40000 /**< Platform dependent flag to enable
+                                        * non blocking file io */
+ 
