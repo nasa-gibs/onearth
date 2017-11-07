@@ -1,0 +1,6 @@
+INCLUDES = -I /usr/include/apache2 -I /usr/include/apr-1.0
+MOD_PATH = /usr/lib/apache2/modules
+
+## Uncoment this if LUA lookup functionality is needed
+# HAS_LUA = TRUE
+
