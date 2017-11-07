@@ -7,6 +7,12 @@ RUN yum install -y redis
 
 RUN mkdir /home/oe2
 
+# Clone OnEarth repo
+WORKDIR /home/oe2
+RUN git clone https://github.com/nasa-gibs/onearth.git
+WORKDIR /home/oe2/onearth
+RUN git checkout 2.0.0-cloud-setup
+
 # Install mod_proxy patch
 WORKDIR /tmp
 RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
@@ -26,11 +32,6 @@ RUN ./configure --prefix=/lib64
 RUN make && make install
 
 # Install Apache modules
-WORKDIR /home/oe2
-RUN git clone https://github.com/nasa-gibs/onearth.git
-WORKDIR /home/oe2/onearth
-RUN git checkout 2.0.0-cloud-setup
-
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
 RUN make && make install
