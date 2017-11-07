@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Support Files">
+      <UniqueIdentifier>{6e87880d-73d0-401a-8f47-c4015dc2a1db}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mod_twms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\mod_twms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Makefile">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="src\Makefile.lcl.example">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="LICENSE">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include=".gitignore">
+      <Filter>Support Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

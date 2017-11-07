@@ -21,7 +21,7 @@ $(TARGET)       :       $(OBJECTS)
 	libtool --mode=compile g++ -std=c++0x -prefer-pic -O2 -Wall $(DEFINES) $(INCLUDES) -pthread -c -o $@ $< && touch $(@:.lo=.slo)
 
 install : $(TARGET)
-	sudo cp $(TARGET) $(MOD_PATH)
+	cp $(TARGET) $(MOD_PATH)
 
 clean   :
 	rm -rf .libs *.{o,lo,slo,la}

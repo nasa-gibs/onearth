@@ -21,7 +21,7 @@ $(TARGET)	:	$(OBJECTS)
 
 # Only do this when httpd is not running
 install :       $(TARGET)
-	sudo    cp $(TARGET) $(MOD_PATH)
+	cp $(TARGET) $(MOD_PATH)
 
 clean	:
 	rm -rf .libs *.o *.la *.slo *.lo

@@ -19,8 +19,8 @@ $(TARGET)	:	$(FILES)
 	libtool --silent --mode=link g++ -o $(MODULE).la -rpath $(MOD_PATH) -module -avoid-version $(MODULE).lo
 
 install	:	$(TARGET)
-	sudo	cp $(TARGET)	$(MOD_PATH)
-	sudo	cp $(HEADER)	$(HTTPD_INCLUDES_PATH)
+	cp $(TARGET)	$(MOD_PATH)
+	cp $(HEADER)	$(HTTPD_INCLUDES_PATH)
 
 
 clean	:
