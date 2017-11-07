@@ -1,0 +1,23 @@
+*** httpd/modules/proxy/mod_proxy_http.c	2016-02-04 12:44:22.135322304 -0800
+--- httpd-2.4.18/modules/proxy/mod_proxy_http.c	2015-09-16 06:34:11.000000000 -0700
+*************** int ap_proxy_http_request(apr_pool_t *p,
+*** 748,758 ****
+       */
+      if (!r->kept_body && r->main) {
+          /* XXX: Why DON'T sub-requests use keepalives? */
+!         // LP: Take this out to improve retile performance
+!         // As the original comment above says, not sure why keepalives 
+!         // are not allowed.
+!         // Maybe the close can be made conditional on the request
+!         // p_conn->close = 1; 
+          old_cl_val = NULL;
+          old_te_val = NULL;
+          rb_method = RB_STREAM_CL;
+--- 748,754 ----
+       */
+      if (!r->kept_body && r->main) {
+          /* XXX: Why DON'T sub-requests use keepalives? */
+!         p_conn->close = 1;
+          old_cl_val = NULL;
+          old_te_val = NULL;
+          rb_method = RB_STREAM_CL;
