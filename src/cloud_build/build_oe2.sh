@@ -2,7 +2,8 @@ WORKING_DIR=$PWD
 
 setup_dependencies() {
     yum groupinstall -y "Development Tools"
-    yum install -y epel-release lua-devel jansson-devel luarocks httpd-devel libpng-devel libjpeg-devel pcre-devel redis mod_proxy mod_ssl    
+    yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel redis mod_proxy mod_ssl wget 
+    yum install -y luarocks
 }
 
 setup_mod_receive() {
