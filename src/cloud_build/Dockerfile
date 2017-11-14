@@ -64,4 +64,5 @@ WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
 
 WORKDIR /home/oe2/onearth/src/cloud_build/
-CMD /home/oe2/onearth/src/cloud_build/test_layer_setup.sh
+RUN test_layer_setup.sh
+CMD /home/oe2/onearth/src/cloud_build/start_oe2.sh
