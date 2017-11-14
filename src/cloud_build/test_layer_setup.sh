@@ -1,3 +1,5 @@
+#!/bin/sh
+
 setup_date_server() {
     # Start redis DB and add some test values
     /usr/bin/redis-server &

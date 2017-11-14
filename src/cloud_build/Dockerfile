@@ -63,6 +63,6 @@ RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
 
-WORKDIR /home/oe2/onearth/src/cloud_build/
-RUN test_layer_setup.sh
-CMD /home/oe2/onearth/src/cloud_build/start_oe2.sh
+WORKDIR /home/oe2/onearth/src/cloud_build
+RUN sh test_layer_setup.sh
+CMD sh start_oe2.sh

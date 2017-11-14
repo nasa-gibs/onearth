@@ -5,11 +5,11 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-echo 'Starting Redis server'
-/usr/bin/redis-server &
-
 echo 'Starting Apache server'
 /usr/sbin/apachectl
+
+echo 'Starting Redis server'
+/usr/bin/redis-server
 
 # Tail the apache logs
 exec tail -qF \
