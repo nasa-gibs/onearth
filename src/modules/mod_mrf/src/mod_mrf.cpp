@@ -520,6 +520,9 @@ static int handler(request_rec *r)
     apr_off_t tidx_offset = level->offset +
         sizeof(TIdx) * (tile.x + level->width * (tile.z * level->height + tile.y));
 
+    // LOGGING
+    apr_time_t start_index_lookup = apr_time_now();
+
     apr_file_t *idxf, *dataf;
     SERR_IF(open_index_file(r, &idxf, cfg->idxfname),
         apr_psprintf(r->pool, "Can't open %s", cfg->idxfname));
@@ -530,6 +533,9 @@ static int handler(request_rec *r)
         || apr_file_read(idxf, &index, &read_size) 
         || read_size != sizeof(TIdx),
         apr_psprintf(r->pool, "Tile index doesn't exist in %s", cfg->idxfname));
+
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "step=index_read, duration=%u, uuid=%s",
+        apr_time_now() - start_index_lookup, apr_table_get(r->headers_in, "UUID"));
 
     // MRF index record is in network order
     index.size = ntoh64(index.size);
@@ -571,14 +577,22 @@ static int handler(request_rec *r)
         rctx.size = 0;
 
         ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
+
         request_rec *sr = ap_sub_req_lookup_uri(cfg->redirect, r, r->output_filters);
 
         // Data file is on a remote site a range request redirect with a range header
         static const char *rfmt = "bytes=%" APR_UINT64_T_FMT "-%" APR_UINT64_T_FMT;
         char *Range = apr_psprintf(r->pool, rfmt, index.offset, index.offset + index.size);
         apr_table_setn(sr->headers_in, "Range", Range);
+
+        // LOGGING
+        start_index_lookup = apr_time_now();
+
         int status = ap_run_sub_req(sr);
         ap_remove_output_filter(rf);
+
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "step=s3_read, duration=%u, uuid=%s",
+            apr_time_now() - start_index_lookup, apr_table_get(r->headers_in, "UUID"));
 
         if (status != APR_SUCCESS || sr->status != HTTP_PARTIAL_CONTENT 
             || rctx.size != static_cast<int>(index.size)) {
