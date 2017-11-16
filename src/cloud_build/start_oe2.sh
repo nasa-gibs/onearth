@@ -9,7 +9,7 @@ echo 'Starting Apache server'
 /usr/sbin/apachectl
 
 echo 'Starting Redis server'
-/usr/bin/redis-server
+/usr/bin/redis-server &
 
 # Tail the apache logs
 exec tail -qF \

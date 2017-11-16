@@ -7,6 +7,7 @@ setup_date_server() {
     redis-cli -n 0 DEL layer:date_test
     redis-cli -n 0 SET layer:date_test:default "2015-01-01"
     redis-cli -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
+    redis-cli -n 0 SAVE
 
     # Copy config stuff
     cp oe2_test_date_service.conf /etc/httpd/conf.d
