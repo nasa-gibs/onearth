@@ -106,6 +106,28 @@ limitations under the License.
       </xs:element>
     </xs:sequence>
   </xs:group>
+  <xs:group name="MetadataJSON">
+    <xs:sequence>
+      <xs:element name="MetadataJSONLocation" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="MetadataJSONURL" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:anyURI">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
   <xs:element name="MapfileLocation">
     <xs:complexType mixed="true">
       <xs:attribute name="basename" use="required" type="xs:string"/>

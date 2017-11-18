@@ -25,5 +25,6 @@ limitations under the License.
  <EnvironmentConfig>/etc/onearth/config/conf/environment_webmercator.xml</EnvironmentConfig>
  <ArchiveLocation static="false" year="true">Terra_Orbit_Dsc</ArchiveLocation>
  <StyleJSON>Terra_Orbit_Dsc.json</StyleJSON>
+ <MetadataJSON>Terra_Orbit_Dsc.json</MetadataJSON>
  <Time>DETECT/P1D</Time>
 </LayerConfiguration>
