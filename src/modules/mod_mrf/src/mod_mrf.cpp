@@ -365,6 +365,11 @@ static int send_image(request_rec *r, apr_uint32_t *buffer, apr_size_t size)
     // TODO: Set headers, as chosen by user
     ap_set_content_length(r, size);
     ap_rwrite(buffer, size, r);
+
+    // LOGGING
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "step=end_onearth_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), apr_table_get(r->headers_in, "UUID"));
+
     return OK;
 }
 
