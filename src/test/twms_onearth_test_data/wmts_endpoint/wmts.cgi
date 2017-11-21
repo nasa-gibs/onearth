@@ -38,29 +38,28 @@ ct() {
   done
 }
 
-QS=${QUERY_STRING%%GetMap*}
+QS=${QUERY_STRING%%GetTile*}
 if [[ -z ${QS##*=} ]]
 then
   if [[ $QUERY_STRING == *jpeg* ]]
   then
     echo -e "Content-type: image/jpeg\n"
-    cat Blank_RGB_512.jpg
+    cat black.jpg
+  elif [[ $QUERY_STRING == *x-protobuf* ]]
+  then
+  	echo -e "Content-type: application/x-protobuf\n"
   else
     echo -e "Content-type: image/png\n"
-    cat Blank_RGBA_512.png
+    cat transparent.png
   fi
   exit
 else
-  # GetCapabilities is only here for WorldWind
   if [[ $QUERY_STRING == *GetCapabilities* ]]
   then
     echo -e "Content-type: text/xml\n"
-#    cat getCapabilities.xml
-    IFS= ct <.lib/getCapabilities.xml
+    IFS= ct <getCapabilities.xml
     exit
   else
-    # Don't believe this works as the file is located in .lib
-    # Believe it is served from there by the Apache module
     if [[ $QUERY_STRING == *GetTileService* ]]
     then
       echo -e "Content-type: text/xml\n"
@@ -69,5 +68,5 @@ else
     fi
   fi
   echo -e "Content-type: text/html\n"
-  echo "<body>This is not a full WMS server!</body>"
+  echo "<body>This is not a full WMTS server!</body>"
 fi

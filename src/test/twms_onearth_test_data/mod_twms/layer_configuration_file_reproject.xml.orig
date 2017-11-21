@@ -1,0 +1,6 @@
+<ReprojectLayerConfig>
+	<SrcWMTSGetCapabilitiesURI>http://localhost/onearth/test/wmts/1.0.0/WMTSCapabilities.xml</SrcWMTSGetCapabilitiesURI>
+	<SrcLocationRewrite internal="/outside" external="http://localhost" />
+	<EnvironmentConfig>{cache_path}/environment_twms.xml</EnvironmentConfig>
+	<ExcludeLayer>mvt_test</ExcludeLayer>
+</ReprojectLayerConfig>

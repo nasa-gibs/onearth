@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE WMT_MS_Capabilities SYSTEM "http://localhost/WMS_MS_Capabilities.dtd" [ <!ELEMENT VendorSpecificCapabilities EMPTY> ]>
+<WMT_MS_Capabilities version="1.1.1">
+  <Service>
+    <Name>OGC:WMS</Name>
+    <Title>NASA Global Imagery Browse Services for EOSDIS</Title>
+    <Abstract>Near real time imagery from multiple NASA instruments</Abstract>
+    <KeywordList>
+      <Keyword>GIBS</Keyword>
+      <Keyword>NASA</Keyword>
+      <Keyword>WMS</Keyword>
+      <Keyword>Earth</Keyword>
+    </KeywordList>
+    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://earthdata.nasa.gov/" />
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson></ContactPerson>
+        <ContactOrganization></ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactElectronicMailAddress></ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>none</AccessConstraints>
+  </Service>
+  <Capability>
+    <Request>
+      <GetCapabilities>
+        <Format>application/vnd.ogc.wms_xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="{ServiceURL}/twms.cgi?" />
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetCapabilities>
+      <GetMap>
+        <Format>image/jpeg</Format>
+        <Format>image/png</Format>
+        <DCPType> <HTTP> <Get>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="{ServiceURL}/twms.cgi?" />
+        </Get> </HTTP> </DCPType>
+      </GetMap>
+      <GetTileService>
+        <Format>text/xml</Format>
+        <DCPType><HTTP><Get>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="{ServiceURL}/twms.cgi?" />
+        </Get></HTTP></DCPType>
+      </GetTileService>
+    </Request>
+    <Exception>
+      <Format>application/vnd.ogc.se_xml</Format>
+    </Exception>
+    <VendorSpecificCapabilities/>
+    <UserDefinedSymbolization SupportSLD="0" UserLayer="0" UserStyle="1" RemoteWFS="0" />
+  	<Layer queryable="0">
+      <Title>Global Imagery Browse Services</Title>
+      <SRS></SRS>
+      <CRS></CRS>
+  	</Layer>
+  </Capability>
+</WMT_MS_Capabilities>

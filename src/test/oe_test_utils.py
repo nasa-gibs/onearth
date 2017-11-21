@@ -419,7 +419,7 @@ def get_layer_config(filepath, archive_config):
         archive config -- path to the archive config file
     """
     config = {}
-
+    
     # Get the layer, environment, and archive config DOMs
     try:
         with open(filepath, "r") as lc:
@@ -461,7 +461,7 @@ def get_layer_config(filepath, archive_config):
         config['vector_style_file'] = config_dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
     except IndexError:
         pass
-    
+
     try:
         with open(env_config, "r") as env:
             env_dom = xml.dom.minidom.parse(env)
@@ -608,6 +608,8 @@ def check_tile_request(url, ref_hash):
     """
     check_apache_running()
     tile = get_url(url)
+    ##print get_file_hash(tile)
+    ##print ref_hash
     hash_check = get_file_hash(tile) == ref_hash
     return hash_check
 
