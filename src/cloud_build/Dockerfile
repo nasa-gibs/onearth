@@ -63,6 +63,9 @@ RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
 
+# Set Apache to Debug mode for performance logging
+RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
+
 WORKDIR /home/oe2/onearth/src/cloud_build
 RUN sh test_layer_setup.sh
 CMD sh start_oe2.sh

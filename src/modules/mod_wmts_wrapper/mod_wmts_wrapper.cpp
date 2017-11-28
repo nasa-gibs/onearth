@@ -490,8 +490,11 @@ static int pre_hook(request_rec *r)
 
         return DECLINED;
     } else if (apr_strnatcasecmp(cfg->role, "tilematrixset") == 0) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "step=begin_onearth_handle, timestamp=%u, uuid=%s",
-            apr_time_now(), apr_table_get(r->headers_in, "UUID"));
+        const char *uuid = apr_table_get(r->headers_in, "UUID") 
+            ? apr_table_get(r->headers_in, "UUID") 
+            : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, timestamp=%u, uuid=%s",
+            apr_time_now(), uuid);
 
 
         const char *filename = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_filename") : NULL;

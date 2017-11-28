@@ -14,14 +14,14 @@ local date_time_format = "%Y-%m-%d_t&H:&M:&S"
 local function split (sep, str)
     local results = {}
     for value in string.gmatch(str, "([^" .. sep .. "]+)") do
-        results[#results+1] = value
+        results[#results + 1] = value
     end
     return results
 end
 
 local function get_query_param (param, query_string)
     local query_parts = split("&", query_string)
-    local date_string = nil;
+    local date_string = nil; 
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
         if string.lower(query_pair[1]) == param then
@@ -32,11 +32,11 @@ local function get_query_param (param, query_string)
 end
 
 local function send_response (code, msg_string)
-   return msg_string,
-      {
+    return msg_string, 
+    {
         ["Content-Type"] = "application/json"
-      },
-      code
+    }, 
+    code
 end
 
 -- Date utility functions
@@ -103,7 +103,7 @@ local function redis_get_all_layers (client)
     local cursor = "0"
     local results
     repeat
-        cursor, results = unpack(client:scan(cursor, {match="layer:*"}))
+        cursor, results = unpack(client:scan(cursor, {match = "layer:*"}))
         for _, value in pairs(results) do
             local layer_name = split(":", value)[2]
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
@@ -118,15 +118,15 @@ local function redis_handler (options)
     local redis = require 'redis'
     local client = redis.connect(options.ip, options.port or 6379)
     return function (layer_name)
+        io.stderr:write(string.format("WMTS=end_mod_wmts_wrapper_handle TIMESTAMP=%d", posix_time.time()))
         if layer_name then
             local default = client:get("layer:" .. layer_name .. ":default")
             local periods = client:smembers("layer:" .. layer_name .. ":periods")
             if default and periods then
                 return {[layer_name] = {
-                        default = default,
-                        periods = periods
-                    }
-                }
+                    default = default, 
+                    periods = periods
+                }}
             end
             return {err_msg = "Layer not found!"}
         end
@@ -140,7 +140,13 @@ end
 local function strftime_formatter (options)
     return function (layer_name, date_epoch, subdaily)
         return layer_name .. posix_time.strftime(subdaily and options.date_time_format
-            or options.date_format, posix_time.gmtime(date_epoch))
+        or options.date_format, posix_time.gmtime(date_epoch))
+    end
+end
+
+local function epoch_formatter (_)
+    return function (layer_name, date_epoch, _)
+        return layer_name .. date_epoch
     end
 end
 
@@ -148,7 +154,9 @@ end
 function onearth.date_snapper (layer_handler_options, filename_options)
     local JSON = require("JSON")
     local layer_handler = layer_handler_options.type == "redis" and redis_handler(layer_handler_options) or nil
-    local filename_handler = filename_options.type == "strftime" and strftime_formatter(filename_options) or nil
+    local filename_handler = filename_options.type == "strftime" and strftime_formatter(filename_options)
+        or filename_options.type == "epoch" and epoch_formatter(filename_options)
+        or nil
     return function (query_string, _, _)
         local layer_name = query_string and get_query_param("layer", query_string) or nil
         -- -- A blank query returns the entire list of layers and periods
@@ -166,9 +174,8 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         -- If it's a default request, return the default date and associated period
         if string.lower(request_date_string) == "default" then
             local out_msg = {
-                date = layer_datetime_info[layer_name].default,
-                filename = filename_handler(layer_name, parse_date(layer_datetime_info[layer_name].default))
-            }
+                date = layer_datetime_info[layer_name].default, 
+            filename = filename_handler(layer_name, parse_date(layer_datetime_info[layer_name].default))}
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -186,10 +193,10 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         for _, period in ipairs(layer_datetime_info[layer_name].periods) do
             local parsed_period = split("/", period)
             local start_date = subdaily and posix_time.strptime(parsed_period[1], date_time_format)
-                or posix_time.strptime(parsed_period[1], date_format)
+            or posix_time.strptime(parsed_period[1], date_format)
             local start_epoch = posix_time.mktime(start_date)
             local end_date = subdaily and posix_time.strptime(parsed_period[2], date_time_format)
-                or posix_time.strptime(parsed_period[2], date_format)
+            or posix_time.strptime(parsed_period[2], date_format)
             local end_epoch = posix_time.mktime(end_date)
             if req_epoch == start_epoch then
                 snap_epoch = req_epoch
@@ -206,11 +213,10 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         -- Return snap date and error if none is found
         if snap_epoch then
             local snap_date_string = posix_time.strftime(subdaily and date_time_format
-                or date_format, posix_time.gmtime(snap_epoch))
+            or date_format, posix_time.gmtime(snap_epoch))
             local out_msg = {
-                date = snap_date_string,
-                filename = filename_handler(layer_name, snap_epoch, subdaily)
-            }
+                date = snap_date_string, 
+            filename = filename_handler(layer_name, snap_epoch, subdaily)}
             return send_response(200, JSON:encode(out_msg))
         else
             local out_msg = {
