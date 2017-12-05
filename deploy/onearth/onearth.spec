@@ -311,6 +311,7 @@ done
 %defattr(755,root,root,-)
 %{_bindir}/oe_generate_legend.py
 %{_bindir}/oe_generate_empty_tile.py
+%{_bindir}/oe_utils.py
 %{_bindir}/twmsbox2wmts.py
 %{_bindir}/wmts2twmsbox.py
 %{_bindir}/read_idx.py
@@ -339,7 +340,6 @@ python setup.py install
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_configure_reproject_layer.py
 %{_bindir}/oe_validate_configs.py
-%{_bindir}/oe_utils.py
 %{_datadir}/lxml
 %{_datadir}/pyparsing
 %{_datadir}/parse_apache_configs
