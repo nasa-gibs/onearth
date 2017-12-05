@@ -38,6 +38,7 @@ This file contains various utilities for the OnEarth tools.
 import glob
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -46,6 +47,9 @@ import socket
 import urllib
 import urllib2
 import xml.dom.minidom
+import smtplib
+from email.mime.text import MIMEText
+from email.utils import parseaddr
 
 basename = None
 
@@ -84,45 +88,65 @@ class Environment:
         self.reprojectLayerConfigLocation_wmts = reprojectLayerConfigLocation_wmts
         self.reprojectLayerConfigLocation_twms = reprojectLayerConfigLocation_twms
         # root directory based on location of service GetCapabilities
-
-def sigevent(type, mssg, sigevent_url):
+       
+def sigevent_email(type, mssg, smtp_server, recipient, sender):
     """
-    Send a message to sigevent service.
+    Send a sigevent message via email.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://localhost:8100/sigevent/events/create'
+        mssg -- message for operations
+        smtp_server -- Address of SMTP server to use
+        recipient -- email address of recipient
+        sender -- email address of sender
     """
-    # Constrain mssg to 256 characters (including '...').
-    if len(mssg) > 256:
-        mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent ', type, ' - ', mssg])
-    # Remove any trailing slash from URL.
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any question mark from URL.  It is added later.
-    if sigevent_url[-1] == '?':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any trailing slash from URL.  (Again.)
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Define sigevent parameters that get encoded into the URL.
+    # Validate input addresses
+    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    if all(allowed.match(x) for x in smtp_server.split(".")) == False:
+        print "ERROR: " + smtp_server + " is an invalid SMTP server name"
+    for email in [sender, recipient]:
+        if re.match(r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])", email) != None:
+            print "ERROR: " + email + " is not a valid email address"
+
+    # Use existing sigevent parameters 
     data={}
     data['type']=type
     data['description']=mssg
     data['computer']=socket.gethostname()
     data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='MRFGEN'
+    data['category']='ONEARTH'
     data['provider']='GIBS'
     if basename != None:
         data['data']=basename
-    # Format sigevent parameters that get encoded into the URL.
-    values=urllib.urlencode(data)
-    # Create complete URL.
-    full_url=sigevent_url+'?'+values
-    data=urllib2.urlopen(full_url)
+    
+    # Send SMTP email
+    contents = ''
+    for i in data:
+        contents += i + ': ' + data[i] + '\n'
+    msg = MIMEText(contents)
+    msg['Subject'] = "OnEarth - " + type + ": " + ((mssg[:55] + '...') if len(mssg) > 55 else mssg)
+    msg['From'] = sender
+    msg['To'] = recipient
+    s = smtplib.SMTP(smtp_server)
+    s.sendmail(sender, [recipient], msg.as_string())
+    s.quit()
+        
+def sigevent(type, mssg, smtp_server, recipient=''):
+    """
+    Send a sigevent message via email without recipient and sender.
+    Arguments:
+        type -- 'INFO', 'WARN', 'ERROR'
+        mssg -- message for operations
+        smtp_server -- Address of SMTP server to use, default: localhost
+    """
+    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    if all(allowed.match(x) for x in smtp_server.split(".")) == False:
+        smtp_server = 'localhost' # Default to localhost if invalid hostname
+    
+    # recipient must be set to use use sigevent email
+    sender = 'noreply@' + smtp_server
+    if recipient != '':
+        sigevent_email(type, mssg, smtp_server, recipient, sender)
 
 def log_info_mssg(mssg):
     """
