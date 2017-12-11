@@ -50,6 +50,7 @@ import xml.dom.minidom
 import smtplib
 from email.mime.text import MIMEText
 from email.utils import parseaddr
+import __main__ as main
 
 basename = None
 
@@ -114,7 +115,7 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     data['computer']=socket.gethostname()
     data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='ONEARTH'
+    data['category']=os.path.basename(main.__file__)
     data['provider']='GIBS'
     if basename != None:
         data['data']=basename
@@ -124,21 +125,28 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     for i in data:
         contents += i + ': ' + data[i] + '\n'
     msg = MIMEText(contents)
-    msg['Subject'] = "OnEarth - " + type + ": " + ((mssg[:55] + '...') if len(mssg) > 55 else mssg)
+    msg['Subject'] = "[" + type + "/" + data['source'] + "] triggered by " +  data['category']
     msg['From'] = sender
     msg['To'] = recipient
-    s = smtplib.SMTP(smtp_server)
-    s.sendmail(sender, [recipient], msg.as_string())
-    s.quit()
+    try:
+        s = smtplib.SMTP(smtp_server)
+        s.sendmail(sender, [recipient], msg.as_string())
+        s.quit()
+    except Exception, e:
+        log_info_mssg("ERROR: Cannot send email using SMTP server " + smtp_server + ", " + str(e))
         
-def sigevent(type, mssg, smtp_server, recipient=''):
+def sigevent(type, mssg, email_meta):
     """
     Send a sigevent message via email without recipient and sender.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- message for operations
-        smtp_server -- Address of SMTP server to use, default: localhost
+        email_meta -- tuple containing address of SMTP server to use and recipient address
     """
+    if len(email_meta) == 2:
+        smtp_server, recipient = email_meta
+    else:
+        return
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
     if all(allowed.match(x) for x in smtp_server.split(".")) == False:
         smtp_server = 'localhost' # Default to localhost if invalid hostname

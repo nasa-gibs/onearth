@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,7 @@
 # limitations under the License.
 
 #
-# Pipeline for converting georeferenced tiles to MRF for Tiled-WMS.
+# Pipeline for converting georeferenced tiles to MRF for OnEarth.
 #
 # Example:
 #
@@ -65,14 +65,6 @@
 #  <mrf_merge>false</mrf_merge>
 # </mrfgen_configuration>
 #
-# Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
-# NASA Jet Propulsion Laboratory
-# 2016
-# Jeffrey.R.Hall@jpl.nasa.gov
-# Joe.T.Roberts@jpl.nasa.gov
-
-
-#COMMENTS IN ALL CAPS INDICATES UNFINISHED OR NEEDS MORE CONSIDERATOIN.
 
 from optparse import OptionParser
 import glob
@@ -93,7 +85,7 @@ import sqlite3
 import math
 from overtiffpacker import pack
 from decimal import *
-from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
+from oe_utils import sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
 versionNumber = '1.3.2'
 basename = None
@@ -780,20 +772,31 @@ parser.add_option('-c', '--configuration_filename',
                   help='Full path of configuration filename.  Default:  ./mrfgen_configuration_file.xml')
 parser.add_option("-d", "--data_only", action="store_true", dest="data_only", 
                   default=False, help="Only output the MRF data, index, and header files")
-parser.add_option('-s', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                  default=False, help="Send email notification for errors and warnings.")
+parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                  default='', help='The server where email is sent from (overrides configuration file value')
+parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                  default='', help='The recipient address for email notifications (overrides configuration file value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
 # Configuration filename.
 configuration_filename=options.configuration_filename
-# Sigevent URL.
-sigevent_url=options.sigevent_url
+# Send email.
+send_email=options.send_email
+# Email server.
+email_server=options.email_server
+# Email recipient
+email_recipient=options.email_recipient
 # Data only.
 data_only = options.data_only
+
+# Email metadata replaces sigevent_url
+if send_email:
+    sigevent_url = (email_server, email_recipient)
+else:
+    sigevent_url = ''
 
 # Get current time, which is written to a file as the previous cycle time.  
 # Time format is "yyyymmdd.hhmmss.f".  Do this first to avoid any gap where tiles 
@@ -820,6 +823,22 @@ else:
     # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
     # Files get date_of_date added, links do not.
     basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', current_cycle_time, '_', str(os.getpid())])    
+    
+    # Get default email server and recipient if not override
+    if email_server == '':
+        try: 
+            email_server = get_dom_tag_value(dom, 'email_server')
+        except:
+            email_server = ''
+    if email_recipient == '':
+        try: 
+            email_recipient = get_dom_tag_value(dom, 'email_recipient')
+        except:
+            email_recipient = ''
+    if send_email:
+        sigevent_url = (email_server, email_recipient)
+        if email_recipient == '':
+            log_sig_err("No email recipient provided for notifications.", sigevent_url)
     
     # for sub-daily imagery
     try: 
@@ -1656,9 +1675,9 @@ else:
 if colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
     if add_transparency == True:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url, '--transparent']
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient, '--transparent']
     else:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url]
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient]
     log_the_command(colormap2vrt_command_list)
     colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
     colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')

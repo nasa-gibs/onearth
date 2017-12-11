@@ -54,6 +54,7 @@ import socket
 import urllib
 import urllib2
 import xml.dom.minidom
+from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, check_abs_path
 
 versionNumber = '1.3.2'
 colormap_filename = None
@@ -78,135 +79,6 @@ def hex_to_rgb(value):
     lv = len(value)
     return tuple(int(value[i:i+lv/3], 16) for i in range(0, lv, lv/3))
     
-
-def sigevent(type, mssg, sigevent_url):
-    """
-    Send a message to sigevent service.
-    Arguments:
-        type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://localhost:8100/sigevent/events/create'
-    """
-    # Constrain mssg to 256 characters (including '...').
-    if len(mssg) > 256:
-        mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent ', type, ' - ', mssg])
-    # Remove any trailing slash from URL.
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any question mark from URL.  It is added later.
-    if sigevent_url[-1] == '?':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any trailing slash from URL.  (Again.)
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Define sigevent parameters that get encoded into the URL.
-    data={}
-    data['type']=type
-    data['description']=mssg
-    data['computer']=socket.gethostname()
-    data['source']='ONEARTH'
-    data['format']='TEXT'
-    data['category']='MRFGEN'
-    data['provider']='GIBS'
-    if colormap_filename != None:
-        data['data']=colormap_filename
-    # Format sigevent parameters that get encoded into the URL.
-    values=urllib.urlencode(data)
-    # Create complete URL.
-    full_url=sigevent_url+'?'+values
-    data=urllib2.urlopen(full_url)
-
-def log_info_mssg(mssg):
-    """
-    For information messages only.  Not for warning or error.
-    Arguments:
-        mssg -- 'message for operations'
-    """
-    # Send to log.
-    print mssg
-    logging.info(mssg)
-
-def log_info_mssg_with_timestamp(mssg):
-    """
-    For information messages only.  Not for warning or error.
-    Arguments:
-        mssg -- 'message for operations'
-    """
-    # Send to log.
-    print time.asctime()
-    logging.info(time.asctime())
-    log_info_mssg(mssg)
-
-def log_sig_warn(mssg, sigevent_url):
-    """
-    Send a warning to the log and to sigevent.
-    Arguments:
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-    """
-    # Send to log.
-    logging.warning(time.asctime())
-    logging.warning(mssg)
-    # Send to sigevent.
-    try:
-        sent=sigevent('WARN', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
-
-def log_sig_exit(type, mssg, sigevent_url):
-    """
-    Send a message to the log, to sigevent, and then exit.
-    Arguments:
-        type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-    """
-    # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting colormap2vrt.'])
-    # Send to sigevent.
-    try:
-        sent=sigevent(type, mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
-    # Send to log.
-    if type == 'INFO':
-        log_info_mssg_with_timestamp(mssg)
-    elif type == 'WARN':
-        logging.warning(time.asctime())
-        logging.warning(mssg)
-    elif type == 'ERROR':
-        logging.error(time.asctime())
-        logging.error(mssg)
-    # Exit.
-    sys.exit()
-
-def log_the_command(command_list):
-    """
-    Send a command list to the log.
-    Arguments:
-        command_list -- list containing all elements of a subprocess command.
-    """
-    # Add a blank space between each element.
-    spaced_command=''
-    for ndx in range(len(command_list)):
-        spaced_command=str().join([spaced_command, command_list[ndx], ' '])
-    # Send to log.
-    log_info_mssg_with_timestamp(spaced_command)
-
-def check_abs_path(directory_path):
-    """
-    Check if directory is absolute path.
-    If not, prepend current working directory.
-        Argument:
-            directory_path -- path to check if absolute
-    """
-    if directory_path[0] != '/':
-        directory_path = os.getcwd() +'/' + directory_path
-    
-    return directory_path
-    
 #-------------------------------------------------------------------------------   
 
 print 'colormap2vrt v' + versionNumber
@@ -226,11 +98,12 @@ parser.add_option('-o', '--output',
                   help='Full path of the final output VRT')
 parser.add_option("-t", "--transparent", action="store_true", dest="transparent", 
                   default=False, help="Use transparent alpha value as default")
-parser.add_option('-u', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                  default=False, help="Send email notification for errors and warnings.")
+parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                  default='', help='The server where email is sent from (overrides configuration file value')
+parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                  default='', help='The recipient address for email notifications (overrides configuration file value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -254,8 +127,19 @@ if options.transparent == False:
     alpha = 255
 else:
     alpha = 0
-# Sigevent URL.
-sigevent_url = options.sigevent_url
+# Send email.
+send_email=options.send_email
+# Email server.
+email_server=options.email_server
+# Email recipient
+email_recipient=options.email_recipient
+# Email metadata replaces sigevent_url
+if send_email:
+    sigevent_url = (email_server, email_recipient)
+    if email_recipient == '':
+        log_sig_err("No email recipient provided for notifications.", sigevent_url)
+else:
+    sigevent_url = ''
 
 log_info_mssg('colormap: ' + colormap_filename)
 log_info_mssg('output VRT: ' + output_vrt)
