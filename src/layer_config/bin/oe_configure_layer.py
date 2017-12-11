@@ -79,6 +79,7 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
+from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command
 
 versionNumber = '1.3.2'
 current_conf = None
@@ -113,36 +114,6 @@ class WMSEndPoint:
         self.mapfileLocationBasename = mapfileLocationBasename
         self.mapfileConfigLocation = mapfileConfigLocation
         self.mapfileConfigBasename = mapfileConfigBasename
-
-class Environment:
-    """Environment information for layer(s)"""
-    
-    def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, metadatajson_dirs, metadatajsonUrls, mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename):
-        self.cacheLocation_wmts = cacheLocation_wmts
-        self.cacheLocation_twms = cacheLocation_twms
-        self.cacheBasename_wmts = cacheBasename_wmts
-        self.cacheBasename_twms = cacheBasename_twms
-        self.getCapabilities_wmts = getCapabilities_wmts
-        self.getCapabilities_twms = getCapabilities_twms
-        self.getTileService = getTileService
-        self.wmtsServiceUrl = wmtsServiceUrl
-        self.twmsServiceUrl = twmsServiceUrl
-        self.wmts_dir = projection_wmts_dir
-        self.twms_dir = projection_twms_dir
-        self.legend_dir = legend_dir
-        self.legendUrl = legendUrl
-        self.colormap_dirs = colormap_dirs
-        self.colormapUrls = colormapUrls
-        self.stylejson_dirs = stylejson_dirs
-        self.stylejsonUrls = stylejsonUrls
-        self.metadatajson_dirs = metadatajson_dirs
-        self.metadatajsonUrls = metadatajsonUrls
-        self.mapfileStagingLocation = mapfileStagingLocation
-        self.mapfileLocation = mapfileLocation
-        self.mapfileLocationBasename = mapfileLocationBasename
-        self.mapfileConfigLocation = mapfileConfigLocation
-        self.mapfileConfigBasename = mapfileConfigBasename
         
 class Projection:
     """Projection information for layer"""
@@ -165,66 +136,6 @@ class TileMatrixSetMeta:
 
 warnings = []
 errors = []
-
-def sigevent(type, mssg, sigevent_url):
-    """
-    Send a message to sigevent service.
-    Arguments:
-        type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://localhost:8100/sigevent/events/create'
-    """
-    # Constrain mssg to 256 characters (including '...').
-    if len(mssg) > 256:
-        mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent ', type, ' - ', mssg])
-    # Remove any trailing slash from URL.
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any question mark from URL.  It is added later.
-    if sigevent_url[-1] == '?':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any trailing slash from URL.  (Again.)
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Define sigevent parameters that get encoded into the URL.
-    data={}
-    data['type']=type
-    data['description']=mssg
-    data['computer']=socket.gethostname()
-    data['source']='ONEARTH'
-    data['format']='TEXT'
-    data['category']='ONEARTH'
-    data['provider']='GIBS'
-    if current_conf != None:
-        data['data']=current_conf
-    # Format sigevent parameters that get encoded into the URL.
-    values=urllib.urlencode(data)
-    # Create complete URL.
-    full_url=sigevent_url+'?'+values
-    data=urllib2.urlopen(full_url)
-
-def log_info_mssg(mssg):
-    """
-    For information messages only.  Not for warning or error.
-    Arguments:
-        mssg -- 'message for operations'
-    """
-    # Send to log.
-    print mssg
-    logging.info(mssg)
-
-def log_info_mssg_with_timestamp(mssg):
-    """
-    For information messages only.  Not for warning or error.
-    Arguments:
-        mssg -- 'message for operations'
-    """
-    # Send to log.
-    print asctime()
-    logging.info(asctime())
-    log_info_mssg(mssg)
 
 def log_sig_warn(mssg, sigevent_url):
     """
@@ -286,19 +197,6 @@ def log_sig_exit(type, mssg, sigevent_url):
         logging.error(mssg)
     # Exit.
     sys.exit()
-
-def log_the_command(command_list):
-    """
-    Send a command list to the log.
-    Arguments:
-        command_list -- list containing all elements of a subprocess command.
-    """
-    # Add a blank space between each element.
-    spaced_command=''
-    for ndx in range(len(command_list)):
-        spaced_command=str().join([spaced_command, command_list[ndx], ' '])
-    # Send to log.
-    log_info_mssg_with_timestamp(spaced_command)
 
 def get_dom_tag_value(dom, tag_name):
     """
@@ -389,232 +287,6 @@ def delete_mapfile_layer(mapfile, layerName):
             layerFound = True
             break
     return layerFound
-
-def get_environment(environmentConfig):
-    """
-    Gets environment metadata from a environment configuration file.
-    Arguments:
-        environmentConfig -- the location of the projection configuration file
-    """
-    try:
-        # Open file.
-        environment_config=open(environmentConfig, 'r')
-        print ('\nUsing environment config: ' + environmentConfig + '\n')
-    except IOError:
-        mssg=str().join(['Cannot read environment configuration file:  ', environmentConfig])
-        raise Exception(mssg)
-        
-    dom = xml.dom.minidom.parse(environment_config)
-    
-    # Caches
-    try:
-        cacheLocationElements = dom.getElementsByTagName('CacheLocation')
-        cacheLocation_wmts = None
-        cacheLocation_twms = None
-        cacheBasename_wmts = None
-        cacheBasename_twms = None
-        for cacheLocation in cacheLocationElements:
-            try:
-                if str(cacheLocation.attributes['service'].value).lower() == "wmts":
-                    cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
-                    cacheBasename_wmts = cacheLocation.attributes['basename'].value
-                elif str(cacheLocation.attributes['service'].value).lower() == "twms":
-                    cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
-                    cacheBasename_twms = cacheLocation.attributes['basename'].value
-            except KeyError:
-                # Set to defaults
-                cacheLocation_wmts = cacheLocation.firstChild.nodeValue.strip()
-                cacheBasename_wmts = "cache_all_wmts" 
-                cacheLocation_twms = cacheLocation.firstChild.nodeValue.strip()
-                cacheBasename_twms = "cache_all_twms"                
-                log_sig_warn("'service' or 'basename' not defined in <CacheLocation>"+cacheLocation_wmts+"</CacheLocation> Using defaults TWMS:'cache_all_twms', WMTS:'cache_all_wmts'", sigevent_url)    
-    except IndexError:
-        raise Exception('Required <CacheLocation> element is missing in ' + environmentConfig)
-        
-    # Services
-    try:
-        getTileService = get_dom_tag_value(dom, 'GetTileServiceLocation')
-    except IndexError:
-        getTileService = None
-    
-    getCapabilitiesElements = dom.getElementsByTagName('GetCapabilitiesLocation')
-    wmts_getCapabilities = None
-    twms_getCapabilities = None
-    for getCapabilities in getCapabilitiesElements:
-        try:
-            if str(getCapabilities.attributes['service'].value).lower() == "wmts":
-                wmts_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
-            elif str(getCapabilities.attributes['service'].value).lower() == "twms":
-                twms_getCapabilities = getCapabilities.firstChild.nodeValue.strip()
-        except KeyError:
-            raise Exception('service is not defined in <GetCapabilitiesLocation>')
-            
-    serviceUrlElements = dom.getElementsByTagName('ServiceURL')
-    wmtsServiceUrl = None
-    twmsServiceUrl = None
-    for serviceUrl in serviceUrlElements:
-        try:
-            if str(serviceUrl.attributes['service'].value).lower() == "wmts":
-                wmtsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
-            elif str(serviceUrl.attributes['service'].value).lower() == "twms":
-                twmsServiceUrl = serviceUrl.firstChild.nodeValue.strip()
-        except KeyError:
-            raise Exception('service is not defined in <ServiceURL>')      
- 
-    stagingLocationElements = dom.getElementsByTagName('StagingLocation')
-    wmtsStagingLocation = None
-    twmsStagingLocation = None
-    for stagingLocation in stagingLocationElements:
-        try:
-            if str(stagingLocation.attributes['service'].value).lower() == "wmts":
-                wmtsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
-            elif str(stagingLocation.attributes['service'].value).lower() == "twms":
-                twmsStagingLocation = stagingLocation.firstChild.nodeValue.strip()
-        except KeyError:
-            raise Exception('service is not defined in <StagingLocation>') 
-    
-    if twmsStagingLocation != None:
-        add_trailing_slash(twmsStagingLocation)
-        if not os.path.exists(twmsStagingLocation):
-            os.makedirs(twmsStagingLocation)
-    if wmtsStagingLocation != None:
-        add_trailing_slash(wmtsStagingLocation)
-        if not os.path.exists(wmtsStagingLocation):
-            os.makedirs(wmtsStagingLocation) 
-    try:
-        legendLocation = add_trailing_slash(get_dom_tag_value(dom, 'LegendLocation'))
-    except IndexError:
-        legendLocation = None
-    try:
-        legendUrl = add_trailing_slash(get_dom_tag_value(dom, 'LegendURL'))
-    except IndexError:
-        legendUrl = None
-
-    # Modified in 0.9 to allow for multiple versioned colormap locations and URLs
-    try:
-        colormapLocations = dom.getElementsByTagName('ColorMapLocation')
-        for location in colormapLocations:
-            if 'version' not in location.attributes.keys():
-                if len(colormapLocations) > 1:
-                    log_sig_err('Multiple <ColorMapLocation> elements but not all have a "version" attribute', sigevent_url)
-                else:
-                    location.attributes['version'] = ''
-    except KeyError:
-        colormapLocations = None
-
-    try:
-        colormapUrls = dom.getElementsByTagName('ColorMapURL')
-        for url in colormapUrls:
-            if 'version' not in url.attributes.keys():
-                if len(colormapUrls) > 1:
-                    log_sig_err('Multiple <ColorMapURL> elements but not all have a "version" attribute', sigevent_url)
-                else:
-                    url.attributes['version'] = ''
-    except KeyError:
-        colormapUrls = None
-        
-    # Same deal as colormaps for style JSON files
-    try:
-        stylejsonLocations = dom.getElementsByTagName('StyleJSONLocation')
-        for location in stylejsonLocations:
-            if 'version' not in location.attributes.keys():
-                if len(stylejsonLocations) > 1:
-                    log_sig_err('Multiple <StyleJSONLocation> elements but not all have a "version" attribute', sigevent_url)
-                else:
-                    location.attributes['version'] = ''
-    except KeyError:
-        stylejsonLocations = None
-
-    try:
-        stylejsonUrls = dom.getElementsByTagName('StyleJSONURL')
-        for url in stylejsonUrls:
-            if 'version' not in url.attributes.keys():
-                if len(stylejsonUrls) > 1:
-                    log_sig_err('Multiple <StyleJSONURL> elements but not all have a "version" attribute', sigevent_url)
-                else:
-                    url.attributes['version'] = ''
-    except KeyError:
-        stylejsonUrls = None
-        
-    # Same deal as colormaps for metadata JSON files
-    try:
-        metadatajsonLocations = dom.getElementsByTagName('MetadataJSONLocation')
-        for location in metadatajsonLocations:
-            if 'version' not in location.attributes.keys():
-                if len(metadatajsonLocations) > 1:
-                    log_sig_err('Multiple <MetadataJSONLocation> elements but not all have a "version" attribute', sigevent_url)
-                else:
-                    location.attributes['version'] = ''
-    except KeyError:
-        metadatajsonLocations = None
-
-    try:
-        metadatajsonUrls = dom.getElementsByTagName('MetadataJSONURL')
-        for url in metadatajsonUrls:
-            if 'version' not in url.attributes.keys():
-                if len(metadatajsonUrls) > 1:
-                    log_sig_err('Multiple <MetadataJSONURL> elements but not all have a "version" attribute', sigevent_url)
-                else:
-                    url.attributes['version'] = ''
-    except KeyError:
-        metadatajsonUrls = None
-
-    # Get mapfile parameters from environment config file
-    # Get/create mapfile staging location
-    try:
-        mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
-    except IndexError:
-        mapfileStagingLocation = None
-    if mapfileStagingLocation is not None:
-        try:
-            os.makedirs(mapfileStagingLocation)
-        except OSError:
-            if not os.path.exists(mapfileStagingLocation):
-                log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
-                mapfileStagingLocation = None
-            pass
-
-    # Get output mapfile location
-    try:
-        mapfileLocationElement = dom.getElementsByTagName('MapfileLocation')[0]
-        mapfileLocation = mapfileLocationElement.firstChild.nodeValue
-    except IndexError:
-        mapfileLocation = None
-        mapfileLocationBasename = None
-
-    if mapfileLocation is not None:
-        try:
-            mapfileLocationBasename = mapfileLocationElement.attributes['basename'].value
-        except KeyError:
-            log_sig_exit('ERROR', 'No "basename" attribute present for <MapfileLocation>.', sigevent_url)
-            mapfileLocationBasename = None
-
-    # Get output mapfile config location
-    try:
-        mapfileConfigLocation = get_dom_tag_value(dom, 'MapfileConfigLocation')
-    except IndexError:
-        mapfileConfigLocation = '/etc/onearth/config/mapserver/'
-    try:
-        mapfileConfigBasename = dom.getElementsByTagName('MapfileConfigLocation')[0].attributes['basename'].value
-    except:
-        mapfileConfigBasename = None
-
-    return Environment(add_trailing_slash(cacheLocation_wmts),
-                       add_trailing_slash(cacheLocation_twms),
-                       cacheBasename_wmts, cacheBasename_twms,
-                       add_trailing_slash(wmts_getCapabilities), 
-                       add_trailing_slash(twms_getCapabilities), 
-                       add_trailing_slash(getTileService),
-                       add_trailing_slash(wmtsServiceUrl), 
-                       add_trailing_slash(twmsServiceUrl),
-                       wmtsStagingLocation, twmsStagingLocation,
-                       legendLocation, legendUrl,
-                       colormapLocations, colormapUrls,
-                       stylejsonLocations, stylejsonUrls,
-                       metadatajsonLocations, metadatajsonUrls,
-                       mapfileStagingLocation, mapfileLocation,
-                       mapfileLocationBasename, mapfileConfigLocation, 
-                       mapfileConfigBasename)
 
 def get_archive(archive_root, archive_configuration):
     """
@@ -1285,11 +957,12 @@ parser.add_option('-p', '--projection_config',
 parser.add_option("-r", "--restart_apache",
                   action="store_true", dest="restart", 
                   default=False, help="Restart the Apache server on completion (requires sudo).")
-parser.add_option('-s', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                  default=False, help="Send email notification for errors and warnings.")
+parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                  default='', help='The server where email is sent from (overrides configuration file value')
+parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                  default='', help='The recipient address for email notifications (overrides configuration file value')
 parser.add_option('-t', '--time',
                   action='store', type='string', dest='time',
                   help='ISO 8601 time(s) for single configuration file (conf_file must be specified).')
@@ -1356,8 +1029,17 @@ if options.archive_configuration:
 else:
     archive_configuration = lcdir+'/conf/archive.xml'
 
-# Sigevent URL.
-sigevent_url = options.sigevent_url
+# Send email.
+send_email = options.send_email
+# Email server.
+email_server = options.email_server
+# Email recipient
+email_recipient = options.email_recipient    
+# Email metadata replaces sigevent_url
+if send_email:
+    sigevent_url = (email_server, email_recipient)
+else:
+    sigevent_url = ''
   
 print 'Using ' + lcdir + ' as $LCDIR.'
 
@@ -1424,13 +1106,23 @@ for conf in conf_files:
         try:
             environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
             try:
-                environment = get_environment(environmentConfig)
+                environment = get_environment(environmentConfig, sigevent_url)
             except Exception, e:
                 log_sig_err(str(e), sigevent_url)
                 continue
         except IndexError:
             log_sig_err('Required <EnvironmentConfig> element is missing in ' + conf, sigevent_url)
             continue
+        
+        # Get default email server and recipient if not override
+        if email_server == '':
+            email_server = environment.emailServer
+        if email_recipient == '':
+            email_recipient = environment.emailRecipient
+        if send_email:
+            sigevent_url = (email_server, email_recipient)
+            if email_recipient == '':
+                log_sig_err("No email recipient provided for notifications.", sigevent_url)
 
         wmts_getCapabilities = environment.getCapabilities_wmts
         twms_getCapabilities = environment.getCapabilities_twms
@@ -1530,7 +1222,7 @@ for conf in conf_files:
         try:
             environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
             try:
-                environment = get_environment(environmentConfig)
+                environment = get_environment(environmentConfig, sigevent_url)
             except Exception, e:
                 log_sig_err(str(e), sigevent_url)
                 continue

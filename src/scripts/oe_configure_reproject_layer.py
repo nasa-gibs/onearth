@@ -859,10 +859,12 @@ if __name__ == '__main__':
     parser.add_option("-n", "--no_twms",
                       action="store_true", dest="no_twms",
                       default=False, help="Do not use configurations for Tiled-WMS")
-    parser.add_option('-s', '--sigevent_url',
-                      action='store', type='string', dest='sigevent_url',
-                      default='http://localhost:8100/sigevent/events/create',
-                      help='Default:  http://localhost:8100/sigevent/events/create')
+    parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                      default=False, help="Send email notification for errors and warnings.")
+    parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                      default='', help='The server where email is sent from (overrides configuration file value')
+    parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                      default='', help='The recipient address for email notifications (overrides configuration file value')
     parser.add_option("-w", "--no_wmts",
                       action="store_true", dest="no_wmts",
                       default=False, help="Do not use configurations for WMTS.")
@@ -897,8 +899,17 @@ if __name__ == '__main__':
         print 'No layer config XML specified'
         sys.exit()
 
-    # Sigevent URL.
-    sigevent_url = options.sigevent_url
+    # Send email.
+    send_email = options.send_email
+    # Email server.
+    email_server = options.email_server
+    # Email recipient
+    email_recipient = options.email_recipient    
+    # Email metadata replaces sigevent_url
+    if send_email:
+        sigevent_url = (email_server, email_recipient)
+    else:
+        sigevent_url = ''
 
     base_twms_gc = os.path.join(lcdir, '/conf/getcapabilities_base_twms.xml')
     base_twms_get_tile_service = os.path.join(lcdir, '/conf/gettileservice_base.xml')

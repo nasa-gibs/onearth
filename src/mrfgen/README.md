@@ -105,7 +105,9 @@ These parameters are available but not used in the example above nor necessarily
 * mrf_data_offset: Offset value for the input data. mod_onearth can output this value in the HTTP header of a tile request.
 * mrf_data_units: The unit of measurement for the input data. mod_onearth can output this value in the HTTP header of a tile request.
 * quality_prec: The quality for JPEG (defaults to 80) or precision for LERC (defaults to 0.001).
-* source_url: The URL of the source data file, 
+* source_url: The URL of the source data file.
+* email_server: The SMTP server where email notifications are sent from.
+* email_recipient: The recipient address for email notifications.
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 

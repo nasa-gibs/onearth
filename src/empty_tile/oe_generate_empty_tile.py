@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2015, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -185,11 +185,6 @@ parser.add_option('-o', '--output',
 parser.add_option('-t', '--type',
                   action='store', type='string', dest='type', default = 'palette',
                   help='The image type: rgba or palette. Default: palette')
-parser.add_option('-u', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Print out detailed log messages")
 parser.add_option('-x', '--width',

@@ -52,3 +52,7 @@ For dense datasets, this option can help improve client performance, as the topm
 **Note that feature reduction currently only works on Point datasets.**
 
 **`<cluster_reduce_rate>` (MVT only)** - Another way to optimize tile size and performance, this option culls points that are within one pixel of each other. For example, at a rate of 2, any group of points within 1px of each other will be reduced (by random selection) to the square root of their previous number. No cluster reduction is done on the highest (overview) zoom level.
+
+**email_server** - The SMTP server where email notifications are sent from.
+
+**email_recipient** - The recipient address for email notifications.
