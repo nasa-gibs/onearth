@@ -494,12 +494,12 @@ def get_environment(environmentConfig, email_meta):
     
     if twmsStagingLocation != None:
         add_trailing_slash(twmsStagingLocation)
-        if not os.path.exists(twmsStagingLocation):
-            os.makedirs(twmsStagingLocation)
+#         if not os.path.exists(twmsStagingLocation):
+#             os.makedirs(twmsStagingLocation)
     if wmtsStagingLocation != None:
         add_trailing_slash(wmtsStagingLocation)
-        if not os.path.exists(wmtsStagingLocation):
-            os.makedirs(wmtsStagingLocation) 
+#         if not os.path.exists(wmtsStagingLocation):
+#             os.makedirs(wmtsStagingLocation) 
     try:
         legendLocation = add_trailing_slash(get_dom_tag_value(dom, 'LegendLocation'))
     except IndexError:
