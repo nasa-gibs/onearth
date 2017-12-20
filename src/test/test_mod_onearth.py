@@ -79,6 +79,7 @@ class TestModOnEarth(unittest.TestCase):
             # Run oe_create_cache_config to make the cache config files
             cmd = 'oe_create_cache_config -cbd {0} {1}'.format(staging_path, cache_path)
             run_command(cmd)
+        self.staging_path = staging_path
 
         # Put the correct path into the Apache config (oe_test.conf)
         file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)),
@@ -1470,7 +1471,9 @@ class TestModOnEarth(unittest.TestCase):
         restart_apache()
         os.remove(os.path.join(self.image_files_path, 'cache_all_wmts.config'))
         os.remove(os.path.join(self.image_files_path, 'cache_all_twms.config'))
-        rmtree(staging_path)
+        if self.staging_path is not None:
+            rmtree(self.staging_path) # make sure both service types are erased
+            rmtree(self.staging_path.replace('twms_cache_staging','wmts_cache_staging'))
 
 if __name__ == '__main__':
     # Parse options before running tests
