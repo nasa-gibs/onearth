@@ -81,6 +81,9 @@ from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
 from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 versionNumber = '1.3.2'
 current_conf = None
 

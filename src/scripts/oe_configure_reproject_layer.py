@@ -54,6 +54,9 @@ import cgi
 import hashlib
 from decimal import Decimal
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
     'image/png': '.png',
