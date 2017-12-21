@@ -368,7 +368,7 @@ static int handleKvP(request_rec *r)
         apr_table_set(r->notes, "mod_wmts_wrapper_date", time ? time : "default");
         apr_table_set(r->notes, "mod_onearth_handled", "true");
         ap_internal_redirect(out_uri, r);
-        return DECLINED;
+        return OK;
     } else if (request && apr_strnatcasecmp(request, "GetCapabilities") == 0) {
         ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), "getCapabilities.xml"), r);
         return DECLINED;    
