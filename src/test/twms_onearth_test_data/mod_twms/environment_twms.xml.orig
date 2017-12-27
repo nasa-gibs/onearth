@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<EnvironmentConfiguration>
+    <GetCapabilitiesLocation service="wmts">{cache_path}/wmts_endpoint/</GetCapabilitiesLocation>
+    <GetCapabilitiesLocation service="twms">{cache_path}/twms_endpoint/.lib/</GetCapabilitiesLocation>
+    <GetTileServiceLocation>{cache_path}/twms_endpoint/.lib/</GetTileServiceLocation>
+    <CacheLocation service="wmts" basename="cache_all_wmts">{cache_path}</CacheLocation>
+    <CacheLocation service="twms" basename="cache_all_twms">{cache_path}/</CacheLocation>
+    <StagingLocation service="wmts">{testfile_dir}/wmts/epsg3857/</StagingLocation>
+    <StagingLocation service="twms">{testfile_dir}/twms/epsg3857/</StagingLocation>
+    <ServiceURL service="wmts">http://localhost/mod_twms/test/wmts/</ServiceURL>
+    <ServiceURL service="twms">http://localhost/mod_twms/test/twms/</ServiceURL>
+    <LegendLocation>{testfile_dir}/legends/</LegendLocation>
+    <LegendURL>http://localhost/legends/</LegendURL>
+    <ColorMapLocation>{testfile_dir}/colormaps/</ColorMapLocation>
+    <ColorMapURL>http://localhost/colormaps</ColorMapURL>
+    <ReprojectEndpoint service="wmts">/mod_twms/test/wmts</ReprojectEndpoint>
+    <ReprojectEndpoint service="twms">/mod_twms/test/twms</ReprojectEndpoint>
+    <ReprojectApacheConfigLocation service="wmts" basename="onearth-reproject-wmts">{cache_path}/</ReprojectApacheConfigLocation>
+    <ReprojectApacheConfigLocation service="twms" basename="onearth-reproject-twms">{cache_path}/</ReprojectApacheConfigLocation>
+    <ReprojectLayerConfigLocation service="wmts">{cache_path}/wmts_endpoint/</ReprojectLayerConfigLocation>
+    <ReprojectLayerConfigLocation service="twms">{cache_path}/twms_endpoint/</ReprojectLayerConfigLocation>
+</EnvironmentConfiguration>
