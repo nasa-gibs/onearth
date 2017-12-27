@@ -1,0 +1,205 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "properties": {
+    "identifier": {
+      "$id": "/properties/identifier",
+      "type": "string",
+      "title": "The Identifier Schema."
+    },
+    "title": {
+      "$id": "/properties/title",
+      "type": "string",
+      "title": "The Title Schema.",
+      "description": "An explanation about the purpose of this instance."
+    },
+    "tiledGroupName": {
+      "$id": "/properties/tiledGroupName",
+      "type": "string",
+      "title": "The Tiledgroupname Schema."
+    },
+    "formats": {
+      "$id": "/properties/formats",
+      "type": "array",
+      "items": {
+        "$id": "/properties/formats/items",
+        "type": "string"
+      }
+    },
+    "spatial": {
+      "$id": "/properties/spatial",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$id": "/properties/spatial/properties/type",
+          "type": "string",
+          "title": "The Type Schema.",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "Polygon"
+          ]
+        },
+        "coordinates": {
+          "$id": "/properties/spatial/properties/coordinates",
+          "type": "array",
+          "items": {
+            "$id": "/properties/spatial/properties/coordinates/items",
+            "type": "array",
+            "items": {
+              "$id": "/properties/spatial/properties/coordinates/items/items",
+              "type": "array",
+              "items": {
+                "$id": "/properties/spatial/properties/coordinates/items/items/items",
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "timePeriods": {
+      "$id": "/properties/timePeriods",
+      "type": "array",
+      "items": {
+        "$id": "/properties/timePeriods/items",
+        "type": "string",
+        "examples": [
+          "2016-03-04/2016-03-04/P1D"
+        ]
+      }
+    },
+    "dataSources": {
+      "$id": "/properties/dataSources",
+      "type": "object",
+      "properties": {
+        "collection": {
+          "$id": "/properties/dataSources/properties/collection",
+          "type": "object",
+          "properties": {
+            "cmrConceptID": {
+              "$id": "/properties/dataSources/properties/collection/properties/cmrConceptID",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "proxySources": {
+      "$id": "/properties/proxySources",
+      "type": "object",
+      "properties": {
+        "collection": {
+          "$id": "/properties/proxySources/properties/collection",
+          "type": "object",
+          "properties": {
+            "cmrConceptID": {
+              "$id": "/properties/proxySources/properties/collection/properties/cmrConceptID",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "tags": {
+      "$id": "/properties/tags",
+      "type": "array",
+      "items": {
+        "$id": "/properties/tags/items",
+        "type": "object",
+        "properties": {
+          "name": {
+            "$id": "/properties/tags/items/properties/name",
+            "type": "string",
+            "title": "The Name Schema.",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "ident"
+            ]
+          },
+          "longName": {
+            "$id": "/properties/tags/items/properties/longName",
+            "type": "string",
+            "title": "The Longname Schema.",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "Identifier"
+            ]
+          },
+          "definition": {
+            "$id": "/properties/tags/items/properties/definition",
+            "type": "string",
+            "title": "The Definition Schema.",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "Identifier of observation"
+            ]
+          },
+          "units": {
+            "$id": "/properties/tags/items/properties/units",
+            "type": "string",
+            "title": "The Units Schema."
+          },
+          "dataType": {
+            "$id": "/properties/tags/items/properties/dataType",
+            "type": "string",
+            "title": "The Datatype Schema."
+          },
+          "validRanges": {
+            "$id": "/properties/tags/items/properties/validRanges",
+            "type": "array",
+            "items": {
+              "$id": "/properties/tags/items/properties/validRanges/items",
+              "type": "object",
+              "properties": {
+                "min": {
+                  "$id": "/properties/tags/items/properties/validRanges/items/properties/min",
+                  "type": "integer",
+                  "title": "The Min Schema.",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0,
+                  "examples": [
+                    0
+                  ]
+                },
+                "max": {
+                  "$id": "/properties/tags/items/properties/validRanges/items/properties/max",
+                  "type": "integer",
+                  "title": "The Max Schema.",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0,
+                  "examples": [
+                    99999999
+                  ]
+                }
+              }
+            }
+          },
+          "ValidValues": {
+            "$id": "/properties/tags/items/properties/ValidValues",
+            "type": "array",
+            "items": {
+              "$id": "/properties/tags/items/properties/ValidValues/items",
+              "type": "string"
+            }
+          },
+          "variableType": {
+            "$id": "/properties/tags/items/properties/variableType",
+            "type": "string",
+            "title": "The Variabletype Schema.",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "Primary", "Ancillary"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
