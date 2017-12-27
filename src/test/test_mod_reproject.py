@@ -342,7 +342,7 @@ class TestModReproject(unittest.TestCase):
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
 #http://localhost:4000/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-29
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nNEED TIME SPECIFIED!!! Testing: Request current (no TIME) JPG tile via TWMS'
             print 'URL: ' + req_url
@@ -1129,11 +1129,9 @@ class TestModReproject(unittest.TestCase):
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
         # Test unknown parameter
-        #ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
-        response_value = 'InvalidParameterValue'
         if DEBUG:
-            print 'Using URL: {0}, expecting response value of {1}'.format(req_url, response_value)
+            print 'Using URL: {0}, expecting bad parameter will return XML'.format(req_url)
         try:
             response = urllib2.urlopen(req_url)
         except urllib2.HTTPError as e:
@@ -1202,7 +1200,7 @@ class TestModReproject(unittest.TestCase):
             # Bad (large integer) BBOX value
             'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,2003750800.34278925,20037508.34278925'
             # Invalid TIME format
-#            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
         )
         for req_url in invalid_parameter_urls:
             if 'bad_value' in req_url or 'fake' in req_url or '-256' in req_url:
@@ -1220,33 +1218,6 @@ class TestModReproject(unittest.TestCase):
                 check_code = check_response_code(req_url, response_code, response_value)
                 error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
                 self.assertTrue(check_code, error)
-
-        # Test for Bad Time
-        #ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
-        response_value = 'InvalidParameterValue'
-        if DEBUG:
-            print 'Using URL: {0}, expecting response value of {1}'.format(req_url, response_value)
-        try:
-            response = urllib2.urlopen(req_url)
-        except urllib2.HTTPError as e:
-            response = e
-
-        # Check if the response is valid XML
-        try:
-            XMLroot = ElementTree.XML(response.read())
-            xml_check = True
-        except:
-            xml_check = False
-        self.assertTrue(xml_check, 'TWMS Bad Time response is not a valid XML file. URL: ' + req_url)
-
-        try:
-            exception = XMLroot.find('exceptionCode').text
-        except AttributeError:
-            exception = ''
-        check_str = exception.find(response_value)
-        error = 'The TWMS response for Bad Time does not match what\'s expected. URL: {0}'.format(req_url)
-        self.assertTrue(check_str, error)
 
     # TEARDOWN
 
