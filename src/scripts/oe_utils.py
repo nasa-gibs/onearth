@@ -104,7 +104,7 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
         sender -- email address of sender
     """
     # Validate input addresses
-    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    allowed = re.compile(r"([a-zA-Z0-9\-_\.]+):?([0-9]{1,5})?", re.IGNORECASE)
     if all(allowed.match(x) for x in smtp_server.split(".")) == False:
         print "ERROR: " + smtp_server + " is an invalid SMTP server name"
     for email in [sender.strip().replace("localhost","localhost.localhost"), recipient.strip()]:
@@ -158,7 +158,7 @@ def sigevent(type, mssg, email_meta):
             sender = 'noreply@' + smtp_server
     else:
         return
-    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    allowed = re.compile(r"([a-zA-Z0-9\-_\.]+):?([0-9]{1,5})?", re.IGNORECASE)
     if all(allowed.match(x) for x in smtp_server.split(".")) == False:
         smtp_server = 'localhost' # Default to localhost if invalid hostname
     
