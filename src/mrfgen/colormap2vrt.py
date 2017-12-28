@@ -138,10 +138,8 @@ email_recipient=options.email_recipient
 # Email sender
 email_sender=options.email_sender
 # Email metadata replaces sigevent_url
-if send_email:
+if send_email == True and email_recipient != '':
     sigevent_url = (email_server, email_recipient, email_sender)
-    if email_recipient == '':
-        log_sig_err("No email recipient provided for notifications.", sigevent_url)
 else:
     sigevent_url = ''
 

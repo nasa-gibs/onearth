@@ -1684,9 +1684,9 @@ else:
 if colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
     if add_transparency == True:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient, 'email_sender', email_sender, '--transparent']
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, '--email_recipient', email_recipient, '--email_sender', email_sender, '--transparent']
     else:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient, 'email_sender', email_sender]
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, '--email_recipient', email_recipient, '--email_sender', email_sender]
     log_the_command(colormap2vrt_command_list)
     colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
     colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
