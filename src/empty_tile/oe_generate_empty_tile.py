@@ -189,10 +189,10 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
                   default=False, help="Print out detailed log messages")
 parser.add_option('-x', '--width',
                   action='store', type='string', dest='width', default = '512',
-                  help='Width of the empty tile')
+                  help='Width of the empty tile  (default: 512)')
 parser.add_option('-y', '--height',
                   action='store', type='string', dest='height', default = '512',
-                  help='Height of the empty tile')
+                  help='Height of the empty tile (default: 512)' )
 
 # read command line args
 (options, args) = parser.parse_args()
