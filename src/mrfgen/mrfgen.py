@@ -1952,8 +1952,9 @@ if data_only == True:
     remove_file(working_dir+"/"+basename+".configuration_file.xml")
 
 # Remove temp tiles
+working_dir_files = glob.glob(working_dir+"/*")
 for tilename in (alltiles):
-    if working_dir in tilename:
+    if os.path.normpath(tilename) in working_dir_files:
         remove_file(tilename)
         if tiff_compress != None:
             remove_file(tilename+'.aux.xml')
