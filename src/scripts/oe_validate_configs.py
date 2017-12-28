@@ -541,7 +541,7 @@ def diff_configs (source_configs, destination_configs, verbose):
 
 print 'oe_validate_configs.py v' + versionNumber
 
-usageText = 'oe_validate_configs.py --input [input file] --sigevent_url [url] --verbose'
+usageText = 'oe_validate_configs.py --input [input file] --verbose'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -565,6 +565,8 @@ parser.add_option('--email_server', action='store', type='string', dest='email_s
                   default='', help='The server where email is sent from (overrides configuration file value')
 parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
                   default='', help='The recipient address for email notifications (overrides configuration file value')
+parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                  default='', help='The sender for email notifications (overrides configuration file value')
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Print out detailed log messages")
 parser.add_option("-S", "--ignore_staged_files", action="store_true", dest="ignore_staged_files", 
@@ -614,9 +616,11 @@ send_email=options.send_email
 email_server=options.email_server
 # Email recipient
 email_recipient=options.email_recipient
+# Email sender
+email_sender=options.email_sender
 # Email metadata replaces sigevent_url
 if send_email:
-    sigevent_url = (email_server, email_recipient)
+    sigevent_url = (email_server, email_recipient, email_sender)
     if email_recipient == '':
         log_sig_err("No email recipient provided for notifications.", sigevent_url)
 else:

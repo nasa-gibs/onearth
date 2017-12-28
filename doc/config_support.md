@@ -78,7 +78,8 @@ The environment configuration file contains information that the OnEarth layer c
 * **ReprojectApacheConfigLocation** (Optional) Used for reprojected layers. This location is where Apache configuration files for reprojected layers are stored. As such, this must be a location Apache is configured to read upon startup (for example `/etc/httpd/conf.d`, or a location specified by an `Includes` directive in your Apache config).
 * **ReprojectLayerConfigLocation** (Optional) Used for reprojected layers. This is the base Apache configuration directory location for reprojected layers.
 * **EmailServer** (Optional) The SMTP server where email notifications are sent from.
-* **EmailRecipient** (Optional) The recipient address for email notifications.
+* **EmailRecipient** (Optional) The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.
+* **EmailSender** (Optional) The sender address for email notifications.
 
 The environment configuration does not have unique identifier.  Reference to the environment configuration is done through referencing the file path.  A sample environment configuration file is included below:
 

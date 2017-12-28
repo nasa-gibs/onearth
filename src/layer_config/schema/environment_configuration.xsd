@@ -34,6 +34,7 @@ limitations under the License.
         <xs:element ref="ReprojectLayerConfigLocation" maxOccurs="2" minOccurs="0"/>
         <xs:element ref="EmailServer" minOccurs="0"/>
         <xs:element ref="EmailRecipient" minOccurs="0"/>
+        <xs:element ref="EmailSender" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -160,4 +161,5 @@ limitations under the License.
   </xs:element>
   <xs:element name="EmailServer" type="xs:string" nillable="true"/>
   <xs:element name="EmailRecipient" type="xs:string" nillable="true"/>
+  <xs:element name="EmailSender" type="xs:string" nillable="true"/>
 </xs:schema>

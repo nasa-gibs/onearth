@@ -44,12 +44,10 @@ import sys
 import time
 import datetime
 import socket
-import urllib
 import urllib2
 import xml.dom.minidom
 import smtplib
 from email.mime.text import MIMEText
-from email.utils import parseaddr
 import __main__ as main
 
 basename = None
@@ -60,7 +58,7 @@ class Environment:
         projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, metadatajson_dirs, metadatajsonUrls, 
         mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
         reprojectEndpoint_wmts, reprojectEndpoint_twms, reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms,
-        emailServer, emailRecipient):
+        emailServer, emailRecipient, emailSender):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -93,6 +91,7 @@ class Environment:
         self.reprojectLayerConfigLocation_twms = reprojectLayerConfigLocation_twms
         self.emailServer = emailServer
         self.emailRecipient = emailRecipient
+        self.emailSender = emailSender
        
 def sigevent_email(type, mssg, smtp_server, recipient, sender):
     """
@@ -108,9 +107,11 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
     if all(allowed.match(x) for x in smtp_server.split(".")) == False:
         print "ERROR: " + smtp_server + " is an invalid SMTP server name"
-    for email in [sender, recipient]:
-        if re.match(r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])", email) != None:
-            print "ERROR: " + email + " is not a valid email address"
+    for email in [sender.strip().replace("localhost","localhost.localhost"), recipient.strip()]:
+        valid_email = re.compile(r"^(([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*$", re.IGNORECASE)
+        if not valid_email.match(email):
+            log_info_mssg("ERROR: " + email + " is not a valid email address")
+            return
 
     # Use existing sigevent parameters 
     data={}
@@ -145,14 +146,16 @@ def sigevent(type, mssg, email_meta):
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- message for operations
-        email_meta -- tuple containing address of SMTP server to use and recipient address
+        email_meta -- triplet containing address of SMTP server to use, recipient address, and sender
     """
-    if len(email_meta) == 2:
-        smtp_server, recipient = email_meta
+    if len(email_meta) == 3:
+        smtp_server, recipient, sender = email_meta
         if smtp_server is None:
             smtp_server = 'localhost'
         if recipient is None:
             recipient = ''
+        if sender is None or sender == '':
+            sender = 'noreply@' + smtp_server
     else:
         return
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
@@ -160,7 +163,6 @@ def sigevent(type, mssg, email_meta):
         smtp_server = 'localhost' # Default to localhost if invalid hostname
     
     # recipient must be set to use use sigevent email
-    sender = 'noreply@' + smtp_server
     if recipient != '':
         sigevent_email(type, mssg, smtp_server, recipient, sender)
 
@@ -403,7 +405,7 @@ def get_environment(environmentConfig, email_meta):
         
     dom = xml.dom.minidom.parse(environment_config)
     
-    # Get email server and recipient
+    # Get email server and recipient/sender
     try:
         emailServer = dom.getElementsByTagName('EmailServer')[0].firstChild.nodeValue
     except IndexError:
@@ -414,14 +416,21 @@ def get_environment(environmentConfig, email_meta):
     except IndexError:
         emailRecipient = None
         
+    try:
+        emailSender = dom.getElementsByTagName('EmailSender')[0].firstChild.nodeValue
+    except IndexError:
+        emailSender = None
+        
     # Override email server and recipient if provided
-    if len(email_meta) == 2:
-        email_server, email_recipient = email_meta
+    if len(email_meta) == 3:
+        email_server, email_recipient, email_sender = email_meta
         if email_server != '':
             emailServer = email_server
         if email_recipient != '':
             emailRecipient = email_recipient
-    sigevent_url = (emailServer, emailRecipient)
+        if email_sender != '':
+            emailSender = email_sender
+    sigevent_url = (emailServer, emailRecipient, emailSender)
     if emailRecipient == '':
         log_sig_err("No email recipient provided for notifications.", sigevent_url)
     
@@ -674,4 +683,4 @@ def get_environment(environmentConfig, email_meta):
                        reprojectEndpoint_wmts, reprojectEndpoint_twms, 
                        reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, 
                        reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms,
-                       emailServer, emailRecipient)
+                       emailServer, emailRecipient, emailSender)

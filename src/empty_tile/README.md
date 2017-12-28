@@ -17,8 +17,6 @@ Options:
                         tile palette entry, overrides nodata value
   -o OUTPUT, --output=OUTPUT
                         The full path of the output file
-  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
   -v, --verbose         Print out detailed log messages
   -x WIDTH, --width=WIDTH
                         Width of the empty tile

@@ -778,6 +778,8 @@ parser.add_option('--email_server', action='store', type='string', dest='email_s
                   default='', help='The server where email is sent from (overrides configuration file value')
 parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
                   default='', help='The recipient address for email notifications (overrides configuration file value')
+parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                  default='', help='The sender for email notifications (overrides configuration file value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -789,12 +791,14 @@ send_email=options.send_email
 email_server=options.email_server
 # Email recipient
 email_recipient=options.email_recipient
+# Email sender.
+email_sender=options.email_sender
 # Data only.
 data_only = options.data_only
 
 # Email metadata replaces sigevent_url
 if send_email:
-    sigevent_url = (email_server, email_recipient)
+    sigevent_url = (email_server, email_recipient, email_sender)
 else:
     sigevent_url = ''
 
@@ -835,8 +839,13 @@ else:
             email_recipient = get_dom_tag_value(dom, 'email_recipient')
         except:
             email_recipient = ''
+    if email_sender == '':
+        try: 
+            email_sender = get_dom_tag_value(dom, 'email_sender')
+        except:
+            email_sender = ''
     if send_email:
-        sigevent_url = (email_server, email_recipient)
+        sigevent_url = (email_server, email_recipient, email_sender)
         if email_recipient == '':
             log_sig_err("No email recipient provided for notifications.", sigevent_url)
     
@@ -1675,9 +1684,9 @@ else:
 if colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
     if add_transparency == True:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient, '--transparent']
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient, 'email_sender', email_sender, '--transparent']
     else:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient]
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, 'email_recipient', email_recipient, 'email_sender', email_sender]
     log_the_command(colormap2vrt_command_list)
     colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
     colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')

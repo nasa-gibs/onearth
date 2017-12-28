@@ -100,6 +100,8 @@ if __name__ == '__main__':
                       default='', help='The server where email is sent from (overrides configuration file value')
     parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
                       default='', help='The recipient address for email notifications (overrides configuration file value')
+    parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                      default='', help='The sender for email notifications (overrides configuration file value')
     
     # Read command line args.
     (options, args) = parser.parse_args()
@@ -110,10 +112,12 @@ if __name__ == '__main__':
     # Email server.
     email_server=options.email_server
     # Email recipient
-    email_recipient=options.email_recipient    
+    email_recipient=options.email_recipient
+    # Email sender
+    email_sender=options.email_sender
     # Email metadata replaces sigevent_url
     if send_email:
-        sigevent_url = (email_server, email_recipient)
+        sigevent_url = (email_server, email_recipient, email_sender)
     else:
         sigevent_url = ''
     
@@ -150,8 +154,13 @@ if __name__ == '__main__':
                 email_recipient = get_dom_tag_value(dom, 'email_recipient')
             except:
                 email_recipient = ''
+        if email_sender == '':
+            try: 
+                email_sender = get_dom_tag_value(dom, 'email_sender')
+            except:
+                email_sender = ''
         if send_email:
-            sigevent_url = (email_server, email_recipient)
+            sigevent_url = (email_server, email_recipient, email_sender)
             if email_recipient == '':
                 log_sig_err("No email recipient provided for notifications.", sigevent_url)
         

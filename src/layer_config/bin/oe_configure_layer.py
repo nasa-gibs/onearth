@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -925,7 +925,7 @@ if os.environ.has_key('LCDIR') == False:
 else:
     lcdir = os.environ['LCDIR']
 
-usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles --create_mapfile'
+usageText = 'oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles --create_mapfile'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -966,6 +966,8 @@ parser.add_option('--email_server', action='store', type='string', dest='email_s
                   default='', help='The server where email is sent from (overrides configuration file value')
 parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
                   default='', help='The recipient address for email notifications (overrides configuration file value')
+parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                  default='', help='The sender for email notifications (overrides configuration file value')
 parser.add_option('-t', '--time',
                   action='store', type='string', dest='time',
                   help='ISO 8601 time(s) for single configuration file (conf_file must be specified).')
@@ -1037,10 +1039,12 @@ send_email = options.send_email
 # Email server.
 email_server = options.email_server
 # Email recipient
-email_recipient = options.email_recipient    
+email_recipient = options.email_recipient
+# Email recipient
+email_sender = options.email_sender   
 # Email metadata replaces sigevent_url
 if send_email:
-    sigevent_url = (email_server, email_recipient)
+    sigevent_url = (email_server, email_recipient, email_sender)
 else:
     sigevent_url = ''
   
@@ -1118,12 +1122,14 @@ for conf in conf_files:
             continue
         
         # Get default email server and recipient if not override
-        if email_server == '':
+        if options.email_server == '':
             email_server = environment.emailServer
-        if email_recipient == '':
+        if options.email_recipient == '':
             email_recipient = environment.emailRecipient
+        if options.email_sender == '':
+            email_sender = environment.emailSender
         if send_email:
-            sigevent_url = (email_server, email_recipient)
+            sigevent_url = (email_server, email_recipient, email_sender)
             if email_recipient == '':
                 log_sig_err("No email recipient provided for notifications.", sigevent_url)
 

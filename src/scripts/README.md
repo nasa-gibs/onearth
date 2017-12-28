@@ -118,9 +118,10 @@ Options:
 Utility script to generate configurations for mod_reproject/mod_wmts_wrapper. Typically used by `oe_configure_layer` but can be used as a separate tool.
 
 ```
-Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --sigevent_url [url] --no_twms --no_wmts
+Usage: oe_configure_reproject_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --no_twms --no_wmts
 
 Options:
+  --version             show program's version number and exit
   -h, --help            show this help message and exit
   -c LAYER_CONFIG_PATH, --conf_file=LAYER_CONFIG_PATH
                         Full path of layer configuration filename.
@@ -131,8 +132,16 @@ Options:
                         Full path of TileMatrixSet configuration file.
                         Default: $LCDIR/conf/tilematrixsets.xml
   -n, --no_twms         Do not use configurations for Tiled-WMS
-  -s SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
   -w, --no_wmts         Do not use configurations for WMTS.
   -x, --no_xml          Do not generate getCapabilities and getTileService
                         XML.
@@ -147,7 +156,7 @@ Options:
 Utility script to validate OnEarth layer and Apache configurations.
 
 ```
-Usage: oe_validate_configs.py --input [input file] --sigevent_url [url] --verbose
+Usage: oe_validate_configs.py --input [input file] --verbose
 
 Options:
   --version             show program's version number and exit
@@ -162,9 +171,22 @@ Options:
                         errors are reported
   -t CONFIG_TYPE, --type=CONFIG_TYPE
                         Type of input file: apache or oe_layer
-  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
   -v, --verbose         Print out detailed log messages
+  -S, --ignore_staged_files
+                        Do not validate configurations in staging location
+  -F, --ignore_final_files
+                        Do not validate configurations in final config
+                        locations; evaluate staged files only
 ```
 
 ## Contact

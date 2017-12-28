@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -83,7 +83,7 @@ def hex_to_rgb(value):
 
 print 'colormap2vrt v' + versionNumber
 
-usageText = 'colormap2vrt.py --colormap [colormap.xml] --output [output.vrt] --merge [merge.vrt] --transparent --sigevent_url [url]'
+usageText = 'colormap2vrt.py --colormap [colormap.xml] --output [output.vrt] --merge [merge.vrt] --transparent'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -104,6 +104,8 @@ parser.add_option('--email_server', action='store', type='string', dest='email_s
                   default='', help='The server where email is sent from (overrides configuration file value')
 parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
                   default='', help='The recipient address for email notifications (overrides configuration file value')
+parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                  default='', help='The sender for email notifications (overrides configuration file value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -133,9 +135,11 @@ send_email=options.send_email
 email_server=options.email_server
 # Email recipient
 email_recipient=options.email_recipient
+# Email sender
+email_sender=options.email_sender
 # Email metadata replaces sigevent_url
 if send_email:
-    sigevent_url = (email_server, email_recipient)
+    sigevent_url = (email_server, email_recipient, email_sender)
     if email_recipient == '':
         log_sig_err("No email recipient provided for notifications.", sigevent_url)
 else:

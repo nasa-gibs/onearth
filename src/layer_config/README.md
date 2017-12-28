@@ -11,7 +11,7 @@ The OnEarth Layer Configuration Tool (oe_configure_layer.py) is a Python script 
 * The tool can optionally generate MapServer mapfiles.
 
 ```
-Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --sigevent_url [url] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles
+Usage: oe_configure_layer.py --conf_file [layer_configuration_file.xml] --layer_dir [$LCDIR/layers/] --lcdir [$LCDIR] --projection_config [projection.xml] --time [ISO 8601] --restart_apache --no_xml --no_cache --no_twms --no_wmts --generate_legend --generate_links --skip_empty_tiles
 
 Options:
   --version             show program's version number and exit
@@ -42,8 +42,16 @@ Options:
                         $LCDIR/conf/projection.xml
   -r, --restart_apache  Restart the Apache server on completion (requires
                         sudo).
-  -s SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
   -t TIME, --time=TIME  ISO 8601 time(s) for single configuration file
                         (conf_file must be specified).
   -w, --no_wmts         Do not use configurations for WMTS.
@@ -100,9 +108,9 @@ An Apache server restart is required when a new layer is added. The tool does NO
 oe_configure_layer -r
 ```
 
-A SigEvent server URL, used for error reporting, may be specified using the -s or --sigevent_url option:
+A send email option, used for error reporting, may be specified using the -s or --send_email option:
 ```
-oe_configure_layer -s http://localhost:8100/sigevent/events/create
+oe_configure_layer --send_email --email_server=EMAIL_SERVER --email_recipient=EMAIL_RECIPIENT --email_sender=EMAIL_SENDER
 ```
 
 #### MapServer Config

@@ -56,3 +56,5 @@ For dense datasets, this option can help improve client performance, as the topm
 **email_server** - The SMTP server where email notifications are sent from.
 
 **email_recipient** - The recipient address for email notifications.
+
+**email_recipient** - The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.

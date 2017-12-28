@@ -845,7 +845,7 @@ if __name__ == '__main__':
     else:
         lcdir = os.environ['LCDIR']
 
-    usageText = 'oe_configure_reproject_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --sigevent_url [url] --no_twms --no_wmts'
+    usageText = 'oe_configure_reproject_layer.py --conf_file [layer_configuration_file.xml] --lcdir [$LCDIR] --no_xml --no_twms --no_wmts'
 
     # Define command line options and args.
     parser = OptionParser(usage=usageText, version=versionNumber)
@@ -868,6 +868,8 @@ if __name__ == '__main__':
                       default='', help='The server where email is sent from (overrides configuration file value')
     parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
                       default='', help='The recipient address for email notifications (overrides configuration file value')
+    parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                      default='', help='The sender for email notifications (overrides configuration file value')
     parser.add_option("-w", "--no_wmts",
                       action="store_true", dest="no_wmts",
                       default=False, help="Do not use configurations for WMTS.")
@@ -907,10 +909,12 @@ if __name__ == '__main__':
     # Email server.
     email_server = options.email_server
     # Email recipient
-    email_recipient = options.email_recipient    
+    email_recipient = options.email_recipient
+    # Email sender
+    email_sender = options.email_sender  
     # Email metadata replaces sigevent_url
     if send_email:
-        sigevent_url = (email_server, email_recipient)
+        sigevent_url = (email_server, email_recipient, email_sender)
     else:
         sigevent_url = ''
 

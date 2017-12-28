@@ -25,8 +25,16 @@ Options:
                         Full path of configuration filename.  Default:
                         ./mrfgen_configuration_file.xml
   -d, --data_only       Only output the MRF data, index, and header files
-  -s SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
 ```
 
 ## Samples
@@ -107,7 +115,8 @@ These parameters are available but not used in the example above nor necessarily
 * quality_prec: The quality for JPEG (defaults to 80) or precision for LERC (defaults to 0.001).
 * source_url: The URL of the source data file.
 * email_server: The SMTP server where email notifications are sent from.
-* email_recipient: The recipient address for email notifications.
+* email_recipient: The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.
+* email_sender: The sender address for email notifications.
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 
@@ -149,9 +158,9 @@ mrfgen.py -d -c mrfgen_test_config.xml
 
 ### SigEvent
 
-mrfgen is compatible with the SigEvent reporting server. This is helpful for sending logs and error messages to an automated system. Use the -s, --sigevent_url to enable SigEvent services:
+mrfgen includes an email notification system. This is helpful for sending logs and error messages to an automated system. Use the -s, --send_email option to enable email notifications:
 ```Shell
-mrfgen.py -c mrfgen_test_config.xml -s http://localhost:8100/sigevent/events/create
+mrfgen.py -c mrfgen_test_config.xml --send_email --email_server=EMAIL_SERVER --email_recipient=EMAIL_RECIPIENT --email_sender=EMAIL_SENDER
 ```
 
 ## mrfgen Processes
@@ -243,18 +252,32 @@ This tool is utilized by mrfgen.py.
 oe_validate_palette.py is a tool for validating an image palette with a GIBS colormap. The output includes a summary of colors matched and the colors unique to the colormap and image. Mismatches are displayed if there are any. The system exit code is the number of colors in the image not found in the color table.
 
 ```Shell
-Usage: oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --sigevent_url [url] --verbose
+Usage: oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --verbose
 
 Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
   -c COLORMAP_FILENAME, --colormap=COLORMAP_FILENAME
                         Full path of colormap filename.
+  -f FILL_VALUE, --fill_value=FILL_VALUE
+                        Fill value for colormaps. Default: "0,0,0,0"
   -i INPUT_FILENAME, --input=INPUT_FILENAME
                         Full path of input image
-  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
+  -n, --no_index        Do not check for matching index location
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
   -v, --verbose         Print out detailed log messages
+  -x IGNORE_COLORS, --ignore_colors=IGNORE_COLORS
+                        List of RGBA color values to ignore in image palette
+                        separated by "|"
 ```
 
 ## Contact
