@@ -46,9 +46,9 @@ import itertools
 from optparse import OptionParser
 import re
 import hashlib
-
 import oe_test_utils as testutils
-from oe_test_utils import make_dir_tree, find_string, get_layer_config, run_command, file_text_replace
+from cStringIO import StringIO
+from oe_test_utils import DebuggingServerThread, make_dir_tree, find_string, get_layer_config, run_command, file_text_replace
 
 DEBUG = False
 
@@ -996,10 +996,9 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
 
-    def test_empty_tile_generation(self):
+    def test_send_email_command_line(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
-        ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
 
         # Create paths for data and GC
@@ -1011,13 +1010,20 @@ class TestLayerConfig(unittest.TestCase):
         make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
         copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
 
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+        
         # Run layer config tool
-        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4} -s --email_server localhost:1025 --email_sender earth@localhost.test --email_recipient space@localhost.test'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
-        # Verify hash
-        with open(config['empty_tile'], 'r') as f:
-            tile_hash = testutils.get_file_hash(f)
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result = new_stdout.getvalue()
+        server.stop()
 
         # Cleanup -- make sure to get rid of staging files
         rmtree(config['wmts_gc_path'])
@@ -1028,7 +1034,58 @@ class TestLayerConfig(unittest.TestCase):
         os.remove(config['empty_tile'])
 
         # Check result
-        self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
+        self.assertTrue("Subject: [INFO/ONEARTH] triggered by oe_configure_layer" in result)
+        self.assertTrue("From: earth@localhost.test" in result)
+        self.assertTrue("To: space@localhost.test" in result)
+        self.assertTrue("category: oe_configure_layer" in result)
+        self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
+
+    def tearDown(self):
+        rmtree(self.testfiles_path)
+
+    def test_send_email_environment_config(self):
+        # Set config files and reference hash for checking empty tile
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Create paths for data and GC
+        make_dir_tree(config['wmts_gc_path'])
+        make_dir_tree(config['twms_gc_path'])
+        make_dir_tree(config['archive_location'])
+
+        # Copy the demo colormap
+        make_dir_tree(config['colormap_locations'][0].firstChild.nodeValue)
+        copy(os.path.join(self.testfiles_path, 'conf/' + config['colormaps'][0].firstChild.nodeValue), config['colormap_locations'][0].firstChild.nodeValue)
+
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+        
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4} -s'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result = new_stdout.getvalue()
+        server.stop()
+
+        # Cleanup -- make sure to get rid of staging files
+        rmtree(config['wmts_gc_path'])
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
+        rmtree(config['colormap_locations'][0].firstChild.nodeValue)
+        rmtree(config['archive_location'])
+        os.remove(config['empty_tile'])
+
+        # Check result
+        self.assertTrue("Subject: [INFO/ONEARTH] triggered by oe_configure_layer" in result)
+        self.assertTrue("From: nobody@localhost.test" in result)
+        self.assertTrue("To: somebody@localhost.test;somebodyelse@localhost.test" in result)
+        self.assertTrue("category: oe_configure_layer" in result)
+        self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
 
     def tearDown(self):
         rmtree(self.testfiles_path)

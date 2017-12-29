@@ -49,8 +49,24 @@ from lxml import etree
 import requests
 import sys
 import platform
+import smtpd
+import threading
+import asyncore
 # cElementTree deprecated in python 3.3
 from xml.etree import cElementTree as ElementTree
+
+class DebuggingServerThread(threading.Thread):
+    def __init__(self, addr='localhost', port=1025):
+        threading.Thread.__init__(self)
+        self.server = smtpd.DebuggingServer((addr, port), None)
+
+    def run(self):
+        asyncore.loop(timeout=5)
+
+    def stop(self):
+        self.server.close()
+        self.join()
+
 
 class XmlListConfig(list):
     def __init__(self, aList):
@@ -66,6 +82,7 @@ class XmlListConfig(list):
                 text = element.text.strip()
                 if text:
                     self.append(text)
+
 
 class XmlDictConfig(dict):
     '''
