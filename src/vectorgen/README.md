@@ -4,9 +4,26 @@
 
 ### oe_vectorgen command syntax
 
-`oe_vectorgen -c LAYER_CONFIG_XML -s SIGEVENT_URL`
+`oe_vectorgen -c LAYER_CONFIG_XML [options]`
 
-The `-c` option is required. `-s` is optional.
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -c CONFIGURATION_FILENAME, --configuration_filename=CONFIGURATION_FILENAME
+                        Full path of configuration filename.  Default:
+                        ./vectorgen_configuration_file.xml
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
+
+The `-c` option is required.
 
 ### The `oe_vectorgen` XML configuration file
 Similar to with `mrfgen`, `oe_vectorgen` uses options specified in an XML file to determine its output. The tags are as follows:
@@ -52,3 +69,9 @@ For dense datasets, this option can help improve client performance, as the topm
 **Note that feature reduction currently only works on Point datasets.**
 
 **`<cluster_reduce_rate>` (MVT only)** - Another way to optimize tile size and performance, this option culls points that are within one pixel of each other. For example, at a rate of 2, any group of points within 1px of each other will be reduced (by random selection) to the square root of their previous number. No cluster reduction is done on the highest (overview) zoom level.
+
+**email_server** - The SMTP server where email notifications are sent from.
+
+**email_recipient** - The recipient address for email notifications.
+
+**email_recipient** - The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.

@@ -25,12 +25,16 @@ limitations under the License.
         <xs:element ref="LegendURL" maxOccurs="1" minOccurs="0"/>
         <xs:group ref="ColorMaps" maxOccurs="unbounded" minOccurs="0" />
         <xs:group ref="StyleJSON" maxOccurs="unbounded" minOccurs="0" />
+        <xs:group ref="MetadataJSON" maxOccurs="unbounded" minOccurs="0" />
         <xs:element ref="MapfileLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileStagingLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileConfigLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="ReprojectEndpoint" maxOccurs="2" minOccurs="0"/>
         <xs:element ref="ReprojectApacheConfigLocation" maxOccurs="2" minOccurs="0"/>
         <xs:element ref="ReprojectLayerConfigLocation" maxOccurs="2" minOccurs="0"/>
+        <xs:element ref="EmailServer" minOccurs="0"/>
+        <xs:element ref="EmailRecipient" minOccurs="0"/>
+        <xs:element ref="EmailSender" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -106,6 +110,28 @@ limitations under the License.
       </xs:element>
     </xs:sequence>
   </xs:group>
+  <xs:group name="MetadataJSON">
+    <xs:sequence>
+      <xs:element name="MetadataJSONLocation" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="MetadataJSONURL" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:anyURI">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
   <xs:element name="MapfileLocation">
     <xs:complexType mixed="true">
       <xs:attribute name="basename" use="required" type="xs:string"/>
@@ -130,8 +156,10 @@ limitations under the License.
   </xs:element>
   <xs:element name="ReprojectLayerConfigLocation">
     <xs:complexType mixed="true">
-      <xs:attribute name="basename" use="required" type="xs:string"/>
       <xs:attribute name="service" use="required" type="xs:string"/>
     </xs:complexType>
   </xs:element>
+  <xs:element name="EmailServer" type="xs:string" nillable="true"/>
+  <xs:element name="EmailRecipient" type="xs:string" nillable="true"/>
+  <xs:element name="EmailSender" type="xs:string" nillable="true"/>
 </xs:schema>

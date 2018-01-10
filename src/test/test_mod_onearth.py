@@ -79,7 +79,7 @@ class TestModOnEarth(unittest.TestCase):
             # Run oe_create_cache_config to make the cache config files
             cmd = 'oe_create_cache_config -cbd {0} {1}'.format(staging_path, cache_path)
             run_command(cmd)
-            rmtree(staging_path)
+        self.staging_path = staging_path
 
         # Put the correct path into the Apache config (oe_test.conf)
         file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)),
@@ -303,7 +303,7 @@ class TestModOnEarth(unittest.TestCase):
         7. Request current (no time) JPEG tile via TWMS
         """
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
             print '\nTesting: Request current (no TIME) JPG tile via TWMS'
             print 'URL: ' + req_url
@@ -365,7 +365,7 @@ class TestModOnEarth(unittest.TestCase):
         10C. Request tile with date from "year" layer via TWMS
         """
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-22'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-22'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -401,7 +401,7 @@ class TestModOnEarth(unittest.TestCase):
         11C. Request tile with date from "non-year" layer via TWMS
         """
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29'
         if DEBUG:
             print '\nTesting: Request tile with date from "non-year layer via TWMS'
             print 'URL: ' + req_url
@@ -437,7 +437,7 @@ class TestModOnEarth(unittest.TestCase):
         12C. Request tile with date and time (sub-daily) from "year" layer via TWMS
         """
         ref_hash = '5a39c4e335d05295160a7bec4961002d'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29T12:00:00Z'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -506,7 +506,7 @@ class TestModOnEarth(unittest.TestCase):
         14C. Request tile with no date from "year" layer via TWMS
         """
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
             print '\nTesting: Request tile with no date from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -659,7 +659,7 @@ class TestModOnEarth(unittest.TestCase):
         19. Request tile with date via TWMS
         """
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
-        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29'
+        req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29'
         if DEBUG:
             print '\nTesting: Request tile with date via TWMS'
             print 'URL: ' + req_url
@@ -1211,6 +1211,14 @@ class TestModOnEarth(unittest.TestCase):
                 xml_check = False
             self.assertTrue(xml_check, 'Invalid FORMAT response is not a valid XML file. URL: ' + req_url)     
 
+            try:
+                exception = XMLroot.find('exceptionCode').text
+            except AttributeError:
+                exception = ''
+            check_str = exception.find('InvalidParameterValue')
+            error = 'The Invalid Format response does not match what\'s expected. URL: {0}'.format(req_url)
+            self.assertTrue(check_str, error)
+
     # DATE/TIME SNAPPING REQUESTS
 
     def test_snapping_1a(self):
@@ -1471,6 +1479,9 @@ class TestModOnEarth(unittest.TestCase):
         restart_apache()
         os.remove(os.path.join(self.image_files_path, 'cache_all_wmts.config'))
         os.remove(os.path.join(self.image_files_path, 'cache_all_twms.config'))
+        if self.staging_path is not None:
+            rmtree(self.staging_path) # make sure both service types are erased
+            rmtree(self.staging_path.replace('twms_cache_staging','wmts_cache_staging'))
 
 if __name__ == '__main__':
     # Parse options before running tests

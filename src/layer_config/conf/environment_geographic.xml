@@ -28,7 +28,12 @@ limitations under the License.
     <ColorMapURL>http://localhost/colormaps/</ColorMapURL>
     <StyleJSONLocation>/usr/share/onearth/demo/gl-styles/</StyleJSONLocation>
     <StyleJSONURL>http://localhost/gl-styles/</StyleJSONURL>
+    <MetadataJSONLocation>/usr/share/onearth/demo/metadata/layer/</MetadataJSONLocation>
+    <MetadataJSONURL>http://localhost/metadata/layer/</MetadataJSONURL>
     <MapfileLocation basename="epsg4326">/usr/share/onearth/demo/mapserver/</MapfileLocation>
     <MapfileStagingLocation>/usr/share/onearth/layer_config/mapserver/EPSG4326/</MapfileStagingLocation>
     <MapfileConfigLocation basename="EPSG4326">/etc/onearth/config/mapserver/</MapfileConfigLocation>
+    <EmailServer>localhost</EmailServer>
+    <EmailRecipient>support@earthdata.nasa.gov</EmailRecipient>
+    <EmailSender>nobody@localhost</EmailSender>
 </EnvironmentConfiguration>

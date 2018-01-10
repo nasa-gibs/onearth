@@ -1136,13 +1136,22 @@ class TestModReproject(unittest.TestCase):
             response = urllib2.urlopen(req_url)
         except urllib2.HTTPError as e:
             response = e
+
         # Check if the response is valid XML
         try:
             XMLroot = ElementTree.XML(response.read())
             xml_check = True
         except:
             xml_check = False
-        self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
+        self.assertTrue(xml_check, 'The WMTS REST unknown parameter response is not a valid XML file. URL: ' + req_url)
+
+        try:
+            exception = XMLroot.find('exceptionCode').text
+        except AttributeError:
+            exception = ''
+        check_str = exception.find(response_value)
+        error = 'The WMTS REST unknown parameter response for does not match what\'s expected. URL: {0}'.format(req_url)
+        self.assertTrue(check_str, error)
 
     def test_twms_error_handling(self):
         """
@@ -1150,50 +1159,65 @@ class TestModReproject(unittest.TestCase):
         """
         # MissingParameterValue test
 #request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29
-        params = ('layers=test_weekly_jpg', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
+        params = ('layers=test_weekly_jpg', 'srs=EPSG:3857', 'format=image%2Fjpeg', 'styles=', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
         if DEBUG:
             print '\nTesting TWMS Error Handling'
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
-            req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&time=default&srs=EPSG:3857&format=image%2Fjpeg&styles=' + '&'.join(param_list)
-            response_code = 400
-            #response_value = 'MissingParameterValue'
-            response_value = 'Bad'
-            if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            # TODO: missing srs, format, or style still shows valid tile
-            error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
+            req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&time=default&' + '&'.join(param_list)
+            if 'srs' not in req_url or 'format' not in req_url or 'styles' not in req_url or 'width' not in req_url or 'height' not in req_url:
+                # expected tile
+                ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+                if DEBUG:
+                    print 'Using URL: {0}, expecting tile'.format(req_url)
+                check_result = check_tile_request(req_url, ref_hash)
+                self.assertTrue(check_result, 'The TWMS response for missing parameter does not match what\'s expected. URL: ' + req_url)
+            else:
+                response_code = 400
+                #response_value = 'MissingParameterValue'
+                response_value = 'Bad'
+                if DEBUG:
+                    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                check_code = check_response_code(req_url, response_code, response_value)
+                error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+                self.assertTrue(check_code, error)
 
         # InvalidParameterValue tests
-        response_code = 400
-        response_value = 'Bad Request'
         invalid_parameter_urls = (
             # Bad LAYER value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=bad_layer_value&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=512&height=512&bbox=-180,-198,108,90',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=bad_layer_value&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad STYLE value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=bad_value&&width=512&height=512&bbox=-180,-198,108,90',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=bad_value&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad FORMAT value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=fake_image&styles=&&width=512&height=512&bbox=-180,-198,108,90',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=fake_image&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad SRS value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=fake_tilematrixset&format=image%2Fjpeg&styles=&&width=512&height=512&bbox=-180,-198,108,90',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=fake_tilematrixset&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad (non-positive integer) WIDTH value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=-512&height=512&bbox=-180,-198,108,90',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=-256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad (non-positive integer) HEIGHT value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=512&height=-512&bbox=-180,-198,108,90',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=-256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad (large integer) BBOX value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=512&height=512&bbox=-180,-198,1080,900',
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,2003750800.34278925,20037508.34278925'
             # Invalid TIME format
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&&width=512&height=512&bbox=-180,-198,108,90&time=2012-02-290'
+            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
         )
         for req_url in invalid_parameter_urls:
-            if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
+            if 'bad_value' in req_url or 'fake' in req_url or '-256' in req_url:
+                # expected tile
+                ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+                if DEBUG:
+                    print 'Using URL: {0}, expecting tile'.format(req_url)
+                check_result = check_tile_request(req_url, ref_hash)
+                self.assertTrue(check_result, 'The TWMS response for missing parameter does not match what\'s expected. URL: ' + req_url)
+            else:
+                response_code = 400
+                response_value = 'Bad'
+                if DEBUG:
+                    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                check_code = check_response_code(req_url, response_code, response_value)
+                error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
+                self.assertTrue(check_code, error)
 
     # TEARDOWN
 

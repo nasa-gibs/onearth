@@ -541,7 +541,7 @@ def diff_configs (source_configs, destination_configs, verbose):
 
 print 'oe_validate_configs.py v' + versionNumber
 
-usageText = 'oe_validate_configs.py --input [input file] --sigevent_url [url] --verbose'
+usageText = 'oe_validate_configs.py --input [input file] --verbose'
 
 # Define command line options and args.
 parser=OptionParser(usage=usageText, version=versionNumber)
@@ -559,11 +559,14 @@ parser.add_option('-r', '--replace', action='store_true', dest='replace',
 parser.add_option('-t', '--type',
                   action='store', type='string', dest='config_type',
                   help='Type of input file: apache or oe_layer')
-parser.add_option('-u', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                  default=False, help="Send email notification for errors and warnings.")
+parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                  default='', help='The server where email is sent from (overrides configuration file value')
+parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                  default='', help='The recipient address for email notifications (overrides configuration file value')
+parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                  default='', help='The sender for email notifications (overrides configuration file value')
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Print out detailed log messages")
 parser.add_option("-S", "--ignore_staged_files", action="store_true", dest="ignore_staged_files", 
@@ -607,8 +610,21 @@ replace = options.replace
 # print verbose log messages
 verbose = options.verbose
 
-# Sigevent URL
-sigevent_url = options.sigevent_url
+# Send email.
+send_email=options.send_email
+# Email server.
+email_server=options.email_server
+# Email recipient
+email_recipient=options.email_recipient
+# Email sender
+email_sender=options.email_sender
+# Email metadata replaces sigevent_url
+if send_email:
+    sigevent_url = (email_server, email_recipient, email_sender)
+    if email_recipient == '':
+        log_sig_err("No email recipient provided for notifications.", sigevent_url)
+else:
+    sigevent_url = ''
 
 # Parse environment
 env = get_environment(environment_filename, sigevent_url)

@@ -35,6 +35,8 @@ limitations under the License.
         <xs:element ref="overview_levels" minOccurs="0"/>
         <xs:element ref="feature_reduce_rate" minOccurs="0"/>
         <xs:element ref="cluster_reduce_rate" minOccurs="0"/>
+        <xs:element ref="email_server" minOccurs="0"/>
+        <xs:element ref="email_recipient" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -71,4 +73,6 @@ limitations under the License.
   <xs:element name="tile_size" type="xs:integer" nillable="true"/>
   <xs:element name="feature_reduce_rate" type="xs:float" default="2.5"/>
   <xs:element name="cluster_reduce_rate" type="xs:float" default="2"/>
+  <xs:element name="email_server" type="xs:string" nillable="true"/>
+  <xs:element name="email_recipient" type="xs:string" nillable="true"/>
 </xs:schema>
