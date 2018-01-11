@@ -31,6 +31,12 @@ BuildRequires:  sqlite-devel
 BuildRequires:	cmake
 BuildRequires:  turbojpeg-devel
 BuildRequires:  python-pip
+BuildRequires:  epel-release
+BuildRequires:  lua-devel
+BuildRequires:  jansson-devel
+BuildRequires:  libjpeg-devel
+BuildRequires:  pcre-devel
+BuildRequires:  wget
 %if 0%{?centos}  == 6
 BuildRequires:  centos-release-scl
 BuildRequires:  devtoolset-3-toolchain
@@ -39,8 +45,11 @@ Requires:	httpd
 Requires:	gibs-gdal
 Requires:   sqlite
 Requires:   libxml2
+Requires:   mod_proxy
 Requires:   mod_ssl
 Requires:   turbojpeg
+Requires:   luarocks
+Requires:   redis
 
 Obsoletes:	mod_oetwms mod_onearth mod_oems mod_oemstime
 
