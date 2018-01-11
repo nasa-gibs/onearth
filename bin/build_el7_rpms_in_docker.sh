@@ -33,9 +33,6 @@ yum install -y \
 
 mkdir -p /build
 rsync -av \
-  --exclude src/modules/mod_receive \
-  --exclude src/modules/mod_reproject \
-  --exclude src/modules/mod_twms \
   /source/ /build/
 
 chown -R root:root /build
@@ -43,7 +40,6 @@ chown -R root:root /build
 (
   set -evx
   cd /build
-  git submodule update --init --recursive
   yum-builddep -y deploy/onearth/onearth.spec
   make download
   scl enable devtoolset-3 "make onearth-rpm"
