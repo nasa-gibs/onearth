@@ -1,0 +1,55 @@
+{
+  "identifier": "Terra_Orbit_Dsc",
+  "title": "Terra Orbital Track",
+  "tiledGroupName": "Terra Orbital Track tileset",
+  "formats": ["application/x-protobuf;type=mapbox-vector"],         
+  "spatial": {
+    "type": "Polygon",
+         "coordinates": [
+             [
+                 [-180, 90],
+                 [-180, -90],
+                 [180, -90],
+                 [180, 90],
+                 [-180, 90]
+             ]
+         ]
+  },
+  "timePeriods": [
+    "2016-03-04/2016-03-04/P1D",
+    "2016-04-29/2016-04-29/P1D"
+  ],
+	"dataSources": {
+        "collection": {
+            "cmrConceptID": "cmr1"
+        }
+    },
+    "proxySources": {
+        "collection": {
+            "cmrConceptID": "cmr2"
+        }
+    },
+  "tags": [
+  {
+    "name": "ident",
+    "longName": "Identifier",
+    "definition": "Identifier of observation",
+    "units": "",
+    "dataType": "int",
+    "validRanges": [
+      { "min": 0, "max": 99999999 }
+    ],
+    "validValues": [
+      "Lake Ice", "Sea Ice", "Not Ice"
+    ],
+    "variableType": "Primary"
+  },
+  {
+    "name": "datetime",
+    "longName": "Time of observation",
+    "definition": "Time of observation as a timestamp",    
+    "units": "",
+    "dataType": "datetime",
+    "variableType": "Ancillary"
+  }]
+}

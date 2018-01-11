@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,7 @@
 # limitations under the License.
 
 #
-# Pipeline for converting georeferenced tiles to MRF for Tiled-WMS.
+# Pipeline for converting georeferenced tiles to MRF for OnEarth.
 #
 # Example:
 #
@@ -65,14 +65,6 @@
 #  <mrf_merge>false</mrf_merge>
 # </mrfgen_configuration>
 #
-# Global Imagery Browse Services / Physical Oceanography Distributed Active Archive Center (PO.DAAC)
-# NASA Jet Propulsion Laboratory
-# 2016
-# Jeffrey.R.Hall@jpl.nasa.gov
-# Joe.T.Roberts@jpl.nasa.gov
-
-
-#COMMENTS IN ALL CAPS INDICATES UNFINISHED OR NEEDS MORE CONSIDERATOIN.
 
 from optparse import OptionParser
 import glob
@@ -93,267 +85,14 @@ import sqlite3
 import math
 from overtiffpacker import pack
 from decimal import *
+from oe_utils import sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
 versionNumber = '1.3.2'
 basename = None
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
-# CONSIDER BREAKING OUT SUBROUTINES TO SEPARATE FILES.
 #-------------------------------------------------------------------------------
-
-def sigevent(type, mssg, sigevent_url):
-    """
-    Send a message to sigevent service.
-    Arguments:
-        type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://localhost:8100/sigevent/events/create'
-    """
-    # Constrain mssg to 256 characters (including '...').
-    if len(mssg) > 256:
-        mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent ', type, ' - ', mssg])
-    # Remove any trailing slash from URL.
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any question mark from URL.  It is added later.
-    if sigevent_url[-1] == '?':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any trailing slash from URL.  (Again.)
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Define sigevent parameters that get encoded into the URL.
-    data={}
-    data['type']=type
-    data['description']=mssg
-    data['computer']=socket.gethostname()
-    data['source']='ONEARTH'
-    data['format']='TEXT'
-    data['category']='MRFGEN'
-    data['provider']='GIBS'
-    if basename != None:
-        data['data']=basename
-    # Format sigevent parameters that get encoded into the URL.
-    values=urllib.urlencode(data)
-    # Create complete URL.
-    full_url=sigevent_url+'?'+values
-    data=urllib2.urlopen(full_url)
-
-def log_info_mssg(mssg):
-    """
-    For information messages only.  Not for warning or error.
-    Arguments:
-        mssg -- 'message for operations'
-    """
-    # Send to log.
-    print mssg
-    logging.info(mssg)
-
-def log_info_mssg_with_timestamp(mssg):
-    """
-    For information messages only.  Not for warning or error.
-    Arguments:
-        mssg -- 'message for operations'
-    """
-    # Send to log.
-    print time.asctime()
-    logging.info(time.asctime())
-    log_info_mssg(mssg)
-
-def log_sig_warn(mssg, sigevent_url):
-    """
-    Send a warning to the log and to sigevent.
-    Arguments:
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-    """
-    # Send to log.
-    logging.warning(time.asctime())
-    logging.warning(mssg)
-    # Send to sigevent.
-    try:
-        sent=sigevent('WARN', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
-        
-def log_sig_err(mssg, sigevent_url):
-    """
-    Send an error to the log and to sigevent.
-    Arguments:
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-    """
-    # Send to log.
-    logging.warning(time.asctime())
-    logging.warning(mssg)
-    # Send to sigevent.
-    try:
-        sent=sigevent('ERROR', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
-
-def log_sig_exit(type, mssg, sigevent_url):
-    """
-    Send a message to the log, to sigevent, and then exit.
-    Arguments:
-        type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-    """
-    exit_code = 0
-    # Add "Exiting" to mssg.
-    mssg=str().join([mssg, '  Exiting mrfgen.'])
-    # Send to sigevent.
-    try:
-        sent=sigevent(type, mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
-    # Send to log.
-    if type == 'INFO':
-        log_info_mssg_with_timestamp(mssg)
-    elif type == 'WARN':
-        logging.warning(time.asctime())
-        logging.warning(mssg)
-    elif type == 'ERROR':
-        logging.error(time.asctime())
-        logging.error(mssg)
-        exit_code = 1
-    # Exit.
-    sys.exit(exit_code)
-
-def log_the_command(command_list):
-    """
-    Send a command list to the log.
-    Arguments:
-        command_list -- list containing all elements of a subprocess command.
-    """
-    # Add a blank space between each element.
-    spaced_command=''
-    for ndx in range(len(command_list)):
-        spaced_command=str().join([spaced_command, command_list[ndx], ' '])
-    # Send to log.
-    log_info_mssg_with_timestamp(spaced_command)
-
-def get_modification_time(filename):
-    """
-    Return (fake) floating point value of posix modification time for a file.
-    The (fake) floating point value is yyyymmdd.hhmmss which may be treated 
-    as a floating point number for the sake of time ordering.
-    Arguments:
-        filename -- name of file for which to return the modificaton time
-    """
-    # Get posix system time for mrf file to check the modification time.
-    stats=os.stat(filename)
-    # Convert st_mtime to time string "yyyymmdd.hhmmss".
-    addt=time.strftime('%Y%m%d.%H%M%S', time.localtime(stats.st_mtime))
-    mssg=str().join(['modification time ', addt, ' ', filename])
-    # Send to log.
-    log_info_mssg(mssg)
-    # Return time as string.
-    return addt
-
-def get_dom_tag_value(dom, tag_name):
-    """
-    Return value of a tag from dom (XML file).
-    Arguments:
-        tag_name -- name of dom tag for which the value should be returned.
-    """
-    tag=dom.getElementsByTagName(tag_name)
-    value=tag[0].firstChild.data.strip()
-    return value
-
-def remove_file(filename):
-    """
-    Delete a file or link, and report this action to the log.
-    Arguments:
-        filename -- file to remove.
-    """
-    preexisting=glob.glob(filename)
-    if len(preexisting) > 0:
-        # Send to log.
-        if os.path.islink(filename):
-            log_info_mssg(str().join(['Removing link:  ', filename]))
-        else:
-            log_info_mssg(str().join(['Removing file:  ', filename]))
-        os.remove(filename)
-
-def check_abs_path(directory_path):
-    """
-    Check if directory is absolute path.
-    If not, prepend current working directory.
-        Argument:
-            directory_path -- path to check if absolute
-    """
-    # Check if already cwd
-    if directory_path[:2] == './':
-        directory_path = directory_path[2:]
-    
-    # Convert relative path to absolute
-    if directory_path[0] != '/':
-        directory_path = os.getcwd() +'/' + directory_path
-    
-    return directory_path
-    
-def add_trailing_slash(directory_path):
-    """
-    Add trailing slash if one is not already present.
-    Argument:
-        directory_path -- path to which trailing slash should be confirmed.
-    """
-    # Add trailing slash.
-    if directory_path[-1] != '/':
-        directory_path = str().join([directory_path, '/'])
-        
-    # Make sure there are no double slashes anywhere
-    directory_path = directory_path.replace('//', '/')
-    
-    # Return directory_path with trailing slash.
-    return directory_path
-
-def verify_directory_path_exists(directory_path, variable_name):
-    """
-    Verify that directory_path exists.
-    Argument:
-        directory_path -- path whose existence needs to be verified.
-    """
-    if not os.path.isdir(directory_path):
-        mssg=str().join([variable_name, ' ', directory_path, 
-                         ' does not exist.'])
-        log_sig_exit('ERROR', mssg, sigevent_url)
-
-def get_input_files(dom):
-    """
-    Returns comma-separated list of files from <input_files> element.
-    Arguments:
-        dom -- The XML dom in which to retrieve <input_files> element.
-    """
-    files = []
-    input_file_element = dom.getElementsByTagName("input_files")[0]
-    file_elements = input_file_element.getElementsByTagName("file")
-    if len(file_elements) > 0:
-        for element in file_elements:
-            files.append(check_abs_path(element.firstChild.data.strip()))
-    else:
-        files.append(check_abs_path(input_file_element.firstChild.data.strip())) 
-    return ",".join(files)
-
-def get_doy_string(date_of_data):
-    """
-    Convert date_of_data string into three-digit doy string.
-    Argument:
-        date_of_data -- string variable, example: 20120730
-    """
-    y=int(date_of_data[0:4])
-    m=int(date_of_data[4:6])
-    d=int(date_of_data[6:8])
-    doy=str(datetime.datetime(y, m, d).timetuple().tm_yday)
-    if int(doy) < 10:
-        doy=str().join(['00', str(int(doy))])
-    elif int(doy) < 100:
-        doy=str().join(['0', str(int(doy))])
-    return doy
 
 def lookupEmptyTile(empty_tile):
     """
@@ -1033,20 +772,35 @@ parser.add_option('-c', '--configuration_filename',
                   help='Full path of configuration filename.  Default:  ./mrfgen_configuration_file.xml')
 parser.add_option("-d", "--data_only", action="store_true", dest="data_only", 
                   default=False, help="Only output the MRF data, index, and header files")
-parser.add_option('-s', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
+parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                  default=False, help="Send email notification for errors and warnings.")
+parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                  default='', help='The server where email is sent from (overrides configuration file value')
+parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                  default='', help='The recipient address for email notifications (overrides configuration file value')
+parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                  default='', help='The sender for email notifications (overrides configuration file value')
 
 # Read command line args.
 (options, args) = parser.parse_args()
 # Configuration filename.
 configuration_filename=options.configuration_filename
-# Sigevent URL.
-sigevent_url=options.sigevent_url
+# Send email.
+send_email=options.send_email
+# Email server.
+email_server=options.email_server
+# Email recipient
+email_recipient=options.email_recipient
+# Email sender.
+email_sender=options.email_sender
 # Data only.
 data_only = options.data_only
+
+# Email metadata replaces sigevent_url
+if send_email:
+    sigevent_url = (email_server, email_recipient, email_sender)
+else:
+    sigevent_url = ''
 
 # Get current time, which is written to a file as the previous cycle time.  
 # Time format is "yyyymmdd.hhmmss.f".  Do this first to avoid any gap where tiles 
@@ -1073,6 +827,27 @@ else:
     # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
     # Files get date_of_date added, links do not.
     basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', current_cycle_time, '_', str(os.getpid())])    
+    
+    # Get default email server and recipient if not override
+    if email_server == '':
+        try: 
+            email_server = get_dom_tag_value(dom, 'email_server')
+        except:
+            email_server = ''
+    if email_recipient == '':
+        try: 
+            email_recipient = get_dom_tag_value(dom, 'email_recipient')
+        except:
+            email_recipient = ''
+    if email_sender == '':
+        try: 
+            email_sender = get_dom_tag_value(dom, 'email_sender')
+        except:
+            email_sender = ''
+    if send_email:
+        sigevent_url = (email_server, email_recipient, email_sender)
+        if email_recipient == '':
+            log_sig_err("No email recipient provided for notifications.", sigevent_url)
     
     # for sub-daily imagery
     try: 
@@ -1277,16 +1052,16 @@ script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
 mrf_compression_type=string.upper(mrf_compression_type)
 
 # Verify logfile_dir first so that the log can be started.
-verify_directory_path_exists(logfile_dir, 'logfile_dir')
+verify_directory_path_exists(logfile_dir, 'logfile_dir', sigevent_url)
 # Initialize log file.
 log_filename=str().join([logfile_dir, basename, '.log'])
 logging.basicConfig(filename=log_filename, level=logging.INFO)
 
 # Verify remaining directory paths.
 if input_dir != None:
-    verify_directory_path_exists(input_dir, 'input_dir')
-verify_directory_path_exists(output_dir, 'output_dir')
-verify_directory_path_exists(working_dir, 'working_dir')
+    verify_directory_path_exists(input_dir, 'input_dir', sigevent_url)
+verify_directory_path_exists(output_dir, 'output_dir', sigevent_url)
+verify_directory_path_exists(working_dir, 'working_dir', sigevent_url)
 
 # Make certain color map can be found
 if colormap != '' and '://' not in colormap:
@@ -1909,9 +1684,9 @@ else:
 if colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
     if add_transparency == True:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url, '--transparent']
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, '--email_recipient', email_recipient, '--email_sender', email_sender, '--transparent']
     else:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--sigevent_url', sigevent_url]
+        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, '--email_recipient', email_recipient, '--email_sender', email_sender]
     log_the_command(colormap2vrt_command_list)
     colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
     colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
@@ -2177,8 +1952,9 @@ if data_only == True:
     remove_file(working_dir+"/"+basename+".configuration_file.xml")
 
 # Remove temp tiles
+working_dir_files = glob.glob(working_dir+"/*")
 for tilename in (alltiles):
-    if working_dir in tilename:
+    if os.path.normpath(tilename) in working_dir_files:
         remove_file(tilename)
         if tiff_compress != None:
             remove_file(tilename+'.aux.xml')

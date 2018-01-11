@@ -38,23 +38,27 @@ This file contains various utilities for the OnEarth tools.
 import glob
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
 import datetime
 import socket
-import urllib
 import urllib2
 import xml.dom.minidom
+import smtplib
+from email.mime.text import MIMEText
+import __main__ as main
 
 basename = None
 
 class Environment:
     """Environment information for layer(s)"""
     def __init__(self, cacheLocation_wmts, cacheLocation_twms, cacheBasename_wmts, cacheBasename_twms, getCapabilities_wmts, getCapabilities_twms, getTileService, wmtsServiceUrl, twmsServiceUrl, 
-        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, 
+        projection_wmts_dir, projection_twms_dir, legend_dir, legendUrl, colormap_dirs, colormapUrls, stylejson_dirs, stylejsonUrls, metadatajson_dirs, metadatajsonUrls, 
         mapfileStagingLocation, mapfileLocation, mapfileLocationBasename, mapfileConfigLocation, mapfileConfigBasename,
-        reprojectEndpoint_wmts, reprojectEndpoint_twms, reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms):
+        reprojectEndpoint_wmts, reprojectEndpoint_twms, reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms,
+        emailServer, emailRecipient, emailSender):
         self.cacheLocation_wmts = cacheLocation_wmts
         self.cacheLocation_twms = cacheLocation_twms
         self.cacheBasename_wmts = cacheBasename_wmts
@@ -72,6 +76,8 @@ class Environment:
         self.colormapUrls = colormapUrls
         self.stylejson_dirs = stylejson_dirs
         self.stylejsonUrls = stylejsonUrls
+        self.metadatajson_dirs = metadatajson_dirs
+        self.metadatajsonUrls = metadatajsonUrls
         self.mapfileStagingLocation = mapfileStagingLocation
         self.mapfileLocation = mapfileLocation
         self.mapfileLocationBasename = mapfileLocationBasename
@@ -83,46 +89,82 @@ class Environment:
         self.reprojectApacheConfigLocation_twms = reprojectApacheConfigLocation_twms
         self.reprojectLayerConfigLocation_wmts = reprojectLayerConfigLocation_wmts
         self.reprojectLayerConfigLocation_twms = reprojectLayerConfigLocation_twms
-        # root directory based on location of service GetCapabilities
-
-def sigevent(type, mssg, sigevent_url):
+        self.emailServer = emailServer
+        self.emailRecipient = emailRecipient
+        self.emailSender = emailSender
+       
+def sigevent_email(type, mssg, smtp_server, recipient, sender):
     """
-    Send a message to sigevent service.
+    Send a sigevent message via email.
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
-        mssg -- 'message for operations'
-        sigevent_url -- Example:  'http://[host]/sigevent/events/create'
-                        'http://localhost:8100/sigevent/events/create'
+        mssg -- message for operations
+        smtp_server -- Address of SMTP server to use
+        recipient -- email address of recipient
+        sender -- email address of sender
     """
-    # Constrain mssg to 256 characters (including '...').
-    if len(mssg) > 256:
-        mssg=str().join([mssg[0:253], '...'])
-    print str().join(['sigevent ', type, ' - ', mssg])
-    # Remove any trailing slash from URL.
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any question mark from URL.  It is added later.
-    if sigevent_url[-1] == '?':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Remove any trailing slash from URL.  (Again.)
-    if sigevent_url[-1] == '/':
-        sigevent_url=sigevent_url[0:len(sigevent_url)-1]
-    # Define sigevent parameters that get encoded into the URL.
+    # Validate input addresses
+    allowed = re.compile(r"([a-zA-Z0-9\-_\.]+):?([0-9]{1,5})?", re.IGNORECASE)
+    if all(allowed.match(x) for x in smtp_server.split(".")) == False:
+        print "ERROR: " + smtp_server + " is an invalid SMTP server name"
+    for email in [sender.strip().replace("localhost","localhost.localhost"), recipient.strip()]:
+        valid_email = re.compile(r"^(([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*$", re.IGNORECASE)
+        if not valid_email.match(email):
+            log_info_mssg("ERROR: " + email + " is not a valid email address")
+            return
+
+    # Use existing sigevent parameters 
     data={}
     data['type']=type
     data['description']=mssg
     data['computer']=socket.gethostname()
     data['source']='ONEARTH'
     data['format']='TEXT'
-    data['category']='MRFGEN'
+    data['category']=os.path.basename(main.__file__)
     data['provider']='GIBS'
     if basename != None:
         data['data']=basename
-    # Format sigevent parameters that get encoded into the URL.
-    values=urllib.urlencode(data)
-    # Create complete URL.
-    full_url=sigevent_url+'?'+values
-    data=urllib2.urlopen(full_url)
+    
+    # Send SMTP email
+    contents = ''
+    for i in data:
+        contents += i + ': ' + data[i] + '\n'
+    msg = MIMEText(contents)
+    msg['Subject'] = "[" + type + "/" + data['source'] + "] triggered by " +  data['category']
+    msg['From'] = sender
+    msg['To'] = recipient
+    try:
+        s = smtplib.SMTP(smtp_server)
+        s.sendmail(sender, [recipient], msg.as_string())
+        s.quit()
+    except Exception, e:
+        log_info_mssg("ERROR: Cannot send email using SMTP server " + smtp_server + ", " + str(e))
+        
+def sigevent(type, mssg, email_meta):
+    """
+    Send a sigevent message via email without recipient and sender.
+    Arguments:
+        type -- 'INFO', 'WARN', 'ERROR'
+        mssg -- message for operations
+        email_meta -- triplet containing address of SMTP server to use, recipient address, and sender
+    """
+    if len(email_meta) == 3:
+        smtp_server, recipient, sender = email_meta
+        if smtp_server is None:
+            smtp_server = 'localhost'
+        if recipient is None:
+            recipient = ''
+        if sender is None or sender == '':
+            sender = 'noreply@' + smtp_server
+    else:
+        return
+    allowed = re.compile(r"([a-zA-Z0-9\-_\.]+):?([0-9]{1,5})?", re.IGNORECASE)
+    if all(allowed.match(x) for x in smtp_server.split(".")) == False:
+        smtp_server = 'localhost' # Default to localhost if invalid hostname
+    
+    # recipient must be set to use use sigevent email
+    if recipient != '':
+        sigevent_email(type, mssg, smtp_server, recipient, sender)
 
 def log_info_mssg(mssg):
     """
@@ -347,7 +389,7 @@ def run_command(cmd, sigevent_url):
             log_sig_err(error.strip(), sigevent_url)
             raise Exception(error.strip())
     
-def get_environment(environmentConfig, sigevent_url):
+def get_environment(environmentConfig, email_meta):
     """
     Gets environment metadata from an environment configuration file.
     Arguments:
@@ -362,6 +404,35 @@ def get_environment(environmentConfig, sigevent_url):
         raise Exception(mssg)
         
     dom = xml.dom.minidom.parse(environment_config)
+    
+    # Get email server and recipient/sender
+    try:
+        emailServer = dom.getElementsByTagName('EmailServer')[0].firstChild.nodeValue
+    except IndexError:
+        emailServer = None
+        
+    try:
+        emailRecipient = dom.getElementsByTagName('EmailRecipient')[0].firstChild.nodeValue
+    except IndexError:
+        emailRecipient = None
+        
+    try:
+        emailSender = dom.getElementsByTagName('EmailSender')[0].firstChild.nodeValue
+    except IndexError:
+        emailSender = None
+        
+    # Override email server and recipient if provided
+    if len(email_meta) == 3:
+        email_server, email_recipient, email_sender = email_meta
+        if email_server != '':
+            emailServer = email_server
+        if email_recipient != '':
+            emailRecipient = email_recipient
+        if email_sender != '':
+            emailSender = email_sender
+    sigevent_url = (emailServer, emailRecipient, emailSender)
+    if emailRecipient == '':
+        log_sig_err("No email recipient provided for notifications.", sigevent_url)
     
     # Caches
     try:
@@ -432,12 +503,12 @@ def get_environment(environmentConfig, sigevent_url):
     
     if twmsStagingLocation != None:
         add_trailing_slash(twmsStagingLocation)
-#         if not os.path.exists(twmsStagingLocation):
-#             os.makedirs(twmsStagingLocation)
+        if not os.path.exists(twmsStagingLocation):
+            os.makedirs(twmsStagingLocation)
     if wmtsStagingLocation != None:
         add_trailing_slash(wmtsStagingLocation)
-#         if not os.path.exists(wmtsStagingLocation):
-#             os.makedirs(wmtsStagingLocation) 
+        if not os.path.exists(wmtsStagingLocation):
+            os.makedirs(wmtsStagingLocation) 
     try:
         legendLocation = add_trailing_slash(get_dom_tag_value(dom, 'LegendLocation'))
     except IndexError:
@@ -492,6 +563,29 @@ def get_environment(environmentConfig, sigevent_url):
                     url.attributes['version'] = ''
     except KeyError:
         stylejsonUrls = None
+        
+    # Same deal as colormaps for metadata JSON files
+    try:
+        metadatajsonLocations = dom.getElementsByTagName('MetadataJSONLocation')
+        for location in metadatajsonLocations:
+            if 'version' not in location.attributes.keys():
+                if len(metadatajsonLocations) > 1:
+                    log_sig_err('Multiple <MetadataJSONLocation> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    location.attributes['version'] = ''
+    except KeyError:
+        metadatajsonLocations = None
+
+    try:
+        metadatajsonUrls = dom.getElementsByTagName('MetadataJSONURL')
+        for url in metadatajsonUrls:
+            if 'version' not in url.attributes.keys():
+                if len(metadatajsonUrls) > 1:
+                    log_sig_err('Multiple <MetadataJSONURL> elements but not all have a "version" attribute', sigevent_url)
+                else:
+                    url.attributes['version'] = ''
+    except KeyError:
+        metadatajsonUrls = None
 
     # Get mapfile parameters from environment config file
     # Get/create mapfile staging location
@@ -499,14 +593,14 @@ def get_environment(environmentConfig, sigevent_url):
         mapfileStagingLocation = dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
     except IndexError:
         mapfileStagingLocation = None
-#     if mapfileStagingLocation is not None:
-#         try:
-#             os.makedirs(mapfileStagingLocation)
-#         except OSError:
-#             if not os.path.exists(mapfileStagingLocation):
-#                 log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
-#                 mapfileStagingLocation = None
-#             pass
+    if mapfileStagingLocation is not None:
+        try:
+            os.makedirs(mapfileStagingLocation)
+        except OSError:
+            if not os.path.exists(mapfileStagingLocation):
+                log_sig_exit('ERROR', 'Mapfile staging location: ' + mapfileStagingLocation + ' cannot be created.', sigevent_url)
+                mapfileStagingLocation = None
+            pass
 
     # Get output mapfile location
     try:
@@ -582,9 +676,11 @@ def get_environment(environmentConfig, sigevent_url):
                        legendLocation, legendUrl,
                        colormapLocations, colormapUrls,
                        stylejsonLocations, stylejsonUrls,
+                       metadatajsonLocations, metadatajsonUrls,
                        mapfileStagingLocation, mapfileLocation,
                        mapfileLocationBasename, mapfileConfigLocation,
                        mapfileConfigBasename, 
                        reprojectEndpoint_wmts, reprojectEndpoint_twms, 
                        reprojectApacheConfigLocation_wmts, reprojectApacheConfigLocation_twms, 
-                       reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms)
+                       reprojectLayerConfigLocation_wmts, reprojectLayerConfigLocation_twms,
+                       emailServer, emailRecipient, emailSender)

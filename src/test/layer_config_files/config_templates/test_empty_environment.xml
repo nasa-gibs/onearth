@@ -26,4 +26,7 @@ limitations under the License.
     <LegendURL>http://localhost/legends/</LegendURL>
     <ColorMapLocation>{testfile_dir}/colormaps/</ColorMapLocation>
     <ColorMapURL>http://localhost/colormaps</ColorMapURL>
+    <EmailServer>127.0.0.1:1025</EmailServer>
+    <EmailRecipient>somebody@localhost.test;somebodyelse@localhost.test</EmailRecipient>
+    <EmailSender>nobody@localhost.test</EmailSender>
 </EnvironmentConfiguration>

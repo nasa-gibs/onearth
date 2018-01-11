@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Capabilities xmlns="http://www.opengis.net/wmts/1.0"
+    xmlns:ows="http://www.opengis.net/ows/1.1"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:gml="http://www.opengis.net/gml"
+    xsi:schemaLocation="http://www.opengis.net/wmts/1.0
+    http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
+    version="1.0.0">
+    <ows:ServiceIdentification>
+        <ows:Title xml:lang="en">NASA Global Imagery Browse Services for EOSDIS</ows:Title>
+        <ows:Abstract xml:lang="en">
+            Near real time imagery from multiple NASA instruments
+        </ows:Abstract>
+        <ows:Keywords>
+            <ows:Keyword>World</ows:Keyword>
+            <ows:Keyword>Global</ows:Keyword>
+        </ows:Keywords>
+        <ows:ServiceType>OGC WMTS</ows:ServiceType>
+        <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+        <ows:Fees>none</ows:Fees>
+        <ows:AccessConstraints>none</ows:AccessConstraints>
+    </ows:ServiceIdentification>
+    <ows:ServiceProvider>
+        <ows:ProviderName>National Aeronautics and Space Administration</ows:ProviderName>
+        <ows:ProviderSite xlink:href="http://earthdata.nasa.gov/"/>
+        <ows:ServiceContact>
+            <ows:IndividualName></ows:IndividualName>
+            <ows:PositionName></ows:PositionName>
+            <ows:ContactInfo>
+                <ows:Address>
+                    <ows:DeliveryPoint></ows:DeliveryPoint>
+                    <ows:City></ows:City>
+                    <ows:AdministrativeArea></ows:AdministrativeArea>
+                    <ows:PostalCode></ows:PostalCode>
+                    <ows:Country></ows:Country>
+                    <ows:ElectronicMailAddress></ows:ElectronicMailAddress>
+                </ows:Address>
+            </ows:ContactInfo>
+        </ows:ServiceContact>
+    </ows:ServiceProvider>
+    <ows:OperationsMetadata>
+        <ows:Operation name="GetCapabilities">
+            <ows:DCP>
+                <ows:HTTP>
+                    <ows:Get xlink:href="{ServiceURL}/1.0.0/WMTSCapabilities.xml">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>RESTful</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                    <ows:Get xlink:href="{ServiceURL}/wmts.cgi?">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>KVP</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                </ows:HTTP>
+            </ows:DCP>
+        </ows:Operation>
+        <ows:Operation name="GetTile">
+            <ows:DCP>
+                <ows:HTTP>
+                    <ows:Get xlink:href="{ServiceURL}">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>RESTful</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                    <ows:Get xlink:href="{ServiceURL}/wmts.cgi?">
+                        <ows:Constraint name="GetEncoding">
+                            <ows:AllowedValues>
+                                <ows:Value>KVP</ows:Value>
+                            </ows:AllowedValues>
+                        </ows:Constraint>
+                    </ows:Get>
+                </ows:HTTP>
+            </ows:DCP>
+        </ows:Operation>
+    </ows:OperationsMetadata>
+    <Contents>
+    </Contents>
+    <ServiceMetadataURL xlink:href="{ServiceURL}"/>
+</Capabilities>

@@ -1,0 +1,398 @@
+<WMS_Tile_Service version="0.1.0">
+  <Service>
+    <Name>GIBS:WMS:Tile</Name>
+    <Title>WMS Tile Service</Title>
+    <Abstract>Tiled WMS service, tiled in a global grid</Abstract>
+    <KeywordList>
+      <Keyword>WMS</Keyword>
+      <Keyword>Tile</Keyword>
+      <Keyword>GIBS</Keyword>
+      <Keyword>Global</Keyword>
+      <Keyword>Earth</Keyword>
+    </KeywordList>
+    <OnlineResource xmlns:xlink="http://www.w3.orf/1999/xlink" xmlns:ns0="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://earthdata.nasa.gov" ns0:href="http://localhost/reproject/test/twms/"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson></ContactPerson>
+        <ContactOrganization></ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactElectronicMailAddress></ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>none</AccessConstraints>
+  </Service>
+  <TiledPatterns>
+    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/reproject/test/twms/twms.cgi?" xlink:type="simple"/>
+    <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+<TiledGroup>
+            <Name>snap test 1a tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 1a</Title>
+            <Abstract xml:lang="en">snap_test_1a abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_1a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 2a tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 2a</Title>
+            <Abstract xml:lang="en">snap_test_2a abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_2a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 3a tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3a</Title>
+            <Abstract xml:lang="en">snap_test_3a abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_3a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 3b tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3b</Title>
+            <Abstract xml:lang="en">snap_test_3b abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_3b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 3c tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3c</Title>
+            <Abstract xml:lang="en">snap_test_3c abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_3c&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 3d tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 3d</Title>
+            <Abstract xml:lang="en">snap_test_3d abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_3d&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 4a tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 4a</Title>
+            <Abstract xml:lang="en">snap_test_4a abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_4a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 4b tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 4b</Title>
+            <Abstract xml:lang="en">snap_test_4b abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_4b&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 5a tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 5a</Title>
+            <Abstract xml:lang="en">snap_test_5a abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_5a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test 6a tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario 6a</Title>
+            <Abstract xml:lang="en">snap_test_6a abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_6a&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>snap test year boundary tileset</Name>
+            <Title xml:lang="en">OnEarth Date Snapping Scenario Year Boundary</Title>
+            <Abstract xml:lang="en">snap_test_year_boundary abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=snap_test_year_boundary&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>test daily png tileset</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - Daily PNG</Title>
+            <Abstract xml:lang="en">test_daily_png abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>4</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image/png&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>test legacy subdaily jpg tileset</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_legacy_subdaily_jpg abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>test nonyear jpg tileset</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_nonyear_jpg abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>test static jpg tileset</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_static_jpg abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>test weekly jpg tileset</Name>
+            <Title xml:lang="en">Blue Marble Demo Imagery - JPEG</Title>
+            <Abstract xml:lang="en">test_weekly_jpg abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+<TiledGroup>
+            <Name>test zindex jpg tileset</Name>
+            <Title xml:lang="en">Blue Marble Z-Index Test Imagery</Title>
+            <Abstract xml:lang="en">test_zindex_jpg abstract</Abstract>
+            <Projection>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</Projection>
+            <Pad>0</Pad>
+            <Bands>3</Bands>
+            <LatLonBoundingBox minx="-20037508.34278925" miny="-20037508.34278925" maxx="20037508.34278925" maxy="20037508.34278925" />
+            <Key>${time}</Key>
+             <TilePattern><![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,15028131.2570919375,-15028131.2570919375,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,10018754.171394625,-10018754.171394625,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,0,0,20037508.34278925
+]]></TilePattern>
+<TilePattern><![CDATA[request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&time=${time}&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+]]></TilePattern>
+</TiledGroup>
+  </TiledPatterns>
+</WMS_Tile_Service>

@@ -18,8 +18,6 @@ Options:
   -r ORIENTATION, --orientation=ORIENTATION
                         Orientation of the legend: horizontal or vertical
                         (default)
-  -u SIGEVENT_URL, --sigevent_url=SIGEVENT_URL
-                        Default:  http://localhost:8100/sigevent/events/create
   -v, --verbose         Print out detailed log messages
 ```
 

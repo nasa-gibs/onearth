@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -38,7 +38,6 @@
 #
 #  vectorgen.py 
 #   -c vectorgen_configuration_file.xml 
-#   -s http://localhost:8100/sigevent/events/create
 
 from optparse import OptionParser
 from oe_utils import *
@@ -56,7 +55,7 @@ try:
 except:
     sys.exit('ERROR: cannot find GDAL/OGR modules')
 
-versionNumber = '1.2.2'
+versionNumber = '1.3.2'
 basename = None
 
 def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
@@ -95,18 +94,32 @@ if __name__ == '__main__':
                       action='store', type='string', dest='configuration_filename',
                       default='./vectorgen_configuration_file.xml',
                       help='Full path of configuration filename.  Default:  ./vectorgen_configuration_file.xml')
-    parser.add_option('-s', '--sigevent_url',
-                      action='store', type='string', dest='sigevent_url',
-                      default=
-                      'http://localhost:8100/sigevent/events/create',
-                      help='Default:  http://localhost:8100/sigevent/events/create')
+    parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+                      default=False, help="Send email notification for errors and warnings.")
+    parser.add_option('--email_server', action='store', type='string', dest='email_server',
+                      default='', help='The server where email is sent from (overrides configuration file value')
+    parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
+                      default='', help='The recipient address for email notifications (overrides configuration file value')
+    parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
+                      default='', help='The sender for email notifications (overrides configuration file value')
     
     # Read command line args.
     (options, args) = parser.parse_args()
     # Configuration filename.
     configuration_filename=options.configuration_filename
-    # Sigevent URL.
-    sigevent_url=options.sigevent_url
+    # Send email.
+    send_email=options.send_email
+    # Email server.
+    email_server=options.email_server
+    # Email recipient
+    email_recipient=options.email_recipient
+    # Email sender
+    email_sender=options.email_sender
+    # Email metadata replaces sigevent_url
+    if send_email:
+        sigevent_url = (email_server, email_recipient, email_sender)
+    else:
+        sigevent_url = ''
     
     # Get current time, which is written to a file as the previous cycle time.  
     # Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
@@ -129,6 +142,27 @@ if __name__ == '__main__':
     
         # Define output basename
         basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time, '_', str(os.getpid())])    
+        
+        # Get default email server and recipient if not override
+        if email_server == '':
+            try: 
+                email_server = get_dom_tag_value(dom, 'email_server')
+            except:
+                email_server = ''
+        if email_recipient == '':
+            try: 
+                email_recipient = get_dom_tag_value(dom, 'email_recipient')
+            except:
+                email_recipient = ''
+        if email_sender == '':
+            try: 
+                email_sender = get_dom_tag_value(dom, 'email_sender')
+            except:
+                email_sender = ''
+        if send_email:
+            sigevent_url = (email_server, email_recipient, email_sender)
+            if email_recipient == '':
+                log_sig_err("No email recipient provided for notifications.", sigevent_url)
         
         # for sub-daily imagery
         try: 

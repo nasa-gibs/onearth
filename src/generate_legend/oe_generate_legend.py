@@ -828,11 +828,6 @@ parser.add_option('-o', '--output',
 parser.add_option('-r', '--orientation',
                   action='store', type='string', dest='orientation', default = 'vertical',
                   help='Orientation of the legend: horizontal or vertical (default)')
-parser.add_option('-u', '--sigevent_url',
-                  action='store', type='string', dest='sigevent_url',
-                  default=
-                  'http://localhost:8100/sigevent/events/create',
-                  help='Default:  http://localhost:8100/sigevent/events/create')
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
                   default=False, help="Print out detailed log messages")
 
