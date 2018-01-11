@@ -199,6 +199,7 @@ onearth-compile:
 	sed -i 's/<receive_context.h>/"receive_context.h"/g' src/modules/mod_reproject/src/mod_reproject.cpp
 	cp src/modules/mod_receive/src/receive_context.h src/modules/mod_twms/src/
 	sed -i 's/<receive_context.h>/"receive_context.h"/g' src/modules/mod_twms/src/mod_twms.cpp
+	cp src/modules/mod_receive/src/receive_context.h src/modules/mod_wmts_wrapper/
 	cp src/modules/mod_reproject/src/mod_reproject.h src/modules/mod_wmts_wrapper/
 	
 	$(MAKE) -C src/modules/mod_onearth
