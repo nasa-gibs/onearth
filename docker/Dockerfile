@@ -11,14 +11,14 @@ RUN mkdir /home/oe2
 WORKDIR /home/oe2
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
-RUN git checkout 2.0.0-cloud-setup
+RUN git checkout 2.0.0
 
 # Install mod_proxy patch
 WORKDIR /tmp
 RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 RUN tar xf httpd-2.4.6.tar.gz
 WORKDIR /tmp/httpd-2.4.6
-RUN patch -p0 < /home/oe2/onearth/src/cloud_build/mod_proxy_http.patch
+RUN patch -p0 < /home/oe2/onearth/docker/mod_proxy_http.patch
 RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared 
 RUN make && make install
 
@@ -33,27 +33,27 @@ RUN make && make install
 
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
-RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
-RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_reproject/src/
-RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_twms/src/
-RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
-RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_wmts_wrapper
-RUN cp /home/oe2/onearth/src/cloud_build/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN cp /home/oe2/onearth/src/modules/mod_reproject/src/mod_reproject.h .
 RUN make && make install
 
@@ -66,6 +66,6 @@ RUN luarocks make onearth-0.1-1.rockspec
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
 
-WORKDIR /home/oe2/onearth/src/cloud_build
+WORKDIR /home/oe2/onearth/docker
 RUN sh test_layer_setup.sh
 CMD sh start_oe2.sh
