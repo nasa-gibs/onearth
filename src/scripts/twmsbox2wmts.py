@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2017, California Institute of Technology.
+# Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,11 +42,11 @@ from optparse import OptionParser
 from decimal import Decimal
 
 # Default EPSG:4236 values
-units = Decimal(111319.490793274) # meters/degree
-tilesize = Decimal(512) # pixels
-pixelsize = Decimal(0.00028) # meters
-top_left_minx = Decimal(-180)
-top_left_maxy = Decimal(90)
+units = Decimal(str(111319.490793274)) # meters/degree
+tilesize = Decimal(str(512)) # pixels
+pixelsize = Decimal(str(0.00028)) # meters
+top_left_minx = Decimal(str(-180))
+top_left_maxy = Decimal(str(90))
 
 def twmsbox2wmts(request_bbox, epsg):
     """
@@ -108,37 +108,37 @@ if not options.request_bbox:
 
 if options.epsg == "4326":
     print "Using EPSG:4326"
-    units = Decimal(111319.490793274)
-    tilesize = Decimal(512)
-    pixelsize = Decimal(0.00028)
-    top_left_minx = Decimal(-180)
-    top_left_maxy = Decimal(90)
+    units = Decimal(str(111319.490793274))
+    tilesize = Decimal(str(512))
+    pixelsize = Decimal(str(0.00028))
+    top_left_minx = Decimal(str(-180))
+    top_left_maxy = Decimal(str(90))
 elif options.epsg == "3857":
     print "Using EPSG:3857"
-    units = Decimal(1)
-    tilesize = Decimal(256)
-    pixelsize = Decimal(0.00028)
-    top_left_minx = Decimal(-20037508.34278925)
-    top_left_maxy = Decimal(20037508.34278925)
+    units = Decimal(str(1))
+    tilesize = Decimal(str(256))
+    pixelsize = Decimal(str(0.00028))
+    top_left_minx = Decimal(str(-20037508.34278925))
+    top_left_maxy = Decimal(str(20037508.34278925))
 elif options.epsg == "3031":
     print "Using EPSG:3031"
-    units = Decimal(1)
-    tilesize = Decimal(512)
-    pixelsize = Decimal(0.00028)
-    top_left_minx = Decimal(-4194304)
-    top_left_maxy = Decimal(4194304)
+    units = Decimal(str(1))
+    tilesize = Decimal(str(512))
+    pixelsize = Decimal(str(0.00028))
+    top_left_minx = Decimal(str(-4194304))
+    top_left_maxy = Decimal(str(4194304))
 elif options.epsg == "3413":
     print "Using EPSG:3413"
-    units = Decimal(1)
-    tilesize = Decimal(512)
-    pixelsize = Decimal(0.00028)
-    top_left_minx = Decimal(-4194304)
-    top_left_maxy = Decimal(4194304)
+    units = Decimal(str(1))
+    tilesize = Decimal(str(512))
+    pixelsize = Decimal(str(0.00028))
+    top_left_minx = Decimal(str(-4194304))
+    top_left_maxy = Decimal(str(4194304))
 else:
     parser.error('Projection is not supported')
     
 if options.tilesize:
     print "Using tilesize: " + str(options.tilesize)
-    tilesize = Decimal(options.tilesize)
+    tilesize = Decimal(str(options.tilesize))
 
 print (twmsbox2wmts(options.request_bbox, options.epsg))
