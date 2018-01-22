@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2017, California Institute of Technology.
+# Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -108,7 +108,7 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     if all(allowed.match(x) for x in smtp_server.split(".")) == False:
         print "ERROR: " + smtp_server + " is an invalid SMTP server name"
     for email in [sender.strip().replace("localhost","localhost.localhost"), recipient.strip()]:
-        valid_email = re.compile(r"^(([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;.](([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*$", re.IGNORECASE)
+        valid_email = re.compile(r"^(([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;,.](([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*$", re.IGNORECASE)
         if not valid_email.match(email):
             log_info_mssg("ERROR: " + email + " is not a valid email address")
             return
@@ -135,7 +135,7 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     msg['To'] = recipient
     try:
         s = smtplib.SMTP(smtp_server)
-        s.sendmail(sender, [recipient], msg.as_string())
+        s.sendmail(sender, recipient.replace(",",";").split(";"), msg.as_string())
         s.quit()
     except Exception, e:
         log_info_mssg("ERROR: Cannot send email using SMTP server " + smtp_server + ", " + str(e))
