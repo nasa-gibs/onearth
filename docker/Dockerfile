@@ -1,11 +1,12 @@
 FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
-RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget 
-RUN yum install -y luarocks 
+RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget
+RUN yum install -y luarocks
 RUN yum install -y redis
 
 RUN mkdir /home/oe2
+RUN mkdir -p /var/www
 
 # Clone OnEarth repo
 WORKDIR /home/oe2
@@ -19,7 +20,7 @@ RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 RUN tar xf httpd-2.4.6.tar.gz
 WORKDIR /tmp/httpd-2.4.6
 RUN patch -p0 < /home/oe2/onearth/docker/mod_proxy_http.patch
-RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared 
+RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared
 RUN make && make install
 
 # Install APR patch
@@ -67,5 +68,4 @@ RUN luarocks make onearth-0.1-1.rockspec
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
 
 WORKDIR /home/oe2/onearth/docker
-RUN sh test_layer_setup.sh
 CMD sh start_oe2.sh

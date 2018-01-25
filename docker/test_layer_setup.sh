@@ -38,7 +38,7 @@ setup_mod_mrf_date() {
     cp oe2_test_mod_mrf_date.conf /etc/httpd/conf.d
     cp oe2_test_mod_mrf_date_layer.config /var/www/html/mrf_endpoint/date_test/default/tms/
     /usr/sbin/httpd -k restart
-    sleep 2 
+    sleep 2
 
     # Test that tiles look okay
     DEFAULT_TILE=($(curl -s http://localhost/mrf_endpoint/date_test/default/default/tms/0/0/0.jpg | md5sum ))
@@ -65,7 +65,7 @@ setup_mod_reproject_date() {
     then
         echo "ERROR: error with mod_reproject date layer" >&2
         ERR=1
-    fi   
+    fi
 }
 
 setup_mod_reproject_static() {
@@ -82,7 +82,7 @@ setup_mod_reproject_static() {
     then
         echo "ERROR: error with mod_reproject static layer" >&2
         ERR=1
-    fi   
+    fi
 }
 
 setup_mod_mrf_static
