@@ -83,12 +83,13 @@ import shutil
 import imghdr
 import sqlite3
 import math
+import oe_utils
 from overtiffpacker import pack
 from decimal import *
-from oe_utils import sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
+from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
 versionNumber = '1.3.2'
-basename = None
+oe_utils.basename = None
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -826,7 +827,7 @@ else:
 
     # Define output basename for log, txt, vrt, .mrf, .idx and .ppg or .pjg
     # Files get date_of_date added, links do not.
-    basename=str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', current_cycle_time, '_', str(os.getpid())])    
+    oe_utils.basename = basename = str().join([parameter_name, '_', date_of_data, '___', 'mrfgen_', current_cycle_time, '_', str(os.getpid())])    
     
     # Get default email server and recipient if not override
     if email_server == '':
