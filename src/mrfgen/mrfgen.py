@@ -1314,7 +1314,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     mssg = output_tile + " created"
                     try:
                         log_info_mssg(mssg)
-                        sigevent('INFO', mssg, sigevent_url)
+                        # sigevent('INFO', mssg, sigevent_url)
                     except urllib2.URLError:
                         print 'sigevent service is unavailable'
                     # Replace with new tiles
@@ -1534,7 +1534,7 @@ if len(mrf_list) > 0:
     mssg=str().join(['MRF updated:  ', mrf])
     try:
         log_info_mssg(mssg)
-        sigevent('INFO', mssg, sigevent_url)
+        # sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
     sys.exit(errors)
@@ -1965,7 +1965,7 @@ for tilename in (alltiles):
 mssg=str().join(['MRF created:  ', out_filename])
 try:
     log_info_mssg(mssg)
-    sigevent('INFO', mssg, sigevent_url)
+    # sigevent('INFO', mssg, sigevent_url)
 except urllib2.URLError:
     None
 sys.exit(errors)
