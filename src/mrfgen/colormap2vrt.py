@@ -230,4 +230,5 @@ else: # merge SLD into VRT
         output_file.close()
 
 message = output_vrt + " created successfully."
-log_sig_exit('INFO', message, sigevent_url)
+log_info_mssg(message)
+# log_sig_exit('INFO', message, sigevent_url)

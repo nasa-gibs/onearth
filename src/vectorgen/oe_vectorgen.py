@@ -404,7 +404,7 @@ if __name__ == '__main__':
     # Send to log.
     try:
         log_info_mssg(mssg)
-        sigevent('INFO', mssg, sigevent_url)
+        # sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
     sys.exit(errors)
