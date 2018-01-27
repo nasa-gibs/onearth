@@ -2674,7 +2674,7 @@ message = message + " " + ("Cache configurations created.", "Cache configuration
 
 try:
     log_info_mssg(asctime() + " " + message)
-#     sigevent('INFO', asctime() + " " + message, sigevent_url)
+    sigevent('INFO', asctime() + " " + message, sigevent_url)
 except urllib2.URLError:
     None
 log_info_mssg('Exiting oe_configure_layer.')
