@@ -66,6 +66,7 @@ RUN luarocks make onearth-0.1-1.rockspec
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
+RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
 
 WORKDIR /home/oe2/onearth/docker
 CMD sh start_oe2.sh
