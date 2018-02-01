@@ -1,11 +1,16 @@
 local redis = {
-    _VERSION     = 'redis-lua 3.0.0-dev',
+    _VERSION     = 'redis-lua 2.0.5-dev',
     _DESCRIPTION = 'A Lua client library for the redis key value storage system.',
     _COPYRIGHT   = 'Copyright (C) 2009-2012 Daniele Alessandri',
 }
 
+-- The following line is used for backwards compatibility in order to keep the `Redis`
+-- global module name. Using `Redis` is now deprecated so you should explicitly assign
+-- the module to a local variable when requiring it: `local redis = require('redis')`.
+Redis = redis
+
 local unpack = _G.unpack or table.unpack
-local network = {}
+local network, request, response = {}, {}, {}
 
 local defaults = {
     host        = '127.0.0.1',
@@ -13,6 +18,15 @@ local defaults = {
     tcp_nodelay = true,
     path        = nil,
 }
+
+-- Utility functions
+local function split (sep, str)
+    local results = {}
+    for value in string.gmatch(str, "([^" .. sep .. "]+)") do
+        results[#results + 1] = value
+    end
+    return results
+end
 
 local function merge_defaults(parameters)
     if parameters == nil then
@@ -38,7 +52,7 @@ end
 
 local function toboolean(value) return value == 1 end
 
-local function sort_request(command, key, params)
+local function sort_request(client, command, key, params)
     --[[ params = {
         by    = 'weight_*',
         get   = 'object_*',
@@ -87,23 +101,10 @@ local function sort_request(command, key, params)
         end
     end
 
-    return query
+    request.multibulk(client, command, query)
 end
 
-local function mset_request(command, ...)
-    local args, arguments = {...}, {}
-    if (#args == 1 and type(args[1]) == 'table') then
-        for k,v in pairs(args[1]) do
-            table.insert(arguments, k)
-            table.insert(arguments, v)
-        end
-    else
-        arguments = args
-    end
-    return arguments
-end
-
-local function zset_range_request(command, ...)
+local function zset_range_request(client, command, ...)
     local args, opts = {...}, { }
 
     if #args >= 1 and type(args[#args]) == 'table' then
@@ -114,10 +115,10 @@ local function zset_range_request(command, ...)
     end
 
     for _, v in pairs(opts) do table.insert(args, v) end
-    return args
+    request.multibulk(client, command, args)
 end
 
-local function zset_range_byscore_request(command, ...)
+local function zset_range_byscore_request(client, command, ...)
     local args, opts = {...}, { }
 
     if #args >= 1 and type(args[#args]) == 'table' then
@@ -133,7 +134,7 @@ local function zset_range_byscore_request(command, ...)
     end
 
     for _, v in pairs(opts) do table.insert(args, v) end
-    return args
+    request.multibulk(client, command, args)
 end
 
 local function zset_range_reply(reply, command, ...)
@@ -142,7 +143,7 @@ local function zset_range_reply(reply, command, ...)
     if opts and (opts.withscores or string.lower(tostring(opts)) == 'withscores') then
         local new_reply = { }
         for i = 1, #reply, 2 do
-            table.insert(new_reply, { reply[i], tonumber(reply[i + 1]) })
+            table.insert(new_reply, { reply[i], reply[i + 1] })
         end
         return new_reply
     else
@@ -150,7 +151,7 @@ local function zset_range_reply(reply, command, ...)
     end
 end
 
-local function zset_store_request(command, ...)
+local function zset_store_request(client, command, ...)
     local args, opts = {...}, { }
 
     if #args >= 1 and type(args[#args]) == 'table' then
@@ -168,11 +169,24 @@ local function zset_store_request(command, ...)
     end
 
     for _, v in pairs(opts) do table.insert(args, v) end
-    return args
+    request.multibulk(client, command, args)
+end
+
+local function mset_filter_args(client, command, ...)
+    local args, arguments = {...}, {}
+    if (#args == 1 and type(args[1]) == 'table') then
+        for k,v in pairs(args[1]) do
+            table.insert(arguments, k)
+            table.insert(arguments, v)
+        end
+    else
+        arguments = args
+    end
+    request.multibulk(client, command, arguments)
 end
 
 local function hash_multi_request_builder(builder_callback)
-    return function(command, ...)
+    return function(client, command, ...)
         local args, arguments = {...}, { }
         if #args == 2 then
             table.insert(arguments, args[1])
@@ -182,7 +196,7 @@ local function hash_multi_request_builder(builder_callback)
         else
             arguments = args
         end
-        return arguments
+        request.multibulk(client, command, arguments)
     end
 end
 
@@ -215,29 +229,29 @@ local function parse_info(response)
     return info
 end
 
-local function scan_request(command, ...)
-    local args, request, params = {...}, { }, nil
+local function scan_request(client, command, ...)
+    local args, req, params = {...}, { }, nil
 
     if command == 'SCAN' then
-        table.insert(request, args[1])
+        table.insert(req, args[1])
         params = args[2]
     else
-        table.insert(request, args[1])
-        table.insert(request, args[2])
+        table.insert(req, args[1])
+        table.insert(req, args[2])
         params = args[3]
     end
 
     if params and params.match then
-        table.insert(request, 'MATCH')
-        table.insert(request, params.match)
+        table.insert(req, 'MATCH')
+        table.insert(req, params.match)
     end
 
     if params and params.count then
-        table.insert(request, 'COUNT')
-        table.insert(request, params.count)
+        table.insert(req, 'COUNT')
+        table.insert(req, params.count)
     end
 
-    return request
+    request.multibulk(client, command, req)
 end
 
 local zscan_response = function(reply, command, ...)
@@ -285,6 +299,9 @@ local function create_client(proto, client_socket, commands)
         read   = network.read,
         write  = network.write,
     }
+    client.requests = {
+        multibulk = request.multibulk,
+    }
     return client
 end
 
@@ -303,28 +320,7 @@ end
 
 -- ############################################################################
 
-local multibulk_request = function(client, command, ...)
-    local args = {...}
-    local argsn = #args
-    local buffer = { true, true }
-
-    if argsn == 1 and type(args[1]) == 'table' then
-        argsn, args = #args[1], args[1]
-    end
-
-    buffer[1] = '*' .. tostring(argsn + 1) .. "\r\n"
-    buffer[2] = '$' .. #command .. "\r\n" .. command .. "\r\n"
-
-    local table_insert = table.insert
-    for i = 1, argsn do
-        local s_argument = tostring(args[i] or '')
-        table_insert(buffer, '$' .. #s_argument .. "\r\n" .. s_argument .. "\r\n")
-    end
-
-    client.network.write(client, table.concat(buffer))
-end
-
-local response_reader = function(client)
+function response.read(client)
     local payload = client.network.read(client)
     local prefix, data = payload:sub(1, -#payload), payload:sub(2)
 
@@ -340,7 +336,15 @@ local response_reader = function(client)
 
    -- error reply
     elseif prefix == '-' then
-        return client.error('redis error: ' .. data)
+
+    -- Patch to handle MOVED responses (for ElastiCache)
+	if split(' ', data)[1] == 'MOVED' then
+        local newLoc = split(' ', data)[3]
+        local ip = split(':', newLoc)[1]
+		local port = split(':', newLoc)[2]
+		return { moved = true, ip = ip, port = port }
+	end
+	return client.error('redis error: ' .. data)
 
    -- integer reply
     elseif prefix == ':' then
@@ -350,7 +354,7 @@ local response_reader = function(client)
             if data == 'nil' then
                 return nil
             end
-            client.error('cannot parse '..data..' as a numeric response.')
+            client.error('cannot parse ' .. data .. ' as a numeric response.')
         end
 
         return number
@@ -381,8 +385,9 @@ local response_reader = function(client)
 
         local list = {}
         if count > 0 then
+            local reader = response.read
             for i = 1, count do
-                list[i] = client:read_response()
+                list[i] = reader(client)
             end
         end
         return list
@@ -395,45 +400,116 @@ end
 
 -- ############################################################################
 
-local default_serializer = function(cmd, ...) return ... end
-local default_parser = function(reply, ...) return reply end
+function request.raw(client, buffer)
+    local bufferType = type(buffer)
 
-local function command(command, opts)
-    command, opts = string.upper(command), opts or {}
+    if bufferType == 'table' then
+        client.network.write(client, table.concat(buffer))
+    elseif bufferType == 'string' then
+        client.network.write(client, buffer)
+    else
+        client.error('argument error: ' .. bufferType)
+    end
+end
 
-    if opts.handler then
-        local handler = opts.handler
-        return function(client, ...)
-            return handler(client, command, ...)
-        end
+function request.multibulk(client, command, ...)
+    local args = {...}
+    local argsn = #args
+    local buffer = { true, true }
+
+    if argsn == 1 and type(args[1]) == 'table' then
+        argsn, args = #args[1], args[1]
     end
 
-    local serializer = opts.request or default_serializer
-    local parser = opts.response or default_parser
+    buffer[1] = '*' .. tostring(argsn + 1) .. "\r\n"
+    buffer[2] = '$' .. #command .. "\r\n" .. command .. "\r\n"
 
-    return function(client, ...)
-        client:write_request(command, serializer(command, ...))
-        local reply = client:read_response()
+    local table_insert = table.insert
+    for i = 1, argsn do
+        local s_argument = tostring(args[i] or '')
+        table_insert(buffer, '$' .. #s_argument .. "\r\n" .. s_argument .. "\r\n")
+    end
 
+    client.network.write(client, table.concat(buffer))
+end
+
+-- ############################################################################
+
+local custom
+custom = function (command, send, parse)
+    command = string.upper(command)
+    local runFunc
+    runFunc = function(client, ...)
+        send(client, command, ...)
+        local reply = response.read(client)
         if type(reply) == 'table' and reply.queued then
-            reply.parser = parser
+            reply.parser = parse
+            return reply
+        elseif type(reply) == 'table' and reply.moved then
+            client.network.socket:close()
+            local ok, err = client.network.socket:connect(reply.ip, reply.port)
+            if not ok then
+                return client.error('redis error: ' .. err)
+            end
+		return runFunc(client, ...)
+	elseif parse then
+                return parse(reply, command, ...)
+           else 
             return reply
         end
-
-        return parser(reply, command, ...)
     end
+    return runFunc
+end
+
+local function command(command, opts)
+    if opts == nil or type(opts) == 'function' then
+        return custom(command, request.multibulk, opts)
+    else
+        return custom(command, opts.request or request.multibulk, opts.response)
+    end
+end
+
+local define_command_impl = function(target, name, opts)
+    local opts = opts or {}
+    target[string.lower(name)] = custom(
+        opts.command or string.upper(name),
+        opts.request or request.multibulk,
+        opts.response or nil
+    )
+end
+
+local undefine_command_impl = function(target, name)
+    target[string.lower(name)] = nil
 end
 
 -- ############################################################################
 
 local client_prototype = {}
 
-client_prototype.write_request = multibulk_request
-client_prototype.read_response = response_reader
+client_prototype.raw_cmd = function(client, buffer)
+    request.raw(client, buffer .. "\r\n")
+    return response.read(client)
+end
 
-client_prototype.raw_command = function(client, ...)
-    client:write_request(table.remove(..., 1), ...)
-    return client:read_response()
+-- obsolete
+client_prototype.define_command = function(client, name, opts)
+    define_command_impl(client, name, opts)
+end
+
+-- obsolete
+client_prototype.undefine_command = function(client, name)
+    undefine_command_impl(client, name)
+end
+
+client_prototype.quit = function(client)
+    request.multibulk(client, 'QUIT')
+    client.network.socket:shutdown()
+    return true
+end
+
+client_prototype.shutdown = function(client)
+    request.multibulk(client, 'SHUTDOWN')
+    client.network.socket:shutdown()
 end
 
 -- Command pipelining
@@ -476,7 +552,7 @@ client_prototype.pipeline = function(client, block)
     client.network.write(client, table.concat(requests, ''))
 
     for i = 1, #requests do
-        local reply, parser = client:read_response(), parsers[i]
+        local reply, parser = response.read(client), parsers[i]
         if parser then
             reply = parser(reply)
         end
@@ -497,16 +573,16 @@ do
     end
 
     local subscribe = function(client, ...)
-        client:write_request('subscribe', ...)
+        request.multibulk(client, 'subscribe', ...)
     end
     local psubscribe = function(client, ...)
-        client:write_request('psubscribe', ...)
+        request.multibulk(client, 'psubscribe', ...)
     end
     local unsubscribe = function(client, ...)
-        client:write_request('unsubscribe')
+        request.multibulk(client, 'unsubscribe')
     end
     local punsubscribe = function(client, ...)
-        client:write_request('punsubscribe')
+        request.multibulk(client, 'punsubscribe')
     end
 
     local consumer_loop = function(client)
@@ -523,7 +599,7 @@ do
         return coroutine.wrap(function()
             while true do
                 local message
-                local response = client:read_response()
+                local response = response.read(client)
 
                 if response[1] == 'pmessage' then
                     message = {
@@ -722,7 +798,7 @@ do
 
             while monitoring do
                 local message, matched
-                local response = client:read_response()
+                local response = response.read(client)
 
                 local ok = response:gsub(pattern, function(time, info, cmd, args)
                     message = {
@@ -756,6 +832,7 @@ local function connect_tcp(socket, parameters)
     if parameters.timeout then
         socket:settimeout(parameters.timeout, 't')
     end
+
     local ok, err = socket:connect(host, port)
     if not ok then
         redis.error('could not connect to '..host..':'..port..' ['..err..']')
@@ -780,7 +857,6 @@ local function create_connection(parameters)
     local perform_connection, socket
 
     if parameters.scheme == 'unix' then
-        require 'socket'
         perform_connection, socket = connect_unix, require('socket.unix')
         assert(socket, 'your build of LuaSocket does not support UNIX domain sockets')
     else
@@ -795,8 +871,6 @@ local function create_connection(parameters)
 end
 
 -- ############################################################################
-
-redis.command = command
 
 function redis.error(message, level)
     error(message, (level or 1) + 1)
@@ -826,8 +900,8 @@ function redis.connect(...)
             end
         end
     elseif #args > 1 then
-        local host, port = unpack(args)
-        parameters = { host = host, port = port }
+        local host, port, timeout = unpack(args)
+        parameters = { host = host, port = port, timeout = tonumber(timeout) }
     end
 
     local commands = redis.commands or {}
@@ -839,6 +913,20 @@ function redis.connect(...)
     local client = create_client(client_prototype, socket, commands)
 
     return client
+end
+
+function redis.command(cmd, opts)
+    return command(cmd, opts)
+end
+
+-- obsolete
+function redis.define_command(name, opts)
+    define_command_impl(redis.commands, name, opts)
+end
+
+-- obsolete
+function redis.undefine_command(name)
+    undefine_command_impl(redis.commands, name)
 end
 
 -- ############################################################################
@@ -907,10 +995,10 @@ redis.commands = {
     setex            = command('SETEX'),        -- >= 2.0
     psetex           = command('PSETEX'),       -- >= 2.6
     mset             = command('MSET', {
-        request = mset_request
+        request = mset_filter_args
     }),
     msetnx           = command('MSETNX', {
-        request  = mset_request,
+        request  = mset_filter_args,
         response = toboolean
     }),
     get              = command('GET'),
@@ -1009,11 +1097,7 @@ redis.commands = {
     }),
     zcount           = command('ZCOUNT'),
     zcard            = command('ZCARD'),
-    zscore           = command('ZSCORE', {
-        response = function(reply, command, ...)
-            return tonumber(reply)
-        end,
-    }),
+    zscore           = command('ZSCORE'),
     zremrangebyscore = command('ZREMRANGEBYSCORE'),
     zrank            = command('ZRANK'),                -- >= 2.0
     zrevrank         = command('ZREVRANK'),             -- >= 2.0
@@ -1074,13 +1158,6 @@ redis.commands = {
     echo             = command('ECHO'),
     auth             = command('AUTH'),
     select           = command('SELECT'),
-    quit             = command('QUIT', {
-        handler = function(client, command)
-            client:write_request(command)
-            client.network.socket:shutdown()
-            return true
-        end
-    }),
 
     -- transactions
     multi            = command('MULTI'),        -- >= 2.0
@@ -1143,12 +1220,6 @@ redis.commands = {
     }),
     info             = command('INFO', {
         response = parse_info,
-    }),
-    shutdown         = command('SHUTDOWN', {
-        handler = function(client, command)
-            client:write_request(command)
-            client.network.socket:shutdown()
-        end
     }),
 }
 

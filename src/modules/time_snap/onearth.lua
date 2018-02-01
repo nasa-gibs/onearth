@@ -21,7 +21,7 @@ end
 
 local function get_query_param (param, query_string)
     local query_parts = split("&", query_string)
-    local date_string = nil; 
+    local date_string = nil;
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
         if string.lower(query_pair[1]) == param then
@@ -32,10 +32,10 @@ local function get_query_param (param, query_string)
 end
 
 local function send_response (code, msg_string)
-    return msg_string, 
+    return msg_string,
     {
         ["Content-Type"] = "application/json"
-    }, 
+    },
     code
 end
 
@@ -116,7 +116,7 @@ end
 
 local function redis_handler (options)
     local redis = require 'redis'
-    local client = redis.connect(options.ip, options.port or 6379)
+    local client = redis.connect(options.host, options.port or 6379)
     return function (layer_name)
         io.stderr:write(string.format("WMTS=end_mod_wmts_wrapper_handle TIMESTAMP=%d", posix_time.time()))
         if layer_name then
