@@ -451,10 +451,10 @@ custom = function (command, send, parse)
             if not ok then
                 return client.error('redis error: ' .. err)
             end
-		return runFunc(client, ...)
-	elseif parse then
-                return parse(reply, command, ...)
-           else 
+            return runFunc(client, ...)
+        elseif parse then
+            return parse(reply, command, ...)
+        else
             return reply
         end
     end
