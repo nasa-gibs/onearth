@@ -415,12 +415,23 @@ static int get_filename_from_date_service(request_rec *r, wmts_wrapper_conf *cfg
     
     ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
     request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
+
+    // LOGGING
+    const char *uuid = apr_table_get(r->headers_in, "UUID") 
+        ? apr_table_get(r->headers_in, "UUID") 
+        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_request_time_snap, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
+
     int rr_status = ap_run_sub_req(rr);
     ap_remove_output_filter(rf);
     if (rr_status != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Time lookup failed for %s", time_request_uri);
         return rr_status; // Pass status along
     }
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_request_time_snap, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
 
     json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
     json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);

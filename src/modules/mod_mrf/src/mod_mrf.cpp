@@ -372,6 +372,8 @@ static int send_image(request_rec *r, apr_uint32_t *buffer, apr_size_t size)
         : apr_table_get(r->subprocess_env, "UNIQUE_ID");
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_mrf_handle, timestamp=%u, uuid=%s",
         apr_time_now(), uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_onearth_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
 
     return OK;
 }
@@ -491,6 +493,12 @@ static int handler(request_rec *r)
     // Only get and no arguments
     if (r->args) return DECLINED; // Don't accept arguments
 
+    const char *uuid = apr_table_get(r->headers_in, "UUID") 
+        ? apr_table_get(r->headers_in, "UUID") 
+        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_mrf_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
+
     mrf_conf *cfg = (mrf_conf *)ap_get_module_config(r->request_config, &mrf_module)
         ? (mrf_conf *)ap_get_module_config(r->request_config, &mrf_module)
         : (mrf_conf *)ap_get_module_config(r->per_dir_config, &mrf_module);
@@ -542,9 +550,6 @@ static int handler(request_rec *r)
         || read_size != sizeof(TIdx),
         apr_psprintf(r->pool, "Tile index doesn't exist in %s", cfg->idxfname));
 
-    const char *uuid = apr_table_get(r->headers_in, "UUID") 
-        ? apr_table_get(r->headers_in, "UUID") 
-        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%u, uuid=%s",
         apr_time_now() - start_index_lookup, uuid);
 
@@ -602,9 +607,6 @@ static int handler(request_rec *r)
         int status = ap_run_sub_req(sr);
         ap_remove_output_filter(rf);
 
-        const char *uuid = apr_table_get(r->headers_in, "UUID") 
-            ? apr_table_get(r->headers_in, "UUID") 
-            : apr_table_get(r->subprocess_env, "UNIQUE_ID");
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_s3_read, duration=%u, uuid=%s",
             apr_time_now() - start_index_lookup, uuid);
 

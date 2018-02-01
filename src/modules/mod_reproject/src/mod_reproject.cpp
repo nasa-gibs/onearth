@@ -900,6 +900,13 @@ static int handler(request_rec *r)
             
     if (!our_request(r, cfg)) return DECLINED;
 
+    // LOGGING
+    const char *uuid = apr_table_get(r->headers_in, "UUID") 
+        ? apr_table_get(r->headers_in, "UUID") 
+        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_reproject_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
+
     apr_array_header_t *tokens = tokenize(r->pool, r->uri);
     if (tokens->nelts < 3) return DECLINED; // At least Level Row Column
 
@@ -1029,6 +1036,12 @@ static int handler(request_rec *r)
     }
 
     apr_table_set(r->headers_out, "ETag", ETag);
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_reproject_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_onearth_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
+
     return send_image(r, dst, cfg->mime_type);
 }
 
