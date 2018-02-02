@@ -493,12 +493,6 @@ static int handler(request_rec *r)
     // Only get and no arguments
     if (r->args) return DECLINED; // Don't accept arguments
 
-    const char *uuid = apr_table_get(r->headers_in, "UUID") 
-        ? apr_table_get(r->headers_in, "UUID") 
-        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_mrf_handle, timestamp=%u, uuid=%s",
-        apr_time_now(), uuid);
-
     mrf_conf *cfg = (mrf_conf *)ap_get_module_config(r->request_config, &mrf_module)
         ? (mrf_conf *)ap_get_module_config(r->request_config, &mrf_module)
         : (mrf_conf *)ap_get_module_config(r->per_dir_config, &mrf_module);
@@ -506,6 +500,12 @@ static int handler(request_rec *r)
 
     apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
     if (tokens->nelts < 3) return DECLINED; // At least Level Row Column
+
+    const char *uuid = apr_table_get(r->headers_in, "UUID") 
+        ? apr_table_get(r->headers_in, "UUID") 
+        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_mrf_handle, timestamp=%u, uuid=%s",
+        apr_time_now(), uuid);
 
     // Use a xyzc structure, with c being the level
     // Input order is M/Level/Row/Column, with M being optional
