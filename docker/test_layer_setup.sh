@@ -1,6 +1,6 @@
 #!/bin/sh
 
-REDIS_HOST=gitc-jn-redis-0001-003.4fest7.0001.use1.cache.amazonaws.com
+REDIS_HOST=gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com
 
 setup_date_server() {
     # Start redis DB and add some test values
