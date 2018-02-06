@@ -410,9 +410,6 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     rctx.size = 0;
 
     const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "fn=%s",
-            time_request_uri);
-    
     ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
     request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
 

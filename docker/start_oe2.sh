@@ -22,9 +22,9 @@ cp oe2_test_mod_mrf_date.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_mrf_date_layer.config /var/www/html/mrf_endpoint/date_test/default/tms/
 
 mkdir -p /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/{2015,2016,2017}
-cp test_imagery/date_test1420070400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2015
-cp test_imagery/date_test1451606400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2016
-cp test_imagery/date_test1483228800* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
+cp test_imagery/date_test_year_dir1420070400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2015
+cp test_imagery/date_test_year_dir1451606400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2016
+cp test_imagery/date_test_year_dir1483228800* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
 cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
 
