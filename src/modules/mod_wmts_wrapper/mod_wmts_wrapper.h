@@ -39,6 +39,7 @@ typedef struct {
     ap_regex_t *date_regexp;
     const char *mime_type;
     const char *time_lookup_uri;
+    int year_dir;
 } wmts_wrapper_conf;
 
 // WMTS error handling

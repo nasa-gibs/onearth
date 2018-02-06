@@ -124,7 +124,7 @@ local function redis_handler (options)
             local periods = client:smembers("layer:" .. layer_name .. ":periods")
             if default and periods then
                 return {[layer_name] = {
-                    default = default, 
+                    default = default,
                     periods = periods
                 }}
             end
@@ -174,8 +174,8 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         -- If it's a default request, return the default date and associated period
         if string.lower(request_date_string) == "default" then
             local out_msg = {
-                date = layer_datetime_info[layer_name].default, 
-            filename = filename_handler(layer_name, parse_date(layer_datetime_info[layer_name].default))}
+                date = layer_datetime_info[layer_name].default,
+                filename = filename_handler(layer_name, parse_date(layer_datetime_info[layer_name].default))}
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -215,8 +215,8 @@ function onearth.date_snapper (layer_handler_options, filename_options)
             local snap_date_string = posix_time.strftime(subdaily and date_time_format
             or date_format, posix_time.gmtime(snap_epoch))
             local out_msg = {
-                date = snap_date_string, 
-            filename = filename_handler(layer_name, snap_epoch, subdaily)}
+                date = snap_date_string,
+                filename = filename_handler(layer_name, snap_epoch, subdaily)}
             return send_response(200, JSON:encode(out_msg))
         else
             local out_msg = {

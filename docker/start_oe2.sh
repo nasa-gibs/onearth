@@ -21,6 +21,13 @@ cp test_imagery/date_test* /var/www/html/mrf_endpoint/date_test/default/tms
 cp oe2_test_mod_mrf_date.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_mrf_date_layer.config /var/www/html/mrf_endpoint/date_test/default/tms/
 
+mkdir -p /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/{2015,2016,2017}
+cp test_imagery/date_test1420070400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2015
+cp test_imagery/date_test1451606400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2016
+cp test_imagery/date_test1483228800* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
+cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
+cp layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
+
 mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
 cp oe2_test_mod_reproject_date.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
@@ -66,6 +73,9 @@ sleep 2
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOGCR_LQD_143_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOGCR_LQD_143_STD:default "2011-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOGCR_LQD_143_STD:periods "2011-01-01/2011-01-02/P1D"

@@ -197,12 +197,10 @@ static apr_array_header_t* tokenize(apr_pool_t *p, const char *s, char sep)
     return arr;
 }
 
-
-static const char *add_filename_to_string(apr_pool_t *p, const char *source_str, const char *date_str, const char *search_str)
-{
-    if (const char *datefield = ap_strstr(source_str, search_str)) {
-        const char *prefix = apr_pstrmemdup(p, source_str, datefield - source_str);
-        return apr_pstrcat(p, prefix, date_str, datefield + strlen(search_str), NULL);
+static const char *find_and_replace_string(apr_pool_t *p, const char *search_str, const char *source_str, const char *replacement_str) {
+    if (const char *replacefield = ap_strstr(source_str, search_str)) {
+        const char *prefix = apr_pstrmemdup(p, source_str, replacefield - source_str);
+        return apr_pstrcat(p, prefix, replacement_str, replacefield + strlen(search_str), NULL);
     }
     return source_str;
 }
@@ -400,7 +398,7 @@ static int handleKvP(request_rec *r)
     return DECLINED;
 }
 
-static int get_filename_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **filename) {
+static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **filename, char **date_string) {
     // Rewrite URI to exclude date and put the date in the notes for the redirect.
     ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("Receive");
     SERR_IF(!receive_filter, "Mod_wmts_wrapper needs mod_receive to be available to make time queries");
@@ -412,6 +410,8 @@ static int get_filename_from_date_service(request_rec *r, wmts_wrapper_conf *cfg
     rctx.size = 0;
 
     const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "fn=%s",
+            time_request_uri);
     
     ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
     request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
@@ -435,8 +435,8 @@ static int get_filename_from_date_service(request_rec *r, wmts_wrapper_conf *cfg
 
     json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
     json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
-    const char *date_string;
-    json_unpack(root, "{s:s, s:s}", "date", &date_string, "filename", filename);
+    json_unpack(root, "{s:s, s:s}", "date", date_string, "filename", filename);
+
     return APR_SUCCESS;
 }
 
@@ -580,7 +580,7 @@ static int pre_hook(request_rec *r)
                 if (reproject_config && reproject_config->source) {
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
-                    out_cfg->source = add_filename_to_string(r->pool, reproject_config->source, datetime_str, "${date}");
+                    out_cfg->source = find_and_replace_string(r->pool, "${date}", reproject_config->source, datetime_str);
                     ap_set_module_config(r->request_config, reproject_module, out_cfg);  
                 } else if (mrf_config && (mrf_config->datafname || mrf_config->redirect)) {
                     apr_array_pop(tokens); // Discard TMS name
@@ -588,18 +588,25 @@ static int pre_hook(request_rec *r)
                     // Get filename from date service and amend the mod_mrf config to point to it
                     char *layer_name = *(char **)apr_array_pop(tokens);
                     char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
-                    status = get_filename_from_date_service(r, cfg, layer_name, datetime_str, &filename);
+                    char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+
+                    status = get_filename_and_date_from_date_service(r, cfg, layer_name, datetime_str, &filename, &date_string);
                     if (status != APR_SUCCESS) return status;
 
                     mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
                     memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
                     if (mrf_config->datafname) {
-                        out_cfg->datafname = (char *)add_filename_to_string(r->pool, mrf_config->datafname, filename, "${filename}");    
+                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->datafname, filename);
                     }
                     if (mrf_config->redirect) {
-                        out_cfg->redirect = (char *)add_filename_to_string(r->pool, mrf_config->redirect, filename, "${filename}");               
+                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->redirect, filename);               
                     }
-                    out_cfg->idxfname = (char *)add_filename_to_string(r->pool, mrf_config->idxfname, filename, "${filename}");
+                    out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->idxfname, filename);
+                    // Add the year dir to the IDX filename if that option is configured
+                    if (cfg->year_dir) {
+                        const char *year = apr_pstrndup(r->pool, date_string, 4);
+                        out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);
+                    }
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);  
                 }
             }
@@ -688,6 +695,13 @@ static const char *enable_time(cmd_parms *cmd, void *dconf, int arg)
 {
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
     cfg->time = arg;
+	return NULL;
+}
+
+static const char *enable_year_dir(cmd_parms *cmd, void *dconf, int arg)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    cfg->year_dir = arg;
     return NULL;
 }
 
@@ -719,6 +733,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->date_regexp = ( add->date_regexp == NULL ) ? base->date_regexp : add->date_regexp;
     cfg->mime_type = ( add->mime_type == NULL ) ? base->mime_type : add->mime_type;
     cfg->time_lookup_uri = ( add->time_lookup_uri == NULL ) ? base->time_lookup_uri : add->time_lookup_uri;
+    cfg->year_dir = ( add->year_dir == NULL ) ? base->year_dir : add->year_dir;
     return cfg;
 }
 
@@ -761,6 +776,14 @@ static const command_rec cmds[] =
         0, // Self pass argument
         ACCESS_CONF,
         "Set URI for time lookup service"
+    ),
+
+    AP_INIT_FLAG(
+        "WMTSWrapperEnableYearDir",
+        (cmd_func) enable_year_dir, // Callback
+        0, // Self pass argument
+        ACCESS_CONF,
+        "Add year directories when looking up index files"
     ),
 
     {NULL}

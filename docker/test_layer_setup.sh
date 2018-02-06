@@ -7,6 +7,10 @@ setup_date_server() {
     redis-cli -h $REDIS_HOST -c -n 0 SET layer:date_test:default "2015-01-01"
     redis-cli -h $REDIS_HOST -c -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
 
+    redis-cli -h $REDIS_HOST -c -n 0 DEL layer:date_test_year_dir
+    redis-cli -h $REDIS_HOST -c -n 0 SET layer:date_test_year_dir:default "2015-01-01"
+    redis-cli -h $REDIS_HOST -c -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
+
     # Copy config stuff
     cp oe2_test_date_service.conf /etc/httpd/conf.d
     mkdir -p /var/www/html/date_service
@@ -44,6 +48,26 @@ setup_mod_mrf_date() {
     if [[ "$DEFAULT_TILE" != "332a632f5642836001e7ae1613253254" ]] && [[ "$SNAP_TILE" != "43dbf8bd926af88997c6f739aa9e043e" ]]
     then
         echo "ERROR: error with mod_mrf date layer" >&2
+        ERR=1
+    fi
+}
+
+setup_mod_mrf_date_year_dir() {
+    mkdir -p /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/{2015,2016,2017}
+    cp test_imagery/date_test1420070400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2015
+    cp test_imagery/date_test1451606400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2016
+    cp test_imagery/date_test1483228800* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
+    cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
+    cp oe2_test_mod_mrf_date_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
+    /usr/sbin/httpd -k restart
+    sleep 2
+
+    # Test that tiles look okay
+    DEFAULT_TILE=($(curl -s http://localhost/mrf_endpoint/date_test_year_dir/default/default/tms/0/0/0.jpg | md5sum ))
+    SNAP_TILE=($(curl -s http://localhost/mrf_endpoint/date_test_year_dir/default/2016-06-01/tms/0/0/0.jpg | md5sum ))
+    if [[ "$DEFAULT_TILE" != "332a632f5642836001e7ae1613253254" ]] && [[ "$SNAP_TILE" != "43dbf8bd926af88997c6f739aa9e043e" ]]
+    then
+        echo "ERROR: error with mod_mrf date (year directory) layer" >&2
         ERR=1
     fi
 }
@@ -86,6 +110,7 @@ setup_mod_reproject_static() {
 setup_mod_mrf_static
 setup_date_server
 setup_mod_mrf_date
+setup_mod_mrf_date_year_dir
 setup_mod_reproject_date
 setup_mod_reproject_static
 
