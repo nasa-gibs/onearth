@@ -7,10 +7,6 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 # Copy config stuff
-cp oe2_test_date_service.conf /etc/httpd/conf.d
-mkdir -p /var/www/html/date_service
-cp date_service.lua /var/www/html/date_service/date_service.lua
-
 mkdir -p /var/www/html/mrf_endpoint/static_test/default/tms
 cp test_imagery/static_test* /var/www/html/mrf_endpoint/static_test/default/tms/
 cp oe2_test_mod_mrf_static.conf /etc/httpd/conf.d
@@ -60,14 +56,9 @@ mkdir -p /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
 wget -O /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/MOG13Q4_LQD_NDVI_NRT1514764800.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT1514764800.idx
 cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
 
-
 echo 'Starting Apache server'
 /usr/sbin/apachectl
 sleep 2
-
-# echo 'Starting Redis server'
-# /usr/bin/redis-server &
-# sleep 2
 
 # Add some test data to redis for profiling
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
