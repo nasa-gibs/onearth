@@ -1,4 +1,5 @@
 #!/bin/sh
+REDIS_HOST=gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -57,24 +58,24 @@ echo 'Starting Apache server'
 /usr/sbin/apachectl
 sleep 2
 
-echo 'Starting Redis server'
-/usr/bin/redis-server &
-sleep 2
+# echo 'Starting Redis server'
+# /usr/bin/redis-server &
+# sleep 2
 
 # Add some test data to redis for profiling
-/usr/bin/redis-cli -n 0 DEL layer:date_test
-/usr/bin/redis-cli -n 0 SET layer:date_test:default "2015-01-01"
-/usr/bin/redis-cli -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
-/usr/bin/redis-cli -n 0 DEL layer:MOGCR_LQD_143_STD
-/usr/bin/redis-cli -n 0 SET layer:MOGCR_LQD_143_STD:default "2011-01-01"
-/usr/bin/redis-cli -n 0 SADD layer:MOGCR_LQD_143_STD:periods "2011-01-01/2011-01-02/P1D"
-/usr/bin/redis-cli -n 0 DEL layer:VNGCR_LQD_I1-M4-M3_NRT
-/usr/bin/redis-cli -n 0 SET layer:VNGCR_LQD_I1-M4-M3_NRT:default "2018-01-16"
-/usr/bin/redis-cli -n 0 SADD layer:VNGCR_LQD_I1-M4-M3_NRT:periods "2018-01-16/2019-01-16/P1D"
-/usr/bin/redis-cli -n 0 DEL layer:MOG13Q4_LQD_NDVI_NRT
-/usr/bin/redis-cli -n 0 SET layer:MOG13Q4_LQD_NDVI_NRT:default "2018-01-01"
-/usr/bin/redis-cli -n 0 SADD layer:MOG13Q4_LQD_NDVI_NRT:periods "2018-01-01/2019-01-01/P1D"
-/usr/bin/redis-cli -n 0 SAVE
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOGCR_LQD_143_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOGCR_LQD_143_STD:default "2011-01-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOGCR_LQD_143_STD:periods "2011-01-01/2011-01-02/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:VNGCR_LQD_I1-M4-M3_NRT
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:VNGCR_LQD_I1-M4-M3_NRT:default "2018-01-16"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:VNGCR_LQD_I1-M4-M3_NRT:periods "2018-01-16/2019-01-16/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOG13Q4_LQD_NDVI_NRT
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOG13Q4_LQD_NDVI_NRT:default "2018-01-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOG13Q4_LQD_NDVI_NRT:periods "2018-01-01/2019-01-01/P1D"
+# /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 
 # Tail the apache logs
 exec tail -qF \

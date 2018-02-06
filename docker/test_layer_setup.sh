@@ -3,9 +3,6 @@
 REDIS_HOST=gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com
 
 setup_date_server() {
-    # Start redis DB and add some test values
-    /usr/bin/redis-server &
-    sleep 2
     redis-cli -h $REDIS_HOST -c -n 0 DEL layer:date_test
     redis-cli -h $REDIS_HOST -c -n 0 SET layer:date_test:default "2015-01-01"
     redis-cli -h $REDIS_HOST -c -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
