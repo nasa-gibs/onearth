@@ -28,5 +28,9 @@ RUN luarocks make onearth-0.1-1.rockspec
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
 RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
 
+# Set Apache configuration for optimized threading
+COPY 00-mpm.conf /etc/httpd/conf.modules.d/
+COPY 10-worker.conf /etc/httpd/conf.modules.d/
+
 WORKDIR /home/oe2/onearth/docker/date_service
 CMD sh start_date_service.sh
