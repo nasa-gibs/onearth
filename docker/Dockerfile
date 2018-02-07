@@ -22,6 +22,7 @@ WORKDIR /tmp/httpd-2.4.6
 RUN patch -p0 < /home/oe2/onearth/docker/mod_proxy_http.patch
 RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared
 RUN make && make install
+RUN cp /tmp/httpd/modules/mod_proxy* /etc/httpd/modules/
 
 # Install APR patch
 WORKDIR /tmp
