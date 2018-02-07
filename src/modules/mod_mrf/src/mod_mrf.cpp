@@ -370,9 +370,9 @@ static int send_image(request_rec *r, apr_uint32_t *buffer, apr_size_t size)
     const char *uuid = apr_table_get(r->headers_in, "UUID") 
         ? apr_table_get(r->headers_in, "UUID") 
         : apr_table_get(r->subprocess_env, "UNIQUE_ID");
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_mrf_handle, timestamp=%u, uuid=%s",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_mrf_handle, timestamp=%ld, uuid=%s",
         apr_time_now(), uuid);
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_onearth_handle, timestamp=%u, uuid=%s",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_onearth_handle, timestamp=%ld, uuid=%s",
         apr_time_now(), uuid);
 
     return OK;
@@ -504,7 +504,7 @@ static int handler(request_rec *r)
     const char *uuid = apr_table_get(r->headers_in, "UUID") 
         ? apr_table_get(r->headers_in, "UUID") 
         : apr_table_get(r->subprocess_env, "UNIQUE_ID");
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_mrf_handle, timestamp=%u, uuid=%s",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_mrf_handle, timestamp=%ld, uuid=%s",
         apr_time_now(), uuid);
 
     // Use a xyzc structure, with c being the level
@@ -550,7 +550,7 @@ static int handler(request_rec *r)
         || read_size != sizeof(TIdx),
         apr_psprintf(r->pool, "Tile index doesn't exist in %s", cfg->idxfname));
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%u, uuid=%s",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%ld, uuid=%s",
         apr_time_now() - start_index_lookup, uuid);
 
     // MRF index record is in network order
@@ -607,7 +607,7 @@ static int handler(request_rec *r)
         int status = ap_run_sub_req(sr);
         ap_remove_output_filter(rf);
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_s3_read, duration=%u, uuid=%s",
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_s3_read, duration=%ld, uuid=%s",
             apr_time_now() - start_index_lookup, uuid);
 
         if (status != APR_SUCCESS || sr->status != HTTP_PARTIAL_CONTENT 

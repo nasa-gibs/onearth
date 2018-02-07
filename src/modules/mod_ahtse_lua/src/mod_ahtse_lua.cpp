@@ -290,6 +290,8 @@ static int handler(request_rec *r)
 
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_ahtse_handle, duration=%ld, uuid=%s",
       apr_time_now() - start_mod_ahtse_process, uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_return_to_wrapper, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
 
     return status;
 }

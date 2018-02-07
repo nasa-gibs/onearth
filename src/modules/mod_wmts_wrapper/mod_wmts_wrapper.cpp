@@ -417,7 +417,7 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     const char *uuid = apr_table_get(r->headers_in, "UUID") 
         ? apr_table_get(r->headers_in, "UUID") 
         : apr_table_get(r->subprocess_env, "UNIQUE_ID");
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_request_time_snap, timestamp=%u, uuid=%s",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_request_time_snap, timestamp=%ld, uuid=%s",
         apr_time_now(), uuid);
     apr_table_set(rr->headers_out, "UUID", uuid);
 
@@ -431,8 +431,10 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         return rr_status; // Pass status along
     }
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_request_time_snap, timestamp=%u, uuid=%s",
-        apr_time_now(), uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_send_to_date_service, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_return_to_wrapper, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
 
     json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
     json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
@@ -505,7 +507,7 @@ static int pre_hook(request_rec *r)
         const char *uuid = apr_table_get(r->headers_in, "UUID") 
             ? apr_table_get(r->headers_in, "UUID") 
             : apr_table_get(r->subprocess_env, "UNIQUE_ID");
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, timestamp=%u, uuid=%s",
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, timestamp=%ld, uuid=%s",
             apr_time_now(), uuid);
 
 
