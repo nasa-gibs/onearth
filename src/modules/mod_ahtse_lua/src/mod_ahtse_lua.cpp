@@ -90,6 +90,13 @@ static int handler(request_rec *r)
     if (!our_request(r))
         return DECLINED;
 
+    const char *uuid = apr_table_get(r->headers_in, "UUID") 
+        ? apr_table_get(r->headers_in, "UUID") 
+        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    apr_time_t start_mod_ahtse_process = apr_time_now();
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_send_to_date_service, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
+
     ahtse_lua_conf * c = (ahtse_lua_conf *)
         ap_get_module_config(r->per_dir_config, &ahtse_lua_module);
 
@@ -280,6 +287,9 @@ static int handler(request_rec *r)
 
     if (!c->persistent)
       lua_close(L);
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_ahtse_handle, duration=%ld, uuid=%s",
+      apr_time_now() - start_mod_ahtse_process, uuid);
 
     return status;
 }

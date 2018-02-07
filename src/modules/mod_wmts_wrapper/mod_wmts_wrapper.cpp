@@ -421,6 +421,9 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         apr_time_now(), uuid);
     apr_table_set(rr->headers_out, "UUID", uuid);
 
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_send_to_date_service, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
+
     int rr_status = ap_run_sub_req(rr);
     ap_remove_output_filter(rf);
     if (rr_status != APR_SUCCESS) {
