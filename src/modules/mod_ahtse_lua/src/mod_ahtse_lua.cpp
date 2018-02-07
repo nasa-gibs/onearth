@@ -63,6 +63,18 @@ int push_to_lua_table(void *Lua, const char *key, const char *val) {
     return 1; // Continue
 }
 
+static int lua_print_to_log(lua_State *L) {
+  request_rec *r = (request_rec *)lua_touserdata(L, lua_upvalueindex(1));
+  int nargs = lua_gettop(L);
+  for (int i=1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {   
+      const char *log_msg = lua_tostring(L, i);
+      ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "%s", log_msg);
+    }
+  }
+  return 0;
+}
+
 // An apr pool cleanup function for a pool owned lua state
 apr_status_t LState_cleanup(void *data) {
   LState *luastate = (LState *)data;
@@ -155,6 +167,11 @@ static int handler(request_rec *r)
         status = HTTP_INTERNAL_SERVER_ERROR;
         throw "Lua handler missing";
       }
+
+      // Add redefined print function so print statements in Lua appear as debug level log messages
+      lua_pushlightuserdata(L, r);
+      lua_pushcclosure(L, lua_print_to_log, 1);
+      lua_setglobal(L, "print");
 
       if (r->args)
         lua_pushstring(L, r->args);

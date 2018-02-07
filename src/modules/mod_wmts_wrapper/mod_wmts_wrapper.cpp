@@ -419,6 +419,7 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         : apr_table_get(r->subprocess_env, "UNIQUE_ID");
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_request_time_snap, timestamp=%u, uuid=%s",
         apr_time_now(), uuid);
+    apr_table_set(rr->headers_out, "UUID", uuid);
 
     int rr_status = ap_run_sub_req(rr);
     ap_remove_output_filter(rf);
