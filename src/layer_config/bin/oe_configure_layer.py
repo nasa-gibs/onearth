@@ -2471,6 +2471,7 @@ $Patterns</TiledGroup>"""
                 try:
                     with open(vectorStyleFile, 'r') as f:
                         mapfile.write(f.read())
+                        mapfile.write("\n")
                 except:
                     log_sig_err("Couldn't read mapfile STYLE file: " + vectorStyleFile, sigevent_url)
             mapfile.write("END\n")
