@@ -119,9 +119,12 @@ end
 local function redis_handler (options)
     local redis = require 'redis'
     local client = redis.connect(options.host, options.port or 6379)
+    closeFunc = function()
+        client:quit()
+    end
     return function (layer_name, uuid)
         local returnValue
-        local start_db_request = socket.gettime() * 1000
+        local start_db_request = socket.gettime() * 1000 * 1000
         if layer_name then
             local default = client:get("layer:" .. layer_name .. ":default")
             local periods = client:smembers("layer:" .. layer_name .. ":periods")
@@ -137,7 +140,7 @@ local function redis_handler (options)
             -- If no layer name specified, dump all data
             returnValue = redis_get_all_layers(client)
         end
-        print(string.format("step=time_database_request duration=%d uuid=%s", socket.gettime() * 1000 - start_db_request, uuid))
+        print(string.format("step=time_database_request duration=%d uuid=%s", socket.gettime() * 1000 * 1000 - start_db_request, uuid))
         return returnValue
     end
 end
@@ -166,12 +169,12 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         or nil
     return function (query_string, headers, _)
         local uuid = headers["UUID"] or "none"
-        local start_timestamp = socket.gettime() * 1000
+        local start_timestamp = socket.gettime() * 1000 * 1000
         local layer_name = query_string and get_query_param("layer", query_string) or nil
 
         -- A blank query returns the entire list of layers and periods
         if not query_string or not layer_name then
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 - start_timestamp, uuid))
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(layer_handler(nil, uuid)))
         end
 
@@ -179,7 +182,7 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         local request_date_string = get_query_param("datetime", query_string)
         local layer_datetime_info = layer_handler(layer_name, uuid)
         if not request_date_string then
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 - start_timestamp, uuid))
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000- start_timestamp, uuid))
             return send_response(200, JSON:encode(layer_datetime_info))
         end
 
@@ -188,7 +191,7 @@ function onearth.date_snapper (layer_handler_options, filename_options)
             local out_msg = {
                 date = layer_datetime_info[layer_name].default,
                 filename = filename_handler(layer_name, parse_date(layer_datetime_info[layer_name].default))}
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 - start_timestamp, uuid))
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -198,7 +201,7 @@ function onearth.date_snapper (layer_handler_options, filename_options)
             local out_msg = {
                 err_msg = "Invalid Date"
             }
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 - start_timestamp, uuid))
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -231,13 +234,13 @@ function onearth.date_snapper (layer_handler_options, filename_options)
             local out_msg = {
                 date = snap_date_string,
                 filename = filename_handler(layer_name, snap_epoch, subdaily)}
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 - start_timestamp, uuid))
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         else
             local out_msg = {
                 err_msg = "Date out of range"
             }
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 - start_timestamp, uuid))
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         end
     end
