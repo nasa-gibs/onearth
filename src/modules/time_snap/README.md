@@ -15,6 +15,19 @@ The service takes queries via URL query parameters and returns a JSON response.
 `time_snap` is a Lua script that's intended to be run by the `mod_ahtse_lua`
 Apache module.
 
+The script can provide different output based on the URL query parameters
+provided.
+
+`/{endpoint}` -- provides a list of all layers, their default times, and
+available periods.
+
+`/{endpoint}?layer={layer_name}` -- provides the default time and period list
+for the specified layer.
+
+`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DD` or
+`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DDTHH:MM:SS` -- provides the
+filename and snap date for the specified layer.
+
 `time_snap` currently uses a Redis database for queries, but other handlers can
 be easily added.
 
