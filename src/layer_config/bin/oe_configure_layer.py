@@ -1162,8 +1162,7 @@ for conf in conf_files:
         try:
             vectorType = dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
             if create_mapfile == False:
-                log_sig_warn('create_mapfile set to False but vector config file found. Setting create_mapfile to True.', sigevent_url)
-                create_mapfile = True
+                print 'create_mapfile set to False but vector config file found. Leaving create_mapfile set to False.'
             try:
                 vectorStyleFile = dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
             except IndexError:
