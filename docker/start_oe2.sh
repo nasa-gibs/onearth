@@ -66,6 +66,37 @@ until [ $d -gt 1523318400 ]; do
 done
 cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
 
+# AST_L1T sample configs
+
+cp oe2_test_AST_L1T.conf /etc/httpd/conf.d
+
+mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg3857/best/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg3857/std/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
+mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected
+mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected
+mkdir -p /var/www/html/wmts/epsg4326/configs
+mkdir -p /var/www/html/wmts/epsg3857/configs
+
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected.config /var/www/html/wmts/epsg4326/configs/
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_source.config /var/www/html/wmts/epsg3857/configs/
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_reproject.config /var/www/html/wmts/epsg3857/configs/
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected/twms.config
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected/twms.config
+
+wget -O /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx https://s3.amazonaws.com/gitc-test-imagery/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx
+wget -O /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx https://s3.amazonaws.com/gitc-test-imagery/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx
+wget -O /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx https://s3.amazonaws.com/gitc-test-imagery/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx
+ln -s /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx
+ln -s /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx
+ln -s /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx
+ln -s /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx
+ln -s /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx
+ln -s /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx
+
 echo 'Starting Apache server'
 /usr/sbin/apachectl
 sleep 2
@@ -86,6 +117,13 @@ sleep 2
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOG13Q4_LQD_NDVI_NRT
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOG13Q4_LQD_NDVI_NRT:default "2018-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOG13Q4_LQD_NDVI_NRT:periods "2018-01-01/2019-01-01/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:ASTER_L1T_Radiance_Terrain_Corrected
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:ASTER_L1T_Radiance_Terrain_Corrected:default "2016-12-01T01:18:44Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "2016-12-01T01:18:26Z/2019-01-01T00:00:01Z/PT1S"
+
+# AST L1T sample dates
+
+
 # /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 
 # Tail the apache logs
