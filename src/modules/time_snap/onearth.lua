@@ -8,9 +8,9 @@ posix.setenv("TZ", "UTC") -- Have to set this as gmtime only uses local timezone
 local socket = require "socket"
 
 local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
-local date_time_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?$"
+local date_time_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
 local date_format = "%Y-%m-%d"
-local date_time_format = "%Y-%m-%d_t&H:&M:&S"
+local date_time_format = "%Y-%m-%dT%H:%M:%S"
 
 -- Utility functions
 local function split (sep, str)
@@ -212,18 +212,28 @@ function onearth.date_snapper (layer_handler_options, filename_options)
             local start_date = subdaily and posix_time.strptime(parsed_period[1], date_time_format)
             or posix_time.strptime(parsed_period[1], date_format)
             local start_epoch = posix_time.mktime(start_date)
-            local end_date = subdaily and posix_time.strptime(parsed_period[2], date_time_format)
-            or posix_time.strptime(parsed_period[2], date_format)
-            local end_epoch = posix_time.mktime(end_date)
-            if req_epoch == start_epoch then
-                snap_epoch = req_epoch
-                break
-            end
-            if req_epoch > start_epoch then
-                local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
-                local interval_size = string.match(parsed_period[3], "%a+$")
-                snap_epoch = get_snap_epoch(start_epoch, req_epoch, end_epoch, interval_length, interval_size)
-                break
+
+            if parsed_period[2] then -- this is a period, so look at both dates
+                local end_date = subdaily and posix_time.strptime(parsed_period[2], date_time_format)
+                or posix_time.strptime(parsed_period[2], date_format)
+
+                -- If period has a single date and it doesn't match, skip it
+                local end_epoch = posix_time.mktime(end_date)
+                if req_epoch == start_epoch then
+                    snap_epoch = req_epoch
+                    break
+                end
+                if req_epoch > start_epoch then
+                    local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
+                    local interval_size = string.match(parsed_period[3], "%a+$")
+                    snap_epoch = get_snap_epoch(start_epoch, req_epoch, end_epoch, interval_length, interval_size)
+                    break
+                end
+            else -- this is a single date, so just check if it matches
+                if req_epoch == start_epoch then
+                    snap_epoch = req_epoch
+                    break
+                end
             end
         end
 
