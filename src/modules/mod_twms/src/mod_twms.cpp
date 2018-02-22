@@ -6,17 +6,11 @@
  *
  */
 
-#define NOMINMAX
-
 #include "mod_twms.h"
 #include <receive_context.h>
 #include <clocale>
 #include <cmath>
-
-// for max()
 #include <algorithm>
-
-using namespace std;
 
 // Tokenize the URI parameters
 static apr_table_t* tokenize_args(request_rec *r)
@@ -24,9 +18,46 @@ static apr_table_t* tokenize_args(request_rec *r)
     apr_table_t *tab = apr_table_make(r->pool, 8);
     const char *val, *key, *data = r->args;
     for (data = r->args; data && *data && (val = ap_getword(r->pool, &data, '&'));)
-        if (NULL != (key = ap_getword(r->pool, &val, '=')))
+        if (key = ap_getword(r->pool, &val, '='))
             apr_table_addn(tab, key, val);
     return tab;
+}
+
+// static const char *get_file_ext(request_rec *r, apr_table_t *args)
+// {
+//     const char *image_types[2][2] = {
+//         {"image/jpeg", ".jpg"},
+//         {"image/png", ".png"}
+//     };
+
+//     int i;
+//     for (i=0; i<2; i++)
+//         if (apr_strnatcasecmp(apr_table_get(args, "format"), image_types[i][0]) == 0)
+//             return image_types[i][1];
+
+//     return "";
+// }
+
+static const char *get_base_uri(request_rec *r)
+{
+    const char *uri = r->uri;
+    int uri_len = strlen(uri);
+    int i;
+    for (i=0;i<uri_len; i++)
+    {
+        if (uri[uri_len-i] == '/') break;
+    }
+    return apr_pstrmemdup(r->pool, uri, uri_len-i);
+}
+
+
+static const char *add_date_to_uri(apr_pool_t *p, const char *source_str, const char *date_str)
+{
+    if (const char *datefield = ap_strstr(source_str, "${date}")) {
+        const char *prefix = apr_pstrmemdup(p, source_str, datefield - source_str);
+        return apr_pstrcat(p, prefix, date_str, datefield + strlen("${date}"), NULL);
+    }
+    return source_str;
 }
 
 static void init_rsets(apr_pool_t *p, struct TiledRaster &raster)
@@ -91,12 +122,12 @@ static const char *get_xyzc_size(struct sz *size, const char *value) {
     size->y = apr_strtoi64(s, &s, 0);
     size->c = 3;
     size->z = 1;
-    if (errno == 0 && *s != 0) { // Read optional third and fourth integers
+    if (errno == 0 && *s != NULL) { // Read optional third and fourth integers
         size->z = apr_strtoi64(s, &s, 0);
-        if (*s != 0)
+        if (*s != NULL)
             size->c = apr_strtoi64(s, &s, 0);
     } // Raster size is 4 params max
-    if (errno != 0 || *s != 0)
+    if (errno != 0 || *s != NULL)
         return " incorrect format";
     return NULL;
 }
@@ -114,7 +145,7 @@ static const char *ConfigRaster(apr_pool_t *p, apr_table_t *kvp, TiledRaster &ra
     raster.pagesize.x = raster.pagesize.y = 512;
     line = apr_table_get(kvp, "PageSize");
     if (line)
-        if (NULL == (err_message = get_xyzc_size(&(raster.pagesize), line)))
+        if (err_message = get_xyzc_size(&(raster.pagesize), line))
             return apr_pstrcat(p, "PageSize", err_message, NULL);
 
     // Optional data type, defaults to unsigned byte
@@ -134,7 +165,7 @@ static const char *ConfigRaster(apr_pool_t *p, apr_table_t *kvp, TiledRaster &ra
 
     line = apr_table_get(kvp, "BoundingBox");
     if (line)
-        if (NULL == (err_message = getbbox(line, &raster.bbox)))
+        if (err_message = getbbox(line, &raster.bbox))
             return apr_pstrcat(p, "BoundingBox", err_message, NULL);
 
     init_rsets(p, raster);
@@ -174,29 +205,51 @@ static apr_table_t *read_pKVP_from_file(apr_pool_t *pool, const char *fname, cha
     return table;
 }
 
-static const char *read_config(cmd_parms *cmd, twms_conf *c, const char *src, const char *fname)
+static const char *set_config(cmd_parms *cmd, twms_conf *c, const char *src, const char *fname)
+{
+    c->cfg_filename_template = apr_pstrdup(cmd->pool, src);
+    c->enabled = true;
+    return NULL;
+}
+
+static apr_status_t get_config_for_layer(request_rec *r, twms_conf **cfg, const char *layer_name)
 {
     char *err_message;
     const char *line;
 
-    // Start with the source configuration
-    apr_table_t *kvp = read_pKVP_from_file(cmd->temp_pool, src, &err_message);
-    if (NULL == kvp) return err_message;
+    const char *cfg_filename = (*cfg)->cfg_filename_template;
 
-    err_message = const_cast<char*>(ConfigRaster(cmd->pool, kvp, c->raster));
-    if (err_message) return err_message;
+    // Substitute layer name into the template for our config file
+    if (const char *layer_field = ap_strstr(cfg_filename, "${layer}")) {
+        const char *prefix = apr_pstrmemdup(r->pool, cfg_filename, layer_field - cfg_filename);
+        cfg_filename = apr_pstrcat(r->pool, prefix, layer_name, layer_field + strlen("${layer}"), NULL);
+    }
+
+    // Start with the source configuration
+    apr_table_t *kvp = read_pKVP_from_file(r->pool, cfg_filename, &err_message);
+    if (NULL == kvp) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "Error opening config file: %s", cfg_filename);
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    err_message = const_cast<char*>(ConfigRaster(r->pool, kvp, (*cfg)->raster));
+    if (err_message) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "Error parsing config file: %s", cfg_filename);
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
 
     line = apr_table_get(kvp, "SourcePath");
-    if (!line)
-        return "SourcePath directive missing";
-    c->source = apr_pstrdup(cmd->pool, line);
+    if (!line) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,  "SourcePath directive missing in config file %s", cfg_filename);
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+    (*cfg)->source = apr_pstrdup(r->pool, line);
 
     line = apr_table_get(kvp, "SourcePostfix");
     if (line)
-        c->postfix = apr_pstrdup(cmd->pool, line);
+        (*cfg)->postfix = apr_pstrdup(r->pool, line);
 
-    c->enabled = true;
-    return NULL;
+    return APR_SUCCESS;
 }
 
 // Allow for one or more RegExp guard
@@ -287,12 +340,26 @@ static int handler(request_rec *r)
     if (!our_request(r)) 
         return DECLINED;
     apr_table_t *args = tokenize_args(r);
+    
+    if (const char *request = apr_table_get(args, "request")) {
+        const char *lookup_uri = NULL;
+        if (apr_strnatcasecmp(request, "GetCapabilities") == 0) {
+            lookup_uri = ".lib/getCapabilities.xml";
+        } else if (apr_strnatcasecmp(request, "GetTileService") == 0) {
+            lookup_uri = ".lib/getTileService.xml";
+        }
+        if (lookup_uri) {
+            ap_internal_redirect(apr_psprintf(r->pool, "%s/%s", get_base_uri(r), lookup_uri), r);
+            return OK;
+        }
+    }
+
     const char *bb_string = apr_table_get(args, "bbox");
 
     // Missing the required bbox argument
     if (!bb_string) 
         return HTTP_BAD_REQUEST;
-    // this should be picked up by the regexp, in which case the response will be HTTP_FORBIDEN
+    // this should be picked up by the regexp, in which case the response will be HTTP_FORBIDDEN
 
     bbox_t bbox;
     message = getbbox(bb_string, &bbox);
@@ -301,12 +368,29 @@ static int handler(request_rec *r)
 
     // Got the bounding box, need to figure out the tile request
     sz tile;
-    twms_conf *cfg = static_cast<twms_conf *>ap_get_module_config(r->per_dir_config, &twms_module);
+    
+    // Use the passed-in layer name to get the configuration filename
+    const char *layer_name = apr_table_get(args, "layers");
+    if (!layer_name) return HTTP_BAD_REQUEST;
+
+    twms_conf *base_cfg = static_cast<twms_conf *>ap_get_module_config(r->per_dir_config, &twms_module);
+
+    twms_conf *cfg = (twms_conf *)apr_pcalloc(r->pool, sizeof(twms_conf));
+    memcpy(cfg, base_cfg, sizeof(twms_conf));
+
+    apr_status_t status = get_config_for_layer(r, &cfg, layer_name);
+    if (status != APR_SUCCESS) return HTTP_BAD_REQUEST;
+
+    // Get TIME and append it to the source URI if applicable
+    const char *source = cfg->source;
+    const char *time_str = apr_table_get(args, "time") ? apr_table_get(args, "time") : "default";
+    source = add_date_to_uri(r->pool, cfg->source, time_str);
+
     // Convert to a source tile
     if (&tile != bbox_to_tile(cfg->raster, bbox, &tile))
         return HTTP_BAD_REQUEST;
 
-// The types and format below have to match
+    // The types and format below have to match
     unsigned int level  = static_cast<unsigned int>(tile.l);
     unsigned int row    = static_cast<unsigned int>(tile.y);
     unsigned int column = static_cast<unsigned int>(tile.x);
@@ -318,15 +402,16 @@ static int handler(request_rec *r)
     if (m_string) { // We have an extra dimension
         m_val = static_cast<unsigned int>(apr_atoi64(m_string));
         new_uri = (cfg->postfix == NULL) ?
-            apr_psprintf(r->pool, "%s/%u/%u/%u/%u" , cfg->source, m_val, level, row, column) :
-            apr_psprintf(r->pool, "%s/%u/%u/%u/%u%s", cfg->source, m_val, level, row, column, cfg->postfix);
+            apr_psprintf(r->pool, "%s/%u/%u/%u/%u" , source, m_val, level, row, column) :
+            apr_psprintf(r->pool, "%s/%u/%u/%u/%u%s", source, m_val, level, row, column, cfg->postfix);
     }
     else {
         new_uri = (cfg->postfix == NULL) ?
-            apr_psprintf(r->pool, "%s/%u/%u/%u", cfg->source, level, row, column) :
-            apr_psprintf(r->pool, "%s/%u/%u/%u%s", cfg->source, level, row, column, cfg->postfix);
+            apr_psprintf(r->pool, "%s/%u/%u/%u", source, level, row, column) :
+            apr_psprintf(r->pool, "%s/%u/%u/%u%s", source, level, row, column, cfg->postfix);
     }
 
+    ap_log_error(APLOG_MARK,APLOG_DEBUG,0,r->server,"Requesting tile URI: %s", new_uri);
     ap_internal_redirect(new_uri, r);
     return OK; // Not sure what this does, because it was already handled
 }
@@ -338,7 +423,7 @@ static void register_hooks(apr_pool_t *p) {
 static const command_rec cmds[] = {
     AP_INIT_TAKE1(
     "tWMS_ConfigurationFile",
-    (cmd_func)read_config, // Callback
+    (cmd_func)set_config, // Callback
     0, // Self-pass argument
     ACCESS_CONF, // availability
     "TWMS configuration file"
