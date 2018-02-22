@@ -78,6 +78,14 @@ static int lua_print_to_log(lua_State *L) {
 // An apr pool cleanup function for a pool owned lua state
 apr_status_t LState_cleanup(void *data) {
   LState *luastate = (LState *)data;
+
+  // Check for the presence of a "close" routine
+  lua_State *L = luastate->L;
+  lua_getglobal(L, "closeFunc");
+  if (lua_isfunction(L, -1)) {
+    int err = lua_pcall(L, 0, 0, 0);
+  }
+
   if (luastate->L) {
     lua_close(luastate->L);
     luastate->L = NULL;
