@@ -80,6 +80,12 @@ mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Correcte
 mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected
 mkdir -p /var/www/html/wmts/epsg4326/configs
 mkdir -p /var/www/html/wmts/epsg3857/configs
+mkdir -p /var/www/html/twms/epsg4326/all
+mkdir -p /var/www/html/twms/epsg4326/best
+mkdir -p /var/www/html/twms/epsg4326/std
+mkdir -p /var/www/html/twms/epsg3857/all
+mkdir -p /var/www/html/twms/epsg3857/best
+mkdir -p /var/www/html/twms/epsg3857/std
 mkdir -p /var/www/html/wmts/epsg4326/empty_tiles
 
 cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected.config /var/www/html/wmts/epsg4326/configs/
