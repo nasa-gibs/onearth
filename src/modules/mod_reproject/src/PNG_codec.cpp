@@ -45,12 +45,12 @@ static void store_data(png_structp pngp, png_bytep data, png_size_t length)
     dst->size -= length;
 }
 
-const char *png_stride_decode(codec_params &params, const TiledRaster &raster, 
-    storage_manager &src, void *buffer)
+const char *png_stride_decode(apr_pool_t *p, codec_params &params, const TiledRaster &raster,
+    storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans)
 {
     char *message = NULL;
-    png_structp pngp = NULL;
-    png_infop infop = NULL;
+    png_structp pngp = (png_structp)apr_pcalloc(p, sizeof(png_structp));
+    png_infop infop = (png_infop)apr_pcalloc(p, sizeof(png_infop));
     std::vector<png_bytep> png_rowp(static_cast<int>(raster.pagesize.y));
     for (size_t i = 0; i < png_rowp.size(); i++) // line_stride is always in bytes
         png_rowp[i] = reinterpret_cast<png_bytep>(
@@ -58,7 +58,7 @@ const char *png_stride_decode(codec_params &params, const TiledRaster &raster,
 
     try {
         png_uint_32 width, height;
-        int bit_depth, ct;
+        int bit_depth;
         pngp = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, pngEH, pngEH);
         infop = png_create_info_struct(pngp);
         png_set_read_fn(pngp, &src, get_data);
@@ -73,12 +73,18 @@ const char *png_stride_decode(codec_params &params, const TiledRaster &raster,
 // TODO: Check that it matches the expected raster
         png_get_IHDR(pngp, infop, &width, &height, &bit_depth, &ct, NULL, NULL, NULL);
 
+        int num_palette;
+        int num_trans;
+        png_color_16 *trans_values;
+        png_get_PLTE(pngp, infop, &palette, &num_palette);
+        png_get_tRNS(pngp, infop, &trans, &num_trans, &trans_values);
+
         if (static_cast<png_uint_32>(raster.pagesize.y) != height 
             || static_cast<png_uint_32>(raster.pagesize.x) != width)
             throw "Input PNG has the wrong size";
 
-        if (png_get_rowbytes(pngp, infop) != params.line_stride)
-            throw "Wrong type of data in PNG encode";
+//        if (png_get_rowbytes(pngp, infop) != params.line_stride)
+//            throw "Wrong type of data in PNG encode";
 
         png_read_image(pngp, png_rowp.data());
         png_read_end(pngp, infop);
@@ -100,13 +106,13 @@ const char *png_stride_decode(codec_params &params, const TiledRaster &raster,
         strcpy(message, "Unknown PNG decode error");
     }
 
-    png_destroy_read_struct(&pngp, &infop, 0);
+//    png_destroy_read_struct(&pngp, &infop, 0);
 
     return message;
 }
 
 const char *png_encode(png_params &params, const TiledRaster &raster, 
-    storage_manager &src, storage_manager &dst)
+    storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans)
 {
     char *message = NULL;
     png_structp pngp = NULL;
@@ -128,9 +134,17 @@ const char *png_encode(png_params &params, const TiledRaster &raster,
             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
         png_set_compression_level(pngp, params.compression_level);
-        // Flag NDV as transparent color
-        if (params.has_transparency)
-            png_set_tRNS(pngp, infop, 0, 0, &params.NDV);
+        if (params.color_type == PNG_COLOR_TYPE_PALETTE) {
+            png_set_PLTE(pngp, infop, palette, 256);
+        }
+        if (params.has_transparency) {
+        	if (params.color_type == PNG_COLOR_TYPE_PALETTE) {
+        		png_set_tRNS(pngp, infop, trans, 1, NULL);
+        	} else {
+                // Flag NDV as transparent color
+        		png_set_tRNS(pngp, infop, 0, 0, &params.NDV);
+        	}
+        }
 
         int rowbytes = png_get_rowbytes(pngp, infop);
         for (size_t i = 0; i < png_rowp.size(); i++) {
