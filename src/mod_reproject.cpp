@@ -502,7 +502,7 @@ static void bbox_to_tile(const TiledRaster &raster, int level, const bbox_t &bb,
 // aligned as a single raster
 // Returns APR_SUCCESS if everything is fine, otherwise an HTTP error code
 
-static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer)
+static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, int &ct, png_colorp &palette, png_bytep &trans)
 {
     const  sz &tl = info.tl, &br = info.br;
     repro_conf *cfg = info.c;
@@ -594,7 +594,7 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer)
             error_message = jpeg_stride_decode(params, cfg->inraster, src, b);
             break;
         case PNG_SIG:
-            error_message = png_stride_decode(params, cfg->inraster, src, b);
+        	error_message = png_stride_decode(r->pool, params, cfg->inraster, src, b, ct, palette, trans);
             break;
         default:
             error_message = "Unsupported format received";
@@ -893,11 +893,22 @@ static int handler(request_rec *r)
     static coord_conv_f *cyf[P_COUNT] = { same_proj, wm2lat, lat2wm, m2wm, wm2m };
 
     // TODO: use r->header_only to verify ETags, assuming the subrequests are faster in that mode
-    repro_conf *cfg = (repro_conf *)ap_get_module_config(r->per_dir_config, &reproject_module);
+
+    // pick up a modified config if one exists in the notes for this request.
+    repro_conf *cfg = ap_get_module_config(r->request_config, &reproject_module)
+        ? (repro_conf *)ap_get_module_config(r->request_config, &reproject_module) :
+            (repro_conf *)ap_get_module_config(r->per_dir_config, &reproject_module);
+
     if (!our_request(r, cfg)) return DECLINED;
 
     apr_array_header_t *tokens = tokenize(r->pool, r->uri);
     if (tokens->nelts < 3) return DECLINED; // At least Level Row Column
+
+    int ct;
+    png_colorp png_palette;
+    png_bytep png_trans;
+    png_palette = (png_colorp)apr_pcalloc(r->pool, 256 * sizeof(png_color));
+    png_trans = (png_bytep)apr_pcalloc(r->pool, 256 * sizeof(unsigned char));
 
     work info;
     info.c = cfg;
@@ -961,7 +972,7 @@ static int handler(request_rec *r)
 
     // Incoming tiles buffer
     void *buffer = NULL;
-    apr_status_t status = retrieve_source(r, info, &buffer);
+    apr_status_t status = retrieve_source(r, info, &buffer, ct, png_palette, png_trans);
     if (APR_SUCCESS != status) return status;
     // back to absolute level for input tiles
     info.tl.l = info.br.l = input_l;
@@ -1015,7 +1026,15 @@ static int handler(request_rec *r)
         set_png_params(cfg->raster, &params);
         if (cfg->quality < 10) // Otherwise use the default of 6
             params.compression_level = static_cast<int>(cfg->quality);
-        error_message = png_encode(params, cfg->raster, raw, dst);
+        if (png_trans != NULL)
+         	params.has_transparency = TRUE;
+        if (png_palette != NULL) {
+        	params.color_type = ct;
+			params.bit_depth = 8;
+        }
+        error_message = png_encode(params, cfg->raster, raw, dst, png_palette, png_trans);
+        png_palette = 0;
+		png_trans = 0;
     }
 
     if (error_message) {
