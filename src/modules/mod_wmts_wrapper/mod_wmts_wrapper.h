@@ -40,6 +40,7 @@ typedef struct {
     const char *mime_type;
     const char *time_lookup_uri;
     int year_dir;
+    const char *layer_alias;
 } wmts_wrapper_conf;
 
 // WMTS error handling

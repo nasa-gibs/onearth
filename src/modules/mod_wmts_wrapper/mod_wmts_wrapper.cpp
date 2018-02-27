@@ -589,7 +589,12 @@ static int pre_hook(request_rec *r)
                     apr_array_pop(tokens); // Discard TMS name
                     apr_array_pop(tokens); // Discard style name
                     // Get filename from date service and amend the mod_mrf config to point to it
+
+                    // Use the layer_name in the request unless an alias was provided in the config
                     char *layer_name = *(char **)apr_array_pop(tokens);
+                    if (cfg->layer_alias) {
+                    	*layer_name = cfg->layer_alias;
+                    }
                     char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
 
@@ -722,6 +727,13 @@ static const char *set_time_lookup(cmd_parms *cmd, void *dconf, const char *uri)
     return NULL;
 }
 
+static const char *set_layer_alias(cmd_parms *cmd, void *dconf, const char *uri)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    cfg->layer_alias = apr_pstrdup(cmd->pool, uri);
+    return NULL;
+}
+
 static void *create_dir_config(apr_pool_t *p, char *unused)
 {
     return apr_pcalloc(p, sizeof(wmts_wrapper_conf));
@@ -737,6 +749,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->mime_type = ( add->mime_type == NULL ) ? base->mime_type : add->mime_type;
     cfg->time_lookup_uri = ( add->time_lookup_uri == NULL ) ? base->time_lookup_uri : add->time_lookup_uri;
     cfg->year_dir = ( add->year_dir == NULL ) ? base->year_dir : add->year_dir;
+    cfg->year_dir = ( add->layer_alias == NULL ) ? base->layer_alias : add->layer_alias;
     return cfg;
 }
 
@@ -784,6 +797,14 @@ static const command_rec cmds[] =
     AP_INIT_FLAG(
         "WMTSWrapperEnableYearDir",
         (cmd_func) enable_year_dir, // Callback
+        0, // Self pass argument
+        ACCESS_CONF,
+        "Add year directories when looking up index files"
+    ),
+
+    AP_INIT_FLAG(
+        "WMTSWrapperLayerAlias",
+        (cmd_func) set_layer_alias, // Callback
         0, // Self pass argument
         ACCESS_CONF,
         "Add year directories when looking up index files"
