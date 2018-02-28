@@ -1,5 +1,6 @@
 #!/bin/sh
-REDIS_HOST=gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com
+S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
+REDIS_HOST=${2:-gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -68,7 +69,9 @@ cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_
 
 # AST_L1T sample configs
 
+# Copy AST_L1T conf and replace {S3_URL} in conf
 cp oe2_test_AST_L1T.conf /etc/httpd/conf.d
+sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_AST_L1T.conf
 
 # Alias endpoints
 mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/default/GoogleMapsCompatible_Level13
