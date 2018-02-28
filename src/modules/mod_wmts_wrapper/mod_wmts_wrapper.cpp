@@ -595,7 +595,6 @@ static int pre_hook(request_rec *r)
                     if (cfg->layer_alias) {
                     	layer_name = apr_psprintf(r->pool, "%s", cfg->layer_alias);
                     }
-                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "layer name %s", layer_name);
                     char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
 
