@@ -593,8 +593,9 @@ static int pre_hook(request_rec *r)
                     // Use the layer_name in the request unless an alias was provided in the config
                     char *layer_name = *(char **)apr_array_pop(tokens);
                     if (cfg->layer_alias) {
-                    	*layer_name = cfg->layer_alias;
+                    	layer_name = apr_psprintf(r->pool, "%s", cfg->layer_alias);
                     }
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "layer name %s", layer_name);
                     char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
 
@@ -749,7 +750,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->mime_type = ( add->mime_type == NULL ) ? base->mime_type : add->mime_type;
     cfg->time_lookup_uri = ( add->time_lookup_uri == NULL ) ? base->time_lookup_uri : add->time_lookup_uri;
     cfg->year_dir = ( add->year_dir == NULL ) ? base->year_dir : add->year_dir;
-    cfg->year_dir = ( add->layer_alias == NULL ) ? base->layer_alias : add->layer_alias;
+    cfg->layer_alias = ( add->layer_alias == NULL ) ? base->layer_alias : add->layer_alias;
     return cfg;
 }
 
@@ -802,7 +803,7 @@ static const command_rec cmds[] =
         "Add year directories when looking up index files"
     ),
 
-    AP_INIT_FLAG(
+	AP_INIT_TAKE1(
         "WMTSWrapperLayerAlias",
         (cmd_func) set_layer_alias, // Callback
         0, // Self pass argument
