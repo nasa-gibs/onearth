@@ -74,4 +74,4 @@ COPY 00-mpm.conf /etc/httpd/conf.modules.d/
 COPY 10-worker.conf /etc/httpd/conf.modules.d/
 
 WORKDIR /home/oe2/onearth/docker
-CMD sh start_oe2.sh
+CMD sh start_oe2.sh $S3_URL $REDIS_HOST
