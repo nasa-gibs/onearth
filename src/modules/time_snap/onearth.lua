@@ -57,7 +57,9 @@ local function find_snap_date_for_fixed_time_interval (start_date, req_date, end
         or nil
     local date_diff = date_util.diff(req_date, start_date)
     local closest_interval_date = start_date:addseconds(math.floor(date_diff:spanseconds() / interval_in_sec) * interval_in_sec)
-    return closest_interval_date < end_date and closest_interval_date or end_date
+    if closest_interval_date <= end_date then
+        return closest_interval_date
+    end
 end
 
 
@@ -212,7 +214,7 @@ function onearth.date_snapper (layer_handler_options, filename_options)
                 if req_date > start_date then
                     local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
                     local interval_size = string.match(parsed_period[3], "%a+$")
-                    snap_date = get_snap_date(start_date, req_date, end_date, interval_length, interval_size)
+                    snap_date = get_snap_date(start_date:copy(), req_date, end_date, interval_length, interval_size)
                     break
                 end
             else -- this is a single date, so just check if it matches
