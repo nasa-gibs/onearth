@@ -1,16 +1,15 @@
 local onearth = {}
 
-local posix = require "posix"
-local posix_time = require "posix.time"
-
-posix.setenv("TZ", "UTC") -- Have to set this as gmtime only uses local timezone
+local md5 = require "md5"
+local date_util = require "date"
 
 local socket = require "socket"
 
 local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
-local date_time_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
-local date_format = "%Y-%m-%d"
-local date_time_format = "%Y-%m-%dT%H:%M:%S"
+local datetime_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
+local datetime_filename_format = "%Y%j%H%M%S"
+local datetime_format = "%Y-%m-%dT%H:%M:%SZ"
+
 
 -- Utility functions
 local function split (sep, str)
@@ -42,60 +41,45 @@ local function send_response (code, msg_string)
 end
 
 -- Date utility functions
-
--- Verify date string, returning epoch, subdaily (bool) if valid, false if not
-local function parse_date (date_string)
-    if string.match(date_string, date_template) then
-        local date = posix_time.strptime(date_string, date_format)
-        return posix_time.mktime(date), false
-    elseif string.match(date_string, date_time_template) then
-        local date = posix_time.strptime(date_string, date_time_format)
-        return posix_time.mktime(date), true
-    else
-        return false
-    end
-end
-
-local function add_interval (date_epoch, interval_length, interval_size)
-    local date = posix_time.gmtime(date_epoch)
+local function add_interval (date, interval_length, interval_size)
     if interval_size == "Y" then
-        date.tm_year = date.tm_year + interval_length
+        return date:addyears(interval_length)
     elseif interval_size == "M" then
-        date.tm_mon = date.tm_mon + interval_length
+        return date:addmonths(interval_length)
     end
-    return posix_time.mktime(date)
 end
 
-local function find_snap_date_for_fixed_time_interval (start_epoch, req_epoch, end_epoch, interval_length, interval_size)
+local function find_snap_date_for_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size)
     local interval_in_sec = interval_size == "S" and interval_length
-    or interval_size == "MM" and interval_length * 60
-    or interval_size == "H" and interval_length * 60 * 60
-    or interval_size == "D" and interval_length * 60 * 60 * 24
-    or nil
-    local closest_interval = math.floor((req_epoch - start_epoch) / interval_in_sec) * interval_in_sec + start_epoch
-    return closest_interval < end_epoch and closest_interval or end_epoch
+        or interval_size == "MM" and interval_length * 60
+        or interval_size == "H" and interval_length * 60 * 60
+        or interval_size == "D" and interval_length * 60 * 60 * 24
+        or nil
+    local date_diff = date_util.diff(req_date, start_date)
+    local closest_interval_date = start_date:addseconds(math.floor(date_diff:spanseconds() / interval_in_sec) * interval_in_sec)
+    return closest_interval_date < end_date and closest_interval_date or end_date
 end
 
 
-local function find_snap_date_for_non_fixed_time_interval (start_epoch, req_epoch, end_epoch, interval_length, interval_size)
-    local previous_interval_epoch = start_epoch
+local function find_snap_date_for_non_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size)
+    local previous_interval_date = start_date
     while true do
-        local check_epoch = add_interval(previous_interval_epoch, interval_length, interval_size)
-        if check_epoch > req_epoch then -- Found snap date
-            return previous_interval_epoch
+        local check_date = add_interval(previous_interval_date:copy(), interval_length, interval_size)
+        if check_date > req_date then -- Found snap date
+            return previous_interval_date
         end
-        if check_epoch > end_epoch then -- Snap date isn't in this period
+        if check_date > end_date then -- Snap date isn't in this period
             break
         end
-        previous_interval_epoch = check_epoch
+        previous_interval_date = check_date
     end
 end
 
-local function get_snap_epoch (start_epoch, req_epoch, end_epoch, interval_length, interval_size)
+local function get_snap_date (start_date, req_date, end_date, interval_length, interval_size)
     if interval_size == "H" or interval_size == "MM" or interval_size == "S" or interval_size == "D" then
-        return find_snap_date_for_fixed_time_interval(start_epoch, req_epoch, end_epoch, interval_length, interval_size)
+        return find_snap_date_for_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size)
     else
-        return find_snap_date_for_non_fixed_time_interval(start_epoch, req_epoch, end_epoch, interval_length, interval_size)
+        return find_snap_date_for_non_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size)
     end
 end
 
@@ -146,26 +130,22 @@ local function redis_handler (options)
 end
 
 -- Handlers to format output filenames
-
-local function strftime_formatter (options)
-    return function (layer_name, date_epoch, subdaily)
-        return layer_name .. posix_time.strftime(subdaily and options.date_time_format
-        or options.date_format, posix_time.gmtime(date_epoch))
+local function hash_formatter ()
+    return function (layer_name, date)
+        local date_string = date:fmt(datetime_filename_format)
+        local base_filename_string = layer_name .. "-" .. date_string
+        local hash = md5.sumhexa(base_filename_string):sub(0, 4)
+        local filename_string = hash .. "-" .. layer_name .. "-" .. date_string
+        return filename_string
     end
 end
 
-local function epoch_formatter (_)
-    return function (layer_name, date_epoch, _)
-        return layer_name .. date_epoch
-    end
-end
 
 -- Main date snapping handler -- this returns a function that's intended to be called by mod_ahtse_lua
 function onearth.date_snapper (layer_handler_options, filename_options)
     local JSON = require("JSON")
-    local layer_handler = layer_handler_options.type == "redis" and redis_handler(layer_handler_options) or nil
-    local filename_handler = filename_options.type == "strftime" and strftime_formatter(filename_options)
-        or filename_options.type == "epoch" and epoch_formatter(filename_options)
+    local layer_handler = layer_handler_options.handler_type == "redis" and redis_handler(layer_handler_options) or nil
+    local filename_handler = filename_options.filename_format == "hash" and hash_formatter(filename_options)
         or nil
     return function (query_string, headers, _)
         local uuid = headers["UUID"] or "none"
@@ -188,16 +168,26 @@ function onearth.date_snapper (layer_handler_options, filename_options)
 
         -- If it's a default request, return the default date and associated period
         if string.lower(request_date_string) == "default" then
+            local default_date = date_util(layer_datetime_info[layer_name].default)
             local out_msg = {
-                date = layer_datetime_info[layer_name].default,
-                filename = filename_handler(layer_name, parse_date(layer_datetime_info[layer_name].default))}
+                date = default_date:fmt(datetime_format),
+                filename = filename_handler(layer_name, default_date)}
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         end
 
         -- Send error message if date is in a bad format
-        local req_epoch, subdaily = parse_date(request_date_string)
-        if not req_epoch then
+        if not string.match(request_date_string, date_template) and not string.match(request_date_string, datetime_template) then
+            local out_msg = {
+                err_msg = "Invalid Date"
+            }
+            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            return send_response(200, JSON:encode(out_msg))
+        end
+
+        -- Send error message if we can't parse the date for any other reason
+        local pass, req_date = pcall(date_util, request_date_string)
+        if not pass then
             local out_msg = {
                 err_msg = "Invalid Date"
             }
@@ -206,44 +196,39 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         end
 
         -- Find snap date if date request is valid
-        local snap_epoch
+        local snap_date
         for _, period in ipairs(layer_datetime_info[layer_name].periods) do
             local parsed_period = split("/", period)
-            local start_date = subdaily and posix_time.strptime(parsed_period[1], date_time_format)
-            or posix_time.strptime(parsed_period[1], date_format)
-            local start_epoch = posix_time.mktime(start_date)
+            local start_date = date_util(parsed_period[1])
 
             if parsed_period[2] then -- this is a period, so look at both dates
-                local end_date = subdaily and posix_time.strptime(parsed_period[2], date_time_format)
-                or posix_time.strptime(parsed_period[2], date_format)
+                local end_date = date_util(parsed_period[2])
 
                 -- If period has a single date and it doesn't match, skip it
-                local end_epoch = posix_time.mktime(end_date)
-                if req_epoch == start_epoch then
-                    snap_epoch = req_epoch
+                if req_date == start_date then
+                    snap_date = req_date
                     break
                 end
-                if req_epoch > start_epoch then
+                if req_date > start_date then
                     local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
                     local interval_size = string.match(parsed_period[3], "%a+$")
-                    snap_epoch = get_snap_epoch(start_epoch, req_epoch, end_epoch, interval_length, interval_size)
+                    snap_date = get_snap_date(start_date, req_date, end_date, interval_length, interval_size)
                     break
                 end
             else -- this is a single date, so just check if it matches
-                if req_epoch == start_epoch then
-                    snap_epoch = req_epoch
+                if req_date == start_date then
+                    snap_date = req_date
                     break
                 end
             end
         end
 
         -- Return snap date and error if none is found
-        if snap_epoch then
-            local snap_date_string = posix_time.strftime(subdaily and date_time_format
-            or date_format, posix_time.gmtime(snap_epoch))
+        if snap_date then
+            local snap_date_string = snap_date:fmt(datetime_format)
             local out_msg = {
                 date = snap_date_string,
-                filename = filename_handler(layer_name, snap_epoch, subdaily)}
+                filename = filename_handler(layer_name, snap_date)}
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         else
