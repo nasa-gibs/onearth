@@ -147,7 +147,7 @@ static const char get_interval_char(apr_pool_t *p, const char *period_string )
     {
         return 'm';
     }
-    return interval_string[1];
+    return interval_string[strlen(interval_string) - 1];
 }
 
 // Evaluate the time period for days or seconds
@@ -179,7 +179,7 @@ static apr_time_t get_pre_1970_epoch(apr_time_exp_t date)
 	return epoch;
 }
 
-static apr_time_t add_date_interval(apr_time_t start_epoch, int interval, char *units) {
+static apr_time_t add_date_interval(apr_time_t start_epoch, long interval, char *units) {
 	apr_time_exp_t date = {0};
 	// Convert start date to apr_time_exp_t
 	apr_time_exp_gmt(&date, start_epoch);
@@ -433,7 +433,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 	   		    	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No duration detected in %s", time_period);
 	   		    	continue;
 	   		    }
-			  	int interval = evaluate_period(time_period);
+			  	long interval = evaluate_period(time_period);
 
 			  	// START OF DATE SNAPPING ROUTINE 
 			  	// First, parse the period start and end time strings, as well as the request.
