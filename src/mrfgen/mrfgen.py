@@ -365,10 +365,14 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
             else:
                 log_info_mssg(message.strip())
         gdal_warp.wait()
-        
+              
         # Now build a combined VRT for both the input VRT and the MRF
         combined_vrt_tile = working_dir + os.path.basename(tile) + ".combined.vrt"
-        gdal_vrt_command_list2 = ['gdalbuildvrt', combined_vrt_tile, mrf, warp_vrt_tile]
+        gdal_vrt_command_list2 = ['gdalbuildvrt']
+        if nodata != "":
+            gdal_vrt_command_list2.extend(['-vrtnodata', nodata, '-srcnodata', nodata]) 
+        gdal_vrt_command_list2.extend([combined_vrt_tile, mrf, warp_vrt_tile])
+
         log_the_command(gdal_vrt_command_list2)
         gdal_vrt2 = subprocess.Popen(gdal_vrt_command_list2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_vrt2.stderr.readlines()
