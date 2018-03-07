@@ -125,6 +125,31 @@ static char colon[] = "%3A";
 // This module
 module AP_MODULE_DECLARE_DATA onearth_module;
 
+static apr_array_header_t* tokenize(apr_pool_t *p, const char *s, char sep)
+{
+    apr_array_header_t* arr = apr_array_make(p, 10, sizeof(char *));
+    while (sep == *s) s++;
+    char *val;
+    while (*s && (val = ap_getword(p, &s, sep))) {
+        char **newelt = (char **)apr_array_push(arr);
+        *newelt = val;
+    }
+    return arr;
+}
+
+static const char get_interval_char(apr_pool_t *p, const char *period_string )
+{
+    apr_array_header_t *tokens = tokenize(p, period_string, '/');
+    const char *interval_string = APR_ARRAY_IDX(tokens, tokens->nelts - 1, char *);
+    
+    // We use a lowercase 'm' for minutes
+    if (interval_string[strlen(interval_string) - 1] == 'M' && interval_string[1] == 'T')
+    {
+        return 'm';
+    }
+    return interval_string[1];
+}
+
 // Evaluate the time period for days or seconds
 static int evaluate_period(char *time_period)
 {
@@ -408,13 +433,13 @@ static void *r_file_pread(request_rec *r, char *fname,
 	   		    	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No duration detected in %s", time_period);
 	   		    	continue;
 	   		    }
-			  	apr_time_t interval = evaluate_period(time_period);
+			  	int interval = evaluate_period(time_period);
 
 			  	// START OF DATE SNAPPING ROUTINE 
 			  	// First, parse the period start and end time strings, as well as the request.
 			  	// We're going to parse them into UNIX time integers (microseconds since 1970) for ease of working with them
 			  	apr_time_t start_epoch = parse_date_string(time_period);
-			  	if (time_period[11] == 'T') {
+			  	if (time_period[10] == 'T') {
 			  		time_period += 21;
 			  	} else {
 			  		time_period += 11;
@@ -446,7 +471,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	apr_time_t snap_epoch = 0;
 			  	apr_time_t date_epoch;
 			  	apr_time_t prev_epoch = start_epoch;
-			  	char interval_char = time_period[(strlen(time_period) - 1)];
+			  	char interval_char = get_interval_char(r->pool, time_period);
 			  	switch (interval_char) {
 			  		case 'Y':
 			  			for(;;) {
@@ -492,7 +517,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  				case 'H':
 			  					interval = interval * 60 * 60 * 1000 * 1000;
 			  					break;
-			  				case 'M':
+			  				case 'm':
 			  					interval = interval * 60 * 1000 * 1000;
 			  					break;
 			  				case 'S':
@@ -540,6 +565,7 @@ static void *r_file_pread(request_rec *r, char *fname,
 			  	}
 			  	// Now let's try the request with our new filename
 				ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Snapping to period in file %s",fn);
+                // ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Snapping to time %04d-%02d-%02dT%02d:%02d:%02d", snap_date.tm_year, snap_date.tm_mon, snap_date.tm_mday, snap_date.tm_hour, snap_date.tm_min, snap_date.tm_sec);
 			    if (0>(fd=open(fn,O_RDONLY))) {
 		  		    ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"No valid data exists for time period");
 					time_period+=strlen(time_period)+1; // try next period
