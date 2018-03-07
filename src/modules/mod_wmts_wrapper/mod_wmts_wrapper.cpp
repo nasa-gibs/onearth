@@ -610,10 +610,11 @@ static int pre_hook(request_rec *r)
                         out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->redirect, filename);               
                     }
                     out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->idxfname, filename);
-                    // Add the year dir to the IDX filename if that option is configured
+                    // Add the year dir filenames if that option is configured
                     if (cfg->year_dir) {
                         const char *year = apr_pstrndup(r->pool, date_string, 4);
                         out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);
+                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->datafname, year);
                     }
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);  
                 }
