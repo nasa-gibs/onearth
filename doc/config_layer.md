@@ -13,9 +13,10 @@ An XML configuration file exists for every OnEarth layer.  This file is read by 
 * **Pattern(s) (Optional)** - Pre-generated URL request patterns that are compiled into the OnEarth cache configuration file for optimized request matching.
 * **EnvironmentConfig** - The file path to the layer's associated [environment configuration](config_support.md#environment-configuration) support file.
 * **ArchiveLocation** - The directory name within which MRF index, image, and metadata files will be placed.
-* The static attribute indicates whether the layer varies by date (false) or is a single static image (true).
-* The year attribute indicates whether files are grouped into subdirectories by year (true) or are all in the base directory (false).
-* The root attribute references the unique identifier of the layer's associated archive location as contained in the [archive configuration](config_support.md#archive-configuration) support file.
+  * The static attribute indicates whether the layer varies by date (false) or is a single static image (true).
+  * The year attribute indicates whether files are grouped into subdirectories by year (true) or are all in the base directory (false).
+  * The subdaily attribute indicates whether files include the subdaily portion (hhmmss) as part of the file name.
+  * The root attribute references the unique identifier of the layer's associated archive location as contained in the [archive configuration](config_support.md#archive-configuration) support file.
 * **ColorMap (Optional)** - The file name for layer's associated colormap, if one exists, to be included in the WMTS GetCapabilities service document. The path is specified with `<ColorMapLocation>` in the environment configuration. A URL may also be used instead of a file name (deprecated). Multiple colormaps may be specified with the version designated by the attribute `version=` and the default designated by `default={true/false}`.
 * **StyleJSON (Optional)** - The file name for layer's associated style JSON file (for vectors), if one exists, to be included in the WMTS GetCapabilities service document. The path is specified with `<StyleJSONLocation>` in the environment configuration. Multiple style JSON files may be specified with the version designated by the attribute `version=` and the default designated by `default={true/false}`.
 * **Time** - The ISO 8601 time range for the layer.  The tool may be configured to scan the file system to detect the the time (e.g., `<Time>DETECT</Time>`).  See [Time Detection](time_detection.md) for details.
