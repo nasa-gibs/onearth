@@ -123,6 +123,8 @@ class TestOELegends(unittest.TestCase):
 
         new_config = open(self.testdata_path + 'new_colormaps.json', 'w')
         json.dump(new_colormaps, new_config, sort_keys=True, indent=4)
+        # dump does not write newline at the end
+        new_config.write("\n")
         new_config.close()
         self.assertTrue(filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'), 'Inconsistent legends found')
 

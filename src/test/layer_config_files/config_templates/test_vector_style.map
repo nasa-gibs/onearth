@@ -1,9 +1,0 @@
-CLASS
-	NAME	"points"
-	STYLE
-		SYMBOL "circle"
-		COLOR 255 255 255
-		SIZE 1
-		WIDTH 1
-	END
-END

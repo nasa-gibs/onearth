@@ -181,6 +181,27 @@ def restart_apache():
     subprocess.call(['sleep', '3'])
 
 
+def restart_redis():
+    try:
+        check_redis_running()
+        if "el7" in platform.release():
+            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            redis = subprocess.Popen(['redis-server'], close_fds=True)
+        else:
+            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            redis = subprocess.Popen(['redis-server'], close_fds=True)
+    except ValueError:
+        #redis = subprocess.Popen(['redis-server'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        redis = subprocess.Popen(['redis-server'], close_fds=True)
+
+#    (stdout, stderr) = redis.communicate()
+#    if stdout != None and len(stdout) != 0:
+#        sys.stderr.write("\n=== STDOUT from restart_redis():\n%s\n===\n" % stdout.rstrip())
+#    if stderr != None and len(stderr) != 0:
+#        sys.stderr.write("\n=== STDERR from restart_redis():\n%s\n===\n" % stderr.rstrip())
+    subprocess.call(['sleep', '2'])
+
+
 def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
     """
     Runs the provided command on the terminal and prints any stderr output.
@@ -590,6 +611,17 @@ def check_apache_running():
     return True
 
 
+def check_redis_running():
+    """
+    Checks to see if redis is running on the test machine, bails if it's not.
+    """
+    # Greps for any running redis-server processes
+    check = subprocess.Popen('ps -e | grep "redis-server"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if not check.stdout.read():
+        raise ValueError('Redis does not appear to be running.')
+    return True
+
+
 def ordered_d(obj): 
     """
     Recursively sort any lists it finds (and convert dictionaries to lists of (key, value) pairs 
@@ -659,7 +691,8 @@ def test_snap_request(hash_table, req_url):
     """
     tile = get_url(req_url)
     tile_hash = get_file_hash(tile)
-
+    # TORHT
+    print "tile_hash: " + tile_hash
     # Get the date that the particular hash is associated with
     tile_date = hash_table.get(tile_hash, '')
     return tile_date
