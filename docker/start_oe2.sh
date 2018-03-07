@@ -112,15 +112,15 @@ cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/
 cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/twms.config
 cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected.png /var/www/html/wmts/epsg4326/empty_tiles/
 
-wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-1480555106.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555106.idx
-wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-1480555115.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555115.idx
-wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-1480555124.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected1480555124.idx
+wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-1480555106.idx.tgz
+tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
+mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx
+wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-1480555115.idx.tgz
+tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
+mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx
+wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/79ce-ASTER_L1T_Radiance_Terrain_Corrected-2016336011826.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-1480555124.idx.tgz
+tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/79ce-ASTER_L1T_Radiance_Terrain_Corrected-2016336011826.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
+mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/79ce-ASTER_L1T_Radiance_Terrain_Corrected-2016336011826.idx
 
 echo 'Starting Apache server'
 /usr/sbin/apachectl
