@@ -603,18 +603,22 @@ static int pre_hook(request_rec *r)
 
                     mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
                     memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
+
+                    const char *year = apr_pstrndup(r->pool, date_string, 4);
                     if (mrf_config->datafname) {
                         out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->datafname, filename);
+                        if (cfg->year_dir)
+                            out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_config->datafname, year);
                     }
                     if (mrf_config->redirect) {
-                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->redirect, filename);               
+                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->redirect, filename);
+                        if (cfg->year_dir)
+                            out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_config->redirect, year);               
                     }
                     out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->idxfname, filename);
                     // Add the year dir to the IDX filename if that option is configured
-                    if (cfg->year_dir) {
-                        const char *year = apr_pstrndup(r->pool, date_string, 4);
+                    if (cfg->year_dir)
                         out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);
-                    }
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);  
                 }
             }
