@@ -33,4 +33,4 @@ COPY 00-mpm.conf /etc/httpd/conf.modules.d/
 COPY 10-worker.conf /etc/httpd/conf.modules.d/
 
 WORKDIR /home/oe2/onearth/docker/date_service
-CMD sh start_date_service.sh
+CMD sh start_date_service.sh $REDIS_HOST
