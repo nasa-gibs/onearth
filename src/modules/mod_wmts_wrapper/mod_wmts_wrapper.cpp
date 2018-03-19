@@ -617,12 +617,12 @@ static int pre_hook(request_rec *r)
                     if (mrf_config->datafname) {
                         out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->datafname, filename);
                         if (cfg->year_dir)
-                            out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_config->datafname, year);
+                            out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->datafname, year);
                     }
                     if (mrf_config->redirect) {
                         out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->redirect, filename);
                         if (cfg->year_dir)
-                            out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_config->redirect, year);               
+                            out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->redirect, year);
                     }
                     out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->idxfname, filename);
                     // Add the year dir to the IDX filename if that option is configured
