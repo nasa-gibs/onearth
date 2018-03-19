@@ -32,6 +32,18 @@ local function get_query_param (param, query_string)
     return date_string
 end
 
+local function get_query_keys(query_string)
+    local results = {}
+    local query_parts = split("&", query_string)
+    for _, part in pairs(query_parts) do
+        local query_pair = split("=", part)
+        if string.match(query_pair[1], "^key[0-5]$") then
+            results[#results + 1] = query_pair[2]
+        end
+    end
+    return results
+end
+
 local function send_response (code, msg_string)
     return msg_string,
     {
@@ -86,17 +98,18 @@ local function get_snap_date (start_date, req_date, end_date, interval_length, i
 end
 
 -- Handlers to get layer period and default date information
-local function redis_get_all_layers (client)
+local function redis_get_all_layers (client, prefix_string)
     local layers = {}
     local cursor = "0"
     local results
     repeat
-        cursor, results = unpack(client:scan(cursor, {match = "layer:*"}))
+        cursor, results = unpack(client:scan(cursor, {match = prefix_string .. "layer:*"}))
         for _, value in pairs(results) do
-            local layer_name = split(":", value)[2]
+            local value_parts = split(":", value)
+            local layer_name = value_parts[#value_parts - 1]
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
-            layers[layer_name].default = client:get("layer:" .. layer_name .. ":default")
-            layers[layer_name].periods = client:smembers("layer:" .. layer_name .. ":periods")
+            layers[layer_name].default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
+            layers[layer_name].periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
         end
     until cursor == "0"
     return layers
@@ -108,12 +121,18 @@ local function redis_handler (options)
     closeFunc = function()
         client:quit()
     end
-    return function (layer_name, uuid)
+    return function (layer_name, uuid, lookup_keys)
         local returnValue
         local start_db_request = socket.gettime() * 1000 * 1000
+        local prefix_string = ""
+        if lookup_keys then
+            for _, value in pairs(lookup_keys) do
+                prefix_string = prefix_string .. value .. ":"
+            end
+        end
         if layer_name then
-            local default = client:get("layer:" .. layer_name .. ":default")
-            local periods = client:smembers("layer:" .. layer_name .. ":periods")
+            local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
+            local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
             if default and periods then
                 returnValue = {[layer_name] = {
                     default = default,
@@ -124,7 +143,7 @@ local function redis_handler (options)
             end
         else
             -- If no layer name specified, dump all data
-            returnValue = redis_get_all_layers(client)
+            returnValue = redis_get_all_layers(client, prefix_string)
         end
         print(string.format("step=time_database_request duration=%d uuid=%s", socket.gettime() * 1000 * 1000 - start_db_request, uuid))
         return returnValue
@@ -153,16 +172,17 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         local uuid = headers["UUID"] or "none"
         local start_timestamp = socket.gettime() * 1000 * 1000
         local layer_name = query_string and get_query_param("layer", query_string) or nil
+        local lookup_keys = query_string and get_query_keys(query_string) or nil
 
         -- A blank query returns the entire list of layers and periods
         if not query_string or not layer_name then
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
-            return send_response(200, JSON:encode(layer_handler(nil, uuid)))
+            return send_response(200, JSON:encode(layer_handler(nil, uuid, lookup_keys)))
         end
 
         -- A layer but no date returns the default date and available periods for that layer
         local request_date_string = get_query_param("datetime", query_string)
-        local layer_datetime_info = layer_handler(layer_name, uuid)
+        local layer_datetime_info = layer_handler(layer_name, uuid, lookup_keys)
         if not request_date_string then
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000- start_timestamp, uuid))
             return send_response(200, JSON:encode(layer_datetime_info))

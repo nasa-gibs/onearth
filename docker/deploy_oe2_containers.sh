@@ -3,7 +3,6 @@
 # Start by making a docker network. This will allow us to lookup hostnames from each Docker instance
 docker network create oe2
 
-
 docker build -t oe2 .
 
 cd date_service

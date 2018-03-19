@@ -410,6 +410,15 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     rctx.size = 0;
 
     const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
+    if (cfg->date_service_keys)
+    {
+        int i;
+        for (i=0; i<cfg->date_service_keys->nelts; i++) {
+            const char *value = (const char *)APR_ARRAY_IDX(cfg->date_service_keys, i, const char *);
+            time_request_uri = apr_psprintf(r->pool, "%s&key%d=%s", time_request_uri, i+1, value);
+        }
+    }
+    
     ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
     request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
 
@@ -738,6 +747,18 @@ static const char *set_layer_alias(cmd_parms *cmd, void *dconf, const char *uri)
     return NULL;
 }
 
+static const char *set_date_service_keys(cmd_parms *cmd, void *dconf, const char *date_service_key)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    if (!cfg->date_service_keys)
+    {
+        cfg->date_service_keys = apr_array_make(cmd->pool, 10, sizeof(char *));
+    }
+    const char **newelt = (const char **)apr_array_push(cfg->date_service_keys);
+    *newelt = date_service_key;
+    return NULL;
+}
+
 static void *create_dir_config(apr_pool_t *p, char *unused)
 {
     return apr_pcalloc(p, sizeof(wmts_wrapper_conf));
@@ -754,6 +775,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->time_lookup_uri = ( add->time_lookup_uri == NULL ) ? base->time_lookup_uri : add->time_lookup_uri;
     cfg->year_dir = ( add->year_dir == NULL ) ? base->year_dir : add->year_dir;
     cfg->layer_alias = ( add->layer_alias == NULL ) ? base->layer_alias : add->layer_alias;
+    cfg->date_service_keys = ( add->date_service_keys == NULL ) ? base->date_service_keys : add->date_service_keys;
     return cfg;
 }
 
@@ -812,6 +834,14 @@ static const command_rec cmds[] =
         0, // Self pass argument
         ACCESS_CONF,
         "Add year directories when looking up index files"
+    ),
+
+    AP_INIT_ITERATE(
+        "WMTSWrapperDateServiceKeys",
+        (cmd_func) set_date_service_keys,
+        0,
+        ACCESS_CONF,
+        "Set keys to be used to query date service. Comma-separated list"
     ),
 
     {NULL}

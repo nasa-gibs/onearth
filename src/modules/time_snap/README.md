@@ -28,6 +28,11 @@ for the specified layer.
 `/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DDTHH:MM:SS` -- provides the
 filename and snap date for the specified layer.
 
+The database can be split into multiple parts so as to separate layer
+information by projection, endpoint, etc. Up to 5 additional keys can be
+specified in the URL request, i.e.:
+`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DD&key1=geographic&key2=best`
+
 `time_snap` currently uses a Redis database for queries, but other handlers can
 be easily added.
 
@@ -91,9 +96,20 @@ layer specified by `[layer_name]`. Should be in either `YYYY-MM-DD` or
 For testing, here's a fast way to set up a Redis database for testing.
 
 1. Enter the Redis CLI: `redis-cli`
-2. Add a default date: `SET layer:test_layer:default "2015-06-01`
+2. Add a default date: `SET layer:test_layer:default "2015-06-01"`
 3. Add some periods: `SADD layer:test_layer:periods "2012-01-01/2013-01-01/P1M"
    "2005-06-01/2005-12-01/P10D"`
+
+#### Creating levels for projection, endpoint, etc.
+
+If you'd like to create a bit more separation in the database, you can add
+additional keys before `layer`. For example, you could put the layer information
+in the following location:
+`geographic:best:layer:test_layer:default"2015-06-01"`
+
+These additional keys can be specified in the request parameters:
+`date_service?key1=geographic&key2=best`. They are processed in order. Up to 5
+additional keys are allowed.
 
 ### Create the Lua configuration script
 
@@ -116,7 +132,7 @@ The only lines you need to edit are the two after `Set configuration here`.
 
 _Redis_
 
-* type -- set to `"redis"`.
+* handler_type -- set to `"redis"`.
 * host -- sets the hostname for the Redis database you'll be using. Should be in
   quotes.
 * port (optional) -- sets the port number for your Redis database. Defaults to
@@ -128,7 +144,7 @@ _strftime_ Outputs filenames in this format: `[layer_name][date]`, where
 `[date]` is the date formatted using a strftime-compatible template. For more
 information, see (http://man7.org/linux/man-pages/man3/strftime.3.html)
 
-* type -- set to `"strftime"`
+* filename_format -- set to `"strftime"`
 * dateFormat -- the strftime-compatible format for non-subdaily dates.
 * dateTimeFormat -- the strftime-compatible format for subdaily dates.
 

@@ -111,6 +111,28 @@ path.
 Example: `IndexFile
 /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/${YYYY}/${filename}.idx`
 
+### WMTSWrapperDateServiceKeys (String, can be multiple)
+
+The OnEarth date service can accept additional keys (can be used to separate
+layers by projection or endpoint).
+
+Keys listed here will be appended to the date service request in order.
+
+So, if configured like this:
+
+```
+WMTSWrapperDateServiceKeys geographic best
+```
+
+The date service query will add the following parameters to the date service
+request for each tile request:
+
+```
+/date-service?layer=layer&key1=geographic&key2=best
+```
+
+Note that this configuration option works per layer.
+
 ### Example config (starred entries are `mod_reproject` configuration directives):
 
 ```
@@ -133,5 +155,6 @@ Example: `IndexFile
         WMTSWrapperTimeLookupUri "/time_lookup"
         Reproject_RegExp GoogleMapsCompatible_Level7/\d{1,2}/\d{1,3}/\d{1,3}.(png|jpeg|jpg)
         Reproject_ConfigurationFiles /usr/share/onearth/demo/wmts-webmerc/blue_marble/default/GoogleMapsCompatible_Level7/blue_marble_source.config /usr/share/onearth/demo/wmts-webmerc/blue_marble/default/GoogleMapsCompatible_Level7/blue_marble_reproject.config
+        WMTSWrapperDateServiceKeys geographic best
 </Directory>
 ```
