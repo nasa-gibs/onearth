@@ -1,0 +1,15 @@
+--- modules/proxy/mod_proxy_http.c	2017-10-31 02:35:40.000000000 +0000
++++ modules/proxy/mod_proxy_http_patched.c	2017-10-31 02:37:46.000000000 +0000
+@@ -732,7 +732,11 @@
+      */
+     if (!r->kept_body && r->main) {
+         /* XXX: Why DON'T sub-requests use keepalives? */
+-        p_conn->close = 1;
++        // LP: Take this out to improve retile performance
++        // As the original comment above says, not sure why keepalives 
++        // are not allowed.
++        // Maybe the close can be made conditional on the request
++        // p_conn->close = 1; 
+         if (old_cl_val) {
+             old_cl_val = NULL;
+             apr_table_unset(r->headers_in, "Content-Length");
