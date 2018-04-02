@@ -4,21 +4,13 @@ OnEarth is a software package consisting of image formatting and serving modules
 
 For more information, visit https://earthdata.nasa.gov/gibs
 
-## Setup
-
-* [Docker Image Build](doc/docker_image_build.md)
-* [Installation](doc/installation.md)
-* [Configuration](doc/configuration.md)
-* [Creating Image Archive](doc/archive.md)
-* [Configuring Vector Data](doc/config_vectors.md)
-
 ## Components
 
-* [mod_mrf](src/modules/mod_mrf/src/README.md)
-* [mod_ahtse_lua](src/modules/mod_ahtse_lua/src/README.md)
-* [mod_receive](src/modules/mod_receive/src/README.md)
+* [mod_mrf](https://github.com/nasa-gibs/mod_mrf)
+* [mod_ahtse_lua](https://github.com/nasa-gibs/mod_ahtse_lua)
 * [mod_receive](https://github.com/nasa-gibs/mod_receive)
 * [mod_reproject](https://github.com/nasa-gibs/mod_reproject)
+* [mod_sfim](https://github.com/nasa-gibs/mod_sfim)
 * [mod_twms](https://github.com/nasa-gibs/mod_twms)
 * [mod_wmts_wrapper](src/modules/mod_wmts_wrapper/README.md)
 * [mrfgen](src/mrfgen/README.md)
@@ -33,7 +25,6 @@ For more information, visit https://earthdata.nasa.gov/gibs
 
 * [Meta Raster Format](https://github.com/nasa-gibs/mrf/blob/master/README.md)
 * [Tests](src/test/README.md)
-* [Troubleshooting](doc/troubleshooting.md)
 * [Contributing](CONTRIBUTING.md)
 
 ## Contact
