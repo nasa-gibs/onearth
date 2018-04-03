@@ -29,6 +29,7 @@ RUN mkdir -p /home/oe2
 
 # Clone OnEarth repo
 WORKDIR /home/oe2
+RUN git config --global url.https://github.com/.insteadOf git://github.com/
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
 RUN git checkout test2.0
