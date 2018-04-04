@@ -20,9 +20,11 @@ FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 
-RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel
+RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel chrpath gcc-c++ freetype-devel python-devel sqlite-devel cmake turbojpeg-devel
 
-RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget
+RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
+
+RUN yum install -y agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN mkdir -p /home/oe2
 #RUN mkdir -p /var/www
