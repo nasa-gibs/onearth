@@ -82,8 +82,6 @@ make && make install
 (
   set -evx
   cd /build
-  git submodule update --init --recursive
-  yum-builddep -y ci/onearth.spec
 
   # Install Apache modules
   cd /build/src/modules/mod_receive/src/

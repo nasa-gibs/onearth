@@ -58,9 +58,6 @@ RUN make && make install
 
 # Install dependencies
 WORKDIR /home/oe2/onearth
-RUN git submodule update --init --recursive
-RUN yum-builddep -y ci/onearth.spec
-RUN make download
 
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
