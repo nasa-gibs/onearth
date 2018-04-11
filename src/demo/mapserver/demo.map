@@ -1,0 +1,121 @@
+MAP
+  Name 			"NASA GIBS OnEarth Mapserver/WMS Demo (Geographic - EPSG:4326)"
+  UNITS 			dd  
+  MAXSIZE 		20000
+  SIZE 			1600 1200
+  Extent 			-180 -90 180 90
+  ImageColor 		0 0 0
+
+  CONFIG "PROJ_LIB" "/usr/share/proj/"
+
+  ##Debug Params##
+  CONFIG "MS_ERRORFILE" stderr
+  Debug 3
+  CONFIG "CPL_DEBUG" "ON"
+  CONFIG "PROJ_DEBUG" "ON"
+
+  OUTPUTFORMAT
+    NAME 		"png"
+    DRIVER		AGG/PNG
+    MIMETYPE		"image/png"
+    IMAGEMODE		RGBA
+    EXTENSION		"png"
+    FORMATOPTION	"GAMMA=0.75"
+  END
+
+  OUTPUTFORMAT
+    NAME "jpeg"
+    DRIVER AGG/JPEG
+    MIMETYPE "image/jpeg"
+    IMAGEMODE RGB
+    EXTENSION "jpg"
+    FORMATOPTION "GAMMA=0.75"
+  END
+
+  Projection  #Output Projection
+    "init=epsg:4326"
+  End
+  
+  WEB
+    METADATA 
+      "wms-title"		"NASA GIBS OnEarth Mapserver/WMS Demo (Geographic - EPSG:4326)"
+      "wms-onlineresource"	"http://localhost/onearth/demo/mapserver/mapserver.cgi?map=demo.map"
+      "wms_enable_request" "GetMap GetCapabilities"
+    END
+  END
+
+  LAYER
+	NAME	"blue_marble"
+	TYPE	RASTER
+	STATUS	ON
+	METADATA
+		"wms_title"		"blue_marble"
+		"wms_extent"		"-180 -90 180 90"
+	END
+	DATA	"/usr/share/onearth/demo/data/EPSG4326/blue_marble/blue_marble.mrf"
+	PROJECTION
+		"init=epsg:4326"
+  	END
+  END
+  LAYER
+	NAME	"MYR4ODLOLLDY_global_10km"
+	TYPE	RASTER
+	STATUS	ON
+	METADATA
+		"default_TIME"	"TTTTTTT"
+		"default_PRODUCTYEAR"	"YYYY"
+		"wms_title"	"MYR4ODLOLLDY_global_10km"
+		"wms_extent"	"-180 -90 180 90"
+	END
+	VALIDATION
+		TIME			'^[0-9]{7}$'
+		PRODUCTYEAR		'^[0-9]{4}$'
+	END
+	DATA    "/usr/share/onearth/demo/data/EPSG4326/MYR4ODLOLLDY_global_10km/%PRODUCTYEAR%/MYR4ODLOLLDY%TIME%_.mrf"
+        PROJECTION
+                "init=epsg:4326"
+        END
+  END
+
+  LAYER
+        NAME    "blue_marble_webmerc"
+        TYPE    RASTER
+        STATUS  ON
+        METADATA
+                "wms_title"             "blue_marble_webmerc"
+                "wms_extent"            "-20037508.34 -20037508.34 20037508.34 20037508.34"
+        END
+        DATA    "/usr/share/onearth/demo/data/EPSG3857/blue_marble/blue_marble.mrf"
+        PROJECTION
+                "init=epsg:3857"
+        END
+  END
+ 
+  LAYER
+        NAME    "blue_marble_arctic"
+        TYPE    RASTER
+        STATUS  ON
+        METADATA
+                "wms_title"             "blue_marble_arctic"
+                "wms_extent"            "-4194304 -4194304 4194304 4194304"
+        END
+        DATA    "/usr/share/onearth/demo/data/EPSG3413/blue_marble/blue_marble.mrf"
+        PROJECTION
+                "init=epsg:3413"
+        END
+  END
+
+  LAYER
+        NAME    "blue_marble_antarctic"
+        TYPE    RASTER
+        STATUS  ON
+        METADATA
+                "wms_title"             "blue_marble_antarctic"
+                "wms_extent"            "-4194304 -4194304 4194304 4194304"
+        END
+        DATA    "/usr/share/onearth/demo/data/EPSG3031/blue_marble/blue_marble.mrf"
+        PROJECTION
+                "init=epsg:3031"
+        END
+  END
+END
