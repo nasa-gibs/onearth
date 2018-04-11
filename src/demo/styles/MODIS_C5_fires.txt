@@ -1,9 +1,0 @@
-  CLASS
-
-        STYLE                                   # start STYLE object
-          Symbol 'circle'
-             COLOR  255 99 71
-          OUTLINECOLOR  255 0 0
-          SIZE 3
-         END                                   # end STYLE object
-  END

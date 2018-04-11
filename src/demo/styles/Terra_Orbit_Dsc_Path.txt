@@ -1,7 +1,0 @@
-    Class
-    	Name            "Orbit Path"
-        Style
-            Width       1.5
-            Color       21 192 230
-        End
-    End
