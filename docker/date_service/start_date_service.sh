@@ -1,5 +1,5 @@
 #!/bin/sh
-REDIS_HOST=${1:-gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com}
+REDIS_HOST=${1:-127.0.0.1}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2

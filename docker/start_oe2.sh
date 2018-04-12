@@ -1,6 +1,6 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
-REDIS_HOST=${2:-gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com}
+REDIS_HOST=${2:-127.0.0.1}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -14,14 +14,14 @@ cp oe2_test_mod_mrf_static.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_mrf_static_layer.config /var/www/html/mrf_endpoint/static_test/default/tms/
 
 mkdir -p /var/www/html/mrf_endpoint/date_test/default/tms
-cp test_imagery/date_test* /var/www/html/mrf_endpoint/date_test/default/tms
+cp test_imagery/*date_test* /var/www/html/mrf_endpoint/date_test/default/tms
 cp oe2_test_mod_mrf_date.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_mrf_date_layer.config /var/www/html/mrf_endpoint/date_test/default/tms/
 
 mkdir -p /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/{2015,2016,2017}
-cp test_imagery/date_test_year_dir1420070400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2015
-cp test_imagery/date_test_year_dir1451606400* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2016
-cp test_imagery/date_test_year_dir1483228800* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
+cp test_imagery/*date_test_year_dir-2015* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2015
+cp test_imagery/*date_test_year_dir-2016* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2016
+cp test_imagery/*date_test_year_dir-2017* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
 cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
 cp layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
 
@@ -127,6 +127,10 @@ echo 'Starting Apache server'
 /usr/sbin/apachectl
 sleep 2
 
+echo 'Starting Redis server'
+/usr/bin/redis-server &
+sleep 2
+
 # Add some test data to redis for profiling
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
@@ -147,10 +151,8 @@ sleep 2
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
 
-# AST L1T sample dates
 
-
-# /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 
 # Tail the apache logs
 exec tail -qF \
