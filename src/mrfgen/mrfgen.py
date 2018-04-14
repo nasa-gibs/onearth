@@ -336,6 +336,8 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         if nodata != "":
             gdal_merge_command_list.append('-n')
             gdal_merge_command_list.append(nodata)
+            gdal_merge_command_list.append('-a_nodata')
+            gdal_merge_command_list.append(nodata)
         gdal_merge_command_list.append(mrf)
         gdal_merge_command_list.append(tile)
     else: # use gdalbuildvrt/gdalwarp/gdal_translate for RGBA imagery
