@@ -18,7 +18,9 @@ sudo yum -y install epel-release
 Postgres Repository RPM
 
 ```
-sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-6-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+ELVERSION=\`rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release)\`
+
+sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-${ELVERSION}-x86_64/pgdg-centos96-9.6-3.noarch.rpm
 ```
 
 ## RPM Installation
