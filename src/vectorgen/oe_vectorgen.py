@@ -67,9 +67,9 @@ def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_ur
         sigevent_url -- the URL for SigEvent
     """
     if source_epsg == target_epsg:
-        ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-fieldTypeToString', 'Time', out_filename, in_filename]
+        ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-fieldTypeToString', 'Date,Time,DateTime', out_filename, in_filename]
     else:
-        ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-fieldTypeToString', 'Time', '-s_srs', source_epsg, '-t_srs', target_epsg, out_filename, in_filename]
+        ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-fieldTypeToString', 'Date,Time,DateTime', '-s_srs', source_epsg, '-t_srs', target_epsg, out_filename, in_filename]
     run_command(ogr2ogr_command_list, sigevent_url)
 
 def shp2geojson(in_filename, out_filename, sigevent_url):
