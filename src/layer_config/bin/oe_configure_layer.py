@@ -84,7 +84,7 @@ from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-versionNumber = '1.3.2'
+versionNumber = '1.3.3'
 current_conf = None
 
 class WMTSEndPoint:
