@@ -1235,7 +1235,8 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             try:
                 identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 identify_process.wait()
-                if 'DirectClass' in identify_process.stdout.readlines()[0]:
+                identityLine = identify_process.stdout.readlines()[0]
+                if ('DirectClass' in identityLine) or ('JPEG' in identityLine):
                     goodtiles.append(tile)
                 else:
                     errors += 1
