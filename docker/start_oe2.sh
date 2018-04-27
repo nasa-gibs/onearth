@@ -99,7 +99,7 @@ sleep 2
 sh load_sample_layers.sh
 
 echo 'Starting Apache server'
-/usr/sbin/apachectl
+/usr/sbin/httpd -k start
 sleep 2
 
 # Tail the apache logs

@@ -122,10 +122,10 @@ cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_3857_twms.config /var/www/html/twms/e
 
 wget -O /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz
 tar -zxf /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz -C /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/
-mv /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/out/out.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
+mv /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/tmp/gitc_mrfGen_1524512832545/output/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254003000.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
 wget -O /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz
 tar -zxf /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz -C /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/
-mv /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/out/out.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
+mv /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/tmp/gitc_mrfGen_1524512832545/output/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254003000.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
 
 
 
