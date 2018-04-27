@@ -96,7 +96,7 @@ echo 'Starting Redis server'
 sleep 2
 
 # Load GIBS sample layers
-sh ./load_sample.layers.sh
+sh load_sample_layers.sh
 
 echo 'Starting Apache server'
 /usr/sbin/apachectl

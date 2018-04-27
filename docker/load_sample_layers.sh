@@ -89,14 +89,14 @@ cp oe2_test_MODIS.conf /etc/httpd/conf.d
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_MODIS.conf
 
 # Alias endpoints
-mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/std/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_Sea_Ice_v6_STD/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Sea_Ice_v6_STD/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
+mkdir -p /var/www/html/wmts/epsg3857/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
+mkdir -p /var/www/html/wmts/epsg3857/std/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
+mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m/2012
+mkdir -p /var/www/html/wmts/epsg4326/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m/2012
+mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_Sea_Ice_v6_STD/default/1km/2012
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km/2012
 
 # Index file directories
 mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012
@@ -119,6 +119,14 @@ cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_source.config /var/www/html/wmts/epsg
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_reproject.config /var/www/html/wmts/epsg3857/configs/
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_4326_twms.config /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD/twms.config
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_3857_twms.config /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD/twms.config
+
+wget -O /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz
+tar -zxf /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz -C /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/
+mv /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/out/out.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
+wget -O /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz
+tar -zxf /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz -C /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/
+mv /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/out/out.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
+
 
 
 # Add time metadata to redis
