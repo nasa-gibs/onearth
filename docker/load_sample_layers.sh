@@ -120,14 +120,9 @@ cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_reproject.config /var/www/html/wmts/e
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_4326_twms.config /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD/twms.config
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_3857_twms.config /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD/twms.config
 
-wget -O /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz -C /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/
-mv /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/tmp/gitc_mrfGen_1524512832545/output/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254003000.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
-wget -O /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx.tgz -C /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/
-mv /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/tmp/gitc_mrfGen_1524512832545/output/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254003000.idx /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/afeb-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
-
-
+# Copy idx files
+wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/1df7-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
 
 # Add time metadata to redis
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
@@ -150,10 +145,10 @@ mv /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/201
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_Sea_Ice_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_Sea_Ice_v6_STD:default "2012-09-10"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_Sea_Ice_v6_STD:periods "2012-01-01/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_Sea_Ice_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD "2012-09-10"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:periods "2012-01-01/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 
