@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# Copyright (c) 2002-2017, California Institute of Technology.
+# Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1229,7 +1229,7 @@ goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     for i, tile in enumerate(alltiles):
         # Create the identify command.
-        identify_command_list=['identify', tile]
+        identify_command_list=['identify', '-verbose', tile]
         if ".mrf" in tile or ".vrt" in tile: # ignore MRF and VRT
             goodtiles.append(tile)
         else:
@@ -1237,7 +1237,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             try:
                 identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 identify_process.wait()
-                if 'DirectClass' in identify_process.stdout.readlines()[0]:
+                if 'DirectClass' in identify_process.stdout.read():
                     goodtiles.append(tile)
                 else:
                     errors += 1
