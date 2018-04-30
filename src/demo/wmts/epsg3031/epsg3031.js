@@ -42,10 +42,10 @@ window.onload = function() {
 
     var source = new ol.source.WMTS({
         url: "/wmts/epsg3013/all/wmts.cgi",
-        layer: "MODIS_Terra_CorrectedReflectance_TrueColor",
+        layer: "MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD",
         extent: [-4194304, -4194304, 4194304, 4194304],
         format: "image/jpeg",
-        matrixSet: "EPSG3013_250m",
+        matrixSet: "250m",
         tileGrid: new ol.tilegrid.WMTS({
             origin: [-4194304, 4194304],
             resolutions: [

@@ -101,6 +101,8 @@ mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km/2
 # Index file directories
 mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012
 mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
+mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
 
 # TWMS configs and endpoints
 mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD
@@ -108,21 +110,28 @@ mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD
 mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 
+# Initial layers
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD.config /var/www/html/wmts/epsg4326/configs/
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD_source.config /var/www/html/wmts/epsg3857/configs/
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD_reproject.config /var/www/html/wmts/epsg3857/configs/
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD_4326_twms.config /var/www/html/twms/epsg4326/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/twms.config
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD_3857_twms.config /var/www/html/twms/epsg3857/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/twms.config
-
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD.config /var/www/html/wmts/epsg4326/configs/
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_source.config /var/www/html/wmts/epsg3857/configs/
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_reproject.config /var/www/html/wmts/epsg3857/configs/
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_4326_twms.config /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD/twms.config
 cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_3857_twms.config /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD/twms.config
 
+# Copy configs
+cp layer_configs/MODIS_*4326.config /var/www/html/wmts/epsg4326/configs/
+cp layer_configs/MODIS_*3031.config /var/www/html/wmts/epsg3031/configs/
+cp layer_configs/MODIS_*3413.config /var/www/html/wmts/epsg3413/configs/
+
 # Copy idx files
 wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/1df7-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
 
 # Add time metadata to redis
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
@@ -149,6 +158,9 @@ wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_ST
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 
