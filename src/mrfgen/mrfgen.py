@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2002-2017, California Institute of Technology.
+# Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -88,7 +88,7 @@ from overtiffpacker import pack
 from decimal import *
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
-versionNumber = '1.3.2'
+versionNumber = '2.1.0'
 oe_utils.basename = None
 
 #-------------------------------------------------------------------------------
@@ -335,6 +335,8 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
         if nodata != "":
             gdal_merge_command_list.append('-n')
+            gdal_merge_command_list.append(nodata)
+            gdal_merge_command_list.append('-a_nodata')
             gdal_merge_command_list.append(nodata)
         gdal_merge_command_list.append(mrf)
         gdal_merge_command_list.append(tile)
@@ -1227,7 +1229,7 @@ goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     for i, tile in enumerate(alltiles):
         # Create the identify command.
-        identify_command_list=['identify', tile]
+        identify_command_list=['identify', '-verbose', tile]
         if ".mrf" in tile or ".vrt" in tile: # ignore MRF and VRT
             goodtiles.append(tile)
         else:
@@ -1235,8 +1237,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             try:
                 identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 identify_process.wait()
-                identityLine = identify_process.stdout.readlines()[0]
-                if ('DirectClass' in identityLine) or ('JPEG' in identityLine):
+                if 'DirectClass' in identify_process.stdout.read():
                     goodtiles.append(tile)
                 else:
                     errors += 1

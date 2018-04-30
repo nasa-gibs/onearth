@@ -40,7 +40,7 @@ import sys
 import struct
 import math
 
-versionNumber = '1.3.2'
+versionNumber = '2.1.0'
     
 #-------------------------------------------------------------------------------   
 
