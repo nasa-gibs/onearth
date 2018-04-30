@@ -93,22 +93,28 @@ mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_SurfaceReflectance_Bands121_
 mkdir -p /var/www/html/wmts/epsg3857/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
 mkdir -p /var/www/html/wmts/epsg3857/std/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
 mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
-mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m/2012
-mkdir -p /var/www/html/wmts/epsg4326/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m/2012
-mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_Sea_Ice_v6_STD/default/1km/2012
-mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km/2012
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg4326/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/default/250m
 
 # Index file directories
 mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012
 mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012
 mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
 mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
 
 # TWMS configs and endpoints
-mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD
-mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD
 mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
+mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD
+mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD
 
 # Initial layers
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD.config /var/www/html/wmts/epsg4326/configs/
@@ -128,8 +134,10 @@ cp layer_configs/MODIS_*3031.config /var/www/html/wmts/epsg3031/configs/
 cp layer_configs/MODIS_*3413.config /var/www/html/wmts/epsg3413/configs/
 
 # Copy idx files
-wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/1df7-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
 
@@ -152,12 +160,12 @@ wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:ASTER_L1T_Radiance_Terrain_Corrected
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_Sea_Ice_v6_STD
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_Sea_Ice_v6_STD:default "2012-09-10"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_Sea_Ice_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_Sea_Ice_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_Sea_Ice_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_Sea_Ice_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:periods "2012-09-10/2018-12-31/P1D"

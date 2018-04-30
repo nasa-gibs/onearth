@@ -30,7 +30,7 @@ window.onload = function() {
     var map = new ol.Map({
         view: new ol.View({
             maxResolution: 8192.0,
-            projection: ol.proj.get("EPSG:3413"),
+            projection: ol.proj.get("EPSG:3031"),
             extent: [-4194304, -4194304, 4194304, 4194304],
             center: [0, 0],
             zoom: 1,
@@ -41,7 +41,7 @@ window.onload = function() {
     });
 
     var source = new ol.source.WMTS({
-        url: "/wmts/epsg3013/all/wmts.cgi",
+        url: "/wmts/epsg3031/all/wmts.cgi",
         layer: "MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD",
         extent: [-4194304, -4194304, 4194304, 4194304],
         format: "image/jpeg",
