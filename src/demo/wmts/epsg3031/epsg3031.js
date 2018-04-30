@@ -29,43 +29,36 @@ function makeTileLoadFunction() {
 window.onload = function() {
     var map = new ol.Map({
         view: new ol.View({
-            maxResolution: 0.5625,
-            projection: ol.proj.get("EPSG:4326"),
-            extent: [-180, -90, 180, 90],
+            maxResolution: 8192.0,
+            projection: ol.proj.get("EPSG:3413"),
+            extent: [-4194304, -4194304, 4194304, 4194304],
             center: [0, 0],
-            zoom: 2,
-            maxZoom: 12
+            zoom: 1,
+            maxZoom: 5,
         }),
         target: "map",
         renderer: ["canvas", "dom"]
     });
 
     var source = new ol.source.WMTS({
-        url: "/mrf_endpoint/wmts",
-        layer: "date_test",
+        url: "/wmts/epsg3013/all/wmts.cgi",
+        layer: "MODIS_Terra_CorrectedReflectance_TrueColor",
+        extent: [-4194304, -4194304, 4194304, 4194304],
         format: "image/jpeg",
-        matrixSet: "tms",
+        matrixSet: "EPSG3013_250m",
         tileGrid: new ol.tilegrid.WMTS({
-            origin: [-180, 90],
+            origin: [-4194304, 4194304],
             resolutions: [
-                0.5625,
-                0.28125,
-                0.140625,
-                0.0703125,
-                0.03515625,
-                0.017578125,
-                0.0087890625,
-                0.00439453125,
-                0.002197265625,
-                0.0010986328125,
-                0.00054931640625,
-                0.000274658203125,
-                0.0001373291015625
+                8192.0,
+                4096.0,
+                2048.0,
+                1024.0,
+                512.0,
+                256.0
             ],
-            matrixIds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            matrixIds: [0, 1, 2, 3, 4, 5],
             tileSize: 512
-        }),
-        tileLoadFunction: makeTileLoadFunction()
+        })
     });
 
     var layer = new ol.layer.Tile({

@@ -41,10 +41,10 @@ window.onload = function() {
     });
 
     var source = new ol.source.WMTS({
-        url: "/mrf_endpoint/wmts",
-        layer: "date_test",
+        url: "/wmts/epsg4326/all/wmts.cgi",
+        layer: "MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD",
         format: "image/jpeg",
-        matrixSet: "tms",
+        matrixSet: "250m",
         tileGrid: new ol.tilegrid.WMTS({
             origin: [-180, 90],
             resolutions: [
