@@ -46,32 +46,32 @@ cp oe2_test_AST_L1T.conf /etc/httpd/conf.d
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_AST_L1T.conf
 
 # Alias endpoints
-mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/best/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/std/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg3857/best/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg3857/std/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/GoogleMapsCompatible_Level13
+mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/15.625m/2016
+mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/15.625m/2016
 
 # Index file directories
 mkdir -p /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
 mkdir -p /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
 
 # TWMS configs and endpoints
-mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD
-mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD
-mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily
-mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily
+mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
+mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
+mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected
+mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected
 
 cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected.config /var/www/html/wmts/epsg4326/configs/
 cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_source.config /var/www/html/wmts/epsg3857/configs/
 cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_reproject.config /var/www/html/wmts/epsg3857/configs/
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/twms.config
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily/twms.config
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/twms.config
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_Subdaily_v3_STD/twms.config
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected/twms.config
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected/twms.config
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/twms.config
+cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/twms.config
 cp empty_tiles/ASTER_L1T_Radiance_Terrain_Corrected.png /var/www/html/wmts/epsg4326/empty_tiles/
 
 wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz
