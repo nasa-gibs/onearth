@@ -171,10 +171,3 @@ wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
-
-# Tail the apache logs
-exec tail -qF \
-  /etc/httpd/logs/access.log \
-  /etc/httpd/logs/error.log \
-  /etc/httpd/logs/access_log \
-  /etc/httpd/logs/error_log
