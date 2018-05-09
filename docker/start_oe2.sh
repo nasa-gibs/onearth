@@ -99,7 +99,7 @@ echo 'Starting Redis server'
 sleep 2
 
 # Load GIBS sample layers
-sh load_sample_layers.sh
+sh load_sample_layers.sh $S3_URL $REDIS_HOST
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
