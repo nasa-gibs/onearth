@@ -1,6 +1,6 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
-REDIS_HOST=${2:-127.0.0.1}
+REDIS_HOST=${2:-gitc-fy-oe2.4fest7.0001.use1.cache.amazonaws.com}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
