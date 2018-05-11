@@ -1,10 +1,4 @@
 /**
- * GIBS OnEarth OpenLayers viewer
- *
- * Copyright 2013 - 2014 United States Government as represented by the
- * Administrator of the National Aeronautics and Space Administration.
- * All Rights Reserved.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+let globalDateString;
+
+function makeTileLoadFunction() {
+    return (imageTile, src) => {
+        imageTile.getImage().src =
+            src + "&TIME=" + (globalDateString || "default");
+    };
+}
 
 window.onload = function() {
     //CONFIGURATION
@@ -30,8 +32,8 @@ window.onload = function() {
     var vectorLayers = ["MODIS_C5_fires", "oscar", "ASCATA-L2-25km", "Terra_Orbit_Dsc_Dots"];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "./wmts.cgi?";
-    var getCapabilitiesLocation = "./getCapabilities.xml";
+    var endpointUrl = "http://localhost/wmts/epsg3857/all/wmts.cgi?";
+    var getCapabilitiesLocation = "http://localhost/wmts/epsg3857/all/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
@@ -97,7 +99,7 @@ window.onload = function() {
 
     var layer = new ol.layer.Tile({
         source: new ol.source.XYZ({
-            url: "http://localhost/onearth/wmts/epsg3857/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg"
+            url: "http://localhost/reproject_endpoint/BlueMarble/default/500m/{z}/{y}/{x}.jpg"
         })
     })
 
@@ -139,7 +141,7 @@ window.onload = function() {
                         format: new ol.format.MVT(),
                         tileGrid: ol.tilegrid.createXYZ({maxZoom: parseInt(tms.match(/^GoogleMapsCompatible_Level(\d)/)[1]) - 1}),
                         tilePixelRatio: 16,
-                        url: `/onearth/wmts/epsg3857/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix={z}&TileCol={x}&TileRow={y}`
+                        url: `/wmts/epsg3857/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix={z}&TileCol={x}&TileRow={y}`
                     });
                     var newLayer = new ol.layer.VectorTile({
                         source,
@@ -194,5 +196,40 @@ window.onload = function() {
 				layer.setVisible(false);
 			}
     	}
+    });
+    
+    const date_picker = flatpickr("#datePicker", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        altInput: true,
+        altFormat: "F j, Y H:i:S",
+        defaultDate: new Date(),
+        time_24hr: true,
+        onChange: (selectedDates, dateStr, instance) => {
+            const date = selectedDates[0];
+            const month = (date.getMonth() + 1).toString().padStart(2, "0");
+            const day = date
+                .getDate()
+                .toString()
+                .padStart(2, "0");
+            const hours = date
+                .getHours()
+                .toString()
+                .padStart(2, "0");
+            const minutes = date
+                .getMinutes()
+                .toString()
+                .padStart(2, "0");
+            const seconds = date
+                .getSeconds()
+                .toString()
+                .padStart(2, "0");
+            globalDateString = `${date.getFullYear()}-${month}-${day}T${
+                hours
+            }:${minutes}:${seconds}Z`;
+            map.getLayers().forEach(layer => {
+                layer.getSource().setTileLoadFunction(makeTileLoadFunction());
+            });
+        }
     });
 };
