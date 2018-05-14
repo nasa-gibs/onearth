@@ -1,5 +1,5 @@
 #!/bin/sh
-REDIS_HOST=${1:-127.0.0.1}
+REDIS_HOST=${1:-onearth}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2

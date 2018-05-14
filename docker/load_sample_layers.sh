@@ -190,7 +190,16 @@ wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_
 wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
 
-# Add time metadata to redis
+# Start Redis if running locally
+if [ "$REDIS_HOST" = "127.0.0.1" ]; then
+	echo 'Starting Redis server'
+	/usr/bin/redis-server &
+	sleep 2
+	# Turn off the following line for production systems
+	/usr/bin/redis-cli -n 0 CONFIG SET protected-mode no
+fi
+
+# Add time metadata to Redis
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
@@ -229,3 +238,4 @@ wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
+sh build_demo.sh
