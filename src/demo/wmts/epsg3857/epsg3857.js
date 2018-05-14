@@ -32,8 +32,8 @@ window.onload = function() {
     var vectorLayers = ["MODIS_C5_fires", "oscar", "ASCATA-L2-25km", "Terra_Orbit_Dsc_Dots"];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "http://localhost/wmts/epsg3857/all/wmts.cgi?";
-    var getCapabilitiesLocation = "http://localhost/wmts/epsg3857/all/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities";
+    var endpointUrl = "/wmts/epsg3857/all/wmts.cgi?";
+    var getCapabilitiesLocation = "/wmts/epsg3857/all/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
@@ -99,7 +99,7 @@ window.onload = function() {
 
     var layer = new ol.layer.Tile({
         source: new ol.source.XYZ({
-            url: "http://localhost/reproject_endpoint/BlueMarble/default/500m/{z}/{y}/{x}.jpg"
+            url: "/reproject_endpoint/BlueMarble/default/500m/{z}/{y}/{x}.jpg"
         })
     })
 
@@ -141,7 +141,7 @@ window.onload = function() {
                         format: new ol.format.MVT(),
                         tileGrid: ol.tilegrid.createXYZ({maxZoom: parseInt(tms.match(/^GoogleMapsCompatible_Level(\d)/)[1]) - 1}),
                         tilePixelRatio: 16,
-                        url: `/wmts/epsg3857/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix={z}&TileCol={x}&TileRow={y}`
+                        url: `/wmts/epsg3857/all/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix={z}&TileCol={x}&TileRow={y}`
                     });
                     var newLayer = new ol.layer.VectorTile({
                         source,
