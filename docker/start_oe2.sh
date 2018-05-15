@@ -94,10 +94,6 @@ mkdir -p /var/www/html/twms/epsg3413/best
 mkdir -p /var/www/html/twms/epsg3413/std
 mkdir -p /var/www/html/twms/epsg3413/nrt
 
-echo 'Starting Redis server'
-/usr/bin/redis-server &
-sleep 2
-
 # Load GIBS sample layers
 sh load_sample_layers.sh $S3_URL $REDIS_HOST
 

@@ -107,16 +107,29 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_MODIS.conf
 # Alias endpoints
 mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
 mkdir -p /var/www/html/wmts/epsg3857/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
-mkdir -p /var/www/html/wmts/epsg3857/std/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
-mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
+mkdir -p /var/www/html/wmts/epsg3857/std/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
 mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m
 mkdir -p /var/www/html/wmts/epsg4326/best/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m
-mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
+mkdir -p /var/www/html/wmts/epsg3857/best/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
+mkdir -p /var/www/html/wmts/epsg3857/std/MODIS_Aqua_Sea_Ice_v6_STD/default/GoogleMapsCompatible_Level7
 mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg4326/best/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg4326/std/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
 mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
 mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_Sea_Ice_v6_STD/default/1km
 mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/default/250m
 mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/default/1km
+mkdir -p /var/www/html/wmts/epsg4326/all/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/default/250m
+mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/default/250m
 
 # Index file directories
 mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012
@@ -125,12 +138,39 @@ mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012
 mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012
 mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
 mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
+mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
+mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
 
 # TWMS configs and endpoints
 mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_Sea_Ice_v6_STD
 mkdir -p /var/www/html/twms/epsg3857/configs/MODIS_Aqua_Sea_Ice_v6_STD
+
+# WMTS GetCapabilities
+mkdir /var/www/html/wmts/epsg4326/all/1.0.0
+wget -O /var/www/html/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg4326/best/1.0.0
+wget -O /var/www/html/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg4326/std/1.0.0
+wget -O /var/www/html/wmts/epsg4326/std/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg4326/std/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg3857/all/1.0.0
+wget -O /var/www/html/wmts/epsg3857/all/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg3857/best/1.0.0
+wget -O /var/www/html/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg3857/std/1.0.0
+wget -O /var/www/html/wmts/epsg3857/std/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg3857/std/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg3031/all/1.0.0
+wget -O /var/www/html/wmts/epsg3031/all/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg3031/all/1.0.0/WMTSCapabilities.xml
+mkdir /var/www/html/wmts/epsg3413/all/1.0.0
+wget -O /var/www/html/wmts/epsg3413/all/1.0.0/WMTSCapabilities.xml https://gibs.earthdata.nasa.gov/wmts/epsg3413/all/1.0.0/WMTSCapabilities.xml
 
 # Initial layers
 cp layer_configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD.config /var/www/html/wmts/epsg4326/configs/
@@ -156,8 +196,26 @@ wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.a
 wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
 wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/b1eb-MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/b1eb-MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/b1eb-MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/e381-MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/e381-MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/e381-MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
+wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
 
-# Add time metadata to redis
+# Start Redis if running locally
+if [ "$REDIS_HOST" = "127.0.0.1" ]; then
+	echo 'Starting Redis server'
+	/usr/bin/redis-server &
+	sleep 2
+	# Turn off the following line for production systems
+	/usr/bin/redis-cli -n 0 CONFIG SET protected-mode no
+fi
+
+# Add time metadata to Redis
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
@@ -185,5 +243,15 @@ wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
+sh build_demo.sh
