@@ -1,6 +1,6 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
-REDIS_HOST=${2:-127.0.0.1}
+REDIS_HOST=${2:-gitc-fy-oe2.4fest7.0001.use1.cache.amazonaws.com}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -18,14 +18,17 @@ wget -O /var/www/html/mrf_endpoint/BlueMarble/default/500m/BlueMarble.idx https:
 cp layer_configs/BlueMarble.config /var/www/html/mrf_endpoint/BlueMarble/default/500m/
 
 mkdir -p /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/
-wget -O /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/MOG13Q4_LQD_NDVI_NRT1514764800.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT1514764800.idx
+#wget -O /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/MOG13Q4_LQD_NDVI_NRT1514764800.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT1514764800.idx
+f=$(./genhashFileName.py -l MOGCR_LQD_143_STD -t 1293840000 -e .idx)
+wget -O /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/$f https://s3.amazonaws.com/gitc-test-imagery/$f
 cp layer_configs/MOGCR_LQD_143_STD.config /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/
 
 mkdir -p /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/2018
 wget -O /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/VNGCR_LQD_I1-M4-M3_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/VNGCR_LQD_I1-M4-M3_NRT.idx
 d=1516060800
 until [ $d -gt 1524614400 ]; do
-    ln -s /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/VNGCR_LQD_I1-M4-M3_NRT.idx /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/2018/VNGCR_LQD_I1-M4-M3_NRT$d.idx
+    f=$(./genhashFileName.py -l VNGCR_LQD_I1-M4-M3_NRT -t $d -e .idx)
+    ln -s /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/VNGCR_LQD_I1-M4-M3_NRT.idx /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/2018/$f
     let d+=86400
 done
 cp layer_configs/VNGCR_LQD_I1-M4-M3_NRT*.config /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/
@@ -34,10 +37,23 @@ mkdir -p /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/2018
 wget -O /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/MOG13Q4_LQD_NDVI_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT.idx
 d=1514764800
 until [ $d -gt 1523318400 ]; do
-    ln -s /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/MOG13Q4_LQD_NDVI_NRT.idx /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/2018/MOG13Q4_LQD_NDVI_NRT$d.idx
+    f=$(./genhashFileName.py -l MOG13Q4_LQD_NDVI_NRT -t $d -e .idx)
+    ln -s /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/MOG13Q4_LQD_NDVI_NRT.idx /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/2018/$f
     let d+=86400
 done
 cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
+
+##mkdir -p /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/2018
+##wget -O /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/766d-MOR5WVIRLLNT-2018016000000.idx https://s3.amazonaws.com/gitc-test-imagery/766d-MOR5WVIRLLNT-2018016000000.idx
+#wget -O /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/MOR5WVIRLLNT.idx https://s3.amazonaws.com/gitc-test-imagery/MOR5WVIRLLNT.idx
+#d=1516060800
+#until [ $d -gt 1524614400 ]; do
+#    f=$(./genhashFileName.py -l MOR5WVIRLLNT -t $d -e .idx)
+#    ln -s /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/MOR5WVIRLLNT.idx /var/www/html/mrf_e
+#ndpoint/MOR5WVIRLLNT/default/2km/2018/$f
+#    let d+=86400
+#done
+##cp layer_configs/MOR5WVIRLLNT.config /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/
 
 # AST_L1T sample configs
 

@@ -12,7 +12,8 @@ RUN mkdir -p /var/www
 WORKDIR /home/oe2
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
-RUN git checkout 2.1.0
+#RUN git checkout 2.1.0
+RUN git checkout GITC-627
 
 # Install mod_proxy patch
 WORKDIR /tmp
