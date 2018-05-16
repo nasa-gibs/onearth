@@ -348,8 +348,8 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
     local defaultDate
     local periods
     if not static then
-        defaultDate = config.default_date or dateList[layerName]["default"]
-        periods = config.periods or dateList[layerName]["periods"]
+        defaultDate = config.default_date or dateList[layerId]["default"]
+        periods = config.periods or dateList[layerId]["periods"]
     end
 
     local layerContents = {}
@@ -369,7 +369,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
     }}
 
     -- Add identifier node
-    layerContents[#layerContents + 1] = {name="ows:Identifier", text=layerName}
+    layerContents[#layerContents + 1] = {name="ows:Identifier", text=layerId}
 
     -- Build Metadata and add nodes
     for _, metadata in pairs(config.metadata) do
@@ -382,7 +382,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
 
     -- Build the ResourceURL element
     local timeString = not static and "/{Time}" or ""
-    local template = baseUriGC .. layerName .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
+    local template = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     layerContents[#layerContents + 1] = {name="ResourceURL", attr={format=mimeType, resourceType="tile", template=template}}
 
     -- Build the Style element
