@@ -1,4 +1,4 @@
-package = "gc"
+package = "onearth_gc_gts"
 version = "0.1-1"
 source = {
    url = "..." -- We don't have one yet
@@ -22,10 +22,10 @@ dependencies = {
 build = {
    type = "builtin",
    modules = {
-      gc = "gc_generator.lua",
+      ["onearth_gc_gts"] = "gc_service.lua",
       ["xml-ser"]="xml-ser.lua",
       ["xml-serde"]="xml-serde.lua",
-      slaxml="SLAXML/slaxml.lua",
+      slaxml="slaxml.lua",
       list="list.lua"
    }
 }

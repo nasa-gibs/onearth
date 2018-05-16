@@ -7,8 +7,32 @@ local lyaml = require "lyaml"
 local request = require "http.request"
 local JSON = require "JSON"
 
+-- Reference Constants
+local EARTH_RADIUS = 6378137.0
+local PROJECTIONS = {
+    ["EPSG:3031"] = {
+        wkt='PROJCS["WGS 84 / Antarctic Polar Stereographic",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",-71],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","3031"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -90}, upperCorner={180, -38.941373}},
+        bbox={crs="urn:ogc:def:crs:EPSG::3031", lowerCorner={-4194304, -4194304}, upperCorner={194304, 4194304}}
+    },
+    ["EPSG:3413"] = {
+        wkt='PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, 8.807151}, upperCorner={180, 90}},
+        bbox={crs="urn:ogc:def:crs:EPSG::3413", lowerCorner={-4194304, -4194304}, upperCorner={4194304, 4194304}}
+    },
+    ["EPSG:3857"] = {
+        wkt='PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85}, upperCorner={180, 85}},
+        bbox={crs="urn:ogc:def:crs:EPSG::3857", lowerCorner={-20037508.34278925, -20037508.34278925}, upperCorner={20037508.34278925, 20037508.34278925}}
+    },
+    ["EPSG:4326"] = {
+        wkt='GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -90}, upperCorner={180, 90}},
+    }
+}
+
 -- Utility functions
-local function split (sep, str)
+local function split(sep, str)
     local results = {}
     for value in string.gmatch(str, "([^" .. sep .. "]+)") do
         results[#results + 1] = value
@@ -16,7 +40,15 @@ local function split (sep, str)
     return results
 end
 
-local function sendResponse (code, msg_string)
+local function join(arr, sep)
+    local outStr = ""
+    for idx, value in ipairs(arr) do
+        outStr = outStr .. tostring(value) .. (idx < #arr and sep or "")
+    end
+    return outStr
+end
+
+local function sendResponse(code, msg_string)
     return msg_string,
     {
         ["Content-Type"] = "text/xml"
@@ -32,10 +64,57 @@ local function getXmlChildrenByName(rootElement, elementName)
     end
 end
 
+local function getXmlNodesByName(rootElement, elementName)
+    local nodes = {}
+    for _, node in pairs(rootElement["kids"]) do
+        if node["name"] == elementName then
+            nodes[#nodes + 1] = node
+        end
+    end
+    return nodes
+end
+
 local function getExtensionFromMimeType(mimeType) 
     if mimeType == "image/jpeg" then
         return ".jpeg"
     end
+end
+
+local function getDateList(dateServiceUri)
+    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
+    local body = assert(stream:get_body_as_string())
+    if headers:get ":status" ~= "200" then
+        error(body)
+    end
+    return JSON:decode(body)
+end
+
+local function getTmsDefs(tmsXml)
+    local tmsDefs = {}
+    for _, proj in ipairs(getXmlNodesByName(tmsXml, "Projection")) do
+        local tileMatrixSets = {}
+        for _, tms in ipairs(getXmlNodesByName(proj, "TileMatrixSet")) do
+            local tmsName = getXmlChildrenByName(tms, "Identifier")
+            local matrices = {}
+            for _, matrix in pairs(tms["kids"]) do
+                if matrix["name"] == "TileMatrix" then
+                    local identifier = getXmlChildrenByName(matrix, "Identifier")
+                    local topLeft = split(" ", getXmlChildrenByName(matrix, "TopLeftCorner"))
+                    matrices[tonumber(identifier) + 1] = {
+                        topLeft={tonumber(topLeft[1]), tonumber(topLeft[2])},
+                        scaleDenominator = getXmlChildrenByName(matrix, "ScaleDenominator"),
+                        matrixWidth = getXmlChildrenByName(matrix, "MatrixWidth"),
+                        matrixHeight = getXmlChildrenByName(matrix, "MatrixHeight"),
+                        tileWidth = getXmlChildrenByName(matrix, "TileWidth"),
+                        tileHeight = getXmlChildrenByName(matrix, "TileHeight"),
+                    }
+                end
+            end
+        tileMatrixSets[tmsName] = matrices
+        end
+    tmsDefs[proj["attr"]["id"]] = tileMatrixSets
+    end
+    return tmsDefs
 end
 
 -- Functions for building configuration files (used by config tools, not service)
@@ -55,7 +134,7 @@ local apacheConfigHeaderTemplate = [[
 
 local luaConfigTemplate = [[
 local gc = require "gc"
-handler = gc.handler(${config_loc}, ${tms_loc}, ${gc_header_loc}, ${date_service_uri} )
+handler = gc.handler(${config_loc}, ${tms_loc}, ${gc_header_loc}, ${date_service_uri}, ${gettileservicemode} )
 ]]
 
 function onearth_gc_service.createConfiguration(endpointConfigFilename)
@@ -112,58 +191,157 @@ function onearth_gc_service.createConfiguration(endpointConfigFilename)
     print("GC service config has been saved to " .. luaConfigLocation)
 end
 
--- Service functions
+-- GetTileService functions
 
-local function getDateList(dateServiceUri)
-    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
-    local body = assert(stream:get_body_as_string())
-    if headers:get ":status" ~= "200" then
-        error(body)
+local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode)
+    -- Load and parse the YAML config file
+    local configFile = assert(io.open(filename, "r"))
+    local config = lyaml.load(configFile:read("*all"))
+    configFile:close()
+
+    local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
+    local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
+    local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
+    local abstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
+    local projInfo = assert(PROJECTIONS[epsgCode], "Can't find projection " .. epsgCode)
+    local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
+    local bands = mimeType == "image/png" and "4" or "3"
+    local static = true
+    if config.static ~= nil then
+        static = config.static
     end
-    return JSON:decode(body)
+    local bbox = projInfo["bbox"] or projInfo["bbox84"]
+    local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+
+    local tiledGroupNode = {name="TiledGroup", kids={
+        {name="Name", text=layerName},
+        {name="Title", attr={["xml:lang"]="en"}, text=layerTitle},
+        {name="Abstract", attr={["xml:lang"]="en"}, text=abstract},
+        {name="Projection", text=projInfo["wkt"]},
+        {name="Pad", text="0"},
+        {name="Bands", text=bands},
+        {name="LatLonBoundingBox",attr={
+            minx=bbox["lowerCorner"][1],
+            miny=bbox["lowerCorner"][2],
+            maxx=bbox["upperCorner"][1],
+            maxy=bbox["upperCorner"][2]
+        }},
+        {name="Key", text="${time}"}}
+    }
+
+    local matrices = tmsDefs[epsgCode][tmsName]
+    table.sort(matrices, function (a, b)
+        return tonumber(a["scaleDenominator"]) < tonumber(b["scaleDenominator"])
+    end)
+    for _, matrix in ipairs(matrices) do
+        local widthInPx = math.ceil(2 * math.pi * EARTH_RADIUS / (matrix["scaleDenominator"] * 0.28E-3))
+        local heightInPx = epsgCode == "EPSG:4326" and widthInPx / 2 or widthInPx
+        local widthRatio = widthInPx / (matrix["tileWidth"] * matrix["matrixWidth"])
+        local heightRatio = heightInPx / (matrix["tileHeight"] * matrix["matrixHeight"])
+        local resx = math.ceil((bbox["upperCorner"][1] - bbox["lowerCorner"][1]) / (matrix["matrixWidth"] * widthRatio))
+        local resy = math.ceil((bbox["upperCorner"][2] - bbox["lowerCorner"][2]) / (matrix["matrixHeight"] * heightRatio))
+        local xmax = matrix["topLeft"][1] + resx
+        local ymax = matrix["topLeft"][2] - resy
+        local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=${time}&width=${width}&height=${height}&bbox=${bbox}"
+        local make_uri = function(hasTime)
+            local time = hasTime and "${time}" or ""
+            return string.gsub(template, "${layer}", layerId)
+                :gsub("${epsg_code}", epsgCode)
+                :gsub("${mime_type}", mimeType)
+                :gsub("${time}", time)
+                :gsub("${width}", matrix["tileWidth"])
+                :gsub("${height}", matrix["tileHeight"])
+                :gsub("${bbox}", join({matrix["topLeft"][1], ymax, xmax, matrix["topLeft"][2]}, ","))
+            end
+        local outString = static and make_uri(false) or make_uri(true) .. "\n" .. make_uri(false)
+        outString = "<![CDATA[" .. outString .. "]]>"
+        tiledGroupNode["kids"][#tiledGroupNode["kids"] + 1] = {name="TilePattern", text=outString}
+    end
+    return tiledGroupNode
 end
 
--- Turn the XML tms defs file into a table containing just what we need.
-local function getTmsDefs(tmsXml) 
-    local tileMatrixSets = {}
-    for _, tms in pairs(tmsXml["kids"]) do
-        local tmsName = getXmlChildrenByName(tms, "Identifier")
-        local matrices = {}
-        for _, matrix in pairs(tms["kids"]) do
-            if matrix["name"] == "TileMatrix" then
-                local identifier = getXmlChildrenByName(matrix, "Identifier")
-                local topLeft = split(" ", getXmlChildrenByName(matrix, "TopLeftCorner"))
-                matrices[tonumber(identifier) + 1] = {
-                    topLeft={tonumber(topLeft[1]), tonumber(topLeft[2])}
-                }
+local function getAllGTSTiledGroups(endpointConfig, epsgCode)
+    -- Load TMS defs
+    local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
+        , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
+    local tmsXml = xmlserde.deserialize(tmsFile:read("*all"))
+    local tmsDefs = getTmsDefs(tmsXml)
+    tmsFile:close()
+
+    local layerConfigSource = endpointConfig["layer_config_source"]
+
+    local nodeList = {}
+    local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
+    if fileAttrs["mode"] == "file" then
+        nodeList[1] = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode)
+    end
+
+    if fileAttrs["mode"] == "directory" then
+        -- Only going down a single directory level
+        for file in lfs.dir(layerConfigSource) do
+            if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
+                string.sub(file, 0, 1) ~= "." then
+                nodeList[#nodeList + 1] = makeTiledGroupFromConfig(layerConfigSource .. "/" .. file,
+                 tmsDefs, epsgCode)
             end
         end
-        tileMatrixSets[tmsName] = matrices
     end
-    return tileMatrixSets
+    return nodeList
 end
 
-local function makeGts(endpointConfig)
-    -- Load and parse header
-    local headerFilename = assert(endpointConfig["gts_header_file"], "No gts_header_file specified in endpoint config")
-    local headerFile = assert(io.open(headerFilename, "r"), "Can't open GTS header file at:" .. headerFilename)
+local function makeGTS(endpointConfig)
+    -- Parse header
+    local headerFile = assert(io.open(endpointConfig["gts_header_file"], "r"),
+        "Can't open GTS header file at:" .. endpointConfig["gts_header_file"])
+    local mainXml = xmlserde.deserialize(headerFile:read("*all"))
+    headerFile:close()
 
-    -- Build <TiledPatterns>
+    -- Load projection (add "EPSG:" part if omitted)
+    local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
+    if string.match(epsgCode:lower(), "^%d") then
+        epsgCode = "EPSG:" .. epsgCode
+    end
+    local projection = PROJECTIONS[epsgCode]
+    local bbox = projection["bbox"] or projection["bbox84"]
+
+    local serviceNode = getXmlNodesByName(mainXml, "Service")[1]
+    local onlineResourceNode = getXmlNodesByName(serviceNode, "OnlineResource")[1]
+
+    -- Build <TiledPatterns> section
+    local tiledPatternsNode = {name="TiledPatterns", kids={}}
+    tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = {name="OnlineResource", text=onlineResourceNode["attr"]["href"] .. "twms?"}
+    tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = {name="LatLonBoundingBox",attr={
+            minx=bbox["lowerCorner"][1],
+            miny=bbox["lowerCorner"][2],
+            maxx=bbox["upperCorner"][1],
+            maxy=bbox["upperCorner"][2]
+        }
+    }
+
+    for _, tiledGroup in pairs(getAllGTSTiledGroups(endpointConfig, epsgCode)) do
+        tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = tiledGroup
+    end
+
+    -- Add contents to the rest of the XML
+    mainXml["kids"][#mainXml["kids"] + 1] = tiledPatternsNode
+    return xmlser.serialize(mainXml)
 end
 
 
-local function parseFile(filename, tmsDefs, dateList, baseUriGC)
+-- GetCapabilities functions
+
+local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
     configFile:close()
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
+    local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
-    -- local projection = assert(config.projection, "Can't find projection in YAML!")
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
-    local tmsName = assert(config.tms, "Can't find TileMatrixSet name in YAML!")
+    local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
     local static = true
     static = config.static or static
 
@@ -173,7 +351,7 @@ local function parseFile(filename, tmsDefs, dateList, baseUriGC)
         defaultDate = config.default_date or dateList[layerName]["default"]
         periods = config.periods or dateList[layerName]["periods"]
     end
-    
+
     local layerContents = {}
     layerContents[#layerContents + 1] = {name= "ows:Title", attr={["xml:lang"]="en"}, text=layerTitle}
 
@@ -181,7 +359,7 @@ local function parseFile(filename, tmsDefs, dateList, baseUriGC)
     local tmsDef = tmsDefs[tmsName]
     local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
     local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
-    
+
     layerContents[#layerContents + 1] = {name="ows:WGS84BoundingBox", attr={crs="urn:ogc:def:crs:OGC:2:84"}, kids={
         {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
     }}
@@ -231,42 +409,52 @@ local function parseFile(filename, tmsDefs, dateList, baseUriGC)
     return { name="Layer", kids=layerContents}
 end
 
-local function getAllLayerNodes(layerConfigSource, tmsXml, dateServiceUri, baseUriGC)
-    local tmsDefs = getTmsDefs(tmsXml)
-    local dateList = getDateList(dateServiceUri)
+local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode)
+    local tmsDefs = getTmsDefs(tmsXml)[epsgCode]
+    local dateList = getDateList(endpointConfig["date_service_uri"])
+    local layerConfigSource = endpointConfig["layer_config_source"]
 
     local nodeList = {}
-    if lfs.attributes(layerConfigSource)["mode"] == "file" then
-        nodeList[1] = parseFile(layerConfigSource, tmsDefs, dateList, baseUriGC)
+    local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
+    if fileAttrs["mode"] == "file" then
+        nodeList[1] = makeGCLayer(layerConfigSource, tmsDefs, dateList, endpointConfig["base_uri_gc"])
     end
 
-    if lfs.attributes(layerConfigSource)["mode"] == "directory" then
+    if fileAttrs["mode"] == "directory" then
         -- Only going down a single directory level
         for file in lfs.dir(layerConfigSource) do
-            if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and 
+            if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
-                nodeList[#nodeList + 1] = parseFile(layerConfigSource .. "/" .. file, tmsDefs, dateList, baseUriGC)
+                nodeList[#nodeList + 1] = makeGCLayer(layerConfigSource .. "/" .. file,
+                 tmsDefs, dateList, endpointConfig["base_uri_gc"])
             end
         end
     end
     return nodeList
 end
 
-local function main(layerConfigSource, tmsDefsFilename, headerFilename, dateServiceUri, baseUriGC)
+local function makeGC(endpointConfig)
     -- Load TMS defs
-    local tmsFile = assert(io.open(tmsDefsFilename, "r")
-        , "Can't open tile matrixsets definition file at: " .. tmsDefsFilename)
-    local tmsXml = xmlserde.deserialize(tmsFile:read("*all")) 
+    local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
+        , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
+    local tmsXml = xmlserde.deserialize(tmsFile:read("*all"))
     tmsFile:close()
 
+    -- Get TMSs for this projection
+    local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
+    if string.match(epsgCode:lower(), "^%d") then
+        epsgCode = "EPSG:" .. epsgCode
+    end
+
     -- Parse header
-    local headerFile = assert(io.open(headerFilename, "r"), "Can't open GC header file at:" .. headerFilename)
+    local headerFile = assert(io.open(endpointConfig["gc_header_file"], "r"),
+        "Can't open GC header file at:" .. endpointConfig["gc_header_file"])
     local mainXml = xmlserde.deserialize(headerFile:read("*all"))
     headerFile:close()
 
     -- Build contents section
     local contentsNodeContent = {}
-    for _, layer in pairs(getAllLayerNodes(layerConfigSource, tmsXml, dateServiceUri, baseUriGC)) do
+    for _, layer in pairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode)) do
         contentsNodeContent[#contentsNodeContent + 1] = layer
     end
     for _, tms in pairs(tmsXml["kids"]) do
@@ -276,7 +464,6 @@ local function main(layerConfigSource, tmsDefsFilename, headerFilename, dateServ
 
     -- Add contents to the rest of the XML
     mainXml["kids"][#mainXml["kids"] + 1] = contentsNode
-    
     return xmlser.serialize(mainXml)
 end
 
@@ -286,18 +473,16 @@ local function generateFromEndpointConfig()
     local endpointConfigFile = assert(io.open(arg[1], "r"), "Can't open endpoint config file: " .. arg[1])
     local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
     endpointConfigFile:close()
-
-    local tmsDefsFilename = endpointConfig["tms_defs_file"]
-    local headerFilename = endpointConfig["gc_header_file"]
-    local layerConfigSource = endpointConfig["layer_config_source"]
-    local dateServiceUri = endpointConfig["date_service_uri"]
-    local baseUriGC = endpointConfig["base_uri_gc"]
-    return main(layerConfigSource, tmsDefsFilename, headerFilename, dateServiceUri, baseUriGC)
+    if arg[2] == "--make_gts" then
+        return makeGTS(endpointConfig)
+    end
+    return makeGC(endpointConfig)
 end
 
-function onearth_gc_service.handler(layerConfigSource, tmsDefsFilename, headerFilename, dateServiceUri, baseUriGC)
+function onearth_gc_service.handler(endpointConfig)
     return function()
-        local responseXml = main(layerConfigSource, tmsDefsFilename, headerFilename, dateServiceUri, baseUriGC)
+        local responseXml = endpointConfig["gts_service"] == true and makeGTS(endpointConfig)
+            or makeGC(endpointConfig)
         return sendResponse(200, responseXml)
     end
 end
