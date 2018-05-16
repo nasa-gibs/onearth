@@ -31,6 +31,7 @@ local config = {
     gts_header_file=${gts_header_file},
     base_uri_gc=${base_uri_gc},
     base_uri_gts=${base_uri_gts},
+    target_epsg_code=${target_epsg_code}
 }
 handler = onearth_gc_gts.handler(config)
 ]]
@@ -114,6 +115,7 @@ local function create_config(endpointConfigFilename, makeOptions)
             :gsub("${gts_header_file}", (endpoint["isGts"] and addQuotes(endpointConfig["gts_header_file"]) or "nil"))
             :gsub("${base_uri_gc}", (not endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gc"]) or "nil"))
             :gsub("${base_uri_gts}", (endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gts"]) or "nil"))
+            :gsub("${target_epsg_code}", addQuotes(endpointConfig["target_epsg_code"]))
         lfs.mkdir(luaConfigBaseLocation .. endpoint["path"])
         local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
             .. luaConfigLocation .. " for writing."))
@@ -138,8 +140,8 @@ end
 
 local parser = argparse("make_gc_endpoint.lua", "")
 parser:argument("endpoint_config", "Endpoint config YAML.")
-parser:option("-n --no_gc", "Don't generate a GetCapabilities service")
-parser:option("-g --make_gts", "Generate a GetTileService service")
+parser:flag("-n --no_gc", "Don't generate a GetCapabilities service")
+parser:flag("-g --make_gts", "Generate a GetTileService service")
 local args = parser:parse()
 
 local makeOptions = {

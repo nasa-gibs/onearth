@@ -6,6 +6,7 @@ local lfs = require "lfs"
 local lyaml = require "lyaml"
 local request = require "http.request"
 local JSON = require "JSON"
+local inspect = require "inspect"
 
 -- Reference Constants
 local EARTH_RADIUS = 6378137.0
@@ -117,6 +118,25 @@ local function getTmsDefs(tmsXml)
     return tmsDefs
 end
 
+local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
+    local function sortTms(a,b)
+        return tonumber(a["scaleDenominator"]) > tonumber(b["scaleDenominator"])
+    end
+    table.sort(sourceTms, sortTms)
+    local sourceScaleDenom = sourceTms[1]["scaleDenominator"]
+    local targetTms
+    local targetTmsName
+    for name, tms in pairs(tmsDefs[targetEpsgCode]) do
+        table.sort(tms, sortTms)
+        if not targetTms or tms[1]["scaleDenominator"] > sourceScaleDenom and sourceScaleDenom < targetTms[1]["scaleDenominator"] then
+            targetTmsName = name
+            targetTms = tms
+        end
+    end
+    return targetTmsName, targetTms
+end
+
+
 -- Functions for building configuration files (used by config tools, not service)
 
 local apacheConfigHeaderTemplate = [[
@@ -164,7 +184,7 @@ function onearth_gc_service.createConfiguration(endpointConfigFilename)
         luaConfigBaseLocation = "/var/www/html"
     end
     local luaConfigLocation = luaConfigBaseLocation .. endpoint .. "/" .. "get_capabilities.lua"
-    
+
     -- Make and write Apache config
     local apacheConfig = apacheConfigHeaderTemplate:gsub("${dir}", endpoint)
         :gsub("${regexp}", regexp)
@@ -193,7 +213,7 @@ end
 
 -- GetTileService functions
 
-local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode)
+local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
@@ -203,7 +223,7 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode)
     local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     local abstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
-    local projInfo = assert(PROJECTIONS[epsgCode], "Can't find projection " .. epsgCode)
+    local projInfo = assert(PROJECTIONS[targetEpsgCode or epsgCode], "Can't find projection " .. epsgCode)
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
     local bands = mimeType == "image/png" and "4" or "3"
     local static = true
@@ -230,6 +250,9 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode)
     }
 
     local matrices = tmsDefs[epsgCode][tmsName]
+    if targetEpsgCode then
+        tmsName, matrices = getReprojectedTms(matrices, targetEpsgCode, tmsDefs)
+    end
     table.sort(matrices, function (a, b)
         return tonumber(a["scaleDenominator"]) < tonumber(b["scaleDenominator"])
     end)
@@ -260,7 +283,7 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode)
     return tiledGroupNode
 end
 
-local function getAllGTSTiledGroups(endpointConfig, epsgCode)
+local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
@@ -273,7 +296,7 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode)
     local nodeList = {}
     local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode)
+        nodeList[1] = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode, targetEpsgCode)
     end
 
     if fileAttrs["mode"] == "directory" then
@@ -282,7 +305,7 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode)
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = makeTiledGroupFromConfig(layerConfigSource .. "/" .. file,
-                 tmsDefs, epsgCode)
+                 tmsDefs, epsgCode, targetEpsgCode)
             end
         end
     end
@@ -301,7 +324,13 @@ local function makeGTS(endpointConfig)
     if string.match(epsgCode:lower(), "^%d") then
         epsgCode = "EPSG:" .. epsgCode
     end
-    local projection = PROJECTIONS[epsgCode]
+
+    local targetEpsgCode = endpointConfig["target_epsg_code"]
+    if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
+        targetEpsgCode = "EPSG:" .. targetEpsgCode
+    end
+
+    local projection = PROJECTIONS[targetEpsgCode or epsgCode]
     local bbox = projection["bbox"] or projection["bbox84"]
 
     local serviceNode = getXmlNodesByName(mainXml, "Service")[1]
@@ -318,7 +347,7 @@ local function makeGTS(endpointConfig)
         }
     }
 
-    for _, tiledGroup in pairs(getAllGTSTiledGroups(endpointConfig, epsgCode)) do
+    for _, tiledGroup in pairs(getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)) do
         tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = tiledGroup
     end
 
@@ -330,7 +359,7 @@ end
 
 -- GetCapabilities functions
 
-local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
+local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
@@ -339,7 +368,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
-    local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
+    -- local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
     local static = true
@@ -356,7 +385,11 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
     layerContents[#layerContents + 1] = {name= "ows:Title", attr={["xml:lang"]="en"}, text=layerTitle}
 
     -- Get the information we need from the TMS definitions and add bbox node
-    local tmsDef = tmsDefs[tmsName]
+    local tmsDef = tmsDefs[epsgCode][tmsName]
+    if targetEpsgCode then
+        tmsName, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
+    end
+
     local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
     local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
 
@@ -380,11 +413,6 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
         layerContents[#layerContents + 1] = metadataNode
     end
 
-    -- Build the ResourceURL element
-    local timeString = not static and "/{Time}" or ""
-    local template = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
-    layerContents[#layerContents + 1] = {name="ResourceURL", attr={format=mimeType, resourceType="tile", template=template}}
-
     -- Build the Style element
     local styleNode = {name="Style", attr={isDefault="true"}, kids={
         {name="ows:Title", attr={["xml:lang"]="en"}, text="default"},
@@ -392,10 +420,11 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
     }}
     layerContents[#layerContents + 1] = styleNode
 
+    layerContents[#layerContents + 1] = {name="Format", text=mimeType}
+
     -- Build the <Dimension> element for time (if necessary)
-    local dimensionNode
     if not static then
-        dimensionNode = {name="Dimension", kids={
+        local dimensionNode = {name="Dimension", kids={
             {name="ows:Identifier", text="time"},
             {name="ows:UOM", text="ISO8601"},
             {name="Default", text=defaultDate},
@@ -406,18 +435,27 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC)
         end
         layerContents[#layerContents + 1] = dimensionNode
     end
+
+    -- Build <TileMatrixSetLink>
+    layerContents[#layerContents + 1] = {name="TileMatrixSetLink", kids={{name="TileMatrixSet", text=tmsName}}}
+
+    -- Build the ResourceURL element
+    local timeString = not static and "/{Time}" or ""
+    local template = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
+    layerContents[#layerContents + 1] = {name="ResourceURL", attr={format=mimeType, resourceType="tile", template=template}}
+
     return { name="Layer", kids=layerContents}
 end
 
-local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode)
-    local tmsDefs = getTmsDefs(tmsXml)[epsgCode]
+local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
+    local tmsDefs = getTmsDefs(tmsXml)
     local dateList = getDateList(endpointConfig["date_service_uri"])
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local nodeList = {}
     local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = makeGCLayer(layerConfigSource, tmsDefs, dateList, endpointConfig["base_uri_gc"])
+        nodeList[1] = makeGCLayer(layerConfigSource, tmsDefs, dateList, endpointConfig["base_uri_gc"], epsgCode, targetEpsgCode)
     end
 
     if fileAttrs["mode"] == "directory" then
@@ -426,7 +464,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode)
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = makeGCLayer(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, endpointConfig["base_uri_gc"])
+                 tmsDefs, dateList, endpointConfig["base_uri_gc"], targetEpsgCode)
             end
         end
     end
@@ -440,10 +478,14 @@ local function makeGC(endpointConfig)
     local tmsXml = xmlserde.deserialize(tmsFile:read("*all"))
     tmsFile:close()
 
-    -- Get TMSs for this projection
     local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
     if string.match(epsgCode:lower(), "^%d") then
         epsgCode = "EPSG:" .. epsgCode
+    end
+
+    local targetEpsgCode = endpointConfig["target_epsg_code"]
+    if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
+        targetEpsgCode = "EPSG:" .. targetEpsgCode
     end
 
     -- Parse header
@@ -454,11 +496,15 @@ local function makeGC(endpointConfig)
 
     -- Build contents section
     local contentsNodeContent = {}
-    for _, layer in pairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode)) do
+    for _, layer in pairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)) do
         contentsNodeContent[#contentsNodeContent + 1] = layer
     end
-    for _, tms in pairs(tmsXml["kids"]) do
-        contentsNodeContent[#contentsNodeContent + 1] = tms
+    for _, proj in ipairs(getXmlNodesByName(tmsXml, "Projection")) do
+        if proj["attr"]["id"] == targetEpsgCode or not targetEpsgCode and epsgCode then
+            for _, tms in ipairs(getXmlNodesByName(proj, "TileMatrixSet")) do
+                contentsNodeContent[#contentsNodeContent + 1] = tms
+            end
+        end
     end
     local contentsNode = {name="Contents", kids=contentsNodeContent}
 
