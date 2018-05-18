@@ -1,6 +1,6 @@
 # Building and Installing OE2
 
-## Docker setup
+## Docker Setup
 
 The included Dockerfile will build an image with OE2. The build is configured
 with a couple of test layers.
@@ -8,6 +8,17 @@ with a couple of test layers.
 To run, simply build the image `docker build -t onearth_2 .`, and then start a
 container using that image. Make sure to expose port 80 on the container to
 access the image server.
+
+## Configuration Options
+
+Several environment variables may be set to specify the location of configuration items.
+
+* **REDIS_HOST**: Redis endpoint URL
+* **S3_URL**: http URL to the S3 bucket containing MRFs
+* **EMPTY_TILES_URL**: URL to S3 bucket or web link containing empty tiles
+* **LEGENDS_URL**: URL to S3 bucket or web link containing legend images
+* **COLORMAPS_URL**: URL to S3 bucket or web link containing colormaps
+* **STYLESHEETS_URL**: URL to S3 bucket or web link containing stylesheets
 
 ### Test Layers
 
