@@ -12,7 +12,7 @@ RUN mkdir /home/oe2
 WORKDIR /home/oe2
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
-RUN git checkout 2.1.0
+RUN git checkout 2.1.0-AST
 
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .

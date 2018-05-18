@@ -34,7 +34,7 @@ WORKDIR /home/oe2
 RUN git config --global url.https://github.com/.insteadOf git://github.com/
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
-RUN git checkout 2.1.0
+RUN git checkout 2.1.0-AST
 
 #chown -R root:root /home/oe2
 
