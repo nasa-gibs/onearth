@@ -253,5 +253,5 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
+#/usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 sh build_demo.sh

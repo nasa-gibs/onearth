@@ -6,6 +6,12 @@ RUN yum install -y python-pip
 
 RUN mkdir /home/perf
 
+# Clone OnEarth repo
+WORKDIR /home/perf
+RUN git clone https://github.com/nasa-gibs/onearth.git
+WORKDIR /home/perf/onearth
+RUN git checkout 2.1.0
+
 # Get and install node
 WORKDIR /home/perf
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash \
@@ -28,5 +34,5 @@ RUN aws configure set region us-east-1
 RUN yum install -y siege
 
 # Run performance test
-#WORKDIR 
-#CMD sh 
+#WORKDIR /home/perf/onearth/docker/profiler
+#CMD sh start_profiler.sh
