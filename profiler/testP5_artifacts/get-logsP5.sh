@@ -2,7 +2,7 @@
 
 list_urls=250m_100png_urls.txt
 output_prefix=log-time-png-250m-5-B
-group_name=${1:-gitc-fy2-oe2-onearth}
+group_name=${1:-127.0.0.1}
 
 mkdir $output_prefix
 i="0"

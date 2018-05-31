@@ -2,7 +2,7 @@
 
 list_urls=test-static-jpeg
 output_prefix=log-static-jpeg-0-A
-group_name=${1:-gitc-fy2-oe2-onearth}
+group_name=${1:-127.0.0.1}
 
 mkdir $output_prefix
 i="0"
