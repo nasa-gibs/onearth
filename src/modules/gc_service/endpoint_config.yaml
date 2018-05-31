@@ -11,3 +11,10 @@ epsg_code: "EPSG:4326"
 gc_endpoint: "/gc"
 gts_endpoint: "/gts"
 target_epsg_code: "EPSG:3857"
+source_mrf: 
+  size_x: 4000
+  size_y: 2000
+  bands: 4
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/something/idx"
