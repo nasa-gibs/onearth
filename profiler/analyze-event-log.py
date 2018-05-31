@@ -7,25 +7,51 @@ import traceback
 import numpy as np
 
 
+logMetrics = [
+               ["begin_onearth_handle","timestamp", True],
+               ["end_onearth_handle","timestamp", True],
+               ["begin_mod_mrf_handle","timestamp", False],
+               ["end_mod_mrf_handle","timestamp", False],
+               ["mod_mrf_index_read","duration", False],
+               ["mod_mrf_s3_read","duration", False],
+               ["begin_request_time_snap","timestamp", False],
+               ["end_request_time_snap","timestamp", False],
+               ["begin_mod_reproject_handle","timestamp", False],
+               ["end_mod_reproject_handle","timestamp", False]
+             ]
+
 class uuidDetails():
    def __init__(self, uuid):
        self.uuid            = uuid
-       self.begin_timestamp = None
-       self.end_timestamp   = None
-       self.s3_read_dur     = None
-       self.idx_read_dur    = None
 
-   def __str__(self):
-      return self.uuid + ": " + \
-         str(self.begin_timestamp) + " / " + \
-         str(self.end_timestamp) + " / " + \
-         str(self.s3_read_dur) + " / " + \
-         str(self.idx_read_dur)
+#   def __str__(self):
+#      return self.uuid + ": " + \
+#         str(self.begin_timestamp) + " / " + \
+#         str(self.end_timestamp) + " / " + \
+#         str(self.s3_read_dur) + " / " + \
+#         str(self.idx_read_dur)
 
 def usage():
    print ("analyze-event-log.py [OPTIONS]")
    print ("  -e/--events_log    : Path to log file with CloudWatch events")
    print ("  -v/--verbose      : Verbose Output (Optional)")
+
+
+def calculateAndPrintStats(metric, values):
+   npArray = np.array(values)
+   
+   print(metric)
+   print("\tcount:           " + str(len(values)))
+   print("\tmean:            " + str(round(np.mean(npArray),2)) + " ms")
+   print("\tmax:             " + str(round(np.amax(npArray),2)) + " ms")
+   print("\tmin:             " + str(round(np.amin(npArray),2)) + " ms")
+   print("\t25th percentile: " + str(round(np.percentile(npArray, 25),2)) + " ms")
+   print("\t50th percentile: " + str(round(np.percentile(npArray, 50),2)) + " ms")
+   print("\t75th percentile: " + str(round(np.percentile(npArray, 75),2)) + " ms")
+   print("\t95th percentile: " + str(round(np.percentile(npArray, 95),2)) + " ms")
+   print("\t98th percentile: " + str(round(np.percentile(npArray, 98),2)) + " ms")
+   print("\t99th percentile: " + str(round(np.percentile(npArray, 99),2)) + " ms")
+
 
 
 eventsLog = None
@@ -57,68 +83,43 @@ except:
    print("Error parsing events log.\n" + traceback.format_exc())
    sys.exit(-1)
 
+
 eventDetailsDict   = {}
 getEventKByteItems = []
+metricMatchers     = {}
 
-matchBegin = re.compile(".*begin_onearth_handle.*")
-matchEnd   = re.compile(".*end_mod_mrf_handle.*")
-matchS3    = re.compile(".*mod_mrf_s3_read.*")
-matchIdx   = re.compile(".*mod_mrf_index_read.*")
-matchGet   = re.compile(".*GET .mrf_endpoint.*")
+for metric in logMetrics:
+   messageMatcher = re.compile(".*" + metric[0] + ".*")
+   messageParser  = re.compile((".*timestamp=([0-9]*)" if metric[1] == "timestamp" 
+                                 else ".*duration=([0-9]*)") + ", uuid=(.*)")
+   metricMatchers[metric[0]] = [messageMatcher, messageParser]
+
+
+#matchGet   = re.compile(".*GET .mrf_endpoint.*")
 
 
 # Parse event data into uuidDetails() objects
 for event in eventsData:
 
    try :
-      if matchBegin.search(event["message"]):
-         m = re.match(".*timestamp=([0-9]*), uuid=(.*)", event["message"])
-         if not m or len(m.groups()) != 2:
-            print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
-         else:
-            if m.group(2) not in eventDetailsDict:
-               eventDetailsDict[m.group(2)] = uuidDetails(m.group(2))
-               
-            eventDetailsDict[m.group(2)].begin_timestamp = float(m.group(1)) / 1000
-
-      elif matchEnd.search(event["message"]):
-         m = re.match(".*timestamp=([0-9]*), uuid=(.*)", event["message"])
-         if not m or len(m.groups()) != 2:
-            print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
-         else:
-            if m.group(2) not in eventDetailsDict:
-               eventDetailsDict[m.group(2)] = uuidDetails(m.group(2))
-               
-            eventDetailsDict[m.group(2)].end_timestamp = float(m.group(1)) / 1000
-
-      elif matchS3.search(event["message"]):
-         m = re.match(".*duration=([0-9]*), uuid=(.*)", event["message"])
-         if not m or len(m.groups()) != 2:
-            print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
-         else:
-            if m.group(2) not in eventDetailsDict:
-               eventDetailsDict[m.group(2)] = uuidDetails(m.group(2))
-               
-            eventDetailsDict[m.group(2)].s3_read_dur = float(m.group(1)) / 1000
-
-      elif matchIdx.search(event["message"]):
-         m = re.match(".*duration=([0-9]*), uuid=(.*)", event["message"])
-         if not m or len(m.groups()) != 2:
-            print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
-         else:
-            if m.group(2) not in eventDetailsDict:
-               eventDetailsDict[m.group(2)] = uuidDetails(m.group(2))
+      for metric in metricMatchers:
+         matched = False
+         
+         if metricMatchers[metric][0].search(event["message"]):
+            matched = True
             
-            eventDetailsDict[m.group(2)].idx_read_dur = float(m.group(1)) / 1000
+            m = metricMatchers[metric][1].match(event["message"])
+            if not m or len(m.groups()) != 2:
+               print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
+            else:
+               if m.group(2) not in eventDetailsDict:
+                  eventDetailsDict[m.group(2)] = uuidDetails(m.group(2))
+               
+               setattr(eventDetailsDict[m.group(2)], metric, float(m.group(1)) / 1000)
+            
+            break
 
-      elif matchGet.search(event["message"]):
-         m = re.match(".*GET .*200 ([0-9]*) .*", event["message"])
-         if not m or len(m.groups()) != 1:
-            print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
-         else:
-            getEventKByteItems.append(float(m.group(1)) / 1000)
-
-      else:
+      if not matched:
          if verbose: print("Unknown log message: (" + str(event["timestamp"]) + "): " + event["message"])
    except:
       print("Error parsing message: (" + str(event["timestamp"]) + "): " + event["message"] + "\n" + traceback.format_exc())
@@ -128,86 +129,55 @@ for event in eventsData:
 badUuids = []
 
 for details in eventDetailsDict.values():
+   valid = True
    
-   valid = (details.begin_timestamp and details.end_timestamp and details.s3_read_dur and details.idx_read_dur) and \
-           (details.end_timestamp - details.begin_timestamp > 0)
-   
+   for metric in logMetrics:
+      if metric[1] == "duration":
+         # If required and missing...
+         if metric[2] and metric[0] not in dir(details):
+            valid = False
+            if verbose: print("Missing metric (" + metric[0] + ") : " + details.uuid)
+         
+      elif metric[1] == "timestamp" and metric[0].startswith("begin"):
+         # If required and 'begin' is missing...
+         if metric[2] and metric[0] not in dir(details):
+            valid = False
+            if verbose: print("Missing metric (" + metric[0] + ") : " + details.uuid)
+
+         #Elif the 'begin' was found, but 'end' was not
+         elif metric[0] in dir(details) and metric[0].replace("begin","end") not in dir(details):
+            valid = False
+            if verbose: print("Missing metric (" + metric[0].replace("begin","end") + ") : " + details.uuid)
+
+         #Elif 
+         elif dir(details) and metric[0].replace("begin","end") in dir(details) and \
+               getattr(details, metric[0].replace("begin","end")) - getattr(details, metric[0]) < 0:
+            if verbose: print("Invalid begin/end metric (" + metric[0].replace("begin_","") + ") : " + details.uuid)
+            
    if not valid:
-      if verbose: print("Invalid uuid details: " + str(details))
-      
       badUuids.append(details.uuid)
 
 for uuid in badUuids:
    del(eventDetailsDict[uuid])
 
+# Calculate and Print Metrics
+for metric in logMetrics:
+   metricValues = []
 
-# Build arrays for analysis
-durReadItems = []
-s3ReadItems  = []
-idxReadItems = []
+   if metric[1] == "duration":
+      for details in eventDetailsDict.values():
+         if metric[0] in dir(details):
+            metricValues.append(getattr(details, metric[0]))
+   
+   elif metric[1] == "timestamp" and metric[0].startswith("begin"):
+      for details in eventDetailsDict.values():
+         if metric[0] in dir(details):
+            if getattr(details, metric[0].replace("begin","end")) - getattr(details, metric[0]) > 0:
+                metricValues.append(getattr(details, metric[0].replace("begin","end")) - getattr(details, metric[0]))
+         
+   else:
+      continue
+   
+   if len(metricValues) > 0:
+      calculateAndPrintStats(metric[0], metricValues)
 
-for details in eventDetailsDict.values():
-   durReadItems.append(details.end_timestamp - details.begin_timestamp)
-   s3ReadItems.append(details.s3_read_dur)
-   idxReadItems.append(details.idx_read_dur)
-
-
-# Calculate and print statistics
-durReadArr = np.array(durReadItems)
-
-print("onearth-mod_mrf")
-print("\tcount:           " + str(len(durReadItems)))
-print("\tmean:            " + str(round(np.mean(durReadArr),2)) + " ms")
-print("\tmax:             " + str(round(np.amax(durReadArr),2)) + " ms")
-print("\tmin:             " + str(round(np.amin(durReadArr),2)) + " ms")
-print("\t25th percentile: " + str(round(np.percentile(durReadArr, 25),2)) + " ms")
-print("\t50th percentile: " + str(round(np.percentile(durReadArr, 50),2)) + " ms")
-print("\t75th percentile: " + str(round(np.percentile(durReadArr, 75),2)) + " ms")
-print("\t95th percentile: " + str(round(np.percentile(durReadArr, 95),2)) + " ms")
-print("\t98th percentile: " + str(round(np.percentile(durReadArr, 98),2)) + " ms")
-print("\t99th percentile: " + str(round(np.percentile(durReadArr, 99),2)) + " ms")
-
-
-s3ReadArr = np.array(s3ReadItems)
-
-print("mod_mrf_s3_read")
-print("\tcount:           " + str(len(s3ReadItems)))
-print("\tmean:            " + str(round(np.mean(s3ReadArr),2)) + " ms")
-print("\tmax:             " + str(round(np.amax(s3ReadArr),2)) + " ms")
-print("\tmin:             " + str(round(np.amin(s3ReadArr),2)) + " ms")
-print("\t25th percentile: " + str(round(np.percentile(s3ReadArr, 25),2)) + " ms")
-print("\t50th percentile: " + str(round(np.percentile(s3ReadArr, 50),2)) + " ms")
-print("\t75th percentile: " + str(round(np.percentile(s3ReadArr, 75),2)) + " ms")
-print("\t95th percentile: " + str(round(np.percentile(s3ReadArr, 95),2)) + " ms")
-print("\t98th percentile: " + str(round(np.percentile(s3ReadArr, 98),2)) + " ms")
-print("\t99th percentile: " + str(round(np.percentile(s3ReadArr, 99),2)) + " ms")
-
-
-idxReadArr = np.array(idxReadItems)
-
-print("mod_mrf_index_read")
-print("\tcount:           " + str(len(idxReadItems)))
-print("\tmean:            " + str(round(np.mean(idxReadArr),2)) + " ms")
-print("\tmax:             " + str(round(np.amax(idxReadArr))) + " ms")
-print("\tmin:             " + str(round(np.amin(idxReadArr))) + " ms")
-print("\t25th percentile: " + str(round(np.percentile(idxReadArr, 25),2)) + " ms")
-print("\t50th percentile: " + str(round(np.percentile(idxReadArr, 50),2)) + " ms")
-print("\t75th percentile: " + str(round(np.percentile(idxReadArr, 75),2)) + " ms")
-print("\t95th percentile: " + str(round(np.percentile(idxReadArr, 95),2)) + " ms")
-print("\t98th percentile: " + str(round(np.percentile(idxReadArr, 98),2)) + " ms")
-print("\t99th percentile: " + str(round(np.percentile(idxReadArr, 99),2)) + " ms")
-
-
-getKBytesArr = np.array(getEventKByteItems)
-
-print("apache_get_bytes")
-print("\tcount:           " + str(len(getEventKByteItems)))
-print("\tmean:            " + str(round(np.mean(getKBytesArr),2)) + " kb")
-print("\tmax:             " + str(round(np.amax(getKBytesArr))) + " kb")
-print("\tmin:             " + str(round(np.amin(getKBytesArr))) + " kb")
-print("\t25th percentile: " + str(round(np.percentile(getKBytesArr, 25),2)) + " kb")
-print("\t50th percentile: " + str(round(np.percentile(getKBytesArr, 50),2)) + " kb")
-print("\t75th percentile: " + str(round(np.percentile(getKBytesArr, 75),2)) + " kb")
-print("\t95th percentile: " + str(round(np.percentile(getKBytesArr, 95),2)) + " kb")
-print("\t98th percentile: " + str(round(np.percentile(getKBytesArr, 98),2)) + " kb")
-print("\t99th percentile: " + str(round(np.percentile(getKBytesArr, 99),2)) + " kb")
