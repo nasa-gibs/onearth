@@ -3,18 +3,24 @@
 import os
 import sys
 import random
-from datetime import date, timedelta
-
+from datetime import date, timedelta, datetime
 
 test_urls = sys.argv[1]
+test_d1 = sys.argv[2]
+test_d2 = sys.argv[3]
 
 print "Using input file " + test_urls
+print "Using starting date " + test_d1
+print "Using ending date " + test_d2
 
 with open(test_urls) as f:
     urls = f.readlines()
  
-d1 = date(2018, 1, 1)
-d2 = date(2018, 4, 10)
+#d1 = date(2018, 1, 1)
+#d2 = date(2018, 4, 10)
+d1 = datetime.strptime(test_d1, '%Y-%m-%d')
+d2 = datetime.strptime(test_d2, '%Y-%m-%d')
+
 delta = d2 - d1
 dates = []
 for i in range(delta.days + 1):
