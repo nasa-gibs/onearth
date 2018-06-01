@@ -1,3 +1,41 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2002-2017, California Institute of Technology.
+# All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#   2. Redistributions in binary form must reproduce the above copyright notice,
+#      this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#   3. Neither the name of the California Institute of Technology (Caltech), its operating division the Jet Propulsion Laboratory (JPL),
+#      the National Aeronautics and Space Administration (NASA), nor the names of its contributors may be used to
+#      endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE CALIFORNIA INSTITUTE OF TECHNOLOGY BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+This script creates mod_reproject Apache configurations using a remote GetCapabilities file. It can be used on its own or
+with oe_configure_layer.
+"""
+
 import argparse
 import yaml
 from pathlib import Path
@@ -7,8 +45,19 @@ import requests
 from functools import partial, reduce
 import re
 import math
+from urllib.parse import urlparse
 
 EARTH_RADIUS = 6378137.0
+
+MIME_TO_EXTENSION = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/tiff': '.tiff',
+    'image/lerc': '.lerc',
+    'application/x-protobuf;type=mapbox-vector': '.pbf',
+    'application/vnd.mapbox-vector-tile': '.mvt'
+}
+
 MOD_REPROJECT_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_id}>
         WMTSWrapperRole layer
 </Directory>
@@ -32,6 +81,50 @@ Projection {projection}
 BoundingBox {bbox}
 """
 
+MOD_REPROJECT_REPRO_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+Nearest On
+PageSize {tile_size_x} {tile_size_y} 1 {bands}
+Projection {projection}
+BoundingBox {bbox}
+SourcePath {source_path}
+SourcePostfix {postfix}
+MimeType {mimetype}
+Oversample On
+ExtraLevels 3
+"""
+
+MAIN_APACHE_CONFIG_TEMPLATE = """<IfModule !mrf_module>
+   LoadModule mrf_module modules/mod_mrf.so
+</IfModule>
+
+<IfModule !wmts_wrapper_module>
+        LoadModule wmts_wrapper_module modules/mod_wmts_wrapper.so
+</IfModule>
+
+<IfModule !receive_module>
+        LoadModule receive_module modules/mod_receive.so
+</IfModule>
+
+<IfModule !reproject_module>
+        LoadModule reproject_module modules/mod_reproject.so
+</IfModule>
+
+<IfModule !proxy_module>
+    LoadModule proxy_module modules/mod_proxy.so
+</IfModule>
+
+<Directory {endpoint_path}>
+        WMTSWrapperRole root
+</Directory>
+"""
+
+PROXY_TEMPLATE = """SSLProxyEngine on
+ProxyPass {local_endpoint} {remote_endpoint}
+ProxyPassReverse {local_endpoint} {remote_endpoint}
+"""
+
+PROXY_PREFIX = '/oe2-reproject-proxy'
+
 
 def bulk_replace(source_str, replace_list):
     out_str = source_str
@@ -43,8 +136,8 @@ def bulk_replace(source_str, replace_list):
 def get_matrix(matrix):
     return {
         'scale_denominator': float(matrix.findtext('{*}ScaleDenominator')),
-        'top_left_corner': map(float, matrix.findtext(
-            '{*}TopLeftCorner').split(' ')),
+        'top_left_corner': list(map(float, matrix.findtext(
+            '{*}TopLeftCorner').split(' '))),
         'width': int(matrix.findtext('{*}TileWidth')),
         'height': int(matrix.findtext('{*}TileHeight')),
         'matrix_width': int(matrix.findtext('{*}MatrixWidth')),
@@ -57,7 +150,7 @@ def get_matrix(matrix):
 def get_projection_from_crs(crs_string):
     suffix = crs_string.split(':')[-1]
     if suffix == 'CRS84':
-        return 'ESPG:4326'
+        return 'EPSG:4326'
     return 'EPSG:' + suffix
 
 
@@ -115,22 +208,33 @@ def get_src_size(source_tms_defs, layer_xml):
     return [width, height]
 
 
+def format_source_url(source_url, reproj_tms):
+    return re.sub(r'(.*{TileMatrixSet})(.*)', r'\1', source_url).replace('{Time}', '${date}').replace('{TileMatrixSet}', reproj_tms['identifier'])
+
+
 def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, layer_xml):
     src_size = get_src_size(source_tms_defs, layer_xml)
     source_tms = get_source_tms(source_tms_defs, layer_xml)
+    reproj_tms = get_reprojected_tilematrixset(
+        target_proj, source_tms_defs, target_tms_defs, layer_xml)
     return {
         'layer_id': layer_xml.findtext('{*}Identifier'),
-        'source_url_template': layer_xml.find('{*}ResourceURL').attrib.get('template'),
+        'source_url_template': format_source_url(layer_xml.find('{*}ResourceURL').attrib.get('template'), source_tms),
         'mimetype': layer_xml.find('{*}ResourceURL').attrib.get('format'),
         'time_enabled': any(len(dimension)for dimension in layer_xml.findall('{*}Dimension') if dimension.findtext('{*}Identifier') == 'time'),
-        'tilematrixset': get_reprojected_tilematrixset(
-            target_proj, source_tms_defs, target_tms_defs, layer_xml),
+        'tilematrixset': reproj_tms,
         'src_size_x': src_size[0],
         'src_size_y': src_size[1],
+        'reproj_size_x': reproj_tms['matrices'][-1]['matrix_width'] * reproj_tms['matrices'][-1]['tile_width'],
+        'reproj_size_y': reproj_tms['matrices'][-1]['matrix_height'] * reproj_tms['matrices'][-1]['tile_height'],
         'tile_size_x': source_tms['matrices'][0]['tile_width'],
         'tile_size_y': source_tms['matrices'][0]['tile_height'],
+        'reproj_tile_size_x': reproj_tms['matrices'][0]['tile_width'],
+        'reproj_tile_size_y': reproj_tms['matrices'][0]['tile_height'],
         'projection': source_tms['projection'],
-        'bbox': (matrices[0]['top_left_corner'][0], matrices[0]['top_left_corner'][1], matrices[0]['top_left_corner'][0] * -1, matrices[0]['top_left_corner'][1] * -1)
+        'reproj_projection': reproj_tms['projection'],
+        'bbox': (source_tms['matrices'][0]['top_left_corner'][0], source_tms['matrices'][0]['top_left_corner'][1] * -1, source_tms['matrices'][0]['top_left_corner'][0] * -1, source_tms['matrices'][0]['top_left_corner'][1]),
+        'reproj_bbox': (reproj_tms['matrices'][0]['top_left_corner'][0], reproj_tms['matrices'][0]['top_left_corner'][1] * -1, reproj_tms['matrices'][0]['top_left_corner'][0] * -1, reproj_tms['matrices'][0]['top_left_corner'][1])
 
     }
 
@@ -175,15 +279,53 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
                                   layer_config['tile_size_x'])),
                               ('{tile_size_y}', str(
                                   layer_config['tile_size_y'])),
-                              ('{projection}', layer_config['projection'])])
-    return src_config
+                              ('{projection}', layer_config['projection']),
+                              ('{bbox}', ','.join(
+                                  map(str, layer_config['bbox']))),
+                              ('{skipped_levels}', '1')])
+
+    reproj_config = bulk_replace(MOD_REPROJECT_REPRO_TEMPLATE, [
+        ('{size_x}', str(layer_config['reproj_size_x'])),
+        ('{size_y}', str(
+            layer_config['reproj_size_y'])),
+        ('{bands}', "4" if layer_config[
+            'mimetype'] == 'image/png' else "3"),
+        ('{tile_size_x}', str(
+            layer_config['reproj_tile_size_x'])),
+        ('{tile_size_y}', str(
+            layer_config['reproj_tile_size_y'])),
+        ('{projection}', str(
+            layer_config['reproj_projection'])),
+        ('{mimetype}', layer_config["mimetype"]),
+        ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
+        ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
+        ('{source_path}', PROXY_PREFIX + urlparse(layer_config['source_url_template']).path)])
+    return {'layer_id': layer_config['layer_id'], 'tilematrixset': layer_config['tilematrixset']['identifier'], 'src_config': src_config, 'reproj_config': reproj_config}
+
+
+def get_proxy_source_path(layers):
+    base_proxy_location = None
+    for layer_config in layers:
+        source_url = layer_config['source_url_template']
+        path = re.sub(r'(.*)\/\${date}', r'\1',
+                      source_url)
+        if not base_proxy_location:
+            base_proxy_location = path
+            continue
+        for idx in range(len(base_proxy_location)):
+            if source_url[idx] == base_proxy_location[idx]:
+                continue
+            base_proxy_location = base_proxy_location[0:idx]
+            break
+    return base_proxy_location
 
 
 def build_configs(endpoint_config):
     try:
         target_proj = endpoint_config['target_epsg_code']
         source_gc_uri = endpoint_config['source_gc_uri']
-        endpoint_config['endpoint_config_base_location']
+        endpoint_config_base_location = endpoint_config[
+            'endpoint_config_base_location']
         endpoint_config['date_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
@@ -192,15 +334,49 @@ def build_configs(endpoint_config):
     gc_xml = get_gc_xml(source_gc_uri)
     source_tms_defs = list(map(parse_tms_set_xml, gc_xml.find(
         '{*}Contents').findall('{*}TileMatrixSet')))
-    layers = map(partial(parse_layer_gc_xml, target_proj, source_tms_defs,
-                         target_tms_defs), gc_xml.iter('{*}Layer'))
+
+    layers = list(map(partial(parse_layer_gc_xml, target_proj, source_tms_defs,
+                              target_tms_defs), gc_xml.iter('{*}Layer')))
+
+    endpoint_config['common_src_path'] = get_proxy_source_path(layers)
+
     layer_apache_configs = map(
         partial(make_apache_layer_config, endpoint_config), layers)
     layer_module_configs = map(
         partial(make_mod_reproject_configs, endpoint_config), layers)
 
-    for layer in layer_module_configs:
-        print(layer)
+    # Write out layer configs
+    for layer_config in layer_module_configs:
+        config_path = Path(endpoint_config_base_location,
+                           layer_config['layer_id'], 'default', layer_config['tilematrixset'])
+        config_path.mkdir(parents=True, exist_ok=True)
+        Path(config_path,
+             'source.config').write_text(layer_config['src_config'])
+        Path(config_path, 'reproject.config').write_text(
+            layer_config['reproj_config'])
+    print(f'Layer configs written to {endpoint_config_base_location}\n')
+
+    # Write out Apache config
+    apache_config_path = Path('/etc/httpd/conf.d/oe2-reproject-service.conf')
+    try:
+        apache_config_path = Path(endpoint_config['apache_config_location'])
+    except KeyError:
+        print(f'"apache_config_location" not found in endpoint config, saving Apache config to {apache_config_path}\n')
+        pass
+
+    Path(apache_config_path.parent).mkdir(parents=True, exist_ok=True)
+    apache_config_str = MAIN_APACHE_CONFIG_TEMPLATE.replace(
+        '{endpoint_path}', endpoint_config_base_location)
+    apache_config_str += '\n'
+    apache_config_str += PROXY_TEMPLATE.replace(
+        '{local_endpoint}',  PROXY_PREFIX + urlparse(endpoint_config['common_src_path']).path).replace('{remote_endpoint}', endpoint_config['common_src_path'])
+    apache_config_str += '\n'
+    apache_config_str += '\n'.join(layer_apache_configs)
+    apache_config_path.write_text(apache_config_str)
+    print(f'Apache config written to {apache_config_path.as_posix()}\n')
+
+    print('All configurations written. Restart Apache for the changes to take effect.')
+
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
@@ -210,7 +386,7 @@ if __name__ == '__main__':
                         help='an endpoint config YAML file')
     parser.add_argument('-t', '--make_twms', action='store_true',
                         help='Generate TWMS configurations')
-    parser.add_argument('-x', '--tms_defs', type=str,
+    parser.add_argument('-x', '--tms_defs', type=str, default='tilematrixsets.xml',
                         help='TileMatrixSets definition XML file')
     args = parser.parse_args()
 
