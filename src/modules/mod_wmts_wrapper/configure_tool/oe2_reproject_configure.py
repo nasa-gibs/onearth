@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2002-2017, California Institute of Technology.
+# Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -116,6 +116,8 @@ MAIN_APACHE_CONFIG_TEMPLATE = """<IfModule !mrf_module>
 <Directory {endpoint_path}>
         WMTSWrapperRole root
 </Directory>
+
+Alias "/oe2-wmts-endpoint" "{endpoint_path}"
 """
 
 PROXY_TEMPLATE = """SSLProxyEngine on
@@ -124,6 +126,25 @@ ProxyPassReverse {local_endpoint} {remote_endpoint}
 """
 
 PROXY_PREFIX = '/oe2-reproject-proxy'
+
+MOD_TWMS_CONFIG_TEMPLATE = """<Directory {endpoint_path}>
+        tWMS_RegExp twms.cgi
+        tWMS_ConfigurationFile {endpoint_path}/twms/{layer}/twms.config
+</Directory>
+"""
+
+TWMS_MODULE_TEMPLATE = """<IfModule !twms_module>
+    LoadModule twms_module modules/mod_twms.so
+</IfModule>
+"""
+
+LAYER_MOD_TWMS_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+PageSize {tile_size_x} {tile_size_y} 1 {bands}
+SkippedLevels {skipped_levels}
+BoundingBox {bbox}
+SourcePath {endpoint_path}/{layer_id}/default/${date}/{tilematrixset}
+SourcePostfix {source_postfix}
+"""
 
 
 def bulk_replace(source_str, replace_list):
@@ -235,7 +256,6 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, layer_xml)
         'reproj_projection': reproj_tms['projection'],
         'bbox': (source_tms['matrices'][0]['top_left_corner'][0], source_tms['matrices'][0]['top_left_corner'][1] * -1, source_tms['matrices'][0]['top_left_corner'][0] * -1, source_tms['matrices'][0]['top_left_corner'][1]),
         'reproj_bbox': (reproj_tms['matrices'][0]['top_left_corner'][0], reproj_tms['matrices'][0]['top_left_corner'][1] * -1, reproj_tms['matrices'][0]['top_left_corner'][0] * -1, reproj_tms['matrices'][0]['top_left_corner'][1])
-
     }
 
 
@@ -253,7 +273,7 @@ def get_gc_xml(source_gc_uri):
     return gc_xml
 
 
-def make_apache_layer_config(endpoint_config, layer_config):
+def make_apache_layer_config(endpoint_config, layer_config, make_twms=False):
     apache_config = bulk_replace(MOD_REPROJECT_APACHE_TEMPLATE, [
                                  ('{time_enabled}', 'On' if layer_config[
                                   'time_enabled'] else 'Off'),
@@ -266,23 +286,28 @@ def make_apache_layer_config(endpoint_config, layer_config):
         date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{date_service_uri}"'
         apache_config = re.sub(r'(WMTSWrapperEnableTime.*)',
                                r'\1' + date_service_snippet, apache_config)
+    if make_twms:
+        twms_config = bulk_replace(MOD_TWMS_CONFIG_TEMPLATE, [('{endpoint_path}', endpoint_config[
+            'endpoint_config_base_location'])])
+        apache_config += '\n' + twms_config
+
     return apache_config
 
 
 def make_mod_reproject_configs(endpoint_config, layer_config):
     src_config = bulk_replace(MOD_REPROJECT_SOURCE_TEMPLATE, [
-                              ('{size_x}', str(layer_config['src_size_x'])),
-                              ('{size_y}', str(layer_config['src_size_y'])),
-                              ('{bands}', "4" if layer_config[
-                               'mimetype'] == 'image/png' else "3"),
-                              ('{tile_size_x}', str(
-                                  layer_config['tile_size_x'])),
-                              ('{tile_size_y}', str(
-                                  layer_config['tile_size_y'])),
-                              ('{projection}', layer_config['projection']),
-                              ('{bbox}', ','.join(
-                                  map(str, layer_config['bbox']))),
-                              ('{skipped_levels}', '1')])
+        ('{size_x}', str(layer_config['src_size_x'])),
+        ('{size_y}', str(layer_config['src_size_y'])),
+        ('{bands}', "4" if layer_config[
+            'mimetype'] == 'image/png' else "3"),
+        ('{tile_size_x}', str(
+            layer_config['tile_size_x'])),
+        ('{tile_size_y}', str(
+            layer_config['tile_size_y'])),
+        ('{projection}', layer_config['projection']),
+        ('{bbox}', ','.join(
+            map(str, layer_config['bbox']))),
+        ('{skipped_levels}', '1' if layer_config['projection'] == 'EPSG:4326' else '0')])
 
     reproj_config = bulk_replace(MOD_REPROJECT_REPRO_TEMPLATE, [
         ('{size_x}', str(layer_config['reproj_size_x'])),
@@ -300,7 +325,33 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
         ('{source_path}', PROXY_PREFIX + urlparse(layer_config['source_url_template']).path)])
-    return {'layer_id': layer_config['layer_id'], 'tilematrixset': layer_config['tilematrixset']['identifier'], 'src_config': src_config, 'reproj_config': reproj_config}
+
+    twms_config = bulk_replace(
+        LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
+            ('{size_x}', str(layer_config['reproj_size_x'])),
+            ('{size_y}', str(
+                layer_config['reproj_size_y'])),
+            ('{bands}', "4" if layer_config[
+                'mimetype'] == 'image/png' else "3"),
+            ('{tile_size_x}', str(
+                layer_config['reproj_tile_size_x'])),
+            ('{tile_size_y}', str(
+                layer_config['reproj_tile_size_y'])),
+            ('{skipped_levels}', '1' if layer_config[
+             'projection'] == 'EPSG:4326' else '0'),
+            ('{bbox}', ','.join(map(str, layer_config[
+             'reproj_bbox']))),
+            ('{endpoint_path}', '/oe2-wmts-endpoint'),
+            ('{layer_id}', layer_config['layer_id']),
+            ('{tilematrixset}', layer_config['tilematrixset']['identifier']),
+            ('{source_postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
+        ])
+    if not layer_config['time_enabled']:
+        twms_config.replace('${date}/', '')
+
+    return {'layer_id': layer_config['layer_id'],
+            'tilematrixset': layer_config['tilematrixset']['identifier'],
+            'src_config': src_config, 'reproj_config': reproj_config, 'twms_config': twms_config}
 
 
 def get_proxy_source_path(layers):
@@ -320,7 +371,8 @@ def get_proxy_source_path(layers):
     return base_proxy_location
 
 
-def build_configs(endpoint_config):
+def build_configs(endpoint_config, make_twms=False):
+    # Check endpoint configs for necessary stuff
     try:
         target_proj = endpoint_config['target_epsg_code']
         source_gc_uri = endpoint_config['source_gc_uri']
@@ -330,7 +382,16 @@ def build_configs(endpoint_config):
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 
-    target_tms_defs = list(parse_tms_xml(args.tms_defs, target_proj))
+    # Get output TMS definitions (provided by local file)
+    if not endpoint_config.get('tms_defs_file'):
+        print('No Tile Matrix Set definition file defined by endpoint config or command line parameters. Using ./tilematrixsets.xml')
+        endpoint_config['tms_defs_file'] = 'tilematrixsets.xml'
+
+    target_tms_defs = list(parse_tms_xml(
+        endpoint_config['tms_defs_file'], target_proj))
+
+    # Download and parse the source GC file, getting the layers and their
+    # tilematrixsets
     gc_xml = get_gc_xml(source_gc_uri)
     source_tms_defs = list(map(parse_tms_set_xml, gc_xml.find(
         '{*}Contents').findall('{*}TileMatrixSet')))
@@ -338,10 +399,11 @@ def build_configs(endpoint_config):
     layers = list(map(partial(parse_layer_gc_xml, target_proj, source_tms_defs,
                               target_tms_defs), gc_xml.iter('{*}Layer')))
 
+    # Build configs for each layer
     endpoint_config['common_src_path'] = get_proxy_source_path(layers)
 
     layer_apache_configs = map(
-        partial(make_apache_layer_config, endpoint_config), layers)
+        partial(make_apache_layer_config, endpoint_config, make_twms=make_twms), layers)
     layer_module_configs = map(
         partial(make_mod_reproject_configs, endpoint_config), layers)
 
@@ -354,6 +416,13 @@ def build_configs(endpoint_config):
              'source.config').write_text(layer_config['src_config'])
         Path(config_path, 'reproject.config').write_text(
             layer_config['reproj_config'])
+        if make_twms:
+            config_path = Path(endpoint_config_base_location,
+                               'twms', layer_config['layer_id'])
+            config_path.mkdir(parents=True, exist_ok=True)
+            Path(config_path, 'twms.config'). write_text(
+                layer_config['twms_config'])
+
     print(f'Layer configs written to {endpoint_config_base_location}\n')
 
     # Write out Apache config
@@ -367,11 +436,11 @@ def build_configs(endpoint_config):
     Path(apache_config_path.parent).mkdir(parents=True, exist_ok=True)
     apache_config_str = MAIN_APACHE_CONFIG_TEMPLATE.replace(
         '{endpoint_path}', endpoint_config_base_location)
-    apache_config_str += '\n'
-    apache_config_str += PROXY_TEMPLATE.replace(
+    apache_config_str += '\n' + PROXY_TEMPLATE.replace(
         '{local_endpoint}',  PROXY_PREFIX + urlparse(endpoint_config['common_src_path']).path).replace('{remote_endpoint}', endpoint_config['common_src_path'])
-    apache_config_str += '\n'
-    apache_config_str += '\n'.join(layer_apache_configs)
+    if make_twms:
+        apache_config_str += '\n' + TWMS_MODULE_TEMPLATE
+    apache_config_str += '\n' + '\n'.join(layer_apache_configs)
     apache_config_path.write_text(apache_config_str)
     print(f'Apache config written to {apache_config_path.as_posix()}\n')
 
@@ -386,9 +455,11 @@ if __name__ == '__main__':
                         help='an endpoint config YAML file')
     parser.add_argument('-t', '--make_twms', action='store_true',
                         help='Generate TWMS configurations')
-    parser.add_argument('-x', '--tms_defs', type=str, default='tilematrixsets.xml',
+    parser.add_argument('-x', '--tms_defs', type=str,
                         help='TileMatrixSets definition XML file')
     args = parser.parse_args()
 
     endpoint_config = yaml.load(Path(args.endpoint_config).read_text())
-    build_configs(endpoint_config)
+    if args.tms_defs:
+        endpoint_config['tms_defs_file'] = args.tms_defs
+    build_configs(endpoint_config, make_twms=args.make_twms)
