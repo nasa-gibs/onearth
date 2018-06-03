@@ -56,10 +56,10 @@ local function create_config(endpointConfigFilename, makeOptions)
     local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
     endpointConfigFile:close()
 
-    local tmsDefsFilename = endpointConfig["tms_defs_file"]
-    local layerConfigSource = endpointConfig["layer_config_source"]
+    local tmsDefsFilename = assert(endpointConfig["tms_defs_file"], "No 'tms_defs_file' specified in endpoint config.")
+    local layerConfigSource = assert(endpointConfig["layer_config_source"], "No 'layer_config_source' specified in endpoint config.")
     local dateServiceUri = endpointConfig["date_service_uri"]
-    local epsgCode = endpointConfig["epsg_code"]
+    local epsgCode = assert(endpointConfig["epsg_code"], "No 'epsg_code' specified in endpoint config.")
 
     local apacheConfigLocation = endpointConfig["apache_config_location"]
     if not apacheConfigLocation then
