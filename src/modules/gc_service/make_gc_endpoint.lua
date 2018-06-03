@@ -1,7 +1,6 @@
 local lyaml = require "lyaml"
 local lfs = require "lfs"
 local argparse = require "argparse"
-local inspect = require "inspect"
 
 local apacheConfigHeaderTemplate = [[
 <IfModule !ahtse_lua>

@@ -96,9 +96,8 @@ configuration files will be stored (this will need to be somewhere Apache is
 configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 
 `endpoint_config_base_location` (required) -- This is the path on disk where the
-configuration files should be stored _for this endpoint_. This needs to be a
-publicly-accessible path on the web server, such as `/var/www/wmts/gc_service`,
-etc. _Each endpoint should have its own unique path!_
+configuration files should be stored _for this endpoint_. Defaults to
+`/var/www/html`, etc.
 
 `base_uri_gc` (required) -- The base URL to be used when forming `<ResourceURL>`
 templates for each layer.
@@ -111,10 +110,10 @@ GC/GTS files will contain layers that have been reprojected to the target
 projection.
 
 `gc_endpoint` (required for GetCapabilities service) -- The location beneath the
-base endpoint where the GC service should be available.
+base endpoint where the GC service should be available. Defaults to `/gc`.
 
 `gts_endpoint` (required for GetTileService service) -- The location beneath the
-base endpoint where the GTS service should be available.
+base endpoint where the GTS service should be available. Defaults to `/gts`.
 
 #### Layer Configuration
 

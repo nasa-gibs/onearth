@@ -220,9 +220,9 @@ static apr_status_t get_config_for_layer(request_rec *r, twms_conf **cfg, const 
     const char *cfg_filename = (*cfg)->cfg_filename_template;
 
     // Substitute layer name into the template for our config file
-    if (const char *layer_field = ap_strstr(cfg_filename, "${layer}")) {
+    if (const char *layer_field = ap_strstr(cfg_filename, "{layer}")) {
         const char *prefix = apr_pstrmemdup(r->pool, cfg_filename, layer_field - cfg_filename);
-        cfg_filename = apr_pstrcat(r->pool, prefix, layer_name, layer_field + strlen("${layer}"), NULL);
+        cfg_filename = apr_pstrcat(r->pool, prefix, layer_name, layer_field + strlen("{layer}"), NULL);
     }
 
     // Start with the source configuration
