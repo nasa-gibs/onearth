@@ -45,7 +45,7 @@ import requests
 from functools import partial, reduce
 import re
 import math
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 EARTH_RADIUS = 6378137.0
 
@@ -233,6 +233,18 @@ def format_source_url(source_url, reproj_tms):
     return re.sub(r'(.*{TileMatrixSet})(.*)', r'\1', source_url).replace('{Time}', '${date}').replace('{TileMatrixSet}', reproj_tms['identifier'])
 
 
+def make_proxy_config(proxy_path):
+    return bulk_replace(PROXY_TEMPLATE, [
+        ('{remote_endpoint}', proxy_path['remote_path']),
+        ('{local_endpoint}', proxy_path['local_path'])])
+
+
+def format_source_uri_for_proxy(uri, proxy_paths):
+    for proxy_path in proxy_paths:
+        if proxy_path['remote_path'] in uri:
+            return uri.replace(proxy_path['remote_path'], proxy_path['local_path'])
+
+
 def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, layer_xml):
     src_size = get_src_size(source_tms_defs, layer_xml)
     source_tms = get_source_tms(source_tms_defs, layer_xml)
@@ -324,7 +336,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         ('{mimetype}', layer_config["mimetype"]),
         ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
-        ('{source_path}', PROXY_PREFIX + urlparse(layer_config['source_url_template']).path)])
+        ('{source_path}', format_source_uri_for_proxy(layer_config['source_url_template'], endpoint_config['proxy_paths']))])
 
     twms_config = bulk_replace(
         LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
@@ -354,21 +366,16 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
             'src_config': src_config, 'reproj_config': reproj_config, 'twms_config': twms_config}
 
 
-def get_proxy_source_path(layers):
-    base_proxy_location = None
+def get_proxy_paths(layers):
+    proxy_paths = []
     for layer_config in layers:
-        source_url = layer_config['source_url_template']
-        path = re.sub(r'(.*)\/\${date}', r'\1',
-                      source_url)
-        if not base_proxy_location:
-            base_proxy_location = path
-            continue
-        for idx in range(len(base_proxy_location)):
-            if source_url[idx] == base_proxy_location[idx]:
-                continue
-            base_proxy_location = base_proxy_location[0:idx]
-            break
-    return base_proxy_location
+        data_file_uri = re.sub(r'(.*)\/\${date}', r'\1',
+                               layer_config['source_url_template'])
+        url_parts = urlsplit(data_file_uri)
+        remote_path = f'{url_parts.scheme}://{url_parts.netloc}'
+        if not any(path for path in proxy_paths if path['remote_path'] == remote_path):
+            proxy_paths.append({'local_path': f'{PROXY_PREFIX}-{url_parts.scheme}-{url_parts.netloc.replace(".", "-")}', 'remote_path': remote_path})
+    return proxy_paths
 
 
 def build_configs(endpoint_config, make_twms=False):
@@ -384,7 +391,7 @@ def build_configs(endpoint_config, make_twms=False):
 
     # Get output TMS definitions (provided by local file)
     if not endpoint_config.get('tms_defs_file'):
-        print('No Tile Matrix Set definition file defined by endpoint config or command line parameters. Using ./tilematrixsets.xml')
+        print('\nNo Tile Matrix Set definition file defined by endpoint config or command line parameters. Using ./tilematrixsets.xml')
         endpoint_config['tms_defs_file'] = 'tilematrixsets.xml'
 
     target_tms_defs = list(parse_tms_xml(
@@ -400,7 +407,7 @@ def build_configs(endpoint_config, make_twms=False):
                               target_tms_defs), gc_xml.iter('{*}Layer')))
 
     # Build configs for each layer
-    endpoint_config['common_src_path'] = get_proxy_source_path(layers)
+    endpoint_config['proxy_paths'] = get_proxy_paths(layers)
 
     layer_apache_configs = map(
         partial(make_apache_layer_config, endpoint_config, make_twms=make_twms), layers)
@@ -423,7 +430,7 @@ def build_configs(endpoint_config, make_twms=False):
             Path(config_path, 'twms.config'). write_text(
                 layer_config['twms_config'])
 
-    print(f'Layer configs written to {endpoint_config_base_location}\n')
+    print(f'\nLayer configs written to {endpoint_config_base_location}\n')
 
     # Write out Apache config
     apache_config_path = Path('/etc/httpd/conf.d/oe2-reproject-service.conf')
@@ -436,8 +443,9 @@ def build_configs(endpoint_config, make_twms=False):
     Path(apache_config_path.parent).mkdir(parents=True, exist_ok=True)
     apache_config_str = MAIN_APACHE_CONFIG_TEMPLATE.replace(
         '{endpoint_path}', endpoint_config_base_location)
-    apache_config_str += '\n' + PROXY_TEMPLATE.replace(
-        '{local_endpoint}',  PROXY_PREFIX + urlparse(endpoint_config['common_src_path']).path).replace('{remote_endpoint}', endpoint_config['common_src_path'])
+    print(make_proxy_config(endpoint_config['proxy_paths'][0]))
+    apache_config_str += '\n' + '\n'.join(make_proxy_config(proxy_path)
+                                          for proxy_path in endpoint_config['proxy_paths'])
     if make_twms:
         apache_config_str += '\n' + TWMS_MODULE_TEMPLATE
     apache_config_str += '\n' + '\n'.join(layer_apache_configs)
