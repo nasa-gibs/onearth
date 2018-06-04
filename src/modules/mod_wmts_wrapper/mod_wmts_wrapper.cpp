@@ -447,8 +447,14 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
 
     json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
     json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
-    json_unpack(root, "{s:s, s:s}", "date", date_string, "filename", filename);
 
+    // If we get an error message from the date service, kick back a 404.
+    char *err_msg = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    if (json_unpack(root, "{s:s}", "err_msg", &err_msg) == 0) {
+        return HTTP_NOT_FOUND;
+    }
+
+    json_unpack(root, "{s:s, s:s}", "date", date_string, "filename", filename);
     return APR_SUCCESS;
 }
 
@@ -519,9 +525,8 @@ static int pre_hook(request_rec *r)
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, timestamp=%ld, uuid=%s",
             apr_time_now(), uuid);
 
-
         const char *filename = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_filename") : NULL;
-        datetime_str = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") : NULL;
+        datetime_str = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") : "default";
         
         // Start by verifying the requested tile coordinates/format from the URI against the mod_reproject configuration for this endpoint
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
