@@ -1,7 +1,7 @@
 FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
-RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget
+RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel
 RUN yum install -y luarocks
 RUN yum install -y redis
 
