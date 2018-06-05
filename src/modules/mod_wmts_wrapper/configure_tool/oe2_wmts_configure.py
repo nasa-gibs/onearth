@@ -312,7 +312,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # Insert time stuff if applicable (using a regexp to stick it in the
     # <Directory> block)
     if not static:
-        date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{date_service_uri}"'
+        date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{LOCAL_DATE_SERVICE_URI}"'
         apache_config = re.sub(r'(WMTSWrapperEnableTime.*)',
                                r'\1' + date_service_snippet, apache_config)
 
@@ -332,9 +332,9 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     if not static:
         if year_dir:
             data_path_str += '/${YYYY}'
-            idx_path = idx_path / '${YYYY}'
+            idx_path += '/${YYYY}'
         data_path_str += '/${filename}'
-        idx_path = idx_path / '${filename}'
+        idx_path += '/${filename}'
 
     main_wmts_config = bulk_replace(LAYER_MOD_MRF_CONFIG_TEMPLATE, [
         ('{size_x}', str(size_x)),
@@ -387,7 +387,7 @@ def get_layer_configs(endpoint_config, make_twms=False):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
-        print("nMust specify 'layer_config_source'!")
+        print("\nMust specify 'layer_config_source'!")
         sys.exit()
 
     # Build all source configs - traversing down a single directory level
