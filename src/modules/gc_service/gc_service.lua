@@ -6,7 +6,7 @@ local lfs = require "lfs"
 local lyaml = require "lyaml"
 local request = require "http.request"
 local JSON = require "JSON"
-local inspect = require "inspect"
+
 
 -- Reference Constants
 local EARTH_RADIUS = 6378137.0
@@ -372,7 +372,9 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
     local static = true
-    static = config.static or static
+    if config.static ~= nil then
+        static = config.static
+    end
 
     local defaultDate
     local periods

@@ -17,7 +17,8 @@ dependencies = {
    "lyaml",
    "luasocket",
    "json-lua",
-   "http"
+   "http",
+   "argparse"
 }
 build = {
    type = "builtin",
