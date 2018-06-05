@@ -33,6 +33,10 @@ RUN aws configure set region us-east-1
 # Install siege
 RUN yum install -y siege
 
+# Install numpy
+WORKDIR /home/perf
+RUN pip install numpy
+
 # Run performance test
 #WORKDIR /home/perf/onearth/docker/profiler
 #CMD sh start_profiler.sh
