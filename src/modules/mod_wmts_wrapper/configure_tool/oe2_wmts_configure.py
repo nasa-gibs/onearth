@@ -133,6 +133,15 @@ MIME_TO_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
+MIME_TO_MRF_EXTENSION = {
+    'image/png': '.ppg',
+    'image/jpeg': '.pjg',
+    'image/tiff': '.ptf',
+    'image/lerc': '.lerc',
+    'application/x-protobuf;type=mapbox-vector': '.pvt',
+    'application/vnd.mapbox-vector-tile': '.pvt'
+}
+
 # Utility functions
 
 
@@ -254,7 +263,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         tile_size_x = layer_config['source_mrf']['tile_size_x']
         tile_size_y = layer_config['source_mrf']['tile_size_y']
         bands = layer_config['source_mrf']['bands']
-        idx_path = Path(layer_config['source_mrf']['idx_path'])
+        idx_path = layer_config['source_mrf']['idx_path']
         mimetype = layer_config['mime_type']
     except KeyError as err:
         print(f"\n{layer_config_path} is missing required config element {err}")
@@ -279,17 +288,17 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
 
     base_idx_path = endpoint_config.get('base_idx_path', None)
     if base_idx_path:
-        idx_path = Path(base_idx_path, idx_path)
+        idx_path = base_idx_path + '/' + idx_path
 
-    # Check to see if and data files exist and warn if not
-    if static and not Path(idx_path).exists():
-        print(f"\nWARNING: Can't find IDX file specified: {idx_path}")
+    # # Check to see if and data files exist and warn if not
+    # if static and not Path(idx_path).exists():
+    #     print(f"\nWARNING: Can't find IDX file specified: {idx_path}")
 
-    if static and data_file_path and not Path(data_file_path).exists():
-        print(f"\nWARNING: Can't find data file specified: {data_file_path}")
+    # if static and data_file_path and not Path(data_file_path).exists():
+    #     print(f"\nWARNING: Can't find data file specified: {data_file_path}")
 
-    if static and requests.head(data_file_uri).status_code != 200:
-        print(f"\nWARNING: Can't access data file uri: {data_file_uri}")
+    # if static and requests.head(data_file_uri).status_code != 200:
+    #     print(f"\nWARNING: Can't access data file uri: {data_file_uri}")
 
     config_file_path = Path(
         endpoint_path, layer_id, "default", tilematrixset, 'mod_mrf.config')
@@ -331,10 +340,15 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # Add in substitution strings for mod_wmts_wrapper for non-static layers
     if not static:
         if year_dir:
-            data_path_str += '/${YYYY}'
-            idx_path += '/${YYYY}'
+            if not data_path_str.endswith('/'):
+                data_path_str += '/'
+            data_path_str += '${YYYY}'
+            if not data_path_str.endswith('/'):
+                idx_path += '/'
+            idx_path += '${YYYY}'
         data_path_str += '/${filename}'
-        idx_path += '/${filename}'
+        data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
+        idx_path += '/${filename}.idx'
 
     main_wmts_config = bulk_replace(LAYER_MOD_MRF_CONFIG_TEMPLATE, [
         ('{size_x}', str(size_x)),
@@ -342,7 +356,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         ('{tile_size_x}', str(tile_size_x)),
         ('{tile_size_y}', str(tile_size_y)),
         ('{bands}', str(bands)),
-        ('{idx_path}', idx_path.as_posix()),
+        ('{idx_path}', idx_path),
         ('{skipped_levels}', '1' if 'EPSG4326' in tilematrixset else '0')])
 
     # Handle optionals like EmptyTile

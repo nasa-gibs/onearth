@@ -82,7 +82,7 @@ BoundingBox {bbox}
 """
 
 MOD_REPROJECT_REPRO_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
-Nearest On
+Nearest {nearest}
 PageSize {tile_size_x} {tile_size_y} 1 {bands}
 Projection {projection}
 BoundingBox {bbox}
@@ -336,7 +336,9 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         ('{mimetype}', layer_config["mimetype"]),
         ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
-        ('{source_path}', format_source_uri_for_proxy(layer_config['source_url_template'], endpoint_config['proxy_paths']))])
+        ('{source_path}', format_source_uri_for_proxy(layer_config[
+         'source_url_template'], endpoint_config['proxy_paths'])),
+        ('{nearest}', 'Off' if mimetype == 'image/jpeg' else 'On')])
 
     twms_config = bulk_replace(
         LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
