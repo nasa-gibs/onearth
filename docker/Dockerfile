@@ -4,6 +4,10 @@ RUN yum groupinstall -y "Development Tools"
 RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel
 RUN yum install -y luarocks
 RUN yum install -y redis
+RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y python36u python36u-pip python36u-devel
+RUN pip3.6 install requests
+RUN pip3.6 install pyaml
 
 RUN mkdir /home/oe2
 RUN mkdir -p /var/www
