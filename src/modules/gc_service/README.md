@@ -8,6 +8,8 @@ same YAML configuration files used by other OnEarth 2 services.
 * Lua 5.1
 * luarocks
 * mod_ahtse_lua
+* openssl-devel
+* libyaml-devel
 
 ## Installation
 
@@ -16,7 +18,7 @@ First make sure that the `mod_ahtse_lua` module is installed.
 Next, use `luarocks` to install the OnEarth 2 GetCapabilities service module and
 its dependencies:
 
-`luarocks make onearth_gc_gts-0.1-1`
+`luarocks make onearth_gc_gts-0.1-1.rockspec`
 
 ---
 
@@ -45,7 +47,7 @@ your Apache directories.
 
 `--no_gc` -- Don't configure the GetCapabilities service
 
-`--make_gc` -- Configure the GetTileService service (off by default)
+`--make_gts` -- Configure the GetTileService service (off by default)
 
 #### Endpoint Configuration
 
