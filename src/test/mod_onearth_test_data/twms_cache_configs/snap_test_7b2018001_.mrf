@@ -1,0 +1,24 @@
+<MRF_META>
+  <Raster>
+    <Size c="3" x="2560" y="1280" z="288"/>
+    <Compression>JPEG</Compression>
+    <Quality>80</Quality>
+    <PageSize c="3" x="512" y="512"/>
+  </Raster>
+  <Rsets model="uniform" scale="2">
+    <DataFileName>{cache_path}/snap_test_7b/YYYY/snap_test_7bTTTTTTT_.pjg</DataFileName>
+    <IndexFileName>{cache_path}/snap_test_7b/YYYY/snap_test_7bTTTTTTT_.idx</IndexFileName>
+    <ZIndexFileName>{cache_path}/snap_test_7b/YYYY/snap_test_7bTTTTTTT_.zdb</ZIndexFileName>
+  </Rsets>
+  <GeoTags>
+    <BoundingBox maxx="180.00000000" maxy=" 90.00000000" minx="-180.00000000" miny="-90.00000000"/>
+  </GeoTags>
+  <TWMS>
+    <Levels>3</Levels>
+    <EmptyInfo offset="0" size="1397"/>
+    <Pattern><![CDATA[request=GetMap&layers=snap_test_7b&srs=EPSG:4326&format=image%2Fjpeg&styles=&time=[-0-9]*&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+    <Pattern><![CDATA[request=GetMap&layers=snap_test_7b&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]*]]></Pattern>
+    <Time>2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M</Time>
+  </TWMS>
+  <Projection><![CDATA[GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]]]></Projection>
+</MRF_META>
