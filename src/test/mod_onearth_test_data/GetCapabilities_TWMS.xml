@@ -148,6 +148,16 @@
       <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
        </Layer>
     <Layer queryable="0">
+      <Name>snap_test_4c</Name>
+      <Title xml:lang="en">OnEarth Date Snapping Scenario 4c</Title>
+      <Abstract xml:lang="en">snap_test_4c abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+	</Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
+    <Layer queryable="0">
       <Name>snap_test_5a</Name>
       <Title xml:lang="en">OnEarth Date Snapping Scenario 5a</Title>
       <Abstract xml:lang="en">snap_test_5a abstract</Abstract>
@@ -161,6 +171,56 @@
       <Name>snap_test_6a</Name>
       <Title xml:lang="en">OnEarth Date Snapping Scenario 6a</Title>
       <Abstract xml:lang="en">snap_test_6a abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
+    <Layer queryable="0">
+      <Name>snap_test_6b</Name>
+      <Title xml:lang="en">OnEarth Date Snapping Scenario 6b</Title>
+      <Abstract xml:lang="en">snap_test_6b abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
+    <Layer queryable="0">
+      <Name>snap_test_6c</Name>
+      <Title xml:lang="en">OnEarth Date Snapping Scenario 6c</Title>
+      <Abstract xml:lang="en">snap_test_6c abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
+    <Layer queryable="0">
+      <Name>snap_test_7a</Name>
+      <Title xml:lang="en">OnEarth Date Snapping Scenario 7a</Title>
+      <Abstract xml:lang="en">snap_test_7a abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
+    <Layer queryable="0">
+      <Name>snap_test_7b</Name>
+      <Title xml:lang="en">OnEarth Date Snapping Scenario 7b</Title>
+      <Abstract xml:lang="en">snap_test_7b abstract</Abstract>
+      <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
+      <Style>
+        <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
+      </Style>
+      <ScaleHint min="10" max="100"/> <MinScaleDenominator>100</MinScaleDenominator>
+       </Layer>
+    <Layer queryable="0">
+      <Name>snap_test_7c</Name>
+      <Title xml:lang="en">OnEarth Date Snapping Scenario 7c</Title>
+      <Abstract xml:lang="en">snap_test_7c abstract</Abstract>
       <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
       <Style>
         <Name>default</Name> <Title xml:lang="en">(default) Default style</Title>
