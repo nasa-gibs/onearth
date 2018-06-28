@@ -4,7 +4,7 @@
 FROM onearth
 
 COPY rpms/*.rpm /rpms/
-RUN yum install -y /rpms/*.rpm && yum clean all
+RUN yum reinstall -y /rpms/onearth-demo-*.el7.noarch.rpm && yum clean all
 
 WORKDIR /usr/share/onearth/demo/examples/default
 RUN ./configure_demo.sh
