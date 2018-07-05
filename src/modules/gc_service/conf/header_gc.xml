@@ -42,14 +42,14 @@
         <ows:Operation name="GetCapabilities">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg3413/best/1.0.0/WMTSCapabilities.xml">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>RESTful</ows:Value>
                             </ows:AllowedValues>
                         </ows:Constraint>
                     </ows:Get>
-                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg3413/best/wmts.cgi?">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>KVP</ows:Value>
@@ -62,14 +62,14 @@
         <ows:Operation name="GetTile">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg3413/best/">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>RESTful</ows:Value>
                             </ows:AllowedValues>
                         </ows:Constraint>
                     </ows:Get>
-                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg3413/best/wmts.cgi?">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>KVP</ows:Value>

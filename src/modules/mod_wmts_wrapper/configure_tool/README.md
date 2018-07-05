@@ -137,7 +137,7 @@ relative to that path.
 
 `data_file_uri` (optional) -- Remote URI to this layer's MRF data file. If this
 layer has a TIME dimension, just enter the path of the data file up to the year
-directory (if it has one). `mod_wmts_rapper` will calculate the filename using
+directory (if it has one). `mod_wmts_wrapper` will calculate the filename using
 the date service.
 
 `year_dir` (optional) -- For dynamic layers, if the data and IDX files are

@@ -16,7 +16,7 @@ RUN mkdir -p /var/www
 WORKDIR /home/oe2
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
-RUN git checkout 2.1.0
+RUN git checkout 2.1.1
 
 # Install mod_proxy patch
 WORKDIR /tmp
@@ -72,6 +72,10 @@ WORKDIR /home/oe2/onearth/src/modules/time_snap/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
+
+# Install GC Service configs
+RUN mkdir -p /etc/onearth/config
+RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
