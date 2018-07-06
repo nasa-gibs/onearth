@@ -16,6 +16,7 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/epsg4326/*
 
 # Make GC Service
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_gc.yaml --make_gts
 
 # Copy empty tiles
 mkdir -p /onearth/empty_tiles/
@@ -23,6 +24,7 @@ cp empty_tiles/* /onearth/empty_tiles/
 
 # Run layer config tools
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326.yaml
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857.yaml
 
 # Copy config stuff
 mkdir -p /var/www/html/mrf_endpoint/static_test/default/tms

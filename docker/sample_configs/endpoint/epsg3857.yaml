@@ -1,0 +1,5 @@
+endpoint_config_base_location: "/var/www/html/wmts/epsg3857/all"
+date_service_uri: "http://localhost/date_service/date"
+target_epsg_code: "EPSG:3857"
+source_gc_uri: "http://localhost/wmts/epsg4326/all/1.0.0/GetCapabilities.xml"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
