@@ -33,6 +33,7 @@ OnEarth is actively maintained by the NASA Global Imagery Browse Services (GIBS)
 
 * [mrfgen](src/mrfgen/README.md)
 * [vectorgen](src/vectorgen/README.md)
+* [OnEarth Layer Configuration Tools](src/modules/mod_wmts_wrapper/configure_tool/README.md)
 * [OnEarth Color Maps](src/colormaps/README.md)
 * [OnEarth Legend Generator](src/generate_legend/README.md)
 * [OnEarth Metrics](src/onearth_logs/README.md)
