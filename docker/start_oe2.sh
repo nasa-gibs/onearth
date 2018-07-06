@@ -7,6 +7,20 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
+# Copy sample configs
+chmod -R 755 /onearth
+cp sample_configs/endpoint/* /etc/onearth/config/endpoint/
+mkdir -p /onearth/layers
+cp -R sample_configs/layers/* /etc/onearth/config/layers/
+sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/epsg4326/*
+
+# Make GC Service
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326.yaml --make_gts
+
+# Copy empty tiles
+mkdir -p /onearth/empty_tiles/
+cp empty_tiles/* /onearth/empty_tiles/
+
 # Copy config stuff
 mkdir -p /var/www/html/mrf_endpoint/static_test/default/tms
 cp test_imagery/static_test* /var/www/html/mrf_endpoint/static_test/default/tms/

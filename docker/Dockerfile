@@ -74,8 +74,10 @@ WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
 
 # Install GC Service configs
-RUN mkdir -p /etc/onearth/config
+RUN mkdir -p /etc/onearth/config/endpoint
 RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
+WORKDIR /home/oe2/onearth/src/modules/gc_service
+RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
