@@ -338,7 +338,8 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
         ('{source_path}', format_source_uri_for_proxy(layer_config[
          'source_url_template'], endpoint_config['proxy_paths'])),
-        ('{nearest}', 'Off' if mimetype == 'image/jpeg' else 'On')])
+        ('{nearest}', 'Off' if layer_config[
+                'mimetype'] == 'image/jpeg' else 'On')])
 
     twms_config = bulk_replace(
         LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
