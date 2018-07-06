@@ -9,8 +9,16 @@ fi
 
 # GIBS sample configs
 
+# BlueMarble
 mkdir -p /onearth/idx/epsg4326/BlueMarble/
 wget -O /onearth/idx/epsg4326/BlueMarble/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
+
+# ASTER_L1T_Radiance_Terrain_Corrected
+
+mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
+wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz
+tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/
+mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx
 
 # Older configs (will be deleted)
 
@@ -47,18 +55,6 @@ until [ $d -gt 1523318400 ]; do
     let d+=86400
 done
 cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
-
-##mkdir -p /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/2018
-##wget -O /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/766d-MOR5WVIRLLNT-2018016000000.idx https://s3.amazonaws.com/gitc-test-imagery/766d-MOR5WVIRLLNT-2018016000000.idx
-#wget -O /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/MOR5WVIRLLNT.idx https://s3.amazonaws.com/gitc-test-imagery/MOR5WVIRLLNT.idx
-#d=1516060800
-#until [ $d -gt 1524614400 ]; do
-#    f=$(../src/test/oe_gen_hash_filename.py -l MOR5WVIRLLNT -t $d -e .idx)
-#    ln -s /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/MOR5WVIRLLNT.idx /var/www/html/mrf_e
-#ndpoint/MOR5WVIRLLNT/default/2km/2018/$f
-#    let d+=86400
-#done
-##cp layer_configs/MOR5WVIRLLNT.config /var/www/html/mrf_endpoint/MOR5WVIRLLNT/default/2km/
 
 # AST_L1T sample configs
 
