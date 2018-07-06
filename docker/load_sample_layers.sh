@@ -9,6 +9,11 @@ fi
 
 # GIBS sample configs
 
+mkdir -p /onearth/idx/epsg4326/BlueMarble/
+wget -O /onearth/idx/epsg4326/BlueMarble/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
+
+# Older configs (will be deleted)
+
 mkdir -p /var/www/html/reproject_endpoint/BlueMarble/default/500m/
 cp layer_configs/BlueMarble_reproject.config /var/www/html/reproject_endpoint/BlueMarble/default/500m/
 cp layer_configs/BlueMarble_source.config /var/www/html/reproject_endpoint/BlueMarble/default/500m//

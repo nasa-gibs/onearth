@@ -98,7 +98,7 @@ window.onload = function() {
     });
 
     var source = new ol.source.WMTS({
-        url: "/mrf_endpoint/wmts.cgi",
+        url: "/wmts/epsg4326/all/wmts.cgi",
         layer: "BlueMarble",
         format: "image/jpeg",
         matrixSet: "500m",
