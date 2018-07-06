@@ -79,6 +79,10 @@ RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
 WORKDIR /home/oe2/onearth/src/modules/gc_service
 RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin/
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
+
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
 RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
