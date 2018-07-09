@@ -191,7 +191,7 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
         # Copy empty output tile and input imagery
         shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
         #shutil.copytree(os.path.join(testdata_path, 'bluemarble_small'), os.path.join(self.staging_area, 'bluemarble_small'))
-        shutil.copy2(os.path.join(testdata_path, 'bluemarble_small/bluemarble_small.wld'), os.path.join(self.staging_area, 'bluemarble_small'))
+        shutil.copy2(os.path.join(testdata_path, 'bluemarble_small/bluemarble_small.jgw'), os.path.join(self.staging_area, 'bluemarble_small'))
 
         self.output_mrf = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.mrf")
         self.output_ppg = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.ppg")

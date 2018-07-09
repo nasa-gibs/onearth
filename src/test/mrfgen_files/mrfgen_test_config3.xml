@@ -3,7 +3,6 @@
  <date_of_data>20140825</date_of_data>
  <parameter_name>BlueMarbleSmall</parameter_name>
  <input_files>
-  <file>mrfgen_files/bluemarble_small/bluemarble_small.wld</file>
   <file>mrfgen_files/bluemarble_small/bluemarble_small.jpg</file>
  </input_files>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
