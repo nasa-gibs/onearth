@@ -19,6 +19,40 @@ static void *create_dir_config(apr_pool_t *p, char *dummy)
     return c;
 }
 
+static int send_wmts_error(request_rec *r, int status, const char *exceptionCode, const char *exceptionText)
+{
+    static char preamble[]=
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<ExceptionReport xmlns=\"http://www.opengis.net/ows/1.1\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd\" version=\"1.1.0\" xml:lang=\"en\">";
+    static char postamble[]="\n</ExceptionReport>" ;
+
+    ap_set_content_type(r,"text/xml");
+    ap_rputs(preamble, r);
+
+    static char preexception[]="\n<Exception exceptionCode=\"";
+    // static char prelocator[]="\" locator=\"";
+    static char postlocator[]="\">";
+    static char pretext[]="\n<ExceptionText>";
+    static char posttext[]="</ExceptionText>";
+    static char postexception[]="</Exception>";
+
+    ap_rputs(preexception, r);
+    ap_rputs(exceptionCode, r);
+    // ap_rputs(prelocator, r);
+    // ap_rputs(error.locator, r);
+    ap_rputs(postlocator, r);
+    ap_rputs(pretext, r);
+    ap_rputs(exceptionText, r);
+    ap_rputs(posttext, r);
+    ap_rputs(postexception, r);
+
+    r->status = status;
+
+    ap_rputs(postamble, r);
+    return OK; // Request handled
+}
+
+
 //
 // Tokenize a string into an array
 //  
@@ -540,8 +574,10 @@ static int handler(request_rec *r)
     apr_time_t start_index_lookup = apr_time_now();
 
     apr_file_t *idxf, *dataf;
-    SERR_IF(open_index_file(r, &idxf, cfg->idxfname),
-        apr_psprintf(r->pool, "Can't open %s", cfg->idxfname));
+    if (open_index_file(r, &idxf, cfg->idxfname)){
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "Can't open %s", cfg->idxfname);
+        return send_wmts_error(r, 500, "NoApplicableCode", "Data missing");
+    }
     TIdx index;
     apr_size_t read_size = sizeof(TIdx);
 
@@ -613,15 +649,16 @@ static int handler(request_rec *r)
         if (status != APR_SUCCESS || sr->status != HTTP_PARTIAL_CONTENT 
             || rctx.size != static_cast<int>(index.size)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Can't fetch data from %s", cfg->redirect);
-            return HTTP_SERVICE_UNAVAILABLE;
+            return send_wmts_error(r, 500, "NoApplicableCode", "Data missing");
         }
         apr_table_clear(r->headers_out);
     }
     else
     { // Read from a local file
-        SERR_IF(open_data_file(r, &dataf, cfg->datafname),
-            apr_psprintf(r->pool, "Can't open %s", cfg->datafname));
-
+        if (open_data_file(r, &dataf, cfg->datafname)) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "Can't open %s", cfg->idxfname);
+            return send_wmts_error(r, 500, "NoApplicableCode", "Data missing");
+        }
         // We got the tile index, and is not empty
         SERR_IF(!buffer,
             "Memory allocation error in mod_mrf");
