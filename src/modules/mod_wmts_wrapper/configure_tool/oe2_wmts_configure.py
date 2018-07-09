@@ -257,6 +257,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     try:
         layer_id = layer_config['layer_id']
         static = layer_config['static']
+        projection = layer_config['projection']
         tilematrixset = layer_config['tilematrixset']
         size_x = layer_config['source_mrf']['size_x']
         size_y = layer_config['source_mrf']['size_y']
@@ -357,7 +358,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         ('{tile_size_y}', str(tile_size_y)),
         ('{bands}', str(bands)),
         ('{idx_path}', idx_path),
-        ('{skipped_levels}', '1' if 'EPSG4326' in tilematrixset else '0')])
+        ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
 
     # Handle optionals like EmptyTile
     empty_tile_config = None
