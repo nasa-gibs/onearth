@@ -18,6 +18,10 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/epsg4326/*
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_gc.yaml --make_gts
 
+echo 'Starting Apache server'
+/usr/sbin/httpd -k start
+sleep 2
+
 # Copy empty tiles
 mkdir -p /onearth/empty_tiles/
 cp empty_tiles/* /onearth/empty_tiles/
@@ -116,8 +120,8 @@ mkdir -p /var/www/html/twms/epsg3413/nrt
 # Load GIBS sample layers
 sh load_sample_layers.sh $S3_URL $REDIS_HOST
 
-echo 'Starting Apache server'
-/usr/sbin/httpd -k start
+echo 'Restarting Apache server'
+/usr/sbin/httpd -k restart
 sleep 2
 
 # Tail the apache logs
