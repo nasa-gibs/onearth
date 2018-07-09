@@ -79,6 +79,21 @@ local function getExtensionFromMimeType(mimeType)
     if mimeType == "image/jpeg" then
         return ".jpeg"
     end
+    if mimeType == "image/png" then
+        return ".png"
+    end
+    if mimeType == "image/tiff" then
+        return ".tiff"
+    end
+    if mimeType == "image/lerc" then
+        return ".lerc"
+    end
+    if mimeType == "application/x-protobuf;type=mapbox-vector" then
+        return ".pbf"
+    end
+    if mimeType == "application/vnd.mapbox-vector-tile" then
+        return ".mvt"
+    end    
 end
 
 local function getDateList(dateServiceUri)
