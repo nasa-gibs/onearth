@@ -13,14 +13,7 @@ fi
 mkdir -p /onearth/idx/epsg4326/BlueMarble/
 wget -O /onearth/idx/epsg4326/BlueMarble/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
 
-# ASTER_L1T_Radiance_Terrain_Corrected
-
-mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
-wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz
-tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/
-mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx
-
-# Older configs (will be deleted)
+# Performance Test Configurations
 
 mkdir -p /var/www/html/reproject_endpoint/BlueMarble/default/500m/
 cp layer_configs/BlueMarble_reproject.config /var/www/html/reproject_endpoint/BlueMarble/default/500m/
@@ -56,50 +49,19 @@ until [ $d -gt 1523318400 ]; do
 done
 cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
 
-# AST_L1T sample configs
+# ASTER_L1T_Radiance_Terrain_Corrected
 
-# Copy AST_L1T conf and replace {S3_URL} in conf
-cp oe2_test_AST_L1T.conf /etc/httpd/conf.d
-sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_AST_L1T.conf
-
-# Alias endpoints
-mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/best/ASTER_L1T_Radiance_Terrain_Corrected/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/std/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg3857/all/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/GoogleMapsCompatible_Level13
-mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/best/ASTER_L1T_Radiance_Terrain_Corrected/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/std/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/15.625m/2016
-mkdir -p /var/www/html/wmts/epsg4326/all/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/default/15.625m/2016
-
-# Index file directories
-mkdir -p /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
-mkdir -p /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
-
-# TWMS configs and endpoints
-mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-mkdir -p /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected
-mkdir -p /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected
-
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected.config /var/www/html/wmts/epsg4326/configs/
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_source.config /var/www/html/wmts/epsg3857/configs/
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_reproject.config /var/www/html/wmts/epsg3857/configs/
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected/twms.config
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected/twms.config
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_4326_twms.config /var/www/html/twms/epsg4326/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/twms.config
-cp layer_configs/ASTER_L1T_Radiance_Terrain_Corrected_3857_twms.config /var/www/html/twms/epsg3857/configs/ASTER_L1T_Radiance_Terrain_Corrected_v3_STD/twms.config
-cp empty_tiles/ASTER_L1T_Radiance_Terrain_Corrected.png /var/www/html/wmts/epsg4326/empty_tiles/
-
-wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx
-wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx
-wget -O /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz
-tar -zxf /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz -C /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/
-mv /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/out/out.idx /var/www/html/wmts/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx
+mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
+mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
+wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz
+tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
+mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx
+wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz
+tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
+mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/5978-ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx
+wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz
+tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/
+mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx
 
 # Sample MODIS configs
 cp oe2_test_MODIS.conf /etc/httpd/conf.d
@@ -133,21 +95,21 @@ mkdir -p /var/www/html/wmts/epsg3031/all/MODIS_Aqua_CorrectedReflectance_Bands72
 mkdir -p /var/www/html/wmts/epsg3413/all/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/default/250m
 
 # Index file directories
-mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
-mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
-mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
-mkdir -p /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
+mkdir -p /onearth/idx/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012
+mkdir -p /onearth/idx/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012
+mkdir -p /onearth/idx/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012
+mkdir -p /onearth/idx/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012
+mkdir -p /onearth/idx/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
+mkdir -p /onearth/idx/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/
+mkdir -p /onearth/idx/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
+mkdir -p /onearth/idx/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
+mkdir -p /onearth/idx/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012
+mkdir -p /onearth/idx/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
+mkdir -p /onearth/idx/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
+mkdir -p /onearth/idx/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012
+mkdir -p /onearth/idx/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
+mkdir -p /onearth/idx/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
+mkdir -p /onearth/idx/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012
 
 # TWMS configs and endpoints
 mkdir -p /var/www/html/twms/epsg4326/configs/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
@@ -189,23 +151,6 @@ cp layer_configs/MODIS_Aqua_Sea_Ice_v6_STD_3857_twms.config /var/www/html/twms/e
 cp layer_configs/MODIS_*4326.config /var/www/html/wmts/epsg4326/configs/
 cp layer_configs/MODIS_*3031.config /var/www/html/wmts/epsg3031/configs/
 cp layer_configs/MODIS_*3413.config /var/www/html/wmts/epsg3413/configs/
-
-# Copy idx files
-wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/2012/1df7-MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Sea_Ice_v6_STD/2012/f45f-MODIS_Aqua_Sea_Ice_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/2012/09ea-MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/b1eb-MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/b1eb-MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/2012/b1eb-MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/e381-MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/e381-MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD/2012/e381-MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3031/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
-wget -P /var/www/html/wmts/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/ https://s3.amazonaws.com/gitc-pgc-public/epsg3413/MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD/2012/8d29-MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD-2012254000000.idx
 
 # Start Redis if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then
