@@ -1,0 +1,20 @@
+--- a/SPECS/httpd.spec	2018-06-26 18:07:11.000000000 +0000
++++ b/SPECS/httpd.spec	2018-07-10 03:01:11.256216915 +0000
+@@ -198,6 +198,8 @@
+ Patch219: httpd-2.4.6-CVE-2017-9788.patch
+ Patch220: httpd-2.4.6-CVE-2017-9798.patch
+ 
++Patch300: mod_proxy_http.patch
++
+ License: ASL 2.0
+ Group: System Environment/Daemons
+ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+@@ -433,6 +435,8 @@
+ %patch219 -p1 -b .cve9788
+ %patch220 -p1 -b .cve9798
+ 
++%patch300 -p1
++
+ # Patch in the vendor string and the release string
+ sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
+ sed -i 's/@RELEASE@/%{release}/' server/core.c

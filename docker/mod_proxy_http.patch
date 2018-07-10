@@ -1,5 +1,5 @@
---- modules/proxy/mod_proxy_http.c	2017-10-31 02:35:40.000000000 +0000
-+++ modules/proxy/mod_proxy_http_patched.c	2017-10-31 02:37:46.000000000 +0000
+--- a/modules/proxy/mod_proxy_http.c	2017-10-31 02:35:40.000000000 +0000
++++ b/modules/proxy/mod_proxy_http.c	2017-10-31 02:37:46.000000000 +0000
 @@ -732,7 +732,11 @@
       */
      if (!r->kept_body && r->main) {

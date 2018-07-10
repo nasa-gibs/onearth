@@ -1,7 +1,7 @@
 FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
-RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel
+RUN yum install -y epel-release lua-devel jansson-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel
 RUN yum install -y luarocks
 RUN yum install -y redis
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
@@ -19,15 +19,22 @@ RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
 RUN git checkout 2.1.1
 
-# Install mod_proxy patch
+# Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
-RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
-RUN tar xf httpd-2.4.6.tar.gz
-WORKDIR /tmp/httpd-2.4.6
-RUN patch -p0 < /home/oe2/onearth/docker/mod_proxy_http.patch
-RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared
-RUN make && make install
-RUN cp /tmp/httpd/modules/mod_proxy* /etc/httpd/modules/
+RUN yum install -y yum-utils rpm-build
+RUN yumdownloader --source httpd
+RUN HOME="/tmp" rpm -ivh httpd-2.4.6-80.el7.centos.1.src.rpm
+RUN yum-builddep -y httpd
+WORKDIR /tmp/rpmbuild/SPECS
+RUN HOME="/tmp" rpmbuild -bp httpd.spec
+COPY http_rpm_spec.patch /home/oe2/onearth/docker/http_rpm_spec.patch
+COPY mod_proxy_http.patch /tmp/rpmbuild/SOURCES
+RUN patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch
+RUN HOME="/tmp" rpmbuild -ba httpd.spec
+RUN yum -y remove httpd httpd-devel httpd-tools
+RUN ls /tmp/rpmbuild/RPMS/x86_64/
+RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm
+RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
 
 # Install APR patch
 WORKDIR /tmp
