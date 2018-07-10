@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<mrfgen_configuration>
+ <date_of_data>20151202</date_of_data>
+ <parameter_name>OBPG_webmerc</parameter_name>
+ <input_files>
+  <file>mrfgen_test_data/obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff</file>
+  <!-- crossing the antimeridian while reprojecting is currently not working
+  <file>mrfgen_test_data/obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff</file>
+  <file>mrfgen_test_data/obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff</file>
+   -->
+ </input_files>
+ <output_dir>mrfgen_test_data/output_dir</output_dir>
+ <working_dir>mrfgen_test_data/working_dir</working_dir>
+ <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGBA_256.png</mrf_empty_tile_filename>
+ <vrtnodata>0</vrtnodata>
+ <mrf_blocksize>256</mrf_blocksize>
+ <mrf_compression_type>PPNG</mrf_compression_type>
+ <outsize>32768 32768</outsize>
+ <overview_resampling>nearest</overview_resampling>
+ <resize_resampling>near</resize_resampling>
+ <target_epsg>3857</target_epsg>
+ <source_epsg>4326</source_epsg>
+ <extents>-180,-90,180,90</extents>
+ <colormap>mrfgen_test_data/working_dir/MODIS_Aqua_Chlorophyll_A.xml</colormap>
+ <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
+ <mrf_nocopy>true</mrf_nocopy>
+ <mrf_merge>false</mrf_merge>
+ <mrf_z_levels>1</mrf_z_levels>
+ <mrf_z_key type="string">20151202</mrf_z_key>
+</mrfgen_configuration>

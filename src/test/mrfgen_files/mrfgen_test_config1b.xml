@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mrfgen_configuration>
+ <date_of_data>20140825</date_of_data>
+ <parameter_name>BlueMarbleSmall</parameter_name>
+ <input_files>
+  <file>mrfgen_test_data/bluemarble_small/bluemarble_small.png</file>
+ </input_files>
+ <output_dir>mrfgen_test_data/output_dir</output_dir>
+ <working_dir>mrfgen_test_data/working_dir</working_dir>
+ <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
+ <vrtnodata>0</vrtnodata>
+ <mrf_blocksize>256</mrf_blocksize>
+ <mrf_compression_type>PNG</mrf_compression_type>
+ <target_x>4096</target_x>
+ <mrf_nocopy>false</mrf_nocopy>
+</mrfgen_configuration>
