@@ -36,9 +36,6 @@ yum install -y \
 
 mkdir -p /build
 rsync -av \
-  --exclude src/modules/mod_receive \
-  --exclude src/modules/mod_reproject \
-  --exclude src/modules/mod_twms \
   /source/ /build/
 
 (

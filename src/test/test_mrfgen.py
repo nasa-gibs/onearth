@@ -45,7 +45,8 @@ import datetime
 import sqlite3
 from osgeo import gdal
 from optparse import OptionParser
-from oe_test_utils import make_dir_tree, mrfgen_run_command as run_command
+from cStringIO import StringIO
+from oe_test_utils import DebuggingServerThread, make_dir_tree, mrfgen_run_command as run_command
 
 DEBUG = False
 
@@ -58,7 +59,7 @@ class TestMRFGeneration(unittest.TestCase):
     def setUp(self):
         testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
         self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
-        test_config = os.path.join(testdata_path, "mrfgen_test_config.xml")
+        test_config = os.path.join(testdata_path, "mrfgen_test_config1a.xml")
 
         # Make empty dirs for mrfgen output
         mrfgen_dirs = ('input_dir', 'output_dir', 'working_dir', 'logfile_dir')
@@ -165,6 +166,113 @@ class TestMRFGeneration(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.staging_area)
 
+
+class TestMRFGeneration_nonpaletted(unittest.TestCase):
+    
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
+        self.tmp_area = os.path.join(self.staging_area, 'tmp')
+        test_config = os.path.join(testdata_path, "mrfgen_test_config1b.xml")
+
+        # Make empty dirs for mrfgen output
+        mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
+        [make_dir_tree(os.path.join(self.staging_area, path)) for path in mrfgen_dirs]
+
+        # Create non-paletted PNG using gdal_translate
+        if DEBUG:
+            print "Generating global image: non-paletted PNG"
+        shutil.copytree(os.path.join(testdata_path, 'bluemarble_small'), os.path.join(self.tmp_area, 'bluemarble_small'))
+        self.input_jpg = os.path.join(self.tmp_area, "bluemarble_small/bluemarble_small.jpg")
+        self.output_png = os.path.join(self.tmp_area, "bluemarble_small/bluemarble_small.png")
+        run_command('gdal_translate -of PNG ' + self.input_jpg + ' ' + self.output_png, show_output=DEBUG)
+        shutil.copytree(os.path.join(self.tmp_area, 'bluemarble_small'), os.path.join(self.staging_area, 'bluemarble_small'))
+
+        # Copy empty output tile and input imagery
+        shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
+        #shutil.copytree(os.path.join(testdata_path, 'bluemarble_small'), os.path.join(self.staging_area, 'bluemarble_small'))
+        shutil.copy2(os.path.join(testdata_path, 'bluemarble_small/bluemarble_small.jgw'), os.path.join(self.staging_area, 'bluemarble_small'))
+
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.mrf")
+        self.output_ppg = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.ppg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.idx")
+        self.output_img = os.path.join(self.staging_area, "output_dir/BlueMarbleSmall2014237_.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp1b.png")
+
+        # generate MRF
+        #pdb.set_trace()
+        cmd = "mrfgen -c " + test_config
+        run_command(cmd, show_output=DEBUG)
+        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # for out in process.communicate():
+        #     if DEBUG:
+        #         print out
+        
+    def test_generate_mrf(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        if DEBUG:
+            print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+        
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
+        if DEBUG:
+            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
+        
+        if DEBUG:
+            print 'Projection:', str(dataset.GetProjection())
+        #self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
+        self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+        
+        if DEBUG:
+            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 3, "Size does not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        if DEBUG:
+            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+        if DEBUG:
+            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(str(geotransform[1]), '0.087890625', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-0.087890625', "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        if DEBUG:
+            print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 4, "Overview count does not match")
+        
+        # Convert and compare MRF
+        mrf = gdal.Open(self.output_mrf)
+        driver = gdal.GetDriverByName("PNG")       
+        img = driver.CreateCopy(self.output_img, mrf, 0 )
+        
+        if DEBUG:
+            print 'Generated: ' + ' '.join(img.GetFileList())
+            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+        self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
+        self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
+        self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
+        
+        if DEBUG:
+            print "Comparing: " + self.output_img + " to " + self.compare_img
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
+        
+        img = None
+        mrf = None
+
+    def tearDown(self):
+        shutil.rmtree(self.staging_area)
+        
 
 class TestMRFGeneration_polar(unittest.TestCase):
     
@@ -825,14 +933,289 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.staging_area)
 
+
+class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
+    
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
+        self.tmp_area = os.path.join(self.staging_area, 'tmp')
+        test_config7a = os.path.join(testdata_path, "mrfgen_test_config7a.xml")
+        test_config7b = os.path.join(testdata_path, "mrfgen_test_config7b.xml")
+
+        # Make empty dirs for mrfgen output
+        mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
+        [make_dir_tree(os.path.join(self.staging_area, path)) for path in mrfgen_dirs]
+
+        # Create non-paletted PNG using pct2rgb.py
+        if DEBUG:
+            print "Generating global image: non-paletted PNG"
+        shutil.copytree(os.path.join(testdata_path, 'obpg'), os.path.join(self.tmp_area, 'obpg'))
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_tiff = os.path.join(self.tmp_area, "obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff")
+        run_command('pct2rgb.py -of GTIFF -rgba ' + self.input_tiff + ' ' + self.output_tiff, show_output=DEBUG)
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_tiff = os.path.join(self.tmp_area, "obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff")
+        run_command('pct2rgb.py -of GTIFF -rgba ' + self.input_tiff + ' ' + self.output_tiff, show_output=DEBUG)
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_tiff = os.path.join(self.tmp_area, "obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff")
+        run_command('pct2rgb.py -of GTIFF -rgba ' + self.input_tiff + ' ' + self.output_tiff, show_output=DEBUG)
+        shutil.copytree(os.path.join(self.tmp_area, 'obpg'), os.path.join(self.staging_area, 'obpg'))
+
+        # create copy of colormap
+        shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
+        shutil.copy2(os.path.join(testdata_path, "colormaps/ColorMap_v1.2_Sample.xml"), os.path.join(self.staging_area, 'working_dir'))
+
+        # Copy empty output tile and input imagery
+        shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
+
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.mrf")
+        self.output_ppg = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.ppg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.idx")
+        self.output_img = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp7a.png")
+
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+
+        # generate MRF
+        #pdb.set_trace()
+        cmd = "mrfgen -c " + test_config7a + " -s --email_server=localhost:1025 --email_sender=earth@localhost.test --email_recipient=space@localhost.test"
+        run_command(cmd, show_output=DEBUG)
+        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # for out in process.communicate():
+        #     if DEBUG:
+        #         print out
+
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result = new_stdout.getvalue()
+        server.stop()
+
+        # Check result
+        self.assertTrue("Subject: [WARN/ONEARTH] triggered by mrfgen" in result)
+        self.assertTrue("From: earth@localhost.test" in result)
+        self.assertTrue("To: space@localhost.test" in result)
+        self.assertTrue("category: mrfgen" in result)
+      
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+
+        # generate MRF
+        #pdb.set_trace()
+        cmd = "mrfgen -c " + test_config7b + " -s"
+        run_command(cmd, show_output=DEBUG)
+        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # for out in process.communicate():
+        #     if DEBUG:
+        #         print out
+
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result2 = new_stdout.getvalue()
+        print result2
+        server.stop()
+
+        # Check result
+        self.assertTrue("Subject: [WARN/ONEARTH] triggered by mrfgen" in result2)
+        self.assertTrue("From: earth@localhost.test" in result2)
+        self.assertTrue("To: space@localhost.test" in result2)
+        self.assertTrue("category: mrfgen" in result2)
+      
+    def test_generate_mrf(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        if DEBUG:
+            print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+        
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
+        if DEBUG:
+            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
+        
+        if DEBUG:
+            print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
+        
+        if DEBUG:
+            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 32768, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 32768, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 1, "Size does not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        if DEBUG:
+            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
+        self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
+        if DEBUG:
+            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(str(geotransform[1]), '1222.99245239', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-1222.99245239', "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        if DEBUG:
+            print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+        
+        # Convert and compare MRF
+        mrf = gdal.Open(self.output_mrf)
+        driver = gdal.GetDriverByName("PNG")       
+        img = driver.CreateCopy(self.output_img, mrf, 0 )
+        
+        if DEBUG:
+            print 'Generated: ' + ' '.join(img.GetFileList())
+            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+        self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
+        self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
+        self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
+        
+        if DEBUG:
+            print "Comparing: " + self.output_img + " to " + self.compare_img
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
+        
+        img = None
+        mrf = None
+
+    def tearDown(self):
+        shutil.rmtree(self.staging_area)
+
+
+class TestMRFGeneration_nonpaletted_badcolormap(unittest.TestCase):
+    
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
+        self.tmp_area = os.path.join(self.staging_area, 'tmp')
+        test_config = os.path.join(testdata_path, "mrfgen_test_config7b.xml")
+
+        # Make empty dirs for mrfgen output
+        mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
+        [make_dir_tree(os.path.join(self.staging_area, path)) for path in mrfgen_dirs]
+
+        # Create non-paletted PNG using pct2rgb.py
+        if DEBUG:
+            print "Generating global image: non-paletted PNG"
+        shutil.copytree(os.path.join(testdata_path, 'obpg'), os.path.join(self.tmp_area, 'obpg'))
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_png = os.path.join(self.tmp_area, "obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS.png")
+        run_command('pct2rgb.py -of PNG -rgba ' + self.input_tiff + ' ' + self.output_png, show_output=DEBUG)
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_png = os.path.join(self.tmp_area, "obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS.png")
+        run_command('pct2rgb.py -of PNG -rgba ' + self.input_tiff + ' ' + self.output_png, show_output=DEBUG)
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_png = os.path.join(self.tmp_area, "obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS.png")
+        run_command('pct2rgb.py -of PNG -rgba ' + self.input_tiff + ' ' + self.output_png, show_output=DEBUG)
+        shutil.copytree(os.path.join(self.tmp_area, 'obpg'), os.path.join(self.staging_area, 'obpg'))
+
+        # create copy of colormap
+        shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
+
+        # Copy empty output tile and input imagery
+        shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
+
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.mrf")
+        self.output_ppg = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.ppg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.idx")
+        self.output_img = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp7a.png")
+
+        # generate MRF
+        #pdb.set_trace()
+        cmd = "mrfgen -c " + test_config
+        run_command(cmd, show_output=DEBUG)
+        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # for out in process.communicate():
+        #     if DEBUG:
+        #         print out
+        
+    def test_generate_mrf(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+        
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        if DEBUG:
+            print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+        
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
+        if DEBUG:
+            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+        self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
+        
+        if DEBUG:
+            print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
+        
+        if DEBUG:
+            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 32768, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 32768, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 3, "Size does not match")
+        
+        geotransform = dataset.GetGeoTransform()
+        if DEBUG:
+            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+        self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
+        self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
+        if DEBUG:
+            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+        self.assertEqual(str(geotransform[1]), '1222.992452392578116', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-1222.992452392578116', "Pixel size does not match")
+        
+        band = dataset.GetRasterBand(1)
+        if DEBUG:
+            print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+        
+        # Convert and compare MRF
+        mrf = gdal.Open(self.output_mrf)
+        driver = gdal.GetDriverByName("PNG")       
+        img = driver.CreateCopy(self.output_img, mrf, 0 )
+        
+        if DEBUG:
+            print 'Generated: ' + ' '.join(img.GetFileList())
+            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+        self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
+        self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
+        self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
+        
+        if DEBUG:
+            print "Comparing: " + self.output_img + " to " + self.compare_img
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
+        
+        img = None
+        mrf = None
+
+    def tearDown(self):
+        shutil.rmtree(self.staging_area)
+        
+
 if __name__ == '__main__':
     # Parse options before running tests
     available_tests = {'mrf_generation': TestMRFGeneration,
+                       'mrf_generation_nonpaletted': TestMRFGeneration_nonpaletted,
                        'polar_mrf': TestMRFGeneration_polar,
                        'mercator_mrf': TestMRFGeneration_mercator,
                        'geo_granule': TestMRFGeneration_OBPG,
                        'mercator_granule': TestMRFGeneration_OBPG_webmerc,
-                       'tiled_z': TestMRFGeneration_tiled_z
+                       'tiled_z': TestMRFGeneration_tiled_z,
+                       'mrf_generation_nonpaletted_colormap': TestMRFGeneration_nonpaletted_colormap
                        }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(available_tests.keys())
     parser = OptionParser()

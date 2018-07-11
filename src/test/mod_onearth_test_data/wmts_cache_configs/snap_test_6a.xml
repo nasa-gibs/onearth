@@ -1,0 +1,26 @@
+      <Layer>
+         <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 6a</ows:Title>
+         <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -90</ows:LowerCorner>
+            <ows:UpperCorner>180 90</ows:UpperCorner>
+        </ows:WGS84BoundingBox>
+         <ows:Identifier>snap_test_6a</ows:Identifier>
+         <Style isDefault="true">
+             <ows:Title xml:lang="en">default</ows:Title>
+             <ows:Identifier>default</ows:Identifier>
+             
+             
+         </Style>
+         <Format>image/jpeg</Format>
+         <Dimension>
+             <ows:Identifier>time</ows:Identifier>
+             <UOM>ISO8601</UOM>
+             <Default>2018-01-01T00:00:00Z</Default>
+             <Current>false</Current>
+             <Value>2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M</Value>
+         </Dimension>
+         <TileMatrixSetLink>
+             <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
+         </TileMatrixSetLink>
+         <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/onearth/test/wmts/snap_test_6a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg"/>
+      </Layer>

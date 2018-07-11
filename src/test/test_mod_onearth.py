@@ -121,7 +121,23 @@ class TestModOnEarth(unittest.TestCase):
                             '1571c4d601dfd871e7680e279e6fd39c': '2015-01-12',
                             'b69307895d6cb654b98d247d710dd806': '2015-12-01',
                             'ba366ccd45a8f1ae0ed2b65cf67b9787': '2016-01-01',
-                            '5e11f1220da2bb6f92d3e1c998f20bcf': 'black'}
+                            '711ee4e1cbce8fa1af6f000dd9c5bcb6': '2018-01-01T00:00:00Z',
+                            '4788acd411a5f0585a1d6bcdf2097e3e': '2018-01-01T00:01:00Z',
+                            '625d2e1195c81c817641f703e6b23aec': '2018-01-01T10:00:00Z',
+                            '4b7af84208c30f72dc1c639665343b9c': '2018-01-01T12:00:00Z',
+                            '7858d61007e2040bd38a1f084e4ee73b': '2018-01-01T23:54:00Z',
+                            '1d79dd99d0fe4fbd1d6f9f257cb7a49a': '2018-01-01T23:55:00Z',
+                            'ea8a5b5a6d3a4dbee54bef2c82b874b9': '2018-01-01T23:59:00Z',
+                            '75ee644a39f5da877d9268ca8b8397e4': '2018-01-01T00:00:00Z',
+                            '555828c04f7c9db23bf6c6ca840daa0a': '2018-01-01T00:01:00Z',
+                            '9fd6a8363ef01482c1f4351df5bf9e9f': '2018-01-01T10:00:00Z',
+                            '17e56046b556ca780712fb62450f46b8': '2018-01-01T12:00:00Z',
+                            'c603aff8a4493a2f9a510e1425cca13a': '2018-01-01T23:54:00Z',
+                            '8e6e3a157075bb1bc8d6b25e652ecd52': '2018-01-01T23:55:00Z',
+                            'fef9f04989867fff9dff6af7115ab4b6': '2018-01-01T23:59:00Z',
+                            '5e11f1220da2bb6f92d3e1c998f20bcf': 'black',
+                            'fb28bfeba6bbadac0b5bef96eca4ad12': 'black2',
+                            '98ff3915cfdc2215ce262c3ed49805a6': 'black3'}
 
         # URL that will be used to create the snap test requests
         self.snap_test_url_template = 'http://localhost/onearth/test/wmts/wmts.cgi?layer={0}&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME={1}'
@@ -1442,6 +1458,136 @@ class TestModOnEarth(unittest.TestCase):
                 self.assertEqual(expected_date.isoformat(), response_date, error)
                 req_date += datetime.timedelta(days=+1)
             expected_date = expected_date.replace(expected_date.year + 1)
+
+    def test_snapping_6a(self):
+        layer_name = 'snap_test_6a'
+        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
+                 ('2018-01-01T10:00:00Z', '2018-01-01T10:00:00Z'),
+                 ('2018-01-01T23:55:00Z', '2018-01-01T23:55:00Z'),
+                 ('2018-01-01T00:01:00Z', '2018-01-01T00:00:00Z'),
+                 ('2017-01-01T00:00:00Z', 'black2'),
+                 ('2018-01-02T00:00:00Z', 'black2'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across one day'
+            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_6b(self):
+        layer_name = 'snap_test_6b'
+        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
+                 ('2018-01-01T12:00:00Z', '2018-01-01T12:00:00Z'),
+                 ('2018-01-01T23:54:00Z', '2018-01-01T23:54:00Z'),
+                 ('2018-01-01T00:01:00Z', '2018-01-01T00:00:00Z'),
+                 ('2017-01-01T00:00:00Z', 'black2'),
+                 ('2018-01-02T00:00:00Z', 'black2'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across one day'
+            print 'Time Period: 2018-01-01T00:00:00/2018-01-01T23:54:00/PT6M'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_6c(self):
+        layer_name = 'snap_test_6c'
+        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
+                 ('2018-01-01T10:00:00Z', '2018-01-01T10:00:00Z'),
+                 ('2018-01-01T23:59:00Z', '2018-01-01T23:59:00Z'),
+                 ('2018-01-01T00:01:01Z', '2018-01-01T00:01:00Z'),
+                 ('2017-01-01T00:00:00Z', 'black2'),
+                 ('2018-01-02T00:00:00Z', 'black2'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across one day'
+            print 'Time Period: 2018-01-01T00:00:00/2018-01-01T23:59:00/PT60S'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_7a(self):
+        layer_name = 'snap_test_7a'
+        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
+                 ('2018-01-01T10:00:00Z', '2018-01-01T10:00:00Z'),
+                 ('2018-01-01T23:55:00Z', '2018-01-01T23:55:00Z'),
+                 ('2017-01-01T00:00:00Z', 'black3'),
+                 ('2018-01-02T00:00:00Z', 'black3'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
+            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_7b(self):
+        layer_name = 'snap_test_7b'
+        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
+                 ('2018-01-01T12:00:00Z', '2018-01-01T12:00:00Z'),
+                 ('2018-01-01T23:54:00Z', '2018-01-01T23:54:00Z'),
+                 ('2017-01-01T00:00:00Z', 'black3'),
+                 ('2018-01-02T00:00:00Z', 'black3'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
+            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
+
+    def test_snapping_7c(self):
+        layer_name = 'snap_test_7c'
+        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
+                 ('2018-01-01T10:00:00Z', '2018-01-01T10:00:00Z'),
+                 ('2018-01-01T23:59:00Z', '2018-01-01T23:59:00Z'),
+                 ('2018-01-01T00:01:00Z', '2018-01-01T00:01:00Z'),
+                 ('2017-01-01T00:00:00Z', 'black3'),
+                 ('2018-01-02T00:00:00Z', 'black3'))
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+        if DEBUG:
+            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
+            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S'
+        for request_date, expected_date in tests:
+            req_url = self.snap_test_url_template.format(layer_name, request_date)
+            if DEBUG:
+                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
+                print 'URL: ' + req_url
+            response_date = test_snap_request(self.tile_hashes, req_url)
+            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
+            self.assertEqual(expected_date, response_date, error)
 
     def test_year_boundary_snapping(self):
         layer_name = 'snap_test_year_boundary'
