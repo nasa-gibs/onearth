@@ -41,13 +41,12 @@ import sys
 import argparse
 import yaml
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlparse
 import requests
 
 # Config templates
 
-LOCAL_DATE_SERVICE_URI = '/oe2-date-service'
-PROXY_PATH = '/oe2-tile-service-proxy-'
+PROXY_PATH = '/oe2-tile-service-proxy'
 
 MAIN_APACHE_CONFIG_TEMPLATE = """<IfModule !mrf_module>
    LoadModule mrf_module modules/mod_mrf.so
@@ -145,6 +144,10 @@ MIME_TO_MRF_EXTENSION = {
 # Utility functions
 
 
+def format_date_service_uri(uri):
+    return '/oe2-date-service-proxy-' + bulk_replace(urlparse(uri).netloc, ((':', '-'), ('.', '-')))
+
+
 def generate_string_from_set(sep, string_set):
     strings = []
     for pair in string_set:
@@ -170,7 +173,7 @@ def get_proxy_paths(layers):
         url_parts = urlsplit(data_file_uri)
         remote_path = f'{url_parts.scheme}://{url_parts.netloc}'
         if not any(path for path in proxy_paths if path['remote_path'] == remote_path):
-            proxy_paths.append({'local_path': f'{PROXY_PATH + url_parts.scheme}-{url_parts.netloc.replace(".", "-")}', 'remote_path': remote_path})
+            proxy_paths.append({'local_path': f'{PROXY_PATH}-{url_parts.netloc.replace(".", "-")}', 'remote_path': remote_path})
     return proxy_paths
 
 
@@ -212,7 +215,7 @@ def make_apache_config(endpoint_config, layer_configs):
     date_service_config = ''
     if date_service_needed:
         date_service_config = DATE_SERVICE_TEMPLATE.replace(
-            '{date_service_uri}', date_service_uri).replace('{local_date_service_uri}', LOCAL_DATE_SERVICE_URI)
+            '{date_service_uri}', date_service_uri).replace('{local_date_service_uri}', format_date_service_uri(date_service_uri))
 
     datafile_proxy_config = ''
     if datafile_proxy_needed:
@@ -325,7 +328,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # Insert time stuff if applicable (using a regexp to stick it in the
     # <Directory> block)
     if not static:
-        date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{LOCAL_DATE_SERVICE_URI}"'
+        date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{format_date_service_uri(date_service_uri)}"'
         if date_service_keys:
             date_service_snippet += f'\n        WMTSWrapperDateServiceKeys {" ".join(date_service_keys)}'
         apache_config = re.sub(r'(WMTSWrapperEnableTime.*)',
