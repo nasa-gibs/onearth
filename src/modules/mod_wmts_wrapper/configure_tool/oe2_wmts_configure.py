@@ -268,6 +268,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         mimetype = layer_config['mime_type']
     except KeyError as err:
         print(f"\n{layer_config_path} is missing required config element {err}")
+        sys.exit()
 
     # Parse optional stuff in layer config
     year_dir = layer_config['source_mrf'].get('year_dir', False)
@@ -278,6 +279,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     data_file_uri = layer_config['source_mrf'].get('data_file_uri', None)
     if not data_file_path and not data_file_uri:
         print(f'\nNo "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}')
+
+    date_service_keys = layer_config.get('date_service_keys')
 
     # Make sure we have what we need from the endpoint config
     try:
@@ -311,7 +314,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         data_file_uri = format_source_uri_for_proxy(
             data_file_uri, endpoint_config['proxy_paths'])
 
-        # Apache <Directory> stuff
+    # Apache <Directory> stuff
     apache_config = bulk_replace(LAYER_APACHE_CONFIG_TEMPLATE, [
         ('{endpoint_path}', endpoint_path), ('{layer_id}', layer_id),
         ('{time_enabled}', 'Off' if static else 'On'),  ('{year_dir}',
@@ -323,6 +326,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # <Directory> block)
     if not static:
         date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{LOCAL_DATE_SERVICE_URI}"'
+        if date_service_keys:
+            date_service_snippet += f'\n        WMTSWrapperDateServiceKeys {" ".join(date_service_keys)}'
         apache_config = re.sub(r'(WMTSWrapperEnableTime.*)',
                                r'\1' + date_service_snippet, apache_config)
 
