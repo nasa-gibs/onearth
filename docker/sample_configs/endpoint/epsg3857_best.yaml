@@ -4,3 +4,4 @@ date_service_keys: ["epsg3857", "best"]
 target_epsg_code: "EPSG:3857"
 source_gc_uri: "http://localhost/wmts/epsg4326/best/1.0.0/GetCapabilities.xml"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+apache_config_location: "/etc/httpd/conf.d/oe2_epsg3857_best.conf"

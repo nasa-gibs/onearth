@@ -6,6 +6,7 @@ projection: "EPSG:4326"
 tilematrixset: "15.625m"
 mime_type: "image/png"
 static: false
+date_service_keys: ["epsg4326", "std"]
 abstract: "ASTER_L1T_Radiance_Terrain_Corrected abstract"
 metadata:
   - {}

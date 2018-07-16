@@ -45,10 +45,16 @@ mkdir -p /var/www/html/twms/epsg3413/best
 mkdir -p /var/www/html/twms/epsg3413/std
 mkdir -p /var/www/html/twms/epsg3413/nrt
 
+# Copy empty tiles
+mkdir -p /onearth/empty_tiles/
+cp empty_tiles/* /onearth/empty_tiles/
+
 # Copy sample configs
 chmod -R 755 /onearth
-cp sample_configs/endpoint/* /etc/onearth/config/endpoint/
 mkdir -p /onearth/layers
+mkdir -p /etc/onearth/config/endpoint/
+mkdir -p /etc/onearth/config/layers/
+cp sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp -R sample_configs/layers/* /etc/onearth/config/layers/
 # Replace with S3 URL
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
@@ -65,28 +71,28 @@ echo 'Starting Apache server'
 /usr/sbin/httpd -k start
 sleep 2
 
-# Copy empty tiles
-mkdir -p /onearth/empty_tiles/
-cp empty_tiles/* /onearth/empty_tiles/
-
 # Run layer config tools
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
-
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml
 
+# Run reproject config tools
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
+
+echo 'Restarting Apache server'
+/usr/sbin/httpd -k restart
+sleep 2
 
 # Performance Test Data
 
 mkdir -p /onearth/idx/profiler/BlueMarble
 wget -O /onearth/idx/profiler/BlueMarble/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
 
-mkdir -p /onearth/idx/profiler/MOGCR_LQD_143_STD/2011
+mkdir -p /onearth/idx/profiler/MOGCR_LQD_143_STD
 f=$(../src/test/oe_gen_hash_filename.py -l MOGCR_LQD_143_STD -t 1293840000 -e .idx)
-wget -O /onearth/idx/profiler/MOGCR_LQD_143_STD/2011/$f https://s3.amazonaws.com/gitc-test-imagery/$f
+wget -O /onearth/idx/profiler/MOGCR_LQD_143_STD/$f https://s3.amazonaws.com/gitc-test-imagery/$f
 
 mkdir -p /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT
 wget -O /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/VNGCR_LQD_I1-M4-M3_NRT.idx
@@ -97,7 +103,7 @@ until [ $d -gt 1524614400 ]; do
     let d+=86400
 done
 
-mkdir -p /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/2018
+mkdir -p /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT
 wget -O /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT.idx
 d=1514764800
 until [ $d -gt 1523318400 ]; do
@@ -108,6 +114,7 @@ done
 
 # ASTER_L1T_Radiance_Terrain_Corrected for gibs-status
 
+cp oe2_gibs_status.conf /etc/httpd/conf.d
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
 wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz
@@ -238,9 +245,9 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:ASTER_L1T_Radiance_Terrain_Corrected
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:default "2012-09-10"

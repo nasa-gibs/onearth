@@ -1,5 +1,4 @@
-date_service_uri: "http://oe2-date-service/date_service/date"
-date_service_keys: ["epsg3857", "std"]
+date_service_uri: "http://oe2-date-service/date_service/date?key1=epsg4326&key2=std"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
 gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
