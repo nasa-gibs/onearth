@@ -10,7 +10,7 @@ RUN mkdir /home/perf
 WORKDIR /home/perf
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/perf/onearth
-RUN git checkout 2.1.0
+RUN git checkout 2.1.1
 
 # Get and install node
 WORKDIR /home/perf

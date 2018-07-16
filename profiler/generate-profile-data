@@ -15,11 +15,11 @@ const zoomLevelMatrix = [
 ];
 
 const BASE_URL = [
-  "http://localhost:8080/mrf_endpoint/BlueMarble/default/500m",
-  "http://localhost:8080/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/default/250m",
-  "http://localhost:8080/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/2018-01-16/250m",
-  "http://localhost:8080/mrf_endpoint/MOR5WVIRLLNT/default/default/2km",
-  "http://localhost:8080/mrf_endpoint/MOR5WVIRLLNT/default/2018-01-16/2km",
+  "http://localhost:8080/profiler/BlueMarble/default/500m",
+  "http://localhost:8080/profiler/VNGCR_LQD_I1-M4-M3_NRT/default/default/250m",
+  "http://localhost:8080/profiler/VNGCR_LQD_I1-M4-M3_NRT/default/2018-01-16/250m",
+  "http://localhost:8080/profiler/MOR5WVIRLLNT/default/default/2km",
+  "http://localhost:8080/profiler/MOR5WVIRLLNT/default/2018-01-16/2km",
 ];
 
 // Fisher-Yates shuffle
