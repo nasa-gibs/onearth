@@ -15,7 +15,7 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   idx_path: "/onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/"
-  data_file_uri: "{S3_URL}/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/"
+  data_file_uri: "http://gitc-test-imagery.s3.amazonaws.com/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/"
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/onearth/empty_tiles/ASTER_L1T_Radiance_Terrain_Corrected.png"

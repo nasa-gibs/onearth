@@ -7,49 +7,106 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-# GIBS sample configs
+# WMTS endpoints
+mkdir -p /var/www/html/profiler/
+mkdir -p /var/www/html/profiler_reproject/
+mkdir -p /var/www/html/wmts/epsg4326/all
+mkdir -p /var/www/html/wmts/epsg4326/best
+mkdir -p /var/www/html/wmts/epsg4326/std
+mkdir -p /var/www/html/wmts/epsg4326/nrt
+mkdir -p /var/www/html/wmts/epsg3857/all
+mkdir -p /var/www/html/wmts/epsg3857/best
+mkdir -p /var/www/html/wmts/epsg3857/std
+mkdir -p /var/www/html/wmts/epsg3857/nrt
+mkdir -p /var/www/html/wmts/epsg3031/all
+mkdir -p /var/www/html/wmts/epsg3031/best
+mkdir -p /var/www/html/wmts/epsg3031/std
+mkdir -p /var/www/html/wmts/epsg3031/nrt
+mkdir -p /var/www/html/wmts/epsg3413/all
+mkdir -p /var/www/html/wmts/epsg3413/best
+mkdir -p /var/www/html/wmts/epsg3413/std
+mkdir -p /var/www/html/wmts/epsg3413/nrt
 
-# BlueMarble
-mkdir -p /onearth/idx/epsg4326/BlueMarble/
-wget -O /onearth/idx/epsg4326/BlueMarble/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
+# TWMS endpoints
+mkdir -p /var/www/html/twms/epsg4326/all
+mkdir -p /var/www/html/twms/epsg4326/best
+mkdir -p /var/www/html/twms/epsg4326/std
+mkdir -p /var/www/html/twms/epsg4326/nrt
+mkdir -p /var/www/html/twms/epsg3857/all
+mkdir -p /var/www/html/twms/epsg3857/best
+mkdir -p /var/www/html/twms/epsg3857/std
+mkdir -p /var/www/html/twms/epsg3857/nrt
+mkdir -p /var/www/html/twms/epsg3031/all
+mkdir -p /var/www/html/twms/epsg3031/best
+mkdir -p /var/www/html/twms/epsg3031/std
+mkdir -p /var/www/html/twms/epsg3031/nrt
+mkdir -p /var/www/html/twms/epsg3413/all
+mkdir -p /var/www/html/twms/epsg3413/best
+mkdir -p /var/www/html/twms/epsg3413/std
+mkdir -p /var/www/html/twms/epsg3413/nrt
 
-# Performance Test Configurations
+# Copy sample configs
+chmod -R 755 /onearth
+cp sample_configs/endpoint/* /etc/onearth/config/endpoint/
+mkdir -p /onearth/layers
+cp -R sample_configs/layers/* /etc/onearth/config/layers/
+# Replace with S3 URL
+sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 
-mkdir -p /var/www/html/reproject_endpoint/BlueMarble/default/500m/
-cp layer_configs/BlueMarble_reproject.config /var/www/html/reproject_endpoint/BlueMarble/default/500m/
-cp layer_configs/BlueMarble_source.config /var/www/html/reproject_endpoint/BlueMarble/default/500m//
+# Make GC Service
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_reproject_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_best_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_std_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_best_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_std_gc.yaml --make_gts
 
-mkdir -p /var/www/html/mrf_endpoint/BlueMarble/default/500m/
-wget -O /var/www/html/mrf_endpoint/BlueMarble/default/500m/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
-cp layer_configs/BlueMarble.config /var/www/html/mrf_endpoint/BlueMarble/default/500m/
+echo 'Starting Apache server'
+/usr/sbin/httpd -k start
+sleep 2
 
-mkdir -p /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/
-#wget -O /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/MOG13Q4_LQD_NDVI_NRT1514764800.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT1514764800.idx
+# Copy empty tiles
+mkdir -p /onearth/empty_tiles/
+cp empty_tiles/* /onearth/empty_tiles/
+
+# Run layer config tools
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
+
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml
+
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
+
+# Performance Test Data
+
+mkdir -p /onearth/idx/profiler/BlueMarble
+wget -O /onearth/idx/profiler/BlueMarble/BlueMarble.idx https://s3.amazonaws.com/gitc-test-imagery/BlueMarble.idx
+
+mkdir -p /onearth/idx/profiler/MOGCR_LQD_143_STD/2011
 f=$(../src/test/oe_gen_hash_filename.py -l MOGCR_LQD_143_STD -t 1293840000 -e .idx)
-wget -O /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/$f https://s3.amazonaws.com/gitc-test-imagery/$f
-cp layer_configs/MOGCR_LQD_143_STD.config /var/www/html/mrf_endpoint/MOGCR_LQD_143_STD/default/250m/
+wget -O /onearth/idx/profiler/MOGCR_LQD_143_STD/2011/$f https://s3.amazonaws.com/gitc-test-imagery/$f
 
-mkdir -p /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/2018
-wget -O /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/VNGCR_LQD_I1-M4-M3_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/VNGCR_LQD_I1-M4-M3_NRT.idx
+mkdir -p /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT
+wget -O /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/VNGCR_LQD_I1-M4-M3_NRT.idx
 d=1516060800
 until [ $d -gt 1524614400 ]; do
     f=$(../src/test/oe_gen_hash_filename.py -l VNGCR_LQD_I1-M4-M3_NRT -t $d -e .idx)
-    ln -s /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/VNGCR_LQD_I1-M4-M3_NRT.idx /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/2018/$f
+    ln -s /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/$f
     let d+=86400
 done
-cp layer_configs/VNGCR_LQD_I1-M4-M3_NRT*.config /var/www/html/mrf_endpoint/VNGCR_LQD_I1-M4-M3_NRT/default/250m/
 
-mkdir -p /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/2018
-wget -O /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/MOG13Q4_LQD_NDVI_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT.idx
+mkdir -p /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/2018
+wget -O /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx https://s3.amazonaws.com/gitc-test-imagery/MOG13Q4_LQD_NDVI_NRT.idx
 d=1514764800
 until [ $d -gt 1523318400 ]; do
     f=$(../src/test/oe_gen_hash_filename.py -l MOG13Q4_LQD_NDVI_NRT -t $d -e .idx)
-    ln -s /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/MOG13Q4_LQD_NDVI_NRT.idx /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/2018/$f
+    ln -s /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/2018/$f
     let d+=86400
 done
-cp layer_configs/MOG13Q4_LQD_NDVI_NRT.config /var/www/html/mrf_endpoint/MOG13Q4_LQD_NDVI_NRT/default/250m/
 
-# ASTER_L1T_Radiance_Terrain_Corrected
+# ASTER_L1T_Radiance_Terrain_Corrected for gibs-status
 
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
@@ -63,9 +120,10 @@ wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-AST
 tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/
 mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/3b5c-ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx
 
+
 # Sample MODIS configs
-cp oe2_test_MODIS.conf /etc/httpd/conf.d
-sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_MODIS.conf
+# cp oe2_test_MODIS.conf /etc/httpd/conf.d
+# sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/httpd/conf.d/oe2_test_MODIS.conf
 
 # Alias endpoints
 mkdir -p /var/www/html/wmts/epsg3857/all/MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD/default/GoogleMapsCompatible_Level9
@@ -183,6 +241,7 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:periods "2012-09-10/2018-12-31/P1D"
@@ -202,5 +261,4 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
-#/usr/bin/redis-cli -h $REDIS_HOST -n 0 SAVE
 sh build_demo.sh

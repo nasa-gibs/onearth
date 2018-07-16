@@ -1,0 +1,21 @@
+layer_id: "MOG13Q4_LQD_NDVI_NRT"
+layer_title: "MOG13Q4_LQD_NDVI_NRT"
+layer_name: "MOG13Q4_LQD_NDVI_NRT tileset"
+projection: "EPSG:4326"
+tilematrixset: "250m"
+mime_type: "image/jpeg"
+static: false
+abstract: "MOG13Q4_LQD_NDVI_NRT abstract"
+metadata:
+  - {}
+source_mrf:
+  size_x: 163840
+  size_y: 81920
+  bands: 1
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/"
+  data_file_uri: "http://gitc-test-imagery.s3.amazonaws.com/epsg4326/MOG13Q4_LQD_NDVI_NRT/"
+  year_dir: true
+  bbox: -180,-90,180,90
+  empty_tile: "/onearth/empty_tiles/MOG13Q4_LQD_NDVI_NRT.png"

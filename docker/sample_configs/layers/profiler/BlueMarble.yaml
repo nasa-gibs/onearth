@@ -14,8 +14,8 @@ source_mrf:
   bands: 3
   tile_size_x: 512
   tile_size_y: 512
-  idx_path: "/onearth/idx/epsg4326/BlueMarble/BlueMarble.idx"
-  data_file_uri: "{S3_URL}/BlueMarble.pjg"
+  idx_path: "/onearth/idx/profiler/BlueMarble/BlueMarble.idx"
+  data_file_uri: "http://gitc-test-imagery.s3.amazonaws.com/BlueMarble.pjg"
   year_dir: false
   bbox: -180,-90,180,90
   empty_tile: "/onearth/empty_tiles/Blank_RGB_512.jpg"
