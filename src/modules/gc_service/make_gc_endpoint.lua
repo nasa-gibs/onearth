@@ -30,7 +30,8 @@ local config = {
     gts_header_file=${gts_header_file},
     base_uri_gc=${base_uri_gc},
     base_uri_gts=${base_uri_gts},
-    target_epsg_code=${target_epsg_code}
+    target_epsg_code=${target_epsg_code},
+    date_service_keys=${date_service_keys}
 }
 handler = onearth_gc_gts.handler(config)
 ]]
@@ -44,8 +45,24 @@ local function split(sep, str)
     return results
 end
 
+local function join(arr, sep)
+    local outStr = ""
+    for idx, value in ipairs(arr) do
+        outStr = outStr .. tostring(value) .. (idx < #arr and sep or "")
+    end
+    return outStr
+end
+
 local function addQuotes(str)
     return '"' .. str .. '"'
+end
+
+function map(func, array)
+  local new_array = {}
+  for i,v in ipairs(array) do
+    new_array[i] = func(v)
+  end
+  return new_array
 end
 
 -- Create configuration
@@ -58,6 +75,12 @@ local function create_config(endpointConfigFilename, makeOptions)
     local tmsDefsFilename = assert(endpointConfig["tms_defs_file"], "No 'tms_defs_file' specified in endpoint config.")
     local layerConfigSource = assert(endpointConfig["layer_config_source"], "No 'layer_config_source' specified in endpoint config.")
     local dateServiceUri = endpointConfig["date_service_uri"]
+
+    local dateServiceKeyString = "{}"
+    if endpointConfig["date_service_keys"] then
+        dateServiceKeyString = "{" .. join(map(addQuotes, endpointConfig["date_service_keys"]), ",") .. "}"
+    end
+
     local epsgCode = assert(endpointConfig["epsg_code"], "No 'epsg_code' specified in endpoint config.")
 
     local apacheConfigLocation = endpointConfig["apache_config_location"]
@@ -115,6 +138,7 @@ local function create_config(endpointConfigFilename, makeOptions)
             :gsub("${base_uri_gc}", (not endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gc"]) or "nil"))
             :gsub("${base_uri_gts}", (endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gts"]) or "nil"))
             :gsub("${target_epsg_code}", addQuotes(endpointConfig["target_epsg_code"]))
+            :gsub("${date_service_keys}", dateServiceKeyString)
         lfs.mkdir(luaConfigBaseLocation .. endpoint["path"])
         local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
             .. luaConfigLocation .. " for writing."))

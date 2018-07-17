@@ -283,8 +283,6 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     if not data_file_path and not data_file_uri:
         print(f'\nNo "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}')
 
-    date_service_keys = layer_config.get('date_service_keys')
-
     # Make sure we have what we need from the endpoint config
     try:
         endpoint_path = endpoint_config['endpoint_config_base_location']
@@ -296,6 +294,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     base_idx_path = endpoint_config.get('base_idx_path', None)
     if base_idx_path:
         idx_path = base_idx_path + '/' + idx_path
+
+    date_service_keys = endpoint_config.get('date_service_keys')
 
     # # Check to see if and data files exist and warn if not
     # if static and not Path(idx_path).exists():

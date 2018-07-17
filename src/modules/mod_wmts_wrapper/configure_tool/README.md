@@ -81,6 +81,9 @@ the OnEarth 2 date service here.
 configuration files will be stored (this will need to be somewhere Apache is
 configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 
+`date_service_keys` (optional) -- Array of keys to be used with the date
+service. Keys will be positioned in the order configured.
+
 #### Layer Configuration
 
 The layer configurations contain all the necessary information for each layer
@@ -149,9 +152,6 @@ IDX and data files when they are accessed. Defaults to 'false'.
 native units.
 
 `mime_type` (required) -- MIME type of the tiles in this MRF.
-
-`date_service_keys` -- Array of keys to be used with the date service. Keys will
-be positioned in the order configured.
 
 Example: `date_service_keys: ["epsg4326", "std"]` will cause date lookups for
 this layer to use the following format:

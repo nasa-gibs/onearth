@@ -93,10 +93,20 @@ local function getExtensionFromMimeType(mimeType)
     end
     if mimeType == "application/vnd.mapbox-vector-tile" then
         return ".mvt"
-    end    
+    end
 end
 
-local function getDateList(dateServiceUri)
+local function getDateList(endpointConfig)
+    local dateServiceUri = endpointConfig["date_service_uri"]
+    local dateServiceKeys = endpointConfig["date_service_keys"]
+    if dateServiceKeys then
+        local formattedKeys = {}
+        for idx, value in ipairs(dateServiceKeys) do
+            formattedKeys[#formattedKeys + 1] = "key" .. tostring(idx) .. "=" .. value
+        end
+        local keyString = join(formattedKeys, "&")
+        dateServiceUri = dateServiceUri .. "?" .. keyString
+    end
     local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
     local body = assert(stream:get_body_as_string())
     if headers:get ":status" ~= "200" then
@@ -466,7 +476,7 @@ end
 
 local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
     local tmsDefs = getTmsDefs(tmsXml)
-    local dateList = getDateList(endpointConfig["date_service_uri"])
+    local dateList = getDateList(endpointConfig)
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local nodeList = {}
