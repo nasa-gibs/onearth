@@ -55,6 +55,26 @@
     return HTTP_INTERNAL_SERVER_ERROR; \
 }
 
+int setup_mod_receive(request_rec *r, ap_filter_rec_t **receive_filter, receive_ctx *rctx) {
+    *receive_filter = ap_get_output_filter_handle("Receive");
+    SERR_IF(!*receive_filter, "Mod_wmts_wrapper needs mod_receive to be available to make time queries");
+    rctx->maxsize = 1024*1024;
+    rctx->buffer = (char *)apr_palloc(r->pool, rctx->maxsize);
+    rctx->size = 0; 
+}
+
+int make_tile_request(request_rec *r) {
+    ap_filter_rec_t *receive_filter;
+    receive_ctx rctx;
+    setup_mod_receive(r, &receive_filter, &rctx);
+
+    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
+    request_rec *rr = ap_sub_req_lookup_uri(r->uri, r, r->output_filters);
+    apr_table_set(rr->notes, "mod_wmts_wrapper_ignore", "true");
+    int rr_status = ap_run_sub_req(rr);
+    ap_remove_output_filter(rf);
+}
+
 // Check a file extension against the specified MIME type
 int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
 {
@@ -230,6 +250,18 @@ static const char *remove_date_from_uri(apr_pool_t *p, apr_array_header_t *token
     return out_uri;
 }
 
+static const char *get_element_from_uri(request_rec *r, wmts_wrapper_conf *cfg, const char *part) {
+    const char* layer_request_uri = r->filename + strlen(cfg->base_path);
+    apr_array_header_t *tokens = tokenize(r->pool, layer_request_uri, '/');
+    if (apr_strnatcasecmp(part, "layer") == 0) {
+        return (const char *)APR_ARRAY_IDX(tokens, 0, const char *);
+    }
+    if (apr_strnatcasecmp(part, "date") == 0) {
+        if (tokens->nelts < 3) return NULL;
+        return (const char *)APR_ARRAY_IDX(tokens, 2, const char *);
+    }
+}
+
 static const char *get_blank_tile_filename(request_rec *r)
 {
     const char *blank_tile_filename;
@@ -399,6 +431,24 @@ static int handleKvP(request_rec *r)
 }
 
 static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **filename, char **date_string) {
+    // First, check to see if we've already looked up a request for this layer and date
+    const char *last_layer = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_layer_name");
+    const char *last_date_req = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_date_requested");
+    const char *last_date_found = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_date_found");
+    const char *last_filename_found = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_filename_found");
+    if ((last_layer && apr_strnatcasecmp(layer_name, last_layer) == 0)
+        && (last_date_req && apr_strnatcasecmp(last_date_req, datetime_str) == 0)
+        && last_date_found
+        && last_filename_found) {
+        *date_string = apr_pstrdup(r->pool, last_date_found);
+        *filename = apr_pstrdup(r->pool, last_filename_found);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Found cached date data!");
+        return APR_SUCCESS;
+    }
+
+    apr_table_set(r->notes, "mod_wmts_wrapper_last_date_requested", datetime_str);
+    apr_table_set(r->notes, "mod_wmts_wrapper_last_date_found", *date_string);
+
     // Rewrite URI to exclude date and put the date in the notes for the redirect.
     ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("Receive");
     SERR_IF(!receive_filter, "Mod_wmts_wrapper needs mod_receive to be available to make time queries");
@@ -437,7 +487,7 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     ap_remove_output_filter(rf);
     if (rr_status != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Time lookup failed for %s", time_request_uri);
-        return rr_status; // Pass status along
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_send_to_date_service, timestamp=%ld, uuid=%s",
@@ -455,6 +505,12 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     }
 
     json_unpack(root, "{s:s, s:s}", "date", date_string, "filename", filename);
+
+    apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_layer_name", layer_name);
+    apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_requested", datetime_str);
+    apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_found", *date_string);
+    apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_filename_found", *filename);
+
     return APR_SUCCESS;
 }
 
@@ -494,6 +550,7 @@ static int pre_hook(request_rec *r)
 
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);   
     if (!cfg->role) return DECLINED;
+    if (apr_table_get(r->notes, "mod_wmts_wrapper_ignore")) return DECLINED;
 
     if (apr_strnatcasecmp(cfg->role, "root") == 0) {
         return DECLINED;
@@ -504,16 +561,17 @@ static int pre_hook(request_rec *r)
             return wmts_return_all_errors(r, errors, wmts_errors);
         }
 
-        // Date handling -- verify date, then add it to the notes and re-issue the request sans date
-        apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
-        datetime_str = (char *)APR_ARRAY_IDX(tokens, tokens->nelts - 5, char *);
-        if (ap_regexec(cfg->date_regexp, datetime_str, 0, NULL, 0) == AP_REG_NOMATCH 
-            && apr_strnatcasecmp(datetime_str, "default")) {
+        datetime_str = get_element_from_uri(r, cfg, "date");
+        if (datetime_str == NULL 
+            || ap_regexec(cfg->date_regexp, datetime_str, 0, NULL, 0) == AP_REG_NOMATCH 
+            && apr_strnatcasecmp(datetime_str, "default") != 0) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
         }
 
         apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);        
         if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
+
+        apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *out_uri = remove_date_from_uri(r->pool, tokens);
         ap_internal_redirect(out_uri, r);
 
@@ -638,6 +696,7 @@ static int pre_hook(request_rec *r)
             }
         }
         if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
+        // int status = make_tile_request(r);
     }
     return DECLINED;
 }
@@ -709,6 +768,9 @@ static const char *set_module(cmd_parms *cmd, void *dconf, const char *role)
 {
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
     cfg->role = apr_pstrdup(cmd->pool, role);
+    if (apr_strnatcasecmp(role, "root") == 0) {
+        cfg->base_path = apr_pstrdup(cmd->pool, cmd->path);
+    }
     const char *pattern = "^\\d{4}-\\d{2}-\\d{2}$|^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$";
     cfg->date_regexp = (ap_regex_t *)apr_palloc(cmd->pool, sizeof(ap_regex_t));
     if (ap_regcomp(cfg->date_regexp, pattern, 0)) {
@@ -781,6 +843,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->year_dir = ( add->year_dir == NULL ) ? base->year_dir : add->year_dir;
     cfg->layer_alias = ( add->layer_alias == NULL ) ? base->layer_alias : add->layer_alias;
     cfg->date_service_keys = ( add->date_service_keys == NULL ) ? base->date_service_keys : add->date_service_keys;
+    cfg->base_path = ( add->base_path == NULL ) ? base->base_path : add->base_path;
     return cfg;
 }
 

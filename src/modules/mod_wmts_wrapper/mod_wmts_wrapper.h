@@ -42,6 +42,7 @@ typedef struct {
     int year_dir;
     const char *layer_alias;
     apr_array_header_t *date_service_keys;
+    const char *base_path;
 } wmts_wrapper_conf;
 
 // WMTS error handling
