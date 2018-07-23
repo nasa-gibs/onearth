@@ -64,8 +64,10 @@ lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/c
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_reproject_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_best_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_std_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_all_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_best_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_std_gc.yaml --make_gts
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_all_gc.yaml --make_gts
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
@@ -75,6 +77,7 @@ sleep 2
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_all.yaml
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
@@ -247,6 +250,27 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:best:layer:ASTER_L1T_Radiance_Terrain_Corrected
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:best:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:best:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
 
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD:default "2012-09-10"
@@ -271,6 +295,7 @@ fi
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
