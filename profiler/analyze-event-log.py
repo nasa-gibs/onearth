@@ -10,12 +10,12 @@ import numpy as np
 logMetrics = [
                ["begin_onearth_handle","timestamp", True],
                ["end_onearth_handle","timestamp", True],
-               ["begin_mod_mrf_handle","timestamp", False],
-               ["end_mod_mrf_handle","timestamp", False],
-               ["mod_mrf_index_read","duration", False],
-               ["mod_mrf_s3_read","duration", False],
-               ["begin_request_time_snap","timestamp", False],
-               ["end_request_time_snap","timestamp", False],
+               ["begin_mod_mrf_handle","timestamp", True],
+               ["end_mod_mrf_handle","timestamp", True],
+               ["mod_mrf_index_read","duration", True],
+               ["mod_mrf_s3_read","duration", True],
+               ["begin_send_to_date_service","timestamp", True],
+               ["end_send_to_date_service","timestamp", True],
                ["begin_mod_reproject_handle","timestamp", False],
                ["end_mod_reproject_handle","timestamp", False]
              ]
