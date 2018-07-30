@@ -46,7 +46,7 @@ static void store_data(png_structp pngp, png_bytep data, png_size_t length)
 }
 
 const char *png_stride_decode(apr_pool_t *p, codec_params &params, const TiledRaster &raster,
-    storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans)
+    storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans)
 {
     char *message = NULL;
     png_structp pngp = (png_structp)apr_pcalloc(p, sizeof(png_structp));
@@ -65,16 +65,15 @@ const char *png_stride_decode(apr_pool_t *p, codec_params &params, const TiledRa
         png_read_info(pngp, infop);
         
 // TODO: Decode to expected format
-//        png_set_palette_to_rgb(pngp); // Palette to RGB
-//        png_set_tRNS_to_alpha(pngp);  // transparency palette to Alpha
-//        png_set_add_alpha(pngp, 255, PNG_FILLER_AFTER); // Add alpha if not there
-//        png_read_update_info(pngp, infop); // update the reader
+       // png_set_palette_to_rgb(pngp); // Palette to RGB
+       // png_set_tRNS_to_alpha(pngp);  // transparency palette to Alpha
+       // png_set_add_alpha(pngp, 255, PNG_FILLER_AFTER); // Add alpha if not there
+       // png_read_update_info(pngp, infop); // update the reader
 
 // TODO: Check that it matches the expected raster
         png_get_IHDR(pngp, infop, &width, &height, &bit_depth, &ct, NULL, NULL, NULL);
 
         int num_palette;
-        int num_trans;
         png_color_16 *trans_values;
         png_get_PLTE(pngp, infop, &palette, &num_palette);
         png_get_tRNS(pngp, infop, &trans, &num_trans, &trans_values);
@@ -112,7 +111,7 @@ const char *png_stride_decode(apr_pool_t *p, codec_params &params, const TiledRa
 }
 
 const char *png_encode(png_params &params, const TiledRaster &raster, 
-    storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans)
+    storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans, int &num_trans)
 {
     char *message = NULL;
     png_structp pngp = NULL;
@@ -139,7 +138,7 @@ const char *png_encode(png_params &params, const TiledRaster &raster,
         }
         if (params.has_transparency) {
         	if (params.color_type == PNG_COLOR_TYPE_PALETTE) {
-        		png_set_tRNS(pngp, infop, trans, 1, NULL);
+        		png_set_tRNS(pngp, infop, trans, num_trans, NULL);
         	} else {
                 // Flag NDV as transparent color
         		png_set_tRNS(pngp, infop, 0, 0, &params.NDV);

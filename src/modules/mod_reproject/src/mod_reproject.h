@@ -213,9 +213,9 @@ struct png_params : codec_params {
 // line_stride is the size of a line in buffer (larger or equal to decoded PNG line)
 // Returns NULL if everything looks fine, or an error message
 const char *png_stride_decode(apr_pool_t *p, codec_params &params, const TiledRaster &raster,
-    storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans);
+    storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans);
 const char *png_encode(png_params &params, const TiledRaster &raster,
-    storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans);
+    storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans, int &num_trans);
 // Based on the raster configuration, populates a png parameter structure
 int set_png_params(const TiledRaster &raster, png_params *params);
 
