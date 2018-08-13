@@ -735,8 +735,8 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(os.path.exists(output_mapfile), "Vector Mapfile Style addition test -- mapfile not created")
 
         with open(output_mapfile) as mapfile:
-            with open(os.path.join(self.testfiles_path, config['vector_style_file'])) as style_file:
-                styles_exist = style_file.read() in mapfile.read()
+            with open(os.path.join(self.testfiles_path, config['vector_layer_contents'])) as layer_contents_file:
+                styles_exist = layer_contents_file.read() in mapfile.read()
         self.assertTrue(styles_exist, 'Style file stuff not found in output mapfile')
 
     def test_vector_data_type_inclusion(self):

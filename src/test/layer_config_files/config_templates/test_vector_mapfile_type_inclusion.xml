@@ -13,17 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <LayerConfiguration>
- <Identifier>vector_mapfile_style_inclusion_test</Identifier>
- <Title>Test Vector Mapfile Style Inclusion</Title>
- <FileNamePrefix>vector_mapfile_style_inclusion_test</FileNamePrefix>
+ <Identifier>vector_mapfile_layer_contents_inclusion_test</Identifier>
+ <Title>Test Vector Mapfile Layer Contents Inclusion</Title>
+ <FileNamePrefix>vector_mapfile_layer_contents_inclusion_test</FileNamePrefix>
  <TiledGroupName>test tileset</TiledGroupName>
  <Compression>JPG</Compression>
  <TileMatrixSet>EPSG4326_250m</TileMatrixSet>
-  <EmptyTileSize offset="0">0</EmptyTileSize>
+ <EmptyTileSize offset="0">0</EmptyTileSize>
  <Projection>EPSG:4326</Projection> 
  <EnvironmentConfig>{testfile_dir}/conf/test_vector_environment.xml</EnvironmentConfig>
- <ArchiveLocation static="true" year="false" root="test">vector_mapfile_style_inclusion_test</ArchiveLocation>
+ <ArchiveLocation static="true" year="false" root="test">vector_mapfile_layer_contents_inclusion_test</ArchiveLocation>
  <Time>P1D</Time>
  <VectorType>Polygon</VectorType>
- <VectorStyleFile>{testfile_dir}/conf/test_vector_style.map</VectorStyleFile>
+ <MapfileLayerContents>{testfile_dir}/conf/test_mapfile_layer_contents.map</MapfileLayerContents>
 </LayerConfiguration>

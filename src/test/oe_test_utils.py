@@ -475,7 +475,7 @@ def get_layer_config(filepath, archive_config):
         pass
     try:
         config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
-        config['vector_style_file'] = config_dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
+        config['vector_layer_contents'] = config_dom.getElementsByTagName('MapfileLayerContents')[0].firstChild.nodeValue
     except IndexError:
         pass
     

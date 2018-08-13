@@ -1164,12 +1164,12 @@ for conf in conf_files:
             if create_mapfile == False:
                 print 'create_mapfile set to False but vector config file found. Leaving create_mapfile set to False.'
             try:
-                vectorStyleFile = dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
+                mapfileLayerContents = dom.getElementsByTagName('MapfileLayerContents')[0].firstChild.nodeValue
             except IndexError:
-                vectorStyleFile = None
+                mapfileLayerContents = None
         except IndexError:
             vectorType = None
-            vectorStyleFile = None
+            mapfileLayerContents = None
 
         #Required parameters
         try:
@@ -2467,13 +2467,13 @@ $Patterns</TiledGroup>"""
             mapfile.write("\tPROJECTION\n")
             mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
             mapfile.write("\tEND\n")
-            if vectorType and vectorStyleFile:
+            if vectorType and mapfileLayerContents:
                 try:
-                    with open(vectorStyleFile, 'r') as f:
+                    with open(mapfileLayerContents, 'r') as f:
                         mapfile.write(f.read())
                         mapfile.write("\n")
                 except:
-                    log_sig_err("Couldn't read mapfile STYLE file: " + vectorStyleFile, sigevent_url)
+                    log_sig_err("Couldn't read mapfile LAYER contents file: " + mapfileLayerContents, sigevent_url)
             mapfile.write("END\n")
 
 # Use config filename or directory for logging the current config outside of loop
