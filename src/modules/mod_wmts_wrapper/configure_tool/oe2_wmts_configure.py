@@ -281,7 +281,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     data_file_path = layer_config['source_mrf'].get('data_file_path', None)
     data_file_uri = layer_config['source_mrf'].get('data_file_uri', None)
     if not data_file_path and not data_file_uri:
-        print(f'\nNo "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}')
+        print(f'\nWARNING: No "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}')
 
     # Make sure we have what we need from the endpoint config
     try:

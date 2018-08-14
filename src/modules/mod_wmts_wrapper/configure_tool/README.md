@@ -188,8 +188,6 @@ This tool requires 2 configuration files to work:
 
 * endpoint config -- contains information about how the WMTS and TWMS endpoints
   should be set up in Apache.
-* layer config(s) -- contains information about each of the layers to be
-  configured.
 
 Note that Apache must be restarted for new configurations to take effect. This
 command may need to be run as `sudo` depending on the permission settings for
@@ -218,7 +216,7 @@ source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCap
 target_epsg_code: "EPSG:3857"
 date_service_uri: "http://137.79.29.45:8090/date"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"
-apache_config_location: "/etc/httpd/conf.d"
+apache_config_location: "/etc/httpd/conf.d/oe2-reproject-service.conf"
 ```
 
 ##### Configuration Options:
