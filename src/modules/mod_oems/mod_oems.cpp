@@ -42,6 +42,7 @@ ap_regex_t* daily_time;
 ap_regex_t* subdaily_time;
 static const char *daily_time_pattern = "\\d{4}-\\d{2}-\\d{2}";
 static const char *subdaily_time_pattern = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z";
+static const char *default_wms_version = "1.3.0";
 
 static int change_xml_node_values(const xmlChar *search_xpath, 
 								  xmlXPathContextPtr *xpathCtx, 
@@ -481,6 +482,9 @@ char *validate_args(request_rec *r, char *mapfile) {
 		get_param(args,"styles",styles);
 		get_param(args,"width",width);
 		get_param(args,"height",height);
+
+	    // Handle missing VERSION (default to 1.3.0)
+	    version = strlen(version) != 0 ? version : (char *)default_wms_version;
 
 		// Projection handling
 		long epsg = 0;
