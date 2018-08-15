@@ -106,7 +106,7 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {endpoint_path}/{layer_id}>
 
 MOD_TWMS_CONFIG_TEMPLATE = """<Directory {endpoint_path}>
         tWMS_RegExp twms.cgi
-        tWMS_ConfigurationFile {endpoint_path}/twms/${layer}/twms.config
+        tWMS_ConfigurationFile {endpoint_path}/twms/{layer}/twms.config
 </Directory>
 """
 
