@@ -84,6 +84,9 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 `date_service_keys` (optional) -- Array of keys to be used with the date
 service. Keys will be positioned in the order configured.
 
+`gc_endpoint` (required for TWMS service) -- The location beneath the
+base endpoint where the GC service should be available. Defaults to `/gc`.
+
 #### Layer Configuration
 
 The layer configurations contain all the necessary information for each layer

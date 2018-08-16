@@ -387,11 +387,18 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         except KeyError as err:
             print(f'\n{layer_config_filename} is missing required config element {err}')
 
-        source_path = Path(endpoint_path, layer_id,
-                           'default', '${date}' if not static else '', tilematrixset)
+        try:
+            base_source_path = endpoint_config['base_uri_gc']
+        except KeyError as err:
+            print(f'\n"base_uri_gc" in endpoint config is required to configure TWMS layers')
+
+        base_source_path = re.sub(r'/$', '', base_source_path)
+
+        source_path = '/'.join((base_source_path, layer_id,
+                                'default' + '${date}' if not static else '', tilematrixset))
         source_postfix = MIME_TO_EXTENSION[mimetype]
         twms_config = bulk_replace(LAYER_MOD_TWMS_CONFIG_TEMPLATE, [('{size_x}', str(size_x)), ('{size_y}', str(size_y)), (
-            '{tile_size_x}', str(tile_size_x)), ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)), ('{source_postfix}', source_postfix), ('{source_path}', source_path.as_posix()), ('{bbox}', bbox),
+            '{tile_size_x}', str(tile_size_x)), ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)), ('{source_postfix}', source_postfix), ('{source_path}', source_path), ('{bbox}', bbox),
             ('{skipped_levels}', '1' if 'EPSG4326' in tilematrixset else '0')])
 
         layer_config_out['twms_config'] = {'path': Path(
