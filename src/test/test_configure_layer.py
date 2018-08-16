@@ -715,15 +715,15 @@ class TestLayerConfig(unittest.TestCase):
                 # Check result
                 self.assertTrue(check_result, error)
 
-    def test_vector_mapfile_layer_contents_inclusion(self):
+    def test_vector_mapfile_style_inclusion(self):
         """
-        Checks that the mapfile layer contents snippet file indicated by <MapfileLayerContents> is included
+        Checks that the style snippet file indicated by <VectorStyleFile> is included
         in the output Mapfile.
         """
         if DEBUG:
-            print '\nTESTING THAT MAPFILE LAYER CONTENTS ARE INCLUDED IN GENERATED MAPFILE...'
+            print '\nTESTING THAT VECTOR STYLES ARE INCLUDED IN GENERATED MAPFILE...'
 
-        layer_config = os.path.join(self.testfiles_path, 'conf/test_vector_mapfile_layer_contents_inclusion.xml')
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_vector_mapfile_style_inclusion.xml')
         config = get_layer_config(layer_config, self.archive_config)
 
         make_dir_tree(config['mapfile_staging_location'])
@@ -732,12 +732,12 @@ class TestLayerConfig(unittest.TestCase):
 
         output_mapfile = os.path.join(config['mapfile_location'], config['mapfile_location_basename'] + '.map')
 
-        self.assertTrue(os.path.exists(output_mapfile), "Mapfile Layer Contents addition test -- mapfile not created")
+        self.assertTrue(os.path.exists(output_mapfile), "Vector Mapfile Style addition test -- mapfile not created")
 
         with open(output_mapfile) as mapfile:
             with open(os.path.join(self.testfiles_path, config['vector_layer_contents'])) as layer_contents_file:
                 styles_exist = layer_contents_file.read() in mapfile.read()
-        self.assertTrue(styles_exist, 'Mapfile layer contents not found in output mapfile')
+        self.assertTrue(styles_exist, 'Style file stuff not found in output mapfile')
 
     def test_vector_data_type_inclusion(self):
         """
