@@ -395,7 +395,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         base_source_path = re.sub(r'/$', '', base_source_path)
 
         source_path = '/'.join((base_source_path, layer_id,
-                                'default' + '${date}' if not static else '', tilematrixset))
+                                'default' + '/${date}' if not static else '', tilematrixset))
         source_postfix = MIME_TO_EXTENSION[mimetype]
         twms_config = bulk_replace(LAYER_MOD_TWMS_CONFIG_TEMPLATE, [('{size_x}', str(size_x)), ('{size_y}', str(size_y)), (
             '{tile_size_x}', str(tile_size_x)), ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)), ('{source_postfix}', source_postfix), ('{source_path}', source_path), ('{bbox}', bbox),
