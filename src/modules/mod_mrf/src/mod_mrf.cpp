@@ -643,8 +643,12 @@ static int handler(request_rec *r)
         int status = ap_run_sub_req(sr);
         ap_remove_output_filter(rf);
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_s3_read, duration=%ld, uuid=%s",
-            apr_time_now() - start_index_lookup, uuid);
+        char *xamzid2 = apr_psprintf(r->pool, apr_table_get(sr->headers_out, "x-amz-id-2"));
+        char *xamzrequestid = apr_psprintf(r->pool, apr_table_get(sr->headers_out, "x-amz-request-id"));
+        char *s3date = apr_psprintf(r->pool, apr_table_get(sr->headers_out, "date"));
+
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_s3_read, duration=%ld, uuid=%s, uri=%s, range=%s, date=%s, x-amz-id-2=%s, x-amz-request-id=%s",
+            apr_time_now() - start_index_lookup, uuid, sr->uri, Range, s3date, xamzid2, xamzrequestid);
 
         if (status != APR_SUCCESS || sr->status != HTTP_PARTIAL_CONTENT 
             || rctx.size != static_cast<int>(index.size)) {

@@ -14,8 +14,8 @@ logMetrics = [
                ["end_mod_mrf_handle","timestamp", True],
                ["mod_mrf_index_read","duration", True],
                ["mod_mrf_s3_read","duration", True],
-               ["begin_send_to_date_service","timestamp", True],
-               ["end_send_to_date_service","timestamp", True],
+               ["begin_send_to_date_service","timestamp", False],
+               ["end_send_to_date_service","timestamp", False],
                ["begin_mod_reproject_handle","timestamp", False],
                ["end_mod_reproject_handle","timestamp", False]
              ]
@@ -151,7 +151,7 @@ for details in eventDetailsDict.values():
 
          #Elif 
          elif dir(details) and metric[0].replace("begin","end") in dir(details) and \
-               getattr(details, metric[0].replace("begin","end")) - getattr(details, metric[0]) < 0:
+               getattr(details, metric[0].replace("begin","end"),-1) - getattr(details, metric[0],-1) < 0:
             if verbose: print("Invalid begin/end metric (" + metric[0].replace("begin_","") + ") : " + details.uuid)
             
    if not valid:
