@@ -137,7 +137,7 @@ local function create_config(endpointConfigFilename, makeOptions)
             :gsub("${gts_header_file}", (endpoint["isGts"] and addQuotes(endpointConfig["gts_header_file"]) or "nil"))
             :gsub("${base_uri_gc}", (not endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gc"]) or "nil"))
             :gsub("${base_uri_gts}", (endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gts"]) or "nil"))
-            :gsub("${target_epsg_code}", addQuotes(endpointConfig["target_epsg_code"]))
+            :gsub("${target_epsg_code}", endpointConfig["target_epsg_code"] and addQuotes(endpointConfig["target_epsg_code"]) or "nil")
             :gsub("${date_service_keys}", dateServiceKeyString)
         lfs.mkdir(luaConfigBaseLocation .. endpoint["path"])
         local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 

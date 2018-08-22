@@ -413,9 +413,13 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
 
     -- Get the information we need from the TMS definitions and add bbox node
     local tmsDef = tmsDefs[epsgCode][tmsName]
+    if not tmsDef then
+        print("Can't find TileMatrixSet (" .. tmsName .. ") for this layer in the TileMatrixSet definitions file." )
+    end
     if targetEpsgCode then
         tmsName, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
     end
+
 
     local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
     local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
@@ -511,8 +515,13 @@ local function makeGC(endpointConfig)
     end
 
     local targetEpsgCode = endpointConfig["target_epsg_code"]
-    if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
-        targetEpsgCode = "EPSG:" .. targetEpsgCode
+    if targetEpsgCode then
+        if targetEpsgCode == "" or epsgCode == targetEpsgCode then
+            targetEpsgCode = nil
+        end
+        if string.match(targetEpsgCode:lower(), "^%d") then
+            targetEpsgCode = "EPSG:" .. targetEpsgCode
+        end
     end
 
     -- Parse header

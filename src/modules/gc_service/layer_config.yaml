@@ -2,7 +2,7 @@ layer_id: "AMSR2_Snow_Water_Equivalent"
 layer_title: "AMSR2 Snow Water Equivalent tileset"
 layer_name: "Snow Water Equivalent (AMSR2, GCOM-W1)"
 projection: "EPSG:4326"
-tilematrixset: "EPSG4326_2km"
+tilematrixset: "2km"
 mime_type: "image/jpeg"
 static: false
 metadata: 
