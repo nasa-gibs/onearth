@@ -409,9 +409,13 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
 
     local defaultDate
     local periods
-    if not static and dateList and dateList[layerId] then
-        defaultDate = config.default_date or dateList[layerId]["default"]
-        periods = config.periods or dateList[layerId]["periods"]
+    if not static and dateList then
+        if dateList[layerId] then
+            defaultDate = config.default_date or dateList[layerId]["default"]
+            periods = config.periods or dateList[layerId]["periods"]
+        else
+            print("Can't find entry for layer " .. layerId .. " in date service list.")
+        end
     end
 
     local layerContents = {}
