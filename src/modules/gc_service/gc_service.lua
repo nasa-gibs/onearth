@@ -409,7 +409,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
 
     local defaultDate
     local periods
-    if not static and dateList then
+    if not static and dateList and dateList[layerId] then
         defaultDate = config.default_date or dateList[layerId]["default"]
         periods = config.periods or dateList[layerId]["periods"]
     end
@@ -461,7 +461,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
 
     -- Build the <Dimension> element for time (if necessary)
     -- Note that we omit this if for some reason we don't have dates from the date service.
-    if not static and dateList then
+    if not static and dateList and dateList[layerId] then
         local dimensionNode = {name="Dimension", kids={
             {name="ows:Identifier", text="time"},
             {name="ows:UOM", text="ISO8601"},
