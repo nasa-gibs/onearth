@@ -122,7 +122,7 @@ class TestModReproject(unittest.TestCase):
         file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), os.path.join(self.testdata_path, 'environment_reproject.xml'), '{testfile_dir}', self.testfiles_path)
 
         # Run oe_config_layer to make the cache config files
-        cmd = 'oe_configure_layer --create_mapfile --skip_empty_tiles --generate_links -l{0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer --skip_empty_tiles --generate_links -l{0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         restart_apache()

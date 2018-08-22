@@ -165,14 +165,15 @@ def add_trailing_slash(directory_path):
 
 
 def restart_apache():
-    try:
-        check_apache_running()
-        if "el7" in platform.release():
-            apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-        else:
-            apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    except ValueError:
-        apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    apache = subprocess.Popen(['httpd', '-k', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    # try:
+    #     check_apache_running()
+    #     if "el7" in platform.release():
+    #         apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    #     else:
+    #         apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    # except ValueError:
+    #     apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     (stdout, stderr) = apache.communicate()
     if stdout != None and len(stdout) != 0:
         sys.stderr.write("\n=== STDOUT from restart_apache():\n%s\n===\n" % stdout.rstrip())

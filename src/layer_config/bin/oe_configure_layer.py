@@ -1145,7 +1145,7 @@ for conf in conf_files:
             base_twms_get_tile_service = lcdir + '/conf/gettileservice_base.xml'
             base_wmts_gc = lcdir + '/conf/getcapabilities_base_wmts.xml'
             reproject_warnings, reproject_errors = build_reproject_configs(conf, tilematrixset_configuration, wmts=not no_wmts, twms=not no_twms, create_gc=not no_xml, sigevent_url=sigevent_url, stage_only=no_cache, base_wmts_gc=base_wmts_gc,
-                                    base_twms_gc=base_twms_gc, base_twms_get_tile_service=base_twms_get_tile_service)
+                                    base_twms_gc=base_twms_gc, base_twms_get_tile_service=base_twms_get_tile_service, create_mapfile=create_mapfile)
             warnings += reproject_warnings
             errors += reproject_errors
             wmtsEndPoint = environment.wmts_dir
@@ -1156,6 +1156,7 @@ for conf in conf_files:
             cacheBasename_twms = environment.cacheBasename_twms
             wmts_endpoints[wmtsEndPoint] = WMTSEndPoint(wmtsEndPoint, cacheLocation_wmts, cacheBasename_wmts, wmts_getCapabilities, projection)
             twms_endpoints[twmsEndPoint] = TWMSEndPoint(twmsEndPoint, cacheLocation_twms, cacheBasename_twms, twms_getCapabilities, getTileService, projection)
+            wms_endpoints[environment.mapfileStagingLocation] = WMSEndPoint(environment.mapfileStagingLocation, environment.mapfileLocation, environment.mapfileLocationBasename, environment.mapfileConfigLocation, environment.mapfileConfigBasename)
             continue
 
         #Vector parameters
