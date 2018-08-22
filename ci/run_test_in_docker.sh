@@ -41,3 +41,4 @@ docker run \
   /test/tmp/docker-script.sh
 
 rm src/test/tmp/docker-script.sh
+exit 0
