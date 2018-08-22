@@ -25,10 +25,10 @@ cp -R /test /build/
 (
   cd /build/test
   pip install -r requirements.txt
-  python "$SCRIPT_NAME" -o /results/test_results.xml
+  python "$SCRIPT_NAME" -o /results/"$SCRIPT_NAME""_test_results.xml"
 )
 
-chown "$DOCKER_UID:$DOCKER_GID" /results/test_results.xml
+chown "$DOCKER_UID:$DOCKER_GID" /results/"$SCRIPT_NAME""_test_results.xml"
 EOS
 chmod +x src/test/tmp/docker-script.sh
 
@@ -41,3 +41,4 @@ docker run \
   /test/tmp/docker-script.sh
 
 rm src/test/tmp/docker-script.sh
+exit 0
