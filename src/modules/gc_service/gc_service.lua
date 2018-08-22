@@ -110,7 +110,8 @@ local function getDateList(endpointConfig)
     local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
     local body = assert(stream:get_body_as_string())
     if headers:get ":status" ~= "200" then
-        error(body)
+        print("Error contacting date service: " .. body)
+        return nil
     end
     return JSON:decode(body)
 end
@@ -351,8 +352,13 @@ local function makeGTS(endpointConfig)
     end
 
     local targetEpsgCode = endpointConfig["target_epsg_code"]
-    if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
-        targetEpsgCode = "EPSG:" .. targetEpsgCode
+    if targetEpsgCode then
+        if targetEpsgCode == "" or epsgCode == targetEpsgCode then
+            targetEpsgCode = nil
+        end
+        if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
+            targetEpsgCode = "EPSG:" .. targetEpsgCode
+        end
     end
 
     local projection = PROJECTIONS[targetEpsgCode or epsgCode]
@@ -403,7 +409,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
 
     local defaultDate
     local periods
-    if not static then
+    if not static and dateList then
         defaultDate = config.default_date or dateList[layerId]["default"]
         periods = config.periods or dateList[layerId]["periods"]
     end
@@ -454,7 +460,8 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
     layerContents[#layerContents + 1] = {name="Format", text=mimeType}
 
     -- Build the <Dimension> element for time (if necessary)
-    if not static then
+    -- Note that we omit this if for some reason we don't have dates from the date service.
+    if not static and dateList then
         local dimensionNode = {name="Dimension", kids={
             {name="ows:Identifier", text="time"},
             {name="ows:UOM", text="ISO8601"},
@@ -519,7 +526,7 @@ local function makeGC(endpointConfig)
         if targetEpsgCode == "" or epsgCode == targetEpsgCode then
             targetEpsgCode = nil
         end
-        if string.match(targetEpsgCode:lower(), "^%d") then
+        if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode
         end
     end
