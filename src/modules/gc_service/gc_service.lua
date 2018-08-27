@@ -506,7 +506,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = makeGCLayer(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, endpointConfig["base_uri_gc"], targetEpsgCode)
+                 tmsDefs, dateList, endpointConfig["base_uri_gc"], epsgCode, targetEpsgCode)
             end
         end
     end
