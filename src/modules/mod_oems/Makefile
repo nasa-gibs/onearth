@@ -10,7 +10,7 @@ $(TARGET) : $(FILES)
 	libtool --silent --mode=link g++ -o mod_oems.la -rpath $(MOD_PATH) -module -avoid-version -lxml2 mod_oems.lo
 
 install	:	$(TARGET)
-	sudo	cp $(TARGET)	$(MOD_PATH)
+	cp $(TARGET)	$(MOD_PATH)
 
 clean	:
 	rm -rf .libs *.{o,lo,slo,la}

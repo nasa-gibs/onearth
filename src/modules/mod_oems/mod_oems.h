@@ -66,4 +66,12 @@ typedef struct {
 	char* wms_version;
 } xml_filter_ctx;
 
+// WMTS error handling
+typedef struct {
+  int status;
+  const char *exceptionCode;
+  const char *locator;
+  const char *exceptionText;
+} wmts_error;
+
 extern module AP_MODULE_DECLARE_DATA oems_module;

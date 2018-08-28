@@ -650,6 +650,29 @@ def check_response_code(url, code, code_value=''):
     return False
 
 
+def check_wmts_error(url, code, hash):
+    """
+    Checks WMTS error responses, which often return a HTTP error code and an XML response.
+    Arguments:
+        url (str)-- url to check
+        code (int) -- expected HTTP response code
+        hash (str) -- expected hash value of the response
+    """
+    check_apache_running()
+    try:
+        response = urllib2.urlopen(url)
+        r_code = 200
+    except urllib2.HTTPError as e:
+        r_code = e.code
+        response = e.read()
+    if r_code == code:
+        hasher = hashlib.md5()
+        hasher.update(response)
+        hash_value = str(hasher.hexdigest())
+        return hash_value == hash
+    return False
+
+
 def test_snap_request(hash_table, req_url):
     """
     Requests the first tile for a given layer and date, then compares the result against a dict w/ dates
