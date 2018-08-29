@@ -78,7 +78,9 @@ MAPFILE_TEMPLATE = """LAYER
         STATUS  ON
         METADATA
                 "wms_title"             "{layer_title}"
-                "wms_extent"            "-20037508.34278925 -20037508.34278925 20037508.34278925 20037508.34278925"
+                "wms_srs"                 "EPSG:3857"
+                "wms_extent" "-180 -85.0511 180 85.0511"
+                {dimension_info}
         END
         DATA    '{data_xml}'
         PROJECTION
@@ -90,14 +92,14 @@ END
 
 DIMENSION_TEMPLATE = """"wms_timeextent" "{periods}"
                 "wms_timeitem" "TIME"
-                "wms_timedefault" "default"
+                "wms_timedefault" "{default}"
                 "wms_timeformat" "YYYY-MM-DD, YYYY-MM-DDTHH:MM:SSZ"
 """
 
 VALIDATION_TEMPLATE = """
         VALIDATION
-            "time"                  "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2}|default$"
-            "default_time"          "default"
+            "time"                  "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            "default_time"          "{default}"
         END
 """
 
@@ -889,7 +891,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 default_datetime = dest_dim_elem.findtext('{*}Default')
                 dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', dest_dim_elem.findtext("{*}Value")),
                                               ('{default}', default_datetime)])
-                validation_info = VALIDATION_TEMPLATE
+                validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
 
             # Mapserver automatically converts to RGBA and works better if we specify that for png layers
             mapserver_bands = 4 if 'image/png' in src_format else 3
