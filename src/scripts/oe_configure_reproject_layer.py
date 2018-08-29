@@ -68,7 +68,7 @@ MIME_TO_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
-TILE_LEVELS = {'2km': '5', '1km': '6', '500m': '7', '250m': '8',
+TILE_LEVELS = {'16km': '2', '8km': '3', '4km': '4', '2km': '5', '1km': '6', '500m': '7', '250m': '8',
                '125m': '9', '62.5m': '10', '31.25m': '11', '15.625m': '12'}
 
 

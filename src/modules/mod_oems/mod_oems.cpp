@@ -44,6 +44,59 @@ static const char *daily_time_pattern = "\\d{4}-\\d{2}-\\d{2}";
 static const char *subdaily_time_pattern = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z";
 static const char *default_wms_version = "1.3.0";
 
+static wmts_error wmts_make_error(int status, const char *exceptionCode, const char *locator, const char *exceptionText)
+{
+
+    wmts_error error;
+    error.status = status;
+    error.exceptionCode = exceptionCode;
+    error.locator = locator;
+    error.exceptionText = exceptionText;
+
+    return error;
+}
+
+static int wmts_return_all_errors(request_rec *r, int errors, wmts_error *wmts_errors)
+{
+
+    static char preamble[]=
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<ExceptionReport xmlns=\"http://www.opengis.net/ows/1.1\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd\" version=\"1.1.0\" xml:lang=\"en\">";
+    static char postamble[]="\n</ExceptionReport>" ;
+
+    ap_set_content_type(r,"text/xml");
+    ap_rputs(preamble, r);
+
+    int i;
+    for(i = 0; i < errors; i++)
+    {
+        wmts_error error = wmts_errors[i];
+
+        static char preexception[]="\n<Exception exceptionCode=\"";
+        static char prelocator[]="\" locator=\"";
+        static char postlocator[]="\">";
+        static char pretext[]="\n<ExceptionText>";
+        static char posttext[]="</ExceptionText>";
+        static char postexception[]="</Exception>";
+
+        ap_rputs(preexception, r);
+        ap_rputs(error.exceptionCode, r);
+        ap_rputs(prelocator, r);
+        ap_rputs(error.locator, r);
+        ap_rputs(postlocator, r);
+        ap_rputs(pretext, r);
+        ap_rputs(error.exceptionText, r);
+        ap_rputs(posttext, r);
+        ap_rputs(postexception, r);
+
+        r->status = error.status;
+        error.exceptionCode = 0;
+    }
+
+    ap_rputs(postamble, r);
+    return OK; // Request handled
+}
+
 static int change_xml_node_values(const xmlChar *search_xpath, 
 								  xmlXPathContextPtr *xpathCtx, 
 								  const char *search_txt,
@@ -321,14 +374,16 @@ char *get_mapfile(request_rec *r, char *mapfile, const char *mapfiledir, const c
 }
 
 // Check for valid arguments and transform request for Mapserver
-char *validate_args(request_rec *r, char *mapfile) {
+apr_status_t validate_args(request_rec *r, char *mapfile) {
 	char *args = r->args;
 	char proj[4];
 	int max_chars;
 	max_chars = strlen(r->args) + 1;
 
+    wmts_error wmts_errors[10];
+    int errors = 0;
+
 	// Time args
-	const char *time_error = "Invalid TIME format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ";
 	apr_time_exp_t tm = {0};
 	apr_size_t tmlen;
 	char *time = (char*)apr_pcalloc(r->pool,max_chars);
@@ -375,7 +430,7 @@ char *validate_args(request_rec *r, char *mapfile) {
 	// handle TIME
 	if (ap_strchr(time, '-') != 0) {
 		int i; i= 0;
-		char *times[6];
+		char *times[6] = { NULL };
 		char *t;
 		char *last;
 		t = apr_strtok(time,"-",&last);
@@ -384,10 +439,12 @@ char *validate_args(request_rec *r, char *mapfile) {
 			t = apr_strtok(NULL,"-",&last);
 		}
 		if (times[2] == NULL) {
-			ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
-			ap_rprintf(r, time_error);
-			return 0;
+			wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
 		}
+        if (errors) {
+            return wmts_return_all_errors(r, errors, wmts_errors);
+        }
+
 		if (ap_strstr(times[2],"T") != 0) {
 			subdaily = times[2];
 			// Check for subdaily delimiters
@@ -413,21 +470,22 @@ char *validate_args(request_rec *r, char *mapfile) {
 				}
 			}
 		}
+
 		if (subdaily == 0) {
 			time = apr_psprintf(r->pool, "%s-%s-%s", times[0], times[1], times[2]);
 			if (ap_regexec(daily_time,time,0,NULL,0)) {
-				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
-				ap_rprintf(r, time_error);
-				return 0;
+				wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
 			}
 		} else {
 			time = apr_psprintf(r->pool, "%s-%s-%sT%s:%s:%s", times[0], times[1], times[2], times[3], times[4], times[5]);
 			if (ap_regexec(subdaily_time,time,0,NULL,0)) {
-				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, time_error);
-				ap_rprintf(r, time_error);
-				return 0;
+				wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
 			}
 		}
+        if (errors) {
+            return wmts_return_all_errors(r, errors, wmts_errors);
+        }
+        
 		apr_table_setn(r->notes, "oems_time", time);
 
 		tm.tm_year = apr_atoi64(times[0]) - 1900;
@@ -453,20 +511,17 @@ char *validate_args(request_rec *r, char *mapfile) {
 		if (subdaily != 0) {
 			apr_strftime(formatted_time, &tmlen, 21, "%Y-%m-%dT%H:%M:%SZ", &tm);
 			if (apr_strnatcasecmp(time, formatted_time)) {
-				char *error = "Invalid TIME";
-				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "%s: %s", error, time);
-				ap_rprintf(r, error);
-				return 0;
+				wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
 			}
 		} else {
 			apr_strftime(formatted_time, &tmlen, 11, "%Y-%m-%d", &tm);
 			if (apr_strnatcasecmp(time, formatted_time)) {
-				char *error = "Invalid date in TIME";
-				ap_log_rerror( APLOG_MARK, APLOG_ERR, 0, r, "%s: %s", error, time);
-				ap_rprintf(r, error);
-				return 0;
+				wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
 			}
 		}
+        if (errors) {
+            return wmts_return_all_errors(r, errors, wmts_errors);
+        }
 	}
 
 	// check if WMS or WFS
@@ -671,7 +726,8 @@ char *validate_args(request_rec *r, char *mapfile) {
 	} else {
 		args = r->args;
 	}
-	return args;
+	r->args = args;
+	return DECLINED;
 }
 
 // OnEarth Mapserver handler
@@ -682,14 +738,9 @@ static int oems_handler(request_rec *r) {
 	}
 	char *mapfile = (char*)apr_pcalloc(r->pool,strlen(cfg->mapfiledir)+strlen(cfg->defaultmap)+1);
 	mapfile = apr_psprintf(r->pool, "%s/%s", cfg->mapfiledir, cfg->defaultmap);
+	
 	// Call Mapserver with mapfile
-	r->args = validate_args(r, mapfile);
-//	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server, "Mapserver args: %s", r->args);
-	if (r->args != 0) {
-		return DECLINED; // Pass request to Mapserver
-	} else {
-		return OK; // We handled this request due to errors
-	}
+	return validate_args(r, mapfile);
 }
 
 // Main handler for module
