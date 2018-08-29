@@ -31,6 +31,8 @@ LoadModule oems_module modules/mod_oems.so
 
 `DefaultMapfile`: Filename of the default mapfile to use relative to `MapfileDir`.
 
+`DisableOemsTime`: Disable `mod_oems` time snapping. Must be set to `On` for use with reprojected WMS endpoints, and omitted or set to `Off` otherwise.
+
 See [Apache Configuration](../../../doc/config_apache.md) for more details on configuration.
 
 ## Contact

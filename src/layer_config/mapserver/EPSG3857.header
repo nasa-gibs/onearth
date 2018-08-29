@@ -94,16 +94,6 @@ MAP
       "wfs_srs"            		"EPSG:3857"
       "wfs_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
     END
-    VALIDATION
-      "default_TIME"            "TTTTTTT"
-      "default_PRODUCTYEAR"     "YYYY"
-      "default_PRODUCTMONTH"    "MM"
-      "default_PRODUCTDAY"      "DD"
-      "TIME"                    "^[0-9]{7}$"
-      "PRODUCTYEAR"             "^[0-9]{4}$"
-      "PRODUCTMONTH"            "^[0-9]{2}$"
-      "PRODUCTDAY"              "^[0-9]{2}$"
-     END
   END
   
   SYMBOL
