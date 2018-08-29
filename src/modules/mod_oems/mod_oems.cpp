@@ -247,6 +247,11 @@ static const char *default_mapfile_set(cmd_parms *cmd, oems_conf *cfg, const cha
 	return 0;
 }
 
+static const char *disable_oemstime_set(cmd_parms *cmd, oems_conf *cfg, int arg) {
+    cfg->disable_oemstime = arg;
+    return NULL;
+}
+
 static void *create_dir_config(apr_pool_t *p, char *dummy)
 {
 	oems_conf *cfg;
@@ -589,9 +594,13 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    	apr_table_setn(r->notes, "oems_layers", last_layer);
 	    }
 
+		oems_conf *cfg = static_cast<oems_conf *>ap_get_module_config(r->per_dir_config, &oems_module);
 	    if (strlen(last_layer) != 0) {
 			// Set filters for time snapping if there is a layer that hasn't been checked
-		    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
+			ap_filter_rec_t *receive_filter = NULL;
+			if (!cfg->disable_oemstime) {
+		    	receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
+			}
 		    if (receive_filter != NULL) {
 		    	ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
 		    }
@@ -611,7 +620,10 @@ char *validate_args(request_rec *r, char *mapfile) {
 	    if (strlen(layers) == 0 && prev_last_layers != 0) {
 	    	layers = apr_psprintf(r->pool,"INVALIDTIME");
 	    }
-		args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years,maplayerops);
+
+	    args = cfg->disable_oemstime
+	    	? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,time,maplayerops)
+			: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years,maplayerops);
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);
@@ -710,6 +722,13 @@ static const command_rec cmds[] =
 		0, /* argument to include in call */
 		ACCESS_CONF, /* where available */
 		"File name of the default mapfile" /* help string */
+	),
+	AP_INIT_FLAG(
+		"DisableOemsTime",
+		(cmd_func) disable_oemstime_set,
+		0, /* argument to include in call */
+		ACCESS_CONF, /* where available */
+		"Option to disable time snapping (for reprojected layers)" /* help string */
 	),
 	{NULL}
 };

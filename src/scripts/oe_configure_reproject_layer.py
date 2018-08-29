@@ -77,16 +77,30 @@ MAPFILE_TEMPLATE = """LAYER
         TYPE    RASTER
         STATUS  ON
         METADATA
-                "wms_title"             "{layer_name}"
+                "wms_title"             "{layer_title}"
                 "wms_extent"            "-20037508.34278925 -20037508.34278925 20037508.34278925 20037508.34278925"
-
         END
         DATA    '{data_xml}'
         PROJECTION
                 "init=epsg:4326"
         END
+        {validation_info}
 END
 """
+
+DIMENSION_TEMPLATE = """"wms_timeextent" "{periods}"
+                "wms_timeitem" "TIME"
+                "wms_timedefault" "default"
+                "wms_timeformat" "YYYY-MM-DD, YYYY-MM-DDTHH:MM:SSZ"
+"""
+
+VALIDATION_TEMPLATE = """
+        VALIDATION
+            "time"                  "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2}|default$"
+            "default_time"          "default"
+        END
+"""
+
 
 versionNumber = '1.3.3'
 
@@ -98,7 +112,7 @@ def bulk_replace(source_str, replace_list):
     return out_str
 
 
-def make_gdal_tms_xml(layer, png_bands):
+def make_gdal_tms_xml(layer, bands):
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
 
     resource_url = layer.find('{*}ResourceURL')
@@ -124,7 +138,7 @@ def make_gdal_tms_xml(layer, png_bands):
     etree.SubElement(out_root, 'Projection').text = 'EPSG:4326'
     etree.SubElement(out_root, 'BlockSizeX').text = '512'
     etree.SubElement(out_root, 'BlockSizeY').text = '512'
-    etree.SubElement(out_root, 'BandsCount').text = str(png_bands)
+    etree.SubElement(out_root, 'BandsCount').text = str(bands)
 
     etree.SubElement(out_root, 'Cache')
     etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
@@ -403,7 +417,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         layer_endpoint = os.path.join(wmts_base_endpoint, identifier)
         layer_style_endpoint = os.path.join(layer_endpoint, 'default')
         layer_tms_apache_configs = []
-        png_bands = None
+        bands = 3
 
         # Get TMSs for this layer and build a config for each
         tms_list = [elem for elem in tilematrixsets if elem.findtext(
@@ -430,7 +444,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             src_title = layer.findtext(ows + 'Title')
 
             # If it's a PNG, we need to grab a tile and check if it's paletted
-            if 'image/png' in src_format and not png_bands:
+            if 'image/png' in src_format:
                 sample_tile_url = layer.find('{*}ResourceURL').get('template').replace('{Time}', 'default')\
                     .replace('{TileMatrixSet}', src_tilematrixset_name).replace('{TileMatrix}', '0').replace('{TileRow}', '0').replace('{TileCol}', '0')
                 print 'Checking for palette for PNG layer: ' + identifier
@@ -454,19 +468,19 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 sample_png.read()
                 try:
                     if sample_png.palette():
-                        png_bands = 1
+                        bands = 1
                         print identifier + ' contains palette'
                 except png.FormatError:
                     # No palette, check for greyscale
                     if sample_png.asDirect()[3]['greyscale'] is True:
-                        png_bands = 1
+                        bands = 1
                         print identifier + ' is greyscale'
                     else:  # Check for alpha
                         if sample_png.asDirect()[3]['alpha'] is True:
-                            png_bands = 4
+                            bands = 4
                             print identifier + ' is RGBA'
                         else:
-                            png_bands = 3
+                            bands = 3
                             print identifier + ' is RGB'
 
             # Now figure out the configuration for the destination layer.
@@ -541,7 +555,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 with open(os.path.join(wmts_staging_path, src_cfg_filename), 'w+') as src_cfg:
                     if 'image/png' in src_format:
                         src_cfg.write('Size {0} {1} 1 {2}\n'.format(
-                            src_width, src_height, png_bands))
+                            src_width, src_height, bands))
                     else:
                         src_cfg.write('Size {0} {1}\n'.format(
                             src_width, src_height))
@@ -557,7 +571,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
                     if 'image/png' in src_format:
                         dest_cfg.write('Size {0} {1} 1 {2}\n'.format(
-                            dest_width, dest_height, png_bands))
+                            dest_width, dest_height, bands))
                         dest_cfg.write('Nearest On\n')
                     else:
                         dest_cfg.write('Size {0} {1}\n'.format(
@@ -869,8 +883,19 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
         if create_mapfile:
             # Use the template to create the new Mapfile snippet
+            dimension_info = ''
+            validation_info = ''
+            if not static:
+                default_datetime = dest_dim_elem.findtext('{*}Default')
+                dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', dest_dim_elem.findtext("{*}Value")),
+                                              ('{default}', default_datetime)])
+                validation_info = VALIDATION_TEMPLATE
+
+            # Mapserver automatically converts to RGBA and works better if we specify that for png layers
+            mapserver_bands = 4 if 'image/png' in src_format else 3
             mapfile_snippet = bulk_replace(
-                MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, png_bands))])
+                MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands)), ('{layer_title}', cgi.escape(src_title)),
+                                   ('{dimension_info}', dimension_info), ('{validation_info}', validation_info)])
 
             mapfile_name = os.path.join(
                 mapfile_staging_location, identifier + '.map')

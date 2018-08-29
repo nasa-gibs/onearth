@@ -56,6 +56,7 @@ APLOG_USE_MODULE(oems);
 struct oems_conf {
 	const char *mapfiledir;
 	const char *defaultmap;
+    int disable_oemstime;
 };
 
 typedef struct {
