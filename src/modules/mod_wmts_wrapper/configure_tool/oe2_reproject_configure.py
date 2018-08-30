@@ -45,7 +45,7 @@ import requests
 from functools import partial, reduce
 import re
 import math
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlparse
 
 EARTH_RADIUS = 6378137.0
 
@@ -146,12 +146,29 @@ SourcePath {endpoint_path}/{layer_id}/default/${date}/{tilematrixset}
 SourcePostfix {source_postfix}
 """
 
+DATE_SERVICE_TEMPLATE = """SSLProxyEngine on
+ProxyPass {local_date_service_uri} {date_service_uri}
+ProxyPassReverse {local_date_service_uri} {date_service_uri}
+"""
+
+
+def format_date_service_uri(uri):
+    return '/oe2-date-service-proxy-' + bulk_replace(urlparse(uri).netloc, ((':', '-'), ('.', '-')))
+
 
 def bulk_replace(source_str, replace_list):
     out_str = source_str
     for item in replace_list:
         out_str = out_str.replace(item[0], item[1])
     return out_str
+
+
+def get_date_service_info(endpoint_config, layer_configs):
+    date_service_needed = any(layer_config.get(
+        'time_enabled') for layer_config in layer_configs)
+    if not date_service_needed:
+        return None
+    return {'local': format_date_service_uri(endpoint_config['date_service_uri']), 'remote': endpoint_config['date_service_uri']}
 
 
 def get_matrix(matrix):
@@ -293,8 +310,9 @@ def make_apache_layer_config(endpoint_config, layer_config, make_twms=False):
                                   'endpoint_config_base_location']),
                                  ('{layer_id}', layer_config['layer_id']),
                                  ('{tilematrixset}', layer_config['tilematrixset']['identifier'])])
-    if layer_config['time_enabled']:
-        date_service_uri = endpoint_config['date_service_uri']
+    if layer_config['time_enabled'] and endpoint_config['date_service_info']:
+        date_service_uri = endpoint_config[
+            'date_service_info']['local']
         date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{date_service_uri}"'
         apache_config = re.sub(r'(WMTSWrapperEnableTime.*)',
                                r'\1' + date_service_snippet, apache_config)
@@ -339,7 +357,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         ('{source_path}', format_source_uri_for_proxy(layer_config[
          'source_url_template'], endpoint_config['proxy_paths'])),
         ('{nearest}', 'Off' if layer_config[
-                'mimetype'] == 'image/jpeg' else 'On')])
+            'mimetype'] == 'image/jpeg' else 'On')])
 
     twms_config = bulk_replace(
         LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
@@ -411,6 +429,8 @@ def build_configs(endpoint_config, make_twms=False):
 
     # Build configs for each layer
     endpoint_config['proxy_paths'] = get_proxy_paths(layers)
+    endpoint_config['date_service_info'] = get_date_service_info(
+        endpoint_config, layers)
 
     layer_apache_configs = map(
         partial(make_apache_layer_config, endpoint_config, make_twms=make_twms), layers)
@@ -446,9 +466,11 @@ def build_configs(endpoint_config, make_twms=False):
     Path(apache_config_path.parent).mkdir(parents=True, exist_ok=True)
     apache_config_str = MAIN_APACHE_CONFIG_TEMPLATE.replace(
         '{endpoint_path}', endpoint_config_base_location)
-    print(make_proxy_config(endpoint_config['proxy_paths'][0]))
     apache_config_str += '\n' + '\n'.join(make_proxy_config(proxy_path)
                                           for proxy_path in endpoint_config['proxy_paths'])
+    if endpoint_config['date_service_info']:
+        apache_config_str += '\n' + DATE_SERVICE_TEMPLATE.replace('{date_service_uri}', endpoint_config['date_service_info']['remote']).replace(
+            '{local_date_service_uri}', endpoint_config['date_service_info']['local'])
     if make_twms:
         apache_config_str += '\n' + TWMS_MODULE_TEMPLATE
     apache_config_str += '\n' + '\n'.join(layer_apache_configs)
