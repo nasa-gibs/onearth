@@ -109,8 +109,6 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
         print 'Processing ' + input_file
         with fiona.open(input_file) as shapefile:
             try:
-                for x in rtree_index_generator(list(shapefile), filter_list):
-                    print x
                 spatial_db = rtree.index.Index(rtree_index_generator(list(shapefile), filter_list))
             except rtree.core.RTreeError as e:
                 print 'ERROR -- problem importing feature data. If you have filters configured, the source dataset may have no features that pass. Err: {0}'.format(e)
