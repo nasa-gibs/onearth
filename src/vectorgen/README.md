@@ -75,3 +75,23 @@ For dense datasets, this option can help improve client performance, as the topm
 **email_recipient** - The recipient address for email notifications.
 
 **email_recipient** - The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.
+
+### Feature Filtering (MVT only)
+vectorgen can be configured to pass all the features in a dataset through a set of filters. Features whose metadata passes the filters will be added to the output MVT MRF.
+
+Here is a sample filter block:
+
+```
+<feature_filters>
+    <filter_block logic="OR">
+        <equals name="id" value="some_id"/>
+        <notEquals name="datetime" regexp="^should_not_start_with"/>
+    </filter_block>
+</feature_filters>
+```
+
+**`<feature_filters`>** - This element should appear only once. This contains all the filter data. A feature will be added to the MVT MRF only if it passes **all** the <filter_block> elements.
+
+**`filter_block`** - Defines a single filter set and the logic used to evaluate it. The `logic` attribute is a boolean parameter used to combine all the results of the sub-filters.
+
+**`equals`** and **`notEquals`** - An `equals` test will pass if the metadata property with the given `name` is equal to the given `value` or passes the given `regexp` (if both are present, the regexp is used). A `notEquals` test does the opposite. Regular expression strings must be valid Python regexps.

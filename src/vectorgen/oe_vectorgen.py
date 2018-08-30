@@ -50,6 +50,7 @@ import time
 import xml.dom.minidom
 import string
 import shutil
+import re
 try:
     from osgeo import ogr, osr, gdal
 except:
@@ -219,6 +220,40 @@ if __name__ == '__main__':
                 log_sig_exit('ERROR', "<input_files> or <input_dir> is required", sigevent_url)
             else:
                 input_files = ''
+
+        # Filtering options
+        filter_list = []
+        filter_options = dom.getElementsByTagName('feature_filters')
+        if len(filter_options):
+            for filter_element in filter_options[0].getElementsByTagName('filter_block'):
+                # Validate filter logic
+                logic = filter_element.getAttribute('logic')
+                if not logic:
+                    raise ValueError('"logic" attribute not provided for <filter_block>')
+                if logic.lower() != "and" and logic.lower() != "or":
+                    raise ValueError('Invalid value for "logic" attribute -- must be AND or OR')
+
+                # Get filters
+                comparisons = filter_element.getElementsByTagName('equals') + filter_element.getElementsByTagName('notEquals')
+                def parse_filter(elem):
+                    name = elem.getAttribute('name')
+                    if not name:
+                        raise ValueError('No "name" attribute found for {0} element'.format(elem.nodeName))
+                    value = elem.getAttribute('value')
+                    regexp_str = elem.getAttribute('regexp')
+                    regexp = None
+                    if regexp_str:
+                        try:
+                            regexp = re.compile(regexp_str)
+                        except:
+                            print "ERROR -- problem compiling regexp string {0}. Make sure it's a valid Python regular expression.".format(regexp_str)
+                            sys.exit()
+                    if not value and not regexp:
+                        raise ValueError('No "value" or "regexp" attribute found for {0} element'.format(elem.nodeName))
+                    return {'comparison': elem.nodeName, 'name': name, 'value': value, 'regexp': regexp}
+                filters = list(map(parse_filter, comparisons))
+                filter_list.append({'logic': logic, 'filters': filters})
+
         if output_format == 'mrf':
             log_sig_warn('"MRF" output format not supported, using "MVT-MRF" instead', sigevent_url)
             output_format = 'mvt-mrf'
@@ -385,7 +420,7 @@ if __name__ == '__main__':
                     alltiles[idx] = outfile
                 
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
-            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
             
             files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
             for mfile in files:

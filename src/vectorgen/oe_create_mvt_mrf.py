@@ -46,14 +46,14 @@ import math
 import random
 import fiona
 import shapely.geometry
-from rtree import index
+import rtree
 import mapbox_vector_tile
 from osgeo import osr
 import decimal
-        
+import re
 
 # Main tile-creation function.
-def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, target_x, target_y, extents, tile_size, overview_levels, projection_str, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
+def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, target_x, target_y, extents, tile_size, overview_levels, projection_str, filter_list, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
 
@@ -71,6 +71,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
         tile_size (int) -- Pixel size of the tiles to be generated.
         overview_levels (list int) -- A list of the overview levels to be used (i.e., a level of 2 will render a level that's 1/2 the width and height of the base level)
         projection_str (str) -- EPSG code for the projection to be used.
+        filter_list (list object) -- List of options for filtering features
         feature_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce features for each successive zoom level.
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
@@ -107,7 +108,13 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
     for input_file in input_file_path:
         print 'Processing ' + input_file
         with fiona.open(input_file) as shapefile:
-            spatial_db = index.Index(rtree_index_generator(list(shapefile)))
+            try:
+                for x in rtree_index_generator(list(shapefile), filter_list):
+                    print x
+                spatial_db = rtree.index.Index(rtree_index_generator(list(shapefile), filter_list))
+            except rtree.core.RTreeError as e:
+                print 'ERROR -- problem importing feature data. If you have filters configured, the source dataset may have no features that pass. Err: {0}'.format(e)
+                sys.exit()
             spatial_dbs.append(spatial_db)
             source_schema = shapefile.schema['geometry']
             source_schemas.append(source_schema)
@@ -362,9 +369,32 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 # UTILITY STUFF
 
 # This is the recommended way of building an rtree index.
-def rtree_index_generator(features):
+def rtree_index_generator(features, filter_list):
     for idx, feature in enumerate(features):
         try:
-            yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
+            if len(filter_list) == 0 or passes_filters(feature, filter_list):
+                yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)            
         except ValueError as e:
             print "WARN - " + str(e)
+
+
+def passes_filters(feature, filter_list):
+    return any(map(lambda filter_block: filter_block_func(feature, filter_block), filter_list))
+
+
+def filter_block_func(feature, filter_block):
+    if filter_block['logic'].lower() == "and":
+        return all(map(lambda comp: filter_func(feature, comp), filter_block['filters']))
+    else:
+        return any(map(lambda comp: filter_func(feature, comp), filter_block['filters']))
+
+
+def filter_func(feature, comparison):
+    property_value = str(feature['properties'].get(comparison['name']))
+    equality = comparison['comparison'] == 'equals'
+    regexp = comparison['regexp']
+    if regexp:
+        result = regexp.search(property_value)
+    else:
+        result = feature['properties'].get(comparison['name']) == comparison['value']
+    return result if equality else not result
