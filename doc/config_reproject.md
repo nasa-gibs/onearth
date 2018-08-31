@@ -68,3 +68,4 @@ The reprojected layer config tool scrapes data from the GetCapabilities file of 
 
 `<IncludeLayer>` (optional, can be multiple) -- Include one of these elements for each layer that you want to exclusively configure. **If this element is found, only the layers specified in each element will be configured, and all others will be ignored.**
 
+`<TargetEpsgCode>` (generally required) -- Sets the output projection for the reprojected layers. Currently, only compatible with EPSG:4326 and EPSG:3857. If this parameter is omitted, it can be used to generate mapfiles that use a tile source but do not reproject the tiles.

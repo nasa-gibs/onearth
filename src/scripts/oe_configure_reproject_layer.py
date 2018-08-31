@@ -46,7 +46,7 @@ import os
 import re
 import shutil
 from optparse import OptionParser
-from osgeo import osr
+from osgeo import osr, ogr
 import png
 from io import BytesIO
 from time import asctime
@@ -54,6 +54,7 @@ import cgi
 import hashlib
 from decimal import Decimal
 import copy
+import json
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -78,13 +79,13 @@ MAPFILE_TEMPLATE = """LAYER
         STATUS  ON
         METADATA
                 "wms_title"             "{layer_title}"
-                "wms_srs"                 "EPSG:3857"
-                "wms_extent" "-180 -85.0511 180 85.0511"
+                "wms_srs"               "EPSG:{target_epsg}"
+                "wms_extent"            "{target_bbox}"
                 {dimension_info}
         END
         DATA    '{data_xml}'
         PROJECTION
-                "init=epsg:4326"
+                "init=epsg:{src_epsg}"
         END
         {validation_info}
 END
@@ -114,8 +115,61 @@ def bulk_replace(source_str, replace_list):
     return out_str
 
 
-def make_gdal_tms_xml(layer, bands):
+def get_epsg_code_for_proj_string(proj_string):
+    # For some reason OSR can't parse this version of the 3857 CRS.
+    if proj_string == 'urn:ogc:def:crs:EPSG:6.18:3:3857':
+        return '3857'
+    proj = osr.SpatialReference()
+    proj.SetFromUserInput(proj_string)
+    return proj.GetAuthorityCode(None)
+
+
+def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=False):
+    epsg_code = get_epsg_code_for_proj_string(proj_string)
+
+    if epsg_code == '4326':
+        if use_oe_tms:
+            return [-180, -198, 396.0, 90]
+        else:
+            return [-180, -90, 180, 90]
+    bbox = get_proj_bbox(epsg_code)
+    if not get_in_map_units:
+        return bbox
+    src_proj = osr.SpatialReference()
+    src_proj.SetFromUserInput('EPSG:4326')
+    target_proj = osr.SpatialReference()
+    target_proj.ImportFromEPSG(int(epsg_code))
+    transform = osr.CoordinateTransformation(src_proj, target_proj)
+
+    point_coords = [(bbox[1], bbox[0]), (bbox[3], bbox[2])]
+    new_bbox = []
+    for coords in point_coords:
+        point = ogr.Geometry(ogr.wkbPoint)
+        point.AddPoint(coords[0], coords[1])
+        point.Transform(transform)
+        new_bbox.append(point.GetX())
+        new_bbox.append(point.GetY())
+    return [new_bbox[0], new_bbox[3], new_bbox[1], new_bbox[2]]
+
+
+def get_proj_bbox(epsg_code):
+    bbox = [-180, -90, 180, 90]
+    uri = 'http://epsg.io/?q={0}&format=json'.format(epsg_code)
+    try:
+        r = requests.get(uri)
+        if r.status_code == 200:
+            res = json.loads(r.content)
+            bbox = res['results'][0]['bbox']
+    except:
+        pass
+    return bbox
+
+
+def make_gdal_tms_xml(layer, bands, src_epsg):
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
+
+    bbox = map(str, get_bbox_for_proj_string(
+        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=src_epsg != '4326'))
 
     resource_url = layer.find('{*}ResourceURL')
     template_string = resource_url.get('template')
@@ -124,22 +178,29 @@ def make_gdal_tms_xml(layer, bands):
 
     service_element = etree.SubElement(out_root, 'Service')
     service_element.set('name', 'TMS')
-    etree.SubElement(service_element, 'ServerUrl').text = template_string.replace(
-        '{TileMatrixSet}', tms).replace('{Time}', '%time%').replace('{TileMatrix}', '${z}').replace('{TileRow}', '${y}').replace('{TileCol}', '${x}')
+    etree.SubElement(service_element, 'ServerUrl').text = bulk_replace(template_string, [
+        ('{TileMatrixSet}', tms), ('{Time}', '%time%'), ('{TileMatrix}',
+                                                         '${z}'), ('{TileRow}', '${y}'), ('{TileCol}', '${x}')])
 
     data_window_element = etree.SubElement(out_root, 'DataWindow')
-    etree.SubElement(data_window_element, 'UpperLeftX').text = '-180.0'
-    etree.SubElement(data_window_element, 'UpperLeftY').text = '90'
-    etree.SubElement(data_window_element, 'LowerRightX').text = '396.0'
-    etree.SubElement(data_window_element, 'LowerRightY').text = '-198'
-    etree.SubElement(data_window_element, 'TileLevel').text = TILE_LEVELS[tms]
-    etree.SubElement(data_window_element, 'TileCountX').text = '2'
+    etree.SubElement(data_window_element, 'UpperLeftX').text = bbox[0]
+    etree.SubElement(data_window_element, 'UpperLeftY').text = bbox[3]
+    etree.SubElement(data_window_element, 'LowerRightX').text = bbox[2]
+    etree.SubElement(data_window_element, 'LowerRightY').text = bbox[1]
+    if src_epsg == '3857':
+        tile_levels = tms.split('GoogleMapsCompatible_Level')[1]
+    else:
+        tile_levels = TILE_LEVELS[tms]
+    etree.SubElement(data_window_element, 'TileLevel').text = tile_levels
+    etree.SubElement(data_window_element,
+                     'TileCountX').text = '2' if src_epsg == '4326' else '1'
     etree.SubElement(data_window_element, 'TileCountY').text = '1'
     etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
-    etree.SubElement(out_root, 'Projection').text = 'EPSG:4326'
-    etree.SubElement(out_root, 'BlockSizeX').text = '512'
-    etree.SubElement(out_root, 'BlockSizeY').text = '512'
+    etree.SubElement(out_root, 'Projection').text = 'EPSG:' + src_epsg
+    tile_size = '512' if src_epsg == '4326' else '256'
+    etree.SubElement(out_root, 'BlockSizeX').text = tile_size
+    etree.SubElement(out_root, 'BlockSizeY').text = tile_size
     etree.SubElement(out_root, 'BandsCount').text = str(bands)
 
     etree.SubElement(out_root, 'Cache')
@@ -202,6 +263,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         name.text for name in config_xml.findall('ExcludeLayer')]
     layer_include_list = [
         name.text for name in config_xml.findall('IncludeLayer')]
+    target_epsg = config_xml.findtext('TargetEpsgCode')
+    if target_epsg and target_epsg.startswith('EPSG:'):
+        target_epsg = target_epsg.split(':')[1]
 
     # Parse the tilematrixsets definition file
     try:
@@ -494,7 +558,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             dest_tilematrixset_name = dest_tilematrixset.findtext(
                 ows + 'Identifier')
             dest_scale_denominator = float(sort_tilematrixset(dest_tilematrixset)[
-                                           0].findtext('{*}ScaleDenominator'))
+                0].findtext('{*}ScaleDenominator'))
             dest_width = dest_height = int(
                 round(2 * math.pi * EARTH_RADIUS / (dest_scale_denominator * 0.28E-3)))
             dest_levels = len(dest_tilematrixset.findall('{*}TileMatrix'))
@@ -505,7 +569,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             dest_top_left_corner = [Decimal(value) for value in sort_tilematrixset(
                 dest_tilematrixset)[0].findtext('{*}TopLeftCorner').split(' ')]
             dest_bbox = '{0},{1},{2},{3}'.format(dest_top_left_corner[0], dest_top_left_corner[
-                                                 0], -dest_top_left_corner[0], -dest_top_left_corner[0])
+                0], -dest_top_left_corner[0], -dest_top_left_corner[0])
             dest_resource_url_elem = layer.find('{*}ResourceURL')
             dest_url = dest_resource_url_elem.get('template')
             for location in src_locations:
@@ -861,9 +925,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     patterns = ''
                     for tilematrix in sorted(out_tilematrixsets[0].findall('{*}TileMatrix'), key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator'))):
                         resx = (dest_top_left_corner[
-                                1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixWidth'))
+                            1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixWidth'))
                         resy = (dest_top_left_corner[
-                                1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixHeight'))
+                            1] - dest_top_left_corner[0]) / Decimal(tilematrix.findtext('MatrixHeight'))
                         local_xmax = dest_top_left_corner[0] + resx
                         local_xmax_str = str(local_xmax) if local_xmax else '0'
                         local_ymax = dest_top_left_corner[1] - resy
@@ -890,14 +954,27 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             if not static:
                 default_datetime = dest_dim_elem.findtext('{*}Default')
                 dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', dest_dim_elem.findtext("{*}Value")),
-                                              ('{default}', default_datetime)])
-                validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
+                                                                   ('{default}', default_datetime)])
+                validation_info = VALIDATION_TEMPLATE.replace(
+                    '{default}', default_datetime)
 
-            # Mapserver automatically converts to RGBA and works better if we specify that for png layers
+            # Mapserver automatically converts to RGBA and works better if we
+            # specify that for png layers
             mapserver_bands = 4 if 'image/png' in src_format else 3
+
+            src_crs = layer_tilematrixsets[0].findtext('{*}SupportedCRS')
+            src_epsg = get_epsg_code_for_proj_string(src_crs)
+
+            if not target_epsg:
+                target_epsg = src_epsg
+            target_bbox = map(
+                str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=src_epsg != '4326'))
+            target_bbox = [target_bbox[1], target_bbox[
+                0], target_bbox[3], target_bbox[2]]
+
             mapfile_snippet = bulk_replace(
-                MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands)), ('{layer_title}', cgi.escape(src_title)),
-                                   ('{dimension_info}', dimension_info), ('{validation_info}', validation_info)])
+                MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
+                                   ('{dimension_info}', dimension_info), ('{validation_info}', validation_info), ('{src_epsg}', src_epsg), ('{target_epsg}', target_epsg), ('{target_bbox}', ', '.join(target_bbox))])
 
             mapfile_name = os.path.join(
                 mapfile_staging_location, identifier + '.map')

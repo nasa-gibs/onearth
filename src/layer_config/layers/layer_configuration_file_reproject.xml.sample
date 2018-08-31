@@ -2,4 +2,6 @@
 	<SrcWMTSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcWMTSGetCapabilitiesURI>
 	<SrcLocationRewrite internal="/outside" external="https://gibs.earthdata.nasa.gov" />
 	<EnvironmentConfig>/etc/onearth/config/conf/environment_webmercator.xml</EnvironmentConfig>
+    <IncludeLayer>AMSR2_Snow_Water_Equivalent</IncludeLayer>
+    <TargetEpsgCode>3857</TargetEpsgCode>
 </ReprojectLayerConfig>
