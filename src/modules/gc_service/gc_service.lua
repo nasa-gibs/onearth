@@ -353,12 +353,11 @@ local function makeGTS(endpointConfig)
 
     local targetEpsgCode = endpointConfig["target_epsg_code"]
     if targetEpsgCode then
-        if targetEpsgCode == "" or epsgCode == targetEpsgCode then
-            targetEpsgCode = nil
-        end
         if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode
         end
+    else
+        targetEpsgCode = epsgCode    
     end
 
     local projection = PROJECTIONS[targetEpsgCode or epsgCode]
@@ -506,7 +505,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = makeGCLayer(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, endpointConfig["base_uri_gc"], epsgCode, targetEpsgCode)
+                 tmsDefs, dateList, endpointConfig["base_uri_gc"], targetEpsgCode)
             end
         end
     end
@@ -527,12 +526,11 @@ local function makeGC(endpointConfig)
 
     local targetEpsgCode = endpointConfig["target_epsg_code"]
     if targetEpsgCode then
-        if targetEpsgCode == "" or epsgCode == targetEpsgCode then
-            targetEpsgCode = nil
-        end
         if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode
         end
+    else
+        targetEpsgCode = epsgCode    
     end
 
     -- Parse header
