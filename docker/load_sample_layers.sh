@@ -255,6 +255,67 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3031:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3031:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3031:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3031:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3031:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3031:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3031:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3031:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3031:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3031:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3031:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3031:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3031:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3031:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3031:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:std:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:periods "2012-09-10/2018-12-31/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Night_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods "2012-09-10/2018-12-31/P1D"
@@ -315,6 +376,14 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:all:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:all:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:default "2012-09-10"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:all:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:MODIS_Aqua_SurfaceReflectance_Bands143_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:MODIS_Aqua_SurfaceReflectance_Bands143_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:MODIS_Aqua_SurfaceReflectance_Bands143_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:MODIS_Aqua_SurfaceReflectance_Bands721_v6_STD
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:MODIS_Aqua_SurfaceReflectance_Bands721_v6_STD:default "2012-09-10"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:MODIS_Aqua_SurfaceReflectance_Bands721_v6_STD:periods "2012-09-10/2018-12-31/P1D"
 
 # Run reproject config tools
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml

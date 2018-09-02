@@ -1,10 +1,9 @@
 layer_id: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
 layer_title: "Brightness Temperature (Band31, Day, v6, Standard, MODIS, Aqua)"
 layer_name: "MODIS_Aqua_Brightness_Temp_Band31_Day tileset"
-alias: "MODIS_Aqua_Brightness_Temp_Band31_Day"
 projection: "EPSG:4326"
 tilematrixset: "1km"
-mime_type: "image/jpeg"
+mime_type: "image/png"
 static: false
 abstract: "MODIS_Aqua_Brightness_Temp_Band31_Day abstract"
 metadata:
@@ -15,7 +14,7 @@ metadata:
 source_mrf:
   size_x: 40960
   size_y: 20480
-  bands: 4
+  bands: 1
   tile_size_x: 512
   tile_size_y: 512
   idx_path: "/onearth/idx/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/"
