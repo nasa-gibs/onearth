@@ -146,22 +146,30 @@ end
 
 local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
     local function sortTms(a,b)
-        return tonumber(a["scaleDenominator"]) > tonumber(b["scaleDenominator"])
+        return tonumber(a["scaleDenominator"]) < tonumber(b["scaleDenominator"])
+    end
+    local function sortTmsName(a,b)
+        a, _ = a:gsub("%D+", "")
+        b, _ = b:gsub("%D+", "")
+        return tonumber(a) < tonumber(b)
     end
     table.sort(sourceTms, sortTms)
     local sourceScaleDenom = sourceTms[1]["scaleDenominator"]
     local targetTms
     local targetTmsName
-    for name, tms in pairs(tmsDefs[targetEpsgCode]) do
+    local sortedTmsDefs = {}
+    for k in pairs(tmsDefs[targetEpsgCode]) do table.insert(sortedTmsDefs, k) end
+    table.sort(sortedTmsDefs, sortTmsName)
+    for _, name in ipairs(sortedTmsDefs) do
+        tms = tmsDefs[targetEpsgCode][name]
         table.sort(tms, sortTms)
-        if not targetTms or tms[1]["scaleDenominator"] > sourceScaleDenom and sourceScaleDenom < targetTms[1]["scaleDenominator"] then
+        if tonumber(tms[1]["scaleDenominator"]) > tonumber(sourceScaleDenom) then
             targetTmsName = name
             targetTms = tms
         end
     end
     return targetTmsName, targetTms
 end
-
 
 -- Functions for building configuration files (used by config tools, not service)
 
@@ -425,7 +433,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
     if not tmsDef then
         print("Can't find TileMatrixSet (" .. tmsName .. ") for this layer in the TileMatrixSet definitions file." )
     end
-    if targetEpsgCode then
+    if targetEpsgCode ~= epsgCode then
         tmsName, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
     end
 
@@ -505,7 +513,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = makeGCLayer(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, endpointConfig["base_uri_gc"], targetEpsgCode)
+                 tmsDefs, dateList, endpointConfig["base_uri_gc"], epsgCode, targetEpsgCode)
             end
         end
     end
