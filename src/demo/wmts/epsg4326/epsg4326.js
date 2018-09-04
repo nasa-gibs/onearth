@@ -32,8 +32,8 @@ window.onload = function() {
     var vectorLayers = [];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "/wmts/epsg4326/all/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg4326/all/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities";
+    var endpointUrl = "/wmts/epsg4326/std/wmts.cgi?";
+    var getCapabilitiesLocation = "/wmts/epsg4326/std/1.0.0/GetCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
@@ -98,7 +98,7 @@ window.onload = function() {
     });
 
     var source = new ol.source.WMTS({
-        url: "/wmts/epsg4326/all/wmts.cgi",
+        url: "/profiler/wmts.cgi",
         layer: "BlueMarble",
         format: "image/jpeg",
         matrixSet: "500m",
@@ -129,7 +129,7 @@ window.onload = function() {
         source: source
     });
 
-    map.addLayer(layer);
+    //map.addLayer(layer);
     
     var req = new XMLHttpRequest();
     //Callback to handle getCapabilities and build layers
@@ -137,7 +137,8 @@ window.onload = function() {
     	if (req.readyState == 4 && req.status == 200) {
             //Use OpenLayers to parse getCapabilities
     		var parser = new ol.format.WMTSCapabilities();
-    		var result = parser.read(req.response);
+    		var response = req.response.toString().replace(/<Identifier>/g,"<ows:Identifier>").replace(/<\/Identifier>/g,"<\/ows:Identifier>");
+    		var result = parser.read(response);
     		var layers = result.Contents.Layer;
     		var tileMatrixSets = result.Contents.TileMatrixSet;
             var mapMetersPerUnit = mapProjection.getMetersPerUnit();    

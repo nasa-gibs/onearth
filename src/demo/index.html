@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+</head>
+
+<body>
+	<div class="container">
+		<div class="row">
+		<h1>Welcome to OnEarth</h1>
+		<p>This demo is customized with pre-confgured endpoints and sample imagery. For more information, visit <a href="https://github.com/nasa-gibs/onearth">https://github.com/nasa-gibs/onearth</a></p>
+
+		<h2>Endpoint Configuration</h2>
+		<p>A "test" endpoint is included for basic configuration and debugging. Two endpoints are included for profiling performance: "profiler" and "profiler_reproject".</p>
+		<p>Four additional endpoints are configured for the following EPSG projections: 4326 (geographic), 3857 (webmercator), 3413 (arctic), and 3857 (antarctic). Sample imagery is not included for these endpoints.</p>
+		<p>The OnEarth Test Client will load any layers configured in the GetCapabilities for each respective endpoint</p>
+		<hr>
+		
+		<h2>Basic demos</h2>
+
+		<h3>Test endpoints with OpenLayers</h3>
+		<p><a href="/demo/test/">/mrf_endpoint/</a></p>
+		<p><a href="/demo/profiler/">/profiler/</a></p>
+		<p><a href="/demo/profiler_reproject/">/profiler_reproject/</a></p>
+
+		<hr>
+		
+		<h2>WMTS endpoint demos</h2>
+
+		<h3>WMTS endpoints with OpenLayers</h3>
+		<p><a href="/demo/wmts/epsg4326/">/wmts/epsg4326/</a></p>
+		<p><a href="/demo/wmts/epsg3857/">/wmts/epsg3857/</a></p>
+		<p><a href="/demo/wmts/epsg3413/">/wmts/epsg3413/</a></p>
+		<p><a href="/demo/wmts/epsg3031">/wmts/epsg3031/</a></p>
+
+		<p><strong>Sample WMTS tile request: </strong><a href="/profiler/BlueMarble/default/500m/0/0/0.jpeg">/profiler/BlueMarble/default/500m/0/0/0.jpeg</a></p>
+
+		<p><strong>Sample WMTS reproject tile request: </strong><a href="/profiler_reproject/BlueMarble/default/GoogleMapsCompatible_Level8/0/0/0.jpeg">/profiler_reproject/BlueMarble/default/GoogleMapsCompatible_Level8/0/0/0.jpeg</a></p>
+
+		<p><strong>Sample WMTS GetCapabilities request: </strong><a href="/profiler/1.0.0/GetCapabilities.xml">/profiler/1.0.0/GetCapabilities.xml</a>
+		
+		<hr>
+		
+		<h2>TWMS endpoint demo</h2>
+						
+		<p><strong>Sample TWMS GetTileService request: </strong><a href="/profiler/GetTileService.xml">/profiler/GetTileService.xml</a>
+		
+		<hr>
+
+	</div>
+</body>

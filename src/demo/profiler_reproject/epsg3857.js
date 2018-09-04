@@ -23,17 +23,17 @@ function makeTileLoadFunction() {
 window.onload = function() {
     //CONFIGURATION
     //Set the EPSG projection here. EPSG:4326, 3857, 3413, and 3031 are supported.
-    var EPSGProjection = "EPSG:3413";
+    var EPSGProjection = "EPSG:3857";
 
     //Set the maximum number of zoom levels. This will depend on the average number of TileMatrixSets for each layer at this endpoint.
-    var maxZoomLevels = 5;
+    var maxZoomLevels = 7;
 
     //If using vector tiles, specify their identifiers
-    var vectorLayers = [];
+    var vectorLayers = ["MODIS_C5_fires", "oscar", "ASCATA-L2-25km", "Terra_Orbit_Dsc_Dots"];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "/wmts/epsg3413/std/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg3413/std/1.0.0/GetCapabilities.xml";
+    var endpointUrl = "/profiler_reproject/wmts.cgi?";
+    var getCapabilitiesLocation = "/profiler_reproject/1.0.0/GetCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
@@ -97,33 +97,13 @@ window.onload = function() {
         renderer: ["canvas", "dom"]
     });
 
-    var source = new ol.source.WMTS({
-        url: "/wmts/epsg3413/all/wmts.cgi",
-        layer: "MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD",
-        extent: [-4194304, -4194304, 4194304, 4194304],
-        format: "image/jpeg",
-        matrixSet: "250m",
-        tileGrid: new ol.tilegrid.WMTS({
-            origin: [-4194304, 4194304],
-            resolutions: [
-                8192.0,
-                4096.0,
-                2048.0,
-                1024.0,
-                512.0,
-                256.0
-            ],
-            matrixIds: [0, 1, 2, 3, 4, 5],
-            tileSize: 512
-        })
-    });
-
     var layer = new ol.layer.Tile({
-        source: source
-    });
+        source: new ol.source.XYZ({
+            url: "/profiler_reproject/BlueMarble/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg"
+        })
+    })
 
-    //map.addLayer(layer);
-    
+    // map.addLayer(layer);
     var req = new XMLHttpRequest();
     //Callback to handle getCapabilities and build layers
     req.onreadystatechange = function() {

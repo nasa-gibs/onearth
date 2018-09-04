@@ -23,17 +23,17 @@ function makeTileLoadFunction() {
 window.onload = function() {
     //CONFIGURATION
     //Set the EPSG projection here. EPSG:4326, 3857, 3413, and 3031 are supported.
-    var EPSGProjection = "EPSG:3413";
+    var EPSGProjection = "EPSG:4326";
 
     //Set the maximum number of zoom levels. This will depend on the average number of TileMatrixSets for each layer at this endpoint.
-    var maxZoomLevels = 5;
+    var maxZoomLevels = 12;
 
     //If using vector tiles, specify their identifiers
     var vectorLayers = [];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "/wmts/epsg3413/std/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg3413/std/1.0.0/GetCapabilities.xml";
+    var endpointUrl = "/profiler/wmts.cgi?";
+    var getCapabilitiesLocation = "/profiler/1.0.0/GetCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
@@ -98,24 +98,31 @@ window.onload = function() {
     });
 
     var source = new ol.source.WMTS({
-        url: "/wmts/epsg3413/all/wmts.cgi",
-        layer: "MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD",
-        extent: [-4194304, -4194304, 4194304, 4194304],
+        url: "/profiler/wmts.cgi",
+        layer: "BlueMarble",
         format: "image/jpeg",
-        matrixSet: "250m",
+        matrixSet: "500m",
         tileGrid: new ol.tilegrid.WMTS({
-            origin: [-4194304, 4194304],
+            origin: [-180, 90],
             resolutions: [
-                8192.0,
-                4096.0,
-                2048.0,
-                1024.0,
-                512.0,
-                256.0
+                0.5625,
+                0.28125,
+                0.140625,
+                0.0703125,
+                0.03515625,
+                0.017578125,
+                0.0087890625,
+                0.00439453125,
+                0.002197265625,
+                0.0010986328125,
+                0.00054931640625,
+                0.000274658203125,
+                0.0001373291015625
             ],
-            matrixIds: [0, 1, 2, 3, 4, 5],
+            matrixIds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             tileSize: 512
-        })
+        }),
+        tileLoadFunction: makeTileLoadFunction()
     });
 
     var layer = new ol.layer.Tile({

@@ -32,8 +32,8 @@ window.onload = function() {
     var vectorLayers = ["MODIS_C5_fires", "oscar", "ASCATA-L2-25km", "Terra_Orbit_Dsc_Dots"];
 
     //Set locations for endpoint and getCapabilities
-    var endpointUrl = "/wmts/epsg3857/all/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg3857/all/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities";
+    var endpointUrl = "/wmts/epsg3857/std/wmts.cgi?";
+    var getCapabilitiesLocation = "/wmts/epsg3857/std/1.0.0/GetCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
@@ -99,18 +99,19 @@ window.onload = function() {
 
     var layer = new ol.layer.Tile({
         source: new ol.source.XYZ({
-            url: "/reproject_endpoint/BlueMarble/default/500m/{z}/{y}/{x}.jpg"
+            url: "/profiler_reproject/BlueMarble/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg"
         })
     })
 
-    map.addLayer(layer);
+    // map.addLayer(layer);
     var req = new XMLHttpRequest();
     //Callback to handle getCapabilities and build layers
     req.onreadystatechange = function() {
     	if (req.readyState == 4 && req.status == 200) {
             //Use OpenLayers to parse getCapabilities
     		var parser = new ol.format.WMTSCapabilities();
-    		var result = parser.read(req.response);
+    		var response = req.response.toString().replace(/<Identifier>/g,"<ows:Identifier>").replace(/<\/Identifier>/g,"<\/ows:Identifier>");
+    		var result = parser.read(response);
     		var layers = result.Contents.Layer;
     		var tileMatrixSets = result.Contents.TileMatrixSet;
             var mapMetersPerUnit = mapProjection.getMetersPerUnit();    
