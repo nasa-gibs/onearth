@@ -1,7 +1,6 @@
 layer_id: "MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD"
 layer_title: "Corrected Reflectance (Bands 7-2-1, MODIS, Aqua)"
 layer_name: "MODIS_Aqua_CorrectedReflectance_Bands721 tileset"
-alias: "MODIS_Aqua_CorrectedReflectance_Bands721"
 projection: "EPSG:3031"
 tilematrixset: "250m"
 mime_type: "image/jpeg"

@@ -1,0 +1,24 @@
+layer_id: "MODIS_Aqua_Ice_Surface_Temp_Night_v6_STD"
+layer_title: "Ice Surface Temperature (Night, v6, Standard, MODIS, Aqua)"
+layer_name: "MODIS_Aqua_Ice_Surface_Temp_Night tileset"
+projection: "EPSG:3413"
+tilematrixset: "1km"
+mime_type: "image/png"
+static: false
+abstract: "MODIS_Aqua_Ice_Surface_Temp_Night abstract"
+metadata:
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/MODIS_Aqua_Ice_Surface_Temp_Night.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.0/MODIS_Aqua_Ice_Surface_Temp_Night.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.2", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.2/MODIS_Aqua_Ice_Surface_Temp_Night.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/MODIS_Aqua_Ice_Surface_Temp_Night.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+source_mrf:
+  size_x: 8192
+  size_y: 8192
+  bands: 1
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/onearth/idx/epsg3413/MODIS_Aqua_Ice_Surface_Temp_Night_v6_STD/"
+  data_file_uri: "{S3_URL}/epsg3413/MODIS_Aqua_Ice_Surface_Temp_Night_v6_STD/"
+  year_dir: true
+  bbox: -180,-90,180,90
+  empty_tile: "/onearth/empty_tiles/Blank_RGBA_512.png"

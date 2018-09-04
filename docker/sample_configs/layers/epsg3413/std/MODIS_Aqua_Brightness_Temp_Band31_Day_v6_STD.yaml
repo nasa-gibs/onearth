@@ -1,7 +1,6 @@
 layer_id: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
 layer_title: "Brightness Temperature (Band31, Day, v6, Standard, MODIS, Aqua)"
 layer_name: "MODIS_Aqua_Brightness_Temp_Band31_Day tileset"
-alias: "MODIS_Aqua_Brightness_Temp_Band31_Day"
 projection: "EPSG:3413"
 tilematrixset: "1km"
 mime_type: "image/jpeg"
