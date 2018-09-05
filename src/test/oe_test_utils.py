@@ -34,8 +34,10 @@ This file contains various utilities for the OnEarth test routines.
 """
 
 import os
+import errno
 import subprocess
-from shutil import copyfile, copy
+#from shutil import copyfile, copy
+import shutil
 import xml.dom.minidom
 import hashlib
 import shlex
@@ -150,6 +152,85 @@ class XmlDictConfig(dict):
                         self.update({element.tag: [element.text]}) # text is written in [], i.e. it will be a list
 
                 #self.update({element.tag: element.text})
+
+
+class Error(EnvironmentError):
+    pass
+
+
+def copytree_x(src, dst, symlinks=False, ignore=None, exist_ok=False):
+    """Recursively copy a directory tree using copy2().
+
+    The destination directory must not already exist.
+    If exception(s) occur, an Error is raised with a list of reasons.
+
+    If the optional symlinks flag is true, symbolic links in the
+    source tree result in symbolic links in the destination tree; if
+    it is false, the contents of the files pointed to by symbolic
+    links are copied.
+
+    The optional ignore argument is a callable. If given, it
+    is called with the `src` parameter, which is the directory
+    being visited by copytree_x(), and `names` which is the list of
+    `src` contents, as returned by os.listdir():
+
+        callable(src, names) -> ignored_names
+
+    Since copytree_x() is called recursively, the callable will be
+    called once for each directory that is copied. It returns a
+    list of names relative to the `src` directory that should
+    not be copied.
+
+    XXX Consider this example code rather than the ultimate tool.
+
+    """
+    names = os.listdir(src)
+    if ignore is not None:
+        ignored_names = ignore(src, names)
+    else:
+        ignored_names = set()
+
+#    os.makedirs(dst, exist_ok=exist_ok)
+    try:
+        os.makedirs(dst)
+    except OSError as e:
+        if exist_ok:
+            if e.errno != errno.EEXIST:
+                raise
+        else:
+            raise
+    errors = []
+    for name in names:
+        if name in ignored_names:
+            continue
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if symlinks and os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+            elif os.path.isdir(srcname):
+                copytree_x(srcname, dstname, symlinks, ignore)
+            else:
+                # Will raise a SpecialFileError for unsupported file types
+                shutil.copy2(srcname, dstname)
+        # catch the Error from the recursive copytree so that we can
+        # continue with other files
+        except Error, err:
+            errors.extend(err.args[0])
+        except EnvironmentError, why:
+            errors.append((srcname, dstname, str(why)))
+    try:
+        shutil.copystat(src, dst)
+    except OSError, why:
+        if WindowsError is not None and isinstance(why, WindowsError):
+            # Copying file access times may fail on Windows
+            pass
+        else:
+            errors.append((src, dst, str(why)))
+    if errors:
+        raise Error, errors
+
 
 def add_trailing_slash(directory_path):
     """

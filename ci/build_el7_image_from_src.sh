@@ -20,33 +20,60 @@ FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 
-RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel chrpath gcc-c++ freetype-devel python-devel sqlite-devel cmake turbojpeg-devel
+#RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel chrpath gcc-c++ freetype-devel python-devel sqlite-devel cmake turbojpeg-devel libyaml-devel
+RUN yum install -y epel-release lua-devel jansson-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel
 
-RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
+#RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
+RUN yum install -y luarocks
+RUN yum install -y redis
+RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y python36u python36u-pip python36u-devel
 
-RUN yum install -y agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
+RUN pip3.6 install requests
+RUN pip3.6 install pyaml
+RUN pip3.6 install lxml
+
+#RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
+#RUN yum install -y agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
+
+RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN mkdir -p /home/oe2
 #RUN mkdir -p /var/www
 
 # Clone OnEarth repo
 WORKDIR /home/oe2
-RUN git config --global url.https://github.com/.insteadOf git://github.com/
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
 RUN git checkout 2.1.1
 
 #chown -R root:root /home/oe2
 
-# Install mod_proxy patch
+# Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
-RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
-RUN tar xf httpd-2.4.6.tar.gz
-WORKDIR /tmp/httpd-2.4.6
-RUN patch -p0 < /home/oe2/onearth/ci/mod_proxy_http.patch
-RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared
-RUN make && make install
-RUN cp /tmp/httpd/modules/mod_proxy* /etc/httpd/modules/
+RUN yum install -y yum-utils rpm-build
+RUN yumdownloader --source httpd
+RUN HOME="/tmp" rpm -ivh httpd-2.4.6-80.el7.centos.1.src.rpm
+RUN yum-builddep -y httpd
+WORKDIR /tmp/rpmbuild/SPECS
+RUN HOME="/tmp" rpmbuild -bp httpd.spec
+##COPY http_rpm_spec.patch /home/oe2/onearth/docker/http_rpm_spec.patch
+##COPY mod_proxy_http.patch /tmp/rpmbuild/SOURCES
+RUN cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES
+RUN patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch
+RUN HOME="/tmp" rpmbuild -ba httpd.spec
+RUN yum -y remove httpd httpd-devel httpd-tools
+#RUN ls /tmp/rpmbuild/RPMS/x86_64/
+RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm
+RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
+
+#RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
+#RUN tar xf httpd-2.4.6.tar.gz
+#WORKDIR /tmp/httpd-2.4.6
+#RUN patch -p0 < /home/oe2/onearth/ci/mod_proxy_http.patch
+#RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared
+#RUN make && make install
+#RUN cp /tmp/httpd/modules/mod_proxy* /etc/httpd/modules/
 
 # Install APR patch
 WORKDIR /tmp
@@ -59,7 +86,7 @@ RUN make && make install
 # libtoolT error (rm: no such file or directory)
 
 # Install dependencies
-WORKDIR /home/oe2/onearth
+#WORKDIR /home/oe2/onearth
 
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
@@ -96,6 +123,16 @@ WORKDIR /home/oe2/onearth/src/modules/time_snap/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_snap
 RUN luarocks make onearth-0.1-1.rockspec
+
+# Install GC Service configs
+RUN mkdir -p /etc/onearth/config/endpoint
+RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
+WORKDIR /home/oe2/onearth/src/modules/gc_service
+RUN luarocks make onearth_gc_gts-0.1-1.rockspec
+
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 
 # Install OnEarth utilties, etc.
 WORKDIR /home/oe2/onearth/
