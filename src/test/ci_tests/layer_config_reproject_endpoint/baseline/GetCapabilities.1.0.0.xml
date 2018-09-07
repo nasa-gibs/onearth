@@ -99,7 +99,7 @@
 <Value>2012-02-29/2012-02-29/P1D</Value> 
 </Dimension> 
 <TileMatrixSetLink> 
-<TileMatrixSet>GoogleMapsCompatible_Level8</TileMatrixSet> 
+<TileMatrixSet>GoogleMapsCompatible_Level6</TileMatrixSet> 
 </TileMatrixSetLink> 
 <ResourceURL format="image/png" template="http://localhost/layer_config_reproject_endpoint/test_versioned_colormaps/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png" resourceType="tile" /> 
 </Layer> 
@@ -121,7 +121,7 @@
 </Style> 
 <Format>image/jpeg</Format> 
 <TileMatrixSetLink> 
-<TileMatrixSet>GoogleMapsCompatible_Level8</TileMatrixSet> 
+<TileMatrixSet>GoogleMapsCompatible_Level3</TileMatrixSet> 
 </TileMatrixSetLink> 
 <ResourceURL format="image/jpeg" template="http://localhost/layer_config_reproject_endpoint/test_static_jpg/default/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" resourceType="tile" /> 
 </Layer> 
@@ -150,7 +150,7 @@
 <Value>2012-02-29/2012-02-29/P1D</Value> 
 </Dimension> 
 <TileMatrixSetLink> 
-<TileMatrixSet>GoogleMapsCompatible_Level8</TileMatrixSet> 
+<TileMatrixSet>GoogleMapsCompatible_Level3</TileMatrixSet> 
 </TileMatrixSetLink> 
 <ResourceURL format="image/png" template="http://localhost/layer_config_reproject_endpoint/test_daily_png/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png" resourceType="tile" /> 
 </Layer> 
@@ -179,7 +179,7 @@
 <Value>2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Value> 
 </Dimension> 
 <TileMatrixSetLink> 
-<TileMatrixSet>GoogleMapsCompatible_Level8</TileMatrixSet> 
+<TileMatrixSet>GoogleMapsCompatible_Level3</TileMatrixSet> 
 </TileMatrixSetLink> 
 <ResourceURL format="image/jpeg" template="http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" resourceType="tile" /> 
 </Layer> 
