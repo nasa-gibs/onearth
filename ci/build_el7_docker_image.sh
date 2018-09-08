@@ -108,6 +108,13 @@ make && make install
   cp /build/ci/Makefile.lcl .
   cp /build/src/modules/mod_reproject/src/mod_reproject.h .
   make && make install
+  
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+  cd /tmp
+  git clone https://github.com/jiyinyiyong/json-lua.git
+  cd json-lua/
+  sed -i 's/git:/https:/' json-lua-0.1-3.rockspec
+  luarocks make json-lua-0.1-3.rockspec
 
 # Install Lua module for time snapping
   cd /build/src/modules/time_snap/redis-lua
