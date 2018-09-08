@@ -91,7 +91,7 @@ metricMatchers     = {}
 for metric in logMetrics:
    messageMatcher = re.compile(".*" + metric[0] + ".*")
    messageParser  = re.compile((".*timestamp=([0-9]*)" if metric[1] == "timestamp" 
-                                 else ".*duration=([0-9]*)") + ", uuid=(.*)")
+                                 else ".*duration=([0-9]*)") + ", uuid=(.*).")
    metricMatchers[metric[0]] = [messageMatcher, messageParser]
 
 
@@ -108,7 +108,7 @@ for event in eventsData:
          if metricMatchers[metric][0].search(event["message"]):
             matched = True
             
-            m = metricMatchers[metric][1].match(event["message"])
+            m = metricMatchers[metric][1].match(event["message"].split(", uri")[0])
             if not m or len(m.groups()) != 2:
                print("Bogus log message: (" + str(event["timestamp"]) + "): " + event["message"])
             else:
