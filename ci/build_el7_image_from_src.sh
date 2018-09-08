@@ -28,6 +28,8 @@ RUN yum install -y luarocks
 RUN yum install -y redis
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum install -y python36u python36u-pip python36u-devel
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm"
 
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
