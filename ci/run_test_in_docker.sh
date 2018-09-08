@@ -24,9 +24,6 @@ cp -R /test /build/
 
 (
   cd /build/test
-  yum install -y python-pip
-  yum install -y python-dateutil
-  yum install -y python-lxml
   pip install -r requirements.txt
   python "$SCRIPT_NAME" -o /results/"$SCRIPT_NAME""_test_results.xml"
 )
