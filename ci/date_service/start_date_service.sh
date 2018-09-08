@@ -1,13 +1,20 @@
 #!/bin/sh
+REDIS_HOST=${1:-onearth}
+
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
 fi
 
-# Copy config stuff
+# copy config stuff
 cp oe2_test_date_service.conf /etc/httpd/conf.d
-mkdir -p /build/test/ci_tests/date_service
-cp date_service.lua /build/test/ci_tests/date_service/date_service.lua
+mkdir -p /var/www/html/date_service
+cp date_service.lua /var/www/html/date_service/date_service.lua
+sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' /var/www/html/date_service/date_service.lua
+
+sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' oe2-date-service.yaml
+echo 'Starting twemproxy'
+nutcracker -d -c oe2-date-service.yaml
 
 echo 'Starting Apache server'
 /usr/sbin/apachectl
