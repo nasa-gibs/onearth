@@ -246,14 +246,15 @@ def add_trailing_slash(directory_path):
 
 
 def restart_apache():
-    try:
-        check_apache_running()
-        if "el7" in platform.release():
-            apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-        else:
-            apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    except ValueError:
-        apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    apache = subprocess.Popen(['httpd', '-k', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    # try:
+    #     check_apache_running()
+    #     if "el7" in platform.release():
+    #         apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    #     else:
+    #         apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    # except ValueError:
+    #     apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     (stdout, stderr) = apache.communicate()
     if stdout != None and len(stdout) != 0:
         sys.stderr.write("\n=== STDOUT from restart_apache():\n%s\n===\n" % stdout.rstrip())
@@ -577,7 +578,7 @@ def get_layer_config(filepath, archive_config):
         pass
     try:
         config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
-        config['vector_style_file'] = config_dom.getElementsByTagName('VectorStyleFile')[0].firstChild.nodeValue
+        config['vector_layer_contents'] = config_dom.getElementsByTagName('MapfileLayerContents')[0].firstChild.nodeValue
     except IndexError:
         pass
     
@@ -759,6 +760,29 @@ def check_response_code(url, code, code_value=''):
         response = e
     if r_code == code and code_value in response.read():
         return True
+    return False
+
+
+def check_wmts_error(url, code, hash):
+    """
+    Checks WMTS error responses, which often return a HTTP error code and an XML response.
+    Arguments:
+        url (str)-- url to check
+        code (int) -- expected HTTP response code
+        hash (str) -- expected hash value of the response
+    """
+    check_apache_running()
+    try:
+        response = urllib2.urlopen(url)
+        r_code = 200
+    except urllib2.HTTPError as e:
+        r_code = e.code
+        response = e.read()
+    if r_code == code:
+        hasher = hashlib.md5()
+        hasher.update(response)
+        hash_value = str(hasher.hexdigest())
+        return hash_value == hash
     return False
 
 

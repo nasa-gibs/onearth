@@ -12,32 +12,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xs:schema elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="vectorgen_configuration">
     <xs:complexType>
-      <xs:sequence>
+      <xs:all>
         <xs:element ref="date_of_data"/>
-        <xs:element ref="time_of_data" minOccurs="0"/>
+        <xs:element minOccurs="0" ref="time_of_data"/>
         <xs:element ref="parameter_name"/>
-        <xs:element ref="input_files" minOccurs="0"/>
-        <xs:element ref="input_dir" minOccurs="0"/>
+        <xs:element minOccurs="0" ref="input_files"/>
+        <xs:element minOccurs="0" ref="input_dir"/>
         <xs:element ref="output_dir"/>
         <xs:element ref="working_dir"/>
-        <xs:element ref="logfile_dir" minOccurs="0"/>
-        <xs:element ref="output_name" minOccurs="0"/>
+        <xs:element minOccurs="0" ref="logfile_dir"/>
+        <xs:element minOccurs="0" ref="output_name"/>
         <xs:element ref="output_format"/>
-        <xs:element ref="target_epsg" minOccurs="0"/>
-        <xs:element ref="source_epsg" minOccurs="0"/>
+        <xs:element minOccurs="0" ref="target_epsg"/>
+        <xs:element minOccurs="0" ref="source_epsg"/>
         <xs:element ref="target_x"/>
-        <xs:element ref="target_y" minOccurs="0"/>
-        <xs:element ref="extents" minOccurs="0"/>
-        <xs:element ref="tile_size" minOccurs="0"/>
-        <xs:element ref="overview_levels" minOccurs="0"/>
-        <xs:element ref="feature_reduce_rate" minOccurs="0"/>
-        <xs:element ref="cluster_reduce_rate" minOccurs="0"/>
-        <xs:element ref="email_server" minOccurs="0"/>
-        <xs:element ref="email_recipient" minOccurs="0"/>
-      </xs:sequence>
+        <xs:element minOccurs="0" ref="target_y"/>
+        <xs:element minOccurs="0" ref="extents"/>
+        <xs:element minOccurs="0" ref="tile_size"/>
+        <xs:element minOccurs="0" ref="overview_levels"/>
+        <xs:element minOccurs="0" ref="feature_reduce_rate"/>
+        <xs:element minOccurs="0" ref="cluster_reduce_rate"/>
+        <xs:element minOccurs="0" ref="email_server"/>
+        <xs:element minOccurs="0" ref="email_recipient"/>
+        <xs:element minOccurs="0" ref="feature_filters"/>
+      </xs:all>
     </xs:complexType>
   </xs:element>
   <xs:element name="date_of_data" type="xs:integer"/>
@@ -46,15 +47,15 @@ limitations under the License.
   <xs:element name="input_files">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" ref="file" minOccurs="0"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="file"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
   <xs:element name="file" type="xs:string"/>
-  <xs:element name="input_dir" type="xs:string" nillable="true"/>
+  <xs:element name="input_dir" nillable="true" type="xs:string"/>
   <xs:element name="output_dir" type="xs:string"/>
   <xs:element name="working_dir" type="xs:string"/>
-  <xs:element name="logfile_dir" type="xs:string" nillable="true"/>
+  <xs:element name="logfile_dir" nillable="true" type="xs:string"/>
   <xs:element name="output_name" type="xs:string"/>
   <xs:element name="output_format">
     <xs:simpleType>
@@ -64,15 +65,57 @@ limitations under the License.
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
-  <xs:element name="target_epsg" type="xs:integer" default="4326"/>
-  <xs:element name="source_epsg" type="xs:integer" default="4326"/>
+  <xs:element default="4326" name="target_epsg" type="xs:integer"/>
+  <xs:element default="4326" name="source_epsg" type="xs:integer"/>
   <xs:element name="target_x" type="xs:integer"/>
-  <xs:element name="target_y" type="xs:integer" nillable="true"/>
-  <xs:element name="extents" type="xs:string" nillable="true"/>
-  <xs:element name="overview_levels" type="xs:string" nillable="true"/>
-  <xs:element name="tile_size" type="xs:integer" nillable="true"/>
-  <xs:element name="feature_reduce_rate" type="xs:float" default="2.5"/>
-  <xs:element name="cluster_reduce_rate" type="xs:float" default="2"/>
-  <xs:element name="email_server" type="xs:string" nillable="true"/>
-  <xs:element name="email_recipient" type="xs:string" nillable="true"/>
+  <xs:element name="target_y" nillable="true" type="xs:integer"/>
+  <xs:element name="extents" nillable="true" type="xs:string"/>
+  <xs:element name="overview_levels" nillable="true" type="xs:string"/>
+  <xs:element name="tile_size" nillable="true" type="xs:integer"/>
+  <xs:element default="2.5" name="feature_reduce_rate" type="xs:float"/>
+  <xs:element default="2" name="cluster_reduce_rate" type="xs:float"/>
+  <xs:element name="email_server" nillable="true" type="xs:string"/>
+  <xs:element name="email_recipient" nillable="true" type="xs:string"/>
+  <xs:element name="feature_filters">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="filter_block">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" minOccurs="0" name="equals">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="name" type="xs:string" use="optional"/>
+                      <xs:attribute name="value" type="xs:string" use="optional"/>
+                      <xs:attribute name="regexp" type="xs:string" use="optional"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+              <xs:element maxOccurs="unbounded" minOccurs="0" name="notEquals">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="name" type="xs:string" use="optional"/>
+                      <xs:attribute name="regexp" type="xs:string" use="optional"/>
+                      <xs:attribute name="value" type="xs:string" use="optional"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="logic" use="required">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:enumeration value="OR"/>
+                  <xs:enumeration value="AND"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

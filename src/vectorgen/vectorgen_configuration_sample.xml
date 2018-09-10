@@ -16,7 +16,7 @@ limitations under the License.
  <date_of_data>20160429</date_of_data>
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
-  <file>input_dir/terra_2016-03-04_epsg4326_points_descending.shp</file>
+  <file>test.geojson</file>
  </input_files> 
  <overview_levels>2 4 8</overview_levels>
  <output_dir>output_dir/</output_dir>
@@ -30,4 +30,10 @@ limitations under the License.
  <tile_size>256</tile_size>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>
+ <feature_filters>
+    <filter_block logic="AND">
+        <notEquals name="direction" value="Ascending"/>
+        <equals name="direction" regexp="Transitional"/>
+    </filter_block>
+</feature_filters>
 </vectorgen_configuration>
