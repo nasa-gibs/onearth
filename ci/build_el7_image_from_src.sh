@@ -28,6 +28,8 @@ RUN yum install -y luarocks
 RUN yum install -y redis
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum install -y python36u python36u-pip python36u-devel
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm"
 
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
@@ -37,6 +39,8 @@ RUN pip3.6 install lxml
 #RUN yum install -y agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
+
+RUN pip install apacheconfig
 
 RUN mkdir -p /home/oe2
 #RUN mkdir -p /var/www
@@ -117,6 +121,13 @@ RUN make && make install
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
+
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/jiyinyiyong/json-lua.git
+WORKDIR /tmp/json-lua/
+RUN sed -i 's/git:/https:/' json-lua-0.1-3.rockspec
+RUN luarocks make json-lua-0.1-3.rockspec
 
 # Install Lua module for time snapping
 WORKDIR /home/oe2/onearth/src/modules/time_snap/redis-lua
