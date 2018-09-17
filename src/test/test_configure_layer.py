@@ -48,6 +48,7 @@ from xml.etree import cElementTree as ElementTree
 import urllib2
 from oe_test_utils import check_tile_request, restart_apache, restart_redis, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt, copytree_x
 import filecmp
+import apacheconfig
 
 DEBUG = False
 
@@ -349,17 +350,17 @@ class TestLayerConfig(unittest.TestCase):
         except:
             xml_check = False
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
-        ElementTree.ElementTree(XMLroot).write("temp1.xml", xml_declaration=True, encoding='utf-8')
+#        ElementTree.ElementTree(XMLroot).write("temp1.xml", xml_declaration=True, encoding='utf-8')
         #refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/mrf_endpoint/1.0.0/WMTSCapabilities.xml'))
         refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_endpoint/baseline/GetCapabilities.1.0.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
-        ElementTree.ElementTree(refXMLroot).write("temp2.xml", xml_declaration=True, encoding='utf-8')
-        if XMLdict == refXMLdict:
-            print "XML is same"
-        else:
-            print "XML different"
+#        ElementTree.ElementTree(refXMLroot).write("temp2.xml", xml_declaration=True, encoding='utf-8')
+#        if XMLdict == refXMLdict:
+#            print "XML is same"
+#        else:
+#            print "XML different"
         check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'WMTS (REST) Get Capabilities Request does not match what\'s expected. URL: ' + req_url)
 
@@ -540,17 +541,40 @@ class TestLayerConfig(unittest.TestCase):
         # Verify auto generated conf files
         layer_gc_conf = '/etc/httpd/conf.d/oe2_layer_config_gc.conf'
         layer_conf = '/etc/httpd/conf.d/oe2_layer_config.conf'
-        cmp_result = filecmp.cmp(layer_gc_conf, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config_gc.conf'), False)
-        self.assertTrue(cmp_result, 'Generated layer config GC conf does not match what\'s expected.')
-        cmp_result = filecmp.cmp(layer_conf, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config.conf'), False)
-        self.assertTrue(cmp_result, 'Generated layer config conf does not match what\'s expected.')
+#        cmp_result = filecmp.cmp(layer_gc_conf, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config_gc.conf'), False)
+#        self.assertTrue(cmp_result, 'Generated layer config GC conf does not match what\'s expected.')
+
+#        cmp_result = filecmp.cmp(layer_conf, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config.conf'), False)
+#        self.assertTrue(cmp_result, 'Generated layer config conf does not match what\'s expected.')
 
         layer_reproject_gc_conf = '/etc/httpd/conf.d/oe2_layer_config_reproject_gc.conf'
         layer_reproject_conf = '/etc/httpd/conf.d/oe2_layer_config_reproject.conf'
-        cmp_result = filecmp.cmp(layer_reproject_gc_conf, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject_gc.conf'), False)
-        self.assertTrue(cmp_result, 'Generated reproject layer config GC conf does not match what\'s expected.')
-        cmp_result = filecmp.cmp(layer_reproject_conf, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject.conf'), False)
-        self.assertTrue(cmp_result, 'Generated reproject layer config conf does not match what\'s expected.')
+#        cmp_result = filecmp.cmp(layer_reproject_gc_conf, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject_gc.conf'), False)
+#        self.assertTrue(cmp_result, 'Generated reproject layer config GC conf does not match what\'s expected.')
+#        cmp_result = filecmp.cmp(layer_reproject_conf, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject.conf'), False)
+#        self.assertTrue(cmp_result, 'Generated reproject layer config conf does not match what\'s expected.')
+
+        with apacheconfig.make_loader() as loader:
+            gc_config = loader.load(layer_gc_conf)
+            config = loader.load(layer_conf)
+            reproject_gc_config = loader.load(layer_reproject_gc_conf)
+            reproject_config = loader.load(layer_reproject_conf)
+            gc_base = loader.load(os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config_gc.conf'))
+            base = loader.load(os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config.conf'))
+            reproject_gc_base = loader.load(os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject_gc.conf'))
+            reproject_base = loader.load(os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject.conf'))
+        
+        check_result = check_dicts(gc_config, gc_base)
+        self.assertTrue(check_result, 'Generated layer config GC conf does not match what\'s expected.')
+
+        check_result = check_dicts(config, base)
+        self.assertTrue(check_result, 'Generated layer config conf does not match what\'s expected.')
+
+        check_result = check_dicts(reproject_gc_config, reproject_gc_base)
+        self.assertTrue(check_result, 'Generated layer config reproject GC conf does not match what\'s expected.')
+
+        check_result = check_dicts(reproject_config, reproject_base)
+        self.assertTrue(check_result, 'Generated layer config reproject conf does not match what\'s expected.')
 
     # TEARDOWN
 

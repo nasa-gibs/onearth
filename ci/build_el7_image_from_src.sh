@@ -40,6 +40,8 @@ RUN pip3.6 install lxml
 
 RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
+RUN pip install apacheconfig
+
 RUN mkdir -p /home/oe2
 #RUN mkdir -p /var/www
 
