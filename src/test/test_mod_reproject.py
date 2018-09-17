@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+<#!/usr/bin/env python
 
-# Copyright (c) 2002-2016, California Institute of Technology.
+# Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -46,7 +46,7 @@ from optparse import OptionParser
 import datetime
 from xml.etree import cElementTree as ElementTree
 import urllib2
-from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
+from oe_test_utils import check_tile_request, restart_apache, restart_redis, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt, copytree_x
 
 DEBUG = False
 
@@ -58,72 +58,139 @@ class TestModReproject(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # Get the path of the test data -- we assume that the script is in the parent dir of the data dir
-        oedata_path = os.path.join(os.getcwd(), 'mod_onearth_test_data')
-        layer_config_path = os.path.join(os.getcwd(), 'layer_config_files')
-        self.testdata_path = os.path.join(os.getcwd(), 'mod_reproject_test_data')
-        wmts_configs = ('wmts_cache_configs', 'wmts_cache_staging', 'test_imagery/cache_all_wmts.config')
-        twms_configs = ('twms_cache_configs', 'twms_cache_staging', 'test_imagery/cache_all_twms.config')
-        self.image_files_path = os.path.join(oedata_path, 'test_imagery')
-        self.test_oe_config = os.path.join(oedata_path, 'oe_test.conf')
-        self.test_apache_config = os.path.join(self.testdata_path, 'reproject_test.conf')
-        
-        # Get the path of the test data -- we assume that the script is in layer_config_files
-        config_template_path = os.path.join(layer_config_path, 'config_templates')
+        testdata_path = os.path.join(os.getcwd(), 'ci_tests')
+        httpd_config = os.path.join(testdata_path, 'httpd.conf')
+#        self.image_files_path = os.path.join(testdata_path, 'test_imagery')
 
-        # This is that path that will be created to hold all our dummy files
-        self.testfiles_path = os.path.join(os.getcwd(), 'mod_reproject_test_artifacts')
-        
-        # Make dir for the test config XML files and text-replace the templates with the proper location
-        make_dir_tree(os.path.join(self.testfiles_path, 'conf'))
-        for file in [f for f in os.listdir(config_template_path) if os.path.isfile(os.path.join(config_template_path, f))]:
-            file_text_replace(os.path.join(config_template_path, file), os.path.join(self.testfiles_path, 'conf/' + file),
-                              '{testfile_dir}', self.testfiles_path)
+        # Make dir for layer config
+        layer_config_path = os.path.join(testdata_path, 'layer_config_endpoint')
+        copytree_x(os.path.join(testdata_path, 'layer_config_endpoint/baseline'), layer_config_path, exist_ok=True)
 
-        # Set the location of the archive XML config file used by all tests
-        self.archive_config = os.path.join(self.testfiles_path, 'conf/archive.xml')
-        self.projection_config = os.path.join(self.testfiles_path, 'conf/projection.xml')
-        self.tilematrixset_config = os.path.join(self.testfiles_path, 'conf/tilematrixsets.xml')
-        
-        for template_dir, staging_dir, cache_config in (wmts_configs, twms_configs):
-            # Make staging cache files dir
-            template_path = os.path.join(oedata_path, template_dir)
-            staging_path = os.path.join(oedata_path, staging_dir)
-            cache_path = os.path.join(oedata_path, cache_config)
-            make_dir_tree(staging_path)
+        self.test_apache_gc_config = os.path.join(testdata_path, 'layer_config_endpoint/oe2_layer_config_gc.conf')
+        self.test_apache_config = os.path.join(testdata_path, 'layer_config_endpoint/oe2_layer_config.conf')
+        dateservice_path = os.path.join(testdata_path, 'date_service')
+        date_config = os.path.join(dateservice_path, 'oe2_test_date_service.conf')
 
-            # Copy XML/MRF files to staging cache files dir, swapping in the location of the imagery files
-            for file in [f for f in os.listdir(template_path) if os.path.isfile(os.path.join(template_path, f))]:
-                file_text_replace(os.path.join(template_path, file), os.path.join(staging_path, file),
-                                  '{cache_path}', self.image_files_path)
+        # Override default dir for httpd (httpd.conf)
+        file_text_replace(httpd_config, os.path.join('/etc/httpd/conf', os.path.basename(httpd_config)), '{nonexistant_path}', testdata_path)
 
-            # Run oe_create_cache_config to make the cache config files
-            cmd = 'oe_create_cache_config -cbd {0} {1}'.format(staging_path, cache_path)
-            run_command(cmd)
-            rmtree(staging_path)
+        # Set up date_service config
+        file_text_replace(date_config, os.path.join('/etc/httpd/conf.d', os.path.basename(date_config)), '{nonexistant_path}', dateservice_path)
 
-        # Put the correct path into the Apache config (oe_test.conf)
-        file_text_replace(self.test_oe_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_oe_config)),
-                          '{cache_path}', oedata_path)
+        # Set up the Apache GC config (oe2_layer_config_gc.conf)
+        file_text_replace(self.test_apache_gc_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_gc_config)), '{nonexistant_path}', testdata_path)
+
         restart_apache()
 
-        # Set reproject conf for Apache config (reproject_test.conf)
-        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)), '{cache_path}', self.testdata_path)
+        # Set up the Apache config (oe2_layer_config.conf)
+        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)), '{nonexistant_path}', testdata_path)
 
-        # Update configuration for mod_reproject
-        # remove .cgi
-        if os.path.isfile(os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi')):
-            move(os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi'), os.path.join(self.testdata_path, 'wmts_endpoint/wmts.cgi.bak'))
-        #if os.path.isfile(os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi')):
-            #move(os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi'), os.path.join(self.testdata_path, 'twms_endpoint/twms.cgi.bak'))
+        restart_apache()
 
-        # Set reprojection layer
-        file_text_replace(os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml.orig'), os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), '{cache_path}', self.testdata_path)
-        file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.orig'), os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), '{cache_path}', self.testdata_path)
-        file_text_replace(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'), os.path.join(self.testdata_path, 'environment_reproject.xml'), '{testfile_dir}', self.testfiles_path)
+        # Set up the redis config
+        restart_redis()
 
-        # Run oe_config_layer to make the cache config files
-        cmd = 'oe_configure_layer --skip_empty_tiles --generate_links -l{0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'), self.projection_config, self.tilematrixset_config)
-        run_command(cmd)
+        run_command('redis-cli -n 0 DEL layer:test_daily_png')
+        run_command('redis-cli -n 0 SET layer:test_daily_png:default "2012-02-29"')
+        run_command('redis-cli -n 0 SADD layer:test_daily_png:periods "2012-02-29/2012-02-29/P1D"')
+        run_command('redis-cli -n 0 DEL layer:test_legacy_subdaily_jpg')
+        run_command('redis-cli -n 0 SET layer:test_legacy_subdaily_jpg:default "2012-02-29T14:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:test_legacy_subdaily_jpg:periods "2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H"')
+        run_command('redis-cli -n 0 DEL layer:test_nonyear_jpg')
+        run_command('redis-cli -n 0 SET layer:test_nonyear_jpg:default "2012-02-29"')
+        run_command('redis-cli -n 0 SADD layer:test_nonyear_jpg:periods "2012-02-29/2012-02-29/P1D"')
+        run_command('redis-cli -n 0 DEL layer:test_weekly_jpg')
+        run_command('redis-cli -n 0 SET layer:test_weekly_jpg:default "2012-02-29"')
+        run_command('redis-cli -n 0 SADD layer:test_weekly_jpg:periods "2012-02-22/2012-02-29/P7D"')
+        run_command('redis-cli -n 0 DEL layer:snap_test_1a')
+        run_command('redis-cli -n 0 SET layer:snap_test_1a:default "2016-02-29"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_1a:periods "2015-01-01/2016-12-31/P1D"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_2a')
+        run_command('redis-cli -n 0 SET layer:snap_test_2a:default "2015-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_2a:periods "2015-01-01/2015-01-10/P1D"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_2a:periods "2015-01-12/2015-01-31/P1D"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_3a')
+        run_command('redis-cli -n 0 SET layer:snap_test_3a:default "2015-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_3a:periods "2015-01-01/2016-01-01/P1M"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_3a:periods "1948-01-01/1948-03-01/P1M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_3b')
+        run_command('redis-cli -n 0 SET layer:snap_test_3b:default "2015-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_3b:periods "2015-01-01/2016-01-01/P3M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_3c')
+        run_command('redis-cli -n 0 SET layer:snap_test_3c:default "2000-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_3c:periods "1990-01-01/2016-01-01/P1Y"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_3d')
+        run_command('redis-cli -n 0 SET layer:snap_test_3d:default "2010-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_3d:periods "2010-01-01/2012-03-11/P8D"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_4a')
+        run_command('redis-cli -n 0 SET layer:snap_test_4a:default "2000-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_4a:periods "2000-01-01/2000-06-01/P1M"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_4a:periods "2000-07-03/2000-07-03/P1M"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_4a:periods "2000-08-01/2000-12-01/P1M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_4b')
+        run_command('redis-cli -n 0 SET layer:snap_test_4b:default "2001-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_4b:periods "2001-01-01/2001-12-27/P8D"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_4b:periods "2002-01-01/2002-12-27/P8D"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_4c')
+        run_command('redis-cli -n 0 SET layer:snap_test_4c:default "2010-01-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_4c:periods "2010-01-01/2010-01-01/P385D"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_5a')
+        run_command('redis-cli -n 0 SET layer:snap_test_5a:default "2011-12-01"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_5a:periods "2002-12-01/2011-12-01/P1Y"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_6a')
+        run_command('redis-cli -n 0 SET layer:snap_test_6a:default "2018-01-01T00:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_6a:periods "2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_6b')
+        run_command('redis-cli -n 0 SET layer:snap_test_6b:default "2018-01-01T00:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_6b:periods "2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_6c')
+        run_command('redis-cli -n 0 SET layer:snap_test_6c:default "2018-01-01T00:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_6c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_7a')
+        run_command('redis-cli -n 0 SET layer:snap_test_7a:default "2018-01-01T00:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_7a:periods "2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_7b')
+        run_command('redis-cli -n 0 SET layer:snap_test_7b:default "2018-01-01T00:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_7b:periods "2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_7c')
+        run_command('redis-cli -n 0 SET layer:snap_test_7c:default "2018-01-01T00:00:00Z"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_7c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
+
+        run_command('redis-cli -n 0 DEL layer:snap_test_year_boundary')
+        run_command('redis-cli -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"')
+        run_command('redis-cli -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"')
+
+        run_command('redis-cli -n 0 SAVE')
+
+        # Make dir for layer config reproject
+        layer_config_reproject_path = os.path.join(testdata_path, 'layer_config_reproject_endpoint')
+        copytree_x(os.path.join(testdata_path, 'layer_config_reproject_endpoint/baseline'), layer_config_reproject_path, exist_ok=True)
+
+        self.test_reproject_gc_config = os.path.join(testdata_path, 'layer_config_reproject_endpoint/oe2_layer_config_reproject_gc.conf')
+        self.test_reproject_config = os.path.join(testdata_path, 'layer_config_reproject_endpoint/oe2_layer_config_reproject.conf')
+
+        # Set up the reproject GC config (oe2_layer_config_reproject_gc.conf)
+        file_text_replace(self.test_reproject_gc_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_reproject_gc_config)), '{nonexistant_path}', testdata_path)
+
+        restart_apache()
+
+        # Set up the reproject config (oe2_layer_config_reproject.conf)
+        file_text_replace(self.test_reproject_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_reproject_config)), '{nonexistant_path}', testdata_path)
 
         restart_apache()
 
@@ -176,7 +243,7 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
 
         # The URL of the tile to be requested
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
 
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -198,7 +265,7 @@ class TestModReproject(unittest.TestCase):
 
         # The URL of the tile to be requested
         # {wmtsBaseUrl}/{layer}/{style}/{dimension1}/.../{dimensionN}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}{formatExtension}
-        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
 
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -214,7 +281,7 @@ class TestModReproject(unittest.TestCase):
         2 .Request current (no time) PNG tile via WMTS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (no time) PNG tile via WMTS'
@@ -227,7 +294,7 @@ class TestModReproject(unittest.TestCase):
         2B. Request current (no time) PNG tile via WMTS REST
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (no time) PNG tile via WMTS REST'
@@ -240,7 +307,7 @@ class TestModReproject(unittest.TestCase):
         3. Request current (no time) PPNG tile via WMTS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (no time) PPNG tile via WMTS'
@@ -253,7 +320,7 @@ class TestModReproject(unittest.TestCase):
         3B. Request current (no time) PPNG tile via WMTS REST
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (no time) PPNG tile via WMTS REST'
@@ -266,7 +333,7 @@ class TestModReproject(unittest.TestCase):
         4. Request current (time=default) JPEG tile via WMTS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (time=default) JPG tile via WMTS'
@@ -280,7 +347,7 @@ class TestModReproject(unittest.TestCase):
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         # https://gibs/earrthdata.nasa.gov/wmts/epsg{EPSG:Code}/best/{ProductName}/default/{time}/{TileMatrixSet}/{ZoomLevel}/{TileRow}/{TileColumn}.png
-        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         # Debug message (if DEBUG is set)
         if DEBUG:
             print '\nTesting: Request current (time=default) JPG tile via WMTS REST'
@@ -293,7 +360,7 @@ class TestModReproject(unittest.TestCase):
         5. Request current (time=default) PNG tile via WMTS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
             print '\nTesting: Request current (time=default) PNG tile via WMTS'
             print 'URL: ' + req_url
@@ -305,7 +372,7 @@ class TestModReproject(unittest.TestCase):
         5B. Request current (time=default) PNG tile via WMTS REST
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
         if DEBUG:
             print '\nTesting: Request current (time=default) PNG tile via WMTS REST'
             print 'URL: ' + req_url
@@ -317,7 +384,7 @@ class TestModReproject(unittest.TestCase):
         6. Request current (time=default) PPNG tile via WMTS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
             print '\nTesting: Request current (time=default) PPNG tile via WMTS'
             print 'URL: ' + req_url
@@ -329,7 +396,7 @@ class TestModReproject(unittest.TestCase):
         6B. Request current (time=default) PPNG tile via WMTS REST
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
         if DEBUG:
             print '\nTesting: Request current (time=default) PPNG tile via WMTS REST'
             print 'URL: ' + req_url
@@ -341,8 +408,8 @@ class TestModReproject(unittest.TestCase):
         7. Request current (no time) JPEG tile via TWMS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-#http://localhost:4000/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-29
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+#http://localhost:4000/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-29
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nNEED TIME SPECIFIED!!! Testing: Request current (no TIME) JPG tile via TWMS'
             print 'URL: ' + req_url
@@ -354,7 +421,7 @@ class TestModReproject(unittest.TestCase):
         8. Request current (no time) PNG tile via TWMS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nTesting: Request current (no TIME) PNG tile via TWMS'
             print 'URL: ' + req_url
@@ -366,7 +433,7 @@ class TestModReproject(unittest.TestCase):
         9. Request current (no time) PPNG tile via TWMS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nTesting: Request current (no TIME) PPNG tile via TWMS'
             print 'URL: ' + req_url
@@ -380,7 +447,7 @@ class TestModReproject(unittest.TestCase):
         10. Request tile with date from "year" layer via WMTS
         """
         ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via WMTS'
             print 'URL: ' + req_url
@@ -392,7 +459,7 @@ class TestModReproject(unittest.TestCase):
         10B. Request tile with date from "year" layer via WMTS (REST)
         """
         ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
-        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-22/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-22/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via WMTS (REST)'
             print 'URL: ' + req_url
@@ -404,7 +471,7 @@ class TestModReproject(unittest.TestCase):
         10C. Request tile with date from "year" layer via TWMS
         """
         ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-22'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-22'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -416,7 +483,7 @@ class TestModReproject(unittest.TestCase):
         11. Request tile with date  from "non-year" layer via WMTS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29'
         if DEBUG:
             print '\nTesting: Request tile with date  from "non-year layer via WMTS'
             print 'URL: ' + req_url
@@ -428,7 +495,7 @@ class TestModReproject(unittest.TestCase):
         11B. Request tile with date  from "non-year" layer via WMTS (REST)
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/test_nonyear_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_nonyear_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with date  from "non-year layer via WMTS (REST)'
             print 'URL: ' + req_url
@@ -442,7 +509,7 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
 ##request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
 #request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
         if DEBUG:
             print '\nTesting: Request tile with date from "non-year layer via TWMS'
             print 'URL: ' + req_url
@@ -454,7 +521,7 @@ class TestModReproject(unittest.TestCase):
         12. Request tile with date and time (sub-daily) from "year" layer via WMTS
         """
         ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T12:00:00Z'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS'
             print 'URL: ' + req_url
@@ -466,7 +533,7 @@ class TestModReproject(unittest.TestCase):
         12B. Request tile with date and time (sub-daily) from "year" layer via WMTS (REST)
         """
         ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
-        req_url = 'http://localhost/reproject/test/wmts/test_legacy_subdaily_jpg/default/2012-02-29T12:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/2012-02-29T12:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
             print 'URL: ' + req_url
@@ -478,7 +545,7 @@ class TestModReproject(unittest.TestCase):
         12C. Request tile with date and time (sub-daily) from "year" layer via TWMS
         """
         ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29T12:00:00Z'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -490,7 +557,7 @@ class TestModReproject(unittest.TestCase):
         13. Request tile with date and time (z-level) from "year" layer via WMTS
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T16:00:00Z'
+#        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T16:00:00Z'
 #        if DEBUG:
 #            print '\nTIME FORMAT!!! Testing: Request tile with date and time (z-level) from "year" layer via WMTS'
 #            print 'URL: ' + req_url
@@ -502,7 +569,7 @@ class TestModReproject(unittest.TestCase):
         13B. Request tile with date and time (z-level) from "year" layer via WMTS (REST)
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/reproject/test/wmts/test_zindex_jpg/default/2012-02-29T16:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+#        req_url = 'http://localhost/layer_config_reproject_endpoint/test_zindex_jpg/default/2012-02-29T16:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
 #        if DEBUG:
 #            print '\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS (REST)'
 #            print 'URL: ' + req_url
@@ -514,7 +581,7 @@ class TestModReproject(unittest.TestCase):
         13C. Request tile with date and time (z-level) from "year" layer via TWMS
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&time=2012-02-29T16:00:00Z&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+#        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&time=2012-02-29T16:00:00Z&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
 #        check_result = check_tile_request(req_url, ref_hash)
 #        self.assertTrue(check_result, 'TWMS Z-Level JPEG Tile request does not match what\'s expected. URL: ' + req_url)
 
@@ -523,7 +590,7 @@ class TestModReproject(unittest.TestCase):
         14. Request tile with no date from "year" layer via WMTS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTesting: Request tile with no date from "year" layer via WMTS'
             print 'URL: ' + req_url
@@ -535,7 +602,7 @@ class TestModReproject(unittest.TestCase):
         14B. Request tile with no date from "year" layer via WMTS (REST)
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with no date from "year" layer via WMTS (REST)'
             print 'URL: ' + req_url
@@ -547,7 +614,7 @@ class TestModReproject(unittest.TestCase):
         14C. Request tile with no date from "year" layer via TWMS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nTesting: Request tile with no date from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -559,7 +626,7 @@ class TestModReproject(unittest.TestCase):
         15. Request tile with no date from "non-year" layer via WMTS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS'
             print 'URL: ' + req_url
@@ -571,7 +638,7 @@ class TestModReproject(unittest.TestCase):
         15B. Request tile with no date from "non-year" layer via WMTS (REST)
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/test_nonyear_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_nonyear_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS (REST)'
             print 'URL: ' + req_url
@@ -583,7 +650,7 @@ class TestModReproject(unittest.TestCase):
         15C. Request tile with no date from "non-year" layer via TWMS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via TWMS'
             print 'URL: ' + req_url
@@ -595,7 +662,7 @@ class TestModReproject(unittest.TestCase):
         16. Request tile with no date and time (sub-daily) from "year" layer via WMTS
         """
         ref_hash = 'fd81999878be17f66c28b18c3cce3179'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
             print 'URL: ' + req_url
@@ -607,7 +674,7 @@ class TestModReproject(unittest.TestCase):
         16B. Request tile with no date and time (sub-daily) from "year" layer via WMTS (REST)
         """
         ref_hash = 'fd81999878be17f66c28b18c3cce3179'
-        req_url = 'http://localhost/reproject/test/wmts/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
             print 'URL: ' + req_url
@@ -619,7 +686,7 @@ class TestModReproject(unittest.TestCase):
         16C. Request tile with no date and time (sub-daily) from "year" layer via TWMS
         """
         ref_hash = 'fd81999878be17f66c28b18c3cce3179'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS'
             print 'URL: ' + req_url
@@ -631,7 +698,7 @@ class TestModReproject(unittest.TestCase):
         17. Request tile with no date and time (z-level) from "year" layer via WMTS
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
+#        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
 #        if DEBUG:
 #            print '\nERROR!!! Testing: Request tile with no date and time (z-level) from "year" layer via WMTS'
 #            print 'URL: ' + req_url
@@ -643,7 +710,7 @@ class TestModReproject(unittest.TestCase):
         17B. Request tile with no date and time (z-level) from "year" layer via WMTS (REST)
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/reproject/test/wmts/test_zindex_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+#        req_url = 'http://localhost/layer_config_reproject_endpoint/test_zindex_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
 #        if DEBUG:
 #            print '\nERROR!!! Testing: Request tile with no date and time (z-level) from "year" layer via WMTS (REST)'
 #            print 'URL: ' + req_url
@@ -655,7 +722,7 @@ class TestModReproject(unittest.TestCase):
         17C. Request tile with no date and time (z-level) from "year" layer via TWMS
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+#        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
 #        check_result = check_tile_request(req_url, ref_hash)
 #        self.assertTrue(check_result, 'TWMS Z-Level no date and time JPEG Tile request does not match what\'s expected. URL: ' + req_url)
 
@@ -664,7 +731,7 @@ class TestModReproject(unittest.TestCase):
         18. Request tile from static layer with no time via WMTS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_static_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_static_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTesting: Request tile from static layer with no time via WMTS'
             print 'URL: ' + req_url
@@ -676,7 +743,7 @@ class TestModReproject(unittest.TestCase):
         18B. Request tile from static layer with no time via WMTS (REST)
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/test_static_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile from static layer with no time via WMTS (REST)'
             print 'URL: ' + req_url
@@ -688,7 +755,7 @@ class TestModReproject(unittest.TestCase):
         18C. Request tile from static layer with no time via TWMS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
             print '\nTesting: Request tile from static layer with no time via TWMS'
             print 'URL: ' + req_url
@@ -700,7 +767,7 @@ class TestModReproject(unittest.TestCase):
         19. Request current (default time) JPEG tile via TWMS
         """
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
         if DEBUG:
             print '\nTesting: Request current (default TIME) JPG tile via TWMS'
             print 'URL: ' + req_url
@@ -712,7 +779,7 @@ class TestModReproject(unittest.TestCase):
         20. Request current (default time) PNG tile via TWMS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
         if DEBUG:
             print '\nTesting: Request current (default TIME) PNG tile via TWMS'
             print 'URL: ' + req_url
@@ -724,7 +791,7 @@ class TestModReproject(unittest.TestCase):
         21. Request current (no time) PPNG tile via TWMS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
         if DEBUG:
             print '\nTesting: Request current (default TIME) PPNG tile via TWMS'
             print 'URL: ' + req_url
@@ -736,7 +803,7 @@ class TestModReproject(unittest.TestCase):
         19. Request tile with date via TWMS
         """
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
         if DEBUG:
             print '\nTesting: Request tile with date via TWMS'
             print 'URL: ' + req_url
@@ -750,7 +817,7 @@ class TestModReproject(unittest.TestCase):
         20. Request WMTS GetCapabilities
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?Request=GetCapabilities'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
             print 'URL: ' + req_url
@@ -778,7 +845,7 @@ class TestModReproject(unittest.TestCase):
         21. ERROR!!! Request WMTS (REST) GetCapabilities
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        req_url = 'http://localhost/reproject/test/wmts/1.0.0/WMTSCapabilities.xml'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/1.0.0/WMTSCapabilities.xml'
         if DEBUG:
             print '\nTesting WMTS (REST) GetCapablities'
             print 'URL: ' + req_url
@@ -805,7 +872,7 @@ class TestModReproject(unittest.TestCase):
         22. Request TWMS GetCapabilities
         """
         ref_hash = '8663c1e1d45e4be1cdaefc8e6749ead4'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?Request=GetCapabilities'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?Request=GetCapabilities'
         if DEBUG:
             print '\nTesting TWMS GetCapablities'
             print 'URL: ' + req_url
@@ -833,7 +900,7 @@ class TestModReproject(unittest.TestCase):
         23. Request TWMS GetTileService
         """
         ref_hash = '7555d5ad3cca96aa8cbc8a36f5e04f19'
-        req_url = 'http://localhost/reproject/test/twms/twms.cgi?Request=GetTileService'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?Request=GetTileService'
         if DEBUG:
             print '\nTesting TWMS GetTileService'
             print 'URL: ' + req_url
@@ -877,7 +944,7 @@ class TestModReproject(unittest.TestCase):
                 else:
                     param_split[0] = param_split[0].lower()
                 test_params.append('='.join(param_split))
-            req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?' + '&'.join(test_params)
+            req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?' + '&'.join(test_params)
             if DEBUG:
                 print 'Trying URL: ' + req_url
             check_result = check_tile_request(req_url, ref_hash)
@@ -896,7 +963,7 @@ class TestModReproject(unittest.TestCase):
         for _ in range(20):
             random.shuffle(params)
             param_string = '&'.join(params)
-            req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?' + param_string
+            req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?' + param_string
             if DEBUG:
                 print 'Trying URL: ' + req_url
             check_result = check_tile_request(req_url, ref_hash)
@@ -914,7 +981,7 @@ class TestModReproject(unittest.TestCase):
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
-            req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?request=GetTile&time=default&' + '&'.join(param_list)
+            req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?request=GetTile&time=default&' + '&'.join(param_list)
             response_code = 400
             response_value = 'MissingParameterValue'
             if DEBUG:
@@ -928,27 +995,27 @@ class TestModReproject(unittest.TestCase):
         response_value = 'InvalidParameterValue'
         invalid_parameter_urls = (
             # Bad SERVICE value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&Service=bad_value',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&Service=bad_value',
             # Bad VERSION value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&Version=bad_value',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&Version=bad_value',
             # Bad LAYER value
-            'http://localhost/reproject/test/wmts/wmts.cgi?tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&layer=bad_layer_value',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&layer=bad_layer_value',
             # Bad STYLE value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&style=bad_value',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&style=bad_value',
             # Bad FORMAT value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&TileMatrix=0&TileCol=0&TileRow=0&time=default&Format=fake_image',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&TileMatrix=0&TileCol=0&TileRow=0&time=default&Format=fake_image',
             # Bad TILEMATRIXSET value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&tilematrixset=fake_tilematrixset',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&tilematrixset=fake_tilematrixset',
             # Bad (non-positive integer) TILEMATRIX value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=-20',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=-20',
             # Bad (non-positive integer) TILEROW value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&time=default&TileRow=-20',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&time=default&TileRow=-20',
             # Bad (non-positive integer) TILECOL value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileRow=0&time=default&TileCol=-20',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileRow=0&time=default&TileCol=-20',
             # Invalid TILEMATRIX value
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=20',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=20',
             # Invalid TIME format
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-290'
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-290'
         )
         for req_url in invalid_parameter_urls:
             if DEBUG:
@@ -960,7 +1027,7 @@ class TestModReproject(unittest.TestCase):
         # OperationNotSupported tests
         response_code = 501
         response_value = 'OperationNotSupported'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetLegendGraphic&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetLegendGraphic&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         if DEBUG:
             print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
         check_code = check_response_code(req_url, response_code, response_value)
@@ -972,9 +1039,9 @@ class TestModReproject(unittest.TestCase):
         response_value = 'TileOutOfRange'
         tile_outofrange_urls = (
             # TileCol out of range
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=50&TileRow=0&time=default',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=50&TileRow=0&time=default',
             # TileRow out of range
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=50&time=default'
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=50&time=default'
         )
         for req_url in tile_outofrange_urls:
             if DEBUG:
@@ -986,9 +1053,9 @@ class TestModReproject(unittest.TestCase):
         # Test if empty tile is served for out of time bounds request
         ref_hash = 'e45470d7b683503c43ca819a674fdc9e'
         empty_urls = (  # Date before range
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-01-01',
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-01-01',
             # Date after range
-            'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-03-07'
+            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-03-07'
         )
         for url in empty_urls:
             if DEBUG:
@@ -998,7 +1065,7 @@ class TestModReproject(unittest.TestCase):
 
         # Test if unknown parameter is ignored
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-29&twoplustwo=five'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-29&twoplustwo=five'
         if DEBUG:
             print 'Using URL: {0}, expecting bad parameter will be ignored'
         check_result = check_tile_request(req_url, ref_hash)
@@ -1015,7 +1082,7 @@ class TestModReproject(unittest.TestCase):
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
-            req_url = 'http://localhost/reproject/test/wmts/' + '/'.join(param_list)
+            req_url = 'http://localhost/layer_config_reproject_endpoint/' + '/'.join(param_list)
             #response_code = 400
             response_value = 'InvalidParameterValue'
             if DEBUG:
@@ -1050,23 +1117,23 @@ class TestModReproject(unittest.TestCase):
         response_value = 'InvalidParameterValue'
         invalid_parameter_urls = (
             # Bad LAYER value
-            'http://localhost/reproject/test/wmts/bad_layer_value/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/bad_layer_value/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
             # Bad STYLE value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/bad_value/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/bad_value/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
             # Bad FORMAT value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.fake',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.fake',
             # Bad TILEMATRIXSET value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/fake_tilematrixset/0/0/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/fake_tilematrixset/0/0/0.jpeg',
             # Bad (non-positive integer) TILEMATRIX value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/-20/0/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/-20/0/0.jpeg',
             # Bad (non-positive integer) TILEROW value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/-20/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/-20/0.jpeg',
             # Bad (non-positive integer) TILECOL value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/-20.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/-20.jpeg',
             # Invalid TILEMATRIX value
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/20/0/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/20/0/0.jpeg',
             # Invalid TIME format
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-290/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-290/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         )
         for req_url in invalid_parameter_urls:
             #if DEBUG:
@@ -1104,9 +1171,9 @@ class TestModReproject(unittest.TestCase):
         response_value = 'TileOutOfRange'
         tile_outofrange_urls = (
             # TileCol out of range
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/50/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/50/0.jpeg',
             # TileRow out of range
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/50.jpeg'
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/50.jpeg'
         )
         for req_url in tile_outofrange_urls:
             if DEBUG:
@@ -1118,9 +1185,9 @@ class TestModReproject(unittest.TestCase):
         # Test if empty tile is served for out of time bounds request
         ref_hash = 'e45470d7b683503c43ca819a674fdc9e'
         empty_urls = (  # Date before range
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-01-01/GoogleMapsCompatible_Level3/0/0/0.jpeg',
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-01-01/GoogleMapsCompatible_Level3/0/0/0.jpeg',
             # Date after range
-            'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-03-07/GoogleMapsCompatible_Level3/0/0/0.jpeg'
+            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-03-07/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         )
         for url in empty_urls:
             if DEBUG:
@@ -1129,7 +1196,7 @@ class TestModReproject(unittest.TestCase):
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
         # Test unknown parameter
-        req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
+        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
         if DEBUG:
             print 'Using URL: {0}, expecting bad parameter will return XML'.format(req_url)
         try:
@@ -1165,7 +1232,7 @@ class TestModReproject(unittest.TestCase):
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
-            req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&time=default&' + '&'.join(param_list)
+            req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&time=default&' + '&'.join(param_list)
             if 'srs' not in req_url or 'format' not in req_url or 'styles' not in req_url or 'width' not in req_url or 'height' not in req_url:
                 # expected tile
                 ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
@@ -1186,21 +1253,21 @@ class TestModReproject(unittest.TestCase):
         # InvalidParameterValue tests
         invalid_parameter_urls = (
             # Bad LAYER value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=bad_layer_value&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=bad_layer_value&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad STYLE value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=bad_value&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=bad_value&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad FORMAT value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=fake_image&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=fake_image&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad SRS value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=fake_tilematrixset&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=fake_tilematrixset&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad (non-positive integer) WIDTH value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=-256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=-256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad (non-positive integer) HEIGHT value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=-256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=-256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
             # Bad (large integer) BBOX value
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,2003750800.34278925,20037508.34278925'
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,2003750800.34278925,20037508.34278925'
             # Invalid TIME format
-            'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
+            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
         )
         for req_url in invalid_parameter_urls:
             if 'bad_value' in req_url or 'fake' in req_url or '-256' in req_url:
