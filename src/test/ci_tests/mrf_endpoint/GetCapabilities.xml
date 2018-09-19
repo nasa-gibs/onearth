@@ -1,0 +1,888 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:Capabilities xmlns:ns0="http://www.opengis.net/wmts/1.0" xmlns:ns2="http://www.opengis.net/ows/1.1" xmlns:ns3="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/wmts/1.0     http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd">
+    <ns2:ServiceIdentification>
+        <ns2:Title xml:lang="en">NASA Global Imagery Browse Services for EOSDIS</ns2:Title>
+        <ns2:Abstract xml:lang="en">
+            Near real time imagery from multiple NASA instruments
+        </ns2:Abstract>
+        <ns2:Keywords>
+            <ns2:Keyword>World</ns2:Keyword>
+            <ns2:Keyword>Global</ns2:Keyword>
+        </ns2:Keywords>
+        <ns2:ServiceType>OGC WMTS</ns2:ServiceType>
+        <ns2:ServiceTypeVersion>1.0.0</ns2:ServiceTypeVersion>
+        <ns2:Fees>none</ns2:Fees>
+        <ns2:AccessConstraints>none</ns2:AccessConstraints>
+    </ns2:ServiceIdentification>
+    <ns2:ServiceProvider>
+        <ns2:ProviderName>National Aeronautics and Space Administration</ns2:ProviderName>
+        <ns2:ProviderSite ns3:href="http://earthdata.nasa.gov/" />
+        <ns2:ServiceContact>
+            <ns2:IndividualName />
+            <ns2:PositionName />
+            <ns2:ContactInfo>
+                <ns2:Address>
+                    <ns2:DeliveryPoint />
+                    <ns2:City />
+                    <ns2:AdministrativeArea />
+                    <ns2:PostalCode />
+                    <ns2:Country />
+                    <ns2:ElectronicMailAddress />
+                </ns2:Address>
+            </ns2:ContactInfo>
+        </ns2:ServiceContact>
+    </ns2:ServiceProvider>
+    <ns2:OperationsMetadata>
+        <ns2:Operation name="GetCapabilities">
+            <ns2:DCP>
+                <ns2:HTTP>
+                    <ns2:Get ns3:href="http://localhost/mrf_endpoint/1.0.0/WMTSCapabilities.xml">
+                        <ns2:Constraint name="GetEncoding">
+                            <ns2:AllowedValues>
+                                <ns2:Value>RESTful</ns2:Value>
+                            </ns2:AllowedValues>
+                        </ns2:Constraint>
+                    </ns2:Get>
+                    <ns2:Get ns3:href="http://localhost/mrf_endpoint/wmts.cgi?">
+                        <ns2:Constraint name="GetEncoding">
+                            <ns2:AllowedValues>
+                                <ns2:Value>KVP</ns2:Value>
+                            </ns2:AllowedValues>
+                        </ns2:Constraint>
+                    </ns2:Get>
+                </ns2:HTTP>
+            </ns2:DCP>
+        </ns2:Operation>
+        <ns2:Operation name="GetTile">
+            <ns2:DCP>
+                <ns2:HTTP>
+                    <ns2:Get ns3:href="http://localhost/mrf_endpoint/">
+                        <ns2:Constraint name="GetEncoding">
+                            <ns2:AllowedValues>
+                                <ns2:Value>RESTful</ns2:Value>
+                            </ns2:AllowedValues>
+                        </ns2:Constraint>
+                    </ns2:Get>
+                    <ns2:Get ns3:href="http://localhost/mrf_endpoint/wmts.cgi?">
+                        <ns2:Constraint name="GetEncoding">
+                            <ns2:AllowedValues>
+                                <ns2:Value>KVP</ns2:Value>
+                            </ns2:AllowedValues>
+                        </ns2:Constraint>
+                    </ns2:Get>
+                </ns2:HTTP>
+            </ns2:DCP>
+        </ns2:Operation>
+    </ns2:OperationsMetadata>
+    <ns0:Contents>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 1a</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_1a</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2016-12-31</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2015-01-01/2016-12-31/P1D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_1a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 2a</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_2a</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2015-01-31</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2015-01-01/2015-01-10/P1D</ns0:Value>
+             <ns0:Value>2015-01-12/2015-01-31/P1D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_2a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 3a</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_3a</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2016-01-01</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2015-01-01/2016-01-01/P1M</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_3a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 3b</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_3b</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2016-01-01</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2015-01-01/2016-01-01/P3M</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_3b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 3c</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_3c</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2016-01-01</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>1990-01-01/2016-01-01/P1Y</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_3c/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 3d</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_3d</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2012-03-11</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2010-01-01/2012-03-11/P8D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_3d/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 4a</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_4a</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2000-12-01</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2000-01-01/2000-06-01/P1M</ns0:Value>
+             <ns0:Value>2000-07-03/2000-07-03/P1M</ns0:Value>
+             <ns0:Value>2000-08-01/2000-12-01/P1M</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_4a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 4b</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_4b</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2002-12-27</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2001-01-01/2001-12-27/P8D</ns0:Value>
+             <ns0:Value>2002-01-01/2002-12-27/P8D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_4b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 4c</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_4c</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2010-01-01</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2010-01-01/2010-01-01/P385D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_4c/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 5a</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_5a</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2011-12-01</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2002-12-01/2011-12-01/P1Y</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_5a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 6a</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_6a</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2018-01-01T00:00:00Z</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_6a/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 6b</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_6b</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2018-01-01T00:00:00Z</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_6b/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario 6c</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_6c</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2018-01-01T00:00:00Z</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_6c/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">OnEarth Date Snapping Scenario Year Boundary</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>snap_test_year_boundary</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2000-09-03</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2000-09-03/2000-09-03/P144D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/snap_test_year_boundary/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">Blue Marble Demo Imagery - Daily PNG</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>test_daily_png</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/png</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2012-02-29</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2012-02-29/2012-02-29/P1D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/png" resourceType="tile" template="http://localhost/mrf_endpoint/test_daily_png/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>test_legacy_subdaily_jpg</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2012-02-29T14:00:00Z</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/test_legacy_subdaily_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>test_nonyear_jpg</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2012-02-29</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2012-02-29/2012-02-29/P1D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/test_nonyear_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>test_static_jpg</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/test_static_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:Layer>
+         <ns2:Title xml:lang="en">Blue Marble Demo Imagery - JPEG</ns2:Title>
+         <ns2:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ns2:LowerCorner>-180 -90</ns2:LowerCorner>
+            <ns2:UpperCorner>180 90</ns2:UpperCorner>
+        </ns2:WGS84BoundingBox>
+         <ns2:Identifier>test_weekly_jpg</ns2:Identifier>
+         <ns0:Style isDefault="true">
+             <ns2:Title xml:lang="en">default</ns2:Title>
+             <ns2:Identifier>default</ns2:Identifier>
+             
+             
+         </ns0:Style>
+         <ns0:Format>image/jpeg</ns0:Format>
+         <ns0:Dimension>
+             <ns2:Identifier>time</ns2:Identifier>
+             <ns0:UOM>ISO8601</ns0:UOM>
+             <ns0:Default>2012-02-29</ns0:Default>
+             <ns0:Current>false</ns0:Current>
+             <ns0:Value>2012-02-22/2012-02-29/P7D</ns0:Value>
+         </ns0:Dimension>
+         <ns0:TileMatrixSetLink>
+             <ns0:TileMatrixSet>EPSG4326_16km</ns0:TileMatrixSet>
+         </ns0:TileMatrixSetLink>
+         <ns0:ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost/mrf_endpoint/test_weekly_jpg/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg" />
+      </ns0:Layer>
+      <ns0:TileMatrixSet>
+         <ns2:Identifier>EPSG4326_16km</ns2:Identifier>
+         <ns2:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ns2:SupportedCRS>
+         <ns0:TileMatrix>
+            <ns2:Identifier>0</ns2:Identifier>
+            <ns0:ScaleDenominator>223632905.6114871</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>2</ns0:MatrixWidth>
+            <ns0:MatrixHeight>1</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>1</ns2:Identifier>
+            <ns0:ScaleDenominator>111816452.8057436</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>3</ns0:MatrixWidth>
+            <ns0:MatrixHeight>2</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>2</ns2:Identifier>
+            <ns0:ScaleDenominator>55908226.40287178</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>5</ns0:MatrixWidth>
+            <ns0:MatrixHeight>3</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+      </ns0:TileMatrixSet>
+      <ns0:TileMatrixSet>
+         <ns2:Identifier>EPSG4326_2km</ns2:Identifier>
+         <ns2:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ns2:SupportedCRS>
+         <ns0:TileMatrix>
+            <ns2:Identifier>0</ns2:Identifier>
+            <ns0:ScaleDenominator>223632905.6114871</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>2</ns0:MatrixWidth>
+            <ns0:MatrixHeight>1</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>1</ns2:Identifier>
+            <ns0:ScaleDenominator>111816452.8057436</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>3</ns0:MatrixWidth>
+            <ns0:MatrixHeight>2</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>2</ns2:Identifier>
+            <ns0:ScaleDenominator>55908226.40287178</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>5</ns0:MatrixWidth>
+            <ns0:MatrixHeight>3</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>3</ns2:Identifier>
+            <ns0:ScaleDenominator>27954113.20143589</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>10</ns0:MatrixWidth>
+            <ns0:MatrixHeight>5</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>4</ns2:Identifier>
+            <ns0:ScaleDenominator>13977056.60071795</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>20</ns0:MatrixWidth>
+            <ns0:MatrixHeight>10</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>5</ns2:Identifier>
+            <ns0:ScaleDenominator>6988528.300358973</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>40</ns0:MatrixWidth>
+            <ns0:MatrixHeight>20</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+      </ns0:TileMatrixSet>
+      <ns0:TileMatrixSet>
+         <ns2:Identifier>EPSG4326_1km</ns2:Identifier>
+         <ns2:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ns2:SupportedCRS>
+         <ns0:TileMatrix>
+            <ns2:Identifier>0</ns2:Identifier>
+            <ns0:ScaleDenominator>223632905.6114871</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>2</ns0:MatrixWidth>
+            <ns0:MatrixHeight>1</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>1</ns2:Identifier>
+            <ns0:ScaleDenominator>111816452.8057436</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>3</ns0:MatrixWidth>
+            <ns0:MatrixHeight>2</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>2</ns2:Identifier>
+            <ns0:ScaleDenominator>55908226.40287178</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>5</ns0:MatrixWidth>
+            <ns0:MatrixHeight>3</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>3</ns2:Identifier>
+            <ns0:ScaleDenominator>27954113.20143589</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>10</ns0:MatrixWidth>
+            <ns0:MatrixHeight>5</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>4</ns2:Identifier>
+            <ns0:ScaleDenominator>13977056.60071795</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>20</ns0:MatrixWidth>
+            <ns0:MatrixHeight>10</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>5</ns2:Identifier>
+            <ns0:ScaleDenominator>6988528.300358973</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>40</ns0:MatrixWidth>
+            <ns0:MatrixHeight>20</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>6</ns2:Identifier>
+            <ns0:ScaleDenominator>3494264.150179486</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>80</ns0:MatrixWidth>
+            <ns0:MatrixHeight>40</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+      </ns0:TileMatrixSet>
+      <ns0:TileMatrixSet>
+         <ns2:Identifier>EPSG4326_500m</ns2:Identifier>
+         <ns2:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ns2:SupportedCRS>
+         <ns0:TileMatrix>
+            <ns2:Identifier>0</ns2:Identifier>
+            <ns0:ScaleDenominator>223632905.6114871</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>2</ns0:MatrixWidth>
+            <ns0:MatrixHeight>1</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>1</ns2:Identifier>
+            <ns0:ScaleDenominator>111816452.8057436</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>3</ns0:MatrixWidth>
+            <ns0:MatrixHeight>2</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>2</ns2:Identifier>
+            <ns0:ScaleDenominator>55908226.40287178</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>5</ns0:MatrixWidth>
+            <ns0:MatrixHeight>3</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>3</ns2:Identifier>
+            <ns0:ScaleDenominator>27954113.20143589</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>10</ns0:MatrixWidth>
+            <ns0:MatrixHeight>5</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>4</ns2:Identifier>
+            <ns0:ScaleDenominator>13977056.60071795</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>20</ns0:MatrixWidth>
+            <ns0:MatrixHeight>10</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>5</ns2:Identifier>
+            <ns0:ScaleDenominator>6988528.300358973</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>40</ns0:MatrixWidth>
+            <ns0:MatrixHeight>20</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>6</ns2:Identifier>
+            <ns0:ScaleDenominator>3494264.150179486</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>80</ns0:MatrixWidth>
+            <ns0:MatrixHeight>40</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>7</ns2:Identifier>
+            <ns0:ScaleDenominator>1747132.075089743</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>160</ns0:MatrixWidth>
+            <ns0:MatrixHeight>80</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+      </ns0:TileMatrixSet>
+      <ns0:TileMatrixSet>
+         <ns2:Identifier>EPSG4326_250m</ns2:Identifier>
+         <ns2:SupportedCRS>urn:ogc:def:crs:OGC:1.3:CRS84</ns2:SupportedCRS>
+         <ns0:TileMatrix>
+            <ns2:Identifier>0</ns2:Identifier>
+            <ns0:ScaleDenominator>223632905.6114871</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>2</ns0:MatrixWidth>
+            <ns0:MatrixHeight>1</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>1</ns2:Identifier>
+            <ns0:ScaleDenominator>111816452.8057436</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>3</ns0:MatrixWidth>
+            <ns0:MatrixHeight>2</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>2</ns2:Identifier>
+            <ns0:ScaleDenominator>55908226.40287178</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>5</ns0:MatrixWidth>
+            <ns0:MatrixHeight>3</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>3</ns2:Identifier>
+            <ns0:ScaleDenominator>27954113.20143589</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>10</ns0:MatrixWidth>
+            <ns0:MatrixHeight>5</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>4</ns2:Identifier>
+            <ns0:ScaleDenominator>13977056.60071795</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>20</ns0:MatrixWidth>
+            <ns0:MatrixHeight>10</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>5</ns2:Identifier>
+            <ns0:ScaleDenominator>6988528.300358973</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>40</ns0:MatrixWidth>
+            <ns0:MatrixHeight>20</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>6</ns2:Identifier>
+            <ns0:ScaleDenominator>3494264.150179486</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>80</ns0:MatrixWidth>
+            <ns0:MatrixHeight>40</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>7</ns2:Identifier>
+            <ns0:ScaleDenominator>1747132.075089743</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>160</ns0:MatrixWidth>
+            <ns0:MatrixHeight>80</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+         <ns0:TileMatrix>
+            <ns2:Identifier>8</ns2:Identifier>
+            <ns0:ScaleDenominator>873566.0375448716</ns0:ScaleDenominator>
+            <ns0:TopLeftCorner>-180 90</ns0:TopLeftCorner>
+            <ns0:TileWidth>512</ns0:TileWidth>
+            <ns0:TileHeight>512</ns0:TileHeight>
+            <ns0:MatrixWidth>320</ns0:MatrixWidth>
+            <ns0:MatrixHeight>160</ns0:MatrixHeight>
+         </ns0:TileMatrix>
+      </ns0:TileMatrixSet>
+    </ns0:Contents>
+    <ns0:ServiceMetadataURL ns3:href="http://localhost/mrf_endpoint/1.0.0/WMTSCapabilities.xml" />
+</ns0:Capabilities>

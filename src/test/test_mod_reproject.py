@@ -1,4 +1,4 @@
-<#!/usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -159,18 +159,6 @@ class TestModReproject(unittest.TestCase):
         run_command('redis-cli -n 0 SET layer:snap_test_6c:default "2018-01-01T00:00:00Z"')
         run_command('redis-cli -n 0 SADD layer:snap_test_6c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_7a')
-        run_command('redis-cli -n 0 SET layer:snap_test_7a:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7a:periods "2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_7b')
-        run_command('redis-cli -n 0 SET layer:snap_test_7b:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7b:periods "2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_7c')
-        run_command('redis-cli -n 0 SET layer:snap_test_7c:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
-
         run_command('redis-cli -n 0 DEL layer:snap_test_year_boundary')
         run_command('redis-cli -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"')
         run_command('redis-cli -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"')
@@ -240,7 +228,7 @@ class TestModReproject(unittest.TestCase):
         All the tile tests follow this template.
         """
         # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
 
         # The URL of the tile to be requested
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
@@ -261,7 +249,7 @@ class TestModReproject(unittest.TestCase):
         All the tile tests follow this template.
         """
         # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
 
         # The URL of the tile to be requested
         # {wmtsBaseUrl}/{layer}/{style}/{dimension1}/.../{dimensionN}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}{formatExtension}
@@ -280,7 +268,7 @@ class TestModReproject(unittest.TestCase):
         """
         2 .Request current (no time) PNG tile via WMTS
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -293,7 +281,7 @@ class TestModReproject(unittest.TestCase):
         """
         2B. Request current (no time) PNG tile via WMTS REST
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -306,7 +294,7 @@ class TestModReproject(unittest.TestCase):
         """
         3. Request current (no time) PPNG tile via WMTS
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -319,7 +307,7 @@ class TestModReproject(unittest.TestCase):
         """
         3B. Request current (no time) PPNG tile via WMTS REST
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -332,7 +320,7 @@ class TestModReproject(unittest.TestCase):
         """
         4. Request current (time=default) JPEG tile via WMTS
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -345,7 +333,7 @@ class TestModReproject(unittest.TestCase):
         """
         4B. Request current (time=default) JPEG tile via WMTS REST
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         # https://gibs/earrthdata.nasa.gov/wmts/epsg{EPSG:Code}/best/{ProductName}/default/{time}/{TileMatrixSet}/{ZoomLevel}/{TileRow}/{TileColumn}.png
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         # Debug message (if DEBUG is set)
@@ -359,7 +347,7 @@ class TestModReproject(unittest.TestCase):
         """
         5. Request current (time=default) PNG tile via WMTS
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
             print '\nTesting: Request current (time=default) PNG tile via WMTS'
@@ -371,7 +359,7 @@ class TestModReproject(unittest.TestCase):
         """
         5B. Request current (time=default) PNG tile via WMTS REST
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
         if DEBUG:
             print '\nTesting: Request current (time=default) PNG tile via WMTS REST'
@@ -383,7 +371,7 @@ class TestModReproject(unittest.TestCase):
         """
         6. Request current (time=default) PPNG tile via WMTS
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
             print '\nTesting: Request current (time=default) PPNG tile via WMTS'
@@ -395,7 +383,7 @@ class TestModReproject(unittest.TestCase):
         """
         6B. Request current (time=default) PPNG tile via WMTS REST
         """
-        ref_hash = '6df00a0095f3df8586572988f6cb7e84'
+        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
         if DEBUG:
             print '\nTesting: Request current (time=default) PPNG tile via WMTS REST'
@@ -446,7 +434,7 @@ class TestModReproject(unittest.TestCase):
         """
         10. Request tile with date from "year" layer via WMTS
         """
-        ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
+        ref_hash = 'ba1e14d3fb2b924974054a9cac61a74c'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via WMTS'
@@ -458,7 +446,7 @@ class TestModReproject(unittest.TestCase):
         """
         10B. Request tile with date from "year" layer via WMTS (REST)
         """
-        ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
+        ref_hash = 'ba1e14d3fb2b924974054a9cac61a74c'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-22/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via WMTS (REST)'
@@ -482,7 +470,7 @@ class TestModReproject(unittest.TestCase):
         """
         11. Request tile with date  from "non-year" layer via WMTS
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29'
         if DEBUG:
             print '\nTesting: Request tile with date  from "non-year layer via WMTS'
@@ -494,7 +482,7 @@ class TestModReproject(unittest.TestCase):
         """
         11B. Request tile with date  from "non-year" layer via WMTS (REST)
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_nonyear_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with date  from "non-year layer via WMTS (REST)'
@@ -520,7 +508,7 @@ class TestModReproject(unittest.TestCase):
         """
         12. Request tile with date and time (sub-daily) from "year" layer via WMTS
         """
-        ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
+        ref_hash = 'f3b9121ef9e6360f4bc6b6a01834841c'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS'
@@ -532,7 +520,7 @@ class TestModReproject(unittest.TestCase):
         """
         12B. Request tile with date and time (sub-daily) from "year" layer via WMTS (REST)
         """
-        ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
+        ref_hash = 'f3b9121ef9e6360f4bc6b6a01834841c'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/2012-02-29T12:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
@@ -589,7 +577,7 @@ class TestModReproject(unittest.TestCase):
         """
         14. Request tile with no date from "year" layer via WMTS
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTesting: Request tile with no date from "year" layer via WMTS'
@@ -601,7 +589,7 @@ class TestModReproject(unittest.TestCase):
         """
         14B. Request tile with no date from "year" layer via WMTS (REST)
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile with no date from "year" layer via WMTS (REST)'
@@ -625,7 +613,7 @@ class TestModReproject(unittest.TestCase):
         """
         15. Request tile with no date from "non-year" layer via WMTS
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS'
@@ -637,7 +625,7 @@ class TestModReproject(unittest.TestCase):
         """
         15B. Request tile with no date from "non-year" layer via WMTS (REST)
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_nonyear_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS (REST)'
@@ -661,7 +649,7 @@ class TestModReproject(unittest.TestCase):
         """
         16. Request tile with no date and time (sub-daily) from "year" layer via WMTS
         """
-        ref_hash = 'fd81999878be17f66c28b18c3cce3179'
+        ref_hash = '29caed86a306369c700cb9c222dc1caf'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
@@ -673,7 +661,7 @@ class TestModReproject(unittest.TestCase):
         """
         16B. Request tile with no date and time (sub-daily) from "year" layer via WMTS (REST)
         """
-        ref_hash = 'fd81999878be17f66c28b18c3cce3179'
+        ref_hash = '29caed86a306369c700cb9c222dc1caf'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
@@ -730,7 +718,7 @@ class TestModReproject(unittest.TestCase):
         """
         18. Request tile from static layer with no time via WMTS
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_static_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
             print '\nTesting: Request tile from static layer with no time via WMTS'
@@ -742,7 +730,7 @@ class TestModReproject(unittest.TestCase):
         """
         18B. Request tile from static layer with no time via WMTS (REST)
         """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         req_url = 'http://localhost/layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
             print '\nTesting: Request tile from static layer with no time via WMTS (REST)'
@@ -929,7 +917,7 @@ class TestModReproject(unittest.TestCase):
         24. URL Parameter Case Insensitivity
         """
         # Randomly capitalizes and lower-cases parameters and checks the tile resulting from the request. Tries 10 different combinations.
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
                   'time=default', 'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
         if DEBUG:
@@ -955,7 +943,7 @@ class TestModReproject(unittest.TestCase):
         25. URL Parameter Reordering
         """
         # Test 20 random permutations of the given param strings
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
+        ref_hash = '5f7056b7b8c98fa736231364f4058859'
         params = ['layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
                   'time=default', 'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0']
         if DEBUG:
@@ -1291,14 +1279,10 @@ class TestModReproject(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         # Delete Apache test config
-        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_oe_config)))
+        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_gc_config)))
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
-        os.remove(os.path.join(self.image_files_path, 'cache_all_wmts.config'))
-        os.remove(os.path.join(self.image_files_path, 'cache_all_twms.config'))
-        os.remove(os.path.join(self.testdata_path, 'layer_configuration_file_reproject.xml'))
-        os.remove(os.path.join(self.testdata_path, 'environment_reproject.xml'))
-        os.remove(os.path.join(self.testdata_path, 'environment_reproject.xml.temp'))
-        rmtree(self.testfiles_path)
+        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_reproject_gc_config)))
+        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_reproject_config)))
         restart_apache()
 
 

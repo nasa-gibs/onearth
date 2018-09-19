@@ -159,18 +159,6 @@ class TestModTwms(unittest.TestCase):
         run_command('redis-cli -n 0 SET layer:snap_test_6c:default "2018-01-01T00:00:00Z"')
         run_command('redis-cli -n 0 SADD layer:snap_test_6c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_7a')
-        run_command('redis-cli -n 0 SET layer:snap_test_7a:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7a:periods "2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_7b')
-        run_command('redis-cli -n 0 SET layer:snap_test_7b:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7b:periods "2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_7c')
-        run_command('redis-cli -n 0 SET layer:snap_test_7c:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
-
         run_command('redis-cli -n 0 DEL layer:snap_test_year_boundary')
         run_command('redis-cli -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"')
         run_command('redis-cli -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"')
@@ -844,76 +832,6 @@ class TestModTwms(unittest.TestCase):
         if DEBUG:
             print '\nTesting Date Snapping: Periods stretching across one day'
             print 'Time Period: 2018-01-01T00:00:00/2018-01-01T23:59:00/PT60S'
-        for request_date, expected_date in tests:
-            req_url = self.snap_test_url_template.format(layer_name, request_date)
-            if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
-            response_date = test_snap_request(self.tile_hashes, req_url)
-            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
-            self.assertEqual(expected_date, response_date, error)
-
-    def test_snapping_7a(self):
-        layer_name = 'snap_test_7a'
-        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
-                 ('2018-01-01T10:00:00Z', '2018-01-01T10:00:00Z'),
-                 ('2018-01-01T23:55:00Z', '2018-01-01T23:55:00Z'))
-# Commented out until GITC-795 is implemented
-#                 ('2018-01-01T23:55:00Z', '2018-01-01T23:55:00Z'),
-#                 ('2017-01-01T00:00:00Z', 'black3'),
-#                 ('2018-01-02T00:00:00Z', 'black3'))
-        for request_date, expected_date in tests:
-            req_url = self.snap_test_url_template.format(layer_name, request_date)
-        if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M'
-        for request_date, expected_date in tests:
-            req_url = self.snap_test_url_template.format(layer_name, request_date)
-            if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
-            response_date = test_snap_request(self.tile_hashes, req_url)
-            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
-            self.assertEqual(expected_date, response_date, error)
-
-    def test_snapping_7b(self):
-        layer_name = 'snap_test_7b'
-        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
-                 ('2018-01-01T12:00:00Z', '2018-01-01T12:00:00Z'),
-                 ('2018-01-01T23:54:00Z', '2018-01-01T23:54:00Z'))
-# Commented out until GITC-795 is implemented
-#                 ('2018-01-01T23:54:00Z', '2018-01-01T23:54:00Z'),
-#                 ('2017-01-01T00:00:00Z', 'black3'),
-#                 ('2018-01-02T00:00:00Z', 'black3'))
-        for request_date, expected_date in tests:
-            req_url = self.snap_test_url_template.format(layer_name, request_date)
-        if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M'
-        for request_date, expected_date in tests:
-            req_url = self.snap_test_url_template.format(layer_name, request_date)
-            if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
-            response_date = test_snap_request(self.tile_hashes, req_url)
-            error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
-            self.assertEqual(expected_date, response_date, error)
-
-    def test_snapping_7c(self):
-        layer_name = 'snap_test_7c'
-        tests = (('2018-01-01T00:00:00Z', '2018-01-01T00:00:00Z'),
-                 ('2018-01-01T10:00:00Z', '2018-01-01T10:00:00Z'),
-                 ('2018-01-01T23:59:00Z', '2018-01-01T23:59:00Z'),
-                 ('2018-01-01T00:01:00Z', '2018-01-01T00:01:00Z'))
-# Commented out until GITC-795 is implemented
-#                 ('2018-01-01T00:01:00Z', '2018-01-01T00:01:00Z'),
-#                 ('2017-01-01T00:00:00Z', 'black3'),
-#                 ('2018-01-02T00:00:00Z', 'black3'))
-        for request_date, expected_date in tests:
-            req_url = self.snap_test_url_template.format(layer_name, request_date)
-        if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S'
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
