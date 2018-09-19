@@ -399,7 +399,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         source_postfix = MIME_TO_EXTENSION[mimetype]
         twms_config = bulk_replace(LAYER_MOD_TWMS_CONFIG_TEMPLATE, [('{size_x}', str(size_x)), ('{size_y}', str(size_y)), (
             '{tile_size_x}', str(tile_size_x)), ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)), ('{source_postfix}', source_postfix), ('{source_path}', source_path), ('{bbox}', bbox),
-            ('{skipped_levels}', '1' if 'EPSG4326' in tilematrixset else '0')])
+            ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
 
         layer_config_out['twms_config'] = {'path': Path(
             endpoint_path, 'twms', layer_id, 'twms.config'), 'contents': twms_config}
