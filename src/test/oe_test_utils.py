@@ -20,9 +20,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,7 +46,6 @@ import sqlite3
 import urllib2
 import StringIO
 import gzip
-import mapbox_vector_tile
 from lxml import etree
 import requests
 import sys
@@ -57,7 +56,9 @@ import asyncore
 # cElementTree deprecated in python 3.3
 from xml.etree import cElementTree as ElementTree
 
+
 class DebuggingServerThread(threading.Thread):
+
     def __init__(self, addr='localhost', port=1025):
         threading.Thread.__init__(self)
         self.server = smtpd.DebuggingServer((addr, port), None)
@@ -71,6 +72,7 @@ class DebuggingServerThread(threading.Thread):
 
 
 class XmlListConfig(list):
+
     def __init__(self, aList):
         for element in aList:
             if element:
@@ -101,6 +103,7 @@ class XmlDictConfig(dict):
 
     And then use xmldict for what it is... a dict.
     '''
+
     def __init__(self, parent_element):
         childrenNames = [child.tag for child in parent_element.getchildren()]
 
@@ -128,8 +131,9 @@ class XmlDictConfig(dict):
                         currentValue = self[element.tag]
                         currentValue.append(aDict)
                         self.update({element.tag: currentValue})
-                    except: #the first of its kind, an empty list must be created
-                        self.update({element.tag: [aDict]}) #aDict is written in [], i.e. it will be a list
+                    except:  # the first of its kind, an empty list must be created
+                        # aDict is written in [], i.e. it will be a list
+                        self.update({element.tag: [aDict]})
 
                 else:
                     self.update({element.tag: aDict})
@@ -139,7 +143,7 @@ class XmlDictConfig(dict):
             # currently doing XML configuration files...
             elif element.items():
                 self.update({element.tag: dict(element.items())})
-                #self[element.tag].update({"__Content__":element.text})
+                # self[element.tag].update({"__Content__":element.text})
             # finally, if there are no child tags and no attributes, extract
             # the text
             else:
@@ -148,8 +152,9 @@ class XmlDictConfig(dict):
                         currentValue = self[element.tag]
                         currentValue.append(element.text)
                         self.update({element.tag: currentValue})
-                    except: #the first of its kind, an empty list must be created
-                        self.update({element.tag: [element.text]}) # text is written in [], i.e. it will be a list
+                    except:  # the first of its kind, an empty list must be created
+                        # text is written in [], i.e. it will be a list
+                        self.update({element.tag: [element.text]})
 
                 #self.update({element.tag: element.text})
 
@@ -246,7 +251,8 @@ def add_trailing_slash(directory_path):
 
 
 def restart_apache():
-    apache = subprocess.Popen(['httpd', '-k', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    apache = subprocess.Popen(
+        ['httpd', '-k', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     # try:
     #     check_apache_running()
     #     if "el7" in platform.release():
@@ -257,9 +263,11 @@ def restart_apache():
     #     apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     (stdout, stderr) = apache.communicate()
     if stdout != None and len(stdout) != 0:
-        sys.stderr.write("\n=== STDOUT from restart_apache():\n%s\n===\n" % stdout.rstrip())
+        sys.stderr.write(
+            "\n=== STDOUT from restart_apache():\n%s\n===\n" % stdout.rstrip())
     if stderr != None and len(stderr) != 0:
-        sys.stderr.write("\n=== STDERR from restart_apache():\n%s\n===\n" % stderr.rstrip())
+        sys.stderr.write(
+            "\n=== STDERR from restart_apache():\n%s\n===\n" % stderr.rstrip())
     subprocess.call(['sleep', '3'])
 
 
@@ -267,10 +275,12 @@ def restart_redis():
     try:
         check_redis_running()
         if "el7" in platform.release():
-            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(),
+                             stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
             redis = subprocess.Popen(['redis-server'], close_fds=True)
         else:
-            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(),
+                             stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
             redis = subprocess.Popen(['redis-server'], close_fds=True)
     except ValueError:
         #redis = subprocess.Popen(['redis-server'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
@@ -293,7 +303,8 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
             will be ignored (defaults to False)
     """
     # print '\nRunning command: ' + cmd
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if wait:
         process.wait()
     if not ignore_warnings:
@@ -305,6 +316,7 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
         output_err.close
     return None
 
+
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
     """
     Runs the provided command on the terminal and prints any stderr output.
@@ -314,12 +326,12 @@ def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
             will be ignored (defaults to False)
     """
     # print '\nRunning command: ' + cmd
-    process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(shlex.split(
+        cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in process.communicate():
         if line:
             if show_output is True or 'error' in line.lower() or ignore_warnings and 'warning' in line.lower():
                 print line
-
 
 
 def find_string(file_path, string):
@@ -344,7 +356,8 @@ def search_for_strings(string_list, file_path):
     # If the line is found, it's removed from the search list.
     with open(file_path, "r") as file:
         for line in file:
-            line_result = next((string for string in string_list if string in line), None)
+            line_result = next(
+                (string for string in string_list if string in line), None)
             if line_result is not None:
                 string_list.remove(line_result)
     # Return True if search list has been emptied out (everything found)
@@ -387,7 +400,8 @@ def create_continuous_period_test_files(path, period_units, period_length, num_p
     """
     if not no_files:
         make_dir_tree(path)
-    # Keep track of each date so we can evaluate if a new year directory needs to be created.
+    # Keep track of each date so we can evaluate if a new year directory needs
+    # to be created.
     test_dates = []
     date = start_datetime
     year_dir = ''
@@ -398,19 +412,23 @@ def create_continuous_period_test_files(path, period_units, period_length, num_p
             subdaily = True
         else:
             subdaily = False
-        
+
         if not no_files:
             # Create year directory if requested
             if make_year_dirs and (not x or test_dates[-1].year != date.year):
                 year_dir = str(date.year)
                 make_dir_tree(os.path.join(path, year_dir))
 
-            # Assemble new filename and create file, using prototype if specified
+            # Assemble new filename and create file, using prototype if
+            # specified
             if subdaily is True:
-                time_string = str(date.hour).zfill(2) + str(date.minute).zfill(2) + str(date.second).zfill(2)
+                time_string = str(date.hour).zfill(
+                    2) + str(date.minute).zfill(2) + str(date.second).zfill(2)
             else:
                 time_string = ''
-            filename = prefix + str(date.year) + str(date.timetuple().tm_yday).zfill(3) + time_string + suffix
+            filename = prefix + \
+                str(date.year) + str(date.timetuple().tm_yday).zfill(3) + \
+                time_string + suffix
             output_path = os.path.join(path, year_dir)
             output_file = os.path.join(output_path, filename)
             if prototype_file:
@@ -445,19 +463,23 @@ def create_intermittent_period_test_files(path, period_units, period_length, num
     """
     if not no_files:
         make_dir_tree(path)
-    # Create a list of date intervals, each separated by the specified period length
+    # Create a list of date intervals, each separated by the specified period
+    # length
     test_dates = []
     year_dir = ''
     for x in range(num_periods):
         # Create a new start date and end date for each interval requested
         interval_set = []
         for y in range(1, 5):
-            date = start_datetime + relativedelta(**{period_units: period_length * y})
+            date = start_datetime + \
+                relativedelta(**{period_units: period_length * y})
             interval_set.append(date)
         test_dates.append(interval_set)
 
-        # Push the start time of the next interval to twice the period distance from the end of the last interval
-        start_datetime = interval_set[-1] + relativedelta(**{period_units: period_length * 2})
+        # Push the start time of the next interval to twice the period distance
+        # from the end of the last interval
+        start_datetime = interval_set[-1] + \
+            relativedelta(**{period_units: period_length * 2})
 
         if not no_files:
             if any(unit in period_units for unit in ('hours', 'minutes', 'seconds')):
@@ -465,16 +487,21 @@ def create_intermittent_period_test_files(path, period_units, period_length, num
             else:
                 subdaily = False
 
-            # If this is the first date or it has a different year than the previous, create that dir
+            # If this is the first date or it has a different year than the
+            # previous, create that dir
             if make_year_dirs and (not x or test_dates[-1][-1].year != date.year):
                 year_dir = str(date.year)
                 make_dir_tree(os.path.join(path, year_dir))
             for interval in interval_set:
                 if subdaily is True:
-                    time_string = str(interval.hour).zfill(2) + str(interval.minute).zfill(2) + str(interval.second).zfill(2)
+                    time_string = str(interval.hour).zfill(
+                        2) + str(interval.minute).zfill(2) + str(interval.second).zfill(2)
                 else:
                     time_string = ''
-                filename = prefix + str(interval.year) + str(interval.timetuple().tm_yday).zfill(3) + time_string + suffix
+                filename = prefix + \
+                    str(interval.year) + \
+                    str(interval.timetuple().tm_yday).zfill(
+                        3) + time_string + suffix
                 output_path = os.path.join(path, year_dir)
                 output_file = os.path.join(output_path, filename)
 
@@ -502,9 +529,10 @@ def read_zkey(zdb, sort):
         else:
             con = sqlite3.connect(zdb, timeout=60)  # 1 minute timeout
             cur = con.cursor()
-            
+
             # Check for existing key
-            cur.execute("SELECT key_str FROM ZINDEX ORDER BY key_str " + sort + " LIMIT 1;")
+            cur.execute(
+                "SELECT key_str FROM ZINDEX ORDER BY key_str " + sort + " LIMIT 1;")
             try:
                 key = cur.fetchone()[0]
             except:
@@ -512,7 +540,7 @@ def read_zkey(zdb, sort):
             if con:
                 con.close()
             return key
-        
+
     except sqlite3.Error, e:
         if con:
             con.rollback()
@@ -544,7 +572,8 @@ def get_layer_config(filepath, archive_config):
     try:
         with open(filepath, "r") as lc:
             config_dom = xml.dom.minidom.parse(lc)
-            env_config = config_dom.getElementsByTagName("EnvironmentConfig")[0].firstChild.nodeValue
+            env_config = config_dom.getElementsByTagName("EnvironmentConfig")[
+                0].firstChild.nodeValue
     except IOError:
         print "Cannot read file " + filepath
         return config
@@ -553,23 +582,32 @@ def get_layer_config(filepath, archive_config):
             archive_dom = xml.dom.minidom.parse(archive)
     except IOError:
         print "Cannot read file " + archive_config
-        return config 
+        return config
 
     # Get archive root path and the archive location
-    archive_root = config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value
-    config['archive_basepath'] = next(loc.getElementsByTagName('Location')[0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
-    config['archive_location'] = os.path.join(config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
+    archive_root = config_dom.getElementsByTagName(
+        'ArchiveLocation')[0].attributes['root'].value
+    config['archive_basepath'] = next(loc.getElementsByTagName('Location')[
+                                      0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
+    config['archive_location'] = os.path.join(
+        config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
 
     # Add everything we need from the layer config
-    config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
-    config['identifier'] = config_dom.getElementsByTagName("Identifier")[0].firstChild.nodeValue
-    config['time'] = config_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
-    config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[0].firstChild.nodeValue
+    config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[
+        0].firstChild.nodeValue
+    config['identifier'] = config_dom.getElementsByTagName("Identifier")[
+        0].firstChild.nodeValue
+    config['time'] = config_dom.getElementsByTagName(
+        "Time")[0].firstChild.nodeValue
+    config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[
+        0].firstChild.nodeValue
     config['colormaps'] = config_dom.getElementsByTagName("ColorMap")
     try:
-        config['empty_tile'] = config_dom.getElementsByTagName('EmptyTile')[0].firstChild.nodeValue
+        config['empty_tile'] = config_dom.getElementsByTagName('EmptyTile')[
+            0].firstChild.nodeValue
     except IndexError:
-        config['empty_tile_size'] = config_dom.getElementsByTagName('EmptyTileSize')[0].firstChild.nodeValue
+        config['empty_tile_size'] = config_dom.getElementsByTagName('EmptyTileSize')[
+            0].firstChild.nodeValue
     config['year_dir'] = False
     try:
         if config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['year'].value == 'true':
@@ -577,11 +615,13 @@ def get_layer_config(filepath, archive_config):
     except KeyError:
         pass
     try:
-        config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
-        config['vector_layer_contents'] = config_dom.getElementsByTagName('MapfileLayerContents')[0].firstChild.nodeValue
+        config['vector_type'] = config_dom.getElementsByTagName('VectorType')[
+            0].firstChild.nodeValue
+        config['vector_layer_contents'] = config_dom.getElementsByTagName(
+            'MapfileLayerContents')[0].firstChild.nodeValue
     except IndexError:
         pass
-    
+
     try:
         with open(env_config, "r") as env:
             env_dom = xml.dom.minidom.parse(env)
@@ -590,17 +630,27 @@ def get_layer_config(filepath, archive_config):
         return config
     # Add everything we need from the environment config
     staging_locations = env_dom.getElementsByTagName('StagingLocation')
-    config['wmts_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
-    config['twms_staging_location'] = next((loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
-    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("CacheLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
-    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName("GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
-    config['colormap_locations'] = [loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
-    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[0].firstChild.nodeValue
+    config['wmts_staging_location'] = next(
+        (loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "wmts"), None)
+    config['twms_staging_location'] = next(
+        (loc.firstChild.nodeValue for loc in staging_locations if loc.attributes["service"].value == "twms"), None)
+    config['cache_location'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName(
+        "CacheLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['wmts_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName(
+        "GetCapabilitiesLocation") if loc.attributes["service"].value == "wmts"), None)
+    config['twms_gc_path'] = next((loc.firstChild.nodeValue for loc in env_dom.getElementsByTagName(
+        "GetCapabilitiesLocation") if loc.attributes["service"].value == "twms"), None)
+    config['colormap_locations'] = [
+        loc for loc in env_dom.getElementsByTagName("ColorMapLocation")]
+    config['legend_location'] = env_dom.getElementsByTagName('LegendLocation')[
+        0].firstChild.nodeValue
     try:
-        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[0].firstChild.nodeValue
-        config['mapfile_location_basename'] = env_dom.getElementsByTagName('MapfileLocation')[0].attributes["basename"].value
-        config['mapfile_staging_location'] = env_dom.getElementsByTagName('MapfileStagingLocation')[0].firstChild.nodeValue
+        config['mapfile_location'] = env_dom.getElementsByTagName('MapfileLocation')[
+            0].firstChild.nodeValue
+        config['mapfile_location_basename'] = env_dom.getElementsByTagName(
+            'MapfileLocation')[0].attributes["basename"].value
+        config['mapfile_staging_location'] = env_dom.getElementsByTagName(
+            'MapfileStagingLocation')[0].firstChild.nodeValue
     except (IndexError, KeyError):
         pass
 
@@ -611,7 +661,8 @@ def get_time_string(start_datetime, end_datetime, config):
     """
     Returns a GetCapabilities date search string for the given start and end datetimes.
     """
-    # Use those dates to create the search string we're looking for in the GC file
+    # Use those dates to create the search string we're looking for in the GC
+    # file
     time_string = start_datetime.isoformat() + 'Z/' + end_datetime.isoformat() + 'Z'
 
     # Check if a period length is added to the 'Time' tag.
@@ -637,7 +688,8 @@ def make_dir_tree(path, ignore_existing=False):
     except OSError:
         if os.listdir(path):
             if not ignore_existing:
-                raise OSError("Target directory {0} is not empty.".format(path))
+                raise OSError(
+                    "Target directory {0} is not empty.".format(path))
             else:
                 pass
         else:
@@ -656,13 +708,15 @@ def setup_test_layer(test_file_path, cache_path, prefix):
     """
     make_dir_tree(os.path.join(cache_path, prefix))
 
-    # Copy MRF files to a new cache directory and the cache file to the root of the cache location
+    # Copy MRF files to a new cache directory and the cache file to the root
+    # of the cache location
     for file in os.listdir(test_file_path):
         if os.path.isfile(os.path.join(test_file_path, file)) and prefix in file:
             if any(ext for ext in ('.mrf', 'ppg', 'idx', '.pjg') if ext in file):
                 copy(os.path.join(test_file_path, file), cache_path)
             elif '_cache.config' in file:
-                copy(os.path.join(test_file_path, file), os.path.join(cache_path, 'cache_all_wmts.config'))
+                copy(os.path.join(test_file_path, file), os.path.join(
+                    cache_path, 'cache_all_wmts.config'))
 
     run_command('apachectl stop')
     run_command('apachectl start')
@@ -687,7 +741,8 @@ def check_apache_running():
     Checks to see if Apache is running on the test machine, bails if it's not.
     """
     # Greps for any running HTTPD processes
-    check = subprocess.Popen('ps -e | grep "httpd"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    check = subprocess.Popen('ps -e | grep "httpd"', shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if not check.stdout.read():
         raise ValueError('Apache does not appear to be running.')
     return True
@@ -698,13 +753,14 @@ def check_redis_running():
     Checks to see if redis is running on the test machine, bails if it's not.
     """
     # Greps for any running redis-server processes
-    check = subprocess.Popen('ps -e | grep "redis-server"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    check = subprocess.Popen('ps -e | grep "redis-server"',
+                             shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if not check.stdout.read():
         raise ValueError('Redis does not appear to be running.')
     return True
 
 
-def ordered_d(obj): 
+def ordered_d(obj):
     """
     Recursively sort any lists it finds (and convert dictionaries to lists of (key, value) pairs 
     """
@@ -723,7 +779,7 @@ def check_dicts(d, ref_d):
         d -- dict to compare
         ref_d -- reference dict being compared against
     """
-    if ordered_d(ref_d) == ordered_d(d) :
+    if ordered_d(ref_d) == ordered_d(d):
         return True
     else:
         return False
@@ -844,6 +900,7 @@ def check_valid_mvt(file, warn_if_empty=False):
     except IOError:
         return False
     try:
+        import mapbox_vector_tile
         tile = mapbox_vector_tile.decode(tile_data)
     except:
         return False
@@ -857,51 +914,71 @@ def check_valid_mvt(file, warn_if_empty=False):
 
 def test_wmts_error(test_obj, test_url, error_code_expected, exception_code_expected, locator_expected, exception_text_expected):
     r = requests.get(test_url)
-    test_obj.assertEqual(error_code_expected, r.status_code, msg='Unexpected error code -- should be {0}, is {1}'.format(error_code_expected, str(r.status_code)))
+    test_obj.assertEqual(error_code_expected, r.status_code,
+                         msg='Unexpected error code -- should be {0}, is {1}'.format(error_code_expected, str(r.status_code)))
     content_type = r.headers.get('content-type')
-    test_obj.assertEqual('text/xml', content_type, msg='Unexpected content type, should be {0}, is {1}'.format('text/xml', content_type))        
+    test_obj.assertEqual('text/xml', content_type,
+                         msg='Unexpected content type, should be {0}, is {1}'.format('text/xml', content_type))
     try:
         err_xml = etree.fromstring(r.content)
     except etree.XMLSyntaxError:
         test_obj.fail('Invalid XML returned for error message')
-    
+
     # Check root element attributes
     expected_namespace = '{http://www.opengis.net/ows/1.1}'
     root_element_expected_value = expected_namespace + 'ExceptionReport'
-    test_obj.assertEqual(root_element_expected_value, err_xml.tag, msg='Invalid root element or namespace, should be {0}, is {1}'.format(root_element_expected_value, err_xml.tag))
+    test_obj.assertEqual(root_element_expected_value, err_xml.tag,
+                         msg='Invalid root element or namespace, should be {0}, is {1}'.format(root_element_expected_value, err_xml.tag))
 
-    schema_location_found = err_xml.attrib.get('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation')
-    test_obj.assertIsNotNone(schema_location_found, msg='Missing schemaLocation attribute from ExceptionReport element')
+    schema_location_found = err_xml.attrib.get(
+        '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation')
+    test_obj.assertIsNotNone(
+        schema_location_found, msg='Missing schemaLocation attribute from ExceptionReport element')
     schema_location_expected = 'http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd'
-    test_obj.assertEqual(schema_location_expected, schema_location_found, msg='Invalid schemaLocation attribute for ExceptionReport element, should be {0}, is {1}'.format(schema_location_expected, schema_location_found))
-    
+    test_obj.assertEqual(schema_location_expected, schema_location_found,
+                         msg='Invalid schemaLocation attribute for ExceptionReport element, should be {0}, is {1}'.format(schema_location_expected, schema_location_found))
+
     version_found = err_xml.attrib.get('version')
-    test_obj.assertIsNotNone(version_found, msg='Missing version attribute for ExceptionReport element')
+    test_obj.assertIsNotNone(
+        version_found, msg='Missing version attribute for ExceptionReport element')
     version_expected = '1.1.0'
-    test_obj.assertEqual(version_expected, version_found, msg='Invalid version attribute for ExceptionReport element, should be {0}, is {1}'.format(version_expected, version_found))
-    
-    lang_found = err_xml.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
-    test_obj.assertIsNotNone(lang_found, msg='Missing xml:lang attribute from ExceptionReport element')
+    test_obj.assertEqual(version_expected, version_found,
+                         msg='Invalid version attribute for ExceptionReport element, should be {0}, is {1}'.format(version_expected, version_found))
+
+    lang_found = err_xml.attrib.get(
+        '{http://www.w3.org/XML/1998/namespace}lang')
+    test_obj.assertIsNotNone(
+        lang_found, msg='Missing xml:lang attribute from ExceptionReport element')
     lang_expected = 'en'
-    test_obj.assertEqual(lang_expected, lang_found, msg='Invalid xml:lang attribute for ExceptionReport element, should be {0}, is {1}'.format(lang_expected, lang_found))
-    
+    test_obj.assertEqual(lang_expected, lang_found,
+                         msg='Invalid xml:lang attribute for ExceptionReport element, should be {0}, is {1}'.format(lang_expected, lang_found))
+
     # Check <Exception> content
     exception_element = err_xml.find(expected_namespace + 'Exception')
-    test_obj.assertIsNotNone(exception_element, msg='Missing Exception element')
-    
+    test_obj.assertIsNotNone(
+        exception_element, msg='Missing Exception element')
+
     exception_code_found = exception_element.attrib.get('exceptionCode')
-    test_obj.assertIsNotNone(exception_code_found, msg='Mising exceptionCode attribute for Exception element')
-    test_obj.assertEqual(exception_code_expected, exception_code_found, msg='Invalid exceptionCode attribute for Exception element, should be {0}, is {1}'.format(exception_code_expected, exception_code_found))
+    test_obj.assertIsNotNone(
+        exception_code_found, msg='Mising exceptionCode attribute for Exception element')
+    test_obj.assertEqual(exception_code_expected, exception_code_found,
+                         msg='Invalid exceptionCode attribute for Exception element, should be {0}, is {1}'.format(exception_code_expected, exception_code_found))
 
     locator_found = exception_element.attrib.get('locator')
-    test_obj.assertIsNotNone(locator_found, msg='Mising locator attribute for Exception element')
+    test_obj.assertIsNotNone(
+        locator_found, msg='Mising locator attribute for Exception element')
     # locator_expected = 'LAYER'
-    test_obj.assertEqual(locator_expected, locator_found, msg='Invalid locator attribute for Exception element, should be {0}, is {1}'.format(locator_expected, locator_found))
+    test_obj.assertEqual(locator_expected, locator_found,
+                         msg='Invalid locator attribute for Exception element, should be {0}, is {1}'.format(locator_expected, locator_found))
 
     # Check <ExceptionText> content
-    exception_text_element = exception_element.find(expected_namespace + 'ExceptionText')
-    test_obj.assertIsNotNone(exception_text_element, msg='Missing ExceptionText element')
+    exception_text_element = exception_element.find(
+        expected_namespace + 'ExceptionText')
+    test_obj.assertIsNotNone(exception_text_element,
+                             msg='Missing ExceptionText element')
 
     exception_text_found = exception_text_element.text
-    test_obj.assertIsNotNone(exception_text_found, msg='Missing ExceptionText text content')
-    test_obj.assertEqual(exception_text_expected, exception_text_found, msg='Invalid text content for ExceptionText element, should be {0}, is {1}'.format(exception_text_expected, exception_text_found))
+    test_obj.assertIsNotNone(exception_text_found,
+                             msg='Missing ExceptionText text content')
+    test_obj.assertEqual(exception_text_expected, exception_text_found,
+                         msg='Invalid text content for ExceptionText element, should be {0}, is {1}'.format(exception_text_expected, exception_text_found))

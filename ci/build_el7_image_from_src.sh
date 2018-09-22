@@ -10,48 +10,44 @@ if [ -z "$TAG" ]; then
   exit 1
 fi
 
-rm -rf tmp && mkdir -p tmp
+rm -rf Dockerfile
 
 #DOCKER_UID=$(id -u)
 #DOCKER_GID=$(id -g)
 
-cat > tmp/Dockerfile <<EOS
+cat > Dockerfile <<EOS
 FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 
 #RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel chrpath gcc-c++ freetype-devel python-devel sqlite-devel cmake turbojpeg-devel libyaml-devel
-RUN yum install -y epel-release lua-devel jansson-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel
+RUN yum install -y epel-release lua-devel jansson-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel python-devel
 
 #RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
 RUN yum install -y luarocks
 RUN yum install -y redis
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum install -y python36u python36u-pip python36u-devel
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm"
 
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
 RUN pip3.6 install lxml
 
-#RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
-#RUN yum install -y agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
-
 RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN pip install apacheconfig
 
+# Install GDAL 2
+WORKDIR /tmp
+RUN wget http://download.osgeo.org/gdal/2.2.3/gdal-2.2.3.tar.gz
+RUN tar xzf gdal-2.2.3.tar.gz
+WORKDIR gdal-2.2.3
+RUN ./configure
+RUN make && make install
+
 RUN mkdir -p /home/oe2
-#RUN mkdir -p /var/www
-
-# Clone OnEarth repo
 WORKDIR /home/oe2
-RUN git clone https://github.com/nasa-gibs/onearth.git
-WORKDIR /home/oe2/onearth
-RUN git checkout 2.1.1
-
-#chown -R root:root /home/oe2
+COPY ./ /home/oe2/onearth/
 
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
@@ -81,9 +77,9 @@ RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
 
 # Install APR patch
 WORKDIR /tmp
-RUN wget http://apache.osuosl.org//apr/apr-1.6.3.tar.gz
-RUN tar xf apr-1.6.3.tar.gz
-WORKDIR /tmp/apr-1.6.3
+RUN wget http://apache.osuosl.org//apr/apr-1.6.5.tar.gz
+RUN tar xf apr-1.6.5.tar.gz
+WORKDIR /tmp/apr-1.6.5
 RUN patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
 RUN ./configure --prefix=/lib64
 RUN make && make install
@@ -183,8 +179,8 @@ CMD sh start_ci2.sh
 EOS
 
 docker build \
-  --no-cache \
   --tag "$TAG" \
-  tmp
+  --no-cache \
+  ./
 
-rm tmp/Dockerfile
+rm Dockerfile

@@ -219,6 +219,12 @@ function onearth.date_snapper (layer_handler_options, filename_options)
 
         -- Find snap date if date request is valid
         local snap_date
+        if not layer_datetime_info[layer_name] then
+            local out_msg = {
+                err_msg = "Invalid Layer"
+            }
+            return send_response(200, JSON:encode(out_msg))
+        end
         for _, period in ipairs(layer_datetime_info[layer_name].periods) do
             local parsed_period = split("/", period)
             local start_date = date_util(parsed_period[1])
