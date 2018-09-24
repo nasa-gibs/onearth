@@ -88,7 +88,7 @@ from overtiffpacker import pack
 from decimal import *
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
-versionNumber = '2.1.1'
+versionNumber = '2.2.0'
 oe_utils.basename = None
 
 #-------------------------------------------------------------------------------
