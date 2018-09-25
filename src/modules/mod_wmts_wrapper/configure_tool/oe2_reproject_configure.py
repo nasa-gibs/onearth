@@ -370,8 +370,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
                 layer_config['reproj_tile_size_x'])),
             ('{tile_size_y}', str(
                 layer_config['reproj_tile_size_y'])),
-            ('{skipped_levels}', '1' if layer_config[
-             'projection'] == 'EPSG:4326' else '0'),
+            ('{skipped_levels}', '0'),
             ('{bbox}', ','.join(map(str, layer_config[
              'reproj_bbox']))),
             ('{endpoint_path}', '/oe2-wmts-endpoint'),
