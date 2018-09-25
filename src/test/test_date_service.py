@@ -78,17 +78,25 @@ def redis_running():
         return False
 
 
-def seed_redis_data(layers):
-    for layer in layers:
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        r.set('layer:{0}:default'.format(layer[0]), layer[1])
-        r.sadd('layer:{0}:periods'.format(layer[0]), layer[2])
-
-
-def remove_redis_layer(layer):
+def seed_redis_data(layers, db_keys=None):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    r.delete('layer:{0}:default'.format(layer[0]))
-    r.delete('layer:{0}:periods'.format(layer[0]))
+    db_keystring = ''
+    if db_keys:
+        for key in db_keys:
+            db_keystring += key + ':'
+    for layer in layers:
+        r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
+        r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]), layer[2])
+
+
+def remove_redis_layer(layer, db_keys=None):
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    db_keystring = ''
+    if db_keys:
+        for key in db_keys:
+            db_keystring += key + ':'
+    r.delete('{0}layer:{1}:default'.format(db_keystring, layer[0]))
+    r.delete('{0}layer:{1}:periods'.format(db_keystring, layer[0]))
 
 
 class TestDateService(unittest.TestCase):
@@ -349,6 +357,54 @@ class TestDateService(unittest.TestCase):
             expected_err = 'Date out of range'
             self.assertEqual(err_msg, expected_err,
                              'Incorrect error message bad date format: was {0}, should be {1}'.format(err_msg, expected_err))
+
+    def test_single_db_keys(self):
+        test_layers = [
+            ('test1_year_snap', '2012-01-01', '2012-01-01/2016-01-01/P1Y',
+             '2013-06-06', '2013-01-01T00:00:00Z'),
+            ('test2_year_snap', '2000-01-01', '2000-01-01/2010-01-01/P5Y',
+             '2006-05-05', '2005-01-01T00:00:00Z')
+        ]
+
+        db_keys = ['test_db_key_1', 'test_db_key_2']
+
+        for key in db_keys:
+            seed_redis_data(test_layers, db_keys=[key])
+            # Test data
+            for test_layer in test_layers:
+                r = requests.get(
+                    self.date_service_url + 'layer={0}&datetime={1}&key1={2}'.format(test_layer[0], test_layer[3], key))
+                res = r.json()
+                returned_date = res['date']
+                if not DEBUG:
+                    remove_redis_layer(test_layer, db_keys=[key])
+                self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for with key {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
+                    key, test_layer[3], returned_date, test_layer[4]))
+
+    def test_multiple_db_keys(self):
+        test_layers = [
+            ('test1_year_snap', '2012-01-01', '2012-01-01/2016-01-01/P1Y',
+             '2013-06-06', '2013-01-01T00:00:00Z'),
+            ('test2_year_snap', '2000-01-01', '2000-01-01/2010-01-01/P5Y',
+             '2006-05-05', '2005-01-01T00:00:00Z')
+        ]
+
+        db_keys = ['test_db_key_1', 'test_db_key_2',
+                   'test_db_key_3', 'test_db_key_4', 'test_db_key_5']
+
+        seed_redis_data(test_layers, db_keys=db_keys)
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(
+                self.date_service_url +
+                'layer={0}&datetime={1}&key1={2}&key2={3}&key3={4}&key4={5}&key5={6}'
+                .format(test_layer[0], test_layer[3], db_keys[0], db_keys[1], db_keys[2], db_keys[3], db_keys[4]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer, db_key=db_keys)
+            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for with keys {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
+                db_keys, test_layer[3], returned_date, test_layer[4]))
 
     @classmethod
     def tearDownClass(self):
