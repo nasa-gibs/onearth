@@ -48,7 +48,6 @@ from xml.etree import cElementTree as ElementTree
 import urllib2
 from oe_test_utils import check_tile_request, restart_apache, restart_redis, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt, copytree_x
 import filecmp
-import apacheconfig
 
 DEBUG = False
 
@@ -71,17 +70,20 @@ class TestLayerConfig(unittest.TestCase):
         # Set up date_service config
         file_text_replace(date_config, os.path.join('/etc/httpd/conf.d', os.path.basename(date_config)), '{nonexistant_path}', dateservice_path)
 
-        self.staging_area = os.path.join(os.getcwd(), 'layer_config_test_data')
+        self.endpoint = os.path.join(self.testdata_path, 'layer_config_endpoint')
+        self.reproject_endpoint = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint')
         self.config_endpoint_area = os.path.realpath('/etc/onearth/config/endpoint')
         self.config_layers_area = os.path.realpath('/etc/onearth/config/layers')
 
         # Make dirs for layer config
-        make_dir_tree(self.staging_area)
+        make_dir_tree(self.endpoint)
+        make_dir_tree(self.reproject_endpoint)
 #        make_dir_tree(self.config_endpoint_area)
 #        make_dir_tree(self.config_layers_area)
 
         copytree_x(os.path.join(self.testdata_path, 'configs/endpoint'), self.config_endpoint_area, exist_ok=True)
         copytree_x(os.path.join(self.testdata_path, 'configs/layers'), self.config_layers_area, exist_ok=True)
+
 
         # Create GC Service with lua
         if DEBUG:
@@ -185,18 +187,6 @@ class TestLayerConfig(unittest.TestCase):
         run_command('redis-cli -n 0 SET layer:snap_test_6c:default "2018-01-01T00:00:00Z"')
         run_command('redis-cli -n 0 SADD layer:snap_test_6c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_7a')
-        run_command('redis-cli -n 0 SET layer:snap_test_7a:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7a:periods "2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_7b')
-        run_command('redis-cli -n 0 SET layer:snap_test_7b:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7b:periods "2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_7c')
-        run_command('redis-cli -n 0 SET layer:snap_test_7c:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_7c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
-
         run_command('redis-cli -n 0 DEL layer:snap_test_year_boundary')
         run_command('redis-cli -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"')
         run_command('redis-cli -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"')
@@ -298,7 +288,7 @@ class TestLayerConfig(unittest.TestCase):
             xml_check = False
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_endpoint/baseline/GetCapabilities.1.0.0.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_baseline/GetCapabilities.1.0.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -323,7 +313,7 @@ class TestLayerConfig(unittest.TestCase):
             xml_check = False
         self.assertTrue(xml_check, 'Reproject GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_reproject_endpoint/baseline/GetCapabilities.1.0.0.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_reproject_baseline/GetCapabilities.1.0.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -352,7 +342,7 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
 #        ElementTree.ElementTree(XMLroot).write("temp1.xml", xml_declaration=True, encoding='utf-8')
         #refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/mrf_endpoint/1.0.0/WMTSCapabilities.xml'))
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_endpoint/baseline/GetCapabilities.1.0.0.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_baseline/GetCapabilities.1.0.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -366,8 +356,8 @@ class TestLayerConfig(unittest.TestCase):
 
         # Request reproject WMTS (REST) GetCapabilities
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        #req_url = 'http://localhost/layer_config_endpoint/1.0.0/WMTSCapabilities.xml'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/1.0.0/GetCapabilities.xml'
+        #req_url = 'http:/localhost/layer_config_endpoint/1.0.0/WMTSCapabilities.xml'
+        req_url = 'http:/localhost/layer_config_reproject_endpoint/1.0.0/GetCapabilities.xml'
         if DEBUG:
             print '\nTesting Reproject WMTS (REST) GetCapablities'
             print 'URL: ' + req_url
@@ -383,7 +373,7 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue(xml_check, 'Reproject GetCapabilities response is not a valid XML file. URL: ' + req_url)
 
         #refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/mrf_endpoint/1.0.0/WMTSCapabilities.xml'))
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_reproject_endpoint/baseline/GetCapabilities.1.0.0.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'ci_tests/layer_config_reproject_baseline/GetCapabilities.1.0.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -400,10 +390,10 @@ class TestLayerConfig(unittest.TestCase):
 
         # Verify auto generated files
         layer_config = os.path.join(self.testdata_path, 'layer_config_endpoint/test_daily_png/default/16km/mod_mrf.config')
-        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/test_daily_png/mod_mrf.config'), False)
+        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/test_daily_png/default/16km/mod_mrf.config'), False)
         self.assertTrue(cmp_result, 'Generated layer config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_daily_png/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/twms/test_daily_png/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_daily_png/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_layer_legacy_subdaily_jpg(self):
@@ -416,10 +406,10 @@ class TestLayerConfig(unittest.TestCase):
 
         # Verify auto generated files
         layer_config = os.path.join(self.testdata_path, 'layer_config_endpoint/test_legacy_subdaily_jpg/default/16km/mod_mrf.config')
-        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/test_legacy_subdaily_jpg/mod_mrf.config'), False)
+        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/test_legacy_subdaily_jpg/default/16km/mod_mrf.config'), False)
         self.assertTrue(cmp_result, 'Generated layer config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_legacy_subdaily_jpg/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/twms/test_legacy_subdaily_jpg/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_legacy_subdaily_jpg/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_layer_static_jpg(self):
@@ -432,10 +422,10 @@ class TestLayerConfig(unittest.TestCase):
 
         # Verify auto generated files
         layer_config = os.path.join(self.testdata_path, 'layer_config_endpoint/test_static_jpg/default/16km/mod_mrf.config')
-        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/test_static_jpg/mod_mrf.config'), False)
+        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/test_static_jpg/default/16km/mod_mrf.config'), False)
         self.assertTrue(cmp_result, 'Generated layer config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_static_jpg/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/twms/test_static_jpg/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_static_jpg/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_layer_versioned_colormaps(self):
@@ -448,10 +438,10 @@ class TestLayerConfig(unittest.TestCase):
 
         # Verify auto generated files
         layer_config = os.path.join(self.testdata_path, 'layer_config_endpoint/test_versioned_colormaps/default/2km/mod_mrf.config')
-        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/test_versioned_colormaps/mod_mrf.config'), False)
+        cmp_result = filecmp.cmp(layer_config, os.path.join(self.testdata_path, 'layer_config_endpoint/test_versioned_colormaps/default/2km/mod_mrf.config'), False)
         self.assertTrue(cmp_result, 'Generated layer config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_versioned_colormaps/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/twms/test_versioned_colormaps/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_endpoint/twms/test_versioned_colormaps/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_reproject_layer_daily_png(self):
@@ -465,12 +455,12 @@ class TestLayerConfig(unittest.TestCase):
         # Verify auto generated files
         source_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/source.config')
         reproject_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/reproject.config')
-        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_daily_png/source.config'), False)
+        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/source.config'), False)
         self.assertTrue(cmp_result, 'Generated source config does not match what\'s expected.')
-        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_daily_png/reproject.config'), False)
+        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/reproject.config'), False)
         self.assertTrue(cmp_result, 'Generated reproject config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_daily_png/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/twms/test_daily_png/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_daily_png/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_reproject_layer_legacy_subdaily_jpg(self):
@@ -484,12 +474,12 @@ class TestLayerConfig(unittest.TestCase):
         # Verify auto generated files
         source_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/source.config')
         reproject_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/reproject.config')
-        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_legacy_subdaily_jpg/source.config'), False)
+        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/source.config'), False)
         self.assertTrue(cmp_result, 'Generated source config does not match what\'s expected.')
-        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_legacy_subdaily_jpg/reproject.config'), False)
+        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/reproject.config'), False)
         self.assertTrue(cmp_result, 'Generated reproject config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_legacy_subdaily_jpg/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/twms/test_legacy_subdaily_jpg/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_legacy_subdaily_jpg/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_reproject_layer_static_jpg(self):
@@ -503,12 +493,12 @@ class TestLayerConfig(unittest.TestCase):
         # Verify auto generated files
         source_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/source.config')
         reproject_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/reproject.config')
-        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_static_jpg/source.config'), False)
+        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/source.config'), False)
         self.assertTrue(cmp_result, 'Generated source config does not match what\'s expected.')
-        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_static_jpg/reproject.config'), False)
+        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/reproject.config'), False)
         self.assertTrue(cmp_result, 'Generated reproject config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_static_jpg/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/twms/test_static_jpg/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_static_jpg/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_reproject_layer_versioned_colormaps(self):
@@ -522,12 +512,12 @@ class TestLayerConfig(unittest.TestCase):
         # Verify auto generated files
         source_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_versioned_colormaps/default/GoogleMapsCompatible_Level6/source.config')
         reproject_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_versioned_colormaps/default/GoogleMapsCompatible_Level6/reproject.config')
-        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_versioned_colormaps/source.config'), False)
+        cmp_result = filecmp.cmp(source_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_versioned_colormaps/default/GoogleMapsCompatible_Level6/source.config'), False)
         self.assertTrue(cmp_result, 'Generated source config does not match what\'s expected.')
-        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/test_versioned_colormaps/reproject.config'), False)
+        cmp_result = filecmp.cmp(reproject_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/test_versioned_colormaps/default/GoogleMapsCompatible_Level6/reproject.config'), False)
         self.assertTrue(cmp_result, 'Generated reproject config does not match what\'s expected.')
         layer_twms_config = os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_versioned_colormaps/twms.config')
-        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/twms/test_versioned_colormaps/twms.config'), False)
+        cmp_result = filecmp.cmp(layer_twms_config, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/twms/test_versioned_colormaps/twms.config'), False)
         self.assertTrue(cmp_result, 'Generated TWMS layer config does not match what\'s expected.')
 
     def test_apache_conf(self):
@@ -541,40 +531,17 @@ class TestLayerConfig(unittest.TestCase):
         # Verify auto generated conf files
         layer_gc_conf = '/etc/httpd/conf.d/oe2_layer_config_gc.conf'
         layer_conf = '/etc/httpd/conf.d/oe2_layer_config.conf'
-#        cmp_result = filecmp.cmp(layer_gc_conf, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config_gc.conf'), False)
-#        self.assertTrue(cmp_result, 'Generated layer config GC conf does not match what\'s expected.')
-
-#        cmp_result = filecmp.cmp(layer_conf, os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config.conf'), False)
-#        self.assertTrue(cmp_result, 'Generated layer config conf does not match what\'s expected.')
+        cmp_result = filecmp.cmp(layer_gc_conf, os.path.join(self.testdata_path, 'layer_config_baseline/oe2_layer_config_gc.conf'), False)
+        self.assertTrue(cmp_result, 'Generated layer config GC conf does not match what\'s expected.')
+        cmp_result = filecmp.cmp(layer_conf, os.path.join(self.testdata_path, 'layer_config_baseline/oe2_layer_config.conf'), False)
+        self.assertTrue(cmp_result, 'Generated layer config conf does not match what\'s expected.')
 
         layer_reproject_gc_conf = '/etc/httpd/conf.d/oe2_layer_config_reproject_gc.conf'
         layer_reproject_conf = '/etc/httpd/conf.d/oe2_layer_config_reproject.conf'
-#        cmp_result = filecmp.cmp(layer_reproject_gc_conf, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject_gc.conf'), False)
-#        self.assertTrue(cmp_result, 'Generated reproject layer config GC conf does not match what\'s expected.')
-#        cmp_result = filecmp.cmp(layer_reproject_conf, os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject.conf'), False)
-#        self.assertTrue(cmp_result, 'Generated reproject layer config conf does not match what\'s expected.')
-
-        with apacheconfig.make_loader() as loader:
-            gc_config = loader.load(layer_gc_conf)
-            config = loader.load(layer_conf)
-            reproject_gc_config = loader.load(layer_reproject_gc_conf)
-            reproject_config = loader.load(layer_reproject_conf)
-            gc_base = loader.load(os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config_gc.conf'))
-            base = loader.load(os.path.join(self.testdata_path, 'layer_config_endpoint/baseline/oe2_layer_config.conf'))
-            reproject_gc_base = loader.load(os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject_gc.conf'))
-            reproject_base = loader.load(os.path.join(self.testdata_path, 'layer_config_reproject_endpoint/baseline/oe2_layer_config_reproject.conf'))
-        
-        check_result = check_dicts(gc_config, gc_base)
-        self.assertTrue(check_result, 'Generated layer config GC conf does not match what\'s expected.')
-
-        check_result = check_dicts(config, base)
-        self.assertTrue(check_result, 'Generated layer config conf does not match what\'s expected.')
-
-        check_result = check_dicts(reproject_gc_config, reproject_gc_base)
-        self.assertTrue(check_result, 'Generated layer config reproject GC conf does not match what\'s expected.')
-
-        check_result = check_dicts(reproject_config, reproject_base)
-        self.assertTrue(check_result, 'Generated layer config reproject conf does not match what\'s expected.')
+        cmp_result = filecmp.cmp(layer_reproject_gc_conf, os.path.join(self.testdata_path, 'layer_config_reproject_baseline/oe2_layer_config_reproject_gc.conf'), False)
+        self.assertTrue(cmp_result, 'Generated reproject layer config GC conf does not match what\'s expected.')
+        cmp_result = filecmp.cmp(layer_reproject_conf, os.path.join(self.testdata_path, 'layer_config_reproject_baseline/oe2_layer_config_reproject.conf'), False)
+        self.assertTrue(cmp_result, 'Generated reproject layer config conf does not match what\'s expected.')
 
     # TEARDOWN
 
@@ -586,7 +553,8 @@ class TestLayerConfig(unittest.TestCase):
         os.remove(os.path.join('/etc/httpd/conf.d/' + 'oe2_layer_config.conf'))
         os.remove(os.path.join('/etc/httpd/conf.d/' + 'oe2_layer_config_reproject_gc.conf'))
         os.remove(os.path.join('/etc/httpd/conf.d/' + 'oe2_layer_config_reproject.conf'))
-        rmtree(self.staging_area)
+        rmtree(self.endpoint)
+        rmtree(self.reproject_endpoint)
         rmtree(self.config_endpoint_area)
         rmtree(self.config_layers_area)
         restart_apache()

@@ -63,11 +63,11 @@ class TestModReproject(unittest.TestCase):
 #        self.image_files_path = os.path.join(testdata_path, 'test_imagery')
 
         # Make dir for layer config
-        layer_config_path = os.path.join(testdata_path, 'layer_config_endpoint')
-        copytree_x(os.path.join(testdata_path, 'layer_config_endpoint/baseline'), layer_config_path, exist_ok=True)
+        self.layer_config_path = os.path.join(testdata_path, 'layer_config_endpoint')
+        copytree_x(os.path.join(testdata_path, 'layer_config_baseline'), self.layer_config_path, exist_ok=True)
 
-        self.test_apache_gc_config = os.path.join(testdata_path, 'layer_config_endpoint/oe2_layer_config_gc.conf')
-        self.test_apache_config = os.path.join(testdata_path, 'layer_config_endpoint/oe2_layer_config.conf')
+        self.test_apache_gc_config = os.path.join(testdata_path, 'layer_config_baseline/oe2_layer_config_gc.conf')
+        self.test_apache_config = os.path.join(testdata_path, 'layer_config_baseline/oe2_layer_config.conf')
         dateservice_path = os.path.join(testdata_path, 'date_service')
         date_config = os.path.join(dateservice_path, 'oe2_test_date_service.conf')
 
@@ -166,11 +166,11 @@ class TestModReproject(unittest.TestCase):
         run_command('redis-cli -n 0 SAVE')
 
         # Make dir for layer config reproject
-        layer_config_reproject_path = os.path.join(testdata_path, 'layer_config_reproject_endpoint')
-        copytree_x(os.path.join(testdata_path, 'layer_config_reproject_endpoint/baseline'), layer_config_reproject_path, exist_ok=True)
+        self.layer_config_reproject_path = os.path.join(testdata_path, 'layer_config_reproject_endpoint')
+        copytree_x(os.path.join(testdata_path, 'layer_config_reproject_baseline'), self.layer_config_reproject_path, exist_ok=True)
 
-        self.test_reproject_gc_config = os.path.join(testdata_path, 'layer_config_reproject_endpoint/oe2_layer_config_reproject_gc.conf')
-        self.test_reproject_config = os.path.join(testdata_path, 'layer_config_reproject_endpoint/oe2_layer_config_reproject.conf')
+        self.test_reproject_gc_config = os.path.join(testdata_path, 'layer_config_reproject_baseline/oe2_layer_config_reproject_gc.conf')
+        self.test_reproject_config = os.path.join(testdata_path, 'layer_config_reproject_baseline/oe2_layer_config_reproject.conf')
 
         # Set up the reproject GC config (oe2_layer_config_reproject_gc.conf)
         file_text_replace(self.test_reproject_gc_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_reproject_gc_config)), '{nonexistant_path}', testdata_path)
@@ -1283,6 +1283,8 @@ class TestModReproject(unittest.TestCase):
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_reproject_gc_config)))
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_reproject_config)))
+        rmtree(self.layer_config_path)
+        rmtree(self.layer_config_reproject_path)
         restart_apache()
 
 

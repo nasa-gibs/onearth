@@ -63,11 +63,11 @@ class TestModTwms(unittest.TestCase):
 #        self.image_files_path = os.path.join(testdata_path, 'test_imagery')
 
         # Make dir for layer config
-        layer_config_path = os.path.join(testdata_path, 'layer_config_endpoint')
-        copytree_x(os.path.join(testdata_path, 'layer_config_endpoint/baseline'), layer_config_path, exist_ok=True)
+        self.layer_config_path = os.path.join(testdata_path, 'layer_config_endpoint')
+        copytree_x(os.path.join(testdata_path, 'layer_config_baseline'), self.layer_config_path, exist_ok=True)
 
-        self.test_apache_gc_config = os.path.join(testdata_path, 'layer_config_endpoint/oe2_layer_config_gc.conf')
-        self.test_apache_config = os.path.join(testdata_path, 'layer_config_endpoint/oe2_layer_config.conf')
+        self.test_apache_gc_config = os.path.join(testdata_path, 'layer_config_baseline/oe2_layer_config_gc.conf')
+        self.test_apache_config = os.path.join(testdata_path, 'layer_config_baseline/oe2_layer_config.conf')
         dateservice_path = os.path.join(testdata_path, 'date_service')
         date_config = os.path.join(dateservice_path, 'oe2_test_date_service.conf')
         
@@ -166,7 +166,7 @@ class TestModTwms(unittest.TestCase):
         run_command('redis-cli -n 0 SAVE')
 
         # Set some handy constant values
-        self.tile_hashes = {'aeec77fbba62d53d539da0851e4b9324': '1948-03-01',
+        self.tile_hashes = {'3d5280b13cbabc41676973d26844f310': '1948-03-01',
                             '40d78f32acdfd866a8b0faad24fda69b': '1990-01-01',
                             'd5ae95bd567813c3e431b55de12f5d3e': '2000-01-01',
                             '57ef9f162328774860ef0e8506a77ebe': '2000-06-01',
@@ -195,7 +195,7 @@ class TestModTwms(unittest.TestCase):
                             'a47002642da81c038bfb37e7de1dc561': '2010-12-01',
                             'a363f215b5f33e5e2990298c329ab8b3': '2011-12-01',
                             'bbfaad71b35dc42b7ea462de75b7308e': '2012-03-11',
-                            '170b8cce84c29664e62f732f00942619': '2015-01-01',
+                            '1964f5637ba11f738a431e0764ed472b': '2015-01-01',
                             'aad46b0afac105b93b00fc95c95c7c30': '2015-01-02',
                             '51f485fa236d8b26a1d7c81a9ffc9d4f': '2015-10-01',
                             '91f3e175621955796245d2d0a6589aad': '2016-02-29',
@@ -869,6 +869,7 @@ class TestModTwms(unittest.TestCase):
         # Delete Apache test config
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_gc_config)))
         os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
+        rmtree(self.layer_config_path)
         restart_apache()
 
 if __name__ == '__main__':
