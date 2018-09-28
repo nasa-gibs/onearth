@@ -28,6 +28,8 @@ RUN yum install -y luarocks
 RUN yum install -y redis
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum install -y python36u python36u-pip python36u-devel
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm
 
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
@@ -38,12 +40,12 @@ RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml
 RUN pip install apacheconfig
 
 # Install GDAL 2
-WORKDIR /tmp
-RUN wget http://download.osgeo.org/gdal/2.2.3/gdal-2.2.3.tar.gz
-RUN tar xzf gdal-2.2.3.tar.gz
-WORKDIR gdal-2.2.3
-RUN ./configure
-RUN make && make install
+# WORKDIR /tmp
+# RUN wget http://download.osgeo.org/gdal/2.3.2/gdal-2.3.2.tar.gz
+# RUN tar xzf gdal-2.3.2.tar.gz
+# WORKDIR gdal-2.3.2
+# RUN ./configure
+# RUN make && make install
 
 RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
