@@ -402,7 +402,7 @@ class TestDateService(unittest.TestCase):
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
-                remove_redis_layer(test_layer, db_key=db_keys)
+                remove_redis_layer(test_layer, db_keys=db_keys)
             self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for with keys {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
                 db_keys, test_layer[3], returned_date, test_layer[4]))
 
