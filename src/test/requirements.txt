@@ -3,6 +3,5 @@ unittest-xml-reporting==1.14.0
 mapbox_vector_tile
 fiona
 requests
-gdal==2.2.3
 redis
 requests
