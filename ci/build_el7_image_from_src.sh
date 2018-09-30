@@ -33,10 +33,21 @@ RUN pip3.6 install requests
 RUN pip3.6 install pyaml
 RUN pip3.6 install lxml
 
-RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg turbojpeg-devel agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
+RUN yum install -y libcurl-devel mod_proxy mod_ssl python-pip sqlite libxml2 turbojpeg turbojpeg-devel agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN pip install apacheconfig
 RUN pip install numpy==1.10.4
+
+# Install vectorgen dependencies
+RUN yum install -y libxml2-devel libxslt-devel chrpath
+WORKDIR /tmp
+RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz
+WORKDIR /tmp/spatialindex-src-1.8.5
+RUN ./configure --libdir=/usr/lib64
+RUN make && make install
+RUN ldconfig
+RUN pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 # Install GDAL 2
 # WORKDIR /tmp
@@ -170,6 +181,8 @@ RUN install -m 755 src/scripts/wmts2twmsbox.py -D /usr/bin/wmts2twmsbox.py
 RUN install -m 755 src/colormaps/bin/colorMaptoHTML.py -D /usr/bin/colorMaptoHTML.py
 RUN install -m 755 src/colormaps/bin/colorMaptoSLD.py -D /usr/bin/colorMaptoSLD.py
 RUN install -m 755 src/colormaps/bin/SLDtoColorMap.py -D /usr/bin/SLDtoColorMap.py
+RUN install -m 755 src/vectorgen/oe_vectorgen.py -D /usr/bin/oe_vectorgen
+RUN install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf

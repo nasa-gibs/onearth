@@ -1,7 +1,5 @@
 unittest2
 unittest-xml-reporting==1.14.0
-mapbox_vector_tile
-fiona
 requests
 redis
 requests
