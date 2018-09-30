@@ -20,22 +20,20 @@ FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 
-#RUN yum install -y epel-release lua-devel jansson-devel httpd-devel libpng-devel libjpeg-devel pcre-devel chrpath gcc-c++ freetype-devel python-devel sqlite-devel cmake turbojpeg-devel libyaml-devel
 RUN yum install -y epel-release lua-devel jansson-devel libpng-devel libjpeg-devel pcre-devel mod_proxy mod_ssl wget openssl-devel libyaml-devel python-devel
-
-#RUN yum install -y luarocks redis libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg
 RUN yum install -y luarocks
 RUN yum install -y redis
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum install -y python36u python36u-pip python36u-devel
 RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm"
 RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm"
+RUN yum install -y ImageMagick
 
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
 RUN pip3.6 install lxml
 
-RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
+RUN yum install -y libcurl-devel mod_proxy mod_ssl wget python-pip sqlite libxml2 turbojpeg turbojpeg-devel agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN pip install apacheconfig
 RUN pip install numpy==1.10.4
@@ -144,6 +142,10 @@ RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 
+# Build RGBApng2Palpng
+WORKDIR /home/oe2/onearth/src/mrfgen
+RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
+
 # Install OnEarth utilties, etc.
 WORKDIR /home/oe2/onearth/
 #RUN install -m 755 -d /usr/lib64/httpd/bin
@@ -155,7 +157,7 @@ RUN install -m 755 src/generate_legend/oe_generate_legend.py -D /usr/bin/oe_gene
 RUN install -m 755 src/mrfgen/mrfgen.py -D /usr/bin/mrfgen
 RUN install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py
 RUN install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py
-#RUN install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng
+RUN install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng
 RUN install -m 755 src/mrfgen/oe_validate_palette.py -D /usr/bin/oe_validate_palette.py
 RUN install -m 755 src/scripts/oe_utils.py -D /usr/bin/oe_utils.py
 #RUN install -m 755 src/scripts/oe_configure_reproject_layer.py -D /usr/bin/oe_configure_reproject_layer.py
