@@ -102,6 +102,8 @@ mrf_size = ""
 for line in mrf_lines:
     if "<Compression>JPEG</Compression>" in line:
         mrf_type = "JPEG"
+    if "<Compression>MVT</Compression>" in line or "<Compression>PBF</Compression>" in line:
+        mrf_type = "MVT"
     if "<Size" in line:
         mrf_size = line
 
@@ -121,6 +123,8 @@ mrf.close()
 index = input.replace(".mrf",".idx")
 if mrf_type == "JPEG":
     datafile = input.replace(".mrf",".pjg")
+elif mrf_type == "MVT":
+    datafile = input.replace(".mrf",".pvt")
 else:
     datafile = input.replace(".mrf",".ppg")
 
