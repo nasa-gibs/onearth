@@ -953,7 +953,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             validation_info = ''
             if not static:
                 default_datetime = dest_dim_elem.findtext('{*}Default')
-                dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', dest_dim_elem.findtext("{*}Value")),
+                period_str = ','.join(
+                    elem.text for elem in dest_dim_elem.findall("{*}Value"))
+                dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', period_str),
                                                                    ('{default}', default_datetime)])
                 validation_info = VALIDATION_TEMPLATE.replace(
                     '{default}', default_datetime)
