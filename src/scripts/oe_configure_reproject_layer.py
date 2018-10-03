@@ -153,7 +153,7 @@ def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=Fal
 
 def get_proj_bbox(epsg_code):
     if epsg_code == '4326':
-        return [-180, -90, 180, 90]
+        return [90.0, -180.0, -90.0, 180.0]
     if epsg_code == '3857':
         return [85.06, -180.0, -85.06, 180.0]
     print "WARNING: unsupported <TargetEpsgCode> specified ({}). Only 4326 and 3857 are supported.".format(epsg_code)
