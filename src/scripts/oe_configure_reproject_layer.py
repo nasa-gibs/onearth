@@ -54,7 +54,6 @@ import cgi
 import hashlib
 from decimal import Decimal
 import copy
-import json
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -153,16 +152,12 @@ def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=Fal
 
 
 def get_proj_bbox(epsg_code):
-    bbox = [-180, -90, 180, 90]
-    uri = 'http://epsg.io/?q={0}&format=json'.format(epsg_code)
-    try:
-        r = requests.get(uri)
-        if r.status_code == 200:
-            res = json.loads(r.content)
-            bbox = res['results'][0]['bbox']
-    except:
-        pass
-    return bbox
+    if epsg_code == '4326':
+        return [90.0, -180.0, -90.0, 180.0]
+    if epsg_code == '3857':
+        return [85.06, -180.0, -85.06, 180.0]
+    print "WARNING: unsupported <TargetEpsgCode> specified ({}). Only 4326 and 3857 are supported.".format(epsg_code)
+    return None
 
 
 def make_gdal_tms_xml(layer, bands, src_epsg):
