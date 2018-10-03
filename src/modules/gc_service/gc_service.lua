@@ -31,8 +31,32 @@ local PROJECTIONS = {
         bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -90}, upperCorner={180, 90}},
     }
 }
+local ELEMENTS_TO_NAMESPACE = {Identifier = "ows", SupportedCRS = "ows"}
 
 -- Utility functions
+local function itemInKeys(item, list)
+    for key, _ in pairs(list) do
+        if key == item then
+            return true
+        end
+    end
+    return false
+end
+
+local function namespaceAsNeeded(children, noRecursive)
+    local namespacedChildren = {}
+    for idx, elem in ipairs(children) do
+        if itemInKeys(elem["name"], ELEMENTS_TO_NAMESPACE) then
+            elem["name"] = ELEMENTS_TO_NAMESPACE[elem["name"]] .. ":" .. elem["name"]
+        end
+        if not noRecursive and elem["kids"] then
+            elem["kids"] = namespaceAsNeeded(elem["kids"])
+        end
+        namespacedChildren[idx] = elem
+    end
+    return namespacedChildren
+end
+
 local function split(sep, str)
     local results = {}
     for value in string.gmatch(str, "([^" .. sep .. "]+)") do
@@ -161,7 +185,7 @@ local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
     for k in pairs(tmsDefs[targetEpsgCode]) do table.insert(sortedTmsDefs, k) end
     table.sort(sortedTmsDefs, sortTmsName)
     for _, name in ipairs(sortedTmsDefs) do
-        tms = tmsDefs[targetEpsgCode][name]
+        local tms = tmsDefs[targetEpsgCode][name]
         table.sort(tms, sortTms)
         if tonumber(tms[1]["scaleDenominator"]) > tonumber(sourceScaleDenom) then
             targetTmsName = name
@@ -169,80 +193,6 @@ local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
         end
     end
     return targetTmsName, targetTms
-end
-
--- Functions for building configuration files (used by config tools, not service)
-
-local apacheConfigHeaderTemplate = [[
-<IfModule !ahtse_lua>
-    LoadModule ahtse_lua_module modules/mod_ahtse_lua.so
-</IfModule>
-
-<Directory ${dir}>
-        AHTSE_lua_RegExp ${regexp}
-        AHTSE_lua_Script ${script_loc}
-        AHTSE_lua_Redirect On
-        AHTSE_lua_KeepAlive On
-</Directory>
-]]
-
-local luaConfigTemplate = [[
-local gc = require "gc"
-handler = gc.handler(${config_loc}, ${tms_loc}, ${gc_header_loc}, ${date_service_uri}, ${gettileservicemode} )
-]]
-
-function onearth_gc_service.createConfiguration(endpointConfigFilename)
-    local endpointConfigFile = assert(io.open(endpointConfigFilename, "r"), "Can't open endpoint config file: " .. endpointConfigFilename)
-    local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
-    endpointConfigFile:close()
-
-    local tmsDefsFilename = endpointConfig["tms_defs_file"]
-    local headerFilename = endpointConfig["gc_header_file"]
-    local layerConfigSource = endpointConfig["layer_config_source"]
-    local dateServiceUri = endpointConfig["date_service_uri"]
-
-    local apacheConfigLocation = endpointConfig["apache_config_location"]
-    if not apacheConfigLocation then
-        print("No Apache config location specified. Using '/etc/httpd/conf.d/get_capabilities.conf'")
-        apacheConfigLocation = "/etc/httpd/conf.d/get_capabilities.conf"
-    end
-    local endpoint = endpointConfig["endpoint"]
-    if not endpoint then
-        print("No endpoint specified. Using /gc")
-        endpoint = "/gc"
-    end
-    local regexp = split("/", endpoint)[#split("/", endpoint)]
-    local luaConfigBaseLocation = endpointConfig["endpoint_config_base_location"]
-    if not luaConfigBaseLocation then
-        print("No Lua config location specified. Using '/var/www/html" .. endpoint .. ";")
-        luaConfigBaseLocation = "/var/www/html"
-    end
-    local luaConfigLocation = luaConfigBaseLocation .. endpoint .. "/" .. "get_capabilities.lua"
-
-    -- Make and write Apache config
-    local apacheConfig = apacheConfigHeaderTemplate:gsub("${dir}", endpoint)
-        :gsub("${regexp}", regexp)
-        :gsub("${script_loc}", luaConfigLocation)
-
-    local apacheConfigFile = assert(io.open(apacheConfigLocation, "w+"), "Can't open Apache config file " 
-        .. apacheConfigLocation .. " for writing.")
-    apacheConfigFile:write(apacheConfig)
-    apacheConfigFile:close()
-
-    -- Make and write Lua config
-    local luaConfig = luaConfigTemplate:gsub("${config_loc}", layerConfigSource)
-        :gsub("${tms_loc}", tmsDefsFilename)
-        :gsub("${gc_header_loc}", headerFilename)
-        :gsub("${date_service_uri}", dateServiceUri)
-    lfs.mkdir(luaConfigBaseLocation .. endpoint)
-    local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
-        .. luaConfigLocation .. " for writing."))
-    luaConfigFile:write(luaConfig)
-    luaConfigFile:close()
-
-    print("Configuration complete!")
-    print("Apache config has been saved to " .. apacheConfigLocation)
-    print("GC service config has been saved to " .. luaConfigLocation)
 end
 
 -- GetTileService functions
@@ -365,7 +315,7 @@ local function makeGTS(endpointConfig)
             targetEpsgCode = "EPSG:" .. targetEpsgCode
         end
     else
-        targetEpsgCode = epsgCode    
+        targetEpsgCode = epsgCode
     end
 
     local projection = PROJECTIONS[targetEpsgCode or epsgCode]
@@ -538,7 +488,7 @@ local function makeGC(endpointConfig)
             targetEpsgCode = "EPSG:" .. targetEpsgCode
         end
     else
-        targetEpsgCode = epsgCode    
+        targetEpsgCode = epsgCode
     end
 
     -- Parse header
@@ -555,6 +505,7 @@ local function makeGC(endpointConfig)
     for _, proj in ipairs(getXmlNodesByName(tmsXml, "Projection")) do
         if proj["attr"]["id"] == targetEpsgCode or not targetEpsgCode and epsgCode then
             for _, tms in ipairs(getXmlNodesByName(proj, "TileMatrixSet")) do
+                tms["kids"] = namespaceAsNeeded(tms["kids"])
                 contentsNodeContent[#contentsNodeContent + 1] = tms
             end
         end
