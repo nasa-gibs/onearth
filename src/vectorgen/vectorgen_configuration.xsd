@@ -30,7 +30,7 @@ limitations under the License.
         <xs:element minOccurs="0" ref="source_epsg"/>
         <xs:element ref="target_x"/>
         <xs:element minOccurs="0" ref="target_y"/>
-        <xs:element minOccurs="0" ref="extents"/>
+        <xs:element minOccurs="0" ref="target_extents"/>
         <xs:element minOccurs="0" ref="tile_size"/>
         <xs:element minOccurs="0" ref="overview_levels"/>
         <xs:element minOccurs="0" ref="feature_reduce_rate"/>
@@ -69,7 +69,7 @@ limitations under the License.
   <xs:element default="4326" name="source_epsg" type="xs:integer"/>
   <xs:element name="target_x" type="xs:integer"/>
   <xs:element name="target_y" nillable="true" type="xs:integer"/>
-  <xs:element name="extents" nillable="true" type="xs:string"/>
+  <xs:element name="target_extents" nillable="true" type="xs:string"/>
   <xs:element name="overview_levels" nillable="true" type="xs:string"/>
   <xs:element name="tile_size" nillable="true" type="xs:integer"/>
   <xs:element default="2.5" name="feature_reduce_rate" type="xs:float"/>

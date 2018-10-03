@@ -26,7 +26,7 @@ limitations under the License.
  <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
  <target_x>2048</target_x>
- <extents>-20037508.3428,-20037508.3428,20037508.3428,20037508.3428</extents>
+ <target_extents>-20037508.3428,-20037508.3428,20037508.3428,20037508.3428</target_extents>
  <tile_size>256</tile_size>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>

@@ -56,7 +56,7 @@ Please note that because the dimensions of the vector pyramid are arbitrary, thi
 
 **`<target_y>` (MVT only)** - Same as above, but for height. If this dimension is omitted, a square (i.e. 1x1) tile matrix will be assumed for projected layers and a rectangular matrix.
 
-**`<extents>` (MVT only)** - The extents of the projection you're using in the units of that projection. Defaults to -180, -90, 180, 90 (degrees).
+**`<target_extents>` (MVT only)** - The extents of the projection you're using in the units of that projection. Defaults to -180, -90, 180, 90 (degrees).
 
 **`<overview_levels>` (MVT only)** - By default, overview levels are calculated as powers of 2. You can list a comma separated list of overview levels if you prefer.
 
