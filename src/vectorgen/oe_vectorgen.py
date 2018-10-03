@@ -271,18 +271,18 @@ if __name__ == '__main__':
             except ValueError:
                 log_sig_exit('ERROR', '<target_y> value is invalid', sigevent_url)
             try:
-                extents_str = get_dom_tag_value(dom, 'extents')
-                if len(extents_str.split(',')) == 4:
-                    extents = [float(extent) for extent in extents_str.split(',')]
-                elif len(extents_str.split(' ')) == 4:
-                    extents = [float(extent) for extent in extents_str.split(' ')]
+                target_extents_str = get_dom_tag_value(dom, 'target_extents')
+                if len(target_extents_str.split(',')) == 4:
+                    target_extents = [float(extent) for extent in target_extents_str.split(',')]
+                elif len(target_extents_str.split(' ')) == 4:
+                    target_extents = [float(extent) for extent in target_extents_str.split(' ')]
                 else:
-                    log_sig_exit('ERROR', 'Invalid <extents> value -- must be comma or space-separated')
+                    log_sig_exit('ERROR', 'Invalid <target_extents> value -- must be comma or space-separated')
             except IndexError:
-                extents = (-180, -90, 180, 90)
-                log_sig_warn('<extents> not specified, assuming -180, -90, 180, 90', sigevent_url)
+                target_extents = (-180, -90, 180, 90)
+                log_sig_warn('<target_extents> not specified, assuming -180, -90, 180, 90', sigevent_url)
             except ValueError:
-                log_sig_exit('ERROR', 'Problem processing <extents>, must be comma or space-separated list.', sigevent_url)
+                log_sig_exit('ERROR', 'Problem processing <target_extents>, must be comma or space-separated list.', sigevent_url)
             try:
                 tile_size = int(get_dom_tag_value(dom, 'tile_size'))
             except IndexError:
@@ -348,7 +348,7 @@ if __name__ == '__main__':
     if output_format == 'mvt-mrf':
         log_info_mssg(str().join(['config target_x:           ', str(target_x)]))
         log_info_mssg(str().join(['config target_y:           ', str(target_y) if target_y else 'Not specified']))
-        log_info_mssg(str().join(['config extents:           ', str(extents)]))
+        log_info_mssg(str().join(['config target_extents:           ', str(target_extents)]))
         log_info_mssg(str().join(['config overview_levels:           ', str(overview_levels)]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
@@ -420,7 +420,7 @@ if __name__ == '__main__':
                     alltiles[idx] = outfile
                 
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
-            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, extents, tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents, tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
             
             files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
             for mfile in files:
