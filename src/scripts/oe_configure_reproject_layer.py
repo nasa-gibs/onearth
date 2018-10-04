@@ -589,8 +589,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 break
             if dest_file_ext in ['.tif', '.lerc', '.mvt']:
                 mssg = identifier + " file type is not supported for reproject: " + dest_file_type
-                warnings.append(asctime() + " " + mssg)
-                log_sig_warn(mssg, sigevent_url)
+                print mssg
                 break
 
             if wmts:
@@ -915,7 +914,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     line = line.replace("$maxx", str(-dest_top_left_corner[0]))
                 if '$maxy' in line:
                     line = line.replace("$maxy", str(-dest_top_left_corner[0]))
-                if '$Patterns' in line:
+                if '$Patterns' in line and len(out_tilematrixsets) > 0:
                     patterns = ''
                     for tilematrix in sorted(out_tilematrixsets[0].findall('{*}TileMatrix'), key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator'))):
                         resx = (dest_top_left_corner[
