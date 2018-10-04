@@ -1733,7 +1733,6 @@ char *order_args(request_rec *r) {
 		strcpy(format,"image%2Ftiff");
 	} else if (ap_strcasecmp_match(format, "image/lerc") == 0) {
 		strcpy(format,"image%2Flerc");
-	} // special handling for vectors
 	} else if (ap_strcasecmp_match(format, "application/vnd.mapbox-vector-tile") == 0) {
 		strcpy(format,"application%2Fvnd.mapbox-vector-tile");
 		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
