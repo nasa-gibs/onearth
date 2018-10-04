@@ -2,9 +2,7 @@
 	<Raster>
 		<Size x="2560" y="1536"/>
 		<PageSize x="512" y="512"/>
-		<Compression>
-			PBF
-		</Compression>
+		<Compression>MVT</Compression>
 		<DataValues NoData="0"/>
 	</Raster>
 	<Rsets model="uniform"/>

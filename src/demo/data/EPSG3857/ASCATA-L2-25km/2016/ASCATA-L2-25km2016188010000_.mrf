@@ -2,7 +2,7 @@
 	<Raster>
 		<Size c="1" x="2048" y="2048"/>
 		<PageSize c="1" x="256" y="256"/>
-		<Compression>PBF</Compression>
+		<Compression>MVT</Compression>
 		<DataValues NoData="0"/>
 	</Raster>
 	<Rsets model="uniform"/>

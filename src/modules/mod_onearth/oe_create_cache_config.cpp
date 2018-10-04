@@ -328,10 +328,6 @@ mrf_data::mrf_data(const char *ifname) :valid(false) {
             dat_ext=".lrc";
             sig=0;
             h_format="Content-type: image/lerc";
-        } else if (compression=="PBF") {
-            dat_ext=".pvt";
-            sig=0;
-            h_format="Content-type: application/x-protobuf;type=mapbox-vector";
         } else if (compression=="MVT") {
             dat_ext=".pvt";
             sig=0;

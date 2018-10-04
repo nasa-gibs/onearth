@@ -996,8 +996,6 @@ static const char *cache_dir_set(cmd_parms *cmd,void *dconf, const char *arg)
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/tiff");
       else if (ap_find_token(cfg->p,cache->prefix,"lerc"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"image/lerc");
-      else if (ap_find_token(cfg->p,cache->prefix,"x-protobuf;type=mapbox-vector"))
- 	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/x-protobuf;type=mapbox-vector");
       else if (ap_find_token(cfg->p,cache->prefix,"vnd.mapbox-vector-tile"))
  	cfg->meta[count].mime_type=apr_pstrdup(cfg->p,"application/vnd.mapbox-vector-tile");
       else {
@@ -1705,7 +1703,7 @@ char *order_args(request_rec *r) {
 	max_chars = strlen(r->args) + 1;
 
 	// valid formats
-	char * formats [] = { "image%2Fpng", "image%2Fjpeg", "image%2Ftiff", "image%2Flerc", "application%2Fx-protobuf;type=mapbox-vector"};
+	char * formats [] = { "image%2Fpng", "image%2Fjpeg", "image%2Ftiff", "image%2Flerc", "application%2Fvnd.mapbox-vector-tile"};
 
 	// common args
 	char *service = apr_pcalloc(r->pool,max_chars);
@@ -1736,16 +1734,11 @@ char *order_args(request_rec *r) {
 	} else if (ap_strcasecmp_match(format, "image/lerc") == 0) {
 		strcpy(format,"image%2Flerc");
 	} // special handling for vectors
-	  else if (ap_strcasecmp_match(format, "application%2Fx-protobuf;type=mapbox-vector") == 0) {
-		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
-	} else if (ap_strcasecmp_match(format, "application/x-protobuf;type=mapbox-vector") == 0) {
-		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
-		ap_set_content_type(r,"application/x-protobuf;type=mapbox-vector");
 	} else if (ap_strcasecmp_match(format, "application/vnd.mapbox-vector-tile") == 0) {
-		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		strcpy(format,"application%2Fvnd.mapbox-vector-tile");
 		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
 	} else if (ap_strcasecmp_match(format, "application%2Fvnd.mapbox-vector-tile") == 0) {
-		strcpy(format,"application%2Fx-protobuf;type=mapbox-vector");
+		strcpy(format,"application%2Fvnd.mapbox-vector-tile");
 		ap_set_content_type(r,"application/vnd.mapbox-vector-tile");
 	}
 
@@ -2440,7 +2433,7 @@ static int mrf_handler(request_rec *r)
       }
       if (!this_data) { // No empty tile provided, let it pass
     	  miss_count--;
-    	  if ((apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf;type=mapbox-vector") == 0) || (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0)) {
+    	  if (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0) {
     		  // return default message with vector tiles
     		  static char empty_json[]="{\"message\":\"Tile does not exist\"}";
     		  ap_set_content_type(r,"application/json; charset=utf-8");
@@ -2470,8 +2463,8 @@ static int mrf_handler(request_rec *r)
   // DEBUG
 //  ap_log_error(APLOG_MARK,APLOG_ERR,0,r->server, "Got data at %x",this_data);
 
-  // Set gzip encoding if output is pbf
-  if ((apr_strnatcmp(cfg->meta[count].mime_type, "application/x-protobuf;type=mapbox-vector") == 0) || (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0)) {
+  // Set gzip encoding if output is mvt
+  if (apr_strnatcmp(cfg->meta[count].mime_type, "application/vnd.mapbox-vector-tile") == 0) {
   	apr_table_setn(r->headers_out, "Content-Encoding", "gzip");
   } else {
 	  ap_set_content_type(r,cfg->meta[count].mime_type);
@@ -2544,9 +2537,7 @@ int rewrite_rest_uri(request_rec *r) {
 		p = apr_strtok(NULL, ".",&last);
 	}
 
-	if (ap_strcasecmp_match(params[length+d],"pbf") == 0) {
-		sprintf(format,"application%%2Fx-protobuf;type=mapbox-vector");
-	} else if (ap_strcasecmp_match(params[length+d],"mvt") == 0) {
+	if (ap_strcasecmp_match(params[length+d],"mvt") == 0) {
 		sprintf(format,"application%%2Fvnd.mapbox-vector-tile");
 	} else if (ap_strcasecmp_match(params[length+d],"jpg") == 0) {
 		sprintf(format,"image%%2Fjpeg");
@@ -2574,7 +2565,7 @@ static int handler(request_rec *r) {
   if (r->method_number != M_GET) return DECLINED;
   if (r->prev && apr_table_get(r->prev->notes, "mod_onearth_handled")) return DECLINED;
   if (!(r->args)) {
-	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".pbf") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
+	  if(strlen(r->uri) > 4 && (!strcmp(r->uri + strlen(r->uri) - 4, ".png") || !strcmp(r->uri + strlen(r->uri) - 4, ".jpg") || !strcmp(r->uri + strlen(r->uri) - 5, ".jpeg") || !strcmp(r->uri + strlen(r->uri) - 4, ".tif") || !strcmp(r->uri + strlen(r->uri) - 5, ".tiff") || !strcmp(r->uri + strlen(r->uri) - 5, ".lerc") || !strcmp(r->uri + strlen(r->uri) - 4, ".mvt") )) {
 		  if (rewrite_rest_uri(r) < 0)
 			  return DECLINED;
 		  else

@@ -45,9 +45,9 @@ then
   then
     echo -e "Content-type: image/jpeg\n"
     cat black.jpg
-  elif [[ $QUERY_STRING == *x-protobuf* ]]
+  elif [[ $QUERY_STRING == *vnd.mapbox-vector-tile* ]]
   then
-  	echo -e "Content-type: application/x-protobuf\n"
+  	echo -e "Content-type: application/vnd.mapbox-vector-tile\n"
   else
     echo -e "Content-type: image/png\n"
     cat transparent.png

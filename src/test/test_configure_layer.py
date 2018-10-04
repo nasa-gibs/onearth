@@ -784,7 +784,7 @@ class TestLayerConfig(unittest.TestCase):
 
         # Verify error
         if os.path.isfile('oe_configure_layer.err'):
-            search_string = 'Compression> must be either JPEG, PNG, TIF, LERC, PBF, or MVT'
+            search_string = 'Compression> must be either JPEG, PNG, TIF, LERC, or MVT'
             contains_error = find_string('oe_configure_layer.err', search_string)
 
 

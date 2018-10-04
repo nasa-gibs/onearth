@@ -4,7 +4,7 @@
  <Title>oscar</Title>
  <FileNamePrefix>oscar</FileNamePrefix>
  <HeaderFileName>/etc/onearth/config/headers/oscarTTTTTTT_.mrf</HeaderFileName>
- <Compression>PBF</Compression>
+ <Compression>MVT</Compression>
  <TileMatrixSet>GoogleMapsCompatible_Level6</TileMatrixSet>
  <EmptyTileSize offset="0">0</EmptyTileSize>
  <Projection>EPSG:3857</Projection> 

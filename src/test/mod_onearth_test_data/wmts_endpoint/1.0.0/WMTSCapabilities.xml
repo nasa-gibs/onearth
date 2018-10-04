@@ -93,7 +93,7 @@
              <ows:Title xml:lang="en">default</ows:Title>
              <ows:Identifier>default</ows:Identifier>
          </Style>
-         <Format>application/x-protobuf</Format>
+         <Format>application/vnd.mapbox-vector-tile</Format>
          <Dimension>
              <ows:Identifier>time</ows:Identifier>
              <UOM>ISO8601</UOM>
@@ -104,7 +104,7 @@
          <TileMatrixSetLink>
              <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
          </TileMatrixSetLink>
-         <ResourceURL format="application/x-protobuf" resourceType="tile" template="http://localhost/onearth/test/wmts/mvt_test/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.pbf"/>
+         <ResourceURL format="application/vnd.mapbox-vector-tile" resourceType="tile" template="http://localhost/onearth/test/wmts/mvt_test/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.mvt"/>
       </Layer>
       <Layer>
          <ows:Title xml:lang="en">OnEarth Date Snapping Scenario 1a</ows:Title>

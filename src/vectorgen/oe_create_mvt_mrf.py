@@ -76,7 +76,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
             Default is 2 (retain the square root of the total points in the cluster).
-        debug (bool) -- Toggle verbose output messages and PBF file artifacts (PBF tile files will be created in addition to MRF)
+        debug (bool) -- Toggle verbose output messages and MVT file artifacts (MVT tile files will be created in addition to MRF)
     """
     # Get projection and calculate overview levels if necessary
     proj = osr.SpatialReference()
@@ -203,8 +203,8 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    pbf_filename = os.path.join(os.getcwd(), 'tiles/test_{0}_{1}_{2}.pbf'.format(z, x, y))
-                    with open(pbf_filename, 'w+') as f:
+                    mvt_filename = os.path.join(os.getcwd(), 'tiles/test_{0}_{1}_{2}.mvt'.format(z, x, y))
+                    with open(mvt_filename, 'w+') as f:
                         f.write(mvt_tile)
 
                 # Write out MVT tile data to MRF. Note that we have to gzip the tile first.
@@ -329,7 +329,7 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 
     # Create <Compression> element
     compression_node = mrf_dom.createElement('Compression')
-    compression_value = mrf_dom.createTextNode('PBF')
+    compression_value = mrf_dom.createTextNode('MVT')
     compression_node.appendChild(compression_value)
     raster_node.appendChild(compression_node)
 

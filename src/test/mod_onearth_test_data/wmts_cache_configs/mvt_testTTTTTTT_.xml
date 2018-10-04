@@ -9,7 +9,6 @@
              <ows:Title xml:lang="en">default</ows:Title>
              <ows:Identifier>default</ows:Identifier>
          </Style>
-         <Format>application/x-protobuf;type=mapbox-vector</Format>
          <Format>application/vnd.mapbox-vector-tile</Format>
          <Dimension>
              <ows:Identifier>time</ows:Identifier>
@@ -21,5 +20,5 @@
          <TileMatrixSetLink>
              <TileMatrixSet>EPSG4326_16km</TileMatrixSet>
          </TileMatrixSetLink>
-         <ResourceURL format="application/x-protobuf;type=mapbox-vector" resourceType="tile" template="http://localhost/onearth/test/wmts/mvt_test/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.pbf"/>
+         <ResourceURL format="application/vnd.mapbox-vector-tile" resourceType="tile" template="http://localhost/onearth/test/wmts/mvt_test/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.mvt"/>
       </Layer>

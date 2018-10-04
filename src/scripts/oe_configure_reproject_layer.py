@@ -64,7 +64,6 @@ MIME_TO_EXTENSION = {
     'image/jpeg': '.jpg',
     'image/tiff': '.tiff',
     'image/lerc': '.lerc',
-    'application/x-protobuf;type=mapbox-vector': '.pbf',
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
@@ -588,7 +587,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 warnings.append(asctime() + " " + mssg)
                 log_sig_warn(mssg, sigevent_url)
                 break
-            if dest_file_ext in ['.tif', '.lerc', '.mvt', '.pbf']:
+            if dest_file_ext in ['.tif', '.lerc', '.mvt']:
                 mssg = identifier + " file type is not supported for reproject: " + dest_file_type
                 warnings.append(asctime() + " " + mssg)
                 log_sig_warn(mssg, sigevent_url)

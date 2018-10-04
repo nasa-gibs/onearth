@@ -1610,7 +1610,7 @@ class TestModOnEarth(unittest.TestCase):
 
     def test_mvt_layer(self):
         layer_name = 'mvt_test'
-        req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer={0}&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf;type=mapbox-vector&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-01-01'.format(layer_name)
+        req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer={0}&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fvnd.mapbox-vector-tile&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-01-01'.format(layer_name)
         if DEBUG:
             print '\nTesting for Valid MVT Tile'
         mvt_tile = get_url(req_url)

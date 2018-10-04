@@ -4,7 +4,7 @@
  <Title>MODIS_C5_fires</Title>
  <FileNamePrefix>MODIS_C5_fires</FileNamePrefix>
  <HeaderFileName>/etc/onearth/config/headers/MODIS_C5_firesTTTTTTT_.mrf</HeaderFileName>
- <Compression>PBF</Compression>
+ <Compression>MVT</Compression>
  <TileMatrixSet>GoogleMapsCompatible_Level3</TileMatrixSet>
  <EmptyTileSize offset="0">0</EmptyTileSize>
  <Projection>EPSG:3857</Projection> 

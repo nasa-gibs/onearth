@@ -1196,8 +1196,8 @@ for conf in conf_files:
             if compression == "EPNG":
                 compression = "PNG"
                 is_encoded = True
-            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "PBF", "MVT"]:
-                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, PBF, or MVT in ' + conf, sigevent_url)
+            if compression not in ["JPEG", "PNG", "EPNG", "TIF", "LERC", "MVT"]:
+                log_sig_err('<Compression> must be either JPEG, PNG, TIF, LERC, or MVT in ' + conf, sigevent_url)
                 continue
         except IndexError:
             if vectorType is None:
@@ -1613,10 +1613,10 @@ for conf in conf_files:
         elif compression.lower() in ['lerc']:
             dataFileLocation = dataFileLocation.replace('.mrf','.lrc')
             mrf_format = 'image/lerc'
-        elif compression.lower() in ['pbf', 'mvt']:
-            compression = "PBF";
+        elif compression.lower() in ['mvt']:
+            compression = "MVT";
             dataFileLocation = dataFileLocation.replace('.mrf','.pvt')
-            mrf_format = 'application/x-protobuf;type=mapbox-vector'
+            mrf_format = 'application/vnd.mapbox-vector-tile'
         elif vectorType is not None:
             dataFileLocation = dataFileLocation.replace('.mrf','.shp')
         else:
@@ -2198,13 +2198,8 @@ for conf in conf_files:
                             line += newline[3:]
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
-                if mrf_format == "application/x-protobuf;type=mapbox-vector":
-                    line = line + line.replace("   ","",1).replace(mrf_format,"application/vnd.mapbox-vector-tile")
             if '$FileType' in line:
-                line = line.replace("$FileType",mrf_format.replace("x-protobuf;type=mapbox-vector","pbf").split('/')[1])
-                if "application/vnd.mapbox-vector-tile" in line:
-                    line = line.replace("}.pbf","}.mvt")
-                line = line.replace("}.mvt","}.pbf",1) # looks like the previous line will replace all
+                line = line.replace("$FileType",mrf_format.replace("application/vnd.mapbox-vector-tile","mvt").split('/')[1])
             if '$WMTSServiceURL' in line:
                 line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)
             if '$TileMatrixSet' in line:
@@ -2376,7 +2371,7 @@ $Patterns</TiledGroup>"""
         layer_xml.close()
 
     # Create mapfile (if specified by user)
-    if create_mapfile is True and compression != "PBF" and environment.mapfileStagingLocation is not None: # don't create mapfiles for protocol buffers (i.e,. vector tiles)
+    if create_mapfile is True and compression != "MVT" and environment.mapfileStagingLocation is not None: # don't create mapfiles for protocol buffers (i.e,. vector tiles)
         # Write mapfile info for layer
         mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
         with open(mapfile_name, 'w+') as mapfile:

@@ -44,12 +44,12 @@ Note that there are two vector-specific tags you'll need to use in your layer co
 
 **Use the `oe_vectorgen` utility to create a MVT MRF** You'll need to create a `oe_vectorgen` configuration file that specifies the desired projection, the desired TileMatrixSet, and desired feature decimation parameters (if any).
 
-**Configure the new layer using `oe_configure_layer`** Just like with raster layers, create a layer configuration XML. Make sure to specify 'PBF' in the `<Compression>` tag. 
+**Configure the new layer using `oe_configure_layer`** Just like with raster layers, create a layer configuration XML. Make sure to specify 'MVT' in the `<Compression>` tag. 
 
 ### Requesting vector tiles from `mod_onearth`
-**Vector tiles may be requested from OnEarth via WMTS or Tiled WMS.** The following MIME types are supported as `format` options: `application/x-protobuf;type=mapbox-vector` and `application/vnd.mapbox-vector-tile`
+**Vector tiles may be requested from OnEarth via WMTS or Tiled WMS.** The following MIME type is supported as a `format` option: `application/vnd.mapbox-vector-tile`
 
-For WMTS REST requests, use either `pbf` or `mvt` as the file extension.
+For WMTS REST requests, use `mvt` as the file extension.
 
 Vector tiles are returned compressed with `gzip` encoding.
 

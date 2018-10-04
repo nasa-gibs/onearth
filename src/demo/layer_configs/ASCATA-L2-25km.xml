@@ -4,7 +4,7 @@
  <Title>ASCATA-L2-25km</Title>
  <FileNamePrefix>ASCATA-L2-25km</FileNamePrefix>
  <HeaderFileName>/etc/onearth/config/headers/ASCATA-L2-25kmTTTTTTTTTTTTT_.mrf</HeaderFileName>
- <Compression>PBF</Compression>
+ <Compression>MVT</Compression>
  <TileMatrixSet>GoogleMapsCompatible_Level3</TileMatrixSet>
  <EmptyTileSize offset="0">0</EmptyTileSize>
  <Projection>EPSG:3857</Projection> 

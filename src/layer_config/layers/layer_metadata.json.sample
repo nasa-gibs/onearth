@@ -2,7 +2,7 @@
   "identifier": "Terra_Orbit_Dsc",
   "title": "Terra Orbital Track",
   "tiledGroupName": "Terra Orbital Track tileset",
-  "formats": ["application/x-protobuf;type=mapbox-vector"],         
+  "formats": ["application/vnd.mapbox-vector-tile"],         
   "spatial": {
     "type": "Polygon",
          "coordinates": [
