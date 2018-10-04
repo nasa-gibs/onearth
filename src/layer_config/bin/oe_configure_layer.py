@@ -2199,7 +2199,10 @@ for conf in conf_files:
             if '$Format' in line:
                 line = line.replace("$Format",mrf_format)
             if '$FileType' in line:
-                line = line.replace("$FileType",mrf_format.replace("application/vnd.mapbox-vector-tile","mvt").split('/')[1])
+                if mrf_format == "application/vnd.mapbox-vector-tile":
+                    line = line.replace("$FileType","mvt")
+                else:
+                    line = line.replace("$FileType",mrf_format.split('/')[1])
             if '$WMTSServiceURL' in line:
                 line = line.replace("$WMTSServiceURL",environment.wmtsServiceUrl)
             if '$TileMatrixSet' in line:
