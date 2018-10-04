@@ -35,6 +35,7 @@
 # 2015
 
 from optparse import OptionParser
+from xml.dom import minidom
 import os
 import sys
 import struct
@@ -95,30 +96,45 @@ if not options.output:
 else:
     output = options.output
     
-mrf = open(input, 'r')
-mrf_lines = mrf.readlines()
+mrfDoc = minidom.parse(input)
+mrf_x  = None
+mrf_y  = None
+mrf_z  = None
 mrf_type = "PNG"
-mrf_size = ""
-for line in mrf_lines:
-    if "<Compression>JPEG</Compression>" in line:
-        mrf_type = "JPEG"
-    if "<Compression>MVT</Compression>" in line or "<Compression>PBF</Compression>" in line:
-        mrf_type = "MVT"
-    if "<Size" in line:
-        mrf_size = line
+
+if len(mrfDoc.getElementsByTagName('Raster')) > 0:
+    rasterElem = mrfDoc.getElementsByTagName('Raster')[0]
+
+    if len(rasterElem.getElementsByTagName('Size')):
+        sizeElem  = rasterElem.getElementsByTagName('Size')[0]
+        sizeAttrs = dict(sizeElem.attributes.items())
+
+        mrf_x = int(sizeAttrs['x'])
+        mrf_y = int(sizeAttrs['y'])
+
+        if 'z' in sizeAttrs:
+            mrf_z = int(sizeAttrs['z'])
+
+    if len(rasterElem.getElementsByTagName('Compression')):
+        compressionElem = rasterElem.getElementsByTagName('Compression')[0]
+        mrf_type = str(compressionElem.firstChild.nodeValue).strip()
+
+        if mrf_type == "PBF":
+            mrf_type = "MVT"
+
+else:
+    print "\nMissing Raster element in MRF, exiting."
+    exit(-1)
+
 
 if options.verbose:
     print "\nMRF type: " + mrf_type
 
 size = None
-sizes = [int(s) for s in mrf_size.replace('"',' " ').split() if s.isdigit()]
 
-mrf_x = sizes[0]
-mrf_y = sizes[1]
 if options.verbose:
     print "MRF x: " + str(mrf_x) + " y: " + str(mrf_y)
     print "Ratio " + str(mrf_x/mrf_y)
-mrf.close()
     
 index = input.replace(".mrf",".idx")
 if mrf_type == "JPEG":
@@ -151,12 +167,12 @@ else:
 if str(options.zlevel) == "None":
     z = None
     z_size = None
-    if "z=" in mrf_size:
+    if mrf_z:
         print "Error: z-level must be specified for this input"
         exit(1)
 else:
     z = options.zlevel
-    z_size = sizes[2]
+    z_size = mrf_z
     if options.verbose:
         print "Using z-level:" + str(z) + " and MRF z-size:" + str(z_size)
     if z >= z_size:
