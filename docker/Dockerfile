@@ -17,7 +17,7 @@ RUN mkdir -p /var/www
 WORKDIR /home/oe2
 RUN git clone https://github.com/nasa-gibs/onearth.git
 WORKDIR /home/oe2/onearth
-RUN git checkout 2.1.1
+RUN git checkout 2.2.0
 
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
@@ -38,9 +38,9 @@ RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
 
 # Install APR patch
 WORKDIR /tmp
-RUN wget http://apache.osuosl.org//apr/apr-1.6.3.tar.gz
-RUN tar xf apr-1.6.3.tar.gz
-WORKDIR /tmp/apr-1.6.3
+RUN wget http://archive.apache.org/dist/apr/apr-1.6.5.tar.gz
+RUN tar xf apr-1.6.5.tar.gz
+WORKDIR /tmp/apr-1.6.5
 RUN patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
 RUN ./configure --prefix=/lib64
 RUN make && make install
