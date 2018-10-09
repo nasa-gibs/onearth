@@ -273,7 +273,6 @@ class TestLayerConfig(unittest.TestCase):
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/layer_config_endpoint/wmts.cgi?Request=GetCapabilities'
-        #req_url = 'http://localhost/layer_config_endpoint/1.0.0/GetCapabilities.xml'
         if DEBUG:
             print '\nTesting WMTS GetCapablities'
             print 'URL: ' + req_url
@@ -298,7 +297,6 @@ class TestLayerConfig(unittest.TestCase):
         # Request reproject WMTS GetCapabilitis
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?Request=GetCapabilities'
-        #req_url = 'http://localhost/layer_config_reproject_endpoint/1.0.0/GetCapabilities.xml'
         if DEBUG:
             print '\nTesting Reproject WMTS GetCapablities'
             print 'URL: ' + req_url
@@ -325,8 +323,7 @@ class TestLayerConfig(unittest.TestCase):
         2. Request WMTS (REST) GetCapabilities
         """
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        #req_url = 'http://localhost/layer_config_endpoint/1.0.0/WMTSCapabilities.xml'
-        req_url = 'http://localhost/layer_config_endpoint/1.0.0/GetCapabilities.xml'
+        req_url = 'http://localhost/layer_config_endpoint/1.0.0/WMTSCapabilities.xml'
         if DEBUG:
             print '\nTesting WMTS (REST) GetCapablities'
             print 'URL: ' + req_url
@@ -356,8 +353,7 @@ class TestLayerConfig(unittest.TestCase):
 
         # Request reproject WMTS (REST) GetCapabilities
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        #req_url = 'http:/localhost/layer_config_endpoint/1.0.0/WMTSCapabilities.xml'
-        req_url = 'http:/localhost/layer_config_reproject_endpoint/1.0.0/GetCapabilities.xml'
+        req_url = 'http:/localhost/layer_config_reproject_endpoint/1.0.0/WMTSCapabilities.xml'
         if DEBUG:
             print '\nTesting Reproject WMTS (REST) GetCapablities'
             print 'URL: ' + req_url

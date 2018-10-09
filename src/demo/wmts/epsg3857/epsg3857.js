@@ -33,7 +33,7 @@ window.onload = function() {
 
     //Set locations for endpoint and getCapabilities
     var endpointUrl = "/wmts/epsg3857/std/wmts.cgi?";
-    var getCapabilitiesLocation = "/wmts/epsg3857/std/1.0.0/GetCapabilities.xml";
+    var getCapabilitiesLocation = "/wmts/epsg3857/std/1.0.0/WMTSCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.

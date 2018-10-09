@@ -33,7 +33,7 @@ window.onload = function() {
 
     //Set locations for endpoint and getCapabilities
     var endpointUrl = "/profiler/wmts.cgi?";
-    var getCapabilitiesLocation = "/profiler/1.0.0/GetCapabilities.xml";
+    var getCapabilitiesLocation = "/profiler/1.0.0/WMTSCapabilities.xml";
     //END CONFIGURATION
 
     //proj4.js needed for arctic/antarctic projections.
