@@ -118,7 +118,7 @@ local function create_config(endpointConfigFilename, makeOptions)
 
     local apacheConfigs = {}
     for _, endpoint in ipairs(endpoints) do
-        local regexp = endpoint["isGts"] and "GetTileService.xml" or "GetCapabilities.xml"
+        local regexp = endpoint["isGts"] and "[rR][eE][qQ][uU][eE][sS][tT]=GetTileService" or "([rR][eE][qQ][uU][eE][sS][tT]=GetCapabilities|WMTSCapabilities\.xml)"
         local luaConfigLocation = luaConfigBaseLocation .. endpoint["path"] .. "/" .. (endpoint["isGts"] and "onearth_gts_service" or "onearth_gc_service") .. ".lua"
 
         -- Generate Apache config string
