@@ -18,12 +18,12 @@ local PROJECTIONS = {
     },
     ["EPSG:3413"] = {
         wkt='PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]',
-        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, 8.807151}, upperCorner={180, 90}},
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, 38.807151}, upperCorner={180, 90}},
         bbox={crs="urn:ogc:def:crs:EPSG::3413", lowerCorner={-4194304, -4194304}, upperCorner={4194304, 4194304}}
     },
     ["EPSG:3857"] = {
         wkt='PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]',
-        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85}, upperCorner={180, 85}},
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85.051129}, upperCorner={180, 85.051129}},
         bbox={crs="urn:ogc:def:crs:EPSG::3857", lowerCorner={-20037508.34278925, -20037508.34278925}, upperCorner={20037508.34278925, 20037508.34278925}}
     },
     ["EPSG:4326"] = {
@@ -391,13 +391,20 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
     local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
     local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
 
-    layerContents[#layerContents + 1] = {name="ows:WGS84BoundingBox", attr={crs="urn:ogc:def:crs:OGC:2:84"}, kids={
-        {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
-    }}
-
-    layerContents[#layerContents + 1] = {name="ows:BoundingBox", attr={crs="urn:ogc:def:crs:EPSG::3413"}, kids={
-     {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
-    }}
+    if targetEpsgCode == "EPSG:4326" then
+        layerContents[#layerContents + 1] = {name="ows:WGS84BoundingBox", attr={crs="urn:ogc:def:crs:OGC:2:84"}, kids={
+            {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
+        }}
+    else
+        local upperCorner84 = tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["upperCorner"][1]) .. " " .. tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["upperCorner"][2])
+        local lowerCorner84 = tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["lowerCorner"][1]) .. " " .. tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["lowerCorner"][2])
+        layerContents[#layerContents + 1] = {name="ows:WGS84BoundingBox", attr={crs="urn:ogc:def:crs:OGC:2:84"}, kids={
+            {name="ows:LowerCorner", text=lowerCorner84}, {name="ows:UpperCorner", text=upperCorner84}
+        }}
+        layerContents[#layerContents + 1] = {name="ows:BoundingBox", attr={crs=PROJECTIONS[targetEpsgCode]["bbox"]["crs"]}, kids={
+            {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
+        }}
+    end
 
     -- Add identifier node
     layerContents[#layerContents + 1] = {name="ows:Identifier", text=layerId}
