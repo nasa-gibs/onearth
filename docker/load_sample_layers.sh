@@ -8,6 +8,8 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 # WMTS endpoints
+mkdir -p /var/www/html/oe-status/
+mkdir -p /var/www/html/oe-status_reproject/
 mkdir -p /var/www/html/profiler/
 mkdir -p /var/www/html/profiler_reproject/
 mkdir -p /var/www/html/wmts/epsg4326/all
@@ -60,6 +62,8 @@ cp -R sample_configs/layers/* /etc/onearth/config/layers/
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 
 # Make GC Service
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status_gc.yaml
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status_reproject_gc.yaml
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_reproject_gc.yaml --make_gts
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_best_gc.yaml --make_gts
@@ -80,6 +84,7 @@ echo 'Starting Apache server'
 sleep 2
 
 # Run layer config tools
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/oe-status.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml
@@ -94,6 +99,10 @@ python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_a
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
 sleep 2
+
+# Data for oe-status
+mkdir -p /onearth/idx/oe-status/BlueMarble16km
+cp test_imagery/*BlueMarble16km* /onearth/idx/oe-status/BlueMarble16km/
 
 # Performance Test Data
 
@@ -122,7 +131,7 @@ until [ $d -gt 1523318400 ]; do
     let d+=86400
 done
 
-# ASTER_L1T_Radiance_Terrain_Corrected for gibs-status
+# ASTER_L1T_Radiance_Terrain_Corrected subdaily example
 
 cp oe2_gibs_status.conf /etc/httpd/conf.d
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
@@ -153,6 +162,9 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:BlueMarble16km
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:BlueMarble16km:default "2004-08-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:BlueMarble16km:periods "2004-08-01/2004-08-01/P1M"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOGCR_LQD_143_STD
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOGCR_LQD_143_STD:default "2011-01-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOGCR_LQD_143_STD:periods "2011-01-01/2011-01-02/P1D"
@@ -460,6 +472,7 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods "2012-09-10/2018-12-31/P1D"
 
 # Run reproject config tools
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
