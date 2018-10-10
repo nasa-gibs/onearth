@@ -60,6 +60,7 @@ cp sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp -R sample_configs/layers/* /etc/onearth/config/layers/
 # Replace with S3 URL
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
+sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
 # Make GC Service
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status_gc.yaml
@@ -101,6 +102,7 @@ echo 'Restarting Apache server'
 sleep 2
 
 # Data for oe-status
+cp oe2_status.conf /etc/httpd/conf.d
 mkdir -p /onearth/idx/oe-status/BlueMarble16km
 cp test_imagery/*BlueMarble16km* /onearth/idx/oe-status/BlueMarble16km/
 
@@ -133,7 +135,6 @@ done
 
 # ASTER_L1T_Radiance_Terrain_Corrected subdaily example
 
-cp oe2_gibs_status.conf /etc/httpd/conf.d
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
 mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
 wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz https://s3.amazonaws.com/gitc-test-imagery/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/4642-ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz
