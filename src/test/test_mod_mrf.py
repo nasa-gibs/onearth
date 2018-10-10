@@ -61,7 +61,6 @@ class TestModMrf(unittest.TestCase):
         testdata_path = os.path.join(os.getcwd(), 'ci_tests')
         httpd_config = os.path.join(testdata_path, 'httpd.conf')
         self.image_files_path = os.path.join(testdata_path, 'test_imagery')
-#        self.daily_png_config = os.path.join(testdata_path, 'layer_configs/test_mod_mrf_daily_png.config')
         self.test_apache_config = os.path.join(testdata_path, 'mrf_test.conf')
         dateservice_path = os.path.join(testdata_path, 'date_service')
         date_config = os.path.join(dateservice_path, 'oe2_test_date_service.conf')
