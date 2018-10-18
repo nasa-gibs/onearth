@@ -18,15 +18,12 @@ dependencies = {
    "luasocket",
    "json-lua",
    "http",
-   "argparse"
+   "argparse",
+   "penlight"
 }
 build = {
    type = "builtin",
    modules = {
-      ["onearth_gc_gts"] = "gc_service.lua",
-      ["xml-ser"]="xml-ser.lua",
-      ["xml-serde"]="xml-serde.lua",
-      slaxml="slaxml.lua",
-      list="list.lua"
+      ["onearth_gc_gts"] = "gc_service.lua"
    }
 }

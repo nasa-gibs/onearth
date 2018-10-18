@@ -1,12 +1,10 @@
 local onearth_gc_service = {}
 
-local xmlser = require "xml-ser"
-local xmlserde = require "xml-serde"
 local lfs = require "lfs"
 local lyaml = require "lyaml"
 local request = require "http.request"
 local JSON = require "JSON"
-
+local xml = require "pl.xml"
 
 -- Reference Constants
 local EARTH_RADIUS = 6378137.0
@@ -22,8 +20,8 @@ local PROJECTIONS = {
         bbox={crs="urn:ogc:def:crs:EPSG::3413", lowerCorner={-4194304, -4194304}, upperCorner={4194304, 4194304}}
     },
     ["EPSG:3857"] = {
-        wkt='PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]',
-        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85.051129}, upperCorner={180, 85.051129}},
+        wkt='PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85}, upperCorner={180, 85}},
         bbox={crs="urn:ogc:def:crs:EPSG::3857", lowerCorner={-20037508.34278925, -20037508.34278925}, upperCorner={20037508.34278925, 20037508.34278925}}
     },
     ["EPSG:4326"] = {
@@ -31,31 +29,9 @@ local PROJECTIONS = {
         bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -90}, upperCorner={180, 90}},
     }
 }
-local ELEMENTS_TO_NAMESPACE = {Identifier = "ows", SupportedCRS = "ows"}
 
 -- Utility functions
-local function itemInKeys(item, list)
-    for key, _ in pairs(list) do
-        if key == item then
-            return true
-        end
-    end
-    return false
-end
 
-local function namespaceAsNeeded(children, noRecursive)
-    local namespacedChildren = {}
-    for idx, elem in ipairs(children) do
-        if itemInKeys(elem["name"], ELEMENTS_TO_NAMESPACE) then
-            elem["name"] = ELEMENTS_TO_NAMESPACE[elem["name"]] .. ":" .. elem["name"]
-        end
-        if not noRecursive and elem["kids"] then
-            elem["kids"] = namespaceAsNeeded(elem["kids"])
-        end
-        namespacedChildren[idx] = elem
-    end
-    return namespacedChildren
-end
 
 local function split(sep, str)
     local results = {}
@@ -81,25 +57,7 @@ local function sendResponse(code, msg_string)
     code
 end
 
-local function getXmlChildrenByName(rootElement, elementName)
-    for _, value in pairs(rootElement["kids"]) do
-        if value["name"] == elementName then
-            return value["text"]
-        end
-    end
-end
-
-local function getXmlNodesByName(rootElement, elementName)
-    local nodes = {}
-    for _, node in pairs(rootElement["kids"]) do
-        if node["name"] == elementName then
-            nodes[#nodes + 1] = node
-        end
-    end
-    return nodes
-end
-
-local function getExtensionFromMimeType(mimeType) 
+local function getExtensionFromMimeType(mimeType)
     if mimeType == "image/jpeg" then
         return ".jpeg"
     end
@@ -129,7 +87,10 @@ local function getDateList(endpointConfig)
             formattedKeys[#formattedKeys + 1] = "key" .. tostring(idx) .. "=" .. value
         end
         local keyString = join(formattedKeys, "&")
-        dateServiceUri = dateServiceUri .. "?" .. keyString
+        if string.sub(dateServiceUri, -1) ~= "?" then
+            dateServiceUri = dateServiceUri .. "?"
+        end
+        dateServiceUri = dateServiceUri .. keyString
     end
     local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
     local body = assert(stream:get_body_as_string())
@@ -142,54 +103,56 @@ end
 
 local function getTmsDefs(tmsXml)
     local tmsDefs = {}
-    for _, proj in ipairs(getXmlNodesByName(tmsXml, "Projection")) do
+    for _, proj in ipairs(tmsXml:get_elements_with_name("Projection")) do
         local tileMatrixSets = {}
-        for _, tms in ipairs(getXmlNodesByName(proj, "TileMatrixSet")) do
-            local tmsName = getXmlChildrenByName(tms, "Identifier")
+        for _, tms in ipairs(proj:get_elements_with_name("TileMatrixSet")) do
+            local tmsName = tms:get_elements_with_name("ows:Identifier")[1]:get_text()
             local matrices = {}
-            for _, matrix in pairs(tms["kids"]) do
-                if matrix["name"] == "TileMatrix" then
-                    local identifier = getXmlChildrenByName(matrix, "Identifier")
-                    local topLeft = split(" ", getXmlChildrenByName(matrix, "TopLeftCorner"))
+            for matrix in tms:childtags() do
+                if matrix.tag == "TileMatrix" then
+                    local identifier = matrix:get_elements_with_name("ows:Identifier")[1]:get_text()
+                    local topLeft = split(" ", matrix:get_elements_with_name("TopLeftCorner")[1]:get_text())
                     matrices[tonumber(identifier) + 1] = {
                         topLeft={tonumber(topLeft[1]), tonumber(topLeft[2])},
-                        scaleDenominator = getXmlChildrenByName(matrix, "ScaleDenominator"),
-                        matrixWidth = getXmlChildrenByName(matrix, "MatrixWidth"),
-                        matrixHeight = getXmlChildrenByName(matrix, "MatrixHeight"),
-                        tileWidth = getXmlChildrenByName(matrix, "TileWidth"),
-                        tileHeight = getXmlChildrenByName(matrix, "TileHeight"),
+                        scaleDenominator = matrix:get_elements_with_name("ScaleDenominator")[1]:get_text(),
+                        matrixWidth = matrix:get_elements_with_name("MatrixWidth")[1]:get_text(),
+                        matrixHeight = matrix:get_elements_with_name("MatrixHeight")[1]:get_text(),
+                        tileWidth = matrix:get_elements_with_name("TileWidth")[1]:get_text(),
+                        tileHeight = matrix:get_elements_with_name("TileHeight")[1]:get_text()
                     }
                 end
             end
         tileMatrixSets[tmsName] = matrices
         end
-    tmsDefs[proj["attr"]["id"]] = tileMatrixSets
+        tmsDefs[proj:get_attribs()["id"]] = tileMatrixSets
     end
     return tmsDefs
 end
 
 local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
+    -- Start by getting the maximum ScaleDenominator for the source TMS
     local function sortTms(a,b)
         return tonumber(a["scaleDenominator"]) < tonumber(b["scaleDenominator"])
     end
-    local function sortTmsName(a,b)
-        a, _ = a:gsub("%D+", "")
-        b, _ = b:gsub("%D+", "")
-        return tonumber(a) < tonumber(b)
-    end
     table.sort(sourceTms, sortTms)
     local sourceScaleDenom = sourceTms[1]["scaleDenominator"]
+
+    -- Now find the TMS in the destination projection that has the closest max scale denominator
+    -- to the source TMS
     local targetTms
     local targetTmsName
+    -- Sort the possible reprojected TileMatrixSets by the value of the biggest scale denominator in their TileMatrix(s).
     local sortedTmsDefs = {}
-    for k in pairs(tmsDefs[targetEpsgCode]) do table.insert(sortedTmsDefs, k) end
-    table.sort(sortedTmsDefs, sortTmsName)
-    for _, name in ipairs(sortedTmsDefs) do
-        local tms = tmsDefs[targetEpsgCode][name]
+    for name, tms in pairs(tmsDefs[targetEpsgCode]) do
         table.sort(tms, sortTms)
-        if tonumber(tms[1]["scaleDenominator"]) > tonumber(sourceScaleDenom) then
-            targetTmsName = name
-            targetTms = tms
+        table.insert(sortedTmsDefs, {name = name, scaleDenominator = tms[1]["scaleDenominator"]})
+    end
+    table.sort(sortedTmsDefs, sortTms)
+
+    for idx, tmsInfo in ipairs(sortedTmsDefs) do
+        if tonumber(tmsInfo["scaleDenominator"]) > tonumber(sourceScaleDenom) then
+            targetTmsName = sortedTmsDefs[idx == 1 and 1 or idx - 1]["name"]
+            targetTms = tmsDefs[targetEpsgCode][targetTmsName]
         end
     end
     return targetTmsName, targetTms
@@ -217,32 +180,34 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local bbox = projInfo["bbox"] or projInfo["bbox84"]
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
 
-    local tiledGroupNode = {name="TiledGroup", kids={
-        {name="Name", text=layerName},
-        {name="Title", attr={["xml:lang"]="en"}, text=layerTitle},
-        {name="Abstract", attr={["xml:lang"]="en"}, text=abstract},
-        {name="Projection", text=projInfo["wkt"]},
-        {name="Pad", text="0"},
-        {name="Bands", text=bands},
-        {name="LatLonBoundingBox",attr={
+    local tiledGroupNode = xml.elem("TiledGroup", {
+        xml.new("Name"):text(layerName),
+        xml.new("Title", {["xml:lang"]="en"}):text(layerTitle),
+        xml.new("Abstract", {["xml:lang"]="en"}):text(abstract),
+        xml.new("Projection"):text(projInfo["wkt"]),
+        xml.new("Pad"):text("0"),
+        xml.new("Bands"):text(bands),
+        xml.new("LatLonBoundingBox", {
             minx=bbox["lowerCorner"][1],
             miny=bbox["lowerCorner"][2],
             maxx=bbox["upperCorner"][1],
             maxy=bbox["upperCorner"][2]
-        }},
-        {name="Key", text="${time}"}}
-    }
+        }),
+        xml.new("Key"):text("${time}")}
+    )
 
     local matrices = tmsDefs[epsgCode][tmsName]
-    if targetEpsgCode then
-        tmsName, matrices = getReprojectedTms(matrices, targetEpsgCode, tmsDefs)
+    if targetEpsgCode and targetEpsgCode ~= epsgCode then
+        _, matrices = getReprojectedTms(matrices, targetEpsgCode, tmsDefs)
     end
     table.sort(matrices, function (a, b)
         return tonumber(a["scaleDenominator"]) < tonumber(b["scaleDenominator"])
     end)
+    targetEpsgCode = targetEpsgCode or epsgCode
+
     for _, matrix in ipairs(matrices) do
         local widthInPx = math.ceil(2 * math.pi * EARTH_RADIUS / (matrix["scaleDenominator"] * 0.28E-3))
-        local heightInPx = epsgCode == "EPSG:4326" and widthInPx / 2 or widthInPx
+        local heightInPx = targetEpsgCode == "EPSG:4326" and widthInPx / 2 or widthInPx
         local widthRatio = widthInPx / (matrix["tileWidth"] * matrix["matrixWidth"])
         local heightRatio = heightInPx / (matrix["tileHeight"] * matrix["matrixHeight"])
         local resx = math.ceil((bbox["upperCorner"][1] - bbox["lowerCorner"][1]) / (matrix["matrixWidth"] * widthRatio))
@@ -250,19 +215,28 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
         local xmax = matrix["topLeft"][1] + resx
         local ymax = matrix["topLeft"][2] - resy
         local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=${time}&width=${width}&height=${height}&bbox=${bbox}"
+        local bboxOut = {}
+        for _, param in ipairs({matrix["topLeft"][1], ymax, xmax, matrix["topLeft"][2]}) do
+            -- Old version of OE rounded zeroes
+            if param < 1 and param > -1 then
+                table.insert(bboxOut, 0)
+            else
+                table.insert(bboxOut, string.format("%.6f", param))
+            end
+        end
         local make_uri = function(hasTime)
             local time = hasTime and "${time}" or ""
             return string.gsub(template, "${layer}", layerId)
-                :gsub("${epsg_code}", epsgCode)
+                :gsub("${epsg_code}", targetEpsgCode)
                 :gsub("${mime_type}", mimeType)
                 :gsub("${time}", time)
                 :gsub("${width}", matrix["tileWidth"])
                 :gsub("${height}", matrix["tileHeight"])
-                :gsub("${bbox}", join({matrix["topLeft"][1], ymax, xmax, matrix["topLeft"][2]}, ","))
+                :gsub("${bbox}", join(bboxOut, ","))
             end
         local outString = static and make_uri(false) or make_uri(true) .. "\n" .. make_uri(false)
         outString = "<![CDATA[" .. outString .. "]]>"
-        tiledGroupNode["kids"][#tiledGroupNode["kids"] + 1] = {name="TilePattern", text=outString}
+        tiledGroupNode:add_child(xml.new("TilePattern"):text(outString))
     end
     return tiledGroupNode
 end
@@ -271,7 +245,7 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
-    local tmsXml = xmlserde.deserialize(tmsFile:read("*all"))
+    local tmsXml = xml.parse(tmsFile:read("*all"))
     local tmsDefs = getTmsDefs(tmsXml)
     tmsFile:close()
 
@@ -300,7 +274,7 @@ local function makeGTS(endpointConfig)
     -- Parse header
     local headerFile = assert(io.open(endpointConfig["gts_header_file"], "r"),
         "Can't open GTS header file at:" .. endpointConfig["gts_header_file"])
-    local mainXml = xmlserde.deserialize(headerFile:read("*all"))
+    local mainXml = xml.parse(headerFile:read("*all"))
     headerFile:close()
 
     -- Load projection (add "EPSG:" part if omitted)
@@ -321,27 +295,29 @@ local function makeGTS(endpointConfig)
     local projection = PROJECTIONS[targetEpsgCode or epsgCode]
     local bbox = projection["bbox"] or projection["bbox84"]
 
-    local serviceNode = getXmlNodesByName(mainXml, "Service")[1]
-    local onlineResourceNode = getXmlNodesByName(serviceNode, "OnlineResource")[1]
+    local serviceNode = mainXml:get_elements_with_name("Service")[1]
+    local onlineResourceNode = serviceNode:get_elements_with_name("OnlineResource")[1]
 
     -- Build <TiledPatterns> section
-    local tiledPatternsNode = {name="TiledPatterns", kids={}}
-    tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = {name="OnlineResource", text=onlineResourceNode["attr"]["href"] .. "twms?"}
-    tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = {name="LatLonBoundingBox",attr={
+    local href_url = onlineResourceNode:get_attribs()["xlink:href"]
+    local tiledPatternsNode = xml.elem("TiledPatterns", {
+        xml.new("OnlineResource", {["xlink:href"]=href_url,
+            ["xmlns:xlink"]="http://www.w3.org/1999/xlink",
+            ["xlink:type"]="simple"}),
+        xml.new("LatLonBoundingBox",
+            { miny=bbox["lowerCorner"][2],
             minx=bbox["lowerCorner"][1],
-            miny=bbox["lowerCorner"][2],
             maxx=bbox["upperCorner"][1],
-            maxy=bbox["upperCorner"][2]
-        }
-    }
+            maxy=bbox["upperCorner"][2]})
+    })
 
-    for _, tiledGroup in pairs(getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)) do
-        tiledPatternsNode["kids"][#tiledPatternsNode["kids"] + 1] = tiledGroup
+    for _, tiledGroup in ipairs(getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)) do
+        tiledPatternsNode:add_child(tiledGroup)
     end
 
     -- Add contents to the rest of the XML
-    mainXml["kids"][#mainXml["kids"] + 1] = tiledPatternsNode
-    return xmlser.serialize(mainXml)
+    mainXml:add_direct_child(tiledPatternsNode)
+    return xml.tostring(mainXml)
 end
 
 
@@ -375,8 +351,9 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
         end
     end
 
-    local layerContents = {}
-    layerContents[#layerContents + 1] = {name= "ows:Title", attr={["xml:lang"]="en"}, text=layerTitle}
+    local layerElem = xml.elem("Layer")
+
+    layerElem:add_child(xml.new("ows:Title", {["xml:lang"]="en"}):text(layerTitle))
 
     -- Get the information we need from the TMS definitions and add bbox node
     local tmsDef = tmsDefs[epsgCode][tmsName]
@@ -387,75 +364,75 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
         tmsName, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
     end
 
-
     local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
     local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
 
-    if targetEpsgCode == "EPSG:4326" then
-        layerContents[#layerContents + 1] = {name="ows:WGS84BoundingBox", attr={crs="urn:ogc:def:crs:OGC:2:84"}, kids={
-            {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
-        }}
-    else
-        local upperCorner84 = tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["upperCorner"][1]) .. " " .. tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["upperCorner"][2])
-        local lowerCorner84 = tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["lowerCorner"][1]) .. " " .. tostring(PROJECTIONS[targetEpsgCode]["bbox84"]["lowerCorner"][2])
-        layerContents[#layerContents + 1] = {name="ows:WGS84BoundingBox", attr={crs="urn:ogc:def:crs:OGC:2:84"}, kids={
-            {name="ows:LowerCorner", text=lowerCorner84}, {name="ows:UpperCorner", text=upperCorner84}
-        }}
-        layerContents[#layerContents + 1] = {name="ows:BoundingBox", attr={crs=PROJECTIONS[targetEpsgCode]["bbox"]["crs"]}, kids={
-            {name="ows:LowerCorner", text=lowerCorner}, {name="ows:UpperCorner", text=upperCorner}
-        }}
-    end
+    local bbox_elem_84 = xml.elem("ows:WGS84BoundingBox",
+        {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
+    bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
+    layerElem:add_child(bbox_elem_84)
+
+    local bbox_elem = xml.elem("ows:BoundingBox",
+        {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
+    bbox_elem:set_attrib("crs", "urn:ogc:def:crs:EPSG::" .. split(":", targetEpsgCode)[2])
+    layerElem:add_child(bbox_elem)
 
     -- Add identifier node
-    layerContents[#layerContents + 1] = {name="ows:Identifier", text=layerId}
+    local id_elem = xml.new("ows:Identifier")
+    id_elem:text(layerId)
+    layerElem:add_child(id_elem)
 
     -- Build Metadata and add nodes
     for _, metadata in pairs(config.metadata) do
-        local metadataNode = {name="ows:Metadata", attr={}}
-        for attr, value in pairs(metadata) do
-            metadataNode["attr"][attr] = value
+        local metadataNode = xml.new("ows:Metadata")
+        for key, value in pairs(metadata) do
+            metadataNode:set_attrib(key, value)
         end
-        layerContents[#layerContents + 1] = metadataNode
+        layerElem:add_child(metadataNode)
     end
 
     -- Build the Style element
-    local styleNode = {name="Style", attr={isDefault="true"}, kids={
-        {name="ows:Title", attr={["xml:lang"]="en"}, text="default"},
-        {name="ows:Identifier", text="default"}
-    }}
-    layerContents[#layerContents + 1] = styleNode
+    local styleNode = xml.new("Style", {isDefault="true"})
+    styleNode:add_child(xml.new("ows:Title",{["xml:lang"]="en"}):text("default"))
+    styleNode:add_child(xml.new("ows:Identifier"):text("default"))
+    layerElem:add_child(styleNode)
 
-    layerContents[#layerContents + 1] = {name="Format", text=mimeType}
 
     -- Build the <Dimension> element for time (if necessary)
     -- Note that we omit this if for some reason we don't have dates from the date service.
     if not static and dateList and dateList[layerId] then
-        local dimensionNode = {name="Dimension", kids={
-            {name="ows:Identifier", text="time"},
-            {name="ows:UOM", text="ISO8601"},
-            {name="Default", text=defaultDate},
-            {name="Current", text="false"},
-        }}
+        local dimensionNode = xml.elem("Dimension", {
+            xml.new("ows:Identifier"):text("time"),
+            xml.new("ows:UOM"):text("ISO8601"),
+            xml.new("Default"):text(defaultDate),
+            xml.new("Current"):text("false")
+        })
         for _, period in pairs(periods) do
-            dimensionNode["kids"][#dimensionNode["kids"] + 1] = {name="Value", text=period}
+            dimensionNode:add_child(xml.new("Value"):text(period))
         end
-        layerContents[#layerContents + 1] = dimensionNode
+        layerElem:add_child(dimensionNode)
     end
 
-    -- Build <TileMatrixSetLink>
-    layerContents[#layerContents + 1] = {name="TileMatrixSetLink", kids={{name="TileMatrixSet", text=tmsName}}}
+
+    -- Build <TileMatrixSetLink> and <Format>
+    layerElem:add_child(xml.elem("TileMatrixSetLink", xml.new("TileMatrixSet"):text(tmsName)))
+    layerElem:add_child(xml.new("Format"):text(mimeType))
 
     -- Build the ResourceURL element
     local timeString = not static and "/{Time}" or ""
+    if baseUriGC[baseUriGC:len()] ~= "/" then
+        baseUriGC = baseUriGC .. '/'
+    end
     local template = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
-    layerContents[#layerContents + 1] = {name="ResourceURL", attr={format=mimeType, resourceType="tile", template=template}}
+    layerElem:addtag("ResourceURL", {format=mimeType, resourceType="tile", template=template})
 
-    return { name="Layer", kids=layerContents}
+    return layerElem
 end
 
 local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
     local tmsDefs = getTmsDefs(tmsXml)
     local dateList = getDateList(endpointConfig)
+
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local nodeList = {}
@@ -477,11 +454,12 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
     return nodeList
 end
 
+
 local function makeGC(endpointConfig)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
-    local tmsXml = xmlserde.deserialize(tmsFile:read("*all"))
+    local tmsXml = xml.parse(tmsFile:read("*all"))
     tmsFile:close()
 
     local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
@@ -501,27 +479,26 @@ local function makeGC(endpointConfig)
     -- Parse header
     local headerFile = assert(io.open(endpointConfig["gc_header_file"], "r"),
         "Can't open GC header file at:" .. endpointConfig["gc_header_file"])
-    local mainXml = xmlserde.deserialize(headerFile:read("*all"))
+    local dom = xml.parse(headerFile:read("*all"))
     headerFile:close()
 
+
     -- Build contents section
-    local contentsNodeContent = {}
-    for _, layer in pairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)) do
-        contentsNodeContent[#contentsNodeContent + 1] = layer
+    local contentsElem = xml.elem("Contents")
+    for _, layer in ipairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)) do
+        contentsElem:add_child(layer)
     end
-    for _, proj in ipairs(getXmlNodesByName(tmsXml, "Projection")) do
-        if proj["attr"]["id"] == targetEpsgCode or not targetEpsgCode and epsgCode then
-            for _, tms in ipairs(getXmlNodesByName(proj, "TileMatrixSet")) do
-                tms["kids"] = namespaceAsNeeded(tms["kids"])
-                contentsNodeContent[#contentsNodeContent + 1] = tms
+
+    for _, proj in ipairs(tmsXml:get_elements_with_name("Projection")) do
+        if proj:get_attribs()["id"] == targetEpsgCode or not targetEpsgCode and epsgCode then
+            for _, tms in ipairs(proj:get_elements_with_name("TileMatrixSet")) do
+                contentsElem:add_child(tms)
             end
         end
     end
-    local contentsNode = {name="Contents", kids=contentsNodeContent}
 
-    -- Add contents to the rest of the XML
-    mainXml["kids"][#mainXml["kids"] + 1] = contentsNode
-    return xmlser.serialize(mainXml)
+    dom:add_direct_child(contentsElem)
+    return xml.tostring(dom)
 end
 
 local function generateFromEndpointConfig()

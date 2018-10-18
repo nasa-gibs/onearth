@@ -3,3 +3,7 @@ unittest-xml-reporting==1.14.0
 requests
 redis
 requests
+formencode
+python-dateutil
+mapbox_vector_tile
+lxml
