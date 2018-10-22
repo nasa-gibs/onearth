@@ -53,6 +53,7 @@ import math
 from functools import partial
 
 DEBUG = False
+START_SERVER = False
 
 EARTH_RADIUS = 6378137.0
 
@@ -96,8 +97,8 @@ local config = {
     gc_header_loc="{gc_header_path}",
     date_service_uri="{date_service_uri}",
     epsg_code="{src_epsg}",
-    gts_service={gts_on},
     gc_header_file="{gc_header_path}",
+    twms_gc_header_file="{twms_gc_header_path}",
     gts_header_file="{gts_header_path}",
     base_uri_gc="{base_uri_gc}",
     base_uri_gts="{base_uri_gts}",
@@ -339,6 +340,8 @@ class TestDateService(unittest.TestCase):
     @classmethod
     def set_up_gc_service(self, test_name, target_proj, date_service_keys=None):
         gc_service_base_url = 'http://localhost/gc_service_' + test_name
+        gc_layer_base_url = 'http://localhost/wmts'
+        gts_layer_base_url = 'http://localhost/twms'
 
         # Configure config paths and dependency files
         gc_test_config_dest_path = os.path.join(
@@ -350,7 +353,11 @@ class TestDateService(unittest.TestCase):
         tms_defs_path = os.path.join(
             dependency_path, 'tilematrixsets.xml')
         gc_header_path = os.path.join(dependency_path, 'header_gc.xml')
-        dependency_paths = [tms_defs_path, gc_header_path]
+        gts_header_path = os.path.join(dependency_path, 'header_gts.xml')
+        twms_gc_header_path = os.path.join(
+            dependency_path, 'header_twms_gc.xml')
+        dependency_paths = [tms_defs_path, gc_header_path,
+                            gts_header_path, twms_gc_header_path]
         for path in dependency_paths:
             shutil.copy(path, gc_test_config_dest_path)
 
@@ -362,12 +369,12 @@ class TestDateService(unittest.TestCase):
             '{layer_config_path}', self.layer_config_base_path),
             ('{tms_defs_path}', tms_defs_path),
             ('{gc_header_path}', gc_header_path),
-            ('{gts_header_path}', 'nil'),
+            ('{gts_header_path}', gts_header_path),
+            ('{twms_gc_header_path}', twms_gc_header_path),
             ('{date_service_uri}', self.date_service_url),
             ('{src_epsg}', 'EPSG:4326'),
-            ('{gts_on}', 'false'),
-            ('{base_uri_gc}', gc_service_base_url),
-            ('{base_uri_gts}', 'nil'),
+            ('{base_uri_gc}', gc_layer_base_url),
+            ('{base_uri_gts}', gts_layer_base_url),
             ('{target_epsg}', target_proj),
             ('{date_service_keys}', date_service_str)])
 
@@ -381,9 +388,8 @@ class TestDateService(unittest.TestCase):
             ('{gc_lua_path}',
              test_gc_config_location),
             ('{gc_path}', gc_test_config_dest_path),
-            ('{endpoint}', '/' +
-             gc_service_base_url.split('/')[-1]),
-            ('{regexp}', 'GetCapabilities.xml')])
+            ('{endpoint}', '/' + gc_service_base_url.split('/')[-1]),
+            ('{regexp}', 'gc_service')])
         gc_apache_path = os.path.join(
             '/etc/httpd/conf.d', 'oe2_test_gc_service_{}.conf'.format(test_name))
         self.test_apache_configs.append(gc_apache_path)
@@ -393,68 +399,13 @@ class TestDateService(unittest.TestCase):
         restart_apache()
 
         return {
-            'endpoint': gc_service_base_url,
-            'header_path': gc_header_path,
-            'tms_path': tms_defs_path
-        }
-
-    @classmethod
-    def set_up_gts_service(self, test_name, target_proj, date_service_keys=None):
-        gts_service_base_url = 'http://localhost/gts_service_' + test_name
-
-        # Configure config paths and dependency files
-        gts_test_config_dest_path = os.path.join(
-            self.test_config_base_path, 'gts_service_test', test_name)
-        make_dir_tree(gts_test_config_dest_path, ignore_existing=True)
-
-        # Copy dependency files
-        dependency_path = os.path.join(os.getcwd(), 'gc_service_test_files')
-        tms_defs_path = os.path.join(
-            dependency_path, 'tilematrixsets.xml')
-        gts_header_path = os.path.join(dependency_path, 'header_gts.xml')
-        dependency_paths = [tms_defs_path, gts_header_path]
-        for path in dependency_paths:
-            shutil.copy(path, gts_test_config_dest_path)
-
-        # Format and write the Lua config files
-        gc_config = bulk_replace(GC_SERVICE_LUA_TEMPLATE, [(
-            '{layer_config_path}', self.layer_config_base_path),
-            ('{tms_defs_path}', tms_defs_path),
-            ('{gc_header_path}', 'nil'),
-            ('{gts_header_path}', gts_header_path),
-            ('{date_service_uri}', self.date_service_url),
-            ('{src_epsg}', 'EPSG:4326'),
-            ('{gts_on}', 'true'),
-            ('{base_uri_gc}', 'nil'),
-            ('{base_uri_gts}', gts_service_base_url),
-            ('{target_epsg}', target_proj),
-            ('{date_service_keys}', '{}')])
-
-        test_gc_config_location = os.path.join(
-            gts_test_config_dest_path, 'gts_service.lua')
-        with open(test_gc_config_location, 'w+') as f:
-            f.write(gc_config)
-
-        # Format and write the Apache config file
-        apache_config = bulk_replace(GC_SERVICE_APACHE_CONFIG_TEMPLATE, [
-            ('{gc_lua_path}',
-             test_gc_config_location),
-            ('{gc_path}', gts_test_config_dest_path),
-            ('{endpoint}', '/' +
-             gts_service_base_url.split('/')[-1]),
-            ('{regexp}', 'GetTileService.xml')])
-        gts_apache_path = os.path.join(
-            '/etc/httpd/conf.d', 'oe2_test_gts_service_{}.conf'.format(test_name))
-        self.test_apache_configs.append(gts_apache_path)
-        with open(gts_apache_path, 'w+') as f:
-            f.write(apache_config)
-
-        restart_apache()
-
-        return {
-            'endpoint': gts_service_base_url,
-            'header_path': gts_header_path,
-            'tms_path': tms_defs_path
+            'endpoint': gc_service_base_url + '/gc_service',
+            'gc_header_path': gc_header_path,
+            'twms_gc_header_path': twms_gc_header_path,
+            'gts_header_path': gts_header_path,
+            'tms_path': tms_defs_path,
+            'gc_base_url': gc_layer_base_url,
+            'gts_base_url': gts_layer_base_url
         }
 
     @classmethod
@@ -483,7 +434,7 @@ class TestDateService(unittest.TestCase):
         layer_config_path = self.write_config_for_test_layer(layer)
 
         # Download GC file
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
         if not DEBUG:
@@ -664,7 +615,7 @@ class TestDateService(unittest.TestCase):
             found, expected, 'Incorrect "resourceType" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'.format(
                 expected, found, url))
 
-        expected = apache_config['endpoint'] + '/' + \
+        expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
         found = resource_url_elems[0].get('template')
@@ -704,7 +655,7 @@ class TestDateService(unittest.TestCase):
         layer_config_path = self.write_config_for_test_layer(layer)
 
         # Download GC file
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
         if not DEBUG:
@@ -885,7 +836,7 @@ class TestDateService(unittest.TestCase):
             found, expected, 'Incorrect "resourceType" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'.format(
                 expected, found, url))
 
-        expected = apache_config['endpoint'] + '/' + \
+        expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
         found = resource_url_elems[0].get('template')
@@ -929,10 +880,10 @@ class TestDateService(unittest.TestCase):
             seed_redis_data([redis_info])
 
         # Download GC file
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
-        if not DEBUG:
+        if not START_SERVER:
             os.remove(layer_config_path)
             if redis_info:
                 remove_redis_layer(redis_info)
@@ -1112,7 +1063,7 @@ class TestDateService(unittest.TestCase):
             found, expected, 'Incorrect "resourceType" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'.format(
                 expected, found, url))
 
-        expected = apache_config['endpoint'] + '/' + \
+        expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
         found = resource_url_elems[0].get('template')
@@ -1229,10 +1180,10 @@ class TestDateService(unittest.TestCase):
             seed_redis_data([redis_info])
 
         # Download GC file
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
-        if not DEBUG:
+        if not START_SERVER:
             os.remove(layer_config_path)
             if redis_info:
                 remove_redis_layer(redis_info)
@@ -1412,7 +1363,7 @@ class TestDateService(unittest.TestCase):
             found, expected, 'Incorrect "resourceType" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'.format(
                 expected, found, url))
 
-        expected = apache_config['endpoint'] + '/' + \
+        expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
         found = resource_url_elems[0].get('template')
@@ -1528,10 +1479,10 @@ class TestDateService(unittest.TestCase):
             seed_redis_data([redis_info], db_keys=date_service_keys)
 
         # Download GC file
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
-        if not DEBUG:
+        if not START_SERVER:
             os.remove(layer_config_path)
             if redis_info:
                 remove_redis_layer(redis_info, db_keys=date_service_keys)
@@ -1711,7 +1662,7 @@ class TestDateService(unittest.TestCase):
             found, expected, 'Incorrect "resourceType" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'.format(
                 expected, found, url))
 
-        expected = apache_config['endpoint'] + '/' + \
+        expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
         found = resource_url_elems[0].get('template')
@@ -1814,7 +1765,7 @@ class TestDateService(unittest.TestCase):
 
         layer = TEST_LAYERS['test_1']
         layer_config_path = self.write_config_for_test_layer(layer)
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
         if not DEBUG:
@@ -1830,7 +1781,7 @@ class TestDateService(unittest.TestCase):
                 'Response for url: {} is not valid xml. Error: {}'.format(url, e))
 
         # Get and parse the header XML
-        with open(apache_config['header_path'], 'r') as f:
+        with open(apache_config['gc_header_path'], 'r') as f:
             header_dom = etree.fromstring(f.read())
 
         # Remove the <Contents>  element from the GC as it is dynamically
@@ -1853,10 +1804,10 @@ class TestDateService(unittest.TestCase):
                 'default'], layer['periods']]
             seed_redis_data([redis_info])
 
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
-        if not DEBUG:
+        if not START_SERVER:
             os.remove(layer_config_path)
             if redis_info:
                 remove_redis_layer(redis_info)
@@ -1904,10 +1855,10 @@ class TestDateService(unittest.TestCase):
                 'default'], layer['periods']]
             seed_redis_data([redis_info])
 
-        url = apache_config['endpoint'] + '/GetCapabilities.xml'
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
         r = requests.get(url)
 
-        if not DEBUG:
+        if not START_SERVER:
             os.remove(layer_config_path)
             if redis_info:
                 remove_redis_layer(redis_info)
@@ -1942,12 +1893,12 @@ class TestDateService(unittest.TestCase):
             'Incorrect line found in GC TileMatrixSet definitions. Error {}. Url: {}'.format(e, url)))
 
     def test_gts_header(self):
-        apache_config = self.set_up_gts_service(
+        apache_config = self.set_up_gc_service(
             'test_gts_header', 'EPSG:4326')
 
         layer = TEST_LAYERS['test_1']
         layer_config_path = self.write_config_for_test_layer(layer)
-        url = apache_config['endpoint'] + '/GetTileService.xml'
+        url = apache_config['endpoint'] + '?request=gettileservice'
         r = requests.get(url)
 
         if not DEBUG:
@@ -1963,7 +1914,7 @@ class TestDateService(unittest.TestCase):
                 'Response for url: {} is not valid xml. Error: {}'.format(url, e))
 
         # Get and parse the header XML
-        with open(apache_config['header_path'], 'r') as f:
+        with open(apache_config['gts_header_path'], 'r') as f:
             header_dom = etree.fromstring(f.read())
 
         # Remove the <TiledPatterns>  element from the GTS as it is dynamically
@@ -1975,12 +1926,12 @@ class TestDateService(unittest.TestCase):
 
     def test_gts_layers(self):
         epsg_code = 'EPSG:4326'
-        apache_config = self.set_up_gts_service(
+        apache_config = self.set_up_gc_service(
             'test_gts_layers', epsg_code)
 
         layer = TEST_LAYERS['test_1']
         layer_config_path = self.write_config_for_test_layer(layer)
-        url = apache_config['endpoint'] + '/GetTileService.xml'
+        url = apache_config['endpoint'] + '?request=gettileservice'
         r = requests.get(url)
 
         if not DEBUG:
@@ -1999,7 +1950,7 @@ class TestDateService(unittest.TestCase):
         tp_elem = gts_dom.find('{*}TiledPatterns')
 
         # Get and parse the header XML
-        with open(apache_config['header_path'], 'r') as f:
+        with open(apache_config['gts_header_path'], 'r') as f:
             header_dom = etree.fromstring(f.read())
 
         # Check base TP stuff
@@ -2212,12 +2163,12 @@ class TestDateService(unittest.TestCase):
     def test_gts_layers_reprojected(self):
         epsg_code = 'EPSG:3857'
         target_tms = 'GoogleMapsCompatible_Level6'
-        apache_config = self.set_up_gts_service(
+        apache_config = self.set_up_gc_service(
             'test_gts_layers_reprojected', epsg_code)
 
         layer = TEST_LAYERS['test_1']
         layer_config_path = self.write_config_for_test_layer(layer)
-        url = apache_config['endpoint'] + '/GetTileService.xml'
+        url = apache_config['endpoint'] + '?request=gettileservice'
         r = requests.get(url)
 
         if not DEBUG:
@@ -2236,7 +2187,7 @@ class TestDateService(unittest.TestCase):
         tp_elem = gts_dom.find('{*}TiledPatterns')
 
         # Get and parse the header XML
-        with open(apache_config['header_path'], 'r') as f:
+        with open(apache_config['gts_header_path'], 'r') as f:
             header_dom = etree.fromstring(f.read())
 
         # Check base TP stuff
@@ -2447,9 +2398,188 @@ class TestDateService(unittest.TestCase):
                 self.fail(
                     '<TilePattern> found but not expected in GTS: {}. Url: {}'.format(p, url))
 
+    def test_twms_gc_header_equal(self):
+        apache_config = self.set_up_gc_service(
+            'test_twms_gc_header_equal', 'EPSG:4326')
+
+        layer = TEST_LAYERS['test_1']
+        layer_config_path = self.write_config_for_test_layer(layer)
+        url = apache_config['endpoint'] + '?request=twmsgetcapabilities'
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer_config_path)
+
+        self.assertEqual(
+            r.status_code, 200, 'Error downloading TWMS GetCapabilities file from url: {}.'.format(url))
+
+        try:
+            gc_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get and parse the header XML
+        with open(apache_config['twms_gc_header_path'], 'r') as f:
+            header_dom = etree.fromstring(f.read())
+
+        # Remove all the <Layer> elements beneath the top one as they are dynamically
+        # generated
+        base_layer_elem = gc_dom.find('{*}Capability').find('{*}Layer')
+        for l in base_layer_elem.findall('{*}Layer'):
+            base_layer_elem.remove(l)
+
+        xml_compare(gc_dom, header_dom, lambda e: self.fail(
+            'Incorrect line found in GC header. Error {}. Url: {}'.format(e, url)))
+
+    def test_twms_gc_layer_info(self):
+        # Check that <Layer> block for a static layer is being generated
+        # correctly
+
+        apache_config = self.set_up_gc_service(
+            'test_twms_gc_layer_info', 'EPSG:4326')
+
+        # Create and write layer config
+        layer = TEST_LAYERS['test_1']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        # Download GC file
+        url = apache_config['endpoint'] + '?request=twmsgetcapabilities'
+        r = requests.get(url)
+
+        if not DEBUG:
+            os.remove(layer_config_path)
+
+        self.assertEqual(
+            r.status_code, 200, 'Error downloading GetCapabilities file from url: {}.'.format(url))
+
+        # Parse the XML and verify the root element and its namespaces are
+        # correct
+        try:
+            gc_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(url, e))
+
+        # Get and test XML for this layer
+        capability_elem = gc_dom.find('{*}Capability')
+        layer_elems = capability_elem.find('{*}Layer').findall('{*}Layer')
+        self.assertNotEqual(
+            len(layer_elems), 0, 'Layer not found in generated GC file. Url: {}'.format(url))
+        layer_elem = layer_elems[0]
+
+        expected = '0'
+        found = layer_elem.get('queryable')
+        self.assertEqual(
+            found, expected, 'Incorrect "queryable" attribute for <Layer>. Expected {}, found {}. Url: {}'.format(
+                expected, found, url))
+
+        name_elems = layer_elem.findall('Name')
+        self.assertNotEqual(
+            len(name_elems), 0, 'Name not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            name_elems), 1, 'Incorrect number of <Name> elements found -- should only be 1. Url: {}'.format(url))
+        self.assertEqual(name_elems[0].text, layer['layer_id'], '<Name> element incorrect, expected {}, found {}. Url:{}'.format(
+            layer['layer_id'], name_elems[0].text, url))
+
+        title_elems = layer_elem.findall('Title')
+        self.assertNotEqual(
+            len(title_elems), 0, 'Title not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            title_elems), 1, 'Incorrect number of <Title> elements found -- should only be 1. Url: {}'.format(url))
+        self.assertEqual(title_elems[0].text, layer['layer_title'], '<Title> element incorrect, expected {}, found {}. Url:{}'.format(
+            layer['layer_title'], title_elems[0].text, url))
+
+        expected = 'en'
+        found = title_elems[0].get(
+            '{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(
+            found, expected, 'Incorrect attribute for <Title>. Expected {}, found {}. Url: {}'.format(
+                expected, found, url))
+
+        abstract_elems = layer_elem.findall('Abstract')
+        self.assertNotEqual(
+            len(abstract_elems), 0, 'Abstract not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            abstract_elems), 1, 'Incorrect number of <Abstract> elements found -- should only be 1. Url: {}'.format(url))
+        self.assertEqual(abstract_elems[0].text, layer['abstract'], '<Abstract> element incorrect, expected {}, found {}. Url:{}'.format(
+            layer['abstract'], abstract_elems[0].text, url))
+
+        expected = 'en'
+        found = abstract_elems[0].get(
+            '{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(
+            found, expected, 'Incorrect attribute for <Abstract>. Expected {}, found {}. Url: {}'.format(
+                expected, found, url))
+
+        bbox_elems = layer_elem.findall('LatLonBoundingBox')
+        self.assertNotEqual(
+            len(bbox_elems), 0, 'LatLonBoundingBox not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            bbox_elems), 1, 'Incorrect number of <LatLonBoundingBox> elements found -- should only be 1. Url: {}'.format(url))
+
+        attrs = ['minx', 'miny', 'maxx', 'maxy']
+        bbox = ['-180', '-90', '180', '90']
+        for attr, expected in zip(attrs, bbox):
+            found = bbox_elems[0].get(attr)
+            self.assertEqual(
+                found, expected, 'Incorrect attribute for <LatLonBoundingBox>. Expected {}, found {}. Url: {}'.format(
+                    expected, found, url))
+
+        style_elems = layer_elem.findall('Style')
+        self.assertNotEqual(
+            len(style_elems), 0, 'Style not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            style_elems), 1, 'Incorrect number of <Style> elements found -- should only be 1. Url: {}'.format(url))
+
+        style_name_elems = style_elems[0].findall('Name')
+        self.assertNotEqual(
+            len(style_name_elems), 0, 'Style/Name not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            style_name_elems), 1, 'Incorrect number of Style/Name elements found -- should only be 1. Url: {}'.format(url))
+        self.assertEqual(style_name_elems[0].text, 'default', '<Name> element incorrect, expected {}, found {}. Url:{}'.format(
+            'default', style_name_elems[0].text, url))
+
+        style_title_elems = style_elems[0].findall('Title')
+        self.assertNotEqual(
+            len(style_title_elems), 0, 'Style/Title not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            style_title_elems), 1, 'Incorrect number of Style/Title elements found -- should only be 1. Url: {}'.format(url))
+        self.assertEqual(style_title_elems[0].text, '(default) Default style', '<Title> element incorrect, expected {}, found {}. Url:{}'.format(
+            '(default) Default style', style_title_elems[0].text, url))
+
+        expected = 'en'
+        found = style_title_elems[0].get(
+            '{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(
+            found, expected, 'Incorrect attribute "lang" for <Style>/<Title>. Expected {}, found {}. Url: {}'.format(
+                expected, found, url))
+
+        scale_hint_elems = layer_elem.findall('ScaleHint')
+        self.assertNotEqual(
+            len(scale_hint_elems), 0, 'ScaleHint not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            scale_hint_elems), 1, 'Incorrect number of ScaleHint elements found -- should only be 1. Url: {}'.format(url))
+
+        attrs = ['min', 'max']
+        values = ['10', '100']
+        for attr, expected in zip(attrs, values):
+            found = scale_hint_elems[0].get(attr)
+            self.assertEqual(
+                found, expected, 'Incorrect attribute for <ScaleHint>. Expected {}, found {}. Url: {}'.format(
+                    expected, found, url))
+
+        min_scale_denom_elems = layer_elem.findall('MinScaleDenominator')
+        self.assertNotEqual(
+            len(min_scale_denom_elems), 0, '<MinScaleDenominator> not found in generated TWMS GC file. Url: {}'.format(url))
+        self.assertEqual(len(
+            min_scale_denom_elems), 1, 'Incorrect number of <MinScaleDenominator> elements found -- should only be 1. Url: {}'.format(url))
+        self.assertEqual(min_scale_denom_elems[0].text, '100', '<MinScaleDenominator> element incorrect, expected {}, found {}. Url:{}'.format(
+            '100', min_scale_denom_elems[0].text, url))
+
     @classmethod
     def tearDownClass(self):
-        if not DEBUG:
+        if not START_SERVER:
             shutil.rmtree(self.test_config_base_path)
             for cfg in self.test_apache_configs:
                 os.remove(cfg)
@@ -2458,13 +2588,16 @@ class TestDateService(unittest.TestCase):
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_date_service_results.xml',
-                      help='Specify XML output file (default is test_date_service_results.xml')
+    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_gc_service_results.xml',
+                      help='Specify XML output file (default is test_date_gc_results.xml')
     parser.add_option('-d', '--debug', action='store_true',
                       dest='debug', help='Output verbose debugging messages')
+    parser.add_option('-s', '--start_server', action='store_true',
+                      dest='start_server', help='Start server with all sample configurations')
     (options, args) = parser.parse_args()
 
     DEBUG = options.debug
+    START_SERVER = options.start_server
 
     # Have to delete the arguments as they confuse unittest
     del sys.argv[1:]

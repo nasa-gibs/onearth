@@ -32,7 +32,6 @@ local PROJECTIONS = {
 
 -- Utility functions
 
-
 local function split(sep, str)
     local results = {}
     for value in string.gmatch(str, "([^" .. sep .. "]+)") do
@@ -49,6 +48,21 @@ local function join(arr, sep)
     return outStr
 end
 
+local function get_query_param (param, query_string)
+    if not query_string then
+        return nil
+    end
+    local query_parts = split("&", query_string)
+    local date_string = nil;
+    for _, part in pairs(query_parts) do
+        local query_pair = split("=", part)
+        if string.lower(query_pair[1]) == param then
+            return query_pair[2]
+        end
+    end
+    return date_string
+end
+    
 local function sendResponse(code, msg_string)
     return msg_string,
     {
@@ -272,6 +286,9 @@ end
 
 local function makeGTS(endpointConfig)
     -- Parse header
+    if not endpointConfig["gts_header_file"] then
+        print("Error: no 'gts_header_file' configured!")
+    end
     local headerFile = assert(io.open(endpointConfig["gts_header_file"], "r"),
         "Can't open GTS header file at:" .. endpointConfig["gts_header_file"])
     local mainXml = xml.parse(headerFile:read("*all"))
@@ -322,8 +339,53 @@ end
 
 
 -- GetCapabilities functions
+local function makeTWMSGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode)
+    -- Load and parse the YAML config file
+    local configFile = assert(io.open(filename, "r"))
+    local config = lyaml.load(configFile:read("*all"))
+    configFile:close()
 
-local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, targetEpsgCode)
+    -- Look for the required data in the YAML config file, and throw errors if we can't find it
+    local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
+    local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
+    local layerAbstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
+    -- local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+
+    local layerElem = xml.new("Layer", {queryable="0"})
+    layerElem:add_child(xml.new("Name"):text(layerId))
+    layerElem:add_child(xml.new("Title",  {["xml:lang"]="en"}):text(layerTitle))
+    layerElem:add_child(xml.new("Abstract",  {["xml:lang"]="en"}):text(layerAbstract))
+
+    -- Get the information we need from the TMS definitions and add bbox node
+    -- local tmsDef = tmsDefs[epsgCode][tmsName]
+    -- if not tmsDef then
+    --     print("Can't find TileMatrixSet (" .. tmsName .. ") for this layer in the TileMatrixSet definitions file." )
+    -- end
+    -- if targetEpsgCode ~= epsgCode then
+    --     _, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
+    -- end
+
+    local bbox = PROJECTIONS[targetEpsgCode or epsgCode]["bbox"] or PROJECTIONS[targetEpsgCode or epsgCode]["bbox84"]
+
+    layerElem:add_child(xml.new("LatLonBoundingBox", {
+        minx=tostring(bbox["lowerCorner"][1]),
+        miny=tostring(bbox["lowerCorner"][2]),
+        maxx=tostring(bbox["upperCorner"][1]),
+        maxy=tostring(bbox["upperCorner"][2])
+    }))
+
+    layerElem:add_child(xml.elem("Style", {
+        xml.new("Name"):text("default"),
+        xml.new("Title", {["xml:lang"]="en"}):text("(default) Default style")}
+    ))
+
+    layerElem:add_child(xml.new("ScaleHint", {min="10", max="100"}))
+    layerElem:add_child(xml.new("MinScaleDenominator"):text("100"))
+
+    return layerElem
+end
+
+local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
@@ -429,16 +491,20 @@ local function makeGCLayer(filename, tmsDefs, dateList, baseUriGC, epsgCode, tar
     return layerElem
 end
 
-local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
+local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode, twms)
     local tmsDefs = getTmsDefs(tmsXml)
     local dateList = getDateList(endpointConfig)
 
     local layerConfigSource = endpointConfig["layer_config_source"]
 
+    local buildFunc = twms and makeTWMSGCLayer or makeGCLayer
+    if not twms and not endpointConfig["base_uri_gc"] then
+        print("Error: no 'base_uri_gc' configured")
+    end
     local nodeList = {}
     local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = makeGCLayer(layerConfigSource, tmsDefs, dateList, endpointConfig["base_uri_gc"], epsgCode, targetEpsgCode)
+        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"])
     end
 
     if fileAttrs["mode"] == "directory" then
@@ -446,8 +512,8 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
         for file in lfs.dir(layerConfigSource) do
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
-                nodeList[#nodeList + 1] = makeGCLayer(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, endpointConfig["base_uri_gc"], epsgCode, targetEpsgCode)
+                nodeList[#nodeList + 1] = buildFunc(layerConfigSource .. "/" .. file,
+                 tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"])
             end
         end
     end
@@ -501,6 +567,50 @@ local function makeGC(endpointConfig)
     return xml.tostring(dom)
 end
 
+
+local function makeTWMSGC(endpointConfig)
+    -- Load TMS defs
+    local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
+        , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
+    local tmsXml = xml.parse(tmsFile:read("*all"))
+    tmsFile:close()
+
+    local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
+    if string.match(epsgCode:lower(), "^%d") then
+        epsgCode = "EPSG:" .. epsgCode
+    end
+
+    local targetEpsgCode = endpointConfig["target_epsg_code"]
+    if targetEpsgCode then
+        if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
+            targetEpsgCode = "EPSG:" .. targetEpsgCode
+        end
+    else
+        targetEpsgCode = epsgCode
+    end
+
+    -- Parse header
+    local headerFile = assert(io.open(endpointConfig["twms_gc_header_file"], "r"),
+        "Can't open TWMS GC header file at:" .. endpointConfig["twms_gc_header_file"])
+    local dom = xml.parse(headerFile:read("*all"))
+    headerFile:close()
+
+
+    -- Add layers to <Capability> section
+    local capabilityElems = dom:get_elements_with_name("Capability")
+    if not capabilityElems then
+        return "{\"error\": \"Can't find <Capability> element in header TWMS GetCapabilities header file.\"}"
+    end
+    local capabilityElem = capabilityElems[1]
+
+    local baseLayerElem = capabilityElem:get_elements_with_name("Layer")[1]
+    for _, layer in ipairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode, true)) do
+        baseLayerElem:add_direct_child(layer)
+    end
+
+    return xml.tostring(dom)
+end
+
 local function generateFromEndpointConfig()
     -- Load endpoint config
     assert(arg[1], "Must specifiy an endpoint config file!")
@@ -514,10 +624,23 @@ local function generateFromEndpointConfig()
 end
 
 function onearth_gc_service.handler(endpointConfig)
-    return function()
-        local responseXml = endpointConfig["gts_service"] == true and makeGTS(endpointConfig)
-            or makeGC(endpointConfig)
-        return sendResponse(200, responseXml)
+    return function(query_string, _, _)
+        local req = get_query_param("request", query_string)
+        if not req then
+            return sendResponse(200, 'No REQUEST parameter specified')
+        end
+        req = req:lower()
+        local response
+        if req == "wmtsgetcapabilities" then
+            response = makeGC(endpointConfig)
+        elseif req == "twmsgetcapabilities" then
+            response = makeTWMSGC(endpointConfig)
+        elseif req == "gettileservice" then
+            response = makeGTS(endpointConfig)
+        else
+            response = "Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService"
+        end
+        return sendResponse(200, response)
     end
 end
 

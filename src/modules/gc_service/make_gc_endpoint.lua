@@ -22,12 +22,11 @@ local onearth_gc_gts = require "onearth_gc_gts"
 local config = {
     layer_config_source="${config_loc}",
     tms_defs_file="${tms_loc}",
-    gc_header_loc="${gc_header_loc}",
     date_service_uri="${date_service_uri}",
     epsg_code="${epsg_code}",
-    gts_service=${gettileservicemode},
     gc_header_file=${gc_header_file},
     gts_header_file=${gts_header_file},
+    twms_gc_header_file=${twms_gc_header_file},
     base_uri_gc=${base_uri_gc},
     base_uri_gts=${base_uri_gts},
     target_epsg_code=${target_epsg_code},
@@ -57,7 +56,7 @@ local function addQuotes(str)
     return '"' .. str .. '"'
 end
 
-function map(func, array)
+local function map(func, array)
   local new_array = {}
   for i,v in ipairs(array) do
     new_array[i] = func(v)
@@ -67,7 +66,7 @@ end
 
 -- Create configuration
 
-local function create_config(endpointConfigFilename, makeOptions)
+local function create_config(endpointConfigFilename)
     local endpointConfigFile = assert(io.open(endpointConfigFilename, "r"), "Can't open endpoint config file: " .. endpointConfigFilename)
     local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
     endpointConfigFile:close()
@@ -85,7 +84,7 @@ local function create_config(endpointConfigFilename, makeOptions)
 
     local apacheConfigLocation = endpointConfig["apache_config_location"]
     if not apacheConfigLocation then
-        apacheConfigLocation = "/etc/httpd/conf.d/gc_gts_service.conf"
+        apacheConfigLocation = "/etc/httpd/conf.d/gc_service.conf"
         print("No Apache config location specified. Using '/etc/httpd/conf.d/" .. apacheConfigLocation .. "'")
     end
 
@@ -95,66 +94,45 @@ local function create_config(endpointConfigFilename, makeOptions)
         luaConfigBaseLocation = "/var/www/html"
     end
 
-    local endpoints = {}
-    if makeOptions["gc"] then
-        local gcHeaderFilename = assert(endpointConfig["gc_header_file"], "GetCapabilities creation selected but no gc_header_file in the endpoint config")
-        local gc_endpoint = endpointConfig["gc_endpoint"]
-        if not gc_endpoint then
-            print("No GetCapabilities endpoint specified. Using /gc")
-            gc_endpoint = "/gc"
-        end
-        endpoints[#endpoints + 1] = {path=gc_endpoint, isGts=false, headerFile=gcHeaderFilename}
+    local endpoint = endpointConfig["endpoint"]
+    if not endpoint then
+        print("No service endpoint specified. Using /gc")
+        endpoint = "/gc"
     end
 
-    if makeOptions["gts"] then
-        local gtsHeaderFilename = assert(endpointConfig["gts_header_file"], "GetTileService creation selected but no gts_header_file in the endpoint config")
-        local gts_endpoint = endpointConfig["gts_endpoint"]
-        if not gts_endpoint then
-            print("No GetTileService endpoint specified. Using /gts")
-            gts_endpoint = "/gts"
-        end
-        endpoints[#endpoints + 1] = {path=gts_endpoint, isGts=true, headerFile=gtsHeaderFilename}
-    end
+    local regexp = "gc_service"
+    local luaConfigLocation = luaConfigBaseLocation .. endpoint .. "/" .. "onearth_gc_service.lua"
 
-    local apacheConfigs = {}
-    for _, endpoint in ipairs(endpoints) do
-        local regexp = endpoint["isGts"] and "[rR][eE][qQ][uU][eE][sS][tT]=GetTileService" or "([rR][eE][qQ][uU][eE][sS][tT]=GetCapabilities|WMTSCapabilities\.xml)"
-        local luaConfigLocation = luaConfigBaseLocation .. endpoint["path"] .. "/" .. (endpoint["isGts"] and "onearth_gts_service" or "onearth_gc_service") .. ".lua"
+    -- Generate Apache config string
+    local apacheConfig = apacheConfigTemplate:gsub("${dir}", luaConfigBaseLocation .. endpoint)
+        :gsub("${regexp}", regexp)
+        :gsub("${script_loc}", luaConfigLocation)
 
-        -- Generate Apache config string
-        apacheConfigs[#apacheConfigs + 1] = apacheConfigTemplate:gsub("${dir}", luaConfigBaseLocation .. endpoint["path"])
-            :gsub("${regexp}", regexp)
-            :gsub("${script_loc}", luaConfigLocation)
+    -- Make and write Lua config
+    local luaConfig = luaConfigTemplate:gsub("${config_loc}", layerConfigSource)
+        :gsub("${tms_loc}", tmsDefsFilename)
+        :gsub("${date_service_uri}", dateServiceUri)
+        :gsub("${epsg_code}", epsgCode)
+        :gsub("${gc_header_file}", addQuotes(endpointConfig["gc_header_file"]) or "nil")
+        :gsub("${gts_header_file}", addQuotes(endpointConfig["gts_header_file"]) or "nil")
+        :gsub("${twms_gc_header_file}", addQuotes(endpointConfig["twms_gc_header_file"]) or "nil")
+        :gsub("${base_uri_gc}", addQuotes(endpointConfig["base_uri_gc"]) or "nil")
+        :gsub("${base_uri_gts}", addQuotes(endpointConfig["base_uri_gts"]) or "nil")
+        :gsub("${target_epsg_code}", endpointConfig["target_epsg_code"] and addQuotes(endpointConfig["target_epsg_code"]) or "nil")
+        :gsub("${date_service_keys}", dateServiceKeyString)
+    lfs.mkdir(luaConfigBaseLocation .. endpoint)
+    local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
+        .. luaConfigLocation .. " for writing."))
+    luaConfigFile:write(luaConfig)
+    luaConfigFile:close()
 
-        -- Make and write Lua config
-        local luaConfig = luaConfigTemplate:gsub("${config_loc}", layerConfigSource)
-            :gsub("${tms_loc}", tmsDefsFilename)
-            :gsub("${gc_header_loc}", endpoint["headerFile"])
-            :gsub("${date_service_uri}", dateServiceUri)
-            :gsub("${epsg_code}", epsgCode)
-            :gsub("${gettileservicemode}", tostring(endpoint["isGts"]))
-            :gsub("${gc_header_file}", (not endpoint["isGts"] and addQuotes(endpointConfig["gc_header_file"]) or "nil"))
-            :gsub("${gts_header_file}", (endpoint["isGts"] and addQuotes(endpointConfig["gts_header_file"]) or "nil"))
-            :gsub("${base_uri_gc}", (not endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gc"]) or "nil"))
-            :gsub("${base_uri_gts}", (endpoint["isGts"] and addQuotes(endpointConfig["base_uri_gts"]) or "nil"))
-            :gsub("${target_epsg_code}", endpointConfig["target_epsg_code"] and addQuotes(endpointConfig["target_epsg_code"]) or "nil")
-            :gsub("${date_service_keys}", dateServiceKeyString)
-        lfs.mkdir(luaConfigBaseLocation .. endpoint["path"])
-        local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
-            .. luaConfigLocation .. " for writing."))
-        luaConfigFile:write(luaConfig)
-        luaConfigFile:close()
-
-        print((endpoint["isGts"] and "GetTileService" or "GetCapabilities") .. " service config has been saved to " .. luaConfigLocation)
-    end
+    print("GetCapabilities" .. " service config has been saved to " .. luaConfigLocation)
 
     local apacheConfigFile = assert(io.open(apacheConfigLocation, "w+"), "Can't open Apache config file "
         .. apacheConfigLocation .. " for writing.")
     apacheConfigFile:write(apacheConfigHeaderTemplate)
-    for _, line in ipairs(apacheConfigs) do
-        apacheConfigFile:write(line)
-        apacheConfigFile:write("\n")
-    end
+    apacheConfigFile:write(apacheConfig)
+    apacheConfigFile:write("\n")
     apacheConfigFile:close()
 
     print("Apache config has been saved to " .. apacheConfigLocation)
@@ -163,13 +141,6 @@ end
 
 local parser = argparse("make_gc_endpoint.lua", "")
 parser:argument("endpoint_config", "Endpoint config YAML.")
-parser:flag("-n --no_gc", "Don't generate a GetCapabilities service")
-parser:flag("-g --make_gts", "Generate a GetTileService service")
 local args = parser:parse()
 
-local makeOptions = {
-    gc = not args["no_gc"],
-    gts = args ["make_gts"]
-}
-
-create_config(args["endpoint_config"], makeOptions)
+create_config(args["endpoint_config"])

@@ -22,6 +22,18 @@ its dependencies:
 
 ---
 
+### Using the service
+The GetCapabilities can output each of the following types of files:
+
+- WMTS GetCapabilities
+- TWMS GetCapabilities
+- TWMS GetTileService
+
+To request a specific file, use the `request=` url parameter. Valid options are `wmtsgetcapabilities`, `twmsgetcapabilities`, and `gettileservice`.
+
+For example, the following request would produce a WTMS GetCapabilities file:
+`http://endpoint/gc_service/gc_service?request=wmtsgetcapabilities`
+
 ### The Configuration Tool
 
 The GetCapabilities service can be fairly easily configured by hand, but a
@@ -30,7 +42,7 @@ information about configuring the module, see the end of this document.
 
 The syntax for running the configuration tool is:
 
-`lua make_gc_endpoint.lua endpoint_config {--no_gc, --make_gts}`
+`lua make_gc_endpoint.lua endpoint_config`
 
 This tool requires a few different configuration files to work:
 
@@ -43,12 +55,6 @@ Note that Apache must be restarted for new configurations to take effect. This
 command may need to be run as `sudo` depending on the permission settings for
 your Apache directories.
 
-##### Options
-
-`--no_gc` -- Don't configure the GetCapabilities service
-
-`--make_gts` -- Configure the GetTileService service (off by default)
-
 #### Endpoint Configuration
 
 The endpoint configuration should be a YAML file in the following format:
@@ -58,6 +64,7 @@ date_service_uri: "http://137.79.29.45:8090/date"
 tms_defs_file: "/etc/onearth/tilematrixsets.xml"
 gc_header_file: "/etc/onearth/headers/header_gc.xml"
 gts_header_file: "/etc/onearth/headers/header_gts.xml"
+twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
 layer_config_source: "/tmp/layer_config.yaml"
 apache_config_location: "/etc/httpd/conf.d/gc.conf"
 endpoint_config_base_location: "/var/www/html"
@@ -78,14 +85,16 @@ the OnEarth 2 date service here.
 `tms_defs_file` (required) -- The path to a Tile Matrix Set definition XML file.
 One is included with this package (`tilematrixsets.xml`).
 
-`gc_header_file` (required) -- the GC service generates all the of the layer
+`gc_header_file` (required for WMTS GC service) -- the GC service generates all the of the layer
 information dynamically (basically, everything outside of `<Contents>`), but
 you'll need to provide a header with everything else. An example file is
-included in `endpoint_stuff/`
+included in `conf/`
 
-`gts_header_file` (required) -- the GTS service generates all the of the layer
+`gts_header_file` (required for TWMS GTS service) -- the GTS service generates all the of the layer
 information dynamically, but you'll need to provide a header with everything
-else. An example file is included in `endpoint_stuff/`.
+else. An example file is included in `conf/`.
+
+`twms_gc_header_file` (required for TWMS GC service) -- the TWMS GC service generates all the of the layer information dynamically, but you'll need to provide a header with everything else. An example file is included in `conf/`.
 
 `layer_config_source` (required) -- This can be a path either to a single layer
 configuration YAML file, or a directory containing multiple layer config files.
@@ -111,11 +120,9 @@ this GC/GTS file. To be used in conjunction with `mod_reproject`. The outgoing
 GC/GTS files will contain layers that have been reprojected to the target
 projection.
 
-`gc_endpoint` (required for GetCapabilities service) -- The location beneath the
-base endpoint where the GC service should be available. Defaults to `/gc`.
+`endpoint` (required) -- The location beneath the
+base endpoint where the GC service should be available. Defaults to `/gc_service`.
 
-`gts_endpoint` (required for GetTileService service) -- The location beneath the
-base endpoint where the GTS service should be available. Defaults to `/gts`.
 
 #### Layer Configuration
 
@@ -188,6 +195,7 @@ local config = {
     gts_service=true,
     gc_header_file="gc_header_file_path",
     gts_header_file="gts_header_file_path",
+    twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml",
     base_uri_gc="base_uri_for_gc",
     target_epsg_code="target_epsg_code"
 }
