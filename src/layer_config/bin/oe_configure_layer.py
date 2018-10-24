@@ -152,10 +152,10 @@ def log_sig_warn(mssg, sigevent_url):
     global warnings
     warnings.append(asctime() + " " + mssg)
     # Send to sigevent.
-    try:
-        sigevent('WARN', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
+    #try:
+    #    sigevent('WARN', mssg, sigevent_url)
+    #except urllib2.URLError:
+    #    print 'sigevent service is unavailable'
 
 def log_sig_err(mssg, sigevent_url):
     """
@@ -186,7 +186,8 @@ def log_sig_exit(type, mssg, sigevent_url):
     mssg=str().join([mssg, '  Exiting oe_configure_layer.'])
     # Send to sigevent.
     try:
-        sigevent(type, mssg, sigevent_url)
+        if type == 'ERROR':
+            sigevent(type, mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
     # Send to log.

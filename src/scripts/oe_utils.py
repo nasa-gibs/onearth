@@ -198,10 +198,10 @@ def log_sig_warn(mssg, sigevent_url):
     logging.warning(time.asctime())
     logging.warning(mssg)
     # Send to sigevent.
-    try:
-        sent=sigevent('WARN', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
+    #try:
+    #    sent=sigevent('WARN', mssg, sigevent_url)
+    #except urllib2.URLError:
+    #    print 'sigevent service is unavailable'
         
 def log_sig_err(mssg, sigevent_url):
     """
@@ -232,7 +232,8 @@ def log_sig_exit(type, mssg, sigevent_url):
     mssg=str().join([mssg, ' - Exiting.'])
     # Send to sigevent.
     try:
-        sent=sigevent(type, mssg, sigevent_url)
+        if type == 'ERROR':
+            sent=sigevent(type, mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
     # Send to log.
