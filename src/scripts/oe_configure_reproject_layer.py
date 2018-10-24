@@ -706,6 +706,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
         if dest_file_ext is None:  # Skip layer if unsupported file type
             continue
+        if dest_file_ext in ['.tif', '.lerc', '.mvt']:
+            continue
 
         if wmts:
             # Finish building the layer Apache config
