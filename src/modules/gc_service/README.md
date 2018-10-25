@@ -71,8 +71,7 @@ endpoint_config_base_location: "/var/www/html"
 base_uri_gc: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/"
 epsg_code: "EPSG:4326"
 target_epsg_code: "EPSG:3857"
-gc_endpoint: "/gc"
-gts_endpoint: "/gts"
+endpoint: "/gc"
 ```
 
 ##### Configuration Options:
