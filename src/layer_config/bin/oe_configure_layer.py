@@ -152,10 +152,10 @@ def log_sig_warn(mssg, sigevent_url):
     global warnings
     warnings.append(asctime() + " " + mssg)
     # Send to sigevent.
-    #try:
-    #    sigevent('WARN', mssg, sigevent_url)
-    #except urllib2.URLError:
-    #    print 'sigevent service is unavailable'
+    try:
+        sigevent('WARN', mssg, sigevent_url)
+    except urllib2.URLError:
+        print 'sigevent service is unavailable'
 
 def log_sig_err(mssg, sigevent_url):
     """
@@ -186,8 +186,7 @@ def log_sig_exit(type, mssg, sigevent_url):
     mssg=str().join([mssg, '  Exiting oe_configure_layer.'])
     # Send to sigevent.
     try:
-        if type == 'ERROR':
-            sigevent(type, mssg, sigevent_url)
+        sigevent(type, mssg, sigevent_url)
     except urllib2.URLError:
         print 'sigevent service is unavailable'
     # Send to log.
@@ -964,11 +963,13 @@ parser.add_option("-r", "--restart_apache",
 parser.add_option("-s", "--send_email", action="store_true", dest="send_email",
                   default=False, help="Send email notification for errors and warnings.")
 parser.add_option('--email_server', action='store', type='string', dest='email_server',
-                  default='', help='The server where email is sent from (overrides configuration file value')
+                  default='', help='The server where email is sent from (overrides configuration file value)')
 parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
-                  default='', help='The recipient address for email notifications (overrides configuration file value')
+                  default='', help='The recipient address for email notifications (overrides configuration file value)')
 parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
-                  default='', help='The sender for email notifications (overrides configuration file value')
+                  default='', help='The sender for email notifications (overrides configuration file value)')
+parser.add_option('--email_logging_level', action='store', type='string', dest='email_logging_level',
+                  default='ERROR', help='Logging level for email notifications: ERROR, WARN, or INFO.  Default: ERROR')
 parser.add_option('-t', '--time',
                   action='store', type='string', dest='time',
                   help='ISO 8601 time(s) for single configuration file (conf_file must be specified).')
@@ -1043,9 +1044,11 @@ email_server = options.email_server
 email_recipient = options.email_recipient
 # Email recipient
 email_sender = options.email_sender
+# Email logging level
+logging_level = options.email_logging_level.upper()
 # Email metadata replaces sigevent_url
 if send_email:
-    sigevent_url = (email_server, email_recipient, email_sender)
+    sigevent_url = (email_server, email_recipient, email_sender, logging_level)
 else:
     sigevent_url = ''
 
@@ -1130,7 +1133,7 @@ for conf in conf_files:
         if options.email_sender == '':
             email_sender = environment.emailSender
         if send_email:
-            sigevent_url = (email_server, email_recipient, email_sender)
+            sigevent_url = (email_server, email_recipient, email_sender, logging_level)
             if email_recipient == '':
                 log_sig_err("No email recipient provided for notifications.", sigevent_url)
 
@@ -2675,7 +2678,7 @@ message = message + " " + ("Cache configurations created.", "Cache configuration
 
 try:
     log_info_mssg(asctime() + " " + message)
-    #sigevent('INFO', asctime() + " " + message, sigevent_url)
+    sigevent('INFO', asctime() + " " + message, sigevent_url)
 except urllib2.URLError:
     None
 log_info_mssg('Exiting oe_configure_layer.')

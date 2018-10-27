@@ -1017,7 +1017,7 @@ class TestLayerConfig(unittest.TestCase):
         sys.stdout = new_stdout = StringIO()
         
         # Run layer config tool
-        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4} -s --email_server localhost:1025 --email_sender earth@localhost.test --email_recipient space@localhost.test'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4} -s --email_server localhost:1025 --email_sender earth@localhost.test --email_recipient space@localhost.test --email_logging_level INFO'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Take down SMTP server
@@ -1064,7 +1064,7 @@ class TestLayerConfig(unittest.TestCase):
         sys.stdout = new_stdout = StringIO()
         
         # Run layer config tool
-        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4} -s'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4} -s --email_logging_level INFO'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
 
         # Take down SMTP server
