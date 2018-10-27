@@ -406,6 +406,20 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	get_param(args,"format",format);
 	get_param(args,"bbox",bbox);
 
+	// Handle URL encoded dashes in time
+	while (ap_strstr(time, "%2D")) {
+		if (const char *replacefield = ap_strstr(time, "%2D")) {
+			const char *prefix = apr_pstrmemdup(r->pool, time, replacefield - time);
+			time = apr_pstrcat(r->pool, prefix, "-", replacefield + strlen("%2D"), NULL);
+		}
+	}
+	// Handle URL encoded colons in time
+	while (ap_strstr(time, "%3A")) {
+		if (const char *replacefield = ap_strstr(time, "%3A")) {
+			const char *prefix = apr_pstrmemdup(r->pool, time, replacefield - time);
+			time = apr_pstrcat(r->pool, prefix, ":", replacefield + strlen("%3A"), NULL);
+		}
+	}
 
 	// Previous args
 	char *prev_format = 0;
@@ -542,6 +556,14 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 		get_param(args,"styles",styles);
 		get_param(args,"width",width);
 		get_param(args,"height",height);
+
+		// Handle URL encoded commas in layers
+		while (ap_strstr(layers, "%2C")) {
+			if (const char *replacefield = ap_strstr(layers, "%2C")) {
+				const char *prefix = apr_pstrmemdup(r->pool, layers, replacefield - layers);
+				layers = apr_pstrcat(r->pool, prefix, ",", replacefield + strlen("%2C"), NULL);
+			}
+		}
 
 	    // Handle missing VERSION (default to 1.3.0)
 	    version = strlen(version) != 0 ? version : (char *)default_wms_version;
