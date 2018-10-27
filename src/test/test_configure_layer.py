@@ -90,16 +90,13 @@ class TestLayerConfig(unittest.TestCase):
             print "Generating GC Service config files: "
         gc_service_lua = os.path.realpath('/home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua')
         layer_gc = os.path.join(self.config_endpoint_area, "layer_config_gc.yaml")
-        #run_command('lua ' + self.gc_service_lua + ' ' + self.layer_gc + ' --make_gts', show_output=DEBUG)
-        run_command('lua ' + gc_service_lua + ' ' + layer_gc + ' --make_gts')
+        run_command('lua ' + gc_service_lua + ' ' + layer_gc)
 
         # Create reproject GC Service with lua
         if DEBUG:
             print "Generating reproject GC Service config files: "
-        #self.gc_service_lua = os.path.realpath('/home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua')
         reproject_layer_gc = os.path.join(self.config_endpoint_area, "layer_config_reproject_gc.yaml")
-        #run_command('lua ' + self.gc_service_lua + ' ' + self.reproject_layer_gc + ' --make_gts', show_output=DEBUG)
-        run_command('lua ' + gc_service_lua + ' ' + reproject_layer_gc + ' --make_gts')
+        run_command('lua ' + gc_service_lua + ' ' + reproject_layer_gc)
 
         restart_apache()
         
