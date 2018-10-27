@@ -7,6 +7,6 @@
  <EnvironmentConfig>/etc/onearth/config/conf/environment_webmercator.xml</EnvironmentConfig>
  <ArchiveLocation static="false" year="true">/usr/share/onearth/demo/data/shapefiles/MODIS_C5_fires</ArchiveLocation>
  <VectorType>POINT</VectorType>
- <VectorStyleFile>/etc/onearth/config/styles/MODIS_C5_fires.txt</VectorStyleFile>
+ <MapfileLayerContents>/etc/onearth/config/styles/MODIS_C5_fires.txt</MapfileLayerContents>
  <Time>DETECT/P1D</Time>
 </LayerConfiguration>
