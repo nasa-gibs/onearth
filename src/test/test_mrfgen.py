@@ -1009,7 +1009,7 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
 
         # generate MRF
         #pdb.set_trace()
-        cmd = "mrfgen -c " + test_config7b + " -s"
+        cmd = "mrfgen -c " + test_config7b + " -s --email_logging_level WARN"
         run_command(cmd, show_output=DEBUG)
         # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # for out in process.communicate():
