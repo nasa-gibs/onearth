@@ -9,6 +9,7 @@ RUN yum install -y python36u python36u-pip python36u-devel
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
 RUN pip3.6 install lxml
+RUN pip3.6 install pypng
 
 RUN mkdir /home/oe2
 RUN mkdir -p /var/www

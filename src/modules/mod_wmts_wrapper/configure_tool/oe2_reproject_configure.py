@@ -46,6 +46,8 @@ from functools import partial, reduce
 import re
 import math
 from urllib.parse import urlsplit, urlparse
+import png
+from io import BytesIO
 
 EARTH_RADIUS = 6378137.0
 
@@ -261,12 +263,51 @@ def format_source_uri_for_proxy(uri, proxy_paths):
         if proxy_path['remote_path'] in uri:
             return uri.replace(proxy_path['remote_path'], proxy_path['local_path'])
 
+def get_layer_bands(identifier, mimetype, sample_tile_url):
+    if mimetype == 'image/png':
+        print('Checking for palette for PNG layer via ' + sample_tile_url)
+        r = requests.get(sample_tile_url)
+        if r.status_code != 200:
+            if "Invalid time format" in r.text:  # Try taking out TIME if server doesn't like the request
+                sample_tile_url = sample_tile_url.replace(
+                    'default/default', 'default')
+                r = requests.get(sample_tile_url)
+                if r.status_code != 200:
+                    mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
+                    print(mssg)
+                    return '1' # Assume PNG uses palette
+            else:
+                mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
+                print(mssg)
+                return '1' # Assume PNG uses palette
+        sample_png = png.Reader(BytesIO(r.content))
+        sample_png.read()
+        try:
+            if sample_png.palette():
+                bands = 1
+                print(identifier + ' contains palette')
+        except png.FormatError:
+            # No palette, check for greyscale
+            if sample_png.asDirect()[3]['greyscale'] is True:
+                bands = 1
+                print(identifier + ' is greyscale')
+            else:  # Check for alpha
+                if sample_png.asDirect()[3]['alpha'] is True:
+                    bands = 4
+                    print(identifier + ' is RGBA')
+                else:
+                    bands = 3
+                    print(identifier + ' is RGB')
+        return str(bands)
+    else:
+        return '3' # default to 3 bands if not PNG
 
 def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, layer_xml):
     src_size = get_src_size(source_tms_defs, layer_xml)
     source_tms = get_source_tms(source_tms_defs, layer_xml)
     reproj_tms = get_reprojected_tilematrixset(
         target_proj, source_tms_defs, target_tms_defs, layer_xml)
+    bands = get_layer_bands(layer_xml.findtext('{*}Identifier'), layer_xml.find('{*}ResourceURL').attrib.get('format'), format_source_url(layer_xml.find('{*}ResourceURL').attrib.get('template'), source_tms).replace('${date}', 'default') + '/0/0/0.png')
     return {
         'layer_id': layer_xml.findtext('{*}Identifier'),
         'source_url_template': format_source_url(layer_xml.find('{*}ResourceURL').attrib.get('template'), source_tms),
@@ -284,7 +325,8 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, layer_xml)
         'projection': source_tms['projection'],
         'reproj_projection': reproj_tms['projection'],
         'bbox': (source_tms['matrices'][0]['top_left_corner'][0], source_tms['matrices'][0]['top_left_corner'][1] * -1, source_tms['matrices'][0]['top_left_corner'][0] * -1, source_tms['matrices'][0]['top_left_corner'][1]),
-        'reproj_bbox': (reproj_tms['matrices'][0]['top_left_corner'][0], reproj_tms['matrices'][0]['top_left_corner'][1] * -1, reproj_tms['matrices'][0]['top_left_corner'][0] * -1, reproj_tms['matrices'][0]['top_left_corner'][1])
+        'reproj_bbox': (reproj_tms['matrices'][0]['top_left_corner'][0], reproj_tms['matrices'][0]['top_left_corner'][1] * -1, reproj_tms['matrices'][0]['top_left_corner'][0] * -1, reproj_tms['matrices'][0]['top_left_corner'][1]),
+        'bands': bands
     }
 
 
@@ -328,8 +370,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
     src_config = bulk_replace(MOD_REPROJECT_SOURCE_TEMPLATE, [
         ('{size_x}', str(layer_config['src_size_x'])),
         ('{size_y}', str(layer_config['src_size_y'])),
-        ('{bands}', "4" if layer_config[
-            'mimetype'] == 'image/png' else "3"),
+        ('{bands}', str(layer_config.get('bands','3'))),
         ('{tile_size_x}', str(
             layer_config['tile_size_x'])),
         ('{tile_size_y}', str(
@@ -343,8 +384,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         ('{size_x}', str(layer_config['reproj_size_x'])),
         ('{size_y}', str(
             layer_config['reproj_size_y'])),
-        ('{bands}', "4" if layer_config[
-            'mimetype'] == 'image/png' else "3"),
+        ('{bands}', str(layer_config.get('bands','3'))),
         ('{tile_size_x}', str(
             layer_config['reproj_tile_size_x'])),
         ('{tile_size_y}', str(
@@ -364,8 +404,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
             ('{size_x}', str(layer_config['reproj_size_x'])),
             ('{size_y}', str(
                 layer_config['reproj_size_y'])),
-            ('{bands}', "4" if layer_config[
-                'mimetype'] == 'image/png' else "3"),
+            ('{bands}', str(layer_config.get('bands','3'))),
             ('{tile_size_x}', str(
                 layer_config['reproj_tile_size_x'])),
             ('{tile_size_y}', str(
