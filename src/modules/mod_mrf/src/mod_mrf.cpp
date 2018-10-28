@@ -182,7 +182,7 @@ static void mrf_init(apr_pool_t *p, mrf_conf *c) {
 // If present, at least one of them has to match the URL
 static const char *set_regexp(cmd_parms *cmd, mrf_conf *c, const char *pattern)
 {
-    char *err_message = NULL;
+    // char *err_message = NULL;
     if (c->arr_rxp == 0)
         c->arr_rxp = apr_array_make(cmd->pool, 2, sizeof(ap_regex_t *));
     ap_regex_t **m = (ap_regex_t **)apr_array_push(c->arr_rxp);
@@ -339,22 +339,22 @@ static const char *mrf_file_set(cmd_parms *cmd, void *dconf, const char *arg)
             apr_finfo_t finfo;
             stat = apr_stat(&finfo, efname, APR_FINFO_CSIZE, cmd->temp_pool);
             if (APR_SUCCESS != stat)
-                return apr_psprintf(cmd->pool, "Can't stat %s %pm", efname, stat);
+                return apr_psprintf(cmd->pool, "Can't stat %s statcode=%d", efname, stat);
             c->esize = (apr_uint64_t)finfo.csize;
         }
 
         stat = apr_file_open(&efile, efname, APR_FOPEN_READ | APR_FOPEN_BINARY, 0, cmd->temp_pool);
         if (APR_SUCCESS != stat)
-            return apr_psprintf(cmd->pool, "Can't open empty file %s, loaded from %s: %pm",
+            return apr_psprintf(cmd->pool, "Can't open empty file %s, loaded from %s: statcode=%d",
             efname, arg, stat);
         c->empty = (apr_uint32_t *)apr_palloc(cmd->pool, static_cast<apr_size_t>(c->esize));
         stat = apr_file_seek(efile, APR_SET, &offset);
         if (APR_SUCCESS != stat)
-            return apr_psprintf(cmd->pool, "Can't seek empty tile %s: %pm", efname, stat);
+            return apr_psprintf(cmd->pool, "Can't seek empty tile %s: statcode=%d", efname, stat);
         apr_size_t size = (apr_size_t)c->esize;
         stat = apr_file_read(efile, c->empty, &size);
         if (APR_SUCCESS != stat)
-            return apr_psprintf(cmd->pool, "Can't read from %s, loaded from %s: %pm",
+            return apr_psprintf(cmd->pool, "Can't read from %s, loaded from %s: statcode=%d",
             efname, arg, stat);
         apr_file_close(efile);
     }
