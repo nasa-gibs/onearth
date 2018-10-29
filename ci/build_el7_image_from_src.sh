@@ -32,6 +32,7 @@ RUN yum install -y ImageMagick
 RUN pip3.6 install requests
 RUN pip3.6 install pyaml
 RUN pip3.6 install lxml
+RUN pip3.6 install pypng
 
 RUN yum install -y libcurl-devel mod_proxy mod_ssl python-pip sqlite libxml2 turbojpeg turbojpeg-devel agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
