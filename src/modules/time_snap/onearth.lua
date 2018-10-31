@@ -97,6 +97,10 @@ local function get_snap_date (start_date, req_date, end_date, interval_length, i
     end
 end
 
+local function period_sort(first, second)
+    return date_util(split("/", first)[1]) > date_util(split("/", second)[1])
+end
+
 -- Handlers to get layer period and default date information
 local function redis_get_all_layers (client, prefix_string)
     local layers = {}
@@ -225,6 +229,7 @@ function onearth.date_snapper (layer_handler_options, filename_options)
             }
             return send_response(200, JSON:encode(out_msg))
         end
+        table.sort(layer_datetime_info[layer_name].periods, period_sort)
         for _, period in ipairs(layer_datetime_info[layer_name].periods) do
             local parsed_period = split("/", period)
             local start_date = date_util(parsed_period[1])

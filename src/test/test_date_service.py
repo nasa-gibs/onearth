@@ -86,7 +86,9 @@ def seed_redis_data(layers, db_keys=None):
             db_keystring += key + ':'
     for layer in layers:
         r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
-        r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]), layer[2])
+        periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
+        for period in periods:
+            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]), period)
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -406,6 +408,28 @@ class TestDateService(unittest.TestCase):
             self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for with keys {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
                 db_keys, test_layer[3], returned_date, test_layer[4]))
 
+    def test_multiple_periods(self):
+        test_layers = [
+            ('test1_multiple_snap', '2012-01-01', ['2000-07-03/2000-07-03/P1M', '2000-01-01/2000-06-01/P1M', '2000-08-01/2000-12-01/P1M'],
+             '2000-08-01', '2000-08-01T00:00:00Z'),
+            ('test2_multiple_snap', '2012-01-01', ['2001-01-01/2001-12-27/P8D', '2002-01-01/2002-12-27/P8D'],
+             '2002-01-01', '2002-01-01T00:00:00Z'),
+        ]
+
+        seed_redis_data(test_layers)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(
+                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
+                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+
+
     @classmethod
     def tearDownClass(self):
         if not DEBUG:
@@ -429,5 +453,5 @@ if __name__ == '__main__':
     with open(options.outfile, 'wb') as f:
         print '\nStoring test results in "{0}"'.format(options.outfile)
         unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output=f)
+            # testRunner=xmlrunner.XMLTestRunner(output=f)
         )
