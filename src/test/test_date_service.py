@@ -88,7 +88,8 @@ def seed_redis_data(layers, db_keys=None):
         r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
         periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
         for period in periods:
-            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]), period)
+            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                   period)
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -102,13 +103,13 @@ def remove_redis_layer(layer, db_keys=None):
 
 
 class TestDateService(unittest.TestCase):
-
     @classmethod
     def setUpClass(self):
         # Check if mod_ahtse_lua is installed
         apache_path = '/etc/httpd/modules/'
         if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
-            print "WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path)
+            print "WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(
+                apache_path)
 
         # Check if onearth Lua stuff has been installed
         lua = Popen(['luarocks', 'list'], stdout=PIPE)
@@ -129,8 +130,8 @@ class TestDateService(unittest.TestCase):
         # Copy Lua config
         test_lua_config_dest_path = '/build/test/ci_tests/tmp/date_service_test'
         test_lua_config_filename = 'date_service.lua'
-        self.test_lua_config_location = os.path.join(
-            test_lua_config_dest_path, test_lua_config_filename)
+        self.test_lua_config_location = os.path.join(test_lua_config_dest_path,
+                                                     test_lua_config_filename)
 
         make_dir_tree(test_lua_config_dest_path, ignore_existing=True)
         with open(self.test_lua_config_location, 'w+') as f:
@@ -140,8 +141,9 @@ class TestDateService(unittest.TestCase):
         self.test_config_dest_path = os.path.join(
             '/etc/httpd/conf.d', 'oe2_test_date_service.conf')
         with open(self.test_config_dest_path, 'w+') as dest:
-            dest.write(DATE_SERVICE_APACHE_TEMPLATE.replace(
-                '{config_path}', test_lua_config_dest_path))
+            dest.write(
+                DATE_SERVICE_APACHE_TEMPLATE.replace(
+                    '{config_path}', test_lua_config_dest_path))
 
         self.date_service_url = 'http://localhost/date_service/date?'
 
@@ -149,8 +151,10 @@ class TestDateService(unittest.TestCase):
 
     def test_get_all_records(self):
         # Tests that a blank inquiry to the date service returns all records.
-        test_layers = [('test1_all_records', '2012-01-01', '2012-01-01/2016-01-01/P1Y'), ('test2_all_records',
-                                                                                          '2015-02-01T12:00:00', '2012-01-01T00:00:00/2016-01-01T23:59:59/P1S')]
+        test_layers = [('test1_all_records', '2012-01-01',
+                        '2012-01-01/2016-01-01/P1Y'),
+                       ('test2_all_records', '2015-02-01T12:00:00',
+                        '2012-01-01T00:00:00/2016-01-01T23:59:59/P1S')]
 
         seed_redis_data(test_layers)
 
@@ -159,32 +163,38 @@ class TestDateService(unittest.TestCase):
         for layer in test_layers:
             layer_res = res.get(layer[0])
             self.assertIsNotNone(
-                layer_res, 'Layer {0} not found in list of all layers'.format(layer[0]))
-            self.assertEqual(layer[1], layer_res[
-                             'default'], 'Layer {0} has incorrect "default" value -- got {1}, expected {2}'.format(layer[0], layer[1], layer_res['default']))
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[1], layer_res['default'],
+                'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
+                .format(layer[0], layer[1], layer_res['default']))
             if not DEBUG:
                 remove_redis_layer(layer)
 
     def test_year_snap(self):
-        test_layers = [
-            ('test1_year_snap', '2012-01-01', '2012-01-01/2016-01-01/P1Y',
-             '2013-06-06', '2013-01-01T00:00:00Z'),
-            ('test2_year_snap', '2000-01-01', '2000-01-01/2010-01-01/P5Y',
-             '2006-05-05', '2005-01-01T00:00:00Z')
-        ]
+        test_layers = [('test1_year_snap', '2012-01-01',
+                        '2012-01-01/2016-01-01/P1Y', '2013-06-06',
+                        '2013-01-01T00:00:00Z'),
+                       ('test2_year_snap', '2000-01-01',
+                        '2000-01-01/2010-01-01/P5Y', '2006-05-05',
+                        '2005-01-01T00:00:00Z')]
 
         seed_redis_data(test_layers)
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     def test_day_snap(self):
         test_layers = [
@@ -208,14 +218,17 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     def test_month_snap(self):
         test_layers = [
@@ -234,22 +247,27 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     def test_hour_snap(self):
         test_layers = [
             # Snap to beginning
-            ('test1_hour_snap', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
+            ('test1_hour_snap', '2012-01-01T00:00:00',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
              '2012-01-01T01:30:00Z', '2012-01-01T00:00:00Z'),
             # Snap to interval
-            ('test2_hour_snap', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
+            ('test2_hour_snap', '2012-01-01T00:00:00',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
              '2012-01-01T02:30:00Z', '2012-01-01T02:00:00Z'),
         ]
 
@@ -257,22 +275,27 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     def test_minute_snap(self):
         test_layers = [
             # Snap to beginning
-            ('test1_minute_snap', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P6MM',
+            ('test1_minute_snap', '2012-01-01T00:00:00',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/P6MM',
              '2012-01-01T00:05:00Z', '2012-01-01T00:00:00Z'),
             # Snap to interval
-            ('test2_minute_snap', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P6MM',
+            ('test2_minute_snap', '2012-01-01T00:00:00',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/P6MM',
              '2012-01-01T00:14:00Z', '2012-01-01T00:12:00Z'),
         ]
 
@@ -280,22 +303,27 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     def test_second_snap(self):
         test_layers = [
             # Snap to beginning
-            ('test1_second_snap', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P11S',
+            ('test1_second_snap', '2012-01-01T00:00:00',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/P11S',
              '2012-01-01T00:00:10Z', '2012-01-01T00:00:00Z'),
             # Snap to interval
-            ('test2_second_snap', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P11S',
+            ('test2_second_snap', '2012-01-01T00:00:00',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/P11S',
              '2012-01-01T00:00:12Z', '2012-01-01T00:00:11Z'),
         ]
 
@@ -303,14 +331,17 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     def test_bad_layer_error(self):
         r = requests.get(self.date_service_url +
@@ -318,22 +349,27 @@ class TestDateService(unittest.TestCase):
         res = r.json()
         err_msg = res['err_msg']
         expected_err = 'Invalid Layer'
-        self.assertEqual(err_msg, expected_err,
-                         'Incorrect error message returned for nonexistent layer: was {0}, should be {1}'.format(err_msg, expected_err))
+        self.assertEqual(
+            err_msg, expected_err,
+            'Incorrect error message returned for nonexistent layer: was {0}, should be {1}'
+            .format(err_msg, expected_err))
 
     def test_bad_date_error(self):
-        test_layer = ('test1_bad_date', '2012-01-01T00:00:00', '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
+        test_layer = ('test1_bad_date', '2012-01-01T00:00:00',
+                      '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
                       '2012-01-01T01:30:00', '2012-01-01T00:00:00Z')
 
         seed_redis_data([test_layer])
 
-        r = requests.get(self.date_service_url +
-                         'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+        r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                         format(test_layer[0], test_layer[3]))
         res = r.json()
         err_msg = res['err_msg']
         expected_err = 'Invalid Date'
-        self.assertEqual(err_msg, expected_err,
-                         'Incorrect error message bad date format: was {0}, should be {1}'.format(err_msg, expected_err))
+        self.assertEqual(
+            err_msg, expected_err,
+            'Incorrect error message bad date format: was {0}, should be {1}'.
+            format(err_msg, expected_err))
 
         if not DEBUG:
             remove_redis_layer(test_layer)
@@ -341,32 +377,34 @@ class TestDateService(unittest.TestCase):
     def test_out_of_range_error(self):
         test_layers = [
             # Before date range
-            ('test1_out_of_range_err', '2012-01-01', '2012-01-01/2016-01-01/P1Y',
-             '2010-01-01', None),
+            ('test1_out_of_range_err', '2012-01-01',
+             '2012-01-01/2016-01-01/P1Y', '2010-01-01', None),
             # After date range
-            ('test2_out_of_range_err', '2012-01-01', '2012-01-01/2016-01-01/P10D',
-             '2016-01-11', None),
+            ('test2_out_of_range_err', '2012-01-01',
+             '2012-01-01/2016-01-01/P10D', '2016-01-11', None),
         ]
 
         seed_redis_data(test_layers)
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             err_msg = res['err_msg']
             expected_err = 'Date out of range'
-            self.assertEqual(err_msg, expected_err,
-                             'Incorrect error message bad date format: was {0}, should be {1}'.format(err_msg, expected_err))
+            self.assertEqual(
+                err_msg, expected_err,
+                'Incorrect error message bad date format: was {0}, should be {1}'
+                .format(err_msg, expected_err))
 
     def test_single_db_keys(self):
-        test_layers = [
-            ('test1_year_snap', '2012-01-01', '2012-01-01/2016-01-01/P1Y',
-             '2013-06-06', '2013-01-01T00:00:00Z'),
-            ('test2_year_snap', '2000-01-01', '2000-01-01/2010-01-01/P5Y',
-             '2006-05-05', '2005-01-01T00:00:00Z')
-        ]
+        test_layers = [('test1_year_snap', '2012-01-01',
+                        '2012-01-01/2016-01-01/P1Y', '2013-06-06',
+                        '2013-01-01T00:00:00Z'),
+                       ('test2_year_snap', '2000-01-01',
+                        '2000-01-01/2010-01-01/P5Y', '2006-05-05',
+                        '2005-01-01T00:00:00Z')]
 
         db_keys = ['test_db_key_1', 'test_db_key_2']
 
@@ -374,25 +412,30 @@ class TestDateService(unittest.TestCase):
             seed_redis_data(test_layers, db_keys=[key])
             # Test data
             for test_layer in test_layers:
-                r = requests.get(
-                    self.date_service_url + 'layer={0}&datetime={1}&key1={2}'.format(test_layer[0], test_layer[3], key))
+                r = requests.get(self.date_service_url +
+                                 'layer={0}&datetime={1}&key1={2}'.format(
+                                     test_layer[0], test_layer[3], key))
                 res = r.json()
                 returned_date = res['date']
                 if not DEBUG:
                     remove_redis_layer(test_layer, db_keys=[key])
-                self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for with key {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                    key, test_layer[3], returned_date, test_layer[4]))
+                self.assertEqual(
+                    returned_date, test_layer[4],
+                    'Error with date snapping: for with key {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                    .format(key, test_layer[3], returned_date, test_layer[4]))
 
     def test_multiple_db_keys(self):
-        test_layers = [
-            ('test1_year_snap', '2012-01-01', '2012-01-01/2016-01-01/P1Y',
-             '2013-06-06', '2013-01-01T00:00:00Z'),
-            ('test2_year_snap', '2000-01-01', '2000-01-01/2010-01-01/P5Y',
-             '2006-05-05', '2005-01-01T00:00:00Z')
-        ]
+        test_layers = [('test1_year_snap', '2012-01-01',
+                        '2012-01-01/2016-01-01/P1Y', '2013-06-06',
+                        '2013-01-01T00:00:00Z'),
+                       ('test2_year_snap', '2000-01-01',
+                        '2000-01-01/2010-01-01/P5Y', '2006-05-05',
+                        '2005-01-01T00:00:00Z')]
 
-        db_keys = ['test_db_key_1', 'test_db_key_2',
-                   'test_db_key_3', 'test_db_key_4', 'test_db_key_5']
+        db_keys = [
+            'test_db_key_1', 'test_db_key_2', 'test_db_key_3', 'test_db_key_4',
+            'test_db_key_5'
+        ]
 
         seed_redis_data(test_layers, db_keys=db_keys)
         # Test data
@@ -400,19 +443,25 @@ class TestDateService(unittest.TestCase):
             r = requests.get(
                 self.date_service_url +
                 'layer={0}&datetime={1}&key1={2}&key2={3}&key3={4}&key4={5}&key5={6}'
-                .format(test_layer[0], test_layer[3], db_keys[0], db_keys[1], db_keys[2], db_keys[3], db_keys[4]))
+                .format(test_layer[0], test_layer[3], db_keys[0], db_keys[1],
+                        db_keys[2], db_keys[3], db_keys[4]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer, db_keys=db_keys)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for with keys {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                db_keys, test_layer[3], returned_date, test_layer[4]))
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for with keys {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(db_keys, test_layer[3], returned_date, test_layer[4]))
 
     def test_multiple_periods(self):
         test_layers = [
-            ('test1_multiple_snap', '2012-01-01', ['2000-07-03/2000-07-03/P1M', '2000-01-01/2000-06-01/P1M', '2000-08-01/2000-12-01/P1M'],
-             '2000-08-01', '2000-08-01T00:00:00Z'),
-            ('test2_multiple_snap', '2012-01-01', ['2001-01-01/2001-12-27/P8D', '2002-01-01/2002-12-27/P8D'],
+            ('test1_multiple_snap', '2012-01-01', [
+                '2000-07-03/2000-07-03/P1M', '2000-01-01/2000-06-01/P1M',
+                '2000-08-01/2000-12-01/P1M'
+            ], '2000-08-01', '2000-08-01T00:00:00Z'),
+            ('test2_multiple_snap', '2012-01-01',
+             ['2001-01-01/2001-12-27/P8D', '2002-01-01/2002-12-27/P8D'],
              '2002-01-01', '2002-01-01T00:00:00Z'),
         ]
 
@@ -420,15 +469,17 @@ class TestDateService(unittest.TestCase):
 
         # Test data
         for test_layer in test_layers:
-            r = requests.get(
-                self.date_service_url + 'layer={0}&datetime={1}'.format(test_layer[0], test_layer[3]))
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
             res = r.json()
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
-            self.assertEqual(returned_date, test_layer[4], 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'.format(
-                test_layer[2], test_layer[3], returned_date, test_layer[4]))
-
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
 
     @classmethod
     def tearDownClass(self):
@@ -436,13 +487,25 @@ class TestDateService(unittest.TestCase):
             os.remove(self.test_config_dest_path)
             os.remove(self.test_lua_config_location)
 
+
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_date_service_results.xml',
-                      help='Specify XML output file (default is test_date_service_results.xml')
-    parser.add_option('-d', '--debug', action='store_true',
-                      dest='debug', help='Output verbose debugging messages')
+    parser.add_option(
+        '-o',
+        '--output',
+        action='store',
+        type='string',
+        dest='outfile',
+        default='test_date_service_results.xml',
+        help='Specify XML output file (default is test_date_service_results.xml'
+    )
+    parser.add_option(
+        '-d',
+        '--debug',
+        action='store_true',
+        dest='debug',
+        help='Output verbose debugging messages')
     (options, args) = parser.parse_args()
 
     DEBUG = options.debug
@@ -452,6 +515,4 @@ if __name__ == '__main__':
 
     with open(options.outfile, 'wb') as f:
         print '\nStoring test results in "{0}"'.format(options.outfile)
-        unittest.main(
-            # testRunner=xmlrunner.XMLTestRunner(output=f)
-        )
+        unittest.main(testRunner=xmlrunner.XMLTestRunner(output=f))
