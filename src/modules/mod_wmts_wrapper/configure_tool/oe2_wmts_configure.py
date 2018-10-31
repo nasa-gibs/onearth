@@ -30,7 +30,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 This script configures WMTS and TWMS layers for use with the OnEarth 2 Apache modules.
 """
@@ -144,8 +143,15 @@ MIME_TO_MRF_EXTENSION = {
 # Utility functions
 
 
+def strip_trailing_slash(string):
+    if string.endswith('/'):
+        string = string[:len(string) - 1]
+    return string
+
+
 def format_date_service_uri(uri):
-    return '/oe2-date-service-proxy-' + bulk_replace(urlparse(uri).netloc, ((':', '-'), ('.', '-')))
+    return '/oe2-date-service-proxy-' + bulk_replace(
+        urlparse(uri).netloc, ((':', '-'), ('.', '-')))
 
 
 def generate_string_from_set(sep, string_set):
@@ -166,41 +172,50 @@ def bulk_replace(source_str, replace_list):
 def get_proxy_paths(layers):
     proxy_paths = []
     for layer_config in layers:
-        data_file_uri = layer_config['config'][
-            'source_mrf'].get('data_file_uri')
+        data_file_uri = layer_config['config']['source_mrf'].get(
+            'data_file_uri')
         if not data_file_uri:
             continue
         url_parts = urlsplit(data_file_uri)
         remote_path = f'{url_parts.scheme}://{url_parts.netloc}'
-        if not any(path for path in proxy_paths if path['remote_path'] == remote_path):
-            proxy_paths.append({'local_path': f'{PROXY_PATH}-{url_parts.netloc.replace(".", "-")}', 'remote_path': remote_path})
+        if not any(path for path in proxy_paths
+                   if path['remote_path'] == remote_path):
+            proxy_paths.append({
+                'local_path':
+                f'{PROXY_PATH}-{url_parts.netloc.replace(".", "-")}',
+                'remote_path':
+                remote_path
+            })
     return proxy_paths
 
 
 def make_proxy_config(proxy_path):
-    return bulk_replace(DATA_FILE_PROXY_TEMPLATE, [
-        ('{data_file_uri}', proxy_path['remote_path']),
-        ('{local_data_file_uri}', proxy_path['local_path'])])
+    return bulk_replace(DATA_FILE_PROXY_TEMPLATE,
+                        [('{data_file_uri}', proxy_path['remote_path']),
+                         ('{local_data_file_uri}', proxy_path['local_path'])])
 
 
 def format_source_uri_for_proxy(uri, proxy_paths):
     for proxy_path in proxy_paths:
         if proxy_path['remote_path'] in uri:
-            return uri.replace(proxy_path['remote_path'], proxy_path['local_path'])
+            return uri.replace(proxy_path['remote_path'],
+                               proxy_path['local_path'])
 
 
 # Main configuration functions
 
+
 def make_apache_config(endpoint_config, layer_configs):
     # Only set up the date service proxy if there are non-static layers
-    date_service_needed = any(layer_config.get('static') is False
-                              for layer_config in layer_configs)
+    date_service_needed = any(
+        layer_config.get('static') is False for layer_config in layer_configs)
 
     datafile_proxy_needed = any(
         layer_config.get('data_file_uri') for layer_config in layer_configs)
 
     try:
-        endpoint_path = endpoint_config['endpoint_config_base_location']
+        endpoint_path = strip_trailing_slash(
+            endpoint_config['endpoint_config_base_location'])
         if date_service_needed:
             date_service_uri = endpoint_config['date_service_uri']
     except KeyError as err:
@@ -215,28 +230,38 @@ def make_apache_config(endpoint_config, layer_configs):
     date_service_config = ''
     if date_service_needed:
         date_service_config = DATE_SERVICE_TEMPLATE.replace(
-            '{date_service_uri}', date_service_uri).replace('{local_date_service_uri}', format_date_service_uri(date_service_uri))
+            '{date_service_uri}', date_service_uri).replace(
+                '{local_date_service_uri}',
+                format_date_service_uri(date_service_uri))
 
     datafile_proxy_config = ''
     if datafile_proxy_needed:
-        datafile_proxy_config = '\n'.join(
-            [make_proxy_config(config) for config in endpoint_config['proxy_paths']])
+        datafile_proxy_config = '\n'.join([
+            make_proxy_config(config)
+            for config in endpoint_config['proxy_paths']
+        ])
 
     main_apache_config = MAIN_APACHE_CONFIG_TEMPLATE.replace(
         '{endpoint_path}', endpoint_path)
 
-    layer_config_snippets = '\n'.join([layer_config['apache_config']
-                                       for layer_config in layer_configs])
+    layer_config_snippets = '\n'.join(
+        [layer_config['apache_config'] for layer_config in layer_configs])
 
     # Add TWMS if there are any TWMS layers
-    twms = any(layer_config.get('twms_config', None)
-               for layer_config in layer_configs)
+    twms = any(
+        layer_config.get('twms_config', None)
+        for layer_config in layer_configs)
     twms_config = None
     if twms:
-        twms_config = bulk_replace(MOD_TWMS_CONFIG_TEMPLATE, [
-            ('{endpoint_path}', endpoint_path)])
+        twms_config = bulk_replace(MOD_TWMS_CONFIG_TEMPLATE,
+                                   [('{endpoint_path}', endpoint_path)])
 
-    return generate_string_from_set('\n', ((proxy_config, proxy_needed), (date_service_config, date_service_needed), (datafile_proxy_config, datafile_proxy_needed), (main_apache_config, True), (layer_config_snippets, True), (TWMS_MODULE_TEMPLATE, twms), (twms_config, twms)))
+    return generate_string_from_set(
+        '\n', ((proxy_config, proxy_needed),
+               (date_service_config, date_service_needed),
+               (datafile_proxy_config, datafile_proxy_needed),
+               (main_apache_config, True), (layer_config_snippets, True),
+               (TWMS_MODULE_TEMPLATE, twms), (twms_config, twms)))
 
 
 def write_apache_config(endpoint_config, apache_config):
@@ -244,7 +269,9 @@ def write_apache_config(endpoint_config, apache_config):
     try:
         apache_config_path = Path(endpoint_config['apache_config_location'])
     except KeyError:
-        print(f'\n"apache_config_location" not found in endpoint config, saving Apache config to {apache_config_path}')
+        print(
+            f'\n"apache_config_location" not found in endpoint config, saving Apache config to {apache_config_path}'
+        )
         pass
 
     # Write out the Apache config
@@ -270,7 +297,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         idx_path = layer_config['source_mrf']['idx_path']
         mimetype = layer_config['mime_type']
     except KeyError as err:
-        print(f"\n{layer_config_path} is missing required config element {err}")
+        print(
+            f"\n{layer_config_path} is missing required config element {err}")
         sys.exit()
 
     # Parse optional stuff in layer config
@@ -281,11 +309,14 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     data_file_path = layer_config['source_mrf'].get('data_file_path', None)
     data_file_uri = layer_config['source_mrf'].get('data_file_uri', None)
     if not data_file_path and not data_file_uri:
-        print(f'\nWARNING: No "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}')
+        print(
+            f'\nWARNING: No "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}'
+        )
 
     # Make sure we have what we need from the endpoint config
     try:
-        endpoint_path = endpoint_config['endpoint_config_base_location']
+        endpoint_path = strip_trailing_slash(
+            endpoint_config['endpoint_config_base_location'])
         if not static:
             date_service_uri = endpoint_config['date_service_uri']
     except KeyError as err:
@@ -307,8 +338,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # if static and requests.head(data_file_uri).status_code != 200:
     #     print(f"\nWARNING: Can't access data file uri: {data_file_uri}")
 
-    config_file_path = Path(
-        endpoint_path, layer_id, "default", tilematrixset, 'mod_mrf.config')
+    config_file_path = Path(endpoint_path, layer_id, "default", tilematrixset,
+                            'mod_mrf.config')
 
     # Create Apache snippet
 
@@ -318,12 +349,13 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
             data_file_uri, endpoint_config['proxy_paths'])
 
     # Apache <Directory> stuff
-    apache_config = bulk_replace(LAYER_APACHE_CONFIG_TEMPLATE, [
-        ('{endpoint_path}', endpoint_path), ('{layer_id}', layer_id),
-        ('{time_enabled}', 'Off' if static else 'On'),  ('{year_dir}',
-                                                         'On' if year_dir else 'Off'),
-        ('{alias}', alias), ('{tilematrixset}',
-                             tilematrixset), ('{config_file_path}', config_file_path.as_posix())])
+    apache_config = bulk_replace(
+        LAYER_APACHE_CONFIG_TEMPLATE,
+        [('{endpoint_path}', endpoint_path), ('{layer_id}', layer_id),
+         ('{time_enabled}', 'Off' if static else 'On'),
+         ('{year_dir}', 'On' if year_dir else 'Off'), ('{alias}', alias),
+         ('{tilematrixset}', tilematrixset),
+         ('{config_file_path}', config_file_path.as_posix())])
 
     # Insert time stuff if applicable (using a regexp to stick it in the
     # <Directory> block)
@@ -359,51 +391,66 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
         data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
         idx_path += '/${filename}.idx'
 
-    main_wmts_config = bulk_replace(LAYER_MOD_MRF_CONFIG_TEMPLATE, [
-        ('{size_x}', str(size_x)),
-        ('{size_y}', str(size_y)),
-        ('{tile_size_x}', str(tile_size_x)),
-        ('{tile_size_y}', str(tile_size_y)),
-        ('{bands}', str(bands)),
-        ('{idx_path}', idx_path),
-        ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
+    main_wmts_config = bulk_replace(
+        LAYER_MOD_MRF_CONFIG_TEMPLATE,
+        [('{size_x}', str(size_x)), ('{size_y}', str(size_y)),
+         ('{tile_size_x}', str(tile_size_x)),
+         ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
+         ('{idx_path}', idx_path),
+         ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
 
     # Handle optionals like EmptyTile
     empty_tile_config = None
     if empty_tile:
         empty_tile_config = f'EmptyTile {empty_tile}'
 
-    wmts_config = generate_string_from_set('\n', ((main_wmts_config, True), (
-        data_path_str, data_file_uri or data_file_path), (empty_tile_config, empty_tile)))
+    wmts_config = generate_string_from_set(
+        '\n', ((main_wmts_config, True),
+               (data_path_str, data_file_uri or data_file_path),
+               (empty_tile_config, empty_tile)))
 
     # Create mod_mrf configuration file
     layer_config_out['mod_mrf_config'] = {
-        'path': config_file_path, 'contents': wmts_config}
+        'path': config_file_path,
+        'contents': wmts_config
+    }
 
     # Build the TWMS config if that's selected
     if make_twms:
         try:
             bbox = layer_config['source_mrf']['bbox']
         except KeyError as err:
-            print(f'\n{layer_config_filename} is missing required config element {err}')
+            print(
+                f'\n{layer_config_filename} is missing required config element {err}'
+            )
 
         try:
             base_source_path = endpoint_config['base_uri_gc']
         except KeyError as err:
-            print(f'\n"base_uri_gc" in endpoint config is required to configure TWMS layers')
+            print(
+                f'\n"base_uri_gc" in endpoint config is required to configure TWMS layers'
+            )
 
         # Remove trailing slash
         base_source_path = re.sub(r'/$', '', base_source_path)
 
-        source_path = '/'.join((base_source_path, layer_id,
-                                'default' + ('/${date}' if not static else ''), tilematrixset))
+        source_path = '/'.join(
+            (base_source_path, layer_id,
+             'default' + ('/${date}' if not static else ''), tilematrixset))
         source_postfix = MIME_TO_EXTENSION[mimetype]
-        twms_config = bulk_replace(LAYER_MOD_TWMS_CONFIG_TEMPLATE, [('{size_x}', str(size_x)), ('{size_y}', str(size_y)), (
-            '{tile_size_x}', str(tile_size_x)), ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)), ('{source_postfix}', source_postfix), ('{source_path}', source_path), ('{bbox}', bbox),
-            ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
+        twms_config = bulk_replace(
+            LAYER_MOD_TWMS_CONFIG_TEMPLATE,
+            [('{size_x}', str(size_x)), ('{size_y}', str(size_y)),
+             ('{tile_size_x}', str(tile_size_x)),
+             ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
+             ('{source_postfix}', source_postfix),
+             ('{source_path}', source_path), ('{bbox}', bbox),
+             ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
 
-        layer_config_out['twms_config'] = {'path': Path(
-            endpoint_path, 'twms', layer_id, 'twms.config'), 'contents': twms_config}
+        layer_config_out['twms_config'] = {
+            'path': Path(endpoint_path, 'twms', layer_id, 'twms.config'),
+            'contents': twms_config
+        }
 
     return layer_config_out
 
@@ -428,47 +475,65 @@ def get_layer_configs(endpoint_config, make_twms=False):
     if layer_source.is_file():
         return [get_layer_config(layer_source)]
     elif layer_source.is_dir():
-        return [get_layer_config(filepath) for filepath in layer_source.iterdir() if filepath.is_file() and filepath.name.endswith('.yaml')]
+        return [
+            get_layer_config(filepath) for filepath in layer_source.iterdir()
+            if filepath.is_file() and filepath.name.endswith('.yaml')
+        ]
 
 
 def write_layer_configs(layer_configs):
     # Write out mod_mrf config files
     for layer_config in layer_configs:
-        Path.mkdir(layer_config['mod_mrf_config']['path'].parent,
-                   parents=True, exist_ok=True)
+        Path.mkdir(
+            layer_config['mod_mrf_config']['path'].parent,
+            parents=True,
+            exist_ok=True)
         layer_config['mod_mrf_config']['path'].write_text(
             layer_config['mod_mrf_config']['contents'])
-        print(f'\nWTMS layer config written to: {layer_config["mod_mrf_config"]["path"]}')
+        print(
+            f'\nWTMS layer config written to: {layer_config["mod_mrf_config"]["path"]}'
+        )
 
         # Write out TWMS config if included
         if layer_config.get('twms_config', None):
-            Path.mkdir(layer_config['twms_config'][
-                       'path'].parent, parents=True, exist_ok=True)
+            Path.mkdir(
+                layer_config['twms_config']['path'].parent,
+                parents=True,
+                exist_ok=True)
             layer_config['twms_config']['path'].write_text(
                 layer_config['twms_config']['contents'])
-            print(f'\nTWMS layer config written to: {layer_config["twms_config"]["path"]}')
+            print(
+                f'\nTWMS layer config written to: {layer_config["twms_config"]["path"]}'
+            )
+
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Configure mod_wmts_wrapper.')
-    parser.add_argument('endpoint_config', type=str,
-                        help='an endpoint config YAML file')
-    parser.add_argument('-t', '--make_twms', action='store_true',
-                        help='Generate TWMS configurations')
+    parser.add_argument(
+        'endpoint_config', type=str, help='an endpoint config YAML file')
+    parser.add_argument(
+        '-t',
+        '--make_twms',
+        action='store_true',
+        help='Generate TWMS configurations')
     args = parser.parse_args()
 
     endpoint_config = yaml.load(Path(args.endpoint_config).read_text())
 
     # Build all configs
     layer_input_configs = get_layer_configs(endpoint_config)
-    endpoint_config['proxy_paths'] = get_proxy_paths(
-        layer_input_configs)
-    layer_output_configs = [make_layer_config(endpoint_config,
-                                              layer, make_twms=args.make_twms) for layer in layer_input_configs]
+    endpoint_config['proxy_paths'] = get_proxy_paths(layer_input_configs)
+    layer_output_configs = [
+        make_layer_config(endpoint_config, layer, make_twms=args.make_twms)
+        for layer in layer_input_configs
+    ]
 
     apache_config = make_apache_config(endpoint_config, layer_output_configs)
 
     # Write all configs
     write_layer_configs(layer_output_configs)
     write_apache_config(endpoint_config, apache_config)
-    print('\nAll configurations written. Restart Apache for changes to take effect.')
+    print(
+        '\nAll configurations written. Restart Apache for changes to take effect.'
+    )

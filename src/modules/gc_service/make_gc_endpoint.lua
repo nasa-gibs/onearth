@@ -36,6 +36,13 @@ handler = onearth_gc_gts.handler(config)
 ]]
 
 -- Utility functions
+local function stripTrailingSlash(str)
+    if string.sub(str, -1) == "/" then
+        str = string.sub(str, 0, -2)
+    end
+    return str
+end
+
 local function split(sep, str)
     local results = {}
     for value in string.gmatch(str, "([^" .. sep .. "]+)") do
@@ -93,6 +100,7 @@ local function create_config(endpointConfigFilename)
         print("No Lua config base location specified. Using '/var/www/html")
         luaConfigBaseLocation = "/var/www/html"
     end
+    luaConfigBaseLocation = stripTrailingSlash(luaConfigBaseLocation)
 
     local endpoint = endpointConfig["endpoint"]
     if not endpoint then

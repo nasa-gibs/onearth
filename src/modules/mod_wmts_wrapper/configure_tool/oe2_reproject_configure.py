@@ -30,7 +30,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 This script creates mod_reproject Apache configurations using a remote GetCapabilities file. It can be used on its own or
 with oe_configure_layer.
@@ -154,8 +153,15 @@ ProxyPassReverse {local_date_service_uri} {date_service_uri}
 """
 
 
+def strip_trailing_slash(string):
+    if string.endswith('/'):
+        string = string[:len(string) - 1]
+    return string
+
+
 def format_date_service_uri(uri):
-    return '/oe2-date-service-proxy-' + bulk_replace(urlparse(uri).netloc, ((':', '-'), ('.', '-')))
+    return '/oe2-date-service-proxy-' + bulk_replace(
+        urlparse(uri).netloc, ((':', '-'), ('.', '-')))
 
 
 def bulk_replace(source_str, replace_list):
@@ -166,24 +172,35 @@ def bulk_replace(source_str, replace_list):
 
 
 def get_date_service_info(endpoint_config, layer_configs):
-    date_service_needed = any(layer_config.get(
-        'time_enabled') for layer_config in layer_configs)
+    date_service_needed = any(
+        layer_config.get('time_enabled') for layer_config in layer_configs)
     if not date_service_needed:
         return None
-    return {'local': format_date_service_uri(endpoint_config['date_service_uri']), 'remote': endpoint_config['date_service_uri']}
+    return {
+        'local': format_date_service_uri(endpoint_config['date_service_uri']),
+        'remote': endpoint_config['date_service_uri']
+    }
 
 
 def get_matrix(matrix):
     return {
-        'scale_denominator': float(matrix.findtext('{*}ScaleDenominator')),
-        'top_left_corner': list(map(float, matrix.findtext(
-            '{*}TopLeftCorner').split(' '))),
-        'width': int(matrix.findtext('{*}TileWidth')),
-        'height': int(matrix.findtext('{*}TileHeight')),
-        'matrix_width': int(matrix.findtext('{*}MatrixWidth')),
-        'matrix_height': int(matrix.findtext('{*}MatrixHeight')),
-        'tile_width': int(matrix.findtext('{*}TileWidth')),
-        'tile_height': int(matrix.findtext('{*}TileHeight')),
+        'scale_denominator':
+        float(matrix.findtext('{*}ScaleDenominator')),
+        'top_left_corner':
+        list(map(float,
+                 matrix.findtext('{*}TopLeftCorner').split(' '))),
+        'width':
+        int(matrix.findtext('{*}TileWidth')),
+        'height':
+        int(matrix.findtext('{*}TileHeight')),
+        'matrix_width':
+        int(matrix.findtext('{*}MatrixWidth')),
+        'matrix_height':
+        int(matrix.findtext('{*}MatrixHeight')),
+        'tile_width':
+        int(matrix.findtext('{*}TileWidth')),
+        'tile_height':
+        int(matrix.findtext('{*}TileHeight')),
     }
 
 
@@ -210,32 +227,36 @@ def parse_tms_xml(tms_xml_str, target_proj):
         print('Problem with TileMatrixSets definition file -- not valid XML')
         sys.exit()
 
-    tms_sets = next(elem.findall('{*}TileMatrixSet') for elem in main_xml.findall(
-        '{*}Projection') if elem.attrib.get("id") == target_proj)
+    tms_sets = next(
+        elem.findall('{*}TileMatrixSet')
+        for elem in main_xml.findall('{*}Projection')
+        if elem.attrib.get("id") == target_proj)
     return map(parse_tms_set_xml, tms_sets)
 
 
 def get_max_scale_denominator(tms):
-    return sorted([matrix['scale_denominator']
-                   for matrix in tms['matrices']])[0]
+    return sorted(
+        [matrix['scale_denominator'] for matrix in tms['matrices']])[0]
 
 
-def get_reprojected_tilematrixset(target_proj, source_tms_defs, target_tms_defs, layer_xml):
+def get_reprojected_tilematrixset(target_proj, source_tms_defs,
+                                  target_tms_defs, layer_xml):
     source_tms = get_source_tms(source_tms_defs, layer_xml)
     base_scale_denom = get_max_scale_denominator(source_tms)
 
     def get_closest_tms(acc, tms):
-        if not acc or get_max_scale_denominator(acc) > get_max_scale_denominator(tms) > base_scale_denom:
+        if not acc or get_max_scale_denominator(
+                acc) > get_max_scale_denominator(tms) > base_scale_denom:
             return tms
         return acc
+
     return reduce(get_closest_tms, target_tms_defs)
 
 
 def get_source_tms(source_tms_defs, layer_xml):
-    tms_id = layer_xml.find(
-        '{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
-    return next(tms for tms in source_tms_defs if tms[
-        'identifier'] == tms_id)
+    tms_id = layer_xml.find('{*}TileMatrixSetLink').findtext(
+        '{*}TileMatrixSet')
+    return next(tms for tms in source_tms_defs if tms['identifier'] == tms_id)
 
 
 def get_src_size(source_tms_defs, layer_xml):
@@ -243,25 +264,30 @@ def get_src_size(source_tms_defs, layer_xml):
     width = math.ceil(2 * math.pi * EARTH_RADIUS /
                       (get_max_scale_denominator(source_tms) * 0.28E-3))
     height = width
-    if source_tms['matrices'][0]['matrix_width'] / source_tms['matrices'][0]['matrix_height'] == 2:
+    if source_tms['matrices'][0]['matrix_width'] / source_tms['matrices'][0][
+            'matrix_height'] == 2:
         height = width // 2
     return [width, height]
 
 
 def format_source_url(source_url, reproj_tms):
-    return re.sub(r'(.*{TileMatrixSet})(.*)', r'\1', source_url).replace('{Time}', '${date}').replace('{TileMatrixSet}', reproj_tms['identifier'])
+    return re.sub(r'(.*{TileMatrixSet})(.*)', r'\1', source_url).replace(
+        '{Time}', '${date}').replace('{TileMatrixSet}',
+                                     reproj_tms['identifier'])
 
 
 def make_proxy_config(proxy_path):
-    return bulk_replace(PROXY_TEMPLATE, [
-        ('{remote_endpoint}', proxy_path['remote_path']),
-        ('{local_endpoint}', proxy_path['local_path'])])
+    return bulk_replace(PROXY_TEMPLATE,
+                        [('{remote_endpoint}', proxy_path['remote_path']),
+                         ('{local_endpoint}', proxy_path['local_path'])])
 
 
 def format_source_uri_for_proxy(uri, proxy_paths):
     for proxy_path in proxy_paths:
         if proxy_path['remote_path'] in uri:
-            return uri.replace(proxy_path['remote_path'], proxy_path['local_path'])
+            return uri.replace(proxy_path['remote_path'],
+                               proxy_path['local_path'])
+
 
 def get_layer_bands(identifier, mimetype, sample_tile_url):
     if mimetype == 'image/png':
@@ -275,11 +301,11 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                 if r.status_code != 200:
                     mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
                     print(mssg)
-                    return '1' # Assume PNG uses palette
+                    return '1'  # Assume PNG uses palette
             else:
                 mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
                 print(mssg)
-                return '1' # Assume PNG uses palette
+                return '1'  # Assume PNG uses palette
         sample_png = png.Reader(BytesIO(r.content))
         sample_png.read()
         try:
@@ -300,33 +326,68 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                     print(identifier + ' is RGB')
         return str(bands)
     else:
-        return '3' # default to 3 bands if not PNG
+        return '3'  # default to 3 bands if not PNG
 
-def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, layer_xml):
+
+def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
+                       layer_xml):
     src_size = get_src_size(source_tms_defs, layer_xml)
     source_tms = get_source_tms(source_tms_defs, layer_xml)
-    reproj_tms = get_reprojected_tilematrixset(
-        target_proj, source_tms_defs, target_tms_defs, layer_xml)
-    bands = get_layer_bands(layer_xml.findtext('{*}Identifier'), layer_xml.find('{*}ResourceURL').attrib.get('format'), format_source_url(layer_xml.find('{*}ResourceURL').attrib.get('template'), source_tms).replace('${date}', 'default') + '/0/0/0.png')
+    reproj_tms = get_reprojected_tilematrixset(target_proj, source_tms_defs,
+                                               target_tms_defs, layer_xml)
+    bands = get_layer_bands(
+        layer_xml.findtext('{*}Identifier'),
+        layer_xml.find('{*}ResourceURL').attrib.get('format'),
+        format_source_url(
+            layer_xml.find('{*}ResourceURL').attrib.get('template'),
+            source_tms).replace('${date}', 'default') + '/0/0/0.png')
     return {
-        'layer_id': layer_xml.findtext('{*}Identifier'),
-        'source_url_template': format_source_url(layer_xml.find('{*}ResourceURL').attrib.get('template'), source_tms),
-        'mimetype': layer_xml.find('{*}ResourceURL').attrib.get('format'),
-        'time_enabled': any(len(dimension)for dimension in layer_xml.findall('{*}Dimension') if dimension.findtext('{*}Identifier') == 'time'),
-        'tilematrixset': reproj_tms,
-        'src_size_x': src_size[0],
-        'src_size_y': src_size[1],
-        'reproj_size_x': reproj_tms['matrices'][-1]['matrix_width'] * reproj_tms['matrices'][-1]['tile_width'],
-        'reproj_size_y': reproj_tms['matrices'][-1]['matrix_height'] * reproj_tms['matrices'][-1]['tile_height'],
-        'tile_size_x': source_tms['matrices'][0]['tile_width'],
-        'tile_size_y': source_tms['matrices'][0]['tile_height'],
-        'reproj_tile_size_x': reproj_tms['matrices'][0]['tile_width'],
-        'reproj_tile_size_y': reproj_tms['matrices'][0]['tile_height'],
-        'projection': source_tms['projection'],
-        'reproj_projection': reproj_tms['projection'],
-        'bbox': (source_tms['matrices'][0]['top_left_corner'][0], source_tms['matrices'][0]['top_left_corner'][1] * -1, source_tms['matrices'][0]['top_left_corner'][0] * -1, source_tms['matrices'][0]['top_left_corner'][1]),
-        'reproj_bbox': (reproj_tms['matrices'][0]['top_left_corner'][0], reproj_tms['matrices'][0]['top_left_corner'][1] * -1, reproj_tms['matrices'][0]['top_left_corner'][0] * -1, reproj_tms['matrices'][0]['top_left_corner'][1]),
-        'bands': bands
+        'layer_id':
+        layer_xml.findtext('{*}Identifier'),
+        'source_url_template':
+        format_source_url(
+            layer_xml.find('{*}ResourceURL').attrib.get('template'),
+            source_tms),
+        'mimetype':
+        layer_xml.find('{*}ResourceURL').attrib.get('format'),
+        'time_enabled':
+        any(
+            len(dimension) for dimension in layer_xml.findall('{*}Dimension')
+            if dimension.findtext('{*}Identifier') == 'time'),
+        'tilematrixset':
+        reproj_tms,
+        'src_size_x':
+        src_size[0],
+        'src_size_y':
+        src_size[1],
+        'reproj_size_x':
+        reproj_tms['matrices'][-1]['matrix_width'] *
+        reproj_tms['matrices'][-1]['tile_width'],
+        'reproj_size_y':
+        reproj_tms['matrices'][-1]['matrix_height'] *
+        reproj_tms['matrices'][-1]['tile_height'],
+        'tile_size_x':
+        source_tms['matrices'][0]['tile_width'],
+        'tile_size_y':
+        source_tms['matrices'][0]['tile_height'],
+        'reproj_tile_size_x':
+        reproj_tms['matrices'][0]['tile_width'],
+        'reproj_tile_size_y':
+        reproj_tms['matrices'][0]['tile_height'],
+        'projection':
+        source_tms['projection'],
+        'reproj_projection':
+        reproj_tms['projection'],
+        'bbox': (source_tms['matrices'][0]['top_left_corner'][0],
+                 source_tms['matrices'][0]['top_left_corner'][1] * -1,
+                 source_tms['matrices'][0]['top_left_corner'][0] * -1,
+                 source_tms['matrices'][0]['top_left_corner'][1]),
+        'reproj_bbox': (reproj_tms['matrices'][0]['top_left_corner'][0],
+                        reproj_tms['matrices'][0]['top_left_corner'][1] * -1,
+                        reproj_tms['matrices'][0]['top_left_corner'][0] * -1,
+                        reproj_tms['matrices'][0]['top_left_corner'][1]),
+        'bands':
+        bands
     }
 
 
@@ -345,84 +406,83 @@ def get_gc_xml(source_gc_uri):
 
 
 def make_apache_layer_config(endpoint_config, layer_config, make_twms=False):
-    apache_config = bulk_replace(MOD_REPROJECT_APACHE_TEMPLATE, [
-                                 ('{time_enabled}', 'On' if layer_config[
-                                  'time_enabled'] else 'Off'),
-                                 ('{endpoint_path}', endpoint_config[
-                                  'endpoint_config_base_location']),
-                                 ('{layer_id}', layer_config['layer_id']),
-                                 ('{tilematrixset}', layer_config['tilematrixset']['identifier'])])
+    apache_config = bulk_replace(
+        MOD_REPROJECT_APACHE_TEMPLATE,
+        [('{time_enabled}', 'On' if layer_config['time_enabled'] else 'Off'),
+         ('{endpoint_path}',
+          strip_trailing_slash(
+              endpoint_config['endpoint_config_base_location'])),
+         ('{layer_id}', layer_config['layer_id']),
+         ('{tilematrixset}', layer_config['tilematrixset']['identifier'])])
     if layer_config['time_enabled'] and endpoint_config['date_service_info']:
-        date_service_uri = endpoint_config[
-            'date_service_info']['local']
+        date_service_uri = endpoint_config['date_service_info']['local']
         date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{date_service_uri}"'
         apache_config = re.sub(r'(WMTSWrapperEnableTime.*)',
                                r'\1' + date_service_snippet, apache_config)
     if make_twms:
-        twms_config = bulk_replace(MOD_TWMS_CONFIG_TEMPLATE, [('{endpoint_path}', endpoint_config[
-            'endpoint_config_base_location'])])
+        twms_config = bulk_replace(
+            MOD_TWMS_CONFIG_TEMPLATE,
+            [('{endpoint_path}',
+              strip_trailing_slash(
+                  endpoint_config['endpoint_config_base_location']))])
         apache_config += '\n' + twms_config
 
     return apache_config
 
 
 def make_mod_reproject_configs(endpoint_config, layer_config):
-    src_config = bulk_replace(MOD_REPROJECT_SOURCE_TEMPLATE, [
-        ('{size_x}', str(layer_config['src_size_x'])),
-        ('{size_y}', str(layer_config['src_size_y'])),
-        ('{bands}', str(layer_config.get('bands','3'))),
-        ('{tile_size_x}', str(
-            layer_config['tile_size_x'])),
-        ('{tile_size_y}', str(
-            layer_config['tile_size_y'])),
-        ('{projection}', layer_config['projection']),
-        ('{bbox}', ','.join(
-            map(str, layer_config['bbox']))),
-        ('{skipped_levels}', '1' if layer_config['projection'] == 'EPSG:4326' else '0')])
+    src_config = bulk_replace(
+        MOD_REPROJECT_SOURCE_TEMPLATE,
+        [('{size_x}', str(layer_config['src_size_x'])),
+         ('{size_y}', str(layer_config['src_size_y'])),
+         ('{bands}', str(layer_config.get('bands', '3'))),
+         ('{tile_size_x}', str(layer_config['tile_size_x'])),
+         ('{tile_size_y}', str(layer_config['tile_size_y'])),
+         ('{projection}', layer_config['projection']),
+         ('{bbox}', ','.join(map(str, layer_config['bbox']))),
+         ('{skipped_levels}',
+          '1' if layer_config['projection'] == 'EPSG:4326' else '0')])
 
-    reproj_config = bulk_replace(MOD_REPROJECT_REPRO_TEMPLATE, [
+    reproj_config = bulk_replace(
+        MOD_REPROJECT_REPRO_TEMPLATE,
+        [('{size_x}', str(layer_config['reproj_size_x'])),
+         ('{size_y}', str(layer_config['reproj_size_y'])),
+         ('{bands}', str(layer_config.get('bands', '3'))),
+         ('{tile_size_x}', str(layer_config['reproj_tile_size_x'])),
+         ('{tile_size_y}', str(layer_config['reproj_tile_size_y'])),
+         ('{projection}', str(layer_config['reproj_projection'])),
+         ('{mimetype}', layer_config["mimetype"]),
+         ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
+         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
+         ('{source_path}',
+          format_source_uri_for_proxy(layer_config['source_url_template'],
+                                      endpoint_config['proxy_paths'])),
+         ('{nearest}',
+          'Off' if layer_config['mimetype'] == 'image/jpeg' else 'On')])
+
+    twms_config = bulk_replace(LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
         ('{size_x}', str(layer_config['reproj_size_x'])),
-        ('{size_y}', str(
-            layer_config['reproj_size_y'])),
-        ('{bands}', str(layer_config.get('bands','3'))),
-        ('{tile_size_x}', str(
-            layer_config['reproj_tile_size_x'])),
-        ('{tile_size_y}', str(
-            layer_config['reproj_tile_size_y'])),
-        ('{projection}', str(
-            layer_config['reproj_projection'])),
-        ('{mimetype}', layer_config["mimetype"]),
+        ('{size_y}', str(layer_config['reproj_size_y'])),
+        ('{bands}', str(layer_config.get('bands', '3'))),
+        ('{tile_size_x}', str(layer_config['reproj_tile_size_x'])),
+        ('{tile_size_y}', str(layer_config['reproj_tile_size_y'])),
+        ('{skipped_levels}', '0'),
         ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
-        ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
-        ('{source_path}', format_source_uri_for_proxy(layer_config[
-         'source_url_template'], endpoint_config['proxy_paths'])),
-        ('{nearest}', 'Off' if layer_config[
-            'mimetype'] == 'image/jpeg' else 'On')])
-
-    twms_config = bulk_replace(
-        LAYER_MOD_TWMS_CONFIG_TEMPLATE, [
-            ('{size_x}', str(layer_config['reproj_size_x'])),
-            ('{size_y}', str(
-                layer_config['reproj_size_y'])),
-            ('{bands}', str(layer_config.get('bands','3'))),
-            ('{tile_size_x}', str(
-                layer_config['reproj_tile_size_x'])),
-            ('{tile_size_y}', str(
-                layer_config['reproj_tile_size_y'])),
-            ('{skipped_levels}', '0'),
-            ('{bbox}', ','.join(map(str, layer_config[
-             'reproj_bbox']))),
-            ('{endpoint_path}', '/oe2-wmts-endpoint'),
-            ('{layer_id}', layer_config['layer_id']),
-            ('{tilematrixset}', layer_config['tilematrixset']['identifier']),
-            ('{source_postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
-        ])
+        ('{endpoint_path}', '/oe2-wmts-endpoint'),
+        ('{layer_id}', layer_config['layer_id']),
+        ('{tilematrixset}', layer_config['tilematrixset']['identifier']),
+        ('{source_postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
+    ])
     if not layer_config['time_enabled']:
         twms_config.replace('${date}/', '')
 
-    return {'layer_id': layer_config['layer_id'],
-            'tilematrixset': layer_config['tilematrixset']['identifier'],
-            'src_config': src_config, 'reproj_config': reproj_config, 'twms_config': twms_config}
+    return {
+        'layer_id': layer_config['layer_id'],
+        'tilematrixset': layer_config['tilematrixset']['identifier'],
+        'src_config': src_config,
+        'reproj_config': reproj_config,
+        'twms_config': twms_config
+    }
 
 
 def get_proxy_paths(layers):
@@ -432,8 +492,14 @@ def get_proxy_paths(layers):
                                layer_config['source_url_template'])
         url_parts = urlsplit(data_file_uri)
         remote_path = f'{url_parts.scheme}://{url_parts.netloc}'
-        if not any(path for path in proxy_paths if path['remote_path'] == remote_path):
-            proxy_paths.append({'local_path': f'{PROXY_PREFIX}-{url_parts.scheme}-{url_parts.netloc.replace(".", "-")}', 'remote_path': remote_path})
+        if not any(path for path in proxy_paths
+                   if path['remote_path'] == remote_path):
+            proxy_paths.append({
+                'local_path':
+                f'{PROXY_PREFIX}-{url_parts.scheme}-{url_parts.netloc.replace(".", "-")}',
+                'remote_path':
+                remote_path
+            })
     return proxy_paths
 
 
@@ -442,28 +508,33 @@ def build_configs(endpoint_config, make_twms=False):
     try:
         target_proj = endpoint_config['target_epsg_code']
         source_gc_uri = endpoint_config['source_gc_uri']
-        endpoint_config_base_location = endpoint_config[
-            'endpoint_config_base_location']
+        endpoint_config_base_location = strip_trailing_slash(
+            endpoint_config['endpoint_config_base_location'])
         endpoint_config['date_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 
     # Get output TMS definitions (provided by local file)
     if not endpoint_config.get('tms_defs_file'):
-        print('\nNo Tile Matrix Set definition file defined by endpoint config or command line parameters. Using ./tilematrixsets.xml')
+        print(
+            '\nNo Tile Matrix Set definition file defined by endpoint config or command line parameters. Using ./tilematrixsets.xml'
+        )
         endpoint_config['tms_defs_file'] = 'tilematrixsets.xml'
 
-    target_tms_defs = list(parse_tms_xml(
-        endpoint_config['tms_defs_file'], target_proj))
+    target_tms_defs = list(
+        parse_tms_xml(endpoint_config['tms_defs_file'], target_proj))
 
     # Download and parse the source GC file, getting the layers and their
     # tilematrixsets
     gc_xml = get_gc_xml(source_gc_uri)
-    source_tms_defs = list(map(parse_tms_set_xml, gc_xml.find(
-        '{*}Contents').findall('{*}TileMatrixSet')))
+    source_tms_defs = list(
+        map(parse_tms_set_xml,
+            gc_xml.find('{*}Contents').findall('{*}TileMatrixSet')))
 
-    layers = list(map(partial(parse_layer_gc_xml, target_proj, source_tms_defs,
-                              target_tms_defs), gc_xml.iter('{*}Layer')))
+    layers = list(
+        map(
+            partial(parse_layer_gc_xml, target_proj, source_tms_defs,
+                    target_tms_defs), gc_xml.iter('{*}Layer')))
 
     # Build configs for each layer
     endpoint_config['proxy_paths'] = get_proxy_paths(layers)
@@ -471,25 +542,28 @@ def build_configs(endpoint_config, make_twms=False):
         endpoint_config, layers)
 
     layer_apache_configs = map(
-        partial(make_apache_layer_config, endpoint_config, make_twms=make_twms), layers)
+        partial(
+            make_apache_layer_config, endpoint_config, make_twms=make_twms),
+        layers)
     layer_module_configs = map(
         partial(make_mod_reproject_configs, endpoint_config), layers)
 
     # Write out layer configs
     for layer_config in layer_module_configs:
         config_path = Path(endpoint_config_base_location,
-                           layer_config['layer_id'], 'default', layer_config['tilematrixset'])
+                           layer_config['layer_id'], 'default',
+                           layer_config['tilematrixset'])
         config_path.mkdir(parents=True, exist_ok=True)
         Path(config_path,
              'source.config').write_text(layer_config['src_config'])
-        Path(config_path, 'reproject.config').write_text(
-            layer_config['reproj_config'])
+        Path(config_path,
+             'reproject.config').write_text(layer_config['reproj_config'])
         if make_twms:
-            config_path = Path(endpoint_config_base_location,
-                               'twms', layer_config['layer_id'])
+            config_path = Path(endpoint_config_base_location, 'twms',
+                               layer_config['layer_id'])
             config_path.mkdir(parents=True, exist_ok=True)
-            Path(config_path, 'twms.config'). write_text(
-                layer_config['twms_config'])
+            Path(config_path,
+                 'twms.config').write_text(layer_config['twms_config'])
 
     print(f'\nLayer configs written to {endpoint_config_base_location}\n')
 
@@ -498,36 +572,49 @@ def build_configs(endpoint_config, make_twms=False):
     try:
         apache_config_path = Path(endpoint_config['apache_config_location'])
     except KeyError:
-        print(f'"apache_config_location" not found in endpoint config, saving Apache config to {apache_config_path}\n')
+        print(
+            f'"apache_config_location" not found in endpoint config, saving Apache config to {apache_config_path}\n'
+        )
         pass
 
     Path(apache_config_path.parent).mkdir(parents=True, exist_ok=True)
     apache_config_str = MAIN_APACHE_CONFIG_TEMPLATE.replace(
         '{endpoint_path}', endpoint_config_base_location)
-    apache_config_str += '\n' + '\n'.join(make_proxy_config(proxy_path)
-                                          for proxy_path in endpoint_config['proxy_paths'])
+    apache_config_str += '\n' + '\n'.join(
+        make_proxy_config(proxy_path)
+        for proxy_path in endpoint_config['proxy_paths'])
     if endpoint_config['date_service_info']:
-        apache_config_str += '\n' + DATE_SERVICE_TEMPLATE.replace('{date_service_uri}', endpoint_config['date_service_info']['remote']).replace(
-            '{local_date_service_uri}', endpoint_config['date_service_info']['local'])
+        apache_config_str += '\n' + DATE_SERVICE_TEMPLATE.replace(
+            '{date_service_uri}',
+            endpoint_config['date_service_info']['remote']).replace(
+                '{local_date_service_uri}',
+                endpoint_config['date_service_info']['local'])
     if make_twms:
         apache_config_str += '\n' + TWMS_MODULE_TEMPLATE
     apache_config_str += '\n' + '\n'.join(layer_apache_configs)
     apache_config_path.write_text(apache_config_str)
     print(f'Apache config written to {apache_config_path.as_posix()}\n')
 
-    print('All configurations written. Restart Apache for the changes to take effect.')
+    print(
+        'All configurations written. Restart Apache for the changes to take effect.'
+    )
 
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Configure mod_reproject.')
-    parser.add_argument('endpoint_config', type=str,
-                        help='an endpoint config YAML file')
-    parser.add_argument('-t', '--make_twms', action='store_true',
-                        help='Generate TWMS configurations')
-    parser.add_argument('-x', '--tms_defs', type=str,
-                        help='TileMatrixSets definition XML file')
+    parser = argparse.ArgumentParser(description='Configure mod_reproject.')
+    parser.add_argument(
+        'endpoint_config', type=str, help='an endpoint config YAML file')
+    parser.add_argument(
+        '-t',
+        '--make_twms',
+        action='store_true',
+        help='Generate TWMS configurations')
+    parser.add_argument(
+        '-x',
+        '--tms_defs',
+        type=str,
+        help='TileMatrixSets definition XML file')
     args = parser.parse_args()
 
     endpoint_config = yaml.load(Path(args.endpoint_config).read_text())
