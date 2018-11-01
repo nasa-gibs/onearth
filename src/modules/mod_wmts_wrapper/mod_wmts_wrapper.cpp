@@ -807,6 +807,14 @@ static const char *set_time_lookup(cmd_parms *cmd, void *dconf, const char *uri)
     return NULL;
 }
 
+
+static const char *set_gc_uri(cmd_parms *cmd, void *dconf, const char *uri)
+{
+    wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
+    cfg->gc_uri = apr_pstrdup(cmd->pool, uri);
+    return NULL;
+}
+
 static const char *set_layer_alias(cmd_parms *cmd, void *dconf, const char *uri)
 {
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
@@ -844,6 +852,7 @@ static void* merge_dir_conf(apr_pool_t *p, void *BASE, void *ADD) {
     cfg->layer_alias = ( add->layer_alias == NULL ) ? base->layer_alias : add->layer_alias;
     cfg->date_service_keys = ( add->date_service_keys == NULL ) ? base->date_service_keys : add->date_service_keys;
     cfg->base_path = ( add->base_path == NULL ) ? base->base_path : add->base_path;
+    cfg->gc_uri = ( add->gc_uri == NULL ) ? base->gc_uri : add->gc_uri;
     return cfg;
 }
 
@@ -910,6 +919,14 @@ static const command_rec cmds[] =
         0,
         ACCESS_CONF,
         "Set keys to be used to query date service. Comma-separated list"
+    ),
+
+    AP_INIT_TAKE1(
+        "WMTSWrapperGCUri",
+        (cmd_func) set_gc_uri, // Callback
+        0, // Self pass argument
+        ACCESS_CONF,
+        "Set URI for the GetCapabilities service"
     ),
 
     {NULL}

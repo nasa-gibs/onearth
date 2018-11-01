@@ -199,7 +199,6 @@ EOS
 
 docker build \
   --tag "$TAG" \
-  --no-cache \
   ./
 
 rm Dockerfile

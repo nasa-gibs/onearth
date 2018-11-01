@@ -43,6 +43,7 @@ typedef struct {
     const char *layer_alias;
     apr_array_header_t *date_service_keys;
     const char *base_path;
+    const char *gc_uri;
 } wmts_wrapper_conf;
 
 // WMTS error handling

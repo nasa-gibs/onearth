@@ -112,7 +112,8 @@ local function getDateList(endpointConfig)
         print("Error contacting date service: " .. body)
         return nil
     end
-    return JSON:decode(body)
+    local dateList = JSON:decode(body)
+    return dateList or {}
 end
 
 local function getTmsDefs(tmsXml)
@@ -404,10 +405,11 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
 
     local defaultDate
     local periods
-    if not static and dateList then
-        if dateList[layerId] then
-            defaultDate = config.default_date or dateList[layerId]["default"]
-            periods = config.periods or dateList[layerId]["periods"]
+    local dateInfo = dateList[layerId] or dateList[config.alias]
+    if not static then
+        if dateInfo then
+            defaultDate = config.default_date or dateInfo["default"]
+            periods = config.periods or dateInfo["periods"]
         else
             print("Can't find entry for layer " .. layerId .. " in date service list.")
         end
@@ -464,7 +466,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
 
     -- Build the <Dimension> element for time (if necessary)
     -- Note that we omit this if for some reason we don't have dates from the date service.
-    if not static and dateList and dateList[layerId] then
+    if not static and dateInfo then
         local dimensionNode = xml.elem("Dimension", {
             xml.new("ows:Identifier"):text("time"),
             xml.new("ows:UOM"):text("ISO8601"),
