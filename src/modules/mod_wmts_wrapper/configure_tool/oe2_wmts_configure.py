@@ -47,7 +47,8 @@ import requests
 
 PROXY_PATH = '/oe2-tile-service-proxy'
 
-MAIN_APACHE_CONFIG_TEMPLATE = """<IfModule !mrf_module>
+MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
+<IfModule !mrf_module>
    LoadModule mrf_module modules/mod_mrf.so
 </IfModule>
 
@@ -62,6 +63,8 @@ MAIN_APACHE_CONFIG_TEMPLATE = """<IfModule !mrf_module>
 <Directory {endpoint_path}>
         WMTSWrapperRole root
 </Directory>
+
+{alias_block}
 """
 
 TWMS_MODULE_TEMPLATE = """<IfModule !twms_module>
@@ -120,6 +123,23 @@ SkippedLevels {skipped_levels}
 BoundingBox {bbox}
 SourcePath {source_path}
 SourcePostfix {source_postfix}
+"""
+
+GC_SERVICE_TEMPLATE = """# Redirects for GC service
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/(.*)$ [NC]
+RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=wmtsgetcapabilities [PT,L]
+"""
+
+TWMS_GC_SERVICE_TEMPLATE = """# Redirects for TWMS GC/GTS service
+RewriteCond %{REQUEST_URI} ^{external_endpoint}/twms/(.*)$ [NC]
+RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=twmsgetcapabilities [PT,L]
+
+RewriteCond %{REQUEST_URI} ^{external_endpoint}/twms/(.*)$ [NC]
+RewriteCond %{QUERY_STRING} request=gettileservice [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=gettileservice [PT,L]
 """
 
 MIME_TO_EXTENSION = {
@@ -221,6 +241,27 @@ def make_apache_config(endpoint_config, layer_configs):
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 
+    external_endpoint = None
+    try:
+        external_endpoint = endpoint_config['external_endpoint']
+    except KeyError:
+        print('No external_endpoint configured. Using "/"')
+        pass
+
+    gc_service_block = ''
+    try:
+        gc_service_block = bulk_replace(
+            GC_SERVICE_TEMPLATE,
+            [('{endpoint_path}', endpoint_path),
+             ('{gc_service_uri}', endpoint_config['gc_service_uri']),
+             ('{external_endpoint}',
+              external_endpoint if external_endpoint else '')])
+    except KeyError:
+        print(
+            '\nNo "gc_service_uri" configured. GetCapabilities/GetTileService will not be accessible'
+        )
+        pass
+
     # Set up proxies for date service and data files (if needed)
     proxy_config = ''
     proxy_needed = date_service_needed or datafile_proxy_needed
@@ -241,8 +282,17 @@ def make_apache_config(endpoint_config, layer_configs):
             for config in endpoint_config['proxy_paths']
         ])
 
-    main_apache_config = MAIN_APACHE_CONFIG_TEMPLATE.replace(
-        '{endpoint_path}', endpoint_path)
+    alias_block = ''
+    if external_endpoint:
+        alias_block = 'Alias {} {}'.format(external_endpoint, endpoint_path)
+
+    main_apache_config = bulk_replace(
+        MAIN_APACHE_CONFIG_TEMPLATE,
+        [('{endpoint_path}', endpoint_path),
+         ('{gc_service_block}', gc_service_block),
+         ('{alias_block}', alias_block),
+         ('{external_endpoint}',
+          external_endpoint if external_endpoint else '/')])
 
     layer_config_snippets = '\n'.join(
         [layer_config['apache_config'] for layer_config in layer_configs])
@@ -255,6 +305,14 @@ def make_apache_config(endpoint_config, layer_configs):
     if twms:
         twms_config = bulk_replace(MOD_TWMS_CONFIG_TEMPLATE,
                                    [('{endpoint_path}', endpoint_path)])
+        if endpoint_config.get('gc_service_uri'):
+            twms_gc_config = bulk_replace(
+                TWMS_GC_SERVICE_TEMPLATE,
+                [('{gc_service_uri}', endpoint_config['gc_service_uri']),
+                 ('{external_endpoint}',
+                  external_endpoint if external_endpoint else '')])
+            main_apache_config = '\n'.join(
+                [twms_gc_config, main_apache_config])
 
     return generate_string_from_set(
         '\n', ((proxy_config, proxy_needed),

@@ -2,9 +2,9 @@
 
 ## Tools Included:
 
-* oe2_wmts_configure.py -- Configures WMTS and TWMS endpoints for layers to be
+- oe2_wmts_configure.py -- Configures WMTS and TWMS endpoints for layers to be
   served in their native projection.
-* oe2_reproject_configure.py -- Configures WMTS and TWMS endpoints for
+- oe2_reproject_configure.py -- Configures WMTS and TWMS endpoints for
   reprojected layers.
 
 ---
@@ -12,16 +12,15 @@
 ## oe2_wmts_configure.py
 
 This tool creates the necessary Apache configurations to serve MRF layers via
-WMTS and TWMS, using the OnEarth Apache modules (`mod_wmts_wrapper, mod_mrf,
-mod_twms`). It allows for both local and remote (i.e., S3) data files to be
+WMTS and TWMS, using the OnEarth Apache modules (`mod_wmts_wrapper, mod_mrf, mod_twms`). It allows for both local and remote (i.e., S3) data files to be
 used.
 
 ## Requirements
 
-* Python 3.6
-* OnEarth 2 modules (`mod_wmts_wrapper, mod_mrf, mod_receive, mod_twms`)
+- Python 3.6
+- OnEarth 2 modules (`mod_wmts_wrapper, mod_mrf, mod_receive, mod_twms`)
   compiled and installed.
-* `mod_proxy` installed.
+- `mod_proxy` installed.
 
 #### Running the tool
 
@@ -29,9 +28,9 @@ used.
 
 This tool requires 2 configuration files to work:
 
-* endpoint config -- contains information about how the WMTS and TWMS endpoints
+- endpoint config -- contains information about how the WMTS and TWMS endpoints
   should be set up in Apache.
-* layer config(s) -- contains information about each of the layers to be
+- layer config(s) -- contains information about each of the layers to be
   configured.
 
 Note that Apache must be restarted for new configurations to take effect. This
@@ -63,6 +62,9 @@ configuration files should be stored _for this endpoint_. This needs to be a
 publicly-accessible path on the web server, such as `/var/www/wmts/epsg4326`,
 etc. _Each endpoint should have its own unique path!_
 
+'external_endpoint' (optional) -- This is the external path to the above internal location.
+The config tool will automatically build an Alias to link the external and internal paths.
+
 `layer_config_source` (required) -- This can be a path either to a single layer
 configuration YAML file, or a directory containing multiple layer config files.
 In the case of a directory, the tool will parse all files in that directory with
@@ -84,8 +86,7 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 `date_service_keys` (optional) -- Array of keys to be used with the date
 service. Keys will be positioned in the order configured.
 
-`gc_endpoint` (required for TWMS service) -- The location beneath the
-base endpoint where the GC service should be available. Defaults to `/gc`.
+'gc_service_uri' (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
 
 #### Layer Configuration
 
@@ -169,10 +170,10 @@ reproject imagery.
 
 ## Requirements
 
-* Python 3.6
-* OnEarth 2 modules (`mod_wmts_wrapper, mod_reproject, mod_receive, mod_twms`)
+- Python 3.6
+- OnEarth 2 modules (`mod_wmts_wrapper, mod_reproject, mod_receive, mod_twms`)
   compiled and installed.
-* `mod_proxy` installed.
+- `mod_proxy` installed.
 
 ## Source Imagery
 
@@ -189,7 +190,7 @@ endpoint to create its configurations.
 
 This tool requires 2 configuration files to work:
 
-* endpoint config -- contains information about how the WMTS and TWMS endpoints
+- endpoint config -- contains information about how the WMTS and TWMS endpoints
   should be set up in Apache.
 
 Note that Apache must be restarted for new configurations to take effect. This
