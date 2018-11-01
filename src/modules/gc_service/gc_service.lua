@@ -445,12 +445,14 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     layerElem:add_child(id_elem)
 
     -- Build Metadata and add nodes
-    for _, metadata in pairs(config.metadata) do
-        local metadataNode = xml.new("ows:Metadata")
-        for key, value in pairs(metadata) do
-            metadataNode:set_attrib(key, value)
+    if config.metadata then
+        for _, metadata in pairs(config.metadata) do
+            local metadataNode = xml.new("ows:Metadata")
+            for key, value in pairs(metadata) do
+                metadataNode:set_attrib(key, value)
+            end
+            layerElem:add_child(metadataNode)
         end
-        layerElem:add_child(metadataNode)
     end
 
     -- Build the Style element
