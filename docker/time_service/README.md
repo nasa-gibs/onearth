@@ -4,7 +4,7 @@
 
 The included Dockerfile will build an image with the OnEarth Time Service.
 
-To run, simply build the image `docker build -t oe2-time-service .`, and then start a
+To run, simply build the image `docker build -t onearth-time-service .`, and then start a
 container using that image. Make sure that the OE2 container can access the time service
 via Docker network or another means.
 
