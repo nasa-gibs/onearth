@@ -85,17 +85,17 @@ echo 'Starting Apache server'
 sleep 2
 
 # Run layer config tools
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/oe-status.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_all.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_best.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_std.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_all.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_best.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_std.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_all.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/oe-status.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_all.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_best.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_std.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_all.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_best.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_std.yaml --make_twms
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_all.yaml --make_twms
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
