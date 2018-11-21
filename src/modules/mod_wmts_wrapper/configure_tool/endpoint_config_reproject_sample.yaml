@@ -6,6 +6,7 @@ gc_service_uri: "/oe2_gc_service"
 include_layers: 
   - 'AMSR2_Cloud_Liquid_Water_Day'
   - 'AMSR2_Cloud_Liquid_Water_Night'
+  - 'BlueMarble_NextGeneration'
 layer_config_source: layer_config.yaml
 base_uri_gc: 'http://some-uri/'
 wmts_service:

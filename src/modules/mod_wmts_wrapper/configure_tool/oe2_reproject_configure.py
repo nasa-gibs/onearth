@@ -69,7 +69,7 @@ MOD_REPROJECT_APACHE_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 </Directory>
 
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
-        Reproject_ConfigurationFiles {endpoint_path}/{layer_id}/default/{tilematrixset}/source.config {endpoint_path}/{layer_id}/default/{tilematrixset}/reproject.config
+        Reproject_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {endpoint_path}/{layer_id}/default/{tilematrixset}/reproject.config
         Reproject_RegExp {layer_id}
         WMTSWrapperRole tilematrixset
 </Directory>
@@ -268,13 +268,11 @@ def get_reprojected_tilematrixset(target_proj, source_tms_defs,
     source_tms = get_source_tms(source_tms_defs, layer_xml)
     base_scale_denom = get_max_scale_denominator(source_tms)
 
-    def get_closest_tms(acc, tms):
-        if not acc or get_max_scale_denominator(
-                acc) > get_max_scale_denominator(tms) > base_scale_denom:
-            return tms
-        return acc
-
-    return reduce(get_closest_tms, target_tms_defs)
+    target_tms = target_tms_defs[0]
+    for tms in target_tms_defs:
+        if get_max_scale_denominator(tms) < base_scale_denom:
+            return target_tms
+        target_tms = tms
 
 
 def get_source_tms(source_tms_defs, layer_xml):
