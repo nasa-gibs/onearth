@@ -5,11 +5,11 @@ same YAML configuration files used by other OnEarth 2 services.
 
 ## Requirements
 
-* Lua 5.1
-* luarocks
-* mod_ahtse_lua
-* openssl-devel
-* libyaml-devel
+- Lua 5.1
+- luarocks
+- mod_ahtse_lua
+- openssl-devel
+- libyaml-devel
 
 ## Installation
 
@@ -23,6 +23,7 @@ its dependencies:
 ---
 
 ### Using the service
+
 The GetCapabilities can output each of the following types of files:
 
 - WMTS GetCapabilities
@@ -46,9 +47,9 @@ The syntax for running the configuration tool is:
 
 This tool requires a few different configuration files to work:
 
-* endpoint config -- contains information about how the GC/GTS endpoint should
+- endpoint config -- contains information about how the GC/GTS endpoint should
   be set up in Apache
-* layer config(s) -- contains information about each of the layers to be
+- layer config(s) -- contains information about each of the layers to be
   included in the GC/GTS files.
 
 Note that Apache must be restarted for new configurations to take effect. This
@@ -60,18 +61,22 @@ your Apache directories.
 The endpoint configuration should be a YAML file in the following format:
 
 ```
-date_service_uri: "http://137.79.29.45:8090/date"
-tms_defs_file: "/etc/onearth/tilematrixsets.xml"
-gc_header_file: "/etc/onearth/headers/header_gc.xml"
-gts_header_file: "/etc/onearth/headers/header_gts.xml"
-twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
-layer_config_source: "/tmp/layer_config.yaml"
-apache_config_location: "/etc/httpd/conf.d/gc.conf"
-endpoint_config_base_location: "/var/www/html"
+date_service_uri: "http://localhost/date_service/date"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+layer_config_source: "/etc/onearth/layers/layer_config.yaml"
+apache_config_location: "/etc/httpd/conf.d"
 base_uri_gc: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/"
+base_uri_gts: "https://gibs.earthdata.nasa.gov/twms/epsg4326/best/"
 epsg_code: "EPSG:4326"
+endpoint: "/gc_service"
 target_epsg_code: "EPSG:3857"
-endpoint: "/gc"
+gc_service:
+  internal_endpoint: "/var/www/html/"
+  external_endpoint: "/gc"
+  config_prefix: "onearth_gc_service"
+  gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
 ```
 
 ##### Configuration Options:
@@ -84,17 +89,6 @@ the OnEarth 2 date service here.
 `tms_defs_file` (required) -- The path to a Tile Matrix Set definition XML file.
 One is included with this package (`tilematrixsets.xml`).
 
-`gc_header_file` (required for WMTS GC service) -- the GC service generates all the of the layer
-information dynamically (basically, everything outside of `<Contents>`), but
-you'll need to provide a header with everything else. An example file is
-included in `conf/`
-
-`gts_header_file` (required for TWMS GTS service) -- the GTS service generates all the of the layer
-information dynamically, but you'll need to provide a header with everything
-else. An example file is included in `conf/`.
-
-`twms_gc_header_file` (required for TWMS GC service) -- the TWMS GC service generates all the of the layer information dynamically, but you'll need to provide a header with everything else. An example file is included in `conf/`.
-
 `layer_config_source` (required) -- This can be a path either to a single layer
 configuration YAML file, or a directory containing multiple layer config files.
 In the case of a directory, the tool will parse all files in that directory with
@@ -104,10 +98,6 @@ subdirectories if they are present._
 `apache_config_location` (optional) -- Location that the main Apache
 configuration files will be stored (this will need to be somewhere Apache is
 configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
-
-`endpoint_config_base_location` (required) -- This is the path on disk where the
-configuration files should be stored _for this endpoint_. Defaults to
-`/var/www/html`, etc.
 
 `base_uri_gc` (required) -- The base URL to be used when forming `<ResourceURL>`
 templates for each layer.
@@ -119,9 +109,24 @@ this GC/GTS file. To be used in conjunction with `mod_reproject`. The outgoing
 GC/GTS files will contain layers that have been reprojected to the target
 projection.
 
-`endpoint` (required) -- The location beneath the
-base endpoint where the GC service should be available. Defaults to `/gc_service`.
+**gc_service config options**
 
+`internal_endpoint` -- location on disk for the gc_service files. Must be accessible by Apache.
+
+`external_endpoint` -- relative URI under which the GC service should be accessible. The configuration tool automatically creates "Alias" blocks.
+
+`config_prefix` -- Filename prefix to be used for the Apache config that's generated.
+
+`gc_header_file` (required for WMTS GC service) -- the GC service generates all the of the layer
+information dynamically (basically, everything outside of `<Contents>`), but
+you'll need to provide a header with everything else. An example file is
+included in `conf/`
+
+`gts_header_file` (required for TWMS GTS service) -- the GTS service generates all the of the layer
+information dynamically, but you'll need to provide a header with everything
+else. An example file is included in `conf/`.
+
+`twms_gc_header_file` (required for TWMS GC service) -- the TWMS GC service generates all the of the layer information dynamically, but you'll need to provide a header with everything else. An example file is included in `conf/`.
 
 #### Layer Configuration
 

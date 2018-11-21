@@ -1,0 +1,11 @@
+date_service_uri: "http://137.79.29.45:8090/date"
+layer_config_source: layer_config.yaml
+apache_config_location: /etc/httpd/conf.d
+gc_service_uri: '/gc_service'
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts"
+  external_endpoint: "/wmts"
+  config_prefix: "oe2-wmts"
+twms_service:
+  internal_endpoint: "/var/www/html/twms"
+  external_endpoint: "/twms"

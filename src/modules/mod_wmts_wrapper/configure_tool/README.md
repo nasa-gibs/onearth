@@ -24,7 +24,7 @@ used.
 
 #### Running the tool
 
-`oe2_wmts_configure.py endpoint_config {--make_twms}`
+`oe2_wmts_configure.py endpoint_config`
 
 This tool requires 2 configuration files to work:
 
@@ -39,31 +39,33 @@ your Apache directories.
 
 #### TWMS Configurations
 
-If the tool is run with the `--make_twms` option set, it will create TWMS
-configurations for the layers. The TWMS endpoint will be available as
-`{endpoint}/twms.cgi`.
+To create TWMS configurations, add the `twms_service` options to the endpoint config file. Example:
+
+```
+twms_service:
+  internal_endpoint: "/var/www/html/twms"
+  external_endpoint: "/twms"
+```
 
 #### Endpoint Configuration
 
 The endpoint configuration should be a YAML file in the following format:
 
 ```
-endpoint_config_base_location: /var/www/html/wmts
-layer_config_source: layer_configs
-base_idx_path: /var/www/idx
-date_service_uri: "http://127.0.0.1:8090/date"
-apache_config_location: "/etc/httpd/conf.d"
+date_service_uri: "http://137.79.29.45:8090/date"
+layer_config_source: layer_config.yaml
+apache_config_location: /etc/httpd/conf.d
+gc_service_uri: "/oe2_gc_service"
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts"
+  external_endpoint: "/wmts"
+  config_prefix: "oe2-wmts"
+twms_service:
+  internal_endpoint: "/var/www/html/twms"
+  external_endpoint: "/twms"
 ```
 
 ##### Configuration Options:
-
-`endpoint_config_base_location` (required) -- This is the path on disk where the
-configuration files should be stored _for this endpoint_. This needs to be a
-publicly-accessible path on the web server, such as `/var/www/wmts/epsg4326`,
-etc. _Each endpoint should have its own unique path!_
-
-'external_endpoint' (optional) -- This is the external path to the above internal location.
-The config tool will automatically build an Alias to link the external and internal paths.
 
 `layer_config_source` (required) -- This can be a path either to a single layer
 configuration YAML file, or a directory containing multiple layer config files.
@@ -87,6 +89,17 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 service. Keys will be positioned in the order configured.
 
 'gc_service_uri' (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
+
+**wmts_service options**
+
+- `internal_endpoint` -- Location on disk where all the configuration files for the WMTS layers should be stored
+- `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.
+- `config_prefix` -- Filename prefix to be used for the Apache config that's generated.
+
+**twms_service options**
+
+- `internal_endpoint` -- Location on disk where all the configuration files for the TWMS layers should be stored
+- `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.
 
 #### Layer Configuration
 
@@ -225,21 +238,21 @@ apache_config_location: "/etc/httpd/conf.d/oe2-reproject-service.conf"
 
 ##### Configuration Options:
 
-`endpoint_config_base_location` (required) -- This is the path on disk where the
-configuration files should be stored _for this endpoint_. This needs to be a
-publicly-accessible path on the web server, such as `/var/www/wmts/epsg3857`,
-etc. _Each endpoint should have its own unique path!_
+`date_service_uri` (optional) -- If you are using dynamic layers, put the URL of
+the OnEarth 2 date service here.
 
-`source_gc_uri` (required) -- The URI of the GetCapabilities file that will be
-used as the source for this endpoint. By default, all the layers present in this
-file will be configured.
+`apache_config_location` (optional) -- Location that the main Apache
+configuration files will be stored (this will need to be somewhere Apache is
+configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
+
+`date_service_keys` (optional) -- Array of keys to be used with the date
+service. Keys will be positioned in the order configured.
+
+`gc_service_uri` (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
 
 `target_epsg_code` (required) -- The projection that your source imagery will be
 reprojected to. Note that this projection must have Tile Matrix Sets configured
 in the Tile Matrix Set definition file.
-
-`date_service_uri` (optional) -- If you are using dynamic layers, put the URL of
-the OnEarth 2 date service here.
 
 `tms_defs_file` (optional) -- If using a Tile Matrix Sets file different from
 the one bundled with the script, you can define it here instead of using the
@@ -248,3 +261,14 @@ command line parameter.
 `apache_config_location` (optional) -- Location that the main Apache
 configuration files will be stored (this will need to be somewhere Apache is
 configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
+
+**wmts_service options**
+
+- `internal_endpoint` -- Location on disk where all the configuration files for the WMTS layers should be stored
+- `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.
+- `config_prefix` -- Filename prefix to be used for the Apache config that's generated.
+
+**twms_service options**
+
+- `internal_endpoint` -- Location on disk where all the configuration files for the TWMS layers should be stored
+- `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.

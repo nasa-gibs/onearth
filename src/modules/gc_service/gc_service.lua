@@ -267,7 +267,13 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local nodeList = {}
-    local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
+    local fileAttrs = lfs.attributes(layerConfigSource)
+    
+    if not fileAttrs then
+        print("Can't open layer config location: " .. layerConfigSource)
+        return
+    end
+    
     if fileAttrs["mode"] == "file" then
         nodeList[1] = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode, targetEpsgCode)
     end
@@ -329,7 +335,12 @@ local function makeGTS(endpointConfig)
             maxy=bbox["upperCorner"][2]})
     })
 
-    for _, tiledGroup in ipairs(getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)) do
+    local layers = getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
+    if not layers then
+        return sendResponse(400, "No layers found!")
+    end
+
+    for _, tiledGroup in ipairs(layers) do
         tiledPatternsNode:add_child(tiledGroup)
     end
 
@@ -502,15 +513,21 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local buildFunc = twms and makeTWMSGCLayer or makeGCLayer
-    if not twms and not endpointConfig["base_uri_gc"] then
+        if not twms and not endpointConfig["base_uri_gc"] then
         print("Error: no 'base_uri_gc' configured")
     end
+
     local nodeList = {}
-    local fileAttrs = assert(lfs.attributes(layerConfigSource), "Can't open layer config location: " .. layerConfigSource)
+
+    local fileAttrs = lfs.attributes(layerConfigSource)
+    if not fileAttrs then
+        print("Can't open layer config location: " .. layerConfigSource)
+        return
+    end
+
     if fileAttrs["mode"] == "file" then
         nodeList[1] = buildFunc(layerConfigSource, tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"])
     end
-
     if fileAttrs["mode"] == "directory" then
         -- Only going down a single directory level
         for file in lfs.dir(layerConfigSource) do
@@ -555,7 +572,13 @@ local function makeGC(endpointConfig)
 
     -- Build contents section
     local contentsElem = xml.elem("Contents")
-    for _, layer in ipairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)) do
+    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
+
+    if not layers then
+        return sendResponse(400, "No layers found!")
+    end
+   
+    for _, layer in ipairs(layers) do
         contentsElem:add_child(layer)
     end
 
@@ -608,7 +631,13 @@ local function makeTWMSGC(endpointConfig)
     local capabilityElem = capabilityElems[1]
 
     local baseLayerElem = capabilityElem:get_elements_with_name("Layer")[1]
-    for _, layer in ipairs(getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode, true)) do
+    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode, true)
+    
+    if not layers then
+        return sendResponse(400, "No layers found!")
+    end
+    
+    for _, layer in ipairs(layers) do
         baseLayerElem:add_direct_child(layer)
     end
 

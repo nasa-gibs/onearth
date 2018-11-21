@@ -9,7 +9,8 @@ local apacheConfigHeaderTemplate = [[
 ]]
 
 local apacheConfigTemplate = [[
-<Directory ${dir}>
+Alias ${external_endpoint} ${internal_endpoint}
+<Directory ${internal_endpoint}>
         AHTSE_lua_RegExp ${regexp}
         AHTSE_lua_Script ${script_loc}
         AHTSE_lua_Redirect On
@@ -89,30 +90,37 @@ local function create_config(endpointConfigFilename)
 
     local epsgCode = assert(endpointConfig["epsg_code"], "No 'epsg_code' specified in endpoint config.")
 
-    local apacheConfigLocation = endpointConfig["apache_config_location"]
+    local configPrefix = endpointConfig["gc_service"]["config_prefix"]
+    if not configPrefix then
+        print("No gc_service/config_filename specified. Using 'onearth_gc_service'")
+        configPrefix = "onearth_gc_service"
+    end        
+
+    local apacheConfigLocation = endpointConfig["gc_service"]["apache_config_location"]
     if not apacheConfigLocation then
-        apacheConfigLocation = "/etc/httpd/conf.d/gc_service.conf"
-        print("No Apache config location specified. Using '/etc/httpd/conf.d/" .. apacheConfigLocation .. "'")
+        apacheConfigLocation = "/etc/httpd/conf.d/" .. configPrefix .. ".conf"
+        print("No Apache config location specified. Using '/etc/httpd/conf.d/'")
     end
 
-    local luaConfigBaseLocation = endpointConfig["endpoint_config_base_location"]
-    if not luaConfigBaseLocation then
-        print("No Lua config base location specified. Using '/var/www/html")
-        luaConfigBaseLocation = "/var/www/html"
+    local internalEndpoint = endpointConfig["gc_service"]["internal_endpoint"]
+    if not internalEndpoint then
+        print("No gc_service/internal_endpoint specified. Using '/var/www/html")
+        internalEndpoint = "/var/www/html"
     end
-    luaConfigBaseLocation = stripTrailingSlash(luaConfigBaseLocation)
+    internalEndpoint = stripTrailingSlash(internalEndpoint)
 
-    local endpoint = endpointConfig["endpoint"]
-    if not endpoint then
-        print("No service endpoint specified. Using /gc")
-        endpoint = "/gc"
+    local externalEndpoint = endpointConfig["gc_service"]["external_endpoint"]
+    if not externalEndpoint then
+        print("No gc_service/internal_endpoint specified. Using /gc")
+        externalEndpoint = "/gc"
     end
 
     local regexp = "gc_service"
-    local luaConfigLocation = luaConfigBaseLocation .. endpoint .. "/" .. "onearth_gc_service.lua"
+    local luaConfigLocation = internalEndpoint .. "/" .. configPrefix .. ".lua"
 
     -- Generate Apache config string
-    local apacheConfig = apacheConfigTemplate:gsub("${dir}", luaConfigBaseLocation .. endpoint)
+    local apacheConfig = apacheConfigTemplate:gsub("${internal_endpoint}", internalEndpoint)
+        :gsub("${external_endpoint}", externalEndpoint)
         :gsub("${regexp}", regexp)
         :gsub("${script_loc}", luaConfigLocation)
 
@@ -121,14 +129,14 @@ local function create_config(endpointConfigFilename)
         :gsub("${tms_loc}", tmsDefsFilename)
         :gsub("${date_service_uri}", dateServiceUri)
         :gsub("${epsg_code}", epsgCode)
-        :gsub("${gc_header_file}", addQuotes(endpointConfig["gc_header_file"]) or "nil")
-        :gsub("${gts_header_file}", addQuotes(endpointConfig["gts_header_file"]) or "nil")
-        :gsub("${twms_gc_header_file}", addQuotes(endpointConfig["twms_gc_header_file"]) or "nil")
+        :gsub("${gc_header_file}", addQuotes(endpointConfig["gc_service"]["gc_header_file"]) or "nil")
+        :gsub("${gts_header_file}", addQuotes(endpointConfig["gc_service"]["gts_header_file"]) or "nil")
+        :gsub("${twms_gc_header_file}", addQuotes(endpointConfig["gc_service"]["twms_gc_header_file"]) or "nil")
         :gsub("${base_uri_gc}", addQuotes(endpointConfig["base_uri_gc"]) or "nil")
         :gsub("${base_uri_gts}", addQuotes(endpointConfig["base_uri_gts"]) or "nil")
         :gsub("${target_epsg_code}", endpointConfig["target_epsg_code"] and addQuotes(endpointConfig["target_epsg_code"]) or "nil")
         :gsub("${date_service_keys}", dateServiceKeyString)
-    lfs.mkdir(luaConfigBaseLocation .. endpoint)
+    lfs.mkdir(internalEndpoint)
     local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
         .. luaConfigLocation .. " for writing."))
     luaConfigFile:write(luaConfig)

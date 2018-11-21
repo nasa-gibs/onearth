@@ -60,7 +60,7 @@ MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
         LoadModule receive_module modules/mod_receive.so
 </IfModule>
 
-<Directory {endpoint_path}>
+<Directory {internal_endpoint}>
         WMTSWrapperRole root
 </Directory>
 
@@ -87,16 +87,16 @@ ProxyPass {local_data_file_uri} {data_file_uri}
 ProxyPassReverse {local_data_file_uri} {data_file_uri}
 """
 
-LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {endpoint_path}/{layer_id}>
+LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
     WMTSWrapperRole layer
 </Directory>
 
-<Directory {endpoint_path}/{layer_id}/default>
+<Directory {internal_endpoint}/{layer_id}/default>
         WMTSWrapperRole style
         WMTSWrapperEnableTime {time_enabled}
 </Directory>
 
-<Directory {endpoint_path}/{layer_id}/default/{tilematrixset}>
+<Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
         MRF On
         MRF_ConfigurationFile {config_file_path}
         MRF_RegExp {alias}
@@ -106,9 +106,10 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {endpoint_path}/{layer_id}>
 </Directory>
 """
 
-MOD_TWMS_CONFIG_TEMPLATE = """<Directory {endpoint_path}>
+MOD_TWMS_CONFIG_TEMPLATE = """Alias {external_endpoint} {internal_endpoint}
+<Directory {internal_endpoint}>
         tWMS_RegExp twms.cgi
-        tWMS_ConfigurationFile {endpoint_path}/twms/{layer}/twms.config
+        tWMS_ConfigurationFile {internal_endpoint}/{layer}/twms.config
 </Directory>
 """
 
@@ -127,7 +128,7 @@ SourcePostfix {source_postfix}
 
 GC_SERVICE_TEMPLATE = """# Redirects for GC service
 RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/(.*)$ [NC]
+RewriteCond %{REQUEST_FILENAME} ^{internal_endpoint}/(.*)$ [NC]
 RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=wmtsgetcapabilities [P,L]
 
@@ -168,9 +169,7 @@ MIME_TO_MRF_EXTENSION = {
 
 
 def strip_trailing_slash(string):
-    if string.endswith('/'):
-        string = string[:len(string) - 1]
-    return string
+    return re.sub(r'/$', '', string)
 
 
 def format_date_service_uri(uri):
@@ -238,33 +237,38 @@ def make_apache_config(endpoint_config, layer_configs):
         layer_config.get('data_file_uri') for layer_config in layer_configs)
 
     try:
-        endpoint_path = strip_trailing_slash(
-            endpoint_config['endpoint_config_base_location'])
+        internal_endpoint = strip_trailing_slash(
+            endpoint_config['wmts_service']['internal_endpoint'])
         if date_service_needed:
             date_service_uri = endpoint_config['date_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 
-    external_endpoint = None
+    external_endpoint = "/wmts"
     try:
-        external_endpoint = endpoint_config['external_endpoint']
+        external_endpoint = strip_trailing_slash(
+            endpoint_config['wmts_service']['external_endpoint'])
     except KeyError:
-        print('No external_endpoint configured. Using "/"')
+        print('No external_endpoint configured. Using "/wmts"')
         pass
 
-    gc_service_block = ''
-    try:
+    gc_service_uri = None
+    if endpoint_config.get('gc_service_uri'):
+        gc_service_uri = endpoint_config.get('gc_service_uri')
+    elif endpoint_config.get('gc_service'):
+        gc_service_uri = endpoint_config.get('gc_service').get(
+            'external_endpoint')
+
+    if gc_service_uri:
         gc_service_block = bulk_replace(
-            GC_SERVICE_TEMPLATE,
-            [('{endpoint_path}', endpoint_path),
-             ('{gc_service_uri}', endpoint_config['gc_service_uri']),
-             ('{external_endpoint}',
-              external_endpoint if external_endpoint else '')])
-    except KeyError:
+            GC_SERVICE_TEMPLATE, [('{internal_endpoint}', internal_endpoint),
+                                  ('{gc_service_uri}', gc_service_uri),
+                                  ('{external_endpoint}', external_endpoint)])
+    else:
+        gc_service_block = ''
         print(
-            '\nNo "gc_service_uri" configured. GetCapabilities/GetTileService will not be accessible'
+            '\nNo "gc_service_uri" configured or gc_service configuration found. GetCapabilities/GetTileService will not be accessible'
         )
-        pass
 
     # Set up proxies for date service and data files (if needed)
     proxy_config = ''
@@ -286,35 +290,48 @@ def make_apache_config(endpoint_config, layer_configs):
             for config in endpoint_config['proxy_paths']
         ])
 
-    alias_block = ''
-    if external_endpoint:
-        alias_block = 'Alias {} {}'.format(external_endpoint, endpoint_path)
+    alias_block = 'Alias {} {}'.format(external_endpoint, internal_endpoint)
 
     main_apache_config = bulk_replace(
         MAIN_APACHE_CONFIG_TEMPLATE,
-        [('{endpoint_path}', endpoint_path),
+        [('{internal_endpoint}', internal_endpoint),
          ('{gc_service_block}', gc_service_block),
          ('{alias_block}', alias_block),
-         ('{external_endpoint}',
-          external_endpoint if external_endpoint else '/')])
+         ('{external_endpoint}', external_endpoint)])
 
     layer_config_snippets = '\n'.join(
         [layer_config['apache_config'] for layer_config in layer_configs])
 
-    # Add TWMS if there are any TWMS layers
-    twms = any(
-        layer_config.get('twms_config', None)
-        for layer_config in layer_configs)
-    twms_config = None
+    # Add TWMS if TWMS endpoint is configured
+    twms = endpoint_config.get('twms_service')
+    twms_config = ''
     if twms:
-        twms_config = bulk_replace(MOD_TWMS_CONFIG_TEMPLATE,
-                                   [('{endpoint_path}', endpoint_path)])
+        try:
+            twms_internal_endpoint = strip_trailing_slash(
+                endpoint_config['twms_service']['internal_endpoint'])
+        except KeyError as err:
+            print(f"Endpoint config is missing required config element {err}")
+
+        try:
+            twms_external_endpoint = strip_trailing_slash(
+                endpoint_config['twms_service']['external_endpoint'])
+        except KeyError:
+            twms_external_endpoint = '/twms'
+            print('No external_endpoint configured. Using {}'.format(
+                twms_external_endpoint))
+            pass
+
+        twms_config = TWMS_MODULE_TEMPLATE
+        twms_config += "\n\n"
+        twms_config += bulk_replace(
+            MOD_TWMS_CONFIG_TEMPLATE,
+            [('{internal_endpoint}', twms_internal_endpoint),
+             ('{external_endpoint}', twms_external_endpoint)])
         if endpoint_config.get('gc_service_uri'):
             twms_gc_config = bulk_replace(
                 TWMS_GC_SERVICE_TEMPLATE,
-                [('{gc_service_uri}', endpoint_config['gc_service_uri']),
-                 ('{external_endpoint}',
-                  external_endpoint if external_endpoint else '')])
+                [('{gc_service_uri}', gc_service_uri),
+                 ('{external_endpoint}', external_endpoint)])
             main_apache_config = '\n'.join(
                 [twms_gc_config, main_apache_config])
 
@@ -323,14 +340,16 @@ def make_apache_config(endpoint_config, layer_configs):
                (date_service_config, date_service_needed),
                (datafile_proxy_config, datafile_proxy_needed),
                (main_apache_config, True), (layer_config_snippets, True),
-               (TWMS_MODULE_TEMPLATE, twms), (twms_config, twms)))
+               (twms_config, twms)))
 
 
 def write_apache_config(endpoint_config, apache_config):
-    apache_config_path = Path('/etc/httpd/conf.d/oe2-tile-service.conf')
     try:
-        apache_config_path = Path(endpoint_config['apache_config_location'])
+        apache_config_path = Path(
+            endpoint_config['apache_config_location'],
+            endpoint_config['wmts_service']['config_prefix'] + '.conf')
     except KeyError:
+        apache_config_path = Path("/etc/httpd/conf.d/oe2_wmts_service.conf")
         print(
             f'\n"apache_config_location" not found in endpoint config, saving Apache config to {apache_config_path}'
         )
@@ -342,7 +361,7 @@ def write_apache_config(endpoint_config, apache_config):
     print(f'\nApache config written to {apache_config_path.as_posix()}')
 
 
-def make_layer_config(endpoint_config, layer, make_twms=False):
+def make_layer_config(endpoint_config, layer):
     layer_config_path = layer['path']
     layer_config = layer['config']
     # Make sure we have what we need from the layer config
@@ -377,8 +396,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
 
     # Make sure we have what we need from the endpoint config
     try:
-        endpoint_path = strip_trailing_slash(
-            endpoint_config['endpoint_config_base_location'])
+        internal_endpoint = strip_trailing_slash(
+            endpoint_config['wmts_service']['internal_endpoint'])
         if not static:
             date_service_uri = endpoint_config['date_service_uri']
     except KeyError as err:
@@ -400,8 +419,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # if static and requests.head(data_file_uri).status_code != 200:
     #     print(f"\nWARNING: Can't access data file uri: {data_file_uri}")
 
-    config_file_path = Path(endpoint_path, layer_id, "default", tilematrixset,
-                            'mod_mrf.config')
+    config_file_path = Path(internal_endpoint, layer_id, "default",
+                            tilematrixset, 'mod_mrf.config')
 
     # Create Apache snippet
 
@@ -413,7 +432,7 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     # Apache <Directory> stuff
     apache_config = bulk_replace(
         LAYER_APACHE_CONFIG_TEMPLATE,
-        [('{endpoint_path}', endpoint_path), ('{layer_id}', layer_id),
+        [('{internal_endpoint}', internal_endpoint), ('{layer_id}', layer_id),
          ('{time_enabled}', 'Off' if static else 'On'),
          ('{year_dir}', 'On' if year_dir else 'Off'), ('{alias}', alias),
          ('{tilematrixset}', tilematrixset),
@@ -478,7 +497,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
     }
 
     # Build the TWMS config if that's selected
-    if make_twms:
+    twms = endpoint_config.get('twms_service')
+    if twms:
         try:
             bbox = layer_config['source_mrf']['bbox']
         except KeyError as err:
@@ -486,18 +506,8 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
                 f'\n{layer_config_filename} is missing required config element {err}'
             )
 
-        try:
-            base_source_path = endpoint_config['base_uri_gc']
-        except KeyError as err:
-            print(
-                f'\n"base_uri_gc" in endpoint config is required to configure TWMS layers'
-            )
-
-        # Remove trailing slash
-        base_source_path = re.sub(r'/$', '', base_source_path)
-
         source_path = '/'.join(
-            (base_source_path, layer_id,
+            (internal_endpoint, layer_id,
              'default' + ('/${date}' if not static else ''), tilematrixset))
         source_postfix = MIME_TO_EXTENSION[mimetype]
         twms_config = bulk_replace(
@@ -509,8 +519,14 @@ def make_layer_config(endpoint_config, layer, make_twms=False):
              ('{source_path}', source_path), ('{bbox}', bbox),
              ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
 
+        try:
+            twms_internal_endpoint = strip_trailing_slash(
+                endpoint_config['twms_service']['internal_endpoint'])
+        except KeyError as err:
+            print(f"Endpoint config is missing required config element {err}")
+
         layer_config_out['twms_config'] = {
-            'path': Path(endpoint_path, 'twms', layer_id, 'twms.config'),
+            'path': Path(twms_internal_endpoint, layer_id, 'twms.config'),
             'contents': twms_config
         }
 
@@ -523,7 +539,7 @@ def get_layer_config(layer_config_path):
     return {'path': layer_config_path, 'config': config}
 
 
-def get_layer_configs(endpoint_config, make_twms=False):
+def get_layer_configs(endpoint_config):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -574,11 +590,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Configure mod_wmts_wrapper.')
     parser.add_argument(
         'endpoint_config', type=str, help='an endpoint config YAML file')
-    parser.add_argument(
-        '-t',
-        '--make_twms',
-        action='store_true',
-        help='Generate TWMS configurations')
+
     args = parser.parse_args()
 
     endpoint_config = yaml.load(Path(args.endpoint_config).read_text())
@@ -587,7 +599,7 @@ if __name__ == '__main__':
     layer_input_configs = get_layer_configs(endpoint_config)
     endpoint_config['proxy_paths'] = get_proxy_paths(layer_input_configs)
     layer_output_configs = [
-        make_layer_config(endpoint_config, layer, make_twms=args.make_twms)
+        make_layer_config(endpoint_config, layer)
         for layer in layer_input_configs
     ]
 
