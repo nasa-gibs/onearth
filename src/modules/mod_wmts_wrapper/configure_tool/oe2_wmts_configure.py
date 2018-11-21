@@ -173,7 +173,7 @@ def strip_trailing_slash(string):
 
 
 def format_date_service_uri(uri):
-    return '/oe2-date-service-proxy-' + bulk_replace(
+    return '/oe2-time-service-proxy-' + bulk_replace(
         urlparse(uri).netloc, ((':', '-'), ('.', '-')))
 
 
@@ -240,7 +240,7 @@ def make_apache_config(endpoint_config, layer_configs):
         internal_endpoint = strip_trailing_slash(
             endpoint_config['wmts_service']['internal_endpoint'])
         if date_service_needed:
-            date_service_uri = endpoint_config['date_service_uri']
+            date_service_uri = endpoint_config['time_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 
@@ -399,7 +399,7 @@ def make_layer_config(endpoint_config, layer):
         internal_endpoint = strip_trailing_slash(
             endpoint_config['wmts_service']['internal_endpoint'])
         if not static:
-            date_service_uri = endpoint_config['date_service_uri']
+            date_service_uri = endpoint_config['time_service_uri']
     except KeyError as err:
         print(f"\nEndpoint config is missing required config element {err}")
 
@@ -407,7 +407,7 @@ def make_layer_config(endpoint_config, layer):
     if base_idx_path:
         idx_path = base_idx_path + '/' + idx_path
 
-    date_service_keys = endpoint_config.get('date_service_keys')
+    date_service_keys = endpoint_config.get('time_service_keys')
 
     # # Check to see if and data files exist and warn if not
     # if static and not Path(idx_path).exists():

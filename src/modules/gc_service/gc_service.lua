@@ -93,8 +93,8 @@ local function getExtensionFromMimeType(mimeType)
 end
 
 local function getDateList(endpointConfig)
-    local dateServiceUri = endpointConfig["date_service_uri"]
-    local dateServiceKeys = endpointConfig["date_service_keys"]
+    local dateServiceUri = endpointConfig["time_service_uri"]
+    local dateServiceKeys = endpointConfig["time_service_keys"]
     if dateServiceKeys then
         local formattedKeys = {}
         for idx, value in ipairs(dateServiceKeys) do
@@ -169,7 +169,6 @@ local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
     while idx > 0 do
         local tmsInfo = sortedTmsDefs[idx]
         if tonumber(tmsInfo["scaleDenominator"]) < tonumber(sourceScaleDenom) then
-            print(targetTmsName)
             return targetTmsName, targetTms
         end
         targetTmsName = tmsInfo["name"]

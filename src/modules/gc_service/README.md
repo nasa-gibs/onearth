@@ -61,7 +61,7 @@ your Apache directories.
 The endpoint configuration should be a YAML file in the following format:
 
 ```
-date_service_uri: "http://localhost/date_service/date"
+time_service_uri: "http://localhost/time_service/time"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/layers/layer_config.yaml"
 apache_config_location: "/etc/httpd/conf.d"
@@ -83,7 +83,7 @@ gc_service:
 
 **Note that all file paths must be accessible to Apache!**
 
-`date_service_uri` (optional) -- If you are using dynamic layers, put the URL of
+`time_service_uri` (optional) -- If you are using dynamic layers, put the URL of
 the OnEarth 2 date service here.
 
 `tms_defs_file` (required) -- The path to a Tile Matrix Set definition XML file.
@@ -194,7 +194,7 @@ local config = {
     layer_config_source="config_location",
     tms_defs_file="tms_defs_location",
     gc_header_loc="gc_header_location",
-    date_service_uri="date_service_uri",
+    time_service_uri="time_service_uri",
     epsg_code="epsg_code",
     gts_service=true,
     gc_header_file="gc_header_file_path",

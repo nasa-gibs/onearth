@@ -1,4 +1,4 @@
-# OnEarth Time Snap Service
+# OnEarth Time Service
 
 ## What it does
 
@@ -12,7 +12,7 @@ The service takes queries via URL query parameters and returns a JSON response.
 
 ## How it works
 
-`time_snap` is a Lua script that's intended to be run by the `mod_ahtse_lua`
+`time_service` is a Lua script that's intended to be run by the `mod_ahtse_lua`
 Apache module.
 
 The script can provide different output based on the URL query parameters
@@ -38,17 +38,17 @@ be easily added.
 
 ## Dependencies
 
-* Apache 2.4
-* `mod_ahtse_lua`
-* Lua 5.1 or greater
-* luarocks (Lua package system)
-* Redis
+-   Apache 2.4
+-   `mod_ahtse_lua`
+-   Lua 5.1 or greater
+-   luarocks (Lua package system)
+-   Redis
 
 #### Lua dependencies
 
-* luaposix
-* redis-lua (forked in this repo)
-* json-lua
+-   luaposix
+-   redis-lua (forked in this repo)
+-   json-lua
 
 ## Installation
 
@@ -97,8 +97,7 @@ For testing, here's a fast way to set up a Redis database for testing.
 
 1. Enter the Redis CLI: `redis-cli`
 2. Add a default date: `SET layer:test_layer:default "2015-06-01"`
-3. Add some periods: `SADD layer:test_layer:periods "2012-01-01/2013-01-01/P1M"
-   "2005-06-01/2005-12-01/P10D"`
+3. Add some periods: `SADD layer:test_layer:periods "2012-01-01/2013-01-01/P1M" "2005-06-01/2005-12-01/P10D"`
 
 #### Creating levels for projection, endpoint, etc.
 
@@ -122,8 +121,8 @@ local databaseHandler = {type="redis", ip="127.0.0.1"}
 local filenameFormatHandler = {type="strftime", dateFormat="%Y%j", dateTimeFormat="%Y%j"}
 -- End configuration
 
-local onearth = require "onearth"
-handler = onearth.dateSnapper(databaseHandler, filenameFormatHandler)
+local onearthTimeService = require "onearthTimeService"
+handler = onearthTimeService.timeService(databaseHandler, filenameFormatHandler)
 ```
 
 The only lines you need to edit are the two after `Set configuration here`.
@@ -132,11 +131,10 @@ The only lines you need to edit are the two after `Set configuration here`.
 
 _Redis_
 
-* handler_type -- set to `"redis"`.
-* host -- sets the hostname for the Redis database you'll be using. Should be in
-  quotes.
-* port (optional) -- sets the port number for your Redis database. Defaults to
-  6379.
+-   handler_type -- set to `"redis"`.
+-   host -- sets the hostname for the Redis database you'll be using. Should be in
+    quotes.
+-   port (optional) -- sets the port number for your Redis database. Defaults to 6379.
 
 #### Filename Format Handlers
 
@@ -144,9 +142,9 @@ _strftime_ Outputs filenames in this format: `[layer_name][date]`, where
 `[date]` is the date formatted using a strftime-compatible template. For more
 information, see (http://man7.org/linux/man-pages/man3/strftime.3.html)
 
-* filename_format -- set to `"strftime"`
-* dateFormat -- the strftime-compatible format for non-subdaily dates.
-* dateTimeFormat -- the strftime-compatible format for subdaily dates.
+-   filename_format -- set to `"strftime"`
+-   dateFormat -- the strftime-compatible format for non-subdaily dates.
+-   dateTimeFormat -- the strftime-compatible format for subdaily dates.
 
 _epoch_ Outputs filenames in this format: `[layer_name][unix_epoch]`, where
 `[unix_epoch]` is the date UNIX epoch time (ms).

@@ -1,4 +1,4 @@
-package = "OnEarth"
+package = "OnEarth_Time_Service"
 version = "0.1-1"
 source = {
    url = "..." -- We don't have one yet
@@ -20,6 +20,6 @@ dependencies = {
 build = {
    type = "builtin",
    modules = {
-      onearth = "onearth.lua"
+      onearthTimeService = "time_service.lua"
    }
 }

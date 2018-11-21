@@ -1,4 +1,4 @@
-local onearth = {}
+local onearthTimeService = {}
 
 local md5 = require "md5"
 local date_util = require "date"
@@ -167,7 +167,7 @@ end
 
 
 -- Main date snapping handler -- this returns a function that's intended to be called by mod_ahtse_lua
-function onearth.date_snapper (layer_handler_options, filename_options)
+function onearthTimeService.timeService (layer_handler_options, filename_options)
     local JSON = require("JSON")
     local layer_handler = layer_handler_options.handler_type == "redis" and redis_handler(layer_handler_options) or nil
     local filename_handler = filename_options.filename_format == "hash" and hash_formatter(filename_options)
@@ -273,4 +273,4 @@ function onearth.date_snapper (layer_handler_options, filename_options)
         end
     end
 end
-return onearth
+return onearthTimeService

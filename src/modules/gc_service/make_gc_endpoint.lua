@@ -23,7 +23,7 @@ local onearth_gc_gts = require "onearth_gc_gts"
 local config = {
     layer_config_source="${config_loc}",
     tms_defs_file="${tms_loc}",
-    date_service_uri="${date_service_uri}",
+    time_service_uri="${time_service_uri}",
     epsg_code="${epsg_code}",
     gc_header_file=${gc_header_file},
     gts_header_file=${gts_header_file},
@@ -31,7 +31,7 @@ local config = {
     base_uri_gc=${base_uri_gc},
     base_uri_gts=${base_uri_gts},
     target_epsg_code=${target_epsg_code},
-    date_service_keys=${date_service_keys}
+    time_service_keys=${time_service_keys}
 }
 handler = onearth_gc_gts.handler(config)
 ]]
@@ -81,11 +81,11 @@ local function create_config(endpointConfigFilename)
 
     local tmsDefsFilename = assert(endpointConfig["tms_defs_file"], "No 'tms_defs_file' specified in endpoint config.")
     local layerConfigSource = assert(endpointConfig["layer_config_source"], "No 'layer_config_source' specified in endpoint config.")
-    local dateServiceUri = endpointConfig["date_service_uri"]
+    local dateServiceUri = endpointConfig["time_service_uri"]
 
     local dateServiceKeyString = "{}"
-    if endpointConfig["date_service_keys"] then
-        dateServiceKeyString = "{" .. join(map(addQuotes, endpointConfig["date_service_keys"]), ",") .. "}"
+    if endpointConfig["time_service_keys"] then
+        dateServiceKeyString = "{" .. join(map(addQuotes, endpointConfig["time_service_keys"]), ",") .. "}"
     end
 
     local epsgCode = assert(endpointConfig["epsg_code"], "No 'epsg_code' specified in endpoint config.")
@@ -128,7 +128,7 @@ local function create_config(endpointConfigFilename)
     -- Make and write Lua config
     local luaConfig = luaConfigTemplate:gsub("${config_loc}", layerConfigSource)
         :gsub("${tms_loc}", tmsDefsFilename)
-        :gsub("${date_service_uri}", dateServiceUri)
+        :gsub("${time_service_uri}", dateServiceUri)
         :gsub("${epsg_code}", epsgCode)
         :gsub("${gc_header_file}", addQuotes(endpointConfig["gc_service"]["gc_header_file"]) or "nil")
         :gsub("${gts_header_file}", addQuotes(endpointConfig["gc_service"]["gts_header_file"]) or "nil")
@@ -136,7 +136,7 @@ local function create_config(endpointConfigFilename)
         :gsub("${base_uri_gc}", addQuotes(endpointConfig["base_uri_gc"]) or "nil")
         :gsub("${base_uri_gts}", addQuotes(endpointConfig["base_uri_gts"]) or "nil")
         :gsub("${target_epsg_code}", endpointConfig["target_epsg_code"] and addQuotes(endpointConfig["target_epsg_code"]) or "nil")
-        :gsub("${date_service_keys}", dateServiceKeyString)
+        :gsub("${time_service_keys}", dateServiceKeyString)
     lfs.mkdir(internalEndpoint)
     local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 
         .. luaConfigLocation .. " for writing."))

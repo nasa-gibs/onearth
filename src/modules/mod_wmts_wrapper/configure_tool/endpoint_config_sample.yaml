@@ -1,4 +1,4 @@
-date_service_uri: "http://137.79.29.45:8090/date"
+time_service_uri: "http://137.79.29.45:8090/date"
 layer_config_source: layer_config.yaml
 apache_config_location: /etc/httpd/conf.d
 gc_service_uri: '/gc_service'

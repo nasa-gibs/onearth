@@ -184,7 +184,7 @@ def strip_trailing_slash(string):
 
 
 def format_date_service_uri(uri):
-    return '/oe2-date-service-proxy-' + bulk_replace(
+    return '/oe2-time-service-proxy-' + bulk_replace(
         urlparse(uri).netloc, ((':', '-'), ('.', '-')))
 
 
@@ -201,8 +201,8 @@ def get_date_service_info(endpoint_config, layer_configs):
     if not date_service_needed:
         return None
     return {
-        'local': format_date_service_uri(endpoint_config['date_service_uri']),
-        'remote': endpoint_config['date_service_uri']
+        'local': format_date_service_uri(endpoint_config['time_service_uri']),
+        'remote': endpoint_config['time_service_uri']
     }
 
 
@@ -549,7 +549,7 @@ def build_configs(endpoint_config):
     try:
         target_proj = endpoint_config['target_epsg_code']
         source_gc_uri = endpoint_config['source_gc_uri']
-        endpoint_config['date_service_uri']
+        endpoint_config['time_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
 

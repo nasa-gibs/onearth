@@ -52,7 +52,7 @@ twms_service:
 The endpoint configuration should be a YAML file in the following format:
 
 ```
-date_service_uri: "http://137.79.29.45:8090/date"
+time_service_uri: "http://137.79.29.45:8090/date"
 layer_config_source: layer_config.yaml
 apache_config_location: /etc/httpd/conf.d
 gc_service_uri: "/oe2_gc_service"
@@ -78,14 +78,14 @@ in a base location on disk -- and if the layer configs themselves list IDX paths
 as relative paths from that location, make sure this is included. Otherwise,
 leave it out. (Read on to the layer configuration section for more information.)
 
-`date_service_uri` (optional) -- If you are using dynamic layers, put the URL of
-the OnEarth 2 date service here.
+`time_service_uri` (optional) -- If you are using dynamic layers, put the URL of
+the OnEarth 2 time service here.
 
 `apache_config_location` (optional) -- Location that the main Apache
 configuration files will be stored (this will need to be somewhere Apache is
 configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 
-`date_service_keys` (optional) -- Array of keys to be used with the date
+`time_service_keys` (optional) -- Array of keys to be used with the date
 service. Keys will be positioned in the order configured.
 
 'gc_service_uri' (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
@@ -170,9 +170,9 @@ native units.
 
 `mime_type` (required) -- MIME type of the tiles in this MRF.
 
-Example: `date_service_keys: ["epsg4326", "std"]` will cause date lookups for
+Example: `time_service_keys: ["epsg4326", "std"]` will cause date lookups for
 this layer to use the following format:
-`{date_service_uri}/date?key1=epsg4326&key2=std`
+`{time_service_uri}/date?key1=epsg4326&key2=std`
 
 ---
 
@@ -231,21 +231,21 @@ The endpoint configuration should be a YAML file in the following format:
 endpoint_config_base_location: "/var/www/html"
 source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 target_epsg_code: "EPSG:3857"
-date_service_uri: "http://137.79.29.45:8090/date"
+time_service_uri: "http://137.79.29.45:8090/date"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"
 apache_config_location: "/etc/httpd/conf.d/oe2-reproject-service.conf"
 ```
 
 ##### Configuration Options:
 
-`date_service_uri` (optional) -- If you are using dynamic layers, put the URL of
+`time_service_uri` (optional) -- If you are using dynamic layers, put the URL of
 the OnEarth 2 date service here.
 
 `apache_config_location` (optional) -- Location that the main Apache
 configuration files will be stored (this will need to be somewhere Apache is
 configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 
-`date_service_keys` (optional) -- Array of keys to be used with the date
+`time_service_keys` (optional) -- Array of keys to be used with the date
 service. Keys will be positioned in the order configured.
 
 `gc_service_uri` (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
