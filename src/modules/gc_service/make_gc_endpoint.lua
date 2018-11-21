@@ -114,6 +114,7 @@ local function create_config(endpointConfigFilename)
         print("No gc_service/internal_endpoint specified. Using /gc")
         externalEndpoint = "/gc"
     end
+    externalEndpoint = stripTrailingSlash(externalEndpoint)
 
     local regexp = "gc_service"
     local luaConfigLocation = internalEndpoint .. "/" .. configPrefix .. ".lua"
