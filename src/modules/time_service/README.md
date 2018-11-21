@@ -118,7 +118,7 @@ determines how your service will run. Here's a sample script:
 ```
 -- Set configuration here
 local databaseHandler = {type="redis", ip="127.0.0.1"}
-local filenameFormatHandler = {type="strftime", dateFormat="%Y%j", dateTimeFormat="%Y%j"}
+local filenameFormatHandler = {type="strftime", dateTimeFormat="%Y%j"}
 -- End configuration
 
 local onearthTimeService = require "onearthTimeService"
@@ -138,16 +138,20 @@ _Redis_
 
 #### Filename Format Handlers
 
-_strftime_ Outputs filenames in this format: `[layer_name][date]`, where
+`strftime` Outputs filenames in this format: `[layer_name][date]`, where
 `[date]` is the date formatted using a strftime-compatible template. For more
 information, see (http://man7.org/linux/man-pages/man3/strftime.3.html)
 
--   filename_format -- set to `"strftime"`
--   dateFormat -- the strftime-compatible format for non-subdaily dates.
+-   filename_format -- set to `"strftime"`.
 -   dateTimeFormat -- the strftime-compatible format for subdaily dates.
 
-_epoch_ Outputs filenames in this format: `[layer_name][unix_epoch]`, where
-`[unix_epoch]` is the date UNIX epoch time (ms).
+`hash` Outputs filenames in this format: `[hash]-[layer_name]-[date]`, where `hash` is the first 4 characters of of the MD5 hash of the string `[layer_name]-[date]`.
+
+-   filename_format -- set to `"strftime"`.
+
+`basic` Outputs filenames in this format: `[layer_name]-[date]` where the date is in the format `%Y%j%H%M%S`.
+
+If no filename format handler is specified, the `basic` handler will be used.
 
 ### Create the Apache configuration
 

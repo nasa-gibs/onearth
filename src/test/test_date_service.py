@@ -48,8 +48,8 @@ from oe_test_utils import restart_apache, make_dir_tree
 
 DEBUG = False
 
-DATE_SERVICE_LUA_TEMPLATE = """local onearth = require "onearth"
-handler = onearth.date_snapper({handler_type="redis", host="127.0.0.1"}, {filename_format="hash"})
+DATE_SERVICE_LUA_TEMPLATE = """local onearthTimeService = require "onearthTimeService"
+handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="hash"})
 """
 
 DATE_SERVICE_APACHE_TEMPLATE = """Alias /date_service {config_path}

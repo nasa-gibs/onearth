@@ -2,7 +2,6 @@ local onearthTimeService = {}
 
 local md5 = require "md5"
 local date_util = require "date"
-
 local socket = require "socket"
 
 local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
@@ -155,6 +154,12 @@ local function redis_handler (options)
 end
 
 -- Handlers to format output filenames
+local function basic_date_formatter (options)
+    return function (layer_name, date)
+        return layer_name .. "-" .. date:fmt(datetime_filename_format)
+    end
+end
+
 local function hash_formatter ()
     return function (layer_name, date)
         local date_string = date:fmt(datetime_filename_format)
@@ -165,13 +170,24 @@ local function hash_formatter ()
     end
 end
 
+local function strftime_formatter (options)
+    return function (layer_name, date)
+        return layer_name .. date:fmt(options.dateTimeFormat)
+    end
+end
+
+
 
 -- Main date snapping handler -- this returns a function that's intended to be called by mod_ahtse_lua
 function onearthTimeService.timeService (layer_handler_options, filename_options)
     local JSON = require("JSON")
     local layer_handler = layer_handler_options.handler_type == "redis" and redis_handler(layer_handler_options) or nil
-    local filename_handler = filename_options.filename_format == "hash" and hash_formatter(filename_options)
-        or nil
+    local filename_handler = not filenameOptions and basic_date_formatter(filename_options)
+        or filename_options.filename_format == "hash" and hash_formatter(filename_options)
+        or filename_options.filename_format == "strftime" and strftime_formatter(filename_options)
+        or filename_options.filename_format == "basic" and basic_date_formatter(filename_options)
+        or basic_date_formatter(filename_options)
+
     return function (query_string, headers, _)
         local uuid = headers["UUID"] or "none"
         local start_timestamp = socket.gettime() * 1000 * 1000
