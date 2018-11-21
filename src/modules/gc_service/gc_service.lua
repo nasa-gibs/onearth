@@ -154,8 +154,7 @@ local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
 
     -- Now find the TMS in the destination projection that has the closest max scale denominator
     -- to the source TMS
-    local targetTms
-    local targetTmsName
+
     -- Sort the possible reprojected TileMatrixSets by the value of the biggest scale denominator in their TileMatrix(s).
     local sortedTmsDefs = {}
     for name, tms in pairs(tmsDefs[targetEpsgCode]) do
@@ -164,11 +163,18 @@ local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
     end
     table.sort(sortedTmsDefs, sortTms)
 
-    for idx, tmsInfo in ipairs(sortedTmsDefs) do
-        if tonumber(tmsInfo["scaleDenominator"]) > tonumber(sourceScaleDenom) then
-            targetTmsName = sortedTmsDefs[idx == 1 and 1 or idx - 1]["name"]
-            targetTms = tmsDefs[targetEpsgCode][targetTmsName]
+    local targetTms
+    local targetTmsName
+    local idx = #sortedTmsDefs
+    while idx > 0 do
+        local tmsInfo = sortedTmsDefs[idx]
+        if tonumber(tmsInfo["scaleDenominator"]) < tonumber(sourceScaleDenom) then
+            print(targetTmsName)
+            return targetTmsName, targetTms
         end
+        targetTmsName = tmsInfo["name"]
+        targetTms = tmsDefs[targetEpsgCode][targetTmsName]
+        idx = idx - 1
     end
     return targetTmsName, targetTms
 end
@@ -416,8 +422,9 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
 
     local defaultDate
     local periods
-    local dateInfo = dateList[layerId] or dateList[config.alias]
+    local dateInfo
     if not static then
+        dateInfo = dateList[layerId] or dateList[config.alias]
         if dateInfo then
             defaultDate = config.default_date or dateInfo["default"]
             periods = config.periods or dateInfo["periods"]
