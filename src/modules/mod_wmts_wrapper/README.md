@@ -100,7 +100,7 @@ Set the MIME type for the tiles to be served by this endpoint.
 ### WMTSWrapperTimeLookupUri String
 
 Set the URI of the time lookup service mod_wmts_wrapper should use for layers
-that involve a TIME dimension (see [time_snap](../time_snap/README.md)).
+that involve a TIME dimension (see [time_service](../time_service/README.md)).
 
 ### WMTSWrapperEnableYearDir (On|Off)
 

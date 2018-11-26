@@ -77,9 +77,9 @@ RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 # Install Lua module for time snapping
-WORKDIR /home/oe2/onearth/src/modules/time_snap/redis-lua
+WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
-WORKDIR /home/oe2/onearth/src/modules/time_snap
+WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth-0.1-1.rockspec
 
 # Install GC Service configs

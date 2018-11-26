@@ -27,7 +27,7 @@ OnEarth is actively maintained by the NASA Global Imagery Browse Services (GIBS)
 * [mod_twms](https://github.com/nasa-gibs/mod_twms)
 * [mod_wmts_wrapper](src/modules/mod_wmts_wrapper/README.md)
 * [GetCapabilities Service](src/modules/gc_service/README.md)
-* [Time Snapping](src/modules/time_snap/README.md)
+* [Time Service](src/modules/time_service/README.md)
 
 ## Tools
 

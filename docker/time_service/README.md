@@ -8,4 +8,4 @@ To run, simply build the image `docker build -t onearth-time-service .`, and the
 container using that image. Make sure that the OE2 container can access the time service
 via Docker network or another means.
 
-For more information about the OnEarth Time Service, see [Time Snapping](../../src/modules/time_snap/README.md)
+For more information about the OnEarth Time Service, see [Time Snapping](../../src/modules/time_service/README.md)

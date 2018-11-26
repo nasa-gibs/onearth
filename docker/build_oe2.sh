@@ -80,8 +80,8 @@ setup_mod_ahtse_lua() {
     cd $WORKING_DIR
 }
 
-setup_time_snap() {
-    cd ../modules/time_snap/redis-lua
+setup_time_service() {
+    cd ../modules/time_service/redis-lua
     luarocks make rockspec/redis-lua-2.0.5-0.rockspec
     if [ ! -d /usr/lib64/luarocks/rocks/redis-lua ] 
     then
@@ -136,7 +136,7 @@ setup_mod_reproject
 setup_mod_twms
 setup_mod_ahtse_lua
 setup_mod_wmts_wrapper
-setup_time_snap
+setup_time_service
 patch_mod_proxy
 patch_apr
 

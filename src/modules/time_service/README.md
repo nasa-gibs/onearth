@@ -33,7 +33,7 @@ information by projection, endpoint, etc. Up to 5 additional keys can be
 specified in the URL request, i.e.:
 `/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DD&key1=geographic&key2=best`
 
-`time_snap` currently uses a Redis database for queries, but other handlers can
+`time_service` currently uses a Redis database for queries, but other handlers can
 be easily added.
 
 ## Dependencies
@@ -60,7 +60,7 @@ be easily added.
 
 3. Install `luarocks`. For CentOS 7, use `yum install luarocks`.
 
-4. Within the `onearth` repo, navigate to `src/modules/time_snap`
+4. Within the `onearth` repo, navigate to `src/modules/time_service`
 
 5. Install the OnEarth Lua package with `luarocks` (you will probably need to
    use `sudo`):
@@ -80,7 +80,7 @@ luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 
 ### Set up the Redis database with layer information
 
-`time_snap` is set to read values from a Redis database in the following format,
+`time_service` is set to read values from a Redis database in the following format,
 for each layer configured:
 
 `layer:[layer_name]:default` -- A string with the current default date for the
@@ -162,5 +162,5 @@ You'll need to make sure the following directives are in place (for more
 information, consult the `mod_ahtse_lua` documentation):
 
 `AHTSE_lua_RegExp` -- Any request that matches this regex expression will be
-handled by `time_snap`. `AHTSE_lua_Script` -- This needs to be a path to the Lua
+handled by `time_service`. `AHTSE_lua_Script` -- This needs to be a path to the Lua
 configuration script described previously.
