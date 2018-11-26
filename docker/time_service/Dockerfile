@@ -19,9 +19,9 @@ RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 # Install Lua module for time snapping
-WORKDIR /home/oe2/onearth/src/modules/time_snap/redis-lua
+WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
-WORKDIR /home/oe2/onearth/src/modules/time_snap
+WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth-0.1-1.rockspec
 
 # Install twemproxy
@@ -40,5 +40,5 @@ RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t
 COPY 00-mpm.conf /etc/httpd/conf.modules.d/
 COPY 10-worker.conf /etc/httpd/conf.modules.d/
 
-WORKDIR /home/oe2/onearth/docker/date_service
+WORKDIR /home/oe2/onearth/docker/time_service
 CMD sh start_date_service.sh $REDIS_HOST
