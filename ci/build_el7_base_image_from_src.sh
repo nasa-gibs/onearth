@@ -34,7 +34,8 @@ RUN pip3.6 install pyaml
 RUN pip3.6 install lxml
 RUN pip3.6 install pypng
 
-RUN yum install -y libcurl-devel mod_proxy mod_ssl python-pip sqlite libxml2 turbojpeg turbojpeg-devel agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
+RUN yum install -y python-backports python-backports-ssl_match_hostname
+RUN yum install -y libcurl-devel python-pip sqlite libxml2 turbojpeg turbojpeg-devel agg agg-devel pyparsing python-tornado python-pycxx-devel python-dateutil python-pypng python-lxml python-nose python-unittest2 python-matplotlib
 
 RUN pip install apacheconfig
 RUN pip install numpy==1.10.4
@@ -83,7 +84,7 @@ RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
 #RUN wget https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 #RUN tar xf httpd-2.4.6.tar.gz
 #WORKDIR /tmp/httpd-2.4.6
-#RUN patch -p0 < /home/oe2/onearth/ci/mod_proxy_http.patch
+#RUN patch -p0 < /home/oe2/onearth/docker/mod_proxy_http.patch
 #RUN ./configure --prefix=/tmp/httpd --enable-proxy=shared --enable-proxy-balancer=shared
 #RUN make && make install
 #RUN cp /tmp/httpd/modules/mod_proxy* /etc/httpd/modules/
