@@ -1,4 +1,4 @@
-date_service_uri: "http://oe2-date-service/date_service/date"
+time_service_uri: "http://oe2-date-service/time_service/date"
 gc_service_uri: "http://localhost/profiler/gc"
 external_endpoint: "/profiler"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"

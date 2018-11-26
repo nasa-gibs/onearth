@@ -1,6 +1,6 @@
 endpoint_config_base_location: "/var/www/html/wmts/epsg3857/std"
-date_service_uri: "http://oe2-date-service/date_service/date"
-date_service_keys: ["epsg3857", "std"]
+time_service_uri: "http://oe2-date-service/time_service/date"
+time_service_keys: ["epsg3857", "std"]
 target_epsg_code: "EPSG:3857"
 source_gc_uri: "http://localhost/wmts/epsg4326/std/1.0.0/WMTSCapabilities.xml"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"

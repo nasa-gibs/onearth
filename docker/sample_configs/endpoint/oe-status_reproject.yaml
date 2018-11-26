@@ -1,5 +1,5 @@
 endpoint_config_base_location: "/var/www/html/oe-status_reproject"
-date_service_uri: "http://oe2-date-service/date_service/date"
+time_service_uri: "http://oe2-date-service/time_service/date"
 target_epsg_code: "EPSG:3857"
 source_gc_uri: "http://localhost/oe-status/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"

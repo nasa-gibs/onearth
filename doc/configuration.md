@@ -32,7 +32,7 @@ This documentation will go through the steps needed to configure OnEarth with im
 ## OnEarth YAML Endpoint Configuration
 
 ```
-date_service_uri: "" (mod_wmts, mod_twms, gc_service)
+time_service_uri: "" (mod_wmts, mod_twms, gc_service)
 tms_defs_file: "/etc/onearth/tilematrixsets.xml" (gc_service)
 gc_header_file: "/etc/onearth/headers/header_gc_best_4326.xml" (gc_service)
 gts_header_file: "/etc/onearth/headers/header_gts_best_4326.xml" (gc_service)
