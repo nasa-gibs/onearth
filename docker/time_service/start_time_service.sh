@@ -7,14 +7,14 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 # copy config stuff
-cp oe2_test_date_service.conf /etc/httpd/conf.d
-mkdir -p /var/www/html/date_service
-cp date_service.lua /var/www/html/date_service/date_service.lua
-sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' /var/www/html/date_service/date_service.lua
+cp onearth_time_service.conf /etc/httpd/conf.d
+mkdir -p /var/www/html/time_service
+cp time_service.lua /var/www/html/time_service/time_service.lua
+sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' /var/www/html/time_service/time_service.lua
 
-sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' oe2-date-service.yaml
+sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' onearth-time-service.yaml
 echo 'Starting twemproxy'
-nutcracker -d -c oe2-date-service.yaml
+nutcracker -d -c onearth-time-service.yaml
 
 echo 'Starting Apache server'
 /usr/sbin/apachectl

@@ -9,9 +9,9 @@ fi
 cp httpd.conf /etc/httpd/conf/
 
 # Copy date_service config
-cp date_service/oe2_test_date_service.conf /etc/httpd/conf.d
-mkdir -p /build/test/ci_tests/date_service
-cp date_service/date_service.lua /build/test/ci_tests/date_service
+cp time_service/onearth_time_service.conf /etc/httpd/conf.d
+mkdir -p /build/test/ci_tests/time_service
+cp time_service/time_service.lua /build/test/ci_tests/time_service
 
 # Copy config stuff
 mkdir -p /build/test/ci_tests/mrf_endpoint/test_daily_png/default/EPSG4326_16km

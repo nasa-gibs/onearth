@@ -1,4 +1,4 @@
-time_service_uri: "http://oe2-date-service/time_service/date"
+time_service_uri: "http://onearth-time-service/time_service/time"
 gc_service_uri: "http://localhost/profiler_reproject/gc"
 external_endpoint: "/profiler_reproject"
 target_epsg_code: "EPSG:3857"

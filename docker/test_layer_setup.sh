@@ -1,6 +1,6 @@
 #!/bin/sh
 
-REDIS_HOST=gitc-jrod-redis.4fest7.ng.0001.use1.cache.amazonaws.com
+REDIS_HOST=127.0.0.1
 
 setup_date_server() {
     redis-cli -h $REDIS_HOST -c -n 0 DEL layer:date_test
@@ -10,11 +10,6 @@ setup_date_server() {
     redis-cli -h $REDIS_HOST -c -n 0 DEL layer:date_test_year_dir
     redis-cli -h $REDIS_HOST -c -n 0 SET layer:date_test_year_dir:default "2015-01-01"
     redis-cli -h $REDIS_HOST -c -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
-
-    # # Copy config stuff
-    # cp oe2_test_date_service.conf /etc/httpd/conf.d
-    # mkdir -p /var/www/html/date_service
-    # cp date_service.lua /var/www/html/date_service/date_service.lua
 }
 
 setup_mod_mrf_static() {

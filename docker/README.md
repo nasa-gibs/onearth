@@ -37,7 +37,7 @@ mod_mrf.
 `localhost/reproject_endpoint/date_test/default/{time}/tms/{level}/{row}/{col}.jpg`
 -- Same as previous, with a TIME dimension.
 
-The date snapping service is also available at `localhost/date_service/date?`
+The OnEarth Time Service is also available at `localhost/time_service/time?`
 
 ## Notes
 

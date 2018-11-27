@@ -1,4 +1,4 @@
-time_service_uri: "http://oe2-date-service/time_service/date"
+time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3413", "all"]
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 gc_header_file: "/etc/onearth/config/conf/header_gc.xml"

@@ -107,7 +107,7 @@ in the following location:
 `geographic:best:layer:test_layer:default"2015-06-01"`
 
 These additional keys can be specified in the request parameters:
-`date_service?key1=geographic&key2=best`. They are processed in order. Up to 5
+`time_service?key1=geographic&key2=best`. They are processed in order. Up to 5
 additional keys are allowed.
 
 ### Create the Lua configuration script
