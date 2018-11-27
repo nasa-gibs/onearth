@@ -1,13 +1,20 @@
-# Building and Installing OE2
+# Building and Deploying OE2
 
 ## Docker Setup
 
-The included Dockerfile will build an image with OE2. The build is configured
-with a couple of test layers.
+OnEarth uses Docker images for its services. The main OnEarth Docker image
+contains WMTS/TWMS and GetCapabilities services and is configured with several
+test layers. It requires the Time Service, which is a separate Docker image,
+in order to support time dynamic layers. A WMS Service is also available as a
+separate Docker image.
 
-To run, simply build the image `docker build -t onearth_2 .`, and then start a
-container using that image. Make sure to expose port 80 on the container to
-access the image server.
+To build the Docker images and deploy the OnEarth stack, run:
+`deploy_oe2_containers.sh`
+
+Alternatively, you can run each Docker image individually by building the
+image: `docker build -t onearth_2 .`, and then starting a container using 
+that image. Make sure to expose the appropriate ports (e.g., port 80) on the 
+container to access the image server.
 
 ## Configuration Options
 
