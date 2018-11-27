@@ -9,12 +9,14 @@ in order to support time dynamic layers. A WMS Service is also available as a
 separate Docker image.
 
 To build the Docker images and deploy the OnEarth stack, run:
-`deploy_oe2_containers.sh`
+`./deploy_oe2_containers.sh`
 
 Alternatively, you can run each Docker image individually by building the
-image: `docker build -t onearth_2 .`, and then starting a container using 
+image: `docker build -t onearth .`, and then starting a container using 
 that image. Make sure to expose the appropriate ports (e.g., port 80) on the 
 container to access the image server.
+
+By default, the containers use a Docker network `oe2` to communicate with each other.
 
 ## Configuration Options
 
@@ -44,10 +46,10 @@ mod_mrf.
 `localhost/reproject_endpoint/date_test/default/{time}/tms/{level}/{row}/{col}.jpg`
 -- Same as previous, with a TIME dimension.
 
-The OnEarth Time Service is also available at `localhost/time_service/time?`
+If the Time Service is running, it will be available at `localhost/time_service/time?`
 
 ## Notes
 
-The date-snapping service also determines the filenames mod_mrf will look for
-when trying to find data for a specific date. Currently, it formats them as
-`{layer}{UNIX_epoch}.(idx|pjg)`.
+The Time Service also determines the filenames mod_mrf will look for
+when trying to find data for a specific date or time. Currently, it formats them as
+`{layer}-{%Y%j%H%M%S}.(idx|pjg)` but may be configured differently.
