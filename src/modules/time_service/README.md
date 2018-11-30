@@ -117,8 +117,8 @@ determines how your service will run. Here's a sample script:
 
 ```
 -- Set configuration here
-local databaseHandler = {type="redis", ip="127.0.0.1"}
-local filenameFormatHandler = {type="strftime", dateTimeFormat="%Y%j"}
+local databaseHandler = {type="redis", host="127.0.0.1"}
+local filenameFormatHandler = {filename_format="hash"}
 -- End configuration
 
 local onearthTimeService = require "onearthTimeService"
@@ -136,20 +136,21 @@ _Redis_
     quotes.
 -   port (optional) -- sets the port number for your Redis database. Defaults to 6379.
 
-#### Filename Format Handlers
+#### Filename Format Handling
 
-`strftime` Outputs filenames in this format: `[layer_name][date]`, where
-`[date]` is the date formatted using a strftime-compatible template. For more
-information, see (http://man7.org/linux/man-pages/man3/strftime.3.html)
+The time service returns a filename formatted with the snapped date. This allows you to customize the naming conventions used by the imagery files. A handful of different output formatters are available.
 
--   filename_format -- set to `"strftime"`.
--   dateTimeFormat -- the strftime-compatible format for subdaily dates.
+To specify the formatter, set the `filename_format` value (see example above) to one of the following values.
 
-`hash` Outputs filenames in this format: `[hash]-[layer_name]-[date]`, where `hash` is the first 4 characters of of the MD5 hash of the string `[layer_name]-[date]`.
+-   `basic` Outputs filenames in this format: `[layer_name]-[date]` where the snapped date is in the format `%Y%j%H%M%S`.
 
--   filename_format -- set to `"strftime"`.
+-   `strftime` Outputs filenames in this format: `[layer_name][date]`, where
+    `[date]` is the snapped date formatted using a strftime-compatible template string. For more
+    information, see (http://man7.org/linux/man-pages/man3/strftime.3.html). To set the format string, set the `format_str` value in the `options` table as in this example:
 
-`basic` Outputs filenames in this format: `[layer_name]-[date]` where the date is in the format `%Y%j%H%M%S`.
+    `local filenameFormatHandler = {filename_format="strftime", options={format_str="%Y%j"}}`
+
+-   `hash` Outputs filenames in this format: `[hash]-[layer_name]-[date]`, where `hash` is the first 4 characters of of the MD5 hash of the string `[layer_name]-[date]` The date format is `%Y%j%H%M%S`.
 
 If no filename format handler is specified, the `basic` handler will be used.
 

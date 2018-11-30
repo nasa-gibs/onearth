@@ -1,2 +1,2 @@
 local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService({handler_type="redis", host="{REDIS_HOST}"}, {filename_format="hash"})
+handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="hash"})

@@ -172,7 +172,7 @@ end
 
 local function strftime_formatter (options)
     return function (layer_name, date)
-        return layer_name .. date:fmt(options.dateTimeFormat)
+        return layer_name .. date:fmt(options.options.format_str)
     end
 end
 
@@ -182,7 +182,7 @@ end
 function onearthTimeService.timeService (layer_handler_options, filename_options)
     local JSON = require("JSON")
     local layer_handler = layer_handler_options.handler_type == "redis" and redis_handler(layer_handler_options) or nil
-    local filename_handler = not filenameOptions and basic_date_formatter(filename_options)
+    local filename_handler = not filename_options and basic_date_formatter(filename_options)
         or filename_options.filename_format == "hash" and hash_formatter(filename_options)
         or filename_options.filename_format == "strftime" and strftime_formatter(filename_options)
         or filename_options.filename_format == "basic" and basic_date_formatter(filename_options)

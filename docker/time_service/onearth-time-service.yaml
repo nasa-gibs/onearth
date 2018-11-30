@@ -1,8 +1,0 @@
-onearth-time-service:
-  listen: 127.0.0.1:22121
-  hash: fnv1a_64
-  distribution: ketama
-  redis: true
-  server_retry_timeout: 2000
-  servers:
-   - {REDIS_HOST}:6379:1
