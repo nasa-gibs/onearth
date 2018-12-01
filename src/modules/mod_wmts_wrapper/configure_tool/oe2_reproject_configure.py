@@ -69,7 +69,7 @@ MOD_REPROJECT_APACHE_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 </Directory>
 
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
-        Reproject_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {endpoint_path}/{layer_id}/default/{tilematrixset}/reproject.config
+        Reproject_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {internal_endpoint}/{layer_id}/default/{tilematrixset}/reproject.config
         Reproject_RegExp {layer_id}
         WMTSWrapperRole tilematrixset
 </Directory>
