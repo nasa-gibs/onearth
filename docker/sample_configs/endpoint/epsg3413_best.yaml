@@ -5,7 +5,7 @@ tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/epsg3413/best/"
 apache_config_location: "/etc/httpd/conf.d/"
 base_uri_gc: "http://localhost/wmts/epsg3413/best/"
-base_uri_gts: "http://localhost/wmts/epsg3413/best/"
+base_uri_gts: "http://localhost/twms/epsg3413/best/"
 epsg_code: "EPSG:3413"
 gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3413/best"
@@ -19,5 +19,5 @@ wmts_service:
   external_endpoint: "/wmts/epsg3413/best"
   config_prefix: "epsg3413_best"
 twms_service:
-  internal_endpoint: "/var/www/html/wmts/epsg3413/best"
-  external_endpoint: "/wmts/epsg3413/best"
+  internal_endpoint: "/var/www/html/twms/epsg3413/best"
+  external_endpoint: "/twms/epsg3413/best"

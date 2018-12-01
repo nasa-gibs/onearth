@@ -5,7 +5,7 @@ tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/epsg3031/std/"
 apache_config_location: "/etc/httpd/conf.d/"
 base_uri_gc: "http://localhost/wmts/epsg3031/std/"
-base_uri_gts: "http://localhost/wmts/epsg3031/std/"
+base_uri_gts: "http://localhost/twms/epsg3031/std/"
 epsg_code: "EPSG:3031"
 gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3031/std"
@@ -19,5 +19,5 @@ wmts_service:
   external_endpoint: "/wmts/epsg3031/std"
   config_prefix: "epsg3031_std"
 twms_service:
-  internal_endpoint: "/var/www/html/wmts/epsg3031/std"
-  external_endpoint: "/wmts/epsg3031/std"
+  internal_endpoint: "/var/www/html/twms/epsg3031/std"
+  external_endpoint: "/twms/epsg3031/std"

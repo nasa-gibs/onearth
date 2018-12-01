@@ -6,7 +6,7 @@ tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/profiler/"
 apache_config_location: "/etc/httpd/conf.d/"
 base_uri_gc: "http://localhost/wmts/epsg3857/all/"
-base_uri_gts: "http://localhost/wmts/epsg3857/all/"
+base_uri_gts: "http://localhost/twms/epsg3857/all/"
 epsg_code: "EPSG:4326"
 target_epsg_code: "EPSG:3857"
 gc_service:
@@ -21,5 +21,5 @@ wmts_service:
   external_endpoint: "/wmts/epsg3857/all"
   config_prefix: "epsg3857_all"
 twms_service:
-  internal_endpoint: "/var/www/html/wmts/epsg3857/all"
-  external_endpoint: "/wmts/epsg3857/all"
+  internal_endpoint: "/var/www/html/twms/epsg3857/all"
+  external_endpoint: "/twms/epsg3857/all"

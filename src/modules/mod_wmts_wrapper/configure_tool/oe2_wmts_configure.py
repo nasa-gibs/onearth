@@ -331,7 +331,7 @@ def make_apache_config(endpoint_config, layer_configs):
             twms_gc_config = bulk_replace(
                 TWMS_GC_SERVICE_TEMPLATE,
                 [('{gc_service_uri}', gc_service_uri),
-                 ('{external_endpoint}', external_endpoint)])
+                 ('{external_endpoint}', twms_external_endpoint)])
             main_apache_config = '\n'.join(
                 [twms_gc_config, main_apache_config])
 
