@@ -398,6 +398,8 @@ def make_layer_config(endpoint_config, layer):
     try:
         internal_endpoint = strip_trailing_slash(
             endpoint_config['wmts_service']['internal_endpoint'])
+        external_endpoint = strip_trailing_slash(
+            endpoint_config['wmts_service']['external_endpoint'])
         if not static:
             date_service_uri = endpoint_config['time_service_uri']
     except KeyError as err:
@@ -507,7 +509,7 @@ def make_layer_config(endpoint_config, layer):
             )
 
         source_path = '/'.join(
-            (internal_endpoint, layer_id,
+            (external_endpoint, layer_id,
              'default' + ('/${date}' if not static else ''), tilematrixset))
         source_postfix = MIME_TO_EXTENSION[mimetype]
         twms_config = bulk_replace(
