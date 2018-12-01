@@ -1,11 +1,10 @@
-time_service_uri: "http://onearth-time-service/time_service/date"
+time_service_uri: "http://onearth-time-service/time_service/time"
 gc_service_uri: "/oe-status/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/oe-status/"
 apache_config_location: "/etc/httpd/conf.d/"
 base_uri_gc: "http://localhost/oe-status/"
 base_uri_gts: "http://localhost/oe-status/"
-endpoint: "/oe-status"
 epsg_code: "EPSG:4326"
 gc_service:
   internal_endpoint: "/var/www/html/oe-status"
