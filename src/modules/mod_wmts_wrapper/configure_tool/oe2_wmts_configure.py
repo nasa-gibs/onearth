@@ -128,7 +128,7 @@ SourcePostfix {source_postfix}
 
 GC_SERVICE_TEMPLATE = """# Redirects for GC service
 RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} ^{internal_endpoint}/(.*)$ [NC]
+RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/(.*)$ [NC]
 RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=wmtsgetcapabilities [P,L]
 
