@@ -28,13 +28,16 @@ Options:
   -s, --send_email      Send email notification for errors and warnings.
   --email_server=EMAIL_SERVER
                         The server where email is sent from (overrides
-                        configuration file value
+                        configuration file value)
   --email_recipient=EMAIL_RECIPIENT
                         The recipient address for email notifications
-                        (overrides configuration file value
+                        (overrides configuration file value)
   --email_sender=EMAIL_SENDER
                         The sender for email notifications (overrides
-                        configuration file value
+                        configuration file value)
+  --email_logging_level=EMAIL_LOGGING_LEVEL
+                        Logging level for email notifications: ERROR, WARN, or
+                        INFO.  Default: ERROR
 ```
 
 ## Samples
@@ -267,13 +270,16 @@ Options:
   -s, --send_email      Send email notification for errors and warnings.
   --email_server=EMAIL_SERVER
                         The server where email is sent from (overrides
-                        configuration file value
+                        configuration file value)
   --email_recipient=EMAIL_RECIPIENT
                         The recipient address for email notifications
-                        (overrides configuration file value
+                        (overrides configuration file value)
   --email_sender=EMAIL_SENDER
                         The sender for email notifications (overrides
-                        configuration file value
+                        configuration file value)
+  --email_logging_level=EMAIL_LOGGING_LEVEL
+                        Logging level for email notifications: ERROR, WARN, or
+                        INFO.  Default: ERROR
   -v, --verbose         Print out detailed log messages
   -x IGNORE_COLORS, --ignore_colors=IGNORE_COLORS
                         List of RGBA color values to ignore in image palette

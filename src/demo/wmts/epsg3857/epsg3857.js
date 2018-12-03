@@ -142,7 +142,7 @@ window.onload = function() {
                         format: new ol.format.MVT(),
                         tileGrid: ol.tilegrid.createXYZ({maxZoom: parseInt(tms.match(/^GoogleMapsCompatible_Level(\d)/)[1]) - 1}),
                         tilePixelRatio: 16,
-                        url: `/wmts/epsg3857/all/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fx-protobuf&TileMatrix={z}&TileCol={x}&TileRow={y}`
+                        url: `/wmts/epsg3857/all/wmts.cgi?layer=${layerName}&tilematrixset=${tms}&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fvnd.mapbox-vector-tile&TileMatrix={z}&TileCol={x}&TileRow={y}`
                     });
                     var newLayer = new ol.layer.VectorTile({
                         source,

@@ -53,7 +53,7 @@ import decimal
 import re
 
 # Main tile-creation function.
-def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, target_x, target_y, extents, tile_size, overview_levels, projection_str, filter_list, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
+def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, target_x, target_y, target_extents, tile_size, overview_levels, projection_str, filter_list, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
 
@@ -67,7 +67,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
         layer_name (str) -- Name for the layer to be packed into the tile. Only single layers currently supported.
         target_x (int) -- Pixel width of the highest zoom level.
         target_y (int) -- Pixel height of the highest zoom level.
-        extents (list float) -- The bounding box for the chosen projection in map units.
+        target_extents (list float) -- The bounding box for the chosen projection in map units.
         tile_size (int) -- Pixel size of the tiles to be generated.
         overview_levels (list int) -- A list of the overview levels to be used (i.e., a level of 2 will render a level that's 1/2 the width and height of the base level)
         projection_str (str) -- EPSG code for the projection to be used.
@@ -76,7 +76,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
             Default is 2 (retain the square root of the total points in the cluster).
-        debug (bool) -- Toggle verbose output messages and PBF file artifacts (PBF tile files will be created in addition to MRF)
+        debug (bool) -- Toggle verbose output messages and MVT file artifacts (MVT tile files will be created in addition to MRF)
     """
     # Get projection and calculate overview levels if necessary
     proj = osr.SpatialReference()
@@ -90,7 +90,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
             overview_levels.append(2**exp)
             exp += 1
 
-    tile_matrices = get_tms(target_x, target_y, extents, tile_size, overview_levels, proj)
+    tile_matrices = get_tms(target_x, target_y, target_extents, tile_size, overview_levels, proj)
 
     # Open MRF data and index files and generate the MRF XML
     fidx = open(os.path.join(output_path, mrf_prefix + '.idx'), 'w+')
@@ -98,7 +98,7 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
     notile = struct.pack('!QQ', 0, 0)
     pvt_offset = 0
     
-    mrf_dom = build_mrf_dom(tile_matrices, extents, tile_size, proj)
+    mrf_dom = build_mrf_dom(tile_matrices, target_extents, tile_size, proj)
     with open(os.path.join(output_path, mrf_prefix) + '.mrf', 'w+') as f:
         f.write(mrf_dom.toprettyxml())
 
@@ -203,8 +203,8 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    pbf_filename = os.path.join(os.getcwd(), 'tiles/test_{0}_{1}_{2}.pbf'.format(z, x, y))
-                    with open(pbf_filename, 'w+') as f:
+                    mvt_filename = os.path.join(os.getcwd(), 'tiles/test_{0}_{1}_{2}.mvt'.format(z, x, y))
+                    with open(mvt_filename, 'w+') as f:
                         f.write(mvt_tile)
 
                 # Write out MVT tile data to MRF. Note that we have to gzip the tile first.
@@ -329,7 +329,7 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 
     # Create <Compression> element
     compression_node = mrf_dom.createElement('Compression')
-    compression_value = mrf_dom.createTextNode('PBF')
+    compression_value = mrf_dom.createTextNode('MVT')
     compression_node.appendChild(compression_value)
     raster_node.appendChild(compression_node)
 

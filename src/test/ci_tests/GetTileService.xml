@@ -35,13 +35,13 @@
 <LatLonBoundingBox maxy="90" maxx="180" miny="-90" minx="-180"/>
 <Key>${time}</Key>
 <TilePattern>
-<![CDATA[  request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&time=${time}&width=512&height=512&bbox=-180,30,-108,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&width=512&height=512&bbox=-180,30,-108,90]]>
+<![CDATA[  request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fvnd.mapbox-vector-tile&styles=&time=${time}&width=512&height=512&bbox=-180,30,-108,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fvnd.mapbox-vector-tile&styles=&width=512&height=512&bbox=-180,30,-108,90]]>
 </TilePattern>
 <TilePattern>
-<![CDATA[  request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&time=${time}&width=512&height=512&bbox=-180,-30,-36,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&width=512&height=512&bbox=-180,-30,-36,90]]>
+<![CDATA[  request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fvnd.mapbox-vector-tile&styles=&time=${time}&width=512&height=512&bbox=-180,-30,-36,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fvnd.mapbox-vector-tile&styles=&width=512&height=512&bbox=-180,-30,-36,90]]>
 </TilePattern>
 <TilePattern>
-<![CDATA[  request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&time=${time}&width=512&height=512&bbox=-180,-150,108,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fx-protobuf&styles=&width=512&height=512&bbox=-180,-150,108,90]]>
+<![CDATA[  request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fvnd.mapbox-vector-tile&styles=&time=${time}&width=512&height=512&bbox=-180,-150,108,90 request=GetMap&layers=mvt_test&srs=EPSG:4326&format=application%2Fvnd.mapbox-vector-tile&styles=&width=512&height=512&bbox=-180,-150,108,90]]>
 </TilePattern>
 </TiledGroup>
 <TiledGroup>

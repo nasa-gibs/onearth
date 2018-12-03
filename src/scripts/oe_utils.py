@@ -146,16 +146,23 @@ def sigevent(type, mssg, email_meta):
     Arguments:
         type -- 'INFO', 'WARN', 'ERROR'
         mssg -- message for operations
-        email_meta -- triplet containing address of SMTP server to use, recipient address, and sender
+        email_meta -- object containing address of SMTP server to use, recipient address, sender, and log level
     """
-    if len(email_meta) == 3:
-        smtp_server, recipient, sender = email_meta
+    if len(email_meta) == 4:
+        smtp_server, recipient, sender, level = email_meta
         if smtp_server is None:
             smtp_server = 'localhost'
         if recipient is None:
             recipient = ''
         if sender is None or sender == '':
             sender = 'noreply@' + smtp_server
+        # allow the correct logging level to pass
+        if level == 'ERROR':
+            if type == 'WARN' or type == 'INFO':
+                return
+        if level == 'WARN':
+            if type == 'INFO':
+                return
     else:
         return
     allowed = re.compile(r"([a-zA-Z0-9\-_\.]+):?([0-9]{1,5})?", re.IGNORECASE)

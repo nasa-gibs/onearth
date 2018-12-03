@@ -782,11 +782,13 @@ parser.add_option("-d", "--data_only", action="store_true", dest="data_only",
 parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
                   default=False, help="Send email notification for errors and warnings.")
 parser.add_option('--email_server', action='store', type='string', dest='email_server',
-                  default='', help='The server where email is sent from (overrides configuration file value')
+                  default='', help='The server where email is sent from (overrides configuration file value)')
 parser.add_option('--email_recipient', action='store', type='string', dest='email_recipient',
-                  default='', help='The recipient address for email notifications (overrides configuration file value')
+                  default='', help='The recipient address for email notifications (overrides configuration file value)')
 parser.add_option('--email_sender', action='store', type='string', dest='email_sender',
-                  default='', help='The sender for email notifications (overrides configuration file value')
+                  default='', help='The sender for email notifications (overrides configuration file value)')
+parser.add_option('--email_logging_level', action='store', type='string', dest='email_logging_level',
+                  default='ERROR', help='Logging level for email notifications: ERROR, WARN, or INFO.  Default: ERROR')
 
 # Read command line args.
 (options, args) = parser.parse_args()
@@ -802,10 +804,12 @@ email_recipient=options.email_recipient
 email_sender=options.email_sender
 # Data only.
 data_only = options.data_only
+# Email logging level
+logging_level = options.email_logging_level.upper()
 
 # Email metadata replaces sigevent_url
 if send_email:
-    sigevent_url = (email_server, email_recipient, email_sender)
+    sigevent_url = (email_server, email_recipient, email_sender, logging_level)
 else:
     sigevent_url = ''
 
@@ -852,7 +856,7 @@ else:
         except:
             email_sender = ''
     if send_email:
-        sigevent_url = (email_server, email_recipient, email_sender)
+        sigevent_url = (email_server, email_recipient, email_sender, logging_level)
         if email_recipient == '':
             log_sig_err("No email recipient provided for notifications.", sigevent_url)
     

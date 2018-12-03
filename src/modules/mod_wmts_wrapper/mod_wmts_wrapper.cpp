@@ -87,10 +87,8 @@ int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
         return (apr_strnatcasecmp(".jpg", extension) == 0 || apr_strnatcasecmp(".jpeg", extension) == 0);
     }
 
-    // Vector tiles are all the same despite differing extensions and MIME types
-    if (apr_strnatcasecmp(cfg->mime_type, "application/vnd.mapbox-vector-tile") == 0
-            || apr_strnatcasecmp(cfg->mime_type, "application/x-protobuf;type=mapbox-vector") == 0) {
-        return (apr_strnatcasecmp(".pbf", extension) == 0 || apr_strnatcasecmp(".mvt", extension) == 0);
+    if (apr_strnatcasecmp(cfg->mime_type, "application/vnd.mapbox-vector-tile") == 0) {
+        return (apr_strnatcasecmp(".mvt", extension) == 0);
     }
 
     if (apr_strnatcasecmp(cfg->mime_type, "image/tiff") == 0) {
@@ -276,8 +274,6 @@ static const char *get_blank_tile_filename(request_rec *r)
         blank_tile_filename = "transparent.png";
     } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0 || apr_strnatcasecmp(file_ext, ".mvt") == 0)  {
         blank_tile_filename = "empty.mvt";
-    } else if (apr_strnatcasecmp(param, "application/x-protobuf;type=mapbox-vector") == 0 || apr_strnatcasecmp(file_ext, ".pbf") == 0)  {
-        blank_tile_filename = "empty.mvt";
     } else {
         return NULL;
     }
@@ -361,8 +357,6 @@ static int handleKvP(request_rec *r)
                 format = ".tiff";
             } else if (apr_strnatcasecmp(param, "image/lerc") == 0) {
                 format = ".lerc";
-            } else if (apr_strnatcasecmp(param, "application/x-protobuf;type=mapbox-vector") == 0) {
-                format = ".pbf";
             } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0) {
                 format = ".mvt";
             } else {
