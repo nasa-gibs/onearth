@@ -49,7 +49,7 @@ Similar to with `mrfgen`, `oe_vectorgen` uses options specified in an XML file t
 
 **`<output_name>`** - Name for files created by `oe_vectorgen`. Defauts to `{$parameter_name}%Y%j_`.
 
-**`<output_format>`** - Currently supports "MRF-MVT" and "ESRI Shapefile".
+**`<output_format>`** - Currently supports "MVT-MRF" and "ESRI Shapefile".
 
 **`<target_epsg>`** - Specify the EPSG code of the output projection. 
 
