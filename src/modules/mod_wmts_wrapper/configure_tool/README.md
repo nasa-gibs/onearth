@@ -52,7 +52,7 @@ twms_service:
 The endpoint configuration should be a YAML file in the following format:
 
 ```
-time_service_uri: "http://137.79.29.45:8090/date"
+time_service_uri: "http://onearth-time-service/time_service/time"
 layer_config_source: layer_config.yaml
 apache_config_location: /etc/httpd/conf.d
 gc_service_uri: "/oe2_gc_service"
@@ -199,9 +199,9 @@ endpoint to create its configurations.
 
 #### Running the tool
 
-`oe2_reproject_configure.py endpoint_config {--make_twms, --tms_defs}`
+`oe2_reproject_configure.py endpoint_config {--tms_defs}`
 
-This tool requires 2 configuration files to work:
+This tool requires configuration files to work:
 
 - endpoint config -- contains information about how the WMTS and TWMS endpoints
   should be set up in Apache.
@@ -217,23 +217,29 @@ file including the most commonly used Tile Matrix Sets is included
 (`tilematrixsets.xml`), which this tool uses by default. The `--tms_defs` option
 can be used to point the tool to a different file.
 
-#### TWMS Configurations
-
-If the tool is run with the `--make_twms` option set, it will create TWMS
-configurations for the layers. The TWMS endpoint will be available as
-`{endpoint}/twms.cgi`.
-
 #### Endpoint Configuration
 
 The endpoint configuration should be a YAML file in the following format:
 
 ```
-endpoint_config_base_location: "/var/www/html"
-source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
+time_service_uri: "http://onearth-time-service/time_service/time"
 target_epsg_code: "EPSG:3857"
-time_service_uri: "http://137.79.29.45:8090/date"
+source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"
-apache_config_location: "/etc/httpd/conf.d/oe2-reproject-service.conf"
+gc_service_uri: "/oe2_gc_service"
+include_layers: 
+  - 'AMSR2_Cloud_Liquid_Water_Day'
+  - 'AMSR2_Cloud_Liquid_Water_Night'
+  - 'BlueMarble_NextGeneration'
+layer_config_source: layer_config.yaml
+base_uri_gc: 'http://some-uri/'
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts"
+  external_endpoint: "/wmts"
+  config_prefix: "oe2-wmts-reproject"
+twms_service:
+  internal_endpoint: "/var/www/html/twms"
+  external_endpoint: "/twms"
 ```
 
 ##### Configuration Options:

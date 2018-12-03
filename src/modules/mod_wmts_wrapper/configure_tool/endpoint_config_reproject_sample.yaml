@@ -1,4 +1,4 @@
-time_service_uri: "http://137.79.29.45:8090/date"
+time_service_uri: "http://onearth-time-service/time_service/time"
 target_epsg_code: "EPSG:3857"
 source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"

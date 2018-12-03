@@ -5,10 +5,10 @@ This documentation will go through the steps needed to configure OnEarth with im
 ## Configurations Used
 
 1. OnEarth YAML Endpoint Configuration Files
-	* An OnEarth YAML endpoint configuration file exists for every desired endpoint. Default location:
+	* An OnEarth YAML endpoint configuration file exists for every desired endpoint. Default location: `/etc/onearth/config/endpoint/`
 
 1. OnEarth YAML Layer Configuration Files
-	* OnEarth YAML layer configuration files exist for active layers. Default location:
+	* OnEarth YAML layer configuration files exist for active layers. Default location: `/etc/onearth/config/layers/`
 
 1. TileMatrixSets config
 
@@ -31,20 +31,38 @@ This documentation will go through the steps needed to configure OnEarth with im
 
 ## OnEarth YAML Endpoint Configuration
 
+The Endpoint Configuration is used by multiple OnEarth tools. See documentation for each specific tool for more information:
+
+* [mod_wmts_wrapper configure tools](../src/modules/mod_wmts_wrapper/configure_tool/README.md)
+* [gc_service](../src/modules/gc_service/README.md)
+
+Sample configuration:
 ```
-time_service_uri: "" (mod_wmts, mod_twms, gc_service)
-tms_defs_file: "/etc/onearth/tilematrixsets.xml" (gc_service)
-gc_header_file: "/etc/onearth/headers/header_gc_best_4326.xml" (gc_service)
-gts_header_file: "/etc/onearth/headers/header_gts_best_4326.xml" (gc_service)
-layer_config_source: "" (mod_wmts, mod_twms, gc_service)
-apache_config_location: "" (mod_wmts, mod_twms, gc_service)
-endpoint_config_base_location: "/var/www/html" (mod_wmts, mod_twms, gc_service)
-base_uri_gc: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/" (gc_service)
-base_uri_gts: "https://gibs.earthdata.nasa.gov/twms/epsg4326/best/" (gc_service)
-epsg_code: "EPSG:4326" (gc_service)
-gc_endpoint: "/gc" (gc_service)
-gts_endpoint: "/gts" (gc_service)
-target_epsg_code: (gc_service)
+time_service_uri: "http://onearth-time-service/time_service/time"
+time_service_keys: ["epsg3857", "best"]
+gc_service_uri: "/wmts/epsg3857/best/gc"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+layer_config_source: "/etc/onearth/config/layers/epsg4326/"
+apache_config_location: "/etc/httpd/conf.d/"
+base_uri_gc: "http://localhost/wmts/epsg3857/best/"
+base_uri_gts: "http://localhost/twms/epsg3857/best/"
+epsg_code: "EPSG:4326"
+target_epsg_code: "EPSG:3857" # For mod_reproject only
+source_gc_uri: "http://localhost/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml" # For mod_reproject only
+gc_service:
+  internal_endpoint: "/var/www/html/wmts/epsg3857/best"
+  external_endpoint: "/wmts/epsg3857/best/gc"
+  config_prefix: "epsg3857_best_gc_service"
+  gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts/epsg3857/best"
+  external_endpoint: "/wmts/epsg3857/best"
+  config_prefix: "epsg3857_best"
+twms_service:
+  internal_endpoint: "/var/www/html/twms/epsg3857/best"
+  external_endpoint: "/twms/epsg3857/best"
 ```
 
 
