@@ -37,6 +37,14 @@ Note that Apache must be restarted for new configurations to take effect. This
 command may need to be run as `sudo` depending on the permission settings for
 your Apache directories.
 
+#### How it works
+
+This tool requires 2 different types of configuration files to work.
+
+**Endpoint Config** -- This file sets everything up for the WMTS/TWMS endpoint for serving tiles. You'll need to configure one endpoint at a time.
+
+**Layer Config** -- This file configures parameters for each layer to be served by the endpoint. You'll need one layer config file per layer. For convenience, you can set this to be a directory and the tool will configure all the layer configs in that directory.
+
 #### TWMS Configurations
 
 To create TWMS configurations, add the `twms_service` options to the endpoint config file. Example:
@@ -67,6 +75,8 @@ twms_service:
 
 ##### Configuration Options:
 
+`time_service_uri` (optional) -- OnEarth allows for the use of a time service, which performs lookups and time-snapping for tile requests. If you have time-sensitive layers, set this parameter to the URL of the time service. For more information, consult the docs for the OnEarth time service.
+
 `layer_config_source` (required) -- This can be a path either to a single layer
 configuration YAML file, or a directory containing multiple layer config files.
 In the case of a directory, the tool will parse all files in that directory with
@@ -77,9 +87,6 @@ subdirectories if they are present._
 in a base location on disk -- and if the layer configs themselves list IDX paths
 as relative paths from that location, make sure this is included. Otherwise,
 leave it out. (Read on to the layer configuration section for more information.)
-
-`time_service_uri` (optional) -- If you are using dynamic layers, put the URL of
-the OnEarth 2 time service here.
 
 `apache_config_location` (optional) -- Location that the main Apache
 configuration files will be stored (this will need to be somewhere Apache is
@@ -100,6 +107,8 @@ service. Keys will be positioned in the order configured.
 
 - `internal_endpoint` -- Location on disk where all the configuration files for the TWMS layers should be stored
 - `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.
+
+**Note that the configuration tool will only configure a TWMS endpoint if the `twms_service` block is configured.**
 
 #### Layer Configuration
 
@@ -227,7 +236,7 @@ target_epsg_code: "EPSG:3857"
 source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"
 gc_service_uri: "/oe2_gc_service"
-include_layers: 
+include_layers:
   - 'AMSR2_Cloud_Liquid_Water_Day'
   - 'AMSR2_Cloud_Liquid_Water_Night'
   - 'BlueMarble_NextGeneration'

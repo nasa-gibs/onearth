@@ -482,6 +482,9 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         internal_endpoint = strip_trailing_slash(
             endpoint_config['wmts_service']['internal_endpoint'])
 
+        external_endpoint = strip_trailing_slash(
+            endpoint_config['wmts_service']['external_endpoint'])
+
         try:
             twms_internal_endpoint = strip_trailing_slash(
                 endpoint_config['twms_service']['internal_endpoint'])
@@ -498,8 +501,8 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
             pass
 
         source_path = '/'.join(
-            (twms_external_endpoint, layer_config['layer_id'], 'default' +
-             ('/${date}' if not layer_config['time_enabled'] else ''),
+            (external_endpoint, layer_config['layer_id'],
+             'default' + ('/${date}' if layer_config['time_enabled'] else ''),
              layer_config['tilematrixset']['identifier']))
         source_postfix = MIME_TO_EXTENSION[layer_config['mimetype']]
 
