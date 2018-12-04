@@ -327,7 +327,7 @@ static sz *bbox_to_tile(const TiledRaster &raster, const bbox_t &bb, sz *tile) {
         // Indeed, this is the right tile, is it within the level?
 
         // Adjust the level
-        tile->l = l ? l - raster.skip : l;
+        tile->l = l - raster.skip;
         return tile;
     }
     return NULL;
