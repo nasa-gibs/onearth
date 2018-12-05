@@ -2468,7 +2468,7 @@ $Patterns</TiledGroup>"""
             else:
                 mapfile.write("\tDATA\t\"" + archiveLocation + "/" + fileNamePrefix + extension + "\"\n")
             mapfile.write("\tPROJECTION\n")
-            mapfile.write("\t\t\"init=" + projection.id.lower() + "\"\n")
+            mapfile.write('\t\t\"init={}"\n'.format('EPSG:4326' if vectorType else projection.id.lower()))
             mapfile.write("\tEND\n")
             if vectorType and mapfileLayerContents:
                 try:
