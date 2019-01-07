@@ -62,6 +62,7 @@
 #  <colormap></colormap>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
 #  <mrf_nocopy>true</mrf_nocopy>
+#  <mrf_sparse>true</mrf_sparse>
 #  <mrf_merge>false</mrf_merge>
 # </mrfgen_configuration>
 #
@@ -330,7 +331,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     if resize_resampling == '':
         resize_resampling = "average" # use average as default for RGBA
     ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
-    new_tile = working_dir + os.path.basename(tile)+".blend.tif"
+    new_tile = working_dir + os.path.basename(tile)+".merge.tif"
     if has_color_table(tile) == True:
         gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
         if nodata != "":
@@ -471,7 +472,7 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
 
     return (tile_left,  tile_right)
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir):
+def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, merge, working_dir):
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -487,7 +488,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         source_epsg -- The source EPSG code
         target_epsg -- The target EPSG code
         nodata -- nodata value
-        blend -- Blend over transparent regions of imagery
+        merge -- Merge over transparent regions of imagery
         working_dir -- Directory to use for temporary files
     """
     errors = 0
@@ -510,7 +511,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
             continue
-        if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
+        if merge == True and target_epsg == source_epsg: # merge tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
             diff_res = False # gdalmerge has corrected the resolutions
@@ -536,7 +537,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
-            if blend == True and target_epsg != source_epsg: # blend tile with existing imagery after reprojection
+            if merge == True and target_epsg != source_epsg: # merge tile with existing imagery after reprojection
                 granule, extents = is_granule_image(vrt_tile) # get new extents
                 log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
                 tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
@@ -563,9 +564,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             else:
                 log_info_mssg(message.strip())
         # clean up      
-        if ".blend." in tile:
+        if ".merge." in tile:
             remove_file(tile)
-            tile = tile.split('.vrt.blend.')[0]
+            tile = tile.split('.vrt.merge.')[0]
         remove_file(vrt_tile)
     for tile in tiles:
         temp_vrt_files = glob.glob(working_dir + os.path.basename(tile) + "*vrt*")
@@ -1015,14 +1016,22 @@ else:
             nocopy = True
     except:
         nocopy = None
-    # blend, defaults to False
+    # sparse, defaults to True
+    try:
+        if get_dom_tag_value(dom, 'mrf_sparse') == "false":
+            sparse = False
+        else:
+            sparse = True
+    except:
+        nocopy = True
+    # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
-            blend = False
+            merge = False
         else:
-            blend = True
+            merge = True
     except:
-        blend = False
+        merge = False
     # mrf data
     try:
         mrf_data_scale = get_dom_tag_value(dom, 'mrf_data_scale')
@@ -1125,7 +1134,8 @@ log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
-log_info_mssg(str().join(['config mrf_merge:               ', str(blend)]))
+log_info_mssg(str().join(['config mrf_sparse:              ', str(sparse)]))
+log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['config mrf_data_scale:          ', mrf_data_scale]))
@@ -1536,7 +1546,7 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend, working_dir)
+    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1771,7 +1781,7 @@ if zlevels != '':
 if nocopy == True:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
-    if len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF or single input
+    if not sparse or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or not sparse
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
         
@@ -1856,8 +1866,8 @@ run_addo = True
 
 # Insert into nocopy
 if nocopy==True:
-    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, blend, working_dir)
-    if len(alltiles) <= 1:
+    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
+    if not sparse or len(alltiles) <= 1:
         run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
 
 # Create pyramid only if idx (MRF index file) was successfully created.
