@@ -1023,7 +1023,7 @@ else:
         else:
             sparse = True
     except:
-        nocopy = True
+        sparse = True
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
