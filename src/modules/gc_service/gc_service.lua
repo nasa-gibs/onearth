@@ -485,7 +485,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     -- Note that we omit this if for some reason we don't have dates from the date service.
     if not static and dateInfo then
         local dimensionNode = xml.elem("Dimension", {
-            xml.new("ows:Identifier"):text("time"),
+            xml.new("ows:Identifier"):text("Time"),
             xml.new("ows:UOM"):text("ISO8601"),
             xml.new("Default"):text(defaultDate),
             xml.new("Current"):text("false")
