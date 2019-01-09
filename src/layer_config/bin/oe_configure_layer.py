@@ -349,6 +349,40 @@ def get_archive(archive_root, archive_configuration):
     return location
 
 
+def get_tmslimits(tmsLimitId, tmslimits_configuration):
+    """
+    Gets TileMatrixSetLimits from a TileMatrixSetLimits configuration file based on the limit ID.
+    Arguments:
+        tmsLimitId -- the id of the TileMatrixSetLimit
+        tmslimits_configuration -- the location of the TileMatrixSetLimits configuration file
+    """
+    try:
+        # Open file.
+        tmsLimits_config = open(tmslimits_configuration, 'r')
+        print('Using TileMatrixSetLimits config: ' + tmslimits_configuration)
+    except IOError:
+        raise ValueError(str().join([
+            'ERROR: Cannot read TileMatrixSetLimits configuration file:  ',
+            tmslimits_configuration
+        ]))
+
+    tmsLimits = None
+    dom = xml.dom.minidom.parse(tmsLimits_config)
+    tmsLimitElements = dom.getElementsByTagName('TileMatrixSetLimits')
+
+    for limitsElem in tmsLimitElements:
+        if limitsElem.getAttribute('id') == tmsLimitId:
+            tmsLimits = limitsElem
+            break
+
+    if not tmsLimits:
+        raise ValueError('ERROR: TileMatrixSetLimits ID "' + tmsLimitId +
+                         '" not found in ' + tmslimits_configuration)
+
+    tmsLimits.removeAttribute('id')
+    return tmsLimits
+
+
 def get_projection(projectionId, projectionConfig, lcdir,
                    tilematrixset_configuration):
     """
@@ -1228,6 +1262,16 @@ parser.add_option(
     help=
     "Do not copy cache configuration files and Apache configs to final location."
 )
+
+parser.add_option(
+    '--tmslimits_config',
+    action='store',
+    type='string',
+    dest='tmslimits_configuration',
+    help=
+    'Full path of TileMatrixSet configuration file.  Default: $LCDIR/conf/tilematrixsetlimits.xml'
+)
+
 parser.add_option(
     "--create_mapfile",
     action="store_true",
@@ -1281,6 +1325,12 @@ if options.archive_configuration:
     archive_configuration = options.archive_configuration
 else:
     archive_configuration = lcdir + '/conf/archive.xml'
+
+# TileMatrixSetLimits configuration
+if options.tmslimits_configuration:
+    tmslimits_configuration = options.tmslimits_configuration
+else:
+    tmslimits_configuration = lcdir + '/conf/tilematrixsetlimits.xml'
 
 # Send email.
 send_email = options.send_email
@@ -1595,6 +1645,16 @@ for conf in conf_files:
         except:
             archive_root = ""
         archiveLocation = archive_root + archiveLocation
+
+        tmsLimits = None
+        try:
+            tmsLimitId = get_dom_tag_value(dom, 'TileMatrixSetLimitsId')
+            tmsLimits = get_tmslimits(tmsLimitId, tmslimits_configuration)
+        except IndexError:
+            pass
+        except ValueError as e:
+            errors.append(e)
+
         try:
             headerFileName = get_dom_tag_value(dom, 'HeaderFileName')
         except:
@@ -1912,6 +1972,8 @@ for conf in conf_files:
         log_info_mssg('config: WMTSEndPoint: ' + str(wmtsEndPoint))
     if twmsEndPoint:
         log_info_mssg('config: TWMSEndPoint: ' + str(twmsEndPoint))
+    if tmsLimits:
+        log_info_mssg('config: TileMatrixSetLimits: ' + tmsLimits.toxml())
     if colormaps:
         for colormap in colormaps:
             map_value = colormap.firstChild.nodeValue.strip()
@@ -2587,7 +2649,7 @@ for conf in conf_files:
                 <Value>$DateRange</Value>
             </Dimension>
             <TileMatrixSetLink>
-                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>
+                <TileMatrixSet>$TileMatrixSet</TileMatrixSet>$TMSLimits
             </TileMatrixSetLink>
             <ResourceURL format="$Format" resourceType="tile" template="$WMTSServiceURL$Identifier/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.$FileType"/>
         </Layer>"""
@@ -2711,7 +2773,12 @@ for conf in conf_files:
                                     environment.wmtsServiceUrl)
             if '$TileMatrixSet' in line:
                 line = line.replace("$TileMatrixSet", tilematrixset)
+                if tmsLimits:
+                    line = line.replace('$TMSLimits', tmsLimits.toxml())
+                else:
+                    line = line.replace('$TMSLimits', '')
                 tilematrixset_line = line
+
             if static == True or len(timeElements) == 0:
                 if any(x in line for x in [
                         'Dimension', '<ows:Identifier>Time</ows:Identifier>',
@@ -3019,7 +3086,8 @@ $Patterns</TiledGroup>"""
                 mapfile.write("\tDATA\t\"" + archiveLocation + "/" +
                               fileNamePrefix + extension + "\"\n")
             mapfile.write("\tPROJECTION\n")
-            mapfile.write('\t\t\"init={}"\n'.format('EPSG:4326' if vectorType else projection.id.lower()))
+            mapfile.write('\t\t\"init={}"\n'.format(
+                'EPSG:4326' if vectorType else projection.id.lower()))
             mapfile.write("\tEND\n")
             if vectorType and mapfileLayerContents:
                 try:
