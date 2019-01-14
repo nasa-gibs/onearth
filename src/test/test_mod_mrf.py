@@ -200,20 +200,21 @@ class TestModMrf(unittest.TestCase):
         tiles = make_randomized_mrf(size_x, size_y, tile_size, 'jpg',
                                     'test_local_tile_request',
                                     self.test_mod_mrf_config_dest_path)
-        test_z = random.choice([x for x in range(len(tiles))])
-        test_y = random.choice([x for x in range(len(tiles[test_z]))])
-        test_x = random.choice([x for x in range(len(tiles[test_z][test_y]))])
+        # Test all tiles against hash reference
+        for z in range(len(tiles)):
+            for y in range(len(tiles[z])):
+                for x in range(len(tiles[z][y])):
+                    ref_tile = tiles[z][y][x]
+                    ref_tile.seek(0)
+                    ref_hash = get_file_hash(ref_tile)
 
-        ref_tile = tiles[test_z][test_y][test_x]
-        ref_tile.seek(0)
-        ref_hash = get_file_hash(ref_tile)
+                    tile_url = 'http://localhost/{}/{}/{}/{}.{}'.format(
+                        self.config_file_prefix, z, y, x, image_type)
 
-        tile_url = 'http://localhost/{}/{}/{}/{}.{}'.format(
-            self.config_file_prefix, test_z, test_y, test_x, image_type)
-
-        errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
-            tile_url)
-        self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
+                    errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
+                        tile_url)
+                    self.assertTrue(
+                        check_tile_request(tile_url, ref_hash), errstring)
 
     @classmethod
     def tearDownClass(self):
@@ -231,7 +232,7 @@ if __name__ == '__main__':
         action='store',
         type='string',
         dest='outfile',
-        default='test_date_service_results.xml',
+        default='test_mod_mrf_results.xml',
         help='Specify XML output file (default is test_date_service_results.xml'
     )
 

@@ -22,9 +22,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,1285 +32,395 @@
 # limitations under the License.
 
 #
-# Tests for mod_reproject
+# Tests for date service
 #
 
 import os
 import sys
 import unittest2 as unittest
-import random
 import xmlrunner
-import xml.dom.minidom
-from shutil import move, rmtree
 from optparse import OptionParser
-import datetime
-from xml.etree import cElementTree as ElementTree
-import urllib2
-from oe_test_utils import check_tile_request, restart_apache, restart_redis, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt, copytree_x
+import random
+from PIL import Image
+import numpy as np
+import StringIO
+import struct
+from oe_test_utils import restart_apache, make_dir_tree, get_file_hash, check_tile_request
+import shutil
 
-DEBUG = False
+APACHE_CONFIG_DIR = "/etc/httpd/conf.d"
+
+START_SERVER = False
+
+MOD_MRF_APACHE_TEMPLATE = """<IfModule !mrf_module>
+   LoadModule mrf_module modules/mod_mrf.so
+</IfModule>
+
+<IfModule !receive_module>
+    LoadModule receive_module modules/mod_receive.so
+</IfModule>
+
+Alias /{alias} {config_path}
+
+<Directory {config_path}>
+    MRF On
+    MRF_ConfigurationFile {config_file_path}
+    MRF_RegExp {alias}
+</Directory>
+"""
+
+MOD_REPROJECT_APACHE_TEMPLATE = """<IfModule !reproject_module>
+   LoadModule reproject_module modules/mod_reproject.so
+</IfModule>
+
+Alias /{alias} {config_path}
+
+<Directory {config_path}>
+    Reproject_ConfigurationFiles {src_config} {dest_config}
+    Reproject_RegExp {alias}
+</Directory>
+"""
+
+MOD_MRF_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+    PageSize {tile_size_x} {tile_size_y} 1 {bands}
+    SkippedLevels {skipped_levels}
+    IndexFile {idx_path}
+    {data_config}
+"""
+
+MOD_REPROJECT_SRC_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+    PageSize {tile_size_x} {tile_size_y} 1 {bands}
+    SkippedLevels {skipped_levels}
+    Projection {projection}
+    BoundingBox {bbox}
+"""
+
+MOD_REPROJECT_DEST_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+    Nearest Off
+    PageSize {tile_size_x} {tile_size_y} 1 {bands}
+    SkippedLevels {skipped_levels}
+    Projection {projection}
+    BoundingBox {bbox}
+    SourcePath /{source_path}
+    SourcePostfix {source_postfix}
+    MimeType {mime}    
+    Oversample On
+    ExtraLevels 3
+"""
+
+TILE_REF = {
+    0: {
+        0: {
+            0: '5f7056b7b8c98fa736231364f4058859'
+        }
+    },
+    1: {
+        0: {
+            0: '1af170cdf1f7e29f8a595b392a24dc97',
+            1: '3208e7745f7323a38d05d5a53ae5124b'
+        },
+        1: {
+            0: '1b151324b1079c362786283d2170aa7e',
+            1: '015a227e52a8d50b4ed54d2b14f4c67d'
+        }
+    },
+    2: {
+        0: {
+            0: '8de85756af92a3e3fa8c997d208c59db',
+            1: 'df5a72b66d02e797dbda12f5899ad8f9',
+            2: '7791a01e047ebbe71a43167761975824',
+            3: 'd3fa6c2849dd58884faf6625098b0f01'
+        },
+        1: {
+            0: 'bea9f3b7d6c74200be0a59ff05f9b2a1',
+            1: 'cf1959fd14e658e75ed12f107f005147',
+            2: '228cdb6d42ca752279adfe267ea178d3',
+            3: '78e3dd6084f74fdf06901a14c14ba19f'
+        },
+        2: {
+            0: '8cf1b00f3bbaf19eea5023b65f672385',
+            1: 'd5c7d591a9c1074c6dcc50e6c8a97844',
+            2: '99a139cbd3d3a08d7094afd176c39c0e',
+            3: '5645b1e0be0757b9f390c7a65bb8a295'
+        },
+        3: {
+            0: 'a9c735589d1460558fb1ec576ff691a3',
+            1: '4358188d6b274c9e2b806bdf49f590bf',
+            2: 'eae5e32cdd508a3876f296cd07185a49',
+            3: '5efa21b5c8f76f41cfa8a62ce24fcb04'
+        }
+    },
+    3: {
+        0: {
+            0: 'a1d0cfaaedfcb8d1961437d6d76b36c2',
+            1: '11e991ae67b71c0191f847c966010ed3',
+            2: '5c90d660d218ea250b4b2b9a0af3df57',
+            3: '5f8aed249a57d9c1cdb69ccd735bbea1',
+            4: 'c6817ad226c09fceea25b5ac6975e922',
+            5: '2319c7adce7b80e1712916eb55d5e14a',
+            6: '44e0628006805898aa5b199a8d9d6763',
+            7: '2190d818b401ad9322017ef98e7e6df8'
+        },
+        1: {
+            0: '9fe0523963b98cea21f52ad3b04e4b68',
+            1: '670a4a2c4511aa7dcb830907302c2f8f',
+            2: '750c725a90a80a9be6ab8104b2a0b7b5',
+            3: 'c2fe267497806c057932f6d1ef4ef1fe',
+            4: 'e09130069c364a106915ebb37ad76685',
+            5: '4990766aace05b2a90d1798c10c15c94',
+            6: 'dde74eb535a0042450893db518c3cc2b',
+            7: '7a50c24bf10e27acf0f523b8a3aefdfc'
+        },
+        2: {
+            0: '0ce5ff3f2ddce554d614fd8538364766',
+            1: 'b2cd4d7daea7c055b191bad602e64075',
+            2: 'd49abaeeeff542e51f8b6c807b8a5b48',
+            3: '65d7b5b1059e59bdb815a8a0048b6ce4',
+            4: 'f118bff09f9350a76dec4a4b6414a628',
+            5: '97c4f920f3a7dd4762c8728d13bdc3e5',
+            6: 'c5baf2bf89bf4bb6ec08aabb02d140df',
+            7: 'afec3d8757a41f0652de35551da57e0d'
+        },
+        3: {
+            0: '06b00da9b3aca40db86af0803141a1d5',
+            1: 'e9f06bb7ea5b2db749c22a5e974e96fb',
+            2: 'a9b9834dc0ec65dc6c35f26b61c2e6a9',
+            3: 'c5a68b04aed3f4447996a29f24ec279e',
+            4: '478901ac3038249f6d017f7ccf665bd1',
+            5: '06d85ed3b76da2df4fa64e4ab52db816',
+            6: '8bfdbcbe5d167fd2fcf900e15080cc20',
+            7: '7c685ee561a2d42d1cacc665fe6ea711'
+        },
+        4: {
+            0: 'd2b493ad9484ebe4b50babd7937e2105',
+            1: 'dea08ef8686b9783cd79b79b361c7dbd',
+            2: 'b5fce883b0f812a6b436713c53ab9cd7',
+            3: 'c2bde3ad67004cea728af3ce8b0cedf3',
+            4: '6617a26e02dec80fd15230aa1cfdb83c',
+            5: 'ee14b7c910bc7766d6fed672dc0d2d73',
+            6: 'fb5f5c8fe1ece02e21dd1b85c5e913ef',
+            7: '188299db721809096dccec94be50dc5c'
+        },
+        5: {
+            0: '400ecd853db0fa5e72baa7cde406d532',
+            1: 'a53cf6e7d92190fc6626874b700753c5',
+            2: 'fa9a4afd82fbb6adb1d72fc26a8a3a27',
+            3: '304e5e08e11549eb5c61adb58468d65a',
+            4: '38c735c094c387af4811db59aa653bbd',
+            5: 'cb4b90ed0e9ddad9420613887c435a06',
+            6: '64a72d44670805716d99b402a51cc91d',
+            7: '681365328983749c836d5740c91b66de'
+        },
+        6: {
+            0: '271b7f83a557bfc6db2aab0b80f92220',
+            1: '84f5d7ccecc73b6b2e4f30f5cc01de5d',
+            2: 'a2d36cb92b4593824227b6fc718d6b47',
+            3: '17d554bf7cdc53b59f28b7c13b5d6107',
+            4: 'fbf81484b14577dea0941dc791ed935d',
+            5: 'e774c7bcb1bbddef65c46dca93c9c441',
+            6: 'ccfec62798e131b7acc3601b40258cd6',
+            7: '6191ddbc86403f496446f65a1718fd8a'
+        },
+        7: {
+            0: '32974802f6f41d9d2b5c0e57897c7e79',
+            1: '8cbaa0d5253713f8e859d6cbad08a62e',
+            2: '4bb77b2f7701c8e14217f90aae82a9ff',
+            3: 'e845b8a47cf24a8dd688fa625250cd5e',
+            4: 'c5c6bc985657e1792fcee8fd10d44152',
+            5: 'a3fe65cec2e370b66c869cc0e905121a',
+            6: '6ae69b91722fee02b99696318767c52d',
+            7: '448f58361a1d4a7120fd8ed262930d6b'
+        }
+    }
+}
+
+
+def bulk_replace(source_str, replace_list):
+    out_str = source_str
+    for item in replace_list:
+        out_str = out_str.replace(item[0], str(item[1]))
+    return out_str
 
 
 class TestModReproject(unittest.TestCase):
-
-    # SETUP
-
     @classmethod
     def setUpClass(self):
-        # Get the path of the test data -- we assume that the script is in the parent dir of the data dir
-        testdata_path = os.path.join(os.getcwd(), 'ci_tests')
-        httpd_config = os.path.join(testdata_path, 'httpd.conf')
-#        self.image_files_path = os.path.join(testdata_path, 'test_imagery')
+        # Set test paths and install base Apache configuration
+        self.src_config_file_prefix = 'test_mod_reproject_src'
+        self.test_mod_reproject_src_config_dest_path = '/build/test/ci_tests/tmp/mod_reproject_test_src'
 
-        # Make dir for layer config
-        self.layer_config_path = os.path.join(testdata_path, 'layer_config_endpoint')
-        copytree_x(os.path.join(testdata_path, 'layer_config_baseline'), self.layer_config_path, exist_ok=True)
+        make_dir_tree(
+            self.test_mod_reproject_src_config_dest_path, ignore_existing=True)
 
-        self.test_apache_gc_config = os.path.join(testdata_path, 'layer_config_baseline/oe2_layer_config_gc.conf')
-        self.test_apache_config = os.path.join(testdata_path, 'layer_config_baseline/oe2_layer_config.conf')
-        dateservice_path = os.path.join(testdata_path, 'date_service')
-        date_config = os.path.join(dateservice_path, 'oe2_test_date_service.conf')
+        # Add config for base imagery layer to be served by mod_reproject
+        apache_config = bulk_replace(
+            MOD_MRF_APACHE_TEMPLATE,
+            [('{config_path}', self.test_mod_reproject_src_config_dest_path),
+             ('{config_file_path}',
+              os.path.join(self.test_mod_reproject_src_config_dest_path,
+                           self.src_config_file_prefix + '.config')),
+             ('{alias}', self.src_config_file_prefix)])
 
-        # Override default dir for httpd (httpd.conf)
-        file_text_replace(httpd_config, os.path.join('/etc/httpd/conf', os.path.basename(httpd_config)), '{nonexistant_path}', testdata_path)
+        self.mod_mrf_apache_config_path = os.path.join(
+            APACHE_CONFIG_DIR, self.src_config_file_prefix + '.conf')
+        with open(self.mod_mrf_apache_config_path, 'w+') as f:
+            f.write(apache_config)
 
-        # Set up date_service config
-        file_text_replace(date_config, os.path.join('/etc/httpd/conf.d', os.path.basename(date_config)), '{nonexistant_path}', dateservice_path)
+        # Add reproject config
+        self.reproject_config_file_prefix = 'test_mod_reproject'
+        self.test_mod_reproject_config_dest_path = '/build/test/ci_tests/tmp/mod_reproject_test'
+        make_dir_tree(
+            self.test_mod_reproject_config_dest_path, ignore_existing=True)
 
-        # Set up the Apache GC config (oe2_layer_config_gc.conf)
-        file_text_replace(self.test_apache_gc_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_gc_config)), '{nonexistant_path}', testdata_path)
+        self.reproj_src_config_path = os.path.join(
+            self.test_mod_reproject_config_dest_path,
+            self.reproject_config_file_prefix + '_src.config')
+        self.reproj_dest_config_path = os.path.join(
+            self.test_mod_reproject_config_dest_path,
+            self.reproject_config_file_prefix + '_dest.config')
 
-        restart_apache()
+        apache_config = bulk_replace(
+            MOD_REPROJECT_APACHE_TEMPLATE,
+            [('{config_path}', self.test_mod_reproject_config_dest_path),
+             ('{config_file_path}',
+              os.path.join(self.test_mod_reproject_config_dest_path,
+                           self.reproject_config_file_prefix + '.config')),
+             ('{alias}', self.reproject_config_file_prefix),
+             ('{src_config}', self.reproj_src_config_path),
+             ('{dest_config}', self.reproj_dest_config_path)])
 
-        # Set up the Apache config (oe2_layer_config.conf)
-        file_text_replace(self.test_apache_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_apache_config)), '{nonexistant_path}', testdata_path)
+        self.apache_config_path = os.path.join(
+            APACHE_CONFIG_DIR, self.reproject_config_file_prefix + '.conf')
+        with open(self.apache_config_path, 'w+') as f:
+            f.write(apache_config)
 
-        restart_apache()
+    def test_local_tile_request(self):
+        size_x = 2560
+        size_y = 1280
+        tile_size = 512
+        image_type = 'jpeg'
+        test_name = 'test_local_tile_request'
+        test_imagery_path = os.path.join(os.getcwd(),
+                                         'mod_reproject_test_data')
 
-        # Set up the redis config
-        restart_redis()
+        # Build mod_mrf config and restart Apache
+        idx_path = os.path.join(self.test_mod_reproject_src_config_dest_path,
+                                test_name + '.idx')
+        data_path = os.path.join(self.test_mod_reproject_src_config_dest_path,
+                                 test_name + '.pjg')
 
-        run_command('redis-cli -n 0 DEL layer:test_daily_png')
-        run_command('redis-cli -n 0 SET layer:test_daily_png:default "2012-02-29"')
-        run_command('redis-cli -n 0 SADD layer:test_daily_png:periods "2012-02-29/2012-02-29/P1D"')
-        run_command('redis-cli -n 0 DEL layer:test_legacy_subdaily_jpg')
-        run_command('redis-cli -n 0 SET layer:test_legacy_subdaily_jpg:default "2012-02-29T14:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:test_legacy_subdaily_jpg:periods "2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H"')
-        run_command('redis-cli -n 0 DEL layer:test_nonyear_jpg')
-        run_command('redis-cli -n 0 SET layer:test_nonyear_jpg:default "2012-02-29"')
-        run_command('redis-cli -n 0 SADD layer:test_nonyear_jpg:periods "2012-02-29/2012-02-29/P1D"')
-        run_command('redis-cli -n 0 DEL layer:test_weekly_jpg')
-        run_command('redis-cli -n 0 SET layer:test_weekly_jpg:default "2012-02-29"')
-        run_command('redis-cli -n 0 SADD layer:test_weekly_jpg:periods "2012-02-22/2012-02-29/P7D"')
-        run_command('redis-cli -n 0 DEL layer:snap_test_1a')
-        run_command('redis-cli -n 0 SET layer:snap_test_1a:default "2016-02-29"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_1a:periods "2015-01-01/2016-12-31/P1D"')
+        data_config = 'DataFile ' + data_path
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_2a')
-        run_command('redis-cli -n 0 SET layer:snap_test_2a:default "2015-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_2a:periods "2015-01-01/2015-01-10/P1D"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_2a:periods "2015-01-12/2015-01-31/P1D"')
+        mod_mrf_config = bulk_replace(
+            MOD_MRF_CONFIG_TEMPLATE,
+            [('{size_x}', size_x), ('{size_y}', size_y),
+             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
+             ('{idx_path}', idx_path), ('{data_config}', data_config),
+             ('{skipped_levels}', '0' if size_x == size_y else '1')])
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_3a')
-        run_command('redis-cli -n 0 SET layer:snap_test_3a:default "2015-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_3a:periods "2015-01-01/2016-01-01/P1M"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_3a:periods "1948-01-01/1948-03-01/P1M"')
+        mod_mrf_config_path = os.path.join(
+            self.test_mod_reproject_src_config_dest_path,
+            self.src_config_file_prefix + '.config')
+        with open(mod_mrf_config_path, 'w+') as f:
+            f.write(mod_mrf_config)
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_3b')
-        run_command('redis-cli -n 0 SET layer:snap_test_3b:default "2015-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_3b:periods "2015-01-01/2016-01-01/P3M"')
+        # Copy test test_imagery_path
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                         self.src_config_file_prefix + '.idx'), idx_path)
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                         self.src_config_file_prefix + '.pjg'), data_path)
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_3c')
-        run_command('redis-cli -n 0 SET layer:snap_test_3c:default "2000-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_3c:periods "1990-01-01/2016-01-01/P1Y"')
+        # Now configure the reproject stuff.
+        mod_reproject_src_config = bulk_replace(
+            MOD_REPROJECT_SRC_CONFIG_TEMPLATE,
+            [('{size_x}', size_x), ('{size_y}', size_y),
+             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
+             ('{skipped_levels}', '1'), ('{projection}', 'EPSG:4326'),
+             ('{bbox}', '-180.0,-90.0,180.0,90.0')])
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_3d')
-        run_command('redis-cli -n 0 SET layer:snap_test_3d:default "2010-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_3d:periods "2010-01-01/2012-03-11/P8D"')
+        with open(self.reproj_src_config_path, 'w+') as f:
+            f.write(mod_reproject_src_config)
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_4a')
-        run_command('redis-cli -n 0 SET layer:snap_test_4a:default "2000-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_4a:periods "2000-01-01/2000-06-01/P1M"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_4a:periods "2000-07-03/2000-07-03/P1M"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_4a:periods "2000-08-01/2000-12-01/P1M"')
+        reprojected_size = 2048
+        reprojected_tile_size = 256
+        mod_reproject_dest_config = bulk_replace(
+            MOD_REPROJECT_DEST_CONFIG_TEMPLATE,
+            [('{size_x}', reprojected_size), ('{size_y}', reprojected_size),
+             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{tile_size_x}', reprojected_tile_size),
+             ('{tile_size_y}', reprojected_tile_size),
+             ('{skipped_levels}', '0'), ('{projection}', 'EPSG:3857'),
+             ('{bbox}',
+              '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+              ), ('{source_path}', self.src_config_file_prefix),
+             ('{source_postfix}', '.jpg'), ('{mime}', 'image/jpeg')])
 
-        run_command('redis-cli -n 0 DEL layer:snap_test_4b')
-        run_command('redis-cli -n 0 SET layer:snap_test_4b:default "2001-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_4b:periods "2001-01-01/2001-12-27/P8D"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_4b:periods "2002-01-01/2002-12-27/P8D"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_4c')
-        run_command('redis-cli -n 0 SET layer:snap_test_4c:default "2010-01-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_4c:periods "2010-01-01/2010-01-01/P385D"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_5a')
-        run_command('redis-cli -n 0 SET layer:snap_test_5a:default "2011-12-01"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_5a:periods "2002-12-01/2011-12-01/P1Y"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_6a')
-        run_command('redis-cli -n 0 SET layer:snap_test_6a:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_6a:periods "2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_6b')
-        run_command('redis-cli -n 0 SET layer:snap_test_6b:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_6b:periods "2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_6c')
-        run_command('redis-cli -n 0 SET layer:snap_test_6c:default "2018-01-01T00:00:00Z"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_6c:periods "2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S"')
-
-        run_command('redis-cli -n 0 DEL layer:snap_test_year_boundary')
-        run_command('redis-cli -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"')
-        run_command('redis-cli -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"')
-
-        run_command('redis-cli -n 0 SAVE')
-
-        # Make dir for layer config reproject
-        self.layer_config_reproject_path = os.path.join(testdata_path, 'layer_config_reproject_endpoint')
-        copytree_x(os.path.join(testdata_path, 'layer_config_reproject_baseline'), self.layer_config_reproject_path, exist_ok=True)
-
-        self.test_reproject_gc_config = os.path.join(testdata_path, 'layer_config_reproject_baseline/oe2_layer_config_reproject_gc.conf')
-        self.test_reproject_config = os.path.join(testdata_path, 'layer_config_reproject_baseline/oe2_layer_config_reproject.conf')
-
-        # Set up the reproject GC config (oe2_layer_config_reproject_gc.conf)
-        file_text_replace(self.test_reproject_gc_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_reproject_gc_config)), '{nonexistant_path}', testdata_path)
-
-        restart_apache()
-
-        # Set up the reproject config (oe2_layer_config_reproject.conf)
-        file_text_replace(self.test_reproject_config, os.path.join('/etc/httpd/conf.d', os.path.basename(self.test_reproject_config)), '{nonexistant_path}', testdata_path)
+        with open(self.reproj_dest_config_path, 'w+') as f:
+            f.write(mod_reproject_dest_config)
 
         restart_apache()
 
-        # Set some handy constant values
-        self.tile_hashes = {'3d5280b13cbabc41676973d26844f310': '1948-03-01',
-                            '210964547845bbeb357f62c214128215': '1990-01-01',
-                            '403705d851af424b3bf9cafbbf869d0c': '2000-01-01',
-                            '4832d6edeed31fad0bd59bbc26d92275': '2000-06-01',
-                            '7ea2038a74af2988dc432a614ec94187': '2000-07-03',
-                            '03b3cc7adc929dd605d617b7066b30ae': '2000-08-01',
-                            '4f24774e71560e15b5ed43fcace2cb29': '2000-09-03',
-                            'fd9e3aa7c12fbf823bd339b92920784e': '2000-12-01',
-                            '24f90bd216f6b7ee25501155fcc8ece4': '2001-01-01',
-                            '3d12e06c60b379efc41f4b8021ce1e29': '2001-05-09',
-                            'e16d97b41cbb408d2a285788dfc9e3b8': '2002-01-01',
-                            'b64066bafe897f0d2c0fc4a41ae7e052': '2002-12-27',
-                            '21634316da8d6e0af3ee4f24643bd72c': '2002-12-01',
-                            'b3639da9334ca5c13072012f9422a03c': '2003-12-01',
-                            '172ba954906b3d4f5d6583b3ad88460f': '2004-12-01',
-                            'f4426ab405ce748b57b34859b3811bf6': '2005-01-01',
-                            '65e2446b2f779b963d0127f374a36fba': '2005-12-01',
-                            'faf5788ab8e006bbcfe18be80d472840': '2006-12-01',
-                            'd834056e48a95e39f55401eb61f710cd': '2007-12-01',
-                            '9a3cf29a5df271c41eefc5c989fd690d': '2008-01-01',
-                            'd03e3e3cdfef2b6e3d1870f26a88fe53': '2008-12-01',
-                            '59692a541429c929117c854fe9e423c9': '2009-12-01',
-                            '84eba8cdbb26444dbc97e119c0b76728': '2010-01-01',
-                            '91206f8c5a4f6fcdcab366ea00a1f53c': '2010-01-09',
-                            '9aa3115cde41a8b9c68433741d98a8b4': '2010-12-01',
-                            'dae12a917a5d672c4cce4fdaf4788bf3': '2011-12-01',
-                            '5346e958989b57c45919604ecf909f43': '2012-03-11',
-                            '92e5d5eef4dc6866b636a49bfae3e463': '2015-01-01',
-                            '5d91fa0c5273b2b58c486a15c91b2e78': '2015-01-02',
-                            '81b8d855e38e6783f14899ff89a2c878': '2015-10-01',
-                            '7f2992ac0986784c28d93840b1e984c4': '2016-02-29',
-                            '1571c4d601dfd871e7680e279e6fd39c': '2015-01-12',
-                            'b69307895d6cb654b98d247d710dd806': '2015-12-01',
-                            'ba366ccd45a8f1ae0ed2b65cf67b9787': '2016-01-01',
-                            '5e11f1220da2bb6f92d3e1c998f20bcf': 'black'}
-
-    # DEFAULT TIME AND CURRENT TIME TESTS
-
-    def test_request_wmts_no_time_jpg(self):
-        """
-        1. Request current (no time) JPG tile via WMTS
-
-        All the tile tests follow this template.
-        """
-        # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-
-        # The URL of the tile to be requested
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via WMTS'
-            print 'URL: ' + req_url
-
-        # Downloads the tile and checks it against the reference hash.
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (no TIME) WMTS JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_no_time_jpg(self):
-        """
-        1B. Request current (no time) JPG tile via WMTS (REST)
-
-        All the tile tests follow this template.
-        """
-        # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-
-        # The URL of the tile to be requested
-        # {wmtsBaseUrl}/{layer}/{style}/{dimension1}/.../{dimensionN}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}{formatExtension}
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via WMTS REST'
-            print 'URL: ' + req_url
-
-        # Downloads the tile and checks it against the reference hash.
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (no TIME) WMTS REST JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_no_time_png(self):
-        """
-        2 .Request current (no time) PNG tile via WMTS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (no time) PNG tile via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (no TIME) WMTS PNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_no_time_png(self):
-        """
-        2B. Request current (no time) PNG tile via WMTS REST
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (no time) PNG tile via WMTS REST'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (no TIME) WMTS REST PNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_no_time_ppng(self):
-        """
-        3. Request current (no time) PPNG tile via WMTS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (no time) PPNG tile via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (no TIME) WMTS PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_no_time_ppng(self):
-        """
-        3B. Request current (no time) PPNG tile via WMTS REST
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (no time) PPNG tile via WMTS REST'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (no TIME) WMTS REST PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_default_time_jpg(self):
-        """
-        4. Request current (time=default) JPEG tile via WMTS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (time=default) JPG tile via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (TIME=default) WMTS JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_default_time_jpg(self):
-        """
-        4B. Request current (time=default) JPEG tile via WMTS REST
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        # https://gibs/earrthdata.nasa.gov/wmts/epsg{EPSG:Code}/best/{ProductName}/default/{time}/{TileMatrixSet}/{ZoomLevel}/{TileRow}/{TileColumn}.png
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        # Debug message (if DEBUG is set)
-        if DEBUG:
-            print '\nTesting: Request current (time=default) JPG tile via WMTS REST'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (TIME=default) WMTS REST JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_default_time_png(self):
-        """
-        5. Request current (time=default) PNG tile via WMTS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
-        if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (TIME=default) WMTS PNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_default_time_png(self):
-        """
-        5B. Request current (time=default) PNG tile via WMTS REST
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
-        if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMTS REST'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (TIME=default) WMTS REST PNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_default_time_ppng(self):
-        """
-        6. Request current (time=default) PPNG tile via WMTS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
-        if DEBUG:
-            print '\nTesting: Request current (time=default) PPNG tile via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (TIME=default) WMTS PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_default_time_ppng(self):
-        """
-        6B. Request current (time=default) PPNG tile via WMTS REST
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
-        if DEBUG:
-            print '\nTesting: Request current (time=default) PPNG tile via WMTS REST'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Current (TIME=default) WMTS REST PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_notime_jpg(self):
-        """
-        7. Request current (no time) JPEG tile via TWMS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-#http://localhost:4000/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-29
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nNEED TIME SPECIFIED!!! Testing: Request current (no TIME) JPG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_notime_png(self):
-        """
-        8. Request current (no time) PNG tile via TWMS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nTesting: Request current (no TIME) PNG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_notime_ppng(self):
-        """
-        9. Request current (no time) PPNG tile via TWMS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nTesting: Request current (no TIME) PPNG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current PPNG request does not match what\'s expected. URL: ' + req_url)
-
-    # REQUEST WITH DATE/TIME AND STATIC TESTS
-
-    def test_request_wmts_date_from_year_layer(self):
-        """
-        10. Request tile with date from "year" layer via WMTS
-        """
-        ref_hash = 'ba1e14d3fb2b924974054a9cac61a74c'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
-        if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_date_from_year_layer(self):
-        """
-        10B. Request tile with date from "year" layer via WMTS (REST)
-        """
-        ref_hash = 'ba1e14d3fb2b924974054a9cac61a74c'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-22/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_date_from_year_layer(self):
-        """
-        10C. Request tile with date from "year" layer via TWMS
-        """
-        ref_hash = 'ba1e14d3fb2b924974054a9cac61a74c'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-22'
-        if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_date_from_noyear_layer(self):
-        """
-        11. Request tile with date  from "non-year" layer via WMTS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29'
-        if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_date_from_noyear_layer(self):
-        """
-        11B. Request tile with date  from "non-year" layer via WMTS (REST)
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_nonyear_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_date_from_noyear_layer(self):
-        """
-        11C. Request tile with date from "non-year" layer via TWMS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-##request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
-#request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
-        if DEBUG:
-            print '\nTesting: Request tile with date from "non-year layer via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_legacy_datetime_from_year_layer(self):
-        """
-        12. Request tile with date and time (sub-daily) from "year" layer via WMTS
-        """
-        ref_hash = 'f3b9121ef9e6360f4bc6b6a01834841c'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T12:00:00Z'
-        if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_legacy_datetime_from_year_layer(self):
-        """
-        12B. Request tile with date and time (sub-daily) from "year" layer via WMTS (REST)
-        """
-        ref_hash = 'f3b9121ef9e6360f4bc6b6a01834841c'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/2012-02-29T12:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) legacy subdaily request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_legacy_datetime_from_year_layer(self):
-        """
-        12C. Request tile with date and time (sub-daily) from "year" layer via TWMS
-        """
-        ref_hash = 'f3b9121ef9e6360f4bc6b6a01834841c'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29T12:00:00Z'
-        if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
-
-#    def test_request_wmts_year_zlevel(self):
-        """
-        13. Request tile with date and time (z-level) from "year" layer via WMTS
-        """
-#        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T16:00:00Z'
-#        if DEBUG:
-#            print '\nTIME FORMAT!!! Testing: Request tile with date and time (z-level) from "year" layer via WMTS'
-#            print 'URL: ' + req_url
-#        check_result = check_tile_request(req_url, ref_hash)
-#        self.assertTrue(check_result, 'WMTS Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-#    def test_request_wmts_rest_year_zlevel(self):
-        """
-        13B. Request tile with date and time (z-level) from "year" layer via WMTS (REST)
-        """
-#        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/layer_config_reproject_endpoint/test_zindex_jpg/default/2012-02-29T16:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-#        if DEBUG:
-#            print '\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS (REST)'
-#            print 'URL: ' + req_url
-#        check_result = check_tile_request(req_url, ref_hash)
-#        self.assertTrue(check_result, 'WMTS (REST) Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-#    def test_request_twms_year_zlevel(self):
-        """
-        13C. Request tile with date and time (z-level) from "year" layer via TWMS
-        """
-#        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&time=2012-02-29T16:00:00Z&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-#        check_result = check_tile_request(req_url, ref_hash)
-#        self.assertTrue(check_result, 'TWMS Z-Level JPEG Tile request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_nodate_from_year_layer(self):
-        """
-        14. Request tile with no date from "year" layer via WMTS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-        if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_nodate_from_year_layer(self):
-        """
-        14B. Request tile with no date from "year" layer via WMTS (REST)
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_nodate_from_year_layer(self):
-        """
-        14C. Request tile with no date from "year" layer via TWMS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_nodate_from_noyear_layer(self):
-        """
-        15. Request tile with no date from "non-year" layer via WMTS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-        if DEBUG:
-            print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_nodate_from_noyear_layer(self):
-        """
-        15B. Request tile with no date from "non-year" layer via WMTS (REST)
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_nonyear_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_nodate_from_noyear_layer(self):
-        """
-        15C. Request tile with no date from "non-year" layer via TWMS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_legacy_nodate_from_year_layer(self):
-        """
-        16. Request tile with no date and time (sub-daily) from "year" layer via WMTS
-        """
-        ref_hash = '29caed86a306369c700cb9c222dc1caf'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-        if DEBUG:
-            print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_legacy_nodate_from_year_layer(self):
-        """
-        16B. Request tile with no date and time (sub-daily) from "year" layer via WMTS (REST)
-        """
-        ref_hash = '29caed86a306369c700cb9c222dc1caf'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_legacy_nodate_from_year_layer(self):
-        """
-        16C. Request tile with no date and time (sub-daily) from "year" layer via TWMS
-        """
-        ref_hash = '29caed86a306369c700cb9c222dc1caf'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
-
-#    def test_request_wmts_nodate_year_zlevel(self):
-        """
-        17. Request tile with no date and time (z-level) from "year" layer via WMTS
-        """
-#        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-#        if DEBUG:
-#            print '\nERROR!!! Testing: Request tile with no date and time (z-level) from "year" layer via WMTS'
-#            print 'URL: ' + req_url
-#        check_result = check_tile_request(req_url, ref_hash)
-#        self.assertTrue(check_result, 'WMTS Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-#    def test_request_wmts_rest_nodate_year_zlevel(self):
-        """
-        17B. Request tile with no date and time (z-level) from "year" layer via WMTS (REST)
-        """
-#        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/layer_config_reproject_endpoint/test_zindex_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-#        if DEBUG:
-#            print '\nERROR!!! Testing: Request tile with no date and time (z-level) from "year" layer via WMTS (REST)'
-#            print 'URL: ' + req_url
-#        check_result = check_tile_request(req_url, ref_hash)
-#        self.assertTrue(check_result, 'WMTS (REST) Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
-
-#    def test_request_twms_nodate_year_zlevel(self):
-        """
-        17C. Request tile with no date and time (z-level) from "year" layer via TWMS
-        """
-#        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
-#        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_zindex_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-#        check_result = check_tile_request(req_url, ref_hash)
-#        self.assertTrue(check_result, 'TWMS Z-Level no date and time JPEG Tile request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_static_notime(self):
-        """
-        18. Request tile from static layer with no time via WMTS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_static_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-        if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via WMTS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS static notime request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_wmts_rest_static_notime(self):
-        """
-        18B. Request tile from static layer with no time via WMTS (REST)
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_static_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via WMTS (REST)'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WMTS (REST) static notime request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_static_notime(self):
-        """
-        18C. Request tile from static layer with no time via TWMS
-        """
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-        if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS static notime request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_default_jpg(self):
-        """
-        19. Request current (default time) JPEG tile via TWMS
-        """
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
-        if DEBUG:
-            print '\nTesting: Request current (default TIME) JPG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_default_png(self):
-        """
-        20. Request current (default time) PNG tile via TWMS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
-        if DEBUG:
-            print '\nTesting: Request current (default TIME) PNG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_default_ppng(self):
-        """
-        21. Request current (no time) PPNG tile via TWMS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
-        if DEBUG:
-            print '\nTesting: Request current (default TIME) PPNG tile via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS current PPNG request does not match what\'s expected. URL: ' + req_url)
-
-    def test_request_twms_date_png(self):
-        """
-        19. Request tile with date via TWMS
-        """
-        ref_hash = '22f25f15436b4a4327a5f3509acadd01'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
-        if DEBUG:
-            print '\nTesting: Request tile with date via TWMS'
-            print 'URL: ' + req_url
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS PNG request with date does not match what\'s expected. URL: ' + req_url)
-
-    # GETCAPABILITIES AND GETTILESERVICE REQUEST TESTS
-
-    def test_wmts_get_capabilities(self):
-        """
-        20. Request WMTS GetCapabilities
-        """
-        ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?Request=GetCapabilities'
-        if DEBUG:
-            print '\nTesting WMTS GetCapablities'
-            print 'URL: ' + req_url
-        response = get_url(req_url)
-
-        # Check if the response is valid XML
-        try:
-            XMLroot = ElementTree.XML(response.read())
-            XMLdict = XmlDictConfig(XMLroot)
-            xml_check = True
-        except:
-            xml_check = False
-        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
-
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/GetCapabilities.1.0.0.xml'))
-        refXMLroot = refXMLtree.getroot()
-        refXMLdict = XmlDictConfig(refXMLroot)
-
-        check_result = check_dicts(XMLdict, refXMLdict)
-        #check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'WTMTS Get GetCapabilities Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_wmts_rest_get_capabilities(self):
-        """
-        21. ERROR!!! Request WMTS (REST) GetCapabilities
-        """
-        ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/1.0.0/WMTSCapabilities.xml'
-        if DEBUG:
-            print '\nTesting WMTS (REST) GetCapablities'
-            print 'URL: ' + req_url
-        response = get_url(req_url)
-
-        # Check if the response is valid XML
-        try:
-            XMLroot = ElementTree.XML(response.read())
-            XMLdict = XmlDictConfig(XMLroot)
-            xml_check = True
-        except:
-            xml_check = False
-        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
-
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/wmts_endpoint/1.0.0/WMTSCapabilities.xml'))
-        refXMLroot = refXMLtree.getroot()
-        refXMLdict = XmlDictConfig(refXMLroot)
-
-        check_result = check_dicts(XMLdict, refXMLdict)
-        self.assertTrue(check_result, 'WTMTS (REST) Get Capabilities Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_twms_get_capabilities(self):
-        """
-        22. Request TWMS GetCapabilities
-        """
-        ref_hash = '8663c1e1d45e4be1cdaefc8e6749ead4'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?Request=GetCapabilities'
-        if DEBUG:
-            print '\nTesting TWMS GetCapablities'
-            print 'URL: ' + req_url
-        response = get_url(req_url)
-
-        # Check if the response is valid XML
-        try:
-            XMLroot = ElementTree.XML(response.read())
-            XMLdict = XmlDictConfig(XMLroot)
-            xml_check = True
-        except:
-            xml_check = False
-        self.assertTrue(xml_check, 'GetCapabilities response is not a valid XML file. URL: ' + req_url)
-
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/GetCapabilities.1.1.1.xml'))
-        refXMLroot = refXMLtree.getroot()
-        refXMLdict = XmlDictConfig(refXMLroot)
-
-        check_result = check_dicts(XMLdict, refXMLdict)
-        #check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'TWMS Get GetCapabilities Request does not match what\'s expected. URL: ' + req_url)
-
-    def test_twms_get_tile_service(self):
-        """
-        23. Request TWMS GetTileService
-        """
-        ref_hash = '7555d5ad3cca96aa8cbc8a36f5e04f19'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?Request=GetTileService'
-        if DEBUG:
-            print '\nTesting TWMS GetTileService'
-            print 'URL: ' + req_url
-        response = get_url(req_url)
-
-        # Check if the response is valid XML
-        try:
-            XMLroot = ElementTree.XML(response.read())
-            XMLdict = XmlDictConfig(XMLroot)
-            xml_check = True
-        except:
-            xml_check = False
-        self.assertTrue(xml_check, 'GetTileService response is not a valid XML file. URL: ' + req_url)
-
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_reproject_test_data/GetTileService.xml'))
-        refXMLroot = refXMLtree.getroot()
-        refXMLdict = XmlDictConfig(refXMLroot)
-
-        check_result = check_dicts(XMLdict, refXMLdict)
-        self.assertTrue(check_result, 'TWMS Get GetTileService Request does not match what\'s expected. URL: ' + req_url)
-
-    # REQUEST SYNTAX TESTS (capitalization, parameter ordering, error handling, REST)
-
-    def test_url_parameter_case_insensitivity(self):
-        """
-        24. URL Parameter Case Insensitivity
-        """
-        # Randomly capitalizes and lower-cases parameters and checks the tile resulting from the request. Tries 10 different combinations.
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
-                  'time=default', 'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
-        if DEBUG:
-            print '\nTesting URL Parameter Insensitivity'
-        for _ in range(10):
-            test_params = []
-            for param in params:
-                param_split = param.split('=')
-                case = random.randint(0, 1)
-                if case:
-                    param_split[0] = param_split[0].upper()
-                else:
-                    param_split[0] = param_split[0].lower()
-                test_params.append('='.join(param_split))
-            req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?' + '&'.join(test_params)
-            if DEBUG:
-                print 'Trying URL: ' + req_url
-            check_result = check_tile_request(req_url, ref_hash)
-            self.assertTrue(check_result, 'URL parameter case insensitivity request does not match what\'s expected. URL: ' + req_url)
-
-    def test_url_parameter_reordering(self):
-        """
-        25. URL Parameter Reordering
-        """
-        # Test 20 random permutations of the given param strings
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
-        params = ['layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
-                  'time=default', 'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0']
-        if DEBUG:
-            print 'Testing URL Parameter Reordering'
-        for _ in range(20):
-            random.shuffle(params)
-            param_string = '&'.join(params)
-            req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?' + param_string
-            if DEBUG:
-                print 'Trying URL: ' + req_url
-            check_result = check_tile_request(req_url, ref_hash)
-            self.assertTrue(check_result, 'URL parameter case insensitivity request does not match what\'s expected. URL: ' + req_url)
-
-    def test_wmts_error_handling(self):
-        """
-        26. WMTS Error handling
-        """
-        # MissingParameterValue test
-        params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'version=1.0.0',
-                  'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
-        if DEBUG:
-            print '\nTesting WMTS Error Handling'
-        for i in range(len(params)):
-            param_list = list(params)
-            param_list.pop(i)
-            req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?request=GetTile&time=default&' + '&'.join(param_list)
-            response_code = 400
-            response_value = 'MissingParameterValue'
-            if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
-
-        # InvalidParameterValue tests
-        response_code = 400
-        response_value = 'InvalidParameterValue'
-        invalid_parameter_urls = (
-            # Bad SERVICE value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&Service=bad_value',
-            # Bad VERSION value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&Version=bad_value',
-            # Bad LAYER value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&layer=bad_layer_value',
-            # Bad STYLE value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&style=bad_value',
-            # Bad FORMAT value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&TileMatrix=0&TileCol=0&TileRow=0&time=default&Format=fake_image',
-            # Bad TILEMATRIXSET value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default&tilematrixset=fake_tilematrixset',
-            # Bad (non-positive integer) TILEMATRIX value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=-20',
-            # Bad (non-positive integer) TILEROW value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&time=default&TileRow=-20',
-            # Bad (non-positive integer) TILECOL value
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileRow=0&time=default&TileCol=-20',
-            # Invalid TILEMATRIX value
-#            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=20',
-            # Invalid TIME format
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-290'
-        )
-        for req_url in invalid_parameter_urls:
-            if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
-
-        # OperationNotSupported tests
-        response_code = 501
-        response_value = 'OperationNotSupported'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetLegendGraphic&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
-        if DEBUG:
-            print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-        check_code = check_response_code(req_url, response_code, response_value)
-        error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-        self.assertTrue(check_code, error)
-
-        # TileOutOfRange tests
-        response_code = 400
-        response_value = 'TileOutOfRange'
-        tile_outofrange_urls = (
-            # TILEMATRIX out of range
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileCol=0&TileRow=0&time=default&TileMatrix=20',
-            # TileCol out of range
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=50&TileRow=0&time=default',
-            # TileRow out of range
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=50&time=default'
-        )
-        for req_url in tile_outofrange_urls:
-            if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
-
-        # Test if empty tile is served for out of time bounds request
-        ref_hash = 'e45470d7b683503c43ca819a674fdc9e'
-        empty_urls = (  # Date before range
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-01-01',
-            # Date after range
-            'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-03-07'
-        )
-        for url in empty_urls:
-            if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(url)
-            check_result = check_tile_request(url, ref_hash)
-            self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
-
-        # Test if unknown parameter is ignored
-        ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
-        req_url = 'http://localhost/layer_config_reproject_endpoint/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-29&twoplustwo=five'
-        if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will be ignored'
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Bad parameter request is not ignored. URL: ' + url)
-
-    def test_wmts_rest_error_handling(self):
-        """
-        27. WMTS REST requests
-        """
-        # MissingParameterValue test
-        params = ('test_weekly_jpg', 'default', 'GoogleMapsCompatible_Level3', '0', '0', '0.jpeg')
-        if DEBUG:
-            print '\nTesting WMTS REST Error Handling'
-        for i in range(len(params)):
-            param_list = list(params)
-            param_list.pop(i)
-            req_url = 'http://localhost/layer_config_reproject_endpoint/' + '/'.join(param_list)
-            #response_code = 400
-            response_value = 'InvalidParameterValue'
-            if DEBUG:
-                print 'Using URL: {0}, expecting response value of {1}'.format(req_url, response_value)
-            try:
-                response = urllib2.urlopen(req_url)
-            except urllib2.HTTPError as e:
-                response = e
-
-            # Check if the response is valid XML
-            try:
-                XMLroot = ElementTree.XML(response.read())
-                xml_check = True
-            except:
-                xml_check = False
-            self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
-
-            try:
-                exception = XMLroot.find('exceptionCode').text
-            except AttributeError:
-                exception = ''
-            check_str = exception.find(response_value)
-            error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
-            self.assertTrue(check_str, error)
-
-            #check_code = check_response_code(req_url, response_code, response_value)
-            #error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            #self.assertTrue(check_code, error)
-
-        # InvalidParameterValue tests
-        response_code = 400
-        response_value = 'InvalidParameterValue'
-        invalid_parameter_urls = (
-            # Bad LAYER value
-            'http://localhost/layer_config_reproject_endpoint/bad_layer_value/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
-            # Bad STYLE value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/bad_value/default/GoogleMapsCompatible_Level3/0/0/0.jpeg',
-            # Bad FORMAT value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.fake',
-            # Bad TILEMATRIXSET value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/fake_tilematrixset/0/0/0.jpeg',
-            # Bad (non-positive integer) TILEMATRIX value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/-20/0/0.jpeg',
-            # Bad (non-positive integer) TILEROW value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/-20/0.jpeg',
-            # Bad (non-positive integer) TILECOL value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/-20.jpeg',
-            # Invalid TILEMATRIX value
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/GoogleMapsCompatible_Level3/20/0/0.jpeg',
-            # Invalid TIME format
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-290/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        )
-        for req_url in invalid_parameter_urls:
-            #if DEBUG:
-                #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            if DEBUG:
-                print '\nTesting WTMS REST Error Invalid Parameters'
-
-            try:
-                response = urllib2.urlopen(req_url)
-            except urllib2.HTTPError as e:
-                response = e
-
-            # Check if the response is valid XML
-            try:
-                XMLroot = ElementTree.XML(response.read())
-                xml_check = True
-            except:
-                xml_check = False
-            self.assertTrue(xml_check, 'WMTS REST response is not a valid XML file. URL: ' + req_url)
-
-            try:
-                exception = XMLroot.find('exceptionCode').text
-            except AttributeError:
-                exception = ''
-            check_str = exception.find('InvalidParameterValue')
-            error = 'The WMTS REST response does not match what\'s expected. URL: {0}'.format(req_url)
-            self.assertTrue(check_str, error)
-
-            #check_code = check_response_code(req_url, response_code, response_value)
-            #error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            #self.assertTrue(check_code, error)
-
-        # TileOutOfRange tests
-        response_code = 400
-        response_value = 'TileOutOfRange'
-        tile_outofrange_urls = (
-            # TileCol out of range
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/50/0.jpeg',
-            # TileRow out of range
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/50.jpeg'
-        )
-        for req_url in tile_outofrange_urls:
-            if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-            check_code = check_response_code(req_url, response_code, response_value)
-            error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-            self.assertTrue(check_code, error)
-
-        # Test if empty tile is served for out of time bounds request
-        ref_hash = 'e45470d7b683503c43ca819a674fdc9e'
-        empty_urls = (  # Date before range
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-01-01/GoogleMapsCompatible_Level3/0/0/0.jpeg',
-            # Date after range
-            'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-03-07/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-        )
-        for url in empty_urls:
-            if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(url)
-            check_result = check_tile_request(url, ref_hash)
-            self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
-
-        # Test unknown parameter
-        req_url = 'http://localhost/layer_config_reproject_endpoint/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
-        if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will return XML'.format(req_url)
-        try:
-            response = urllib2.urlopen(req_url)
-        except urllib2.HTTPError as e:
-            response = e
-
-        # Check if the response is valid XML
-        try:
-            XMLroot = ElementTree.XML(response.read())
-            xml_check = True
-        except:
-            xml_check = False
-        self.assertTrue(xml_check, 'The WMTS REST unknown parameter response is not a valid XML file. URL: ' + req_url)
-
-        try:
-            exception = XMLroot.find('exceptionCode').text
-        except AttributeError:
-            exception = ''
-        check_str = exception.find(response_value)
-        error = 'The WMTS REST unknown parameter response for does not match what\'s expected. URL: {0}'.format(req_url)
-        self.assertTrue(check_str, error)
-
-    def test_twms_error_handling(self):
-        """
-        28. TWMS requests
-        """
-        # MissingParameterValue test
-#request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29
-        params = ('layers=test_weekly_jpg', 'srs=EPSG:3857', 'format=image%2Fjpeg', 'styles=', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
-        if DEBUG:
-            print '\nTesting TWMS Error Handling'
-        for i in range(len(params)):
-            param_list = list(params)
-            param_list.pop(i)
-            req_url = 'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&time=default&' + '&'.join(param_list)
-            if 'srs' not in req_url or 'format' not in req_url or 'styles' not in req_url or 'width' not in req_url or 'height' not in req_url:
-                # expected tile
-                ref_hash = '5f7056b7b8c98fa736231364f4058859'
-                if DEBUG:
-                    print 'Using URL: {0}, expecting tile'.format(req_url)
-                check_result = check_tile_request(req_url, ref_hash)
-                self.assertTrue(check_result, 'The TWMS response for missing parameter does not match what\'s expected. URL: ' + req_url)
-            else:
-                response_code = 400
-                #response_value = 'MissingParameterValue'
-                response_value = 'Bad'
-                if DEBUG:
-                    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-                check_code = check_response_code(req_url, response_code, response_value)
-                error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-                self.assertTrue(check_code, error)
-
-        # InvalidParameterValue tests
-        invalid_parameter_urls = (
-            # Bad LAYER value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=bad_layer_value&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
-            # Bad STYLE value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=bad_value&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
-            # Bad FORMAT value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=fake_image&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
-            # Bad SRS value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=fake_tilematrixset&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
-            # Bad (non-positive integer) WIDTH value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=-256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
-            # Bad (non-positive integer) HEIGHT value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=-256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925',
-            # Bad (large integer) BBOX value
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,2003750800.34278925,20037508.34278925'
-            # Invalid TIME format
-            'http://localhost/layer_config_reproject_endpoint/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-290'
-        )
-        for req_url in invalid_parameter_urls:
-            if 'bad_value' in req_url or 'fake' in req_url or '-256' in req_url:
-                # expected tile
-                ref_hash = '5f7056b7b8c98fa736231364f4058859'
-                if DEBUG:
-                    print 'Using URL: {0}, expecting tile'.format(req_url)
-                check_result = check_tile_request(req_url, ref_hash)
-                self.assertTrue(check_result, 'The TWMS response for missing parameter does not match what\'s expected. URL: ' + req_url)
-            else:
-                response_code = 400
-                response_value = 'Bad'
-                if DEBUG:
-                    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
-                check_code = check_response_code(req_url, response_code, response_value)
-                error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
-                self.assertTrue(check_code, error)
-
-    # TEARDOWN
+        # Verify that the mod_mrf endpoint is set up and working
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        tile_url = 'http://localhost/{}/{}/{}/{}.{}'.format(
+            self.src_config_file_prefix, 0, 0, 0, image_type)
+        errstring = 'Error setting up mod_mrf: Tile at URL:{} was not the same as what was expected. Check that mod_mrf is working.'.format(
+            tile_url)
+        self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
+
+        # Test all tiles against hash reference
+        for z in range(len(TILE_REF)):
+            for y in range(len(TILE_REF[z])):
+                for x in range(len(TILE_REF[z][y])):
+                    tile_url = 'http://localhost/{}/{}/{}/{}.{}'.format(
+                        self.reproject_config_file_prefix, z, y, x, image_type)
+
+                    ref_hash = TILE_REF[z][y][x]
+
+                    errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
+                        tile_url)
+                    self.assertTrue(
+                        check_tile_request(tile_url, ref_hash), errstring)
 
     @classmethod
     def tearDownClass(self):
-        # Delete Apache test config
-        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_gc_config)))
-        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_apache_config)))
-        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_reproject_gc_config)))
-        os.remove(os.path.join('/etc/httpd/conf.d/' + os.path.basename(self.test_reproject_config)))
-        rmtree(self.layer_config_path)
-        rmtree(self.layer_config_reproject_path)
-        restart_apache()
+        if not START_SERVER:
+            os.remove(self.mod_mrf_apache_config_path)
+            os.remove(self.apache_config_path)
+            shutil.rmtree(self.test_mod_reproject_src_config_dest_path)
+            shutil.rmtree(self.test_mod_reproject_config_dest_path)
 
 
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mod_reproject_results.xml',
-                      help='Specify XML output file (default is test_mod_reproject_results.xml')
-    parser.add_option('-s', '--start_server', action='store_true', dest='start_server', help='Load test configuration into Apache and quit (for debugging)')
-    parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Output verbose debugging messages')
+    parser.add_option(
+        '-o',
+        '--output',
+        action='store',
+        type='string',
+        dest='outfile',
+        default='test_date_service_results.xml',
+        help='Specify XML output file (default is test_date_service_results.xml'
+    )
+
+    parser.add_option(
+        '-s',
+        '--start_server',
+        action='store_true',
+        dest='start_server',
+        help='Start server but do not clean up')
     (options, args) = parser.parse_args()
 
-    # --start_server option runs the test Apache setup, then quits.
-    if options.start_server:
-        TestModReproject.setUpClass()
-        sys.exit('Apache has been loaded with the test configuration. No tests run.')
-    
-    DEBUG = options.debug
+    START_SERVER = options.start_server
 
     # Have to delete the arguments as they confuse unittest
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
         print '\nStoring test results in "{0}"'.format(options.outfile)
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output=f)
-        )
+        unittest.main(testRunner=xmlrunner.XMLTestRunner(output=f))
