@@ -7,3 +7,5 @@ formencode
 python-dateutil
 mapbox_vector_tile
 lxml
+pillow
+numpy
