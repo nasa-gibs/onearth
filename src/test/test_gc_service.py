@@ -1385,7 +1385,7 @@ class TestDateService(unittest.TestCase):
             'Incorrect number of < Identifier > elements found in < Dimension > element - - should only be 1. Url: {}'
             .format(url))
 
-        expected = 'time'
+        expected = 'Time'
         found = dimension_id_elems[0].text
         self.assertEqual(
             found, expected,
@@ -1782,7 +1782,7 @@ class TestDateService(unittest.TestCase):
             'Incorrect number of < Identifier > elements found in < Dimension > element - - should only be 1. Url: {}'
             .format(url))
 
-        expected = 'time'
+        expected = 'Time'
         found = dimension_id_elems[0].text
         self.assertEqual(
             found, expected,
@@ -2180,7 +2180,7 @@ class TestDateService(unittest.TestCase):
             'Incorrect number of < Identifier > elements found in < Dimension > element - - should only be 1. Url: {}'
             .format(url))
 
-        expected = 'time'
+        expected = 'Time'
         found = dimension_id_elems[0].text
         self.assertEqual(
             found, expected,

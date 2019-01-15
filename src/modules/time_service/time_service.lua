@@ -142,7 +142,7 @@ local function redis_handler (options)
                     periods = periods
                 }}
             else
-                returnValue = {err_msg = "Layer not found!"}
+                returnValue = {err_msg = "Invalid Layer"}
             end
         else
             -- If no layer name specified, dump all data
