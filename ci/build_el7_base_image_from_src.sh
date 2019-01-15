@@ -67,7 +67,7 @@ COPY ./ /home/oe2/onearth/
 WORKDIR /tmp
 RUN yum install -y yum-utils rpm-build
 RUN yumdownloader --source httpd
-RUN HOME="/tmp" rpm -ivh httpd-2.4.6-80.el7.centos.1.src.rpm
+RUN HOME="/tmp" rpm -ivh httpd-*.src.rpm
 RUN yum-builddep -y httpd
 WORKDIR /tmp/rpmbuild/SPECS
 RUN HOME="/tmp" rpmbuild -bp httpd.spec

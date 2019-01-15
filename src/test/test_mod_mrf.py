@@ -32,7 +32,7 @@
 # limitations under the License.
 
 #
-# Tests for date service
+# Tests for mod_mrf
 #
 
 import os
@@ -59,6 +59,10 @@ MOD_MRF_APACHE_TEMPLATE = """<IfModule !mrf_module>
 <IfModule !receive_module>
     LoadModule receive_module modules/mod_receive.so
 </IfModule>
+
+<Directory /build/test/ci_tests/tmp>
+    Require all granted
+</Directory>
 
 Alias /test_mod_mrf {config_path}
 

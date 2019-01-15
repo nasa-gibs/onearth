@@ -53,15 +53,15 @@ MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
 </IfModule>
 
 <IfModule !wmts_wrapper_module>
-        LoadModule wmts_wrapper_module modules/mod_wmts_wrapper.so
+    LoadModule wmts_wrapper_module modules/mod_wmts_wrapper.so
 </IfModule>
 
 <IfModule !receive_module>
-        LoadModule receive_module modules/mod_receive.so
+    LoadModule receive_module modules/mod_receive.so
 </IfModule>
 
 <Directory {internal_endpoint}>
-        WMTSWrapperRole root
+    WMTSWrapperRole root
 </Directory>
 
 {alias_block}

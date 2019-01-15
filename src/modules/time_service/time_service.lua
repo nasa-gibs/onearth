@@ -200,9 +200,13 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             return send_response(200, JSON:encode(layer_handler(nil, uuid, lookup_keys)))
         end
 
-        -- A layer but no date returns the default date and available periods for that layer
         local request_date_string = get_query_param("datetime", query_string)
         local layer_datetime_info = layer_handler(layer_name, uuid, lookup_keys)
+        if layer_datetime_info.err_msg then
+            return send_response(200, JSON:encode(layer_datetime_info))
+        end
+
+        -- A layer but no date returns the default date and available periods for that layer
         if not request_date_string then
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000- start_timestamp, uuid))
             return send_response(200, JSON:encode(layer_datetime_info))

@@ -24,7 +24,6 @@ cp -R /test /build/
 
 (
   cd /build/test
-  pip install -r requirements.txt
   python "$SCRIPT_NAME" -o /results/"$SCRIPT_NAME""_test_results.xml"
 )
 

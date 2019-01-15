@@ -66,8 +66,8 @@ WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth_time_service-0.1-1.rockspec
 
 # Install GC Service configs
-RUN mkdir -p /etc/onearth/config/endpoint
-RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
+#RUN mkdir -p /etc/onearth/config/endpoint
+#RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
 WORKDIR /home/oe2/onearth/src/modules/gc_service
 RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 
@@ -113,6 +113,9 @@ RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t
 # Set Apache configuration for optimized threading
 RUN cp /home/oe2/onearth/ci/00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp /home/oe2/onearth/ci/10-worker.conf /etc/httpd/conf.modules.d/
+
+WORKDIR /home/oe2/onearth/src/test
+RUN pip install -r requirements.txt
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh

@@ -32,7 +32,7 @@
 # limitations under the License.
 
 #
-# Tests for date service
+# Tests for mod_reproject
 #
 
 import os
@@ -40,11 +40,6 @@ import sys
 import unittest2 as unittest
 import xmlrunner
 from optparse import OptionParser
-import random
-from PIL import Image
-import numpy as np
-import StringIO
-import struct
 from oe_test_utils import restart_apache, make_dir_tree, get_file_hash, check_tile_request
 import shutil
 
@@ -59,6 +54,10 @@ MOD_MRF_APACHE_TEMPLATE = """<IfModule !mrf_module>
 <IfModule !receive_module>
     LoadModule receive_module modules/mod_receive.so
 </IfModule>
+
+<Directory /build/test/ci_tests/tmp>
+ Require all granted
+</Directory>
 
 Alias /{alias} {config_path}
 

@@ -495,11 +495,11 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     // If we get an error message from the date service, kick back a 404.
     char *err_msg = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
     if (json_unpack(root, "{s:s}", "err_msg", &err_msg) == 0) {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Date service error: %s", err_msg);
         return HTTP_NOT_FOUND;
     }
 
     json_unpack(root, "{s:s, s:s}", "date", date_string, "filename", filename);
-
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_layer_name", layer_name);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_requested", datetime_str);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_found", *date_string);
