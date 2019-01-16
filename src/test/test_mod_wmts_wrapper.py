@@ -38,7 +38,7 @@ import os
 import sys
 import unittest2 as unittest
 import xmlrunner
-from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request
+from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request, redis_running, seed_redis_data, remove_redis_layer, bulk_replace
 from optparse import OptionParser
 import shutil
 from subprocess import Popen, PIPE
@@ -199,46 +199,6 @@ MOD_REPROJECT_DEST_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
     Oversample On
     ExtraLevels 3
 """
-
-
-def redis_running():
-    try:
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        return r.ping()
-    except redis.exceptions.ConnectionError:
-        return False
-
-
-def seed_redis_data(layers, db_keys=None):
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    db_keystring = ''
-    if db_keys:
-        for key in db_keys:
-            db_keystring += key + ':'
-    for layer in layers:
-        r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
-        periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
-        for period in periods:
-            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                   period)
-
-
-def remove_redis_layer(layers, db_keys=None):
-    for layer in layers:
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        db_keystring = ''
-        if db_keys:
-            for key in db_keys:
-                db_keystring += key + ':'
-        r.delete('{0}layer:{1}:default'.format(db_keystring, layer[0]))
-        r.delete('{0}layer:{1}:periods'.format(db_keystring, layer[0]))
-
-
-def bulk_replace(source_str, replace_list):
-    out_str = source_str
-    for item in replace_list:
-        out_str = out_str.replace(item[0], str(item[1]))
-    return out_str
 
 
 class TestModWmtsWrapper(unittest.TestCase):
@@ -1344,7 +1304,6 @@ class TestModWmtsWrapper(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        # Delete Apache test config
         shutil.rmtree(self.base_tmp_path)
         os.remove(self.mod_mrf_apache_config_path_date)
         os.remove(self.mod_mrf_apache_config_path_date_yeardir)

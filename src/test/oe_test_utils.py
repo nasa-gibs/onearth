@@ -55,6 +55,7 @@ import threading
 import asyncore
 # cElementTree deprecated in python 3.3
 from xml.etree import cElementTree as ElementTree
+import redis
 
 
 class DebuggingServerThread(threading.Thread):
@@ -1064,3 +1065,43 @@ def test_wmts_error(test_obj, test_url, error_code_expected,
         msg=
         'Invalid text content for ExceptionText element, should be {0}, is {1}'
         .format(exception_text_expected, exception_text_found))
+
+
+def bulk_replace(source_str, replace_list):
+    out_str = source_str
+    for item in replace_list:
+        out_str = out_str.replace(item[0], str(item[1]))
+    return out_str
+
+
+def redis_running():
+    try:
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        return r.ping()
+    except redis.exceptions.ConnectionError:
+        return False
+
+
+def seed_redis_data(layers, db_keys=None):
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    db_keystring = ''
+    if db_keys:
+        for key in db_keys:
+            db_keystring += key + ':'
+    for layer in layers:
+        r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
+        periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
+        for period in periods:
+            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                   period)
+
+
+def remove_redis_layer(layers, db_keys=None):
+    for layer in layers:
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        db_keystring = ''
+        if db_keys:
+            for key in db_keys:
+                db_keystring += key + ':'
+        r.delete('{0}layer:{1}:default'.format(db_keystring, layer[0]))
+        r.delete('{0}layer:{1}:periods'.format(db_keystring, layer[0]))
