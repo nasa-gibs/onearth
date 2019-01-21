@@ -471,6 +471,31 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
 
     return (tile_left,  tile_right)
 
+def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
+    """
+    Crops a tile to be within projection extents
+    Arguments:
+        tile -- Tile to crop
+        tile_extents -- The spatial extents of the tile as ulx, uly, lrx, lry
+        projection_extents -- The spatial extents of the projection as xmin, ymin, xmax, ymax
+        working_dir -- Directory to use for temporary files
+    """
+    ulx, uly, lrx, lry = tile_extents
+    xmin, ymin, xmax, ymax = projection_extents
+    if float(ulx) < float(xmin):
+        ulx = xmin
+    if float(uly) > float(ymax):
+        uly = ymax
+    if float(lrx) > float(xmax):
+        lrx = xmax
+    if float(lry) < float(ymin):
+        lry = ymin
+    cut_tile = working_dir + os.path.basename(tile) + '._cut.vrt'
+    gdalwarp_command_list = ['gdalwarp', '-of', 'VRT', '-te', ulx, lry, lrx, uly, tile, cut_tile]
+    log_the_command(gdalwarp_command_list)
+    subprocess.call(gdalwarp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return cut_tile
+
 def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, blend, working_dir):
     """
     Inserts a list of tiles into an existing MRF
@@ -504,12 +529,20 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         granule, extents = is_granule_image(tile)
         diff_res, ps = diff_resolution([tile, mrf])
         log_info_mssg("Pixel size " + repr(ps))
-        # check if granule crosses antimeridian
-        if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
-            log_info_mssg(tile + " crosses antimeridian")
-            left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
-            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
-            continue
+        if source_epsg == 'EPSG:3031' or source_epsg == 'EPSG:3413':
+            # check if granule fits within extents
+            if (float(extents[0]) < float(s_xmin)) or (float(extents[1]) > float(s_ymax)) or (float(extents[2]) > float(s_xmax)) or (float(extents[3]) < float(s_ymin)):
+                log_info_mssg(tile + " falls outside of extents for " + source_epsg)
+                cut_tile = crop_to_extents(tile, extents, source_extents, working_dir)
+                errors += run_mrf_insert(mrf, [cut_tile], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
+                continue
+        else:
+            # check if granule crosses antimeridian
+            if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
+                log_info_mssg(tile + " crosses antimeridian")
+                left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
+                errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
+                continue
         if blend == True and target_epsg == source_epsg: # blend tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
