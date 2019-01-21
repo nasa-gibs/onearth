@@ -88,7 +88,7 @@ from overtiffpacker import pack
 from decimal import *
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
-versionNumber = '1.3.4'
+versionNumber = '1.3.5'
 oe_utils.basename = None
 
 #-------------------------------------------------------------------------------
@@ -1694,10 +1694,20 @@ else:
 # Insert color map into VRT if provided
 if colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
+    colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
     if add_transparency == True:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, '--email_recipient', email_recipient, '--email_sender', email_sender, '--transparent']
-    else:
-        colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename, '--send_email', '--email_server', email_server, '--email_recipient', email_recipient, '--email_sender', email_sender]
+        colormap2vrt_command_list.append('--transparent')
+    if send_email == True:
+        colormap2vrt_command_list.append('--send_email')
+    if email_server != '':
+        colormap2vrt_command_list.append('--email_server')
+        colormap2vrt_command_list.append(email_server)
+    if email_recipient != '':
+        colormap2vrt_command_list.append('--email_recipient')
+        colormap2vrt_command_list.append(email_recipient)
+    if email_sender != '':
+        colormap2vrt_command_list.append('--email_sender')
+        colormap2vrt_command_list.append(email_sender)
     log_the_command(colormap2vrt_command_list)
     colormap2vrt_stderr_filename=str().join([working_dir, basename,'_colormap2vrt_stderr.txt'])
     colormap2vrt_stderr_file=open(colormap2vrt_stderr_filename, 'w+')
