@@ -131,6 +131,11 @@ class TestOELegends(unittest.TestCase):
     def tearDown(self):
         if filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'):
             os.remove(self.testdata_path + 'new_colormaps.json')
+        else:
+            f = open(self.testdata_path + 'new_colormaps.json', 'r')
+            print "\nResults:\n"
+            print f.read()
+            f.close()
 
 if __name__ == '__main__':
     # Parse options before running tests
