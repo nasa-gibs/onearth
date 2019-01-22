@@ -33,7 +33,7 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.3.4
+ * Version 1.3.5
  */
 
 #include "mod_oems.h"

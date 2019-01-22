@@ -84,7 +84,7 @@ from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-versionNumber = '1.3.4'
+versionNumber = '1.3.5'
 current_conf = None
 
 

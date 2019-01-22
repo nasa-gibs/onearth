@@ -8,7 +8,7 @@ The new images is built from a Docker image that has the gibs-gdal RPMs installe
 
 Example of building an OnEarth Docker image:
 
-`./bin/build_el7_docker_image.sh gibs/onearth:v1.3.4`
+`./bin/build_el7_docker_image.sh gibs/onearth:v1.3.5`
 
 The generated image will start Apache when it is run.
 

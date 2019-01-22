@@ -103,7 +103,7 @@ VALIDATION_TEMPLATE = """
 """
 
 
-versionNumber = '1.3.4'
+versionNumber = '1.3.5'
 
 
 def bulk_replace(source_str, replace_list):
