@@ -62,7 +62,7 @@
 #  <colormap></colormap>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
 #  <mrf_nocopy>true</mrf_nocopy>
-#  <mrf_sparse>true</mrf_sparse>
+#  <mrf_noaddo>false</mrf_noaddo>
 #  <mrf_merge>false</mrf_merge>
 # </mrfgen_configuration>
 #
@@ -1049,14 +1049,14 @@ else:
             nocopy = True
     except:
         nocopy = None
-    # sparse, defaults to True
+    # noaddo, defaults to False
     try:
-        if get_dom_tag_value(dom, 'mrf_sparse') == "false":
-            sparse = False
+        if get_dom_tag_value(dom, 'mrf_noaddo') == "false":
+            noaddo = False
         else:
-            sparse = True
+            noaddo = True
     except:
-        sparse = True
+        noaddo = False
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
@@ -1167,7 +1167,7 @@ log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
-log_info_mssg(str().join(['config mrf_sparse:              ', str(sparse)]))
+log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -1824,7 +1824,7 @@ if zlevels != '':
 if nocopy == True:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
-    if not sparse or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or not sparse
+    if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
         
@@ -1910,7 +1910,7 @@ run_addo = True
 # Insert into nocopy
 if nocopy==True:
     errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
-    if not sparse or len(alltiles) <= 1:
+    if noaddo or len(alltiles) <= 1:
         run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
 
 # Create pyramid only if idx (MRF index file) was successfully created.
