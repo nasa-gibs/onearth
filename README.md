@@ -36,7 +36,6 @@ For more information, visit https://earthdata.nasa.gov/gibs
 * [vectorgen](src/vectorgen/README.md)
 * [OnEarth Layer Configurator](src/layer_config/README.md)
 * [OnEarth Legend Generator](src/generate_legend/README.md)
-* [OnEarth Metrics](src/onearth_logs/README.md)
 * [OnEarth Scripts](src/scripts/README.md)
 * [OnEarth Empty Tile Generator](src/empty_tile/README.md)
 * [OnEarth Demo](src/demo/README.md)

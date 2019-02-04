@@ -55,13 +55,6 @@ BuildArch:	noarch
 %description demo
 Demonstration of OnEarth
 
-%package metrics
-Summary:	OnEarth log tool for metrics
-BuildArch:	noarch
-
-%description metrics
-OnEarth log tool for metrics
-
 %package vectorgen
 Summary:	Vector data processing for OnEarth
 Requires:	libxml2-devel
@@ -363,12 +356,6 @@ pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apach
 %{_bindir}/colormap2vrt.py
 %{_bindir}/overtiffpacker.py
 %{_bindir}/oe_validate_palette.py
-
-%files metrics
-%defattr(664,gibs,gibs,775)
-%{_sysconfdir}/onearth/metrics
-%defattr(755,root,root,-)
-%{_bindir}/onearth_metrics
 
 %files demo
 %defattr(-,gibs,gibs,-)

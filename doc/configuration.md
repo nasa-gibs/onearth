@@ -181,10 +181,3 @@ sudo apachectl start
 
 The imagery layers should now be available.  If errors were discovered, please visit the [troubleshooting documentation](troubleshooting.md) or contact us by sending an email to
 [support@earthdata.nasa.gov](mailto:support@earthdata.nasa.gov)
-
-## Log Metrics
-
-Dependent RPMs: 
-* onearth-metrics
-
-Please refer to the following documentation: [OnEarth Metrics](../src/onearth_logs/README.md)
