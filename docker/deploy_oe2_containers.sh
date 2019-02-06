@@ -1,5 +1,5 @@
 #!/bin/sh
-OE_VERSION=${1:-2.2.0}
+OE_VERSION=${1:-2.2.1}
 
 # Start by making a docker network. This will allow us to lookup hostnames from each Docker instance
 docker network create oe2

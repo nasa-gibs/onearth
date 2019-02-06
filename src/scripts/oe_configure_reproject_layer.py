@@ -67,7 +67,7 @@ MIME_TO_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
-versionNumber = '2.2.0'
+versionNumber = '2.2.1'
 
 def sort_tilematrixset(tilematrixset):
     return sorted([elem for elem in tilematrixset.findall('{*}TileMatrix')], key=lambda matrix: float(matrix.findtext('{*}ScaleDenominator')))
