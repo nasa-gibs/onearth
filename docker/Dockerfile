@@ -23,9 +23,9 @@ RUN git checkout 2.2.0
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
 RUN yum install -y yum-utils rpm-build
-RUN yumdownloader --source httpd
-RUN HOME="/tmp" rpm -ivh httpd-2.4.6-80.el7.centos.1.src.rpm
-RUN yum-builddep -y httpd
+RUN yumdownloader --source httpd-2.4.6
+RUN HOME="/tmp" rpm -ivh httpd-*.src.rpm
+RUN yum-builddep -y httpd-2.4.6
 WORKDIR /tmp/rpmbuild/SPECS
 RUN HOME="/tmp" rpmbuild -bp httpd.spec
 COPY http_rpm_spec.patch /home/oe2/onearth/docker/http_rpm_spec.patch
