@@ -14,36 +14,13 @@ WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
-WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
-
-WORKDIR /home/oe2/onearth/src/modules/mod_reproject/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
-
-WORKDIR /home/oe2/onearth/src/modules/mod_twms/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
-
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
-
-WORKDIR /home/oe2/onearth/src/modules/mod_wmts_wrapper
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN cp /home/oe2/onearth/src/modules/mod_reproject/src/mod_reproject.h .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
-
-# Install Lua module for time snapping
-WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
-RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
-WORKDIR /home/oe2/onearth/src/modules/time_service
-RUN luarocks make onearth_time_service-0.1-1.rockspec
 
 # Install GC Service configs
 RUN mkdir -p /etc/onearth/config/endpoint
@@ -60,6 +37,6 @@ WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
-WORKDIR /home/oe2/onearth/docker/tile_services
-CMD sh start_tile_services.sh $S3_URL $REDIS_HOST
+WORKDIR /home/oe2/onearth/docker/capabilities
+CMD sh start_capabilities.sh $S3_URL $REDIS_HOST
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/

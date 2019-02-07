@@ -1,7 +1,7 @@
 source_gc_uri: "http://localhost/wmts/epsg4326/std/1.0.0/WMTSCapabilities.xml"
 time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3857", "std"]
-gc_service_uri: "/wmts/epsg3857/std/gc"
+gc_service_uri: "http://onearth-capabilities/wmts/epsg3857/std/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/epsg4326/"
 apache_config_location: "/etc/httpd/conf.d/"

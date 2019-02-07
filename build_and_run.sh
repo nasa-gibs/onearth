@@ -1,5 +1,6 @@
 #!/bin/sh
 OE_VERSION=${1:-2.2.1}
+REDIS_HOST=onearth-time-service
 
 # Start by making a docker network. This will allow us to lookup hostnames from each Docker instance
 docker network create oe2
@@ -14,6 +15,11 @@ cp ./docker/time_service/Dockerfile .
 docker build --no-cache -t nasagibs/onearth-time-service:$OE_VERSION .
 rm Dockerfile
 
+# Build the onearth-capabilities image
+cp ./docker/capabilities/Dockerfile .
+docker build --no-cache -t nasagibs/onearth-capabilities:$OE_VERSION .
+rm Dockerfile
+
 # Build the onearth-wms image
 docker build --no-cache -t nasagibs/onearth-wms:$OE_VERSION ./docker/wms_service/
 
@@ -22,6 +28,9 @@ docker run -d --rm --name onearth-time-service --hostname onearth-time-service -
 
 # Run onearth-tile-services using port 80 for httpd
 docker run -d --rm --name onearth-tile-services --hostname onearth-tile-services --net oe2 -p 80:80 nasagibs/onearth-tile-services:$OE_VERSION
+
+# Run onearth-capabilities using port 8080 for httpd
+docker run -d --rm --name onearth-capabilities --hostname onearth-capabilities --net oe2 -p 8080:80 nasagibs/onearth-capabilities:$OE_VERSION
 
 # Run onearth-reproject using port 8081 for httpd
 docker run -d --rm --name onearth-reproject --hostname onearth-reproject --net oe2 -p 8081:80 nasagibs/onearth-tile-services:$OE_VERSION

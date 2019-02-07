@@ -1,6 +1,6 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3031", "all"]
-gc_service_uri: "/wmts/epsg3031/all/gc"
+gc_service_uri: "http://onearth-capabilities/wmts/epsg3031/all/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/epsg3031/all/"
 apache_config_location: "/etc/httpd/conf.d/"
