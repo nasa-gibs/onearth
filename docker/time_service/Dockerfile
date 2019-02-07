@@ -1,3 +1,5 @@
+# This Dockerfile must be run from source root
+
 FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
@@ -9,11 +11,10 @@ RUN yum install -y redis-3.2.12
 RUN mkdir /home/oe2
 RUN mkdir -p /var/www
 
-# Clone OnEarth repo
+# Copy OnEarth to home directory
+RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
-RUN git clone https://github.com/nasa-gibs/onearth.git
-WORKDIR /home/oe2/onearth
-RUN git checkout 2.2.1
+COPY ./ /home/oe2/onearth/
 
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
@@ -30,8 +31,8 @@ RUN luarocks make onearth_time_service-0.1-1.rockspec
 # RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
 
 # Set Apache configuration for optimized threading
-COPY 00-mpm.conf /etc/httpd/conf.modules.d/
-COPY 10-worker.conf /etc/httpd/conf.modules.d/
-
 WORKDIR /home/oe2/onearth/docker/time_service
+RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
+RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
+
 CMD sh start_time_service.sh $REDIS_HOST

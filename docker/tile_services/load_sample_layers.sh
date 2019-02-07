@@ -49,15 +49,15 @@ mkdir -p /var/www/html/twms/epsg3413/nrt
 
 # Copy empty tiles
 mkdir -p /onearth/empty_tiles/
-cp empty_tiles/* /onearth/empty_tiles/
+cp ../empty_tiles/* /onearth/empty_tiles/
 
 # Copy sample configs
 chmod -R 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
-cp sample_configs/endpoint/* /etc/onearth/config/endpoint/
-cp -R sample_configs/layers/* /etc/onearth/config/layers/
+cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 # Replace with S3 URL
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
@@ -104,7 +104,7 @@ sleep 2
 # Data for oe-status
 cp oe2_status.conf /etc/httpd/conf.d
 mkdir -p /onearth/idx/oe-status/BlueMarble16km
-cp test_imagery/*BlueMarble16km* /onearth/idx/oe-status/BlueMarble16km/
+cp ../test_imagery/*BlueMarble16km* /onearth/idx/oe-status/BlueMarble16km/
 
 # Performance Test Data
 
@@ -482,5 +482,3 @@ python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
 sleep 2
-
-sh build_demo.sh

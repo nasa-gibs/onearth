@@ -1,11 +1,10 @@
-FROM centos:7
-RUN yum install -y epel-release
-RUN yum groupinstall -y "Development Tools"
-RUN yum install -y httpd-devel libpng-devel libjpeg-devel proj-epsg proj-devel fribidi-devel cairo-devel cmake geos-devel libcurl-devel libxml2-devel harfbuzz-devel fcgi-devel wget python-pip gdal-devel
+FROM nasagibs/onearth-deps:2.2.1
+
+RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 gdal-devel-1.11.4 python2-pip-8.1.2
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget http://download.nextag.com/apache//httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
@@ -34,7 +33,7 @@ COPY header.map /tmp
 COPY template.map /tmp
 COPY make_wms.py /tmp
 WORKDIR /tmp
-RUN pip install requests lxml
+RUN pip install requests==2.21.0 lxml==3.8.0
 RUN python make_wms.py /var/www/demo.map
 
 RUN mkdir -p /home/wms_service

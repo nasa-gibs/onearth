@@ -1,1 +1,0 @@
-cp -R ../src/demo /var/www/html/

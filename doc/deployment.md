@@ -2,6 +2,11 @@
 
 This documentation will go through the steps needed to deploy OnEarth.
 
+## Build and Run
+
+To build the Docker images and deploy the OnEarth stack, run:
+`build_and_run.sh` from the source root.
+
 ## Container Startup Process
 
 OnEarth container starts up and moves through the following steps:

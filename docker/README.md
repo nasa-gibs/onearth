@@ -9,7 +9,7 @@ in order to support time dynamic layers. A WMS Service is also available as a
 separate Docker image.
 
 To build the Docker images and deploy the OnEarth stack, run:
-`./deploy_oe2_containers.sh`
+`build_and_run.sh` from the source root.
 
 Alternatively, you can run each Docker image individually by building the
 image: `docker build -t onearth .`, and then starting a container using 

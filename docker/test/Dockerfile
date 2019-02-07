@@ -2,7 +2,27 @@
 
 FROM nasagibs/onearth-deps:2.2.1
 
-RUN yum install -y ImageMagick-6.7.8.9 libjpeg-turbo-devel-1.2.90
+# Install GDAL
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm"
+
+# Install mrfgen and OnEarth utils dependencies
+RUN yum install -y ImageMagick-6.7.8.9
+RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
+RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5 pyparsing-1.5.6 python-tornado-4.2.1 python-pycxx-devel-6.2.4 python-dateutil-1.5 python-pypng-0.0.16 python-lxml-3.2.1 python-nose-1.3.7 python-unittest2-1.1.0 python-matplotlib-1.2.0
+RUN pip install apacheconfig==0.2.8
+RUN pip install numpy==1.10.4
+
+# Install vectorgen dependencies
+RUN yum install -y libxslt-devel-1.1.28 chrpath-0.16
+WORKDIR /tmp
+RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz
+WORKDIR /tmp/spatialindex-src-1.8.5
+RUN ./configure --libdir=/usr/lib64
+RUN make && make install
+RUN ldconfig
+RUN pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/

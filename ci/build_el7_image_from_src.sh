@@ -19,6 +19,7 @@ cp ./docker/test/Dockerfile .
 
 docker build \
   --tag "$TAG" \
+  --no-cache \
   ./
 
 rm Dockerfile
