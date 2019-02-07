@@ -27,16 +27,6 @@ cp ../test_imagery/*date_test_year_dir-2017* /var/www/html/mrf_endpoint/date_tes
 cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
 cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
 
-mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
-cp oe2_test_mod_reproject_date.conf /etc/httpd/conf.d
-cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
-cp ../layer_configs/oe2_test_mod_reproject_date*.config /var/www/html/reproject_endpoint/date_test/default/tms/
-
-mkdir -p /var/www/html/reproject_endpoint/static_test/default/tms
-cp oe2_test_mod_reproject_static.conf /etc/httpd/conf.d
-cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/static_test/default/tms/oe2_test_mod_reproject_static_layer_source.config
-cp ../layer_configs/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
-
 # Load GIBS sample layers
 sh load_sample_layers.sh $S3_URL $REDIS_HOST
 

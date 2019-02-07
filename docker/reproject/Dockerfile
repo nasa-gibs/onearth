@@ -14,25 +14,30 @@ WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
-WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
+WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
-WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
+WORKDIR /home/oe2/onearth/src/modules/mod_twms/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
-# Install GC Service configs
-RUN mkdir -p /etc/onearth/config/endpoint
-RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
-WORKDIR /home/oe2/onearth/src/modules/gc_service
-RUN luarocks make onearth_gc_gts-0.1-1.rockspec
+WORKDIR /home/oe2/onearth/src/modules/mod_reproject/src/
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
+RUN make && make install
+
+WORKDIR /home/oe2/onearth/src/modules/mod_wmts_wrapper
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
+RUN cp /home/oe2/onearth/src/modules/mod_reproject/src/mod_reproject.h .
+RUN make && make install
+
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
-WORKDIR /home/oe2/onearth/docker/capabilities
-CMD sh start_capabilities.sh $S3_URL $REDIS_HOST
-RUN cp -R /home/oe2/onearth/src/demo /var/www/html/
+WORKDIR /home/oe2/onearth/docker/reproject
+CMD sh start_reproject.sh

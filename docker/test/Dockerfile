@@ -9,7 +9,7 @@ RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gi
 # Install mrfgen and OnEarth utils dependencies
 RUN yum install -y ImageMagick-6.7.8.9
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
-RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5 pyparsing-1.5.6 python-tornado-4.2.1 python-pycxx-devel-6.2.4 python-dateutil-1.5 python-pypng-0.0.16 python-lxml-3.2.1 python-nose-1.3.7 python-unittest2-1.1.0 python-matplotlib-1.2.0
+RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5 pyparsing-1.5.6 python-tornado-4.2.1 python-pycxx-devel-6.2.4 python-dateutil-1.5 python-pypng-0.0.16 python-lxml-3.2.1 python-nose-1.3.7 python-unittest2-1.1.0 python-matplotlib-1.2.0 python2-pip-8.1.2
 RUN pip install apacheconfig==0.2.8
 RUN pip install numpy==1.10.4
 

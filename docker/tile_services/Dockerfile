@@ -18,10 +18,6 @@ WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
-WORKDIR /home/oe2/onearth/src/modules/mod_reproject/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
-
 WORKDIR /home/oe2/onearth/src/modules/mod_twms/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
@@ -38,18 +34,6 @@ RUN make && make install
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
-
-# Install Lua module for time snapping
-WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
-RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
-WORKDIR /home/oe2/onearth/src/modules/time_service
-RUN luarocks make onearth_time_service-0.1-1.rockspec
-
-# Install GC Service configs
-RUN mkdir -p /etc/onearth/config/endpoint
-RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
-WORKDIR /home/oe2/onearth/src/modules/gc_service
-RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin/

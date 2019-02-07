@@ -1,12 +1,12 @@
-source_gc_uri: "http://localhost/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml"
+source_gc_uri: "http://onearth-tile-services/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml"
 time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3857", "all"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg3857/all/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/profiler/"
 apache_config_location: "/etc/httpd/conf.d/"
-base_uri_gc: "http://localhost/wmts/epsg3857/all/"
-base_uri_gts: "http://localhost/twms/epsg3857/all/"
+base_uri_gc: "http://localhost/wmts/epsg3857/all"
+base_uri_gts: "http://localhost/twms/epsg3857/all"
 epsg_code: "EPSG:4326"
 target_epsg_code: "EPSG:3857"
 gc_service:
