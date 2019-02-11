@@ -30,6 +30,9 @@ cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mr
 # Load GIBS sample layers
 sh load_sample_layers.sh $S3_URL $REDIS_HOST
 
+# Include Reproject demo
+cp oe2_reproject.conf /etc/httpd/conf.d
+
 # Include WMS demo
 cp oe2_wms.conf /etc/httpd/conf.d
 

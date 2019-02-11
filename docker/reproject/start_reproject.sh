@@ -33,6 +33,7 @@ mkdir -p /var/www/html/twms/epsg3857/std
 mkdir -p /var/www/html/twms/epsg3857/nrt
 
 # Copy sample configs
+mkdir -p /onearth
 chmod -R 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
