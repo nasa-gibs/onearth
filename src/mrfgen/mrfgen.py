@@ -87,6 +87,7 @@ import math
 import oe_utils
 from overtiffpacker import pack
 from decimal import *
+from osgeo import gdal
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
 versionNumber = '1.3.5'
@@ -95,22 +96,6 @@ oe_utils.basename = None
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
 #-------------------------------------------------------------------------------
-
-
-def check_jpeg(filename):
-    """ 
-    Check if a file is a JPEG by looking for the byte signature.
-    """
-    with open(filename, 'rb') as f:
-    # Check opening bytes
-        if hex(ord(f.read(1))) != '0xff' or hex(ord(f.read(1))) != '0xd8':
-            return False
-
-    # Check closing bytes
-        f.seek(-2, 2)
-        if hex(ord(f.read(1))) != '0xff' or hex(ord(f.read(1))) != '0xd9':
-            return False
-        return True
 
 def lookupEmptyTile(empty_tile):
     """
@@ -1296,15 +1281,16 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             continue
 
         try:
-            result = check_jpeg(tile):
-        except IOError:
+            img = gdal.Open(tile)
+        except RuntimeError as e:
             log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
-
-        if not result:
+            
+        
+        if img.RasterCount == 1:
             errors += 1
             log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
             continue
-        
+
         goodtiles.append(tile)
         
     alltiles = goodtiles       
