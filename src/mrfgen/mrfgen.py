@@ -96,6 +96,22 @@ oe_utils.basename = None
 # Begin defining subroutines.
 #-------------------------------------------------------------------------------
 
+
+def check_jpeg(filename):
+    """ 
+    Check if a file is a JPEG by looking for the byte signature.
+    """
+    with open(filename, 'rb') as f:
+    # Check opening bytes
+        if hex(ord(f.read(1))) != '0xff' or hex(ord(f.read(1))) != '0xd8':
+            return False
+
+    # Check closing bytes
+        f.seek(-2, 2)
+        if hex(ord(f.read(1))) != '0xff' or hex(ord(f.read(1))) != '0xd9':
+            return False
+        return True
+
 def lookupEmptyTile(empty_tile):
     """
     Lookup predefined empty tiles form config file
@@ -1275,26 +1291,22 @@ else: # Default to png
 goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     for i, tile in enumerate(alltiles):
-        # Create the identify command.
-        identify_command_list=['identify', '-verbose', tile]
         if ".mrf" in tile or ".vrt" in tile: # ignore MRF and VRT
             goodtiles.append(tile)
-        else:
-            # Execute identify.
-            try:
-                identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                identify_process.wait()
-                if 'DirectClass' in identify_process.stdout.read():
-                    goodtiles.append(tile)
-                else:
-                    errors += 1
-                    log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
-            except OSError:
-                if i==0:
-                    log_sig_warn('identify command not found, unable to detect bad JPEG tiles', sigevent_url)
-                goodtiles.append(tile)
-            except IndexError:
-                log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+            continue
+
+        try:
+            result = check_jpeg(tile):
+        except IOError:
+            log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
+        if not result:
+            errors += 1
+            log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
+            continue
+        
+        goodtiles.append(tile)
+        
     alltiles = goodtiles       
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
