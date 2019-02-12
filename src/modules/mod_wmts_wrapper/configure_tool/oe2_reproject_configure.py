@@ -374,7 +374,7 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
         'time_enabled':
         any(
             len(dimension) for dimension in layer_xml.findall('{*}Dimension')
-            if dimension.findtext('{*}Identifier') == 'time'),
+            if dimension.findtext('{*}Identifier') == 'Time'),
         'tilematrixset':
         reproj_tms,
         'src_size_x':
