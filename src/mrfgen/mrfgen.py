@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/bin/env python
 
 # Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -1275,26 +1275,23 @@ else: # Default to png
 goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     for i, tile in enumerate(alltiles):
-        # Create the identify command.
-        identify_command_list=['identify', '-verbose', tile]
         if ".mrf" in tile or ".vrt" in tile: # ignore MRF and VRT
             goodtiles.append(tile)
-        else:
-            # Execute identify.
-            try:
-                identify_process = subprocess.Popen(identify_command_list, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                identify_process.wait()
-                if 'DirectClass' in identify_process.stdout.read():
-                    goodtiles.append(tile)
-                else:
-                    errors += 1
-                    log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
-            except OSError:
-                if i==0:
-                    log_sig_warn('identify command not found, unable to detect bad JPEG tiles', sigevent_url)
-                goodtiles.append(tile)
-            except IndexError:
-                log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+            continue
+
+        try:
+            img = gdal.Open(tile)
+        except RuntimeError as e:
+            log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+            
+        
+        if img.RasterCount == 1:
+            errors += 1
+            log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
+            continue
+
+        goodtiles.append(tile)
+        
     alltiles = goodtiles       
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
