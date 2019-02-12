@@ -38,7 +38,7 @@ docker run -d --rm --name onearth-tile-services --hostname onearth-tile-services
 docker run -d --rm --name onearth-capabilities --hostname onearth-capabilities --net oe2 -p 8080:80 nasagibs/onearth-capabilities:$OE_VERSION
 
 # Allow other services to load before starting reproject and wms
-sleep 10
+sleep 20
 
 # Run onearth-reproject using port 8081 for httpd
 docker run -d --rm --name onearth-reproject --hostname onearth-reproject --net oe2 -p 8081:80 nasagibs/onearth-reproject:$OE_VERSION
