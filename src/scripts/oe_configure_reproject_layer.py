@@ -153,9 +153,13 @@ def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=Fal
 def get_proj_bbox(epsg_code):
     if epsg_code == '4326':
         return [90.0, -180.0, -90.0, 180.0]
-    if epsg_code == '3857':
+    elif epsg_code == '3857':
         return [85.06, -180.0, -85.06, 180.0]
-    print "WARNING: unsupported <TargetEpsgCode> specified ({}). Only 4326 and 3857 are supported.".format(epsg_code)
+    elif epsg_code == '3413':
+        return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
+    elif epsg_code == '3031':
+        return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
+    print "WARNING: unsupported <TargetEpsgCode> specified ({}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code)
     return None
 
 
@@ -163,7 +167,7 @@ def make_gdal_tms_xml(layer, bands, src_epsg):
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
 
     bbox = map(str, get_bbox_for_proj_string(
-        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=src_epsg != '4326'))
+        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
 
     resource_url = layer.find('{*}ResourceURL')
     template_string = resource_url.get('template')
@@ -187,12 +191,12 @@ def make_gdal_tms_xml(layer, bands, src_epsg):
         tile_levels = TILE_LEVELS[tms]
     etree.SubElement(data_window_element, 'TileLevel').text = tile_levels
     etree.SubElement(data_window_element,
-                     'TileCountX').text = '2' if src_epsg == '4326' else '1'
+                     'TileCountX').text = '2' if src_epsg in ['4326','3413','3031'] else '1'
     etree.SubElement(data_window_element, 'TileCountY').text = '1'
     etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
     etree.SubElement(out_root, 'Projection').text = 'EPSG:' + src_epsg
-    tile_size = '512' if src_epsg == '4326' else '256'
+    tile_size = '512' if src_epsg in ['4326','3413','3031'] else '256'
     etree.SubElement(out_root, 'BlockSizeX').text = tile_size
     etree.SubElement(out_root, 'BlockSizeY').text = tile_size
     etree.SubElement(out_root, 'BandsCount').text = str(bands)
@@ -325,79 +329,87 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             mssg = 'no twms reproject endpoint specified in ' + environment_config_path
             errors.append(asctime() + " " + mssg)
             log_sig_err(mssg, sigevent_url)
-    else:
+    elif wmts or twms:
         log_sig_exit('ERROR', 'no ReprojectEndpoint specified in ' +
                      environment_config_path, sigevent_url)
 
-    wmts_service_url = next(elem.text for elem in environment_xml.findall(
-        'ServiceURL') if elem.get('service') == 'wmts')
-    if not wmts_service_url:
-        mssg = 'no wmts service URL specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
+    if wmts:
+        wmts_service_url = next(elem.text for elem in environment_xml.findall(
+            'ServiceURL') if elem.get('service') == 'wmts')
+        if not wmts_service_url:
+            mssg = 'no wmts service URL specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
 
-    wmts_base_endpoint = next(elem.text for elem in environment_xml.findall(
-        'ReprojectLayerConfigLocation') if elem.get('service') == 'wmts')
-    if not wmts_base_endpoint:
-        mssg = 'no wmts GC URL specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
+        wmts_base_endpoint = next(elem.text for elem in environment_xml.findall(
+            'ReprojectLayerConfigLocation') if elem.get('service') == 'wmts')
+        if not wmts_base_endpoint:
+            mssg = 'no wmts GC URL specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
 
-    if len(environment_xml.findall('ReprojectApacheConfigLocation')) > 1:
-        wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall(
-            'ReprojectApacheConfigLocation') if elem.get('service') == 'wmts')
-        twms_apache_config_location_elem = next(elem for elem in environment_xml.findall(
-            'ReprojectApacheConfigLocation') if elem.get('service') == 'twms')
-    else:
-        log_sig_exit('ERROR', 'ReprojectApacheConfigLocation missing in ' +
-                     environment_config_path, sigevent_url)
-    wmts_apache_config_location = wmts_apache_config_location_elem.text
-    if not wmts_apache_config_location:
-        mssg = 'no wmts Apache config location specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-    wmts_apache_config_basename = wmts_apache_config_location_elem.get(
-        'basename')
-    if not wmts_apache_config_basename:
-        mssg = 'no wmts Apache config basename specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
+        if len(environment_xml.findall('ReprojectApacheConfigLocation')) > 1:
+            wmts_apache_config_location_elem = next(elem for elem in environment_xml.findall(
+                'ReprojectApacheConfigLocation') if elem.get('service') == 'wmts')
+        else:
+            log_sig_exit('ERROR', 'ReprojectApacheConfigLocation missing in ' +
+                         environment_config_path, sigevent_url)
 
-    twms_base_endpoint = next(elem.text for elem in environment_xml.findall(
-        'ReprojectLayerConfigLocation') if elem.get('service') == 'twms')
-    if not twms_base_endpoint:
-        mssg = 'no twms GC URL specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-    if os.path.split(os.path.dirname(twms_base_endpoint))[1] == '.lib':
-        twms_base_endpoint = os.path.split(
-            os.path.dirname(twms_base_endpoint))[0]
+        wmts_apache_config_location = wmts_apache_config_location_elem.text
+        if not wmts_apache_config_location:
+            mssg = 'no wmts Apache config location specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+        wmts_apache_config_basename = wmts_apache_config_location_elem.get(
+            'basename')
+        if not wmts_apache_config_basename:
+            mssg = 'no wmts Apache config basename specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
 
-    twms_apache_config_location = twms_apache_config_location_elem.text
-    if not twms_apache_config_location:
-        mssg = 'no twms Apache config location specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
-    twms_apache_config_basename = twms_apache_config_location_elem.get(
-        'basename')
-    if not twms_apache_config_basename:
-        mssg = 'no twms Apache config basename specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
+        wmts_service_url = next(elem.text for elem in environment_xml.findall(
+            'ServiceURL') if elem.get('service') == 'wmts')
+        if not wmts_service_url and create_gc:
+            mssg = 'no WMTS ServiceURL specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
 
-    wmts_service_url = next(elem.text for elem in environment_xml.findall(
-        'ServiceURL') if elem.get('service') == 'wmts')
-    if not wmts_service_url and create_gc:
-        mssg = 'no WMTS ServiceURL specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
+    if twms:
+        twms_base_endpoint = next(elem.text for elem in environment_xml.findall(
+            'ReprojectLayerConfigLocation') if elem.get('service') == 'twms')
+        if not twms_base_endpoint:
+            mssg = 'no twms GC URL specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+        if twms_base_endpoint and os.path.split(os.path.dirname(twms_base_endpoint))[1] == '.lib':
+            twms_base_endpoint = os.path.split(
+                os.path.dirname(twms_base_endpoint))[0]
 
-    twms_service_url = next(elem.text for elem in environment_xml.findall(
-        'ServiceURL') if elem.get('service') == 'twms')
-    if not twms_service_url and create_gc:
-        mssg = 'no TWMS ServiceURL specified'
-        warnings.append(asctime() + " " + mssg)
-        log_sig_warn(mssg, sigevent_url)
+        if len(environment_xml.findall('ReprojectApacheConfigLocation')) > 1:
+            twms_apache_config_location_elem = next(elem for elem in environment_xml.findall(
+                'ReprojectApacheConfigLocation') if elem.get('service') == 'twms')
+        else:
+            log_sig_exit('ERROR', 'ReprojectApacheConfigLocation missing in ' +
+                         environment_config_path, sigevent_url)
+
+        twms_apache_config_location = twms_apache_config_location_elem.text
+        if not twms_apache_config_location:
+            mssg = 'no twms Apache config location specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+        twms_apache_config_basename = twms_apache_config_location_elem.get(
+            'basename')
+        if not twms_apache_config_basename:
+            mssg = 'no twms Apache config basename specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+
+        twms_service_url = next(elem.text for elem in environment_xml.findall(
+            'ServiceURL') if elem.get('service') == 'twms')
+        if not twms_service_url and create_gc:
+            mssg = 'no TWMS ServiceURL specified'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
 
     if create_mapfile:
         # Check for all required config info
@@ -474,8 +486,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             continue
         if layer_include_list and identifier not in layer_include_list:
             continue
-        layer_endpoint = os.path.join(wmts_base_endpoint, identifier)
-        layer_style_endpoint = os.path.join(layer_endpoint, 'default')
         layer_tms_apache_configs = []
         bands = 3
 
@@ -483,6 +493,12 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         tms_list = [elem for elem in tilematrixsets if elem.findtext(
             ows + 'Identifier') == layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')]
         layer_tilematrixsets = sorted(tms_list, key=get_max_scale_dem)
+
+        #HACK
+        if len(layer_tilematrixsets) == 0:
+           print("No layer_tilematrixsets. Skipping layer: " + identifier)
+           continue
+
         out_tilematrixsets = []
         for tilematrixset in layer_tilematrixsets:
             # Start by getting the source info we need to configure this layer
@@ -593,6 +609,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 break
 
             if wmts:
+                layer_endpoint = os.path.join(wmts_base_endpoint, identifier)
+                layer_style_endpoint = os.path.join(layer_endpoint, 'default')
+
                 # Write the source and reproject (output) configuration files
                 wmts_staging_layer_path = os.path.join(
                     wmts_staging_location, identifier)
@@ -965,9 +984,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             if not target_epsg:
                 target_epsg = src_epsg
             target_bbox = map(
-                str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=src_epsg != '4326'))
-            target_bbox = [target_bbox[1], target_bbox[
-                0], target_bbox[3], target_bbox[2]]
+                str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
+            target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
 
             mapfile_snippet = bulk_replace(
                 MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
