@@ -559,6 +559,10 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 		get_param(args,"height",height);
 		get_param(args,"exceptions",exceptions);
 
+		if (strlen(exceptions)) {
+			exceptions = apr_psprintf(r->pool, "&EXCEPTIONS=%s", exceptions);
+		}
+
 		// Handle URL encoded commas in layers
 		while (ap_strstr(layers, "%2C")) {
 			if (const char *replacefield = ap_strstr(layers, "%2C")) {
@@ -701,8 +705,8 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    }
 
 	    args = cfg->disable_oemstime
-	    	? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s&EXCEPTIONS=%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
-			: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s&EXCEPTIONS=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,layer_times,layer_years,maplayerops);
+	    	? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
+			: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,layer_times,layer_years,maplayerops);
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);
