@@ -1066,6 +1066,14 @@ else:
             merge = True
     except:
         merge = False
+    # strict_palette, defaults to False
+    try:
+        if get_dom_tag_value(dom, 'mrf_strict_palette') == "false":
+            strict_palette = False
+        else:
+            strict_palette = True
+    except:
+        strict_palette = False
     # mrf data
     try:
         mrf_data_scale = get_dom_tag_value(dom, 'mrf_data_scale')
@@ -1170,6 +1178,7 @@ log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
+log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['config mrf_data_scale:          ', mrf_data_scale]))
@@ -1392,6 +1401,28 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             else:
                 log_info_mssg("Paletted image verified")
 
+            # ONEARTH-348 - Validate the palette, but don't do anything about it yet
+            # For now, we won't enforce any issues, but will log issues validating imagery
+            if strict_palette:
+               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v ', '-c', colormap, '-i', alltiles[i]]
+      
+               # Log the oe_validate_palette.py command.
+               log_the_command(oe_validate_palette_command_list)
+         
+               # Execute oe_validate_palette.py 
+               try:
+                  oeValidatePalette = subprocess.Popen(oe_validate_palette_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                  oeValidatePalette.wait()
+   
+                  if oeValidatePalette.returncode != None:
+                      if  oeValidatePalette.returncode != 0:
+                          mssg = "oe_validate_palette.py: " + str(oeValidatePalette.returncode) + " colors in image not found in color table"
+                          log_sig_warn(mssg, sigevent_url)
+   
+               except OSError:
+                  log_sig_warn("Error executing oe_validate_palette.py", sigevent_url)
+                
+                    
         # remove tif temp tiles
         if temp_tile != None:
             remove_file(temp_tile)
