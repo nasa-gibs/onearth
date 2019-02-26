@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/bin/env python
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -22,15 +22,14 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 oe_create_mvt_mrt -- A utility to create MRFs that contain MVT tiles. This can be run either from the command line,
 or by using the create_vector_mrf() function in another script.
@@ -52,8 +51,22 @@ from osgeo import osr
 import decimal
 import re
 
+
 # Main tile-creation function.
-def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, target_x, target_y, target_extents, tile_size, overview_levels, projection_str, filter_list, feature_reduce_rate=2.5, cluster_reduce_rate=2, debug=False):
+def create_vector_mrf(input_file_path,
+                      output_path,
+                      mrf_prefix,
+                      layer_name,
+                      target_x,
+                      target_y,
+                      target_extents,
+                      tile_size,
+                      overview_levels,
+                      projection_str,
+                      filter_list,
+                      feature_reduce_rate=2.5,
+                      cluster_reduce_rate=2,
+                      debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
 
@@ -90,14 +103,15 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
             overview_levels.append(2**exp)
             exp += 1
 
-    tile_matrices = get_tms(target_x, target_y, target_extents, tile_size, overview_levels, proj)
+    tile_matrices = get_tms(target_x, target_y, target_extents, tile_size,
+                            overview_levels, proj)
 
     # Open MRF data and index files and generate the MRF XML
     fidx = open(os.path.join(output_path, mrf_prefix + '.idx'), 'w+')
     fout = open(os.path.join(output_path, mrf_prefix + '.pvt'), 'w+')
     notile = struct.pack('!QQ', 0, 0)
     pvt_offset = 0
-    
+
     mrf_dom = build_mrf_dom(tile_matrices, target_extents, tile_size, proj)
     with open(os.path.join(output_path, mrf_prefix) + '.mrf', 'w+') as f:
         f.write(mrf_dom.toprettyxml())
@@ -109,15 +123,18 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
         print 'Processing ' + input_file
         with fiona.open(input_file) as shapefile:
             try:
-                spatial_db = rtree.index.Index(rtree_index_generator(list(shapefile), filter_list))
+                spatial_db = rtree.index.Index(
+                    rtree_index_generator(list(shapefile), filter_list))
             except rtree.core.RTreeError as e:
-                print 'ERROR -- problem importing feature data. If you have filters configured, the source dataset may have no features that pass. Err: {0}'.format(e)
+                print 'ERROR -- problem importing feature data. If you have filters configured, the source dataset may have no features that pass. Err: {0}'.format(
+                    e)
                 sys.exit()
             spatial_dbs.append(spatial_db)
             source_schema = shapefile.schema['geometry']
             source_schemas.append(source_schema)
             if debug:
-                print 'Points to process: ' + str(spatial_db.count(spatial_db.bounds))
+                print 'Points to process: ' + str(
+                    spatial_db.count(spatial_db.bounds))
 
     # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right, top-bottom and write them
     # successively to the MRF.
@@ -127,46 +144,76 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
         for idx, spatial_db in enumerate(spatial_dbs):
             # We do general point rate reduction randomly, deleting those items from the
             # spatial index. The highest zoom level is never reduced.
-            if source_schemas[idx] == 'Point' and feature_reduce_rate and z != len(tile_matrices) - 1:
+            if source_schemas[
+                    idx] == 'Point' and feature_reduce_rate and z != len(
+                        tile_matrices) - 1:
                 feature_count = spatial_dbs[idx].count(spatial_dbs[idx].bounds)
-                num_points_to_delete = int(feature_count - math.floor(feature_count / feature_reduce_rate))
+                num_points_to_delete = int(feature_count - math.floor(
+                    feature_count / feature_reduce_rate))
                 if debug:
-                    print 'Deleting ' + str(num_points_to_delete) + ' points from dataset'
-                for feature in random.sample([feature for feature in spatial_dbs[idx].intersection(spatial_dbs[idx].bounds, objects=True)], num_points_to_delete):
+                    print 'Deleting ' + str(
+                        num_points_to_delete) + ' points from dataset'
+                for feature in random.sample([
+                        feature for feature in spatial_dbs[idx].intersection(
+                            spatial_dbs[idx].bounds, objects=True)
+                ], num_points_to_delete):
                     spatial_dbs[idx].delete(feature.id, feature.bbox)
-    
+
             # Here we're culling points that are less than a pixel away from each other. We use a queue to keep track of them and avoid looking at points twice.
-            if source_schemas[idx] == 'Point' and cluster_reduce_rate and z != len(tile_matrices) - 1:
-                feature_queue = [item for item in spatial_dbs[idx].intersection(spatial_dbs[idx].bounds, objects=True)]
+            if source_schemas[
+                    idx] == 'Point' and cluster_reduce_rate and z != len(
+                        tile_matrices) - 1:
+                feature_queue = [
+                    item for item in spatial_dbs[idx].intersection(
+                        spatial_dbs[idx].bounds, objects=True)
+                ]
                 while feature_queue:
                     feature = feature_queue.pop()
-                    sub_pixel_bbox = (feature.bbox[0] - tile_matrix['resolution'],
-                                      feature.bbox[1] - tile_matrix['resolution'],
-                                      feature.bbox[2] + tile_matrix['resolution'],
-                                      feature.bbox[3] + tile_matrix['resolution'])
-                    nearby_points = [item for item in spatial_dbs[idx].intersection(sub_pixel_bbox, objects=True) if item.id != feature.id]
+                    sub_pixel_bbox = (
+                        feature.bbox[0] - tile_matrix['resolution'],
+                        feature.bbox[1] - tile_matrix['resolution'],
+                        feature.bbox[2] + tile_matrix['resolution'],
+                        feature.bbox[3] + tile_matrix['resolution'])
+                    nearby_points = [
+                        item for item in spatial_dbs[idx].intersection(
+                            sub_pixel_bbox, objects=True)
+                        if item.id != feature.id
+                    ]
                     if nearby_points:
                         # We reduce the number of clustered points to 1/nth of their previous number. (user-selectable)
                         # All the nearby points are then dropped from the queue.
-                        for point in random.sample(nearby_points, len(nearby_points) - int(math.floor(len(nearby_points) ** (1 / float(cluster_reduce_rate))))):
+                        for point in random.sample(
+                                nearby_points,
+                                len(nearby_points) - int(
+                                    math.floor(
+                                        len(nearby_points)**
+                                        (1 / float(cluster_reduce_rate))))):
                             spatial_dbs[idx].delete(point.id, point.bbox)
                         for point in nearby_points:
-                            [feature_queue.remove(item) for item in feature_queue if item.id == point.id]
+                            [
+                                feature_queue.remove(item)
+                                for item in feature_queue
+                                if item.id == point.id
+                            ]
 
         # Start making tiles. We figure out the tile's bbox, then search for all the features that intersect with that bbox,
         # then turn the resulting list into an MVT tile and write the tile.
         for y in xrange(tile_matrix['matrix_height']):
             for x in xrange(tile_matrix['matrix_width']):
                 # Get tile bounds
-                min_x = tile_matrix['matrix_extents'][0] + (x * tile_matrix['tile_size_in_map_units'])
-                max_y = tile_matrix['matrix_extents'][3] - (y * tile_matrix['tile_size_in_map_units'])
+                min_x = tile_matrix['matrix_extents'][0] + (
+                    x * tile_matrix['tile_size_in_map_units'])
+                max_y = tile_matrix['matrix_extents'][3] - (
+                    y * tile_matrix['tile_size_in_map_units'])
                 max_x = min_x + tile_matrix['tile_size_in_map_units']
                 min_y = max_y - tile_matrix['tile_size_in_map_units']
                 tile_bbox = shapely.geometry.box(min_x, min_y, max_x, max_y)
 
                 # MVT tiles usually have a buffer around the edges for rendering purposes
                 tile_buffer = 5 * (tile_matrix['tile_size_in_map_units'] / 256)
-                tile_buffer_bbox = shapely.geometry.box(min_x - tile_buffer, min_y - tile_buffer, max_x + tile_buffer, max_y + tile_buffer)
+                tile_buffer_bbox = shapely.geometry.box(
+                    min_x - tile_buffer, min_y - tile_buffer,
+                    max_x + tile_buffer, max_y + tile_buffer)
 
                 if debug:
                     print "Processing tile: {0}/{1}/{2}\r".format(z, x, y)
@@ -175,35 +222,39 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
                 # Iterate through the shapefile geometry and grab anything in this tile's bounds
                 tile_features = []
                 for spatial_db in spatial_dbs:
-                    for feature in [item.object for item in spatial_db.intersection(tile_buffer_bbox.bounds, objects=True)]:
+                    for feature in [
+                            item.object for item in spatial_db.intersection(
+                                tile_buffer_bbox.bounds, objects=True)
+                    ]:
                         geometry = shapely.geometry.shape(feature['geometry'])
                         # If the feature isn't fully contained in the tile bounds, we need to clip it.
-                        if not shapely.geometry.shape(feature['geometry']).within(tile_buffer_bbox):
+                        if not shapely.geometry.shape(
+                                feature['geometry']).within(tile_buffer_bbox):
                             geometry = tile_buffer_bbox.intersection(geometry)
                         new_feature = {
                             'geometry': geometry,
                             'properties': feature['properties']
                         }
                         tile_features.append(new_feature)
-                
+
                 # Create MVT tile from the features in this tile (Only doing single layers for now)
-                if tile_features:
-                    new_layer = {
-                        'name': layer_name,
-                        'features': tile_features
-                    }
-                    # Have to change the default rounding if in Python 2.6 due to Decimal rounding issues.
-                    if sys.version_info < (2, 7):
-                        round_fn = py_26_round_fn
-                    else:
-                        round_fn = None
-                    mvt_tile = mapbox_vector_tile.encode([new_layer], quantize_bounds=tile_bbox.bounds, y_coord_down=False, round_fn=round_fn)
+                new_layer = {'name': layer_name, 'features': tile_features}
+                # Have to change the default rounding if in Python 2.6 due to Decimal rounding issues.
+                if sys.version_info < (2, 7):
+                    round_fn = py_26_round_fn
                 else:
-                    mvt_tile = None
+                    round_fn = None
+                mvt_tile = mapbox_vector_tile.encode(
+                    [new_layer],
+                    quantize_bounds=tile_bbox.bounds,
+                    y_coord_down=False,
+                    round_fn=round_fn)
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    mvt_filename = os.path.join(os.getcwd(), 'tiles/test_{0}_{1}_{2}.mvt'.format(z, x, y))
+                    mvt_filename = os.path.join(
+                        os.getcwd(), 'tiles/test_{0}_{1}_{2}.mvt'.format(
+                            z, x, y))
                     with open(mvt_filename, 'w+') as f:
                         f.write(mvt_tile)
 
@@ -214,10 +265,11 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
                     gzip_obj.write(mvt_tile)
                     gzip_obj.close()
                     zipped_tile_data = out.getvalue()
-                    tile_index = struct.pack('!QQ', pvt_offset, len(zipped_tile_data))
+                    tile_index = struct.pack('!QQ', pvt_offset,
+                                             len(zipped_tile_data))
                     pvt_offset += len(zipped_tile_data)
                     fout.write(zipped_tile_data)
-                    
+
                 else:
                     tile_index = notile
                 fidx.write(tile_index)
@@ -228,7 +280,6 @@ def create_vector_mrf(input_file_path, output_path, mrf_prefix, layer_name, targ
 
 
 # UTILITY FUNCTIONS
-
 """
 mapbox_vector_tile module is not compatible with Python 2.6's decimal handling, so we
 use a modified rounding function if necessary.
@@ -292,9 +343,10 @@ def get_tms(target_x, target_y, extents, tile_size, o_levels, proj):
             tms['tile_size_in_map_units'] = max_x / tms['matrix_width']
         else:
             tms['matrix_extents'] = extents
-            tms['tile_size_in_map_units'] = (extents[2] - extents[0]) / tms['matrix_width']
+            tms['tile_size_in_map_units'] = (
+                extents[2] - extents[0]) / tms['matrix_width']
             tms['resolution'] = width_in_meters / x_dim
-        
+
         tile_matrices.append(tms)
 
     return tile_matrices
@@ -314,11 +366,13 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
     mrf_dom = mrf_impl.createDocument(None, 'MRF_META', None)
     mrf_meta = mrf_dom.documentElement
     raster_node = mrf_dom.createElement('Raster')
-    
+
     # Create <Size> element
     size_node = mrf_dom.createElement('Size')
-    size_node.setAttribute('x', str(tile_matrices[-1]['matrix_width'] * tile_size))
-    size_node.setAttribute('y', str(tile_matrices[-1]['matrix_height'] * tile_size))
+    size_node.setAttribute('x',
+                           str(tile_matrices[-1]['matrix_width'] * tile_size))
+    size_node.setAttribute('y',
+                           str(tile_matrices[-1]['matrix_height'] * tile_size))
     raster_node.appendChild(size_node)
 
     # Create <PageSize> element
@@ -366,25 +420,33 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 
 # UTILITY STUFF
 
+
 # This is the recommended way of building an rtree index.
 def rtree_index_generator(features, filter_list):
     for idx, feature in enumerate(features):
         try:
             if len(filter_list) == 0 or passes_filters(feature, filter_list):
-                yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)            
+                yield (idx, shapely.geometry.shape(feature['geometry']).bounds,
+                       feature)
         except ValueError as e:
             print "WARN - " + str(e)
 
 
 def passes_filters(feature, filter_list):
-    return any(map(lambda filter_block: filter_block_func(feature, filter_block), filter_list))
+    return any(
+        map(lambda filter_block: filter_block_func(feature, filter_block),
+            filter_list))
 
 
 def filter_block_func(feature, filter_block):
     if filter_block['logic'].lower() == "and":
-        return all(map(lambda comp: filter_func(feature, comp), filter_block['filters']))
+        return all(
+            map(lambda comp: filter_func(feature, comp),
+                filter_block['filters']))
     else:
-        return any(map(lambda comp: filter_func(feature, comp), filter_block['filters']))
+        return any(
+            map(lambda comp: filter_func(feature, comp),
+                filter_block['filters']))
 
 
 def filter_func(feature, comparison):
@@ -394,5 +456,6 @@ def filter_func(feature, comparison):
     if regexp:
         result = regexp.search(property_value)
     else:
-        result = feature['properties'].get(comparison['name']) == comparison['value']
+        result = feature['properties'].get(
+            comparison['name']) == comparison['value']
     return result if equality else not result
