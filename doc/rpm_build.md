@@ -11,7 +11,6 @@ If a new RPM build is desired, these instructions describe how to build the foll
 * onearth-config: OnEarth configuration tools
 * onearth-demo: A simple demo layer for the OnEarth Apache module
 * onearth-mapserver: Apache modules that leverage MapServer for WMS and WFS services
-* onearth-metrics: OnEarth custom log generator for creating metrics
 * onearth-mrfgen: A tool used to help automate the generation of MRF files
 * onearth-vectorgen: A tool used to help organize vectors files and generate vector tiles
 * onearth-tools: Auxiliary tools for OnEarth such as a legend generator
@@ -115,5 +114,5 @@ make download onearth-rpm
 To install the OnEarth RPMs:
 
 ```Shell
-sudo yum -y install dist/onearth-*.x86_64.rpm dist/onearth-config-*.noarch.rpm dist/onearth-demo-*.noarch.rpm dist/onearth-metrics-*.noarch.rpm dist/onearth-mrfgen-*.x86_64.rpm dist/onearth-mapserver-*.x86_64.rpm dist/onearth-vectorgen-*.x86_64.rpm dist/onearth-tools-*.noarch.rpm
+sudo yum -y install dist/onearth-*.x86_64.rpm dist/onearth-config-*.noarch.rpm dist/onearth-demo-*.noarch.rpm dist/onearth-mrfgen-*.x86_64.rpm dist/onearth-mapserver-*.x86_64.rpm dist/onearth-vectorgen-*.x86_64.rpm dist/onearth-tools-*.noarch.rpm
 ```

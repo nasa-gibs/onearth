@@ -44,6 +44,7 @@ limitations under the License.
         <xs:element ref="BoundingBox" minOccurs="0"/>
         <xs:element ref="VectorType" minOccurs="0"/>
         <xs:element ref="VectorStyleFile" minOccurs="0"/>
+        <xs:element ref="TileMatrixSetLimitsId" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -148,4 +149,5 @@ limitations under the License.
   </xs:element>
   <xs:element name="VectorType" type="xs:string"/>
   <xs:element name="VectorStyleFile" type="xs:string"/>
+  <xs:element name="TileMatrixSetLimitsId" type="xs:string"/>
 </xs:schema>

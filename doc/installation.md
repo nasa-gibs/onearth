@@ -65,7 +65,6 @@ For manual installation or to install or another OS, please refer to the specifi
 * [mrfgen](../src/mrfgen/README.md)
 * [OnEarth Layer Configurator](../src/layer_config/README.md)
 * [OnEarth Legend Generator](../src/generate_legend/README.md)
-* [OnEarth Metrics](../src/onearth_logs/README.md)
 * [OnEarth Scripts](../src/scripts/README.md)
 * [vectorgen](../src/vectorgen/README.md)
 
@@ -133,12 +132,6 @@ OnEarth Layer Configurator
 /usr/bin/oe_generate_legend.py
 /usr/bin/oe_generate_empty_tile.py
 /etc/onearth/config/*
-```
-
-OnEarth Metrics
-```
-/usr/bin/onearth_metrics
-/etc/onearth/metrics/*
 ```
 
 OnEarth Demo

@@ -33,7 +33,7 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.3.4
+ * Version 1.3.5
  */
 
 #include "mod_oems.h"
@@ -550,12 +550,18 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 		char *maplayerops = (char*)apr_pcalloc(r->pool,max_chars);
 		char *layer_years = (char*)apr_pcalloc(r->pool,max_chars);
 		char *layer_times = (char*)apr_pcalloc(r->pool,max_chars);
+		char *exceptions = (char*)apr_pcalloc(r->pool,max_chars);
 
 		get_param(args,"transparent",transparent);
 		get_param(args,"layers",layers);
 		get_param(args,"styles",styles);
 		get_param(args,"width",width);
 		get_param(args,"height",height);
+		get_param(args,"exceptions",exceptions);
+
+		if (strlen(exceptions)) {
+			exceptions = apr_psprintf(r->pool, "&EXCEPTIONS=%s", exceptions);
+		}
 
 		// Handle URL encoded commas in layers
 		while (ap_strstr(layers, "%2C")) {
@@ -699,8 +705,8 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    }
 
 	    args = cfg->disable_oemstime
-	    	? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,time,maplayerops)
-			: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,layer_times,layer_years,maplayerops);
+	    	? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
+			: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,layer_times,layer_years,maplayerops);
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);

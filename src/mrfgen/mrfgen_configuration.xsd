@@ -45,7 +45,9 @@ limitations under the License.
         <xs:element ref="quality_prec" minOccurs="0"/>
         <xs:element ref="mrf_name" minOccurs="0"/>
         <xs:element ref="mrf_nocopy" minOccurs="0"/>
+        <xs:element ref="mrf_noaddo" minOccurs="0"/>
         <xs:element ref="mrf_merge" minOccurs="0"/>
+        <xs:element ref="mrf_strict_palette" minOccurs="0"/>
         <xs:element ref="mrf_z_levels" minOccurs="0"/>
         <xs:element ref="mrf_z_key" minOccurs="0"/>
         <xs:element ref="mrf_data_scale" minOccurs="0"/>
@@ -146,7 +148,9 @@ limitations under the License.
   <xs:element name="quality_prec" type="xs:float" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
   <xs:element name="mrf_nocopy" type="xs:boolean" nillable="true" default="true"/>
-  <xs:element name="mrf_merge" type="xs:boolean" nillable="true" default="true"/>
+  <xs:element name="mrf_noaddo" type="xs:boolean" nillable="true" default="false"/>
+  <xs:element name="mrf_merge" type="xs:boolean" nillable="true" default="false"/>
+  <xs:element name="mrf_strict_palette" type="xs:boolean" nillable="true" default="false"/>
   <xs:element name="mrf_z_levels" type="xs:integer" nillable="true"/>
   <xs:element name="mrf_z_key">
     <xs:complexType>

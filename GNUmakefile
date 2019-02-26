@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ONEARTH_VERSION=1.3.4
+ONEARTH_VERSION=1.3.5
 
 PREFIX=/usr/local
 LIB_PREFIX=/usr
@@ -241,8 +241,6 @@ onearth-install:
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_configure_layer
 	install -m 755 src/empty_tile/oe_generate_empty_tile.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_generate_empty_tile.py
-	install -m 755 src/onearth_logs/onearth_logs.py  \
-		-D $(DESTDIR)/$(PREFIX)/bin/onearth_metrics
 	install -m 755 src/generate_legend/oe_generate_legend.py  \
 		-D $(DESTDIR)/$(PREFIX)/bin/oe_generate_legend.py
 	install -m 755 src/mrfgen/mrfgen.py  \
@@ -315,12 +313,6 @@ onearth-install:
 		$(DESTDIR)/etc/onearth/config
 	install -m 755 -d $(DESTDIR)/etc/onearth/config/headers
 
-	install -m 755 -d $(DESTDIR)/etc/onearth/metrics
-	cp -r src/onearth_logs/logs.* \
-		$(DESTDIR)/etc/onearth/metrics
-	cp -r src/onearth_logs/tilematrixsetmap.* \
-		$(DESTDIR)/etc/onearth/metrics
-
 	install -m 755 -d $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	cp -r src/demo/* $(DESTDIR)/$(PREFIX)/share/onearth/demo
 	
@@ -375,7 +367,7 @@ onearth-artifact: onearth-clean
 		--transform="s,^,onearth-$(ONEARTH_VERSION)/," \
 		src/modules/mod_onearth src/modules/mod_oetwms src/modules/mod_oems src/modules/mod_oemstime \
 		src/modules/mod_receive/src src/modules/mod_reproject/src src/modules/mod_twms/src src/modules/mod_wmts_wrapper \
-		src/scripts src/colormaps src/vectorgen src/layer_config src/mrfgen src/cgi src/demo src/test src/onearth_logs \
+		src/scripts src/colormaps src/vectorgen src/layer_config src/mrfgen src/cgi src/demo src/test \
 		src/generate_legend src/empty_tile GNUmakefile
 
 #-----------------------------------------------------------------------------

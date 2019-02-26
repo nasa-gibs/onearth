@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TileMatrixSetLimitDefinitions>
+	<TileMatrixSetLimits id="MODIS_Aqua">
+		<TileMatrixLimits>
+			<TileMatrix>2</TileMatrix>
+			<MinTileRow>4</MinTileRow>
+			<MaxTileRow>8</MaxTileRow>
+			<MinTileCol>4</MinTileCol>
+			<MaxTileCol>8</MaxTileCol>
+		</TileMatrixLimits>
+	</TileMatrixSetLimits>
+</TileMatrixSetLimitDefinitions>

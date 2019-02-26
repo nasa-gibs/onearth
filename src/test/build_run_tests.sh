@@ -26,7 +26,7 @@ git checkout develop
 sudo yum-builddep -y deploy/onearth/onearth.spec
 make download onearth-rpm
 # sudo yum -y remove numpy
-sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-metrics-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm
+sudo yum -y install dist/onearth-*.el6.x86_64.rpm dist/onearth-config-*.el6.noarch.rpm dist/onearth-demo-*.el6.noarch.rpm dist/onearth-mrfgen-*.el6.x86_64.rpm
 # yum -y remove gibs-gdal-devel
 sudo ldconfig -v
 

@@ -23,6 +23,7 @@ An XML configuration file exists for every OnEarth layer. This file is read by t
 - **Time** - The ISO 8601 time range for the layer. The tool may be configured to scan the file system to detect the the time (e.g., `<Time>DETECT</Time>`). See [Time Detection](time_detection.md) for details.
 - **VectorType** - Indicates the type of vector data if configuring a vector layer (i.e. Point, Polygon, etc.) that will be served via Mapserver. Must be a valid Shapefile data type.
 - **VectorStyleFile** - Vector layers being served via Mapserver won't rasterize unless style data is applied to them. This tag specifies a file that contains the CLASS/STYLE information that should be included in the layer's Mapserver configuration.
+- **TileMatrixSetLimitsId** - WMTS GetCapabilities files can be configured with a <TileMatrixSetLimits> element, which can be useful for sparse datasets where not all the tiles in a tile level contain data. Use this element to indicate the `id` of the `<TileMatrixSetLimits element>` you wish to use. By default, the `oe_configure_layer` tool looks for a TileMatrixSetLimits definition file in `$LCDIR`. Refer to the [example file](../src/demo/conf/tilematrixsetlimits.xml) to see how to configure TileMatrixSetLimit definitions.
 
 ##### Additional MRF fields
 
