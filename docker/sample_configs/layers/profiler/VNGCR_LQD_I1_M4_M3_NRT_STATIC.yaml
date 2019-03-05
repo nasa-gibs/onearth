@@ -16,7 +16,7 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   idx_path: "/onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx"
-  data_file_uri: "http://gitc-test-imagery.s3.amazonaws.com/VNGCR_LQD_I1-M4-M3_NRT.pjg"
+  data_file_uri: "{S3_URL}/profiler/"
   year_dir: false
   bbox: -180,-90,180,90
   empty_tile: "/onearth/empty_tiles/Blank_RGB_512.jpg"

@@ -30,5 +30,6 @@ if __name__ == "__main__":
         sys.exit(-2)
     newname = options.layer + '-' + date_str
     hprefix = get_hash_prefix(newname)
-    hashname = hprefix + '-' + newname + options.extension
+#     hashname = hprefix + '-' + newname + options.extension
+    hashname = newname + options.extension
     print hashname

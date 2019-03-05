@@ -15,7 +15,7 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   idx_path: "/onearth/idx/profiler/MOGCR_LQD_143_STD/"
-  data_file_uri: "http://gitc-test-imagery.s3.amazonaws.com"
+  data_file_uri: "{S3_URL}/profiler/"
   year_dir: false
   bbox: -180,-90,180,90
   empty_tile: "/onearth/empty_tiles/Blank_RGB_512.jpg"
