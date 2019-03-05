@@ -47,6 +47,7 @@ import math
 from urllib.parse import urlsplit, urlparse
 import png
 from io import BytesIO
+import time
 
 EARTH_RADIUS = 6378137.0
 
@@ -413,10 +414,27 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
 
 
 def get_gc_xml(source_gc_uri):
-    r = requests.get(source_gc_uri)
-    if r.status_code != 200:
-        print(f"Can't get source GetCapabilities file: {source_gc_uri}")
-        sys.exit()
+    attempt = 1
+    retries = 10
+    duration = 30 # in seconds
+    try:
+        r = requests.get(source_gc_uri)
+        if r.status_code != 200:
+            print(f"Can't get source GetCapabilities file: {source_gc_uri}")
+            sys.exit()
+    except:
+        while attempt < retries:
+            time.sleep(duration)
+            attempt = attempt + 1
+            try:
+                r = requests.get(source_gc_uri)
+                if r.status_code == 200:
+                    break
+            except:
+                print("Failed attempt " + str(attempt) + " to connect to " + source_gc_uri)
+        if attempt == retries:
+            print(f"Can't get source GetCapabilities file: {source_gc_uri}")
+            sys.exit()
 
     try:
         gc_xml = etree.fromstring(r.content)
