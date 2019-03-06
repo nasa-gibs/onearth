@@ -41,14 +41,15 @@ cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
 
 # Run reproject config tools
+sleep 10
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml
 
-echo 'Starting Apache server'
-/usr/sbin/httpd -k start
+echo 'Restarting Apache server'
+/usr/sbin/httpd -k restart
 sleep 2
 
 # Tail the apache logs
