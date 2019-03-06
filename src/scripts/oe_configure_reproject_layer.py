@@ -159,7 +159,7 @@ def get_proj_bbox(epsg_code):
         return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
     elif epsg_code == '3031':
         return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
-    print "WARNING: unsupported <TargetEpsgCode> specified ({}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code)
+    print "WARNING: unsupported <TargetEpsgCode> specified ({0}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code)
     return None
 
 
