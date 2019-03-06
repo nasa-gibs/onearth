@@ -46,4 +46,3 @@ RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
 WORKDIR /home/oe2/onearth/docker/tile_services
 CMD sh start_tile_services.sh $S3_URL $REDIS_HOST
-RUN cp -R /home/oe2/onearth/src/demo /var/www/html/

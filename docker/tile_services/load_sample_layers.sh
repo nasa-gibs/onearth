@@ -84,7 +84,6 @@ echo 'Starting Apache server'
 sleep 2
 
 # Data for oe-status
-cp oe2_status.conf /etc/httpd/conf.d
 mkdir -p /onearth/idx/oe-status/BlueMarble16km
 mkdir -p /onearth/layers/oe-status/BlueMarble16km
 cp ../test_imagery/BlueMarble16km*.idx /onearth/idx/oe-status/BlueMarble16km/
