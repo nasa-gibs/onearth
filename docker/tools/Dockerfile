@@ -1,14 +1,42 @@
-FROM lambci/lambda:build-provided
+FROM lambci/lambda:build-nodejs6.10
 
-# Install deps
-
+# Install GDAL
+WORKDIR /tmp
 RUN \
   touch /var/lib/rpm/* \
   && yum install -y epel-release
-RUN \
-    yum install -y gcc-c++-4.8.3 libtool-2.4.2 pkgconfig-0.27.1 libpng-devel-1.2.49 giflib-devel-4.1.6 libtiff-devel-4.0.3 \
-    jpackage-utils-1.7.5 jasper-devel-1.900.1 sqlite-devel-3.7.17 sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5 \
-    libxslt-devel-1.1.28 chrpath-0.13 zlib-devel-1.2.8 curl-devel-7.51.0 swig-2.0.10 doxygen-1.8.2 expat-devel-2.1.0 geos-3.4.2 geos-devel-3.4.2
+COPY gibs-gdal-2.4.0-1.el7.x86_64.rpm /tmp
+RUN yum install -y gibs-gdal-2.4.0-1.el7.x86_64.rpm
+COPY gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm /tmp
+RUN yum install -y gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm
+
+# Copy binaries and libs
+RUN mkdir /var/task/bin
+RUN cp /usr/bin/*mrf* /var/task/bin
+RUN cp /usr/bin/epsg_tr.py /var/task/bin
+RUN cp /usr/bin/esri2wkt.py /var/task/bin
+RUN cp /usr/bin/gcps2vec.py /var/task/bin
+RUN cp /usr/bin/gcps2wld.py /var/task/bin
+RUN cp /usr/bin/gdal* /var/task/bin
+RUN cp /usr/bin/gnmanalyse /var/task/bin
+RUN cp /usr/bin/gnmmanage /var/task/bin
+RUN cp /usr/bin/mkgraticule.py /var/task/bin
+RUN cp /usr/bin/nearblack /var/task/bin
+RUN cp /usr/bin/ogr* /var/task/bin
+RUN cp /usr/bin/pct2rgb.py /var/task/bin
+RUN cp /usr/bin/rgb2pct.py /var/task/bin
+RUN cp /usr/bin/testepsg /var/task/bin
+RUN mkdir /var/task/lib64/
+RUN cp /usr/lib64/libgdal.so.20 /var/task/lib64/
+RUN cp /usr/lib64/libgdal.so.20.5.0 /var/task/lib64/
+RUN mkdir /var/task/lib64/pkgconfig
+RUN cp /usr/lib64/pkgconfig/gdal.pc /var/task/lib64/pkgconfig
+RUN mkdir -p /var/task/lib64/python2.7/site-packages
+RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
+RUN mkdir /var/task/gdal/
+RUN cp -R /usr/share/gdal/* /var/task/gdal/
+RUN export "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64"
+RUN export "PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages/"
 
 # Install mrfgen and OnEarth utils dependencies
 RUN curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
@@ -16,74 +44,17 @@ RUN python get-pip.py
 RUN pip install apacheconfig==0.2.8
 RUN pip install numpy==1.10.4
 RUN rm get-pip.py
-	
-# Fetch PROJ.4
 
-RUN \
-  curl -L http://download.osgeo.org/proj/proj-4.9.3.tar.gz | tar zxf - -C /tmp
+# Fetch PROJ.4
+RUN curl -L http://download.osgeo.org/proj/proj-4.9.3.tar.gz | tar zxf - -C /tmp
 
 # Build and install PROJ.4
-
 WORKDIR /tmp/proj-4.9.3
-
 RUN \
   ./configure \
     --prefix=/var/task && \
   make -j $(nproc) && \
   make install
-
-# Fetch GDAL
-
-RUN \
-  mkdir -p /tmp/gdal-dev && \
-  curl -L http://download.osgeo.org/gdal/2.1.4/gdal-2.1.4.tar.gz | tar zxf - -C /tmp/gdal-dev --strip-components=1
-
-# Build + install GDAL
-
-WORKDIR /tmp/gdal-dev
-
-RUN \
-  ./configure \
-    --prefix=/var/task \
-    --datarootdir=/var/task/share/gdal \
-	--with-threads \
-	--without-bsb \
-	--with-libtiff=internal \
-	--without-ogdi \
-	--with-libz \
-	--with-geos \
-	--with-jasper \
-	--with-png \
-	--with-gif \
-	--with-jpeg \
-	--with-sqlite3 \
-	--with-curl \
-	--with-python=yes \
-	--with-pcraster \
-	--with-jpeg12=no \
-	--disable-rpath \
-	--with-expat && \
-  make -j $(nproc) && \
-  make install
-
-WORKDIR /tmp/gdal-dev/swig/python
-
-RUN \
-  python setup.py install && \
-  cp /usr/lib64/libpython2.7.so.1.0 /var/task/lib64/python2.7/site-packages
-
-RUN \
-  cp -r /usr/local/lib64/python2.7/site-packages/GDAL-2.1.4-py2.7-linux-x86_64.egg/osgeo /var/task/lib64/python2.7/site-packages
-
-WORKDIR /tmp/mrf-dev
-
-# Build mrf_insert from GIBS
-RUN \
-  git clone --branch v1.1.2 --depth 1 https://github.com/nasa-gibs/mrf.git && \
-  mv mrf/src/gdal_mrf/mrf_apps /tmp/gdal-dev/ && \
-  cd /tmp/gdal-dev/mrf_apps && \
-  make && \
-  mv .libs/mrf_insert /var/task/bin/mrf_insert
 
 # Install vectorgen dependencies
 WORKDIR /tmp
@@ -113,6 +84,7 @@ RUN rm RGBApng2Palpng.c
 # Clean up
 WORKDIR /var/task
 RUN \
-  strip lib/libgdal.so.20.* && \
+  strip lib64/libgdal.so.20.* && \
   strip lib/libproj.so.12.*
+RUN yum remove -y gibs-gdal
 RUN rm -rf /tmp/*
