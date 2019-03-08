@@ -357,7 +357,7 @@ class TestMRFGeneration_polar(unittest.TestCase):
         
         filesize = os.path.getsize(self.output_img)
         print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
-        self.assertEqual(filesize, 758628, "Output image does not match")
+        self.assertEqual(filesize, 758560, "Output image does not match")
         
         img = None
         mrf = None
@@ -1084,7 +1084,7 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         
         if DEBUG:
             print "Comparing: " + self.output_img + " to " + self.compare_img
-        # self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
         mrf = None
