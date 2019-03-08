@@ -39,11 +39,11 @@ RUN cp /usr/lib64/libgdal.so.20 /var/task/lib64/
 RUN cp /usr/lib64/libgdal.so.20.5.0 /var/task/lib64/
 RUN mkdir /var/task/lib64/pkgconfig
 RUN cp /usr/lib64/pkgconfig/gdal.pc /var/task/lib64/pkgconfig
-RUN mkdir /var/task/share/gdal/
+RUN mkdir -p /var/task/share/gdal/
 RUN cp -R /usr/share/gdal/* /var/task/share/gdal/
 
 ENV GDAL_DATA=/var/task/gdal
-ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages
+ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib64/python2.7/site-packages/osgeo
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64
 ENV PATH=$PATH:/var/task/bin
 
@@ -53,6 +53,7 @@ RUN python get-pip.py
 RUN pip install apacheconfig==0.2.8
 RUN pip install numpy==1.10.4
 RUN rm get-pip.py
+RUN mkdir -p /var/task/lib64/python2.7/site-packages/
 RUN mv /usr/local/lib/python2.7/site-packages/apacheconfig /var/task/lib64/python2.7/site-packages/
 RUN mv /usr/local/lib64/python2.7/site-packages/numpy /var/task/lib64/python2.7/site-packages/
 
