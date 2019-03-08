@@ -21,7 +21,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
+RUN pip install Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
