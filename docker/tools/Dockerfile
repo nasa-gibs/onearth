@@ -1,17 +1,25 @@
+# This Dockerfile must be run from source root
+
 FROM lambci/lambda:build-nodejs6.10
+
+# Copy mrfgen/vectorgen
+RUN mkdir /var/task/bin
+COPY ./src/mrfgen/*.py /var/task/bin/
+COPY ./src/mrfgen/RGBApng2Palpng.c /var/task/bin/
+COPY ./src/vectorgen/*.py /var/task/bin/
+COPY ./src/scripts/*.py /var/task/bin/
+COPY ./src/generate_legend/*.py /var/task/bin/
+COPY ./src/colormaps/bin/*.py /var/task/bin/
 
 # Install GDAL
 WORKDIR /tmp
 RUN \
   touch /var/lib/rpm/* \
   && yum install -y epel-release
-COPY gibs-gdal-2.4.0-1.el7.x86_64.rpm /tmp
-RUN yum install -y gibs-gdal-2.4.0-1.el7.x86_64.rpm
-COPY gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm /tmp
-RUN yum install -y gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm"
 
 # Copy binaries and libs
-RUN mkdir /var/task/bin
 RUN cp /usr/bin/*mrf* /var/task/bin
 RUN cp /usr/bin/epsg_tr.py /var/task/bin
 RUN cp /usr/bin/esri2wkt.py /var/task/bin
@@ -31,12 +39,13 @@ RUN cp /usr/lib64/libgdal.so.20 /var/task/lib64/
 RUN cp /usr/lib64/libgdal.so.20.5.0 /var/task/lib64/
 RUN mkdir /var/task/lib64/pkgconfig
 RUN cp /usr/lib64/pkgconfig/gdal.pc /var/task/lib64/pkgconfig
-RUN mkdir -p /var/task/lib64/python2.7/site-packages
-RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
 RUN mkdir /var/task/gdal/
 RUN cp -R /usr/share/gdal/* /var/task/gdal/
-RUN export "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64"
-RUN export "PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages/"
+
+ENV GDAL_DATA=/var/task/gdal
+ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64
+ENV PATH=$PATH:/var/task/bin
 
 # Install mrfgen and OnEarth utils dependencies
 RUN curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
@@ -65,16 +74,8 @@ RUN make && make install
 RUN ldconfig
 RUN pip install Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
-# Build mrfgen/vectorgen from nasa-gibs
-WORKDIR /tmp/gen-dev
-RUN \
-  git clone --branch 2.2.1  --depth 1 https://github.com/nasa-gibs/onearth.git && \
-  mv onearth/src/mrfgen/*.py /var/task/bin/ && \
-  mv onearth/src/mrfgen/RGBApng2Palpng.c /var/task/bin/ && \
-  mv onearth/src/vectorgen/*.py /var/task/bin/ && \
-  mv onearth/src/scripts/*.py /var/task/bin/ && \
-  mv onearth/src/generate_legend/*.py /var/task/bin/ && \
-  mv onearth/src/colormaps/bin/*.py /var/task/bin/
+RUN mkdir -p /var/task/lib64/python2.7/site-packages
+RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
 
 # Build RGBApng2Palpng
 WORKDIR /var/task/bin

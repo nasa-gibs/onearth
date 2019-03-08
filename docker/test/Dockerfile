@@ -3,8 +3,8 @@
 FROM nasagibs/onearth-deps:2.2.1
 
 # Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-2.1.4-1.el7.centos.x86_64.rpm"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v1.1.2/gibs-gdal-devel-2.1.4-1.el7.centos.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm"
 
 # Install mrfgen and OnEarth utils dependencies
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
@@ -92,9 +92,6 @@ RUN install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng
 RUN install -m 755 src/mrfgen/oe_validate_palette.py -D /usr/bin/oe_validate_palette.py
 RUN install -m 755 src/scripts/oe_utils.py -D /usr/bin/oe_utils.py
 RUN install -m 755 src/scripts/oe_validate_configs.py -D /usr/bin/oe_validate_configs.py
-RUN install -m 755 src/scripts/read_idx.py -D /usr/bin/read_idx.py
-RUN install -m 755 src/scripts/read_mrf.py -D /usr/bin/read_mrf.py
-RUN install -m 755 src/scripts/read_mrfdata.py -D /usr/bin/read_mrfdata.py
 RUN install -m 755 src/scripts/twmsbox2wmts.py -D /usr/bin/twmsbox2wmts.py
 RUN install -m 755 src/scripts/wmts2twmsbox.py -D /usr/bin/wmts2twmsbox.py
 RUN install -m 755 src/colormaps/bin/colorMaptoHTML.py -D /usr/bin/colorMaptoHTML.py

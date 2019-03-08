@@ -34,7 +34,9 @@ rm Dockerfile
 docker build --no-cache -t nasagibs/onearth-wms:$OE_VERSION ./docker/wms_service/
 
 # Build the onearth-tools image
-docker build --no-cache -t nasagibs/onearth-tools:$OE_VERSION ./docker/tools/
+cp ./docker/tools/Dockerfile .
+docker build --no-cache -t nasagibs/onearth-tools:$OE_VERSION .
+rm Dockerfile
 
 # Run onearth-time-service using port 6379 for Redis
 docker run -d --rm --name onearth-time-service --hostname onearth-time-service --net oe2 -p 6379:6379 nasagibs/onearth-time-service:$OE_VERSION
