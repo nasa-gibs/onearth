@@ -36,26 +36,24 @@ RUN cp /usr/bin/rgb2pct.py /var/task/bin
 RUN cp /usr/bin/testepsg /var/task/bin
 RUN mkdir /var/task/lib64/
 RUN cp /usr/lib64/libgdal.so.20 /var/task/lib64/
-RUN cp /usr/lib64/libgdal.so.20.5.0 /var/task/lib64/
+RUN cp /usr/lib64/libgeos-3.4.2.so /var/task/lib64/
+RUN cp /usr/lib64/libgeos_c.so.1 /var/task/lib64/
 RUN mkdir /var/task/lib64/pkgconfig
 RUN cp /usr/lib64/pkgconfig/gdal.pc /var/task/lib64/pkgconfig
 RUN mkdir -p /var/task/share/gdal/
 RUN cp -R /usr/share/gdal/* /var/task/share/gdal/
 
 ENV GDAL_DATA=/var/task/gdal
-ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib64/python2.7/site-packages/osgeo
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64
+ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib/python2.7/site-packages
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64:/var/task/lib
 ENV PATH=$PATH:/var/task/bin
 
 # Install mrfgen and OnEarth utils dependencies
 RUN curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
 RUN python get-pip.py
-RUN pip install apacheconfig==0.2.8
-RUN pip install numpy==1.10.4
+RUN pip install --prefix=/var/task --ignore-installed apacheconfig==0.2.8
+RUN pip install --prefix=/var/task --ignore-installed numpy==1.10.4
 RUN rm get-pip.py
-RUN mkdir -p /var/task/lib64/python2.7/site-packages/
-RUN mv /usr/local/lib/python2.7/site-packages/apacheconfig /var/task/lib64/python2.7/site-packages/
-RUN mv /usr/local/lib64/python2.7/site-packages/numpy /var/task/lib64/python2.7/site-packages/
 
 # Fetch PROJ.4
 RUN curl -L http://download.osgeo.org/proj/proj-4.9.3.tar.gz | tar zxf - -C /tmp
@@ -75,7 +73,10 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip install Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
+RUN pip install --prefix=/var/task --ignore-installed Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
+# TODO: Sort out weirdness with some dependencies expecting specific lib locations
+RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
+RUN pip uninstall -y protobuf && pip install protobuf==3.7.0
 
 RUN mkdir -p /var/task/lib64/python2.7/site-packages
 RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
@@ -88,7 +89,9 @@ RUN rm RGBApng2Palpng.c
 # Clean up
 WORKDIR /var/task
 RUN \
-  strip lib64/libgdal.so.20.* && \
+  strip lib64/libgdal.so.20* && \
+  strip lib64/libgeos* && \
+  strip lib64/libspatialindex*so* && \
   strip lib/libproj.so.12.*
 RUN yum remove -y gibs-gdal
 RUN rm -rf /tmp/*
