@@ -225,6 +225,12 @@ if __name__ == '__main__':
             else:
                 input_files = ''
 
+        # Identifier for MVT tile content
+        try:
+            tile_layer_name = get_dom_tag_value(dom, "identifier")
+        except: 
+            tile_layer_name = parameter_name
+
         # Filtering options
         filter_list = []
         filter_options = dom.getElementsByTagName('feature_filters')
@@ -416,7 +422,6 @@ if __name__ == '__main__':
         elif output_format == "mvt-mrf": # Create MVT-MRF
             for idx, tile in enumerate(alltiles):
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
-                tile_layer_name = parameter_name + '_' + date_of_data
                 if source_epsg != target_epsg:
                     outfile = os.path.join(working_dir, basename + '_reproject_' + str(idx) + os.path.splitext(tile)[1])
                     ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1] else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
