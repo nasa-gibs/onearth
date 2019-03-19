@@ -41,8 +41,9 @@ RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproje
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
-RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
-RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
+RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
+    cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
+    cp cors.conf /etc/httpd/conf.d/
 
 WORKDIR /home/oe2/onearth/docker/tile_services
 CMD sh start_tile_services.sh $S3_URL $REDIS_HOST
