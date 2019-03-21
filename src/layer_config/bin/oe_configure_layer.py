@@ -2419,17 +2419,10 @@ for conf in conf_files:
         print '\n' + twms_mrf_filename + ' configured successfully\n'
         print '\n' + wmts_mrf_filename + ' configured successfully\n'
 
-        # generate color map if requested
+        # generate legend if requested
         legendUrl_vertical = ''
         legendUrl_horizontal = ''
         if legend == True and default_colormap != None:
-            legend_output = ''
-            try:
-                legend_output = environment.legend_dir + identifier
-            except:
-                message = "Legend directory has not been defined for environment with cache location: " + environment.cache
-                log_sig_err(message, sigevent_url)
-
             colormap_value = default_colormap.firstChild.nodeValue
             colormap_location = default_colormap.attributes['location'].value
             if colormap_location == '':
@@ -2438,22 +2431,30 @@ for conf in conf_files:
                 colormap_path = add_trailing_slash(
                     colormap_location) + colormap_value
 
+            legend_identifier = os.path.splitext(colormap_value)[0]
+            legend_output = ''
+            try:
+                legend_output = environment.legend_dir + legend_identifier
+            except:
+                message = "Legend directory has not been defined for environment with cache location: " + environment.cache
+                log_sig_err(message, sigevent_url)
+
             try:
                 if environment.legendUrl != None:
                     if legend_output != '':
                         legendUrl_vertical = generate_legend(
                             colormap_path, legend_output + '_V.svg',
-                            environment.legendUrl + identifier + '_V.svg',
+                            environment.legendUrl + legend_identifier + '_V.svg',
                             'vertical')
                         legendUrl_horizontal = generate_legend(
                             colormap_path, legend_output + '_H.svg',
-                            environment.legendUrl + identifier + '_H.svg',
+                            environment.legendUrl + legend_identifier + '_H.svg',
                             'horizontal')
                 else:
                     message = "Legend URL has not been defined for environment with cache location: " + environment.cache
                     log_sig_err(message, sigevent_url)
             except:
-                message = "Error generating legend for " + identifier
+                message = "Error generating legend for " + legend_identifier
                 log_sig_err(message, sigevent_url)
 
     else:  # Vectors
