@@ -21,7 +21,7 @@ yum install -y \
   ./gibs-gdal-2.1.2-1.el6.x86_64.rpm \
   ./gibs-gdal-devel-2.1.2-1.el6.x86_64.rpm \
   @buildsys-build \
-  devtoolset-3-toolchain \
+  devtoolset-6-toolchain \
   geos-devel \
   giflib-devel \
   git \
@@ -44,7 +44,7 @@ rsync -av \
   git submodule update --init --recursive
   yum-builddep -y deploy/onearth/onearth.spec
   make download
-  scl enable devtoolset-3 "make onearth-rpm"
+  scl enable devtoolset-6 "make onearth-rpm"
 )
 
 cp /build/dist/onearth-*.rpm /dist/
