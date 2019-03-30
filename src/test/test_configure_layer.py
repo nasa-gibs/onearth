@@ -194,7 +194,7 @@ class TestLayerConfig(unittest.TestCase):
         hasher = hashlib.md5()
         stripped_file = ''
         try:
-            with open(os.path.join(config['legend_location'], config['prefix'] + '_H.svg'), 'r') as f:
+            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.svg'), 'r') as f:
                 file_str = f.read()
                 stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
                 stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
@@ -204,7 +204,7 @@ class TestLayerConfig(unittest.TestCase):
         except OSError:
             raise ValueError('Horizontal legend not generated')
         try:
-            with open(os.path.join(config['legend_location'], config['prefix'] + '_V.svg'), 'r') as f:
+            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_V.svg'), 'r') as f:
                 file_str = f.read()
                 stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
                 stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
