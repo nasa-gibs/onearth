@@ -38,6 +38,7 @@ limitations under the License.
         <xs:element minOccurs="0" ref="email_server"/>
         <xs:element minOccurs="0" ref="email_recipient"/>
         <xs:element minOccurs="0" ref="feature_filters"/>
+        <xs:element minOccurs="0" ref="indentifier"/>
       </xs:all>
     </xs:complexType>
   </xs:element>
@@ -118,4 +119,5 @@ limitations under the License.
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+  <xs:element name="identifier" nillable="true" type="xs:string"/>
 </xs:schema>

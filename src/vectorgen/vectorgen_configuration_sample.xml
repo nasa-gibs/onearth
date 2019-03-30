@@ -14,6 +14,7 @@ limitations under the License.
 -->
 <vectorgen_configuration>
  <date_of_data>20160429</date_of_data>
+ <identifier>terra_points_descending</identifier>
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
   <file>test.geojson</file>
