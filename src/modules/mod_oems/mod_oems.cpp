@@ -778,7 +778,7 @@ static int handler(request_rec *r) {
 	if (!(r->args)) { // Don't handle if no arguments
 		return DECLINED;
 	} else {
-		if ((ap_strstr(r->args, "SERVICE=WMS") == 0) && (ap_strstr(r->args, "SERVICE=WFS") == 0)) { // Don't handle if not WMS or WFS
+		if ((ap_strcasestr(r->args, "SERVICE=WMS") == 0) && (ap_strcasestr(r->args, "SERVICE=WFS") == 0)) { // Don't handle if not WMS or WFS
 			return DECLINED;
 		}
 	}
