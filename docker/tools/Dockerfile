@@ -8,6 +8,7 @@ COPY ./src/mrfgen/*.py /var/task/bin/
 COPY ./src/mrfgen/RGBApng2Palpng.c /var/task/bin/
 COPY ./src/vectorgen/*.py /var/task/bin/
 COPY ./src/scripts/*.py /var/task/bin/
+COPY ./src/empty_tile/*.py /var/task/bin/
 COPY ./src/generate_legend/*.py /var/task/bin/
 COPY ./src/colormaps/bin/*.py /var/task/bin/
 
