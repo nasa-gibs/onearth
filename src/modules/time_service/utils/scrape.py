@@ -8,7 +8,7 @@ import argparse
 def keyMapper(acc, obj):
     keyElems = obj['Key'].split("/")
 
-    if len(keyElems) == 3:  # Don't do anything with static layers
+    if len(keyElems) <= 3:  # Don't do anything with static layers
         return acc
 
     proj = keyElems[0]
