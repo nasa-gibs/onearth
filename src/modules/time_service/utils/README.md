@@ -27,4 +27,5 @@ The script accepts the following options:
 -   `-b` indicates the bucket to be scraped. Default is `gitc-deployment-mrf-archive`
 -   `-p` indicates the port of the Redis time service database. Default is `6379`.
 -   `-s` indicates the uri of the S3 service. Useful when you're using a localstack configuration for testing instead of an actual AWS S3 bucket.
+-   `-t` indicates a tag (srt, best) to be used in tagging the dates.
 -   `REDIS_URI` (argument)
