@@ -259,6 +259,14 @@ local function isValidPeriod(size, unit)
 	return true
 end
 
+local function getLatestDate(dates)
+	local maxEpoch = 0
+	for i, date in ipairs(dates) do
+		local epoch = dateToEpoch(date)
+		maxEpoch = epoch > maxEpoch and epoch or maxEpoch
+	end
+	return epochToDate(maxEpoch)
+end
 
 local function calculatePeriods(dates)
 	local periods = {}
@@ -400,3 +408,5 @@ for i, periodString in ipairs(periodStrings) do
 	end
 	redis.call("SADD", KEYS[1] .. ":periods", periodString)
 end
+local defaultDate = getLatestDate(dates)
+redis.call("SET", KEYS[1] .. ":default", defaultDate)

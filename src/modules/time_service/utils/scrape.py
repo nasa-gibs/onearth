@@ -30,13 +30,28 @@ def keyMapper(acc, obj):
     return acc
 
 
-def updateDateService(redis_uri, redis_port, bucket, s3_uri=None):
+# https://alexwlchan.net/2017/07/listing-s3-keys/
+def getAllKeys(conn, bucket):
+    keys = []
+    kwargs = {'Bucket': bucket}
+
+    while True:
+        resp = conn.list_objects_v2(**kwargs)
+        keys = keys + resp['Contents']
+
+        try:
+            kwargs['ContinuationToken'] = resp['NextContinuationToken']
+        except KeyError:
+            break
+    return keys
+
+
+def updateDateService(redis_uri, redis_port, bucket, s3_uri=None, tag=None):
     session = boto3.session.Session()
 
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
 
-    objects = reduce(keyMapper,
-                     s3.list_objects_v2(Bucket=bucket)['Contents'], {})
+    objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
     r = redis.Redis(host=redis_uri, port=redis_port)
 
@@ -47,20 +62,18 @@ def updateDateService(redis_uri, redis_port, bucket, s3_uri=None):
                 map(lambda date: datetime.strptime(date, '%Y%j%H%M%S'),
                     sorted(list(data['dates']))))
 
-            # Set default to latest date
-            default = sorted_parsed_dates[-1].isoformat()
-
             print(f'Configuring layer: {layer}')
 
-            r.set(f'{proj}:layer:{layer}:default', default)
+            tag_str = f'{tag}:' if tag else ''
             for date in sorted_parsed_dates:
-                r.sadd(f'{proj}:layer:{layer}:dates', date.isoformat())
+                r.sadd(f'{proj}:{tag_str}layer:{layer}:dates',
+                       date.isoformat())
 
             with open('periods.lua', 'r') as f:
                 lua_script = f.read()
 
             date_script = r.register_script(lua_script)
-            date_script(keys=[f'{proj}:layer:{layer}'])
+            date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
 
 
 # Routine when run from CLI
@@ -93,8 +106,18 @@ parser.add_argument(
     dest='s3_uri',
     action='store',
     help='S3 URI -- for use with localstack testing')
+parser.add_argument(
+    '-t',
+    '--tag',
+    dest='tag',
+    action='store',
+    help='Classification tag (srt, best, std, etc.)')
 
 args = parser.parse_args()
 
 updateDateService(
-    args.redis_uri[0], args.port, args.bucket, s3_uri=args.s3_uri)
+    args.redis_uri[0],
+    args.port,
+    args.bucket,
+    s3_uri=args.s3_uri,
+    tag=args.tag)
