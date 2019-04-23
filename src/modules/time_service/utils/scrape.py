@@ -46,7 +46,12 @@ def getAllKeys(conn, bucket):
     return keys
 
 
-def updateDateService(redis_uri, redis_port, bucket, s3_uri=None, tag=None):
+def updateDateService(redis_uri,
+                      redis_port,
+                      bucket,
+                      s3_uri=None,
+                      tag=None,
+                      layer_name=None):
     session = boto3.session.Session()
 
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
@@ -58,9 +63,15 @@ def updateDateService(redis_uri, redis_port, bucket, s3_uri=None, tag=None):
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
         for layer, data in layers.items():
+            if layer_name and layer != layer_name:
+                continue
+
             sorted_parsed_dates = list(
                 map(lambda date: datetime.strptime(date, '%Y%j%H%M%S'),
                     sorted(list(data['dates']))))
+
+            # Set default to latest date
+            default = sorted_parsed_dates[-1].isoformat()
 
             print(f'Configuring layer: {layer}')
 
@@ -112,6 +123,12 @@ parser.add_argument(
     dest='tag',
     action='store',
     help='Classification tag (srt, best, std, etc.)')
+parser.add_argument(
+    '-l',
+    '--layer',
+    dest='layer',
+    action='store',
+    help='Layer name to filter on')
 
 args = parser.parse_args()
 
@@ -120,4 +137,5 @@ updateDateService(
     args.port,
     args.bucket,
     s3_uri=args.s3_uri,
-    tag=args.tag)
+    tag=args.tag,
+    layer_name=args.layer)
