@@ -353,7 +353,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_url = '/' + dest_url
             dest_url = re.match('(.*default)', dest_url).group()
             dest_dim_elem = layer.find('{*}Dimension')
-            if dest_dim_elem is not None and dest_dim_elem.findtext(ows + 'Identifier') == 'time':
+            if dest_dim_elem is not None and dest_dim_elem.findtext(ows + 'Identifier') == 'Time':
                 static = False
                 dest_url = '{0}/{1}/{2}'.format(dest_url, '${date}', src_tilematrixset_name)
             else:
