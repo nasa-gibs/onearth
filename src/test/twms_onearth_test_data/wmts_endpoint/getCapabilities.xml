@@ -97,7 +97,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-02-29</Default>
              <Current>false</Current>

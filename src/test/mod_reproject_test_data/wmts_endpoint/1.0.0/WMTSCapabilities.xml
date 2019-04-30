@@ -97,7 +97,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2016-12-31</Default>
              <Current>false</Current>
@@ -121,7 +121,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2015-01-31</Default>
              <Current>false</Current>
@@ -146,7 +146,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2016-01-01</Default>
              <Current>false</Current>
@@ -170,7 +170,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2016-01-01</Default>
              <Current>false</Current>
@@ -194,7 +194,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2016-01-01</Default>
              <Current>false</Current>
@@ -218,7 +218,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-03-11</Default>
              <Current>false</Current>
@@ -242,7 +242,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2000-12-01</Default>
              <Current>false</Current>
@@ -268,7 +268,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2002-12-27</Default>
              <Current>false</Current>
@@ -293,7 +293,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2011-12-01</Default>
              <Current>false</Current>
@@ -317,7 +317,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-03-11</Default>
              <Current>false</Current>
@@ -341,7 +341,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2000-09-03</Default>
              <Current>false</Current>
@@ -365,7 +365,7 @@
          </Style>
          <Format>image/png</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-02-29</Default>
              <Current>false</Current>
@@ -389,7 +389,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-02-29T14:00:00Z</Default>
              <Current>false</Current>
@@ -413,7 +413,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-02-29</Default>
              <Current>false</Current>
@@ -454,7 +454,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-02-29</Default>
              <Current>false</Current>
@@ -478,7 +478,7 @@
          </Style>
          <Format>image/jpeg</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-02-29T16:00:00Z</Default>
              <Current>false</Current>

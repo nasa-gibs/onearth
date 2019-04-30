@@ -11,7 +11,7 @@
          </Style>
          <Format>application/vnd.mapbox-vector-tile</Format>
          <Dimension>
-             <ows:Identifier>time</ows:Identifier>
+             <ows:Identifier>Time</ows:Identifier>
              <UOM>ISO8601</UOM>
              <Default>2012-01-01</Default>
              <Current>false</Current>
