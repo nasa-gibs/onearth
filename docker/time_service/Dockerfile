@@ -1,15 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM centos:7
-
-RUN yum groupinstall -y "Development Tools"
-RUN yum install -y epel-release-7-11 lua-devel-5.1.4 jansson-devel-2.10 libpng-devel-1.5.13 pcre-devel-8.32 wget-1.14 libjpeg-turbo-devel-1.2.90 httpd-devel-2.4.6
-RUN yum install -y mod_ssl
-RUN yum install -y luarocks-2.3.0
-RUN yum install -y redis-3.2.12
-
-RUN mkdir /home/oe2
-RUN mkdir -p /var/www
+FROM nasagibs/onearth-deps:2.2.1
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2

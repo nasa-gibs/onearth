@@ -16,11 +16,8 @@ RUN pip3.6 install requests==2.21.0
 RUN pip3.6 install pyaml==18.11.0
 RUN pip3.6 install lxml==4.3.0
 RUN pip3.6 install pypng==0.0.19
-
-# Copy OnEarth to home directory
-RUN mkdir -p /home/oe2
-WORKDIR /home/oe2
-COPY ./ /home/oe2/onearth/
+RUN pip3.6 install boto3==1.9
+RUN pip3.6 install redis==3.2.1
 
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
