@@ -19,6 +19,11 @@ RUN pip3.6 install pypng==0.0.19
 RUN pip3.6 install boto3==1.9
 RUN pip3.6 install redis==3.2.1
 
+# Copy OnEarth to home directory
+RUN mkdir -p /home/oe2
+WORKDIR /home/oe2
+COPY ./ /home/oe2/onearth/
+
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
 RUN yum install -y yum-utils-1.1.31 rpm-build-4.11.3
