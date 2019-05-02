@@ -50,3 +50,4 @@ RUN make && make install
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
+RUN rm -rf /tmp/
