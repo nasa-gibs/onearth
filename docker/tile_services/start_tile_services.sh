@@ -1,6 +1,7 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
+SYNC_IDX=${3:-true}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -26,6 +27,11 @@ cp ../test_imagery/*date_test_year_dir-2016* /var/www/html/mrf_endpoint/date_tes
 cp ../test_imagery/*date_test_year_dir-2017* /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/2017
 cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
 cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
+
+# Sync IDX files if true
+if [ "$SYNC_IDX" = true ]; then
+    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx
+fi
 
 # Load GIBS sample layers
 sh load_sample_layers.sh $S3_URL $REDIS_HOST

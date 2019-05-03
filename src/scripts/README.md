@@ -114,6 +114,32 @@ Options:
                         locations; evaluate staged files only
 ```
 
+
+## oe_sync_s3_idx.py
+
+This script synchronizes IDX files inside S3 tar balls with those on a file system.
+Files on S3 will always act as the 'master' (i.e., files found on S3 that are not on the file system 
+will be downloaded, while files found on the file system but not on S3 will be deleted).
+File modifications are not detected. Use --force to overwrite existing files.
+
+```
+Usage: oe_sync_s3_idx.py [-h] [-b BUCKET] [-d DIR] [-f] [-p PREFIX]
+                         [-s S3_URI]
+
+Rebuilds IDX files on system from S3 bucket contents.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -b BUCKET, --bucket BUCKET
+                        bucket name
+  -d DIR, --dir DIR     Directory on file system to sync
+  -f, --force           Force update even if file exists
+  -p PREFIX, --prefix PREFIX
+                        S3 prefix to use
+  -s S3_URI, --s3_uri S3_URI
+                        S3 URI -- for use with localstack testing
+```
+
 ## Contact
 
 Contact us by sending an email to
