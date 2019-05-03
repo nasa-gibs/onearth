@@ -68,11 +68,14 @@ def updateDateService(redis_uri,
                       bucket,
                       s3_uri=None,
                       tag=None,
-                      layer_name=None):
+                      layer_name=None,
+                      reproject=False):
     session = boto3.session.Session()
 
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
 
+    if bucket.startswith('http'):
+        bucket = bucket.split('/')[2].split('.')[0]
     objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
     r = redis.Redis(host=redis_uri, port=redis_port)
@@ -94,14 +97,17 @@ def updateDateService(redis_uri,
 
             tag_str = f'{tag}:' if tag else ''
             for date in sorted_parsed_dates:
-                r.sadd(f'{proj}:{tag_str}layer:{layer}:dates',
-                       date.isoformat())
+                r.sadd(f'{proj}:{tag_str}layer:{layer}:dates', date.isoformat())
+                if reproject and str(proj) == 'epsg4326':
+                    r.sadd(f'epsg3857:{tag_str}layer:{layer}:dates', date.isoformat())
 
             with open('periods.lua', 'r') as f:
                 lua_script = f.read()
 
             date_script = r.register_script(lua_script)
             date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
+            if reproject and str(proj) == 'epsg4326':
+                date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])
 
 
 # Routine when run from CLI
@@ -139,13 +145,20 @@ parser.add_argument(
     '--tag',
     dest='tag',
     action='store',
-    help='Classification tag (srt, best, std, etc.)')
+    help='Classification tag (nrt, best, std, etc.)')
 parser.add_argument(
     '-l',
     '--layer',
     dest='layer',
     action='store',
     help='Layer name to filter on')
+parser.add_argument(
+    '-r',
+    '--reproject',
+    default=False,
+    dest='reproject',
+    help='If layer uses epsg4326, add a record for epsg3857 as well',
+    action='store_true')
 
 args = parser.parse_args()
 
@@ -155,4 +168,5 @@ updateDateService(
     args.bucket,
     s3_uri=args.s3_uri,
     tag=args.tag,
-    layer_name=args.layer)
+    layer_name=args.layer,
+    reproject=args.reproject)
