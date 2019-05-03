@@ -1,5 +1,6 @@
 #!/bin/sh
-REDIS_HOST=${1:-127.0.0.1}
+S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
+REDIS_HOST=${2:-127.0.0.1}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -25,7 +26,7 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	# Turn off the following line for production systems
 	/usr/bin/redis-cli -n 0 CONFIG SET protected-mode no
 	
-	# Load sample data
+	# Load extra sample data
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
@@ -340,6 +341,12 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:default "2012-09-10"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods "2012-09-10/2018-12-31/P1D"
+
+else
+	# Load time periods by scraping S3 bucket
+	cd /home/oe2/onearth/src/modules/time_service/utils/
+	python3.6 oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST
+	python3.6 oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST	
 fi
 
 # Tail the apache logs

@@ -39,6 +39,7 @@ RUN make && make install
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_idx.py /usr/bin/
+RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
@@ -47,4 +48,4 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/
 
 WORKDIR /home/oe2/onearth/docker/tile_services
-CMD sh start_tile_services.sh $S3_URL $REDIS_HOST
+CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $S3_CONFIGS $IDX_SYNC

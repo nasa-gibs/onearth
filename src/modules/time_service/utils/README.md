@@ -11,7 +11,7 @@ The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4
 
 `redis-cli --eval periods.lua epsg4326:layer:layer_name`
 
-## `scrape.py` -- Database regeneration tool
+## `oe_scrape_time.py` -- Database regeneration tool
 
 This tool scrapes a bucket with MRF imagery and generates time service entries for each layer.
 

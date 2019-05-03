@@ -1,6 +1,7 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
+S3_CONFIGS=${3:-gitc-uat-onearth-configs}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -51,14 +52,24 @@ mkdir -p /var/www/html/twms/epsg3413/nrt
 mkdir -p /onearth/empty_tiles/
 cp ../empty_tiles/* /onearth/empty_tiles/
 
-# Copy sample configs
+# Create config directories
 chmod -R 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
+
+# Copy sample configs
 cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+
+# Scrape OnEarth configs from S3
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
+
 # Replace with S3 URL
+sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml # in case there is a preceding slash
+sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case there is a preceding slash
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
