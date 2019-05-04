@@ -26,4 +26,4 @@ WORKDIR /home/oe2/onearth/docker/time_service
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
-CMD sh start_time_service.sh $REDIS_HOST
+CMD sh start_time_service.sh $S3_URL $REDIS_HOST
