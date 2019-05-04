@@ -357,6 +357,10 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
     source_tms = get_source_tms(source_tms_defs, layer_xml)
     reproj_tms = get_reprojected_tilematrixset(target_proj, source_tms_defs,
                                                target_tms_defs, layer_xml)
+    if reproj_tms is None:
+        layer_id = layer_xml.findtext('{*}Identifier')
+        print(f"Unable to find matching tilematrixset for {layer_id}")
+        return{}
     bands = get_layer_bands(
         layer_xml.findtext('{*}Identifier'),
         layer_xml.find('{*}ResourceURL').attrib.get('format'),
@@ -549,8 +553,11 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
 def get_proxy_paths(layers):
     proxy_paths = []
     for layer_config in layers:
-        data_file_uri = re.sub(r'(.*)\/\${date}', r'\1',
-                               layer_config['source_url_template'])
+        try:
+            data_file_uri = re.sub(r'(.*)\/\${date}', r'\1', layer_config['source_url_template'])
+        except KeyError as err:
+            print(f"{err} is missing")
+            return proxy_paths
         url_parts = urlsplit(data_file_uri)
         remote_path = f'{url_parts.scheme}://{url_parts.netloc}'
         if not any(path for path in proxy_paths
@@ -607,6 +614,7 @@ def build_configs(endpoint_config):
         map(
             partial(parse_layer_gc_xml, target_proj, source_tms_defs,
                     target_tms_defs), layer_list))
+    layers = [x for x in layers if x != {}] # remove layers we can't reproject
 
     # Build configs for each layer
     endpoint_config['proxy_paths'] = get_proxy_paths(layers)
