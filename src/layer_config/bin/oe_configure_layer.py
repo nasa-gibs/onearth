@@ -2456,8 +2456,9 @@ for conf in conf_files:
         print '\n' + wmts_mrf_filename + ' configured successfully\n'
 
         # generate legend if requested
-        legendUrl_vertical = ''
-        legendUrl_horizontal = ''
+        legendUrl_svg_vertical = ''
+        legendUrl_svg_horizontal = ''
+        legendUrl_png_horizontal = ''
         if legend == True and default_colormap != None:
             colormap_value = default_colormap.firstChild.nodeValue
             colormap_location = default_colormap.attributes['location'].value
