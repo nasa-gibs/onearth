@@ -232,6 +232,13 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['wmts_staging_location'])
         rmtree(config['twms_staging_location'])
 
+        print("HASHES")
+        print(h_png_legend_ref_hash)
+        print(h_png_legend_hash)
+        print(h_svg_legend_ref_hash)
+        print(h_svg_legend_hash)
+        print(v_svg_legend_ref_hash)
+        print(v_svg_legend_hash)
         # Check if hashes are kosher
         self.assertEqual(h_png_legend_ref_hash, h_png_legend_hash, 'Horizontal PNG legend generated does not match expected.')
         self.assertEqual(h_svg_legend_ref_hash, h_svg_legend_hash, 'Horizontal SVG legend generated does not match expected.')
