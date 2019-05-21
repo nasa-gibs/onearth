@@ -73,6 +73,7 @@ import re
 import distutils.spawn
 import sqlite3
 import glob
+import json
 from datetime import datetime, time, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
@@ -878,25 +879,38 @@ def get_file_from_time(timestr, fileNamePrefix, include_year_dir, has_zdb):
         return filename
 
 
-def generate_legend(colormap, output, legend_url, orientation):
+def generate_legend(colormap, output, legend_url, format, orientation):
     """
     Generate an SVG legend graphic from GIBS color map.
     Arguments:
         colormap -- the color map file name
         output -- the output file name
         legend_url -- URL to access legend from GetCapabilities
+        format -- the format of the legend ('png' or 'svg'
         orientation -- the orientation of the legend
     """
 
     print "\nLegend location: " + output
     print "Legend URL: " + legend_url
     print "Color Map: " + colormap
+    print "Format: " + format
     print "Orientation: " + orientation
     pt = 1.25  #pixels in point
 
+    legend_url_template = ''
+
+    if format not in ["svg","png"]:
+        log_sig_err("Error generating legend; Invalid format: " + format, sigevent_url)
+        return
+    elif orientation not in ["horizontal","vertical"]:
+        log_sig_err("Error generating legend; Invalid orientation: " + orientation, sigevent_url)
+        return
+
+    cmd = 'oe_generate_legend.py -c ' + colormap + ' -o ' + output + ' -r ' + orientation + ' -f ' + format
+
     if os.path.isfile(output) == False:
         print "Generating new legend"
-        cmd = 'oe_generate_legend.py -c ' + colormap + ' -o ' + output + ' -r ' + orientation
+
         try:
             run_command(cmd, sigevent_url)
         except Exception, e:
@@ -915,32 +929,54 @@ def generate_legend(colormap, output, legend_url, orientation):
             if colormap_time > legend_time:
                 print "Updated color map found"
                 print "Generating new legend"
-                cmd = 'oe_generate_legend.py -c ' + colormap + ' -o ' + output + ' -r ' + orientation
                 run_command(cmd, sigevent_url)
         except Exception, e:
             log_sig_err("Error generating legend: " + str(e), sigevent_url)
+
     # check file
     try:
-        # Open file.
-        svg = open(output, 'r')
+        if format == "svg":
+            # Open file.
+            svg = open(output, 'r')
+
+            # get width and height
+            dom = xml.dom.minidom.parse(svg)
+            svgElement = dom.getElementsByTagName('svg')[0]
+            height = float(svgElement.attributes['height'].value.replace('pt',
+                                                                         '')) * pt
+            width = float(svgElement.attributes['width'].value.replace('pt', '')) * pt
+            svg.close()
+
+            if orientation == 'horizontal':
+                legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
+                    legend_url, int(width), int(height))
+            else:
+                legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
+                    legend_url, int(width), int(height))
+
+
+        # png
+        else:
+            # get width and height
+            gdalinfo_command_list = ['gdalinfo', '-json', output]
+            gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            outputInfo = json.loads(gdalinfo.stdout.read())
+
+            width  = outputInfo["size"][0]
+            height = outputInfo["size"][1]
+
+            if orientation == 'horizontal':
+                legend_url_template = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
+                    legend_url, int(width), int(height))
+            else:
+                legend_url_template = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
+                legend_url, int(width), int(height))
+
     except IOError:
-        mssg = str().join(['Cannot read SVG legend file:  ', output])
+        mssg = str().join(['Cannot read legend file:  ', output])
         log_sig_err(mssg, sigevent_url)
 
-    # get width and height
-    dom = xml.dom.minidom.parse(svg)
-    svgElement = dom.getElementsByTagName('svg')[0]
-    height = float(svgElement.attributes['height'].value.replace('pt',
-                                                                 '')) * pt
-    width = float(svgElement.attributes['width'].value.replace('pt', '')) * pt
-    svg.close()
-
-    if orientation == 'horizontal':
-        legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
-            legend_url, int(width), int(height))
-    else:
-        legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
-            legend_url, int(width), int(height))
 
     return legend_url_template
 
@@ -2442,14 +2478,21 @@ for conf in conf_files:
             try:
                 if environment.legendUrl != None:
                     if legend_output != '':
-                        legendUrl_vertical = generate_legend(
+                        # These URLs _are_ used in the WMTS capabilities
+                        legendUrl_svg_vertical = generate_legend(
                             colormap_path, legend_output + '_V.svg',
                             environment.legendUrl + legend_identifier + '_V.svg',
-                            'vertical')
-                        legendUrl_horizontal = generate_legend(
+                            'svg', 'vertical')
+                        legendUrl_svg_horizontal = generate_legend(
                             colormap_path, legend_output + '_H.svg',
                             environment.legendUrl + legend_identifier + '_H.svg',
-                            'horizontal')
+                            'svg', 'horizontal')
+
+                        # This URL _is not_ used in the WMTS capabilities
+                        legendUrl_png_horizontal = generate_legend(
+                            colormap_path, legend_output + '_H.png',
+                            environment.legendUrl + legend_identifier + '_H.png',
+                            'png', 'horizontal')
                 else:
                     message = "Legend URL has not been defined for environment with cache location: " + environment.cache
                     log_sig_err(message, sigevent_url)
@@ -2670,10 +2713,9 @@ for conf in conf_files:
             if '$Identifier' in line:
                 line = line.replace("$Identifier", identifier)
             if '$LegendURL_vertical' in line:
-                line = line.replace("$LegendURL_vertical", legendUrl_vertical)
+                line = line.replace("$LegendURL_vertical", legendUrl_svg_vertical)
             if '$LegendURL_horizontal' in line:
-                line = line.replace("$LegendURL_horizontal",
-                                    legendUrl_horizontal)
+                line = line.replace("$LegendURL_horizontal", legendUrl_svg_horizontal)
             if '$ColorMap' in line:
                 if colormaps == None or default_colormap == None:
                     line = ''
