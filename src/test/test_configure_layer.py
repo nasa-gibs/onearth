@@ -168,8 +168,9 @@ class TestLayerConfig(unittest.TestCase):
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_legend_generation.xml')
-        h_legend_ref_hash = '45223e22a673700d52f17c6658eac7e0'
-        v_legend_ref_hash = 'cf9b632f30fbdbea466a489ecf363d76'
+        h_png_legend_ref_hash = 'f937aa0d047d9075f6ab76894bb7fb17'
+        h_svg_legend_ref_hash = '1766e4a987db87ad13c385f631aa309b'
+        v_svg_legend_ref_hash = '81c385706fc1be436f70ac206069045e'
 
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -194,15 +195,25 @@ class TestLayerConfig(unittest.TestCase):
         hasher = hashlib.md5()
         stripped_file = ''
         try:
+            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.png'), 'r') as f:
+                file_str = f.read()
+                stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
+                stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
+                stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
+                hasher.update(stripped_file)
+                h_png_legend_hash = hasher.hexdigest()
+        except OSError:
+            raise ValueError('Horizontal PNG legend not generated')
+        try:
             with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.svg'), 'r') as f:
                 file_str = f.read()
                 stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
                 stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
                 stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
                 hasher.update(stripped_file)
-                h_legend_hash = hasher.hexdigest()
+                h_svg_legend_hash = hasher.hexdigest()
         except OSError:
-            raise ValueError('Horizontal legend not generated')
+            raise ValueError('Horizontal SVG legend not generated')
         try:
             with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_V.svg'), 'r') as f:
                 file_str = f.read()
@@ -210,9 +221,9 @@ class TestLayerConfig(unittest.TestCase):
                 stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
                 stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
                 hasher.update(stripped_file)
-                v_legend_hash = hasher.hexdigest()
+                v_svg_legend_hash = hasher.hexdigest()
         except OSError:
-            raise ValueError('Vertical legend not generated')
+            raise ValueError('Vertical SVG legend not generated')
 
         # Cleanup
         rmtree(config['wmts_gc_path'])
@@ -222,8 +233,9 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['twms_staging_location'])
 
         # Check if hashes are kosher
-        self.assertEqual(h_legend_ref_hash, h_legend_hash, 'Horizontal legend generated does not match expected.')
-        self.assertEqual(v_legend_ref_hash, v_legend_hash, 'Vertical legend generated does not match expected.')
+        self.assertEqual(h_png_legend_ref_hash, h_png_legend_hash, 'Horizontal PNG legend generated does not match expected.')
+        self.assertEqual(h_svg_legend_ref_hash, h_svg_legend_hash, 'Horizontal SVG legend generated does not match expected.')
+        self.assertEqual(v_svg_legend_ref_hash, v_svg_legend_hash, 'Vertical SVG legend generated does not match expected.')
 
     def test_versioned_colormaps(self):
         # Set locations of the config files we're using for this test
