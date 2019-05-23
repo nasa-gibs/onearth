@@ -979,7 +979,8 @@ else:
     except:
         if input_dir == None:
             if mrf_empty_tile_filename != '':
-                input_files = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename, target_epsg, xmin, ymin, xmax, ymax)
+                input_files = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename,
+                                         target_epsg, target_xmin, target_ymin, target_xmax, target_ymax)
             else:
                 log_sig_exit('ERROR', "<input_files> or <input_dir> or <mrf_empty_tile_filename> is required", sigevent_url)
         else:
@@ -1620,6 +1621,8 @@ if len(mrf_list) > 0:
         # sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
+
+    # Exit mrfgen because we are done
     sys.exit(errors)
     
   
