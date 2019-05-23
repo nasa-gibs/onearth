@@ -962,7 +962,7 @@ else:
         extents        =get_dom_tag_value(dom, 'extents')
     except:
         extents = '-180,-90,180,90' # default to geographic
-    xmin, ymin, xmax, ymax = extents.split(',')
+    source_xmin, source_ymin, source_xmax, source_ymax = extents.split(',')
     try:
         target_extents        =get_dom_tag_value(dom, 'target_extents')
     except:
@@ -1493,7 +1493,7 @@ diff_res, res = diff_resolution(alltiles)
 # determine if nocopy should be used if not set
 if nocopy == None:
     if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
-        if is_global_image(alltiles[0],xmin, ymin, xmax, ymax) == True:
+        if is_global_image(alltiles[0],target_xmin, target_ymin, target_xmax, target_ymax) == True:
             # Don't do inserts if we have a single global image
             nocopy = False
         else:
@@ -1609,7 +1609,10 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
+    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [source_xmin, source_ymin, source_xmax, source_ymax],
+                             [target_xmin, target_ymin, target_xmax, target_ymax],
+                             source_epsg, target_epsg, vrtnodata, merge, working_dir)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1655,12 +1658,12 @@ else:
 #target_x=str(360.0/int(target_x))
 #target_y=target_x
 
-gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
+gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', source_xmin, source_ymin, source_xmax, source_ymax,'-input_file_list', all_tiles_filename]
 # use resolution?
 if diff_res == True and target_x != '':
-    xres = repr(abs((float(xmax)-float(xmin))/float(target_x)))
+    xres = repr(abs((float(source_xmax)-float(source_xmin))/float(target_x)))
     if target_y != '':
-        yres = repr(abs((float(ymin)-float(ymax))/float(target_y)))
+        yres = repr(abs((float(source_ymin)-float(source_ymax))/float(target_y)))
     else:
         yres = xres
     log_info_mssg("x resolution: " + xres + ", y resolution: " + yres)
@@ -1941,7 +1944,10 @@ run_addo = True
 
 # Insert into nocopy
 if nocopy==True:
-    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
+    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [source_xmin, source_ymin, source_xmax, source_ymax],
+                             [target_xmin, target_ymin, target_xmax, target_ymax],
+                             source_epsg, target_epsg, vrtnodata, merge, working_dir)
     if noaddo or len(alltiles) <= 1:
         run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
 
