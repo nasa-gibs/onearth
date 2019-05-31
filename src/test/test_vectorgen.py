@@ -70,6 +70,7 @@ class TestVectorgen(unittest.TestCase):
         self.mrf_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf.xml')
         self.shapefile_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile.xml')
         self.reproject_test_config = os.path.join(self.test_data_path, 'vectorgen_test_reproject.xml')
+        self.geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_geojson.xml')
 
     # Utility function that parses a vectorgen config XML and creates necessary dirs/copies necessary files
     def parse_vector_config(self, vector_config, artifact_path):
@@ -194,6 +195,35 @@ class TestVectorgen(unittest.TestCase):
             with fiona.open(output_file) as shapefile:
                 self.assertEqual(origin_num_features, len(list(shapefile)),
                                  "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], output_file))
+        except IOError:
+            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output geojson file {0}.".format(output_file))
+            
+    def test_geojson_generation(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'geojson')
+        config = self.parse_vector_config(self.geojson_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson:
+                origin_num_features = len(list(geojson))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
+        
+        # Run vectorgen
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.geojson_test_config
+        run_command(cmd, ignore_warnings=True)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.json')
+        try:
+            with fiona.open(output_file) as geojson:
+                self.assertEqual(origin_num_features, len(list(geojson)),
+                                 "Feature count between input GeoJSON {0} and output GeoJSON {1} differs. There is a problem with the conversion process."
                                  .format(config['input_files'][0], output_file))
         except IOError:
             self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
