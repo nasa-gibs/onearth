@@ -8,7 +8,7 @@ The new images is built from a Docker image that has the gibs-gdal RPMs installe
 
 Example of building an OnEarth Docker image:
 
-`./bin/build_el7_docker_image.sh gibs/onearth:v1.3.5`
+`./bin/build_el7_docker_image.sh nasagibs/onearth:1.3.6`
 
 The generated image will start Apache when it is run.
 
@@ -22,6 +22,6 @@ takes two parameters:
 * TAG - the tag to be applied to the newly generated image
 
 Example of building an onearth-demo Docker image using the
-"nasagibs/onearth:1.3.1-8.2":
+"nasagibs/onearth:1.3.6":
 
-`./bin/build_el7_demo_docker_image.sh nasagibs/onearth:1.3.1-8.2 onearth-demo:1.3.1-8.2`
+`./bin/build_el7_demo_docker_image.sh nasagibs/onearth:1.3.6 onearth-demo:1.3.6`

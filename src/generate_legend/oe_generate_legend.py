@@ -61,7 +61,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "v1.3.5"
+versionNumber = "v1.3.6"
 
 class ColorMaps:
     """Collection of ColorMaps"""
