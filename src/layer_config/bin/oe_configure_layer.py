@@ -3108,6 +3108,7 @@ $Patterns</TiledGroup>"""
                     '\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
                 mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
             mapfile.write("\tEND\n")
+            datacon = "DATA"
             if vectorType:
                 # check if we have json files; if yes, use that extension, otherwise assume shapefiles
                 jsonsearch = archiveLocation + '/[0-9]*/*.json'
@@ -3115,24 +3116,26 @@ $Patterns</TiledGroup>"""
                     extension = ''
                 else:
                     extension = '.json'
+                    mapfile.write("\tCONNECTIONTYPE OGR\n")
+                    datacon = "CONNECTION"
             else:
                 extension = '.mrf'
             if not static and year:
                 if subdaily:
-                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" +
+                    mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
                                   yearDirPattern + "/" + fileNamePrefix +
                                   timeDirPattern + subdailyDirPattern +
                                   extension + "\"\n")
                 else:
-                    mapfile.write("\tDATA\t\"" + archiveLocation + "/" +
+                    mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
                                   yearDirPattern + "/" + fileNamePrefix +
                                   timeDirPattern + extension + "\"\n")
             elif not static and not year:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" +
+                mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
                               fileNamePrefix + timeDirPattern + extension +
                               "\"\n")
             else:
-                mapfile.write("\tDATA\t\"" + archiveLocation + "/" +
+                mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
                               fileNamePrefix + extension + "\"\n")
             mapfile.write("\tPROJECTION\n")
             mapfile.write('\t\t\"init={0}"\n'.format(projection.id.lower()))
