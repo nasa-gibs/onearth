@@ -528,12 +528,12 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         #detect everything including breaks in date
         dates = []
         if year == True:
-            filesearch = archiveLocation + '/[0-9]*/*[idx,shp]'
+            filesearch = archiveLocation + '/[0-9]*/*[idx,shp,json]'
             if len(glob.glob(filesearch)
                    ) == 0:  # No files, maybe 'year' not specified correctly
-                filesearch = archiveLocation + '/*[idx,shp]'
+                filesearch = archiveLocation + '/*[idx,shp,json]'
         else:
-            filesearch = archiveLocation + '/*[idx,shp]'
+            filesearch = archiveLocation + '/*[idx,shp,json]'
         for f in glob.glob(filesearch):
             filename = os.path.basename(f)
             if str(filename).startswith(fileNamePrefix) and len(filename) == (
@@ -719,7 +719,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         if start == detect:
             dates = []
             for f in glob.glob(archiveLocation + '/' + oldest_year +
-                               '/*[idx,shp]'):
+                               '/*[idx,shp,json]'):
                 filename = os.path.basename(f)
                 if str(filename).startswith(fileNamePrefix) and len(
                         filename) == (
@@ -766,7 +766,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         if end == detect:
             dates = []
             for f in glob.glob(archiveLocation + '/' + newest_year +
-                               '/*[idx,shp]'):
+                               '/*[idx,shp,json]'):
                 filename = os.path.basename(f)
                 if str(filename).startswith(fileNamePrefix) and len(
                         filename) == (
@@ -1086,7 +1086,7 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
         os.symlink(idx, idx_link)
         print "Created soft link " + idx_link + " -> " + idx
     else:
-        if data_ext != ".shp":
+        if data_ext != ".shp" or data_ext != ".json":
             log_sig_warn("Default MRF index file " + idx + " does not exist",
                          sigevent_url)
     if os.path.isfile(data):
@@ -3109,7 +3109,12 @@ $Patterns</TiledGroup>"""
                 mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
             mapfile.write("\tEND\n")
             if vectorType:
-                extension = ''
+                # check if we have json files; if yes, use that extension, otherwise assume shapefiles
+                jsonsearch = archiveLocation + '/[0-9]*/*.json'
+                if len(glob.glob(jsonsearch)) == 0:
+                    extension = ''
+                else:
+                    extension = '.json'
             else:
                 extension = '.mrf'
             if not static and year:
