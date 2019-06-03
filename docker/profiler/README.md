@@ -1,19 +1,19 @@
-# Creating Siege docker container with performance test suite
+# Creating Docker image with performance profiling test suite
 
 ## Docker setup
 
-The included Dockerfile will build an image with siege. The build is configured
+The included Dockerfile will build an image with Siege. The build is configured
 with the performance test suite.  This Docker image assumes AWS instance has been 
 deployed and configured and that it is accessible.
 
-To run, build the image `docker build -t nasagibs/onearth-profiler .`, and then start a container using that image. 
+To build the image, copy the Dockerfile to the top directory `cp ./docker/profiler/Dockerfile/ .`, and then build using the Dockerfile `docker build -t nasagibs/onearth-profiler .` 
 
 Environment variables for AWS CLI tools must be passed into the Docker container on startup:
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_REGION
 
-To keep it simple use, use host networking with the docker run command.
+Run the container using the Docker image. To keep it simple use, use host networking with the docker run command.
 For example, 
 docker run -it --network host -e GROUP_NAME=$GROUP_NAME -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_REGION=$AWS_REGION nasagibs/onearth-profiler:latest /bin/bash
 

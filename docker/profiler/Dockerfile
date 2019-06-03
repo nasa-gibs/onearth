@@ -4,11 +4,9 @@ RUN yum groupinstall -y "Development Tools"
 RUN yum install -y epel-release 
 RUN yum install -y python-pip 
 
-RUN mkdir /home/oe2
-
-# Clone OnEarth repo
+# Copy OnEarth to home directory
+RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
-RUN git clone https://github.com/nasa-gibs/onearth.git
 COPY ./ /home/oe2/onearth/
 
 # Get and install node
