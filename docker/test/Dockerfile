@@ -1,6 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM nasagibs/onearth-deps:2.2.1
+FROM nasagibs/onearth-deps:latest
 
 # Install GDAL
 RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm"

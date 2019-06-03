@@ -1,6 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM nasagibs/onearth-deps:2.2.1
+FROM nasagibs/onearth-deps:latest
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2

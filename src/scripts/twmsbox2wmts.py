@@ -85,7 +85,7 @@ def twmsbox2wmts(request_bbox, epsg):
     return "TILECOL=" + str(abs(int(col))) + "\n" + "TILEROW="+str(abs(int(row)))
 
 
-versionNumber = '2.2.1'
+versionNumber = '2.2.2'
 usageText = 'twmsbox2wmts.py --bbox [bbox]'
 
 # Define command line options and args.
