@@ -107,10 +107,10 @@ wget -O /onearth/idx/profiler/BlueMarble/BlueMarble.idx $S3_URL/profiler/BlueMar
 
 mkdir -p /onearth/idx/profiler/MOGCR_LQD_143_STD
 f=$(../../src/test/oe_gen_hash_filename.py -l MOGCR_LQD_143_STD -t 1293840000 -e .idx)
-wget -O /onearth/idx/profiler/MOGCR_LQD_143_STD/$f $S3_URL/profiler/$f
+wget -O /onearth/idx/profiler/MOGCR_LQD_143_STD/$f $S3_URL/epsg4326/MOGCR_LQD_143_STD/$f
 
 mkdir -p /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT
-wget -O /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx $S3_URL/profiler/VNGCR_LQD_I1-M4-M3_NRT.idx
+wget -O /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx $S3_URL/epsg4326/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx
 d=1516060800
 until [ $d -gt 1524614400 ]; do
     f=$(../../src/test/oe_gen_hash_filename.py -l VNGCR_LQD_I1-M4-M3_NRT -t $d -e .idx)
@@ -119,7 +119,7 @@ until [ $d -gt 1524614400 ]; do
 done
 
 mkdir -p /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT
-wget -O /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx $S3_URL/profiler/MOG13Q4_LQD_NDVI_NRT.idx
+wget -O /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx $S3_URL/epsg4326/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx
 d=1514764800
 until [ $d -gt 1523318400 ]; do
     f=$(../../src/test/oe_gen_hash_filename.py -l MOG13Q4_LQD_NDVI_NRT -t $d -e .idx)

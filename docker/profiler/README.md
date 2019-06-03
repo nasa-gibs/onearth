@@ -6,16 +6,16 @@ The included Dockerfile will build an image with siege. The build is configured
 with the performance test suite.  This Docker image assumes AWS instance has been 
 deployed and configured and that it is accessible.
 
-To allow access to the AWS instance, set up a SSH tunnel thru bastion to the host 
-machine.  Run the following command.
-ssh -L*:8080:<AWS instance IP address>:80 <bastion>
+To run, build the image `docker build -t nasagibs/onearth-profiler .`, and then start a container using that image. 
 
-To run, simply build the image `docker build -t siege --build-arg AWS_ID={id} 
---build-arg AWS_SECRET={secret key} .`, and then start a container using that image. 
+Environment variables for AWS CLI tools must be passed into the Docker container on startup:
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
 
 To keep it simple use, use host networking with the docker run command.
 For example, 
-docker run -it --network host siege:latest /bin/bash
+docker run -it --network host -e GROUP_NAME=$GROUP_NAME -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_REGION=$AWS_REGION nasagibs/onearth-profiler:latest /bin/bash
 
 Please note, docker host networking does not work as expected on MacOS.  Please refer
 to https://forums.docker.com/t/should-docker-run-net-host-work/14215/29 for more 
@@ -38,6 +38,6 @@ testP5 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m PNG MRFs
 testP6 -- Mod Reproject 100,000 Requests / 100 Users / 87,381 URLs / Single 500m JPEG MRF
 
 To run the test suite, run the following command in the docker image.
-/home/perf/onearth/docker/profiler/start_profiler.sh <GROUP NAME>
+/home/perf/onearth/docker/profiler/start_profiler.sh $GROUP_NAME $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_REGION
 
-<GROUP NAME> is the AWS instance name where OnEarth is deployed
+$GROUP_NAME is the AWS instance name where OnEarth is deployed

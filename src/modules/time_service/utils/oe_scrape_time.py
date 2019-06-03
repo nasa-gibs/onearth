@@ -41,8 +41,11 @@ def keyMapper(acc, obj):
         acc[proj][layer_name] = {'dates': set([])}
 
     date = filename.split("-")[-1].split(".")[0]
-
-    acc[proj][layer_name]['dates'].add(date)
+    try:
+        datetime.strptime(date, '%Y%j%H%M%S')
+        acc[proj][layer_name]['dates'].add(date)
+    except ValueError:
+        print('Incorrect data format for ' + filename + ', should be YYYYDDDhhmmss')
 
     return acc
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-OE_VERSION=${1:-2.2.1}
+OE_VERSION=${1:-2.2.2}
 REDIS_HOST=onearth-time-service
 
 # Start by making a docker network. This will allow us to lookup hostnames from each Docker instance
