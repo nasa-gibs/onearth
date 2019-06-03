@@ -1,4 +1,5 @@
 #!/bin/sh
+DEBUG_LOGGING=${1:-false}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -47,6 +48,12 @@ python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profi
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml
+
+# Set Apache logs to debug log level
+if [ "$DEBUG_LOGGING" = true ]; then
+    perl -pi -e 's/LogLevel warn/LogLevel debug/g' /etc/httpd/conf/httpd.conf
+    perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
+fi
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart

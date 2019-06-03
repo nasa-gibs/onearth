@@ -17,13 +17,9 @@ RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth_time_service-0.1-1.rockspec
 
-# Set Apache to Debug mode for performance logging
-# RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
-# RUN perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
-
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker/time_service
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
-CMD sh start_time_service.sh $S3_URL $REDIS_HOST
+CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING

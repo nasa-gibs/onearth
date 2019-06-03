@@ -1,8 +1,9 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
-S3_CONFIGS=${3:-gitc-uat-onearth-configs}
+S3_CONFIGS=${3:-gitc-dev-onearth-configs}
 IDX_SYNC=${4:-true}
+DEBUG_LOGGING=${5:-false}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -32,6 +33,12 @@ cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mr
 # Sync IDX files if true
 if [ "$IDX_SYNC" = true ]; then
     python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx
+fi
+
+# Set Apache logs to debug log level
+if [ "$DEBUG_LOGGING" = true ]; then
+    perl -pi -e 's/LogLevel warn/LogLevel debug/g' /etc/httpd/conf/httpd.conf
+    perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
 fi
 
 # Load GIBS sample layers

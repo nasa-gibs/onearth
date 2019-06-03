@@ -1,7 +1,8 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
-S3_CONFIGS=${3:-gitc-uat-onearth-configs}
+S3_CONFIGS=${3:-gitc-dev-onearth-configs}
+DEBUG_LOGGING=${4:-false}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -86,6 +87,12 @@ lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/c
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_best.yaml
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_std.yaml
 lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_all.yaml
+
+# Set Apache logs to debug log level
+if [ "$DEBUG_LOGGING" = true ]; then
+    perl -pi -e 's/LogLevel warn/LogLevel debug/g' /etc/httpd/conf/httpd.conf
+    perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
+fi
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start

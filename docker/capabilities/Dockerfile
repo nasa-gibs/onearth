@@ -37,5 +37,5 @@ RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
 WORKDIR /home/oe2/onearth/docker/capabilities
-CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $S3_CONFIGS
+CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $S3_CONFIGS $DEBUG_LOGGING
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/

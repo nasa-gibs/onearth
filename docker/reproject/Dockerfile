@@ -40,4 +40,4 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
 WORKDIR /home/oe2/onearth/docker/reproject
-CMD sh start_reproject.sh
+CMD sh start_reproject.sh $DEBUG_LOGGING
