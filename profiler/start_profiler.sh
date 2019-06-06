@@ -1,18 +1,11 @@
 #!/bin/sh
-GROUP_NAME=${1:-127.0.0.1}
-AWS_ACCESS_KEY_ID=$2
-AWS_SECRET_ACCESS_KEY=$3
-AWS_REGION=$4
+ONEARTH_HOST=${1:-localhost:8080}
+GROUP_NAME=${2:-onearth}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
 fi
-
-aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-aws configure set output json
-aws configure set region $AWS_REGION
 
 # Performance test suite
 cd /home/oe2/onearth/profiler/testP0_artifacts

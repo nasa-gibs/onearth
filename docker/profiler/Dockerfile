@@ -2,7 +2,7 @@ FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 RUN yum install -y epel-release 
-RUN yum install -y python-pip 
+RUN yum install -y python-pip httpd
 
 # Copy OnEarth profiler source
 RUN mkdir -p /home/oe2/onearth/profiler
@@ -27,4 +27,6 @@ RUN pip install numpy
 
 # Run performance test
 WORKDIR /home/oe2/onearth/profiler
-#CMD sh start_profiler.sh $GROUP_NAME $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_REGION
+
+EXPOSE 80
+CMD ["/usr/sbin/httpd","-D", "FOREGROUND"]
