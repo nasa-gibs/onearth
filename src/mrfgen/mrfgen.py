@@ -554,7 +554,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         working_dir -- Directory to use for temporary files
     """
     errors = 0
-    t_min, t_ymin, t_xmax, t_ymax  = target_extents
+    t_xmin, t_ymin, t_xmax, t_ymax  = target_extents
 
     if target_y == '':
         target_y = float(int(target_x)/2)
@@ -1359,7 +1359,13 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
     tiff_compress = "JPEG"
 else: # Default to png
     tiff_compress = "PNG"
-    
+
+# Sanity check to make sure all of the input files exist
+for i, tile in enumerate(alltiles):
+    if not os.path.exists(tile):
+        log_info_mssg("Missing input file: " + tile)
+        log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
 # Filter out bad JPEGs
 goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
