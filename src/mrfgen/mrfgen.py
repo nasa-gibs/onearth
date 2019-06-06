@@ -253,6 +253,10 @@ def get_image_extents(tile):
     log_info_mssg("Getting image extents")
 
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
+    log_the_command(gdalinfo_command_list)
+
+    if tile: log_info_mssg(os.path.exists(tile))
+
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     tileInfo = json.loads(gdalinfo.stdout.read())
 
@@ -558,7 +562,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
 
     if target_y == '':
         target_y = float(int(target_x)/2)
-    log_info_mssg("Inserting new tiles to " + mrf)
+    log_info_mssg("Inserting new tiles into " + mrf)
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
 
     for tile in tiles:
