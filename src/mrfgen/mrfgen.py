@@ -612,7 +612,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if merge and target_epsg == s_epsg: # merge tile with existing imagery if true and same projection
             log_info_mssg("Image extents " + str([s_xmin, s_ymax, s_xmax, s_ymin]))
             tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
-                             t_min, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
+                             t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
             diff_res = False # gdalmerge has corrected the resolutions
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
 
@@ -622,7 +622,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 resize_resampling = "near" # use nearest neighbor as default
 
             tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr',
-                                     str((Decimal(t_xmax)-Decimal(t_min))/Decimal(target_x)),
+                                     str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
                                      str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y))]
 
             # add source and target EPSGs explicitly if they are not the same
@@ -634,9 +634,9 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
 
             # build the vrt for the entire projection if we have one image that covers the entire projection
             # TODO ... not sure this is needed actually...
-            if is_global_image(tile, t_min, t_ymin, t_xmax, t_ymax) and len(tiles) == 1:
+            if is_global_image(tile, t_xmin, t_ymin, t_xmax, t_ymax) and len(tiles) == 1:
                 tile_vrt_command_list.append('-te')
-                tile_vrt_command_list.append(t_min)
+                tile_vrt_command_list.append(t_xmin)
                 tile_vrt_command_list.append(t_ymin)
                 tile_vrt_command_list.append(t_xmax)
                 tile_vrt_command_list.append(t_ymax)
@@ -651,7 +651,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(vrt_tile) # get new extents
                 log_info_mssg("Image extents " + str(extents))
                 tile = gdalmerge(mrf, vrt_tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
-                                 t_min, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
+                                 t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
                 mrf_insert_command_list.append(tile)
             else:
                 mrf_insert_command_list.append(vrt_tile)
