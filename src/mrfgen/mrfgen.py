@@ -571,8 +571,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             log_info_mssg("Skipping insert of " + tile)
             continue
 
-        diff_res, ps = diff_resolution([tile, mrf])
-
         # check if image fits within extents
         if (float(s_xmin) < float(t_xmin)) or \
            (float(s_ymax) > float(t_ymax)) or \
@@ -584,12 +582,13 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                                      target_extents, target_epsg, nodata, True, working_dir)
             continue
         # check if image crosses antimeridian
-        elif ((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or (float(s_xmax) > float(t_xmax)):
+        elif target_epsg in ['EPSG:4326','EPSG:4326'] and (((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or
+                                                            (float(s_xmax) > float(t_xmax))):
             log_info_mssg(tile + " crosses antimeridian")
             left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
                                                               str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)),
                                                               str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)),
-                                                              s_epsg, target_epsg, working_dir)
+                                                              target_epsg, target_epsg, working_dir)
 
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
@@ -601,6 +600,8 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                              t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
             diff_res = False # gdalmerge has corrected the resolutions
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
+
+        diff_res, ps = diff_resolution([tile, mrf])
 
         if diff_res:
             # convert tile to matching resolution
