@@ -255,8 +255,6 @@ def get_image_extents(tile):
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
     log_the_command(gdalinfo_command_list)
 
-    if tile: log_info_mssg(os.path.exists(tile))
-
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     tileInfo = json.loads(gdalinfo.stdout.read())
 
@@ -539,7 +537,7 @@ def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     return cut_tile
 
 def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                   target_extents, source_epsg, target_epsg, nodata, merge, working_dir):
+                   target_extents, target_epsg, nodata, merge, working_dir):
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -551,7 +549,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         target_y -- The target resolution for y
         mrf_blocksize -- The block size of MRF tiles
         target_extents -- Full extents of the target imagery
-        source_epsg -- The source EPSG code (or "detect")
         target_epsg -- The target EPSG code
         nodata -- nodata value
         merge -- Merge over transparent regions of imagery
@@ -567,15 +564,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
 
     for tile in tiles:
 
-        if source_epsg == "detect":
-            s_epsg  = get_image_epsg(tile)
-
-            if not s_epsg:
-                log_sig_warn(tile + " does not have detectable EPSG code", sigevent_url)
-                continue
-        else:
-            s_epsg  = source_epsg
-
         s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(tile)
 
         if os.path.splitext(tile)[1] == ".vrt" and not ("_cut." in tile or "_reproject." in tile):
@@ -585,31 +573,29 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
 
         diff_res, ps = diff_resolution([tile, mrf])
 
-        if s_epsg == 'EPSG:3031' or s_epsg == 'EPSG:3413':
-            # check if polar image fits within extents
-            if (float(s_xmin) < float(t_xmin)) or \
-               (float(s_ymax) > float(t_ymax)) or \
-               (float(s_xmax) > float(t_xmax)) or \
-               (float(s_ymin) < float(t_ymin)):
-                log_info_mssg(tile + " falls outside of extents for " + target_epsg)
-                cut_tile = crop_to_extents(tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_extents, working_dir)
-                errors += run_mrf_insert(mrf, [cut_tile], insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                                         target_extents, s_epsg, target_epsg, nodata, True, working_dir)
-                continue
-        else:
-            # check if image crosses antimeridian
-            if ((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or (float(s_xmax) > float(t_xmax)):
-                log_info_mssg(tile + " crosses antimeridian")
-                left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
-                                                                  str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)),
-                                                                  str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)),
-                                                                  s_epsg, target_epsg, working_dir)
+        # check if image fits within extents
+        if (float(s_xmin) < float(t_xmin)) or \
+           (float(s_ymax) > float(t_ymax)) or \
+           (float(s_xmax) > float(t_xmax)) or \
+           (float(s_ymin) < float(t_ymin)):
+            log_info_mssg(tile + " falls outside of extents for " + target_epsg)
+            cut_tile = crop_to_extents(tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_extents, working_dir)
+            errors += run_mrf_insert(mrf, [cut_tile], insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                                     target_extents, target_epsg, nodata, True, working_dir)
+            continue
+        # check if image crosses antimeridian
+        elif ((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or (float(s_xmax) > float(t_xmax)):
+            log_info_mssg(tile + " crosses antimeridian")
+            left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
+                                                              str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)),
+                                                              str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)),
+                                                              s_epsg, target_epsg, working_dir)
 
-                errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
-                                         mrf_blocksize, target_extents, s_epsg, target_epsg, nodata, True, working_dir)
-                continue
+            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
+                                     mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
+            continue
 
-        if merge and target_epsg == s_epsg: # merge tile with existing imagery if true and same projection
+        if merge: # merge tile with existing imagery if true
             log_info_mssg("Image extents " + str([s_xmin, s_ymax, s_xmax, s_ymin]))
             tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                              t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
@@ -624,13 +610,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr',
                                      str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
                                      str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y))]
-
-            # add source and target EPSGs explicitly if they are not the same
-            if target_epsg != source_epsg:
-                tile_vrt_command_list.append('-s_srs')
-                tile_vrt_command_list.append(s_epsg)
-                tile_vrt_command_list.append('-t_srs')
-                tile_vrt_command_list.append(target_epsg)
 
             # build the vrt for the entire projection if we have one image that covers the entire projection
             # TODO ... not sure this is needed actually...
@@ -647,7 +626,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
 
-            if merge and target_epsg != s_epsg: # merge tile with existing imagery after reprojection
+            if merge: # merge tile with existing imagery
                 s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(vrt_tile) # get new extents
                 log_info_mssg("Image extents " + str(extents))
                 tile = gdalmerge(mrf, vrt_tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
@@ -1520,8 +1499,9 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             remove_file(temp_tile+'.aux.xml')
             remove_file(temp_tile.split('.')[0]+'.wld')
 
-# Create VRTs with the target EPSG for input images if the source EPSG is to be detected:
-if source_epsg == "detect":
+# Create VRTs with the target EPSG for input images if the source EPSG is different or is to be detected:
+if source_epsg == "detect" or source_epsg != target_epsg:
+    log_info_mssg("source EPSG != target EPSG or source EPSG is to be detected; Creating VRTs for each input tile in target EPSG")
 
     for i, tile in enumerate(alltiles):
         temp_tile = None
@@ -1529,16 +1509,22 @@ if source_epsg == "detect":
         tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
         tile_vrt = os.path.join(tile_path, tile_basename + "_reproject.vrt")
 
-        s_epsg = get_image_epsg(tile)
+        if source_epsg == "detect":
+            s_epsg = get_image_epsg(tile)
+        else:
+            s_epsg = source_epsg
+
         if not s_epsg:
             # if EPSG can't be determined, remove the tile
             errors += 1
             log_sig_warn(tile + " has undetectable EPSG", sigevent_url)
             del alltiles[i]
         elif s_epsg != target_epsg:
+            log_info_mssg("Creating VRT for input tile: " + tile)
+
             # if the source and target EPSGs are not the same, create a VRT
 
-            gdalwarp_command_list = ['gdalwarp', '-q', '-of', 'vrt', 's_srs', s_epsg, '-t_srs', target_epsg, tile, tile_vrt]
+            gdalwarp_command_list = ['gdalwarp', '-q', '-of', 'vrt', '-s_srs', s_epsg, '-t_srs', target_epsg, tile, tile_vrt]
 
             # Log the gdalbuildvrt command.
             log_the_command(gdalwarp_command_list)
@@ -1546,7 +1532,7 @@ if source_epsg == "detect":
             # Capture stderr to record skipped .png files that are not valid PNG+World.
             gdalwarp_stderr_filename = str().join([working_dir, basename, '_gdalwarp_stderr.txt'])
             # Open stderr file for write.
-            gdalwarp_stderr_file = open(gdalwarp_stderr_filename, 'w')
+            gdalwarp_stderr_file = open(gdalwarp_stderr_filename, 'w+')
 
             # ---------------------------------------------------------------------------
             # Execute gdalwarp.
@@ -1623,30 +1609,9 @@ if mrf_compression_type == 'EPNG':
 # sort
 alltiles.sort()
 
-# check for different resolutions
-diff_res, res = diff_resolution(alltiles)
-
-# determine if nocopy should be used if not set
-if nocopy == None:
-    if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
-        if is_global_image(alltiles[0],target_xmin, target_ymin, target_xmax, target_ymax) == True:
-            # Don't do inserts if we have a single global image
-            nocopy = False
-        else:
-            nocopy = True
-    elif len(alltiles) == 1 and alltiles[0].endswith('empty.vrt') == True: #empty VRT, use nocopy
-        nocopy = True
-    else:
-        if (res*8) < (float(mrf_blocksize)/float(target_x)):
-            # Avoid inserts if the target MRF resolution is too low
-            nocopy = False
-        elif source_epsg != target_epsg:
-            # Avoid inserts if reprojecting
-            nocopy = False
-        else:
-            nocopy = True
-    log_info_mssg("Setting MRF nocopy to " + str(nocopy))
-
+# Just always set nocopy to True. It's simpler that way
+nocopy=True
+log_info_mssg("Setting MRF nocopy to " + str(nocopy))
 
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
@@ -1748,8 +1713,7 @@ if len(mrf_list) > 0:
         con = None
 
     errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                             [target_xmin, target_ymin, target_xmax, target_ymax],
-                             source_epsg, target_epsg, vrtnodata, merge, working_dir)
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1786,8 +1750,20 @@ else:
 
 
 gdalbuildvrt_command_list=['gdalbuildvrt', '-q', '-input_file_list', all_tiles_filename]
-# use resolution?
+
+# all tiles are now in the target_epsg because:
+#   a) source_epsg == target_epsg
+#   b) source_epsg != target_epsg and we've fixed that by replacing the tile with a VRT
+
+# Set the extents and EPSG based on the target since we know that that the EPSG of all tiles is the target EPSG
+#gdalbuildvrt_command_list.extend(['-te', target_xmin, target_ymin, target_xmax, target_ymax])
+gdalbuildvrt_command_list.append('-a_srs')
+gdalbuildvrt_command_list.append(target_epsg)
+
+diff_res, res = diff_resolution(alltiles)
+
 if diff_res and target_x != '':
+    # set the output resolution if input tiles have a different resolution and a target size has been provided
     xres = repr(abs((float(target_xmax)-float(target_xmin))/float(target_x)))
     if target_y != '':
         yres = repr(abs((float(target_ymin)-float(target_ymax))/float(target_y)))
@@ -1799,17 +1775,15 @@ if diff_res and target_x != '':
     gdalbuildvrt_command_list.append('-tr')
     gdalbuildvrt_command_list.append(xres)
     gdalbuildvrt_command_list.append(yres)
-if source_epsg != "detect":
-    # if we know the source_epsg, use it.  Otherwise GDAL will detect them
-    gdalbuildvrt_command_list.extend(['-te', source_xmin, source_ymin, source_xmax, source_ymax])
-    gdalbuildvrt_command_list.append('-a_srs')
-    gdalbuildvrt_command_list.append(source_epsg)
+
 if vrtnodata != "":
+    # set the nodata values if provided
     gdalbuildvrt_command_list.append('-vrtnodata')
     gdalbuildvrt_command_list.append(vrtnodata)
     gdalbuildvrt_command_list.append('-srcnodata')
     gdalbuildvrt_command_list.append(vrtnodata)
-    
+
+
 # add VRT filename at the end        
 gdalbuildvrt_command_list.append(vrt_filename)
 # Log the gdalbuildvrt command.
@@ -1827,6 +1801,9 @@ subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
 
 # If the target and source EPSGs don't match, create a reprojected VRT.  But if the source_epsg is "detect", then
 # we've already taken care of this previously be replacing each tile with a VRT reprojected to the target_epsg
+
+# NO LONGER NEEDED SINCE WE'VE BUILT VRTs and are INSERTING
+'''
 if target_epsg != source_epsg and source_epsg != "detect":
     log_info_mssg("Converting tiles to " + target_epsg)
     gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', reprojection_resampling, '-s_srs', source_epsg, '-t_srs', target_epsg,
@@ -1835,6 +1812,7 @@ if target_epsg != source_epsg and source_epsg != "detect":
     log_the_command(gdal_warp_command_list)
     subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
     vrt_filename = vrt_filename.replace('.vrt','_reproj.vrt')
+'''
 
 # use gdalwarp if resize with resampling method is declared
 if resize_resampling != '':
@@ -1991,7 +1969,7 @@ if compress == "COMPRESS=LERC":
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
-if nocopy == True:
+if nocopy:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
     if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
@@ -2080,10 +2058,9 @@ run_addo = True
 # Insert into nocopy
 if nocopy:
     errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                             [target_xmin, target_ymin, target_xmax, target_ymax],
-                             source_epsg, target_epsg, vrtnodata, merge, working_dir)
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
     if noaddo or len(alltiles) <= 1:
-        run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
+        run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set or if we have a single input or empty MRF
 
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
