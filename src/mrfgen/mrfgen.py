@@ -1803,21 +1803,6 @@ gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'w')
 subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
 #---------------------------------------------------------------------------
 
-# If the target and source EPSGs don't match, create a reprojected VRT.  But if the source_epsg is "detect", then
-# we've already taken care of this previously be replacing each tile with a VRT reprojected to the target_epsg
-
-# NO LONGER NEEDED SINCE WE'VE BUILT VRTs and are INSERTING
-'''
-if target_epsg != source_epsg and source_epsg != "detect":
-    log_info_mssg("Converting tiles to " + target_epsg)
-    gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', reprojection_resampling, '-s_srs', source_epsg, '-t_srs', target_epsg,
-                              '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-multi', vrt_filename,
-                              vrt_filename.replace('.vrt','_reproj.vrt')]
-    log_the_command(gdal_warp_command_list)
-    subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
-    vrt_filename = vrt_filename.replace('.vrt','_reproj.vrt')
-'''
-
 # use gdalwarp if resize with resampling method is declared
 if resize_resampling != '':
     if target_y == '':
