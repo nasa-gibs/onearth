@@ -1019,8 +1019,8 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
         if DEBUG:
             print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
-        self.assertEqual(str(geotransform[1]), '1222.992452392578116', "Pixel size does not match")
-        self.assertEqual(str(geotransform[5]), '-1222.992452392578116', "Pixel size does not match")
+        self.assertEqual(str(geotransform[1]), '1222.99245239', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-1222.99245239', "Pixel size does not match")
 
         band = dataset.GetRasterBand(1)
         if DEBUG:
