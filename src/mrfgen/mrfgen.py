@@ -287,7 +287,7 @@ def has_color_table(tile):
     log_info_mssg(("No color table found","Color table found in image")[has_color_table])
     return has_color_table
 
-def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
+def mrf_block_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
     """
     Aligns granule image to fit in a MRF block
     Arguments:
@@ -361,7 +361,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     """
     if resize_resampling == '':
         resize_resampling = "average" # use average as default for RGBA
-    ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
+    ulx, uly, lrx, lry = mrf_block_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = working_dir + os.path.basename(tile)+".merge.tif"
 
     if has_color_table(tile) == True:
@@ -441,7 +441,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge.wait()
     return new_tile
 
-def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, source_epsg, target_epsg, working_dir):
+def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, working_dir):
     """
     Splits up a tile that crosses the antimeridian
     Arguments:
@@ -488,8 +488,8 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, so
         gdal_edit.wait()  
     
     # cut the input at the antimeridian into left and right halves
-    left_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    right_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+    left_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+    right_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
     log_the_command(left_cut_command_list)
     left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     left_cut.wait()
@@ -509,7 +509,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, so
     gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdal_edit.wait()  
 
-    return (tile_left,  tile_right)
+    return (tile_left, tile_right)
 
 def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     """
@@ -588,7 +588,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
                                                               str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
                                                               str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y)),
-                                                              target_epsg, target_epsg, working_dir)
+                                                              working_dir)
 
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
@@ -1759,6 +1759,7 @@ gdalbuildvrt_command_list=['gdalbuildvrt', '-q', '-input_file_list', all_tiles_f
 
 # all tiles are now in the target_epsg because:
 #   a) source_epsg == target_epsg
+#       OR
 #   b) source_epsg != target_epsg and we've fixed that by replacing the tile with a VRT
 
 # Set the extents and EPSG based on the target since we know that that the EPSG of all tiles is the target EPSG
@@ -1985,7 +1986,7 @@ subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
 gdal_translate_stderr_file.close()
 
 # Copy vrt to output
-if data_only == False:
+if not data_only:
     shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
 
 # Clean up.
@@ -2044,15 +2045,10 @@ else:
     # Get largest dimension, usually X.
     actual_size=max([int(sizeX), int(sizeY)])
 
-# Run gdaladdo by default
-run_addo = True
-
-# Insert if there were input files or a directory
+# Insert if there were are input tiles to process
 if len(alltiles) > 0:
     errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
-    if noaddo or len(alltiles) <= 1:
-        run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set or if we have a single input or empty MRF
 
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
@@ -2060,8 +2056,9 @@ compare_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
 old_stats=os.stat(idx_filename)
 if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
-    
-    if run_addo == True and (overview_levels == '' or int(overview_levels[0])>1):
+
+    # Run gdaladdo if noaddo==False, we have more than one tile, and we have none or >1 overviews
+    if (not noaddo) and (len(alltiles) > 1) and (overview_levels == '' or int(overview_levels[0]) > 1):
         # Create the gdaladdo command.
         gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
                                str(gdal_mrf_filename)]
@@ -2119,7 +2116,7 @@ else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
     log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
     log_info_mssg('idxf should be >= vrtf')
-    if nocopy==True:
+    if nocopy:
         mssg = mrf_filename + ' already exists'
     else:
         mssg=str().join(['Unsuccessful:  gdal_translate   ',
@@ -2151,7 +2148,7 @@ if mrf_name != '':
     out_filename = output_dir+output_data
     
 # Leave only MRF data, index, and header files
-if data_only == True:
+if data_only:
     remove_file(log_filename)
     remove_file(output_dir+"/"+basename+".mrf.aux.xml")
     remove_file(working_dir+"/"+basename+".configuration_file.xml")
