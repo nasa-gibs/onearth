@@ -479,7 +479,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, so
     tile = temp_tile
     tile_left = tile+".left_cut.vrt"
     tile_right = tile+".right_cut.vrt" 
-    
+
     if Decimal(lrx) <= Decimal(antimeridian):
         # modify input into >180 space if not already
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
@@ -582,12 +582,12 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                                      target_extents, target_epsg, nodata, True, working_dir)
             continue
         # check if image crosses antimeridian
-        elif target_epsg in ['EPSG:4326','EPSG:4326'] and (((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or
+        elif target_epsg in ['EPSG:4326','EPSG:3857'] and (((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or
                                                             (float(s_xmax) > float(t_xmax))):
             log_info_mssg(tile + " crosses antimeridian")
             left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
-                                                              str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)),
-                                                              str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)),
+                                                              str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
+                                                              str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y)),
                                                               target_epsg, target_epsg, working_dir)
 
             errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
@@ -1020,20 +1020,26 @@ else:
             source_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
     except:
         source_epsg = 'EPSG:4326' # default to geographic
-    # Target extents.
+
+    # Source extents.
     try:
         extents = get_dom_tag_value(dom, 'extents')
     except:
         extents = '-180,-90,180,90' # default to geographic
     source_xmin, source_ymin, source_xmax, source_ymax = extents.split(',')
+
+    # Target extents.
     try:
         target_extents = get_dom_tag_value(dom, 'target_extents')
     except:
         if target_epsg == 'EPSG:3857':
             target_extents = '-20037508.34,-20037508.34,20037508.34,20037508.34'
+        elif target_epsg in ['EPSG:3413','EPSG:3031']:
+            target_extents = '-4194304,-4194304,4194304,4194304'
         else:
-            target_extents = extents # default to extents
+            target_extents = '-180,-90,180,90'
     target_xmin, target_ymin, target_xmax, target_ymax = target_extents.split(',')
+
     # Input files.
     try:
         input_files = get_input_files(dom)
@@ -1047,7 +1053,7 @@ else:
             else:
                 log_sig_exit('ERROR', "<input_files> or <input_dir> or <mrf_empty_tile_filename> is required", sigevent_url)
         else:
-            input_files = ''
+            input_files = None
     # overview levels
     try:
         overview_levels = get_dom_tag_value(dom, 'overview_levels').split(' ')
@@ -1211,7 +1217,7 @@ if os.path.dirname(configuration_filename) != os.path.dirname(working_dir):
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
 log_info_mssg(str().join(['config date_of_data:            ', date_of_data]))
 log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
-if input_files != '':
+if input_files != None:
     log_info_mssg(str().join(['config input_files:             ', input_files]))
 if input_dir != None:
     log_info_mssg(str().join(['config input_dir:               ', input_dir]))
@@ -1319,7 +1325,7 @@ units = None
 
 # Get list of all tile filenames.
 alltiles = []
-if input_files != '':
+if input_files != None:
     input_files = input_files.strip()
     alltiles = input_files.split(',')
 if input_dir != None:
@@ -1336,7 +1342,7 @@ for tile in alltiles:
     striptiles.append(tile.strip())
 alltiles = striptiles
 
-if len(alltiles) == 0: # No tiles, check for possible tiffs
+if len(alltiles) == 0 and input_dir != None: # No tiles, check for possible tiffs
     alltiles=glob.glob(str().join([input_dir, '*.tif*']))
 
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
@@ -1686,7 +1692,7 @@ for tile in list(alltiles):
         mrf_list.append(tile)
         alltiles.remove(tile)
 
-if len(mrf_list) == 0 and input_files == '':
+if len(mrf_list) == 0 and input_files == None:
     mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
 
 # Should only be one MRF, so use that one
@@ -1757,7 +1763,7 @@ gdalbuildvrt_command_list=['gdalbuildvrt', '-q', '-input_file_list', all_tiles_f
 #   b) source_epsg != target_epsg and we've fixed that by replacing the tile with a VRT
 
 # Set the extents and EPSG based on the target since we know that that the EPSG of all tiles is the target EPSG
-#gdalbuildvrt_command_list.extend(['-te', target_xmin, target_ymin, target_xmax, target_ymax])
+gdalbuildvrt_command_list.extend(['-te', target_xmin, target_ymin, target_xmax, target_ymax])
 gdalbuildvrt_command_list.append('-a_srs')
 gdalbuildvrt_command_list.append(target_epsg)
 
@@ -2003,6 +2009,9 @@ if data_only == False:
 # Clean up.
 vrt_files = glob.glob(str().join([working_dir, basename, '*.vrt']))
 for vrt in vrt_files:
+    # remove VRT from alltiles if it was a temp file
+    if vrt in alltiles:
+       alltiles.remove(vrt)
     remove_file(vrt)
 
 # Check if MRF was created.
@@ -2056,8 +2065,8 @@ else:
 # Run gdaladdo by default
 run_addo = True
 
-# Insert into nocopy
-if nocopy:
+# Insert if there were input files or a directory
+if len(alltiles) > 0:
     errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
     if noaddo or len(alltiles) <= 1:
