@@ -277,9 +277,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     y_res = Decimal(target_y)/y_len
     x_size = abs(lrx-ulx) * x_res
     y_size = abs(lry-uly) * y_res
-    x_pixelsize = (Decimal(xmax)-Decimal(xmin))/Decimal(target_x)
-    y_pixelsize = (Decimal(ymin)-Decimal(ymax))/Decimal(target_y)
-    log_info_mssg ("x-res: " + str(x_res) + ", y-res: " + str(y_res) + ", x-size: " + str(x_size) + ", y-size: " + str(y_size) + ", x-pixelsize: " + str(x_pixelsize) + ", y-pixelsize: " + str(y_pixelsize))
+    log_info_mssg ("x-res: " + str(x_res) + ", y-res: " + str(y_res) + ", x-size: " + str(x_size) + ", y-size: " + str(y_size))
 
     # figure out appropriate block size that covers extent of granule    
     block_x = Decimal(mrf_blocksize)
@@ -304,9 +302,9 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     if uly > Decimal(ymax):
         uly = ymax
     if lrx > Decimal(xmax):
-        lrx = str(Decimal(xmax) - x_pixelsize)
+        lrx = Decimal(xmax)
     if lry < Decimal(ymin):
-        lry = str(Decimal(ymin) - y_pixelsize)
+        lry = Decimal(ymin)
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
