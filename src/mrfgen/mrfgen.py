@@ -1769,7 +1769,9 @@ gdalbuildvrt_command_list.append(target_epsg)
 
 diff_res, res = diff_resolution(alltiles)
 
-if diff_res and target_x != '':
+# HACK
+#if diff_res and target_x != '':
+if target_x != '':
     # set the output resolution if input tiles have a different resolution and a target size has been provided
     xres = repr(abs((float(target_xmax)-float(target_xmin))/float(target_x)))
     if target_y != '':

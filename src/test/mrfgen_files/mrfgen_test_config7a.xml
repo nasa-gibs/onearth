@@ -39,6 +39,4 @@ limitations under the License.
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_merge>false</mrf_merge>
- <mrf_z_levels>1</mrf_z_levels>
- <mrf_z_key type="string">20151202</mrf_z_key>
 </mrfgen_configuration>
