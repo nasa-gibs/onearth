@@ -598,7 +598,6 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             log_info_mssg("Image extents " + str([s_xmin, s_ymax, s_xmax, s_ymin]))
             tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                              t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
-            diff_res = False # gdalmerge has corrected the resolutions
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
 
         diff_res, ps = diff_resolution([tile, mrf])
@@ -1767,12 +1766,8 @@ gdalbuildvrt_command_list.extend(['-te', target_xmin, target_ymin, target_xmax, 
 gdalbuildvrt_command_list.append('-a_srs')
 gdalbuildvrt_command_list.append(target_epsg)
 
-diff_res, res = diff_resolution(alltiles)
-
-# HACK
-#if diff_res and target_x != '':
 if target_x != '':
-    # set the output resolution if input tiles have a different resolution and a target size has been provided
+    # set the output resolution if a target size has been provided
     xres = repr(abs((float(target_xmax)-float(target_xmin))/float(target_x)))
     if target_y != '':
         yres = repr(abs((float(target_ymin)-float(target_ymax))/float(target_y)))
