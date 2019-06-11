@@ -1,3 +1,10 @@
+local function concat(t1, t2)
+	for _, val in ipairs(t2) do
+		t1[#t1+1] = val
+	end
+	return t1
+end
+
 local function isLeapYear(year)
 	return year % 4 == 0 and year % 100 ~= 0 or year % 400 == 0
 end
@@ -400,7 +407,14 @@ end
 -- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name
 -- Routine called by Redis. Read all dates, create periods, and replace old period entries
 -- with new list.
-local dates = redis.call("SMEMBERS", KEYS[1] .. ":dates")
+local dates = {}
+local cursor = "0"
+repeat
+	local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor)
+	dates = concat(dates, scan[2])
+	cursor = scan[1]
+until cursor == "0"
+
 local periodStrings = calculatePeriods(dates)
 for i, periodString in ipairs(periodStrings) do
 	if redis.call("EXISTS", KEYS[1] .. ":periods") then
