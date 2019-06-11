@@ -990,8 +990,8 @@ else:
         for level in overview_levels:
             if level.isdigit() == False:
                 log_sig_exit("ERROR", "'" + level + "' is not a valid overview value.", sigevent_url)
-        if len(overview_levels>1):
-            overview = overview_levels[1]/overview_levels[0]
+        if len(overview_levels) > 1:
+            overview = int(overview_levels[1])/int(overview_levels[0])
         else:
             overview = 2
     except:
