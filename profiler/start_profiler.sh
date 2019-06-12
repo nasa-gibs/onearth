@@ -7,6 +7,14 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP0_artifacts/test-static-jpeg
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP1_artifacts/test-time-jpeg
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP2_artifacts/250m_test_urls.txt
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP3_artifacts/250m_100mrf_urls.txt
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP4_artifacts/250m_test_urls.txt
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP5_artifacts/250m_100png_urls.txt
+sed -i 's@localhost:8080@'$ONEARTH_HOST'@g' testP6_artifacts/250m_wm_urls.txt
+
 # Performance test suite
 cd /home/oe2/onearth/profiler/testP0_artifacts
 ./get-logsP0.sh $GROUP_NAME > log-static-jpeg-0-A.stdout 2>&1
