@@ -8,7 +8,7 @@ deployed and configured and that it is accessible.
 
 To build the image, copy the Dockerfile to the top directory `cp ./docker/profiler/Dockerfile/ .`, and then build using the Dockerfile `docker build -t nasagibs/onearth-profiler .` 
 
-Environment variables for AWS CLI tools must be passed into the Docker container on startup:
+Environment variables for AWS CLI tools can be passed into the Docker container on startup as needed (use IAM Roles if running on AWS):
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_REGION
@@ -37,7 +37,8 @@ testP5 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m PNG MRFs
 
 testP6 -- Mod Reproject 100,000 Requests / 100 Users / 87,381 URLs / Single 500m JPEG MRF
 
-To run the test suite, run the following command in the docker image.
-/home/perf/onearth/docker/profiler/start_profiler.sh $GROUP_NAME $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_REGION
+To run the test suite, run the following command in the Docker image.
+/home/perf/onearth/docker/profiler/start_profiler.sh $ONEARTH_HOST $GROUP_NAME
 
+$ONEARTH_HOST is the IP address or host name of the OnEarth server
 $GROUP_NAME is the AWS instance name where OnEarth is deployed
