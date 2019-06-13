@@ -103,7 +103,7 @@ def updateDateService(redis_uri,
             print(f'Configuring layer: {layer}')
 
             tag_str = f'{tag}:' if tag else ''
-            for date in sorted_parsed_dates[0:30]:
+            for date in sorted_parsed_dates:
                 r.sadd(f'{proj}:{tag_str}layer:{layer}:dates', date.isoformat())
                 if reproject and str(proj) == 'epsg4326':
                     r.sadd(f'epsg3857:{tag_str}layer:{layer}:dates', date.isoformat())
