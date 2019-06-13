@@ -23,22 +23,22 @@ information.
 
 ### Performance Test Suite
 
-testP0 -- 100,000 Requests / 100 Users / 20 URLs / Single 500m JPEG MRF
+test0 -- 100,000 Requests / 100 Users / 20 URLs / Single 500m JPEG MRF
 
-testP1 -- 100,000 Requests / 100 Users / 20 URLs / Single 250m JPEG MRF with TIME
+test1 -- 100,000 Requests / 100 Users / 20 URLs / Single 250m JPEG MRF with TIME
 
-testP2 -- 100,000 Requests / 100 Users / 68,273 URLs / Single 250m JPEG MRF
+test2 -- 100,000 Requests / 100 Users / 68,273 URLs / Single 250m JPEG MRF
 
-testP3 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m JPEG MRFs
+test3 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m JPEG MRFs
 
-testP4 -- 100,000 Requests / 1 Users / 68,273 URLs / Single 250m JPEG MRF
+test4 -- 100,000 Requests / 1 Users / 68,273 URLs / Single 250m JPEG MRF
 
-testP5 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m PNG MRFs
+test5 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m PNG MRFs
 
-testP6 -- Mod Reproject 100,000 Requests / 100 Users / 87,381 URLs / Single 500m JPEG MRF
+test6 -- Mod Reproject 100,000 Requests / 100 Users / 87,381 URLs / Single 500m JPEG MRF
 
-To run the test suite, run the following command in the Docker image.
-/home/oe2/onearth/profiler/start_profiler.sh $ONEARTH_HOST $GROUP_NAME
+To run all tests in the test suite, run the following command in the Docker image.
+/home/oe2/onearth/profiler/start_profiler.sh $ONEARTH_HOST $ONEARTH_GROUP_NAME
 
 $ONEARTH_HOST is the IP address or host name of the OnEarth server
-$GROUP_NAME is the AWS instance name where OnEarth is deployed
+$ONEARTH_GROUP_NAME is the AWS instance name where OnEarth is deployed

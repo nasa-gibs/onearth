@@ -1,6 +1,6 @@
 #!/bin/sh
 ONEARTH_HOST=${1:-localhost:8080}
-GROUP_NAME=${2:-onearth}
+ONEARTH_GROUP_NAME=${2:-onearth}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
