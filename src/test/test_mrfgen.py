@@ -975,15 +975,59 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         self.output_img = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.png")
         self.compare_img = os.path.join(testdata_path, "test_comp7a.png")
 
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+
         # generate MRF
-        # pdb.set_trace()
-        cmd = "mrfgen -c " + test_config
+        #pdb.set_trace()
+        cmd = "mrfgen -c " + test_config7a + " -s --email_server=localhost:1025 --email_sender=earth@localhost.test --email_recipient=space@localhost.test --email_logging_level WARN"
         run_command(cmd, show_output=DEBUG)
         # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # for out in process.communicate():
         #     if DEBUG:
         #         print out
 
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result = new_stdout.getvalue()
+        server.stop()
+
+        # Check result
+        self.assertTrue("Subject: [WARN/ONEARTH] triggered by mrfgen" in result)
+        self.assertTrue("From: earth@localhost.test" in result)
+        self.assertTrue("To: space@localhost.test" in result)
+        self.assertTrue("category: mrfgen" in result)
+      
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+
+        # generate MRF
+        #pdb.set_trace()
+        cmd = "mrfgen -c " + test_config7b + " -s --email_logging_level WARN"
+        run_command(cmd, show_output=DEBUG)
+        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # for out in process.communicate():
+        #     if DEBUG:
+        #         print out
+
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result2 = new_stdout.getvalue()
+        print result2
+        server.stop()
+
+        # Check result
+        self.assertTrue("Subject: [WARN/ONEARTH] triggered by mrfgen" in result2)
+        self.assertTrue("From: earth@localhost.test" in result2)
+        self.assertTrue("To: space@localhost.test" in result2)
+        self.assertTrue("category: mrfgen" in result2)
+   
     def test_generate_mrf(self):
         # Check MRF generation succeeded
         self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
