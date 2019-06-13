@@ -404,5 +404,6 @@ end
 for i, periodString in ipairs(periodStrings) do
 	redis.call("SADD", KEYS[1] .. ":periods", periodString)
 end
-local defaultDate = getLatestDate(dates)
+
+local defaultDate = dates[#dates]
 redis.call("SET", KEYS[1] .. ":default", defaultDate)
