@@ -1,0 +1,4 @@
+description: "Single 250m JPEG MRF"
+base_url: "http://$ONEARTH_HOST/profiler/VNGCR_LQD_I1-M4-M3_NRT_STATIC"
+period: ""
+tilematrixset: "250m"

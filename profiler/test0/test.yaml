@@ -1,4 +1,4 @@
 description: "Single 500m JPEG MRF"
 base_url: "http://$ONEARTH_HOST/profiler/BlueMarble"
-periods: []
+period: ""
 tilematrixset: "500m"

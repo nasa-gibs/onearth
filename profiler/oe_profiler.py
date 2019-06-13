@@ -20,6 +20,8 @@ import collections
 import math
 import random
 import subprocess
+from datetime import timedelta
+from datetime import datetime
 
 version = '2.2.2'
 
@@ -34,10 +36,32 @@ tilematrixsets = {
     '500m': [80,160],
     '250m': [160,320]}
 
+tilematrixsets_wm = {
+    'GoogleMapsCompatible_Level0': [1,1], 
+    'GoogleMapsCompatible_Level1': [2,2],
+    'GoogleMapsCompatible_Level2': [4,4],
+    'GoogleMapsCompatible_Level3': [8,8],
+    'GoogleMapsCompatible_Level4': [16,16],
+    'GoogleMapsCompatible_Level5': [32,32],
+    'GoogleMapsCompatible_Level6': [64,64], 
+    'GoogleMapsCompatible_Level7': [128,128],
+    'GoogleMapsCompatible_Level8': [256,256],
+    'GoogleMapsCompatible_Level9': [512,512],
+    'GoogleMapsCompatible_Level10': [1024,1024],
+    'GoogleMapsCompatible_Level11': [2048,2048],
+    'GoogleMapsCompatible_Level12': [4096,4096],
+    'GoogleMapsCompatible_Level13': [8192,8192]}
+
 style = 'default'
 
+def random_time(start_time, end_time, interval):
+    delta = end_time - start_time
+    random_day = random.randrange(delta.days+1)
+    rdate = start_time + timedelta(days=random_day)
+    return datetime.strftime(rdate,'%Y-%m-%dT%H:%M:%SZ')
+
 def run_test(test_dir, server, group_name, 
-             number_requests, number_users, number_urls, number_dates):
+             number_requests, number_users, number_urls):
     
     print('Test directory: ' + test_dir)
     print('Server: ' + server)
@@ -46,32 +70,55 @@ def run_test(test_dir, server, group_name,
         config = yaml.load(f.read())
 
     base_url = config['base_url'].replace('$ONEARTH_HOST', server)
-    print('Description:' + config['description'])
-    print('Base URL:' + base_url)
-    print('Tilematrixset:' + config['tilematrixset'])
+    print('Description: ' + config['description'])
+    print('Base URL: ' + base_url)
+    print('Period: ' + config['period'])
+    print('Tilematrixset: ' + config['tilematrixset'])
+    
+    if 'GoogleMaps' in config['tilematrixset']: # Use Web Mercator tilematrixsets
+        tilematrixsets = tilematrixsets_wm
+    
+    urls_file = 'urls'
+    if os.path.isfile(test_dir + '/list_urls'):
+        urls_file = 'list_urls'
+    
+    if config['period'] != '':
+        start_time, end_time, interval = config['period'].split('/')
+        if interval != 'P1D':
+            print('Only 1 day periods are currently supported.')
+        interval = 1
+        start_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
+        end_time = datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S')
+        use_date = True
+    else:
+        use_date = False
+        date_str = ''
     
     # generate URLs
-    urls = []
-    zoom_max = 0
-    tilematrixsets_list = list(tilematrixsets.items())
-    for key, value in tilematrixsets_list:
-        if key == config['tilematrixset']:
-            break
-        zoom_max += 1
-    
-    for i in range(number_urls):
-        zoomlevel = random.randint(0,zoom_max)
-        tiles = tuple(tilematrixsets_list[zoomlevel])[1]
-        row_max, col_max = tiles[0], tiles[1]
-        row = random.randint(0,row_max-1)
-        col = random.randint(0,col_max-1)
-        url = base_url +'/' + style + '/' + config['tilematrixset'] + '/' + str(zoomlevel) + '/' + str(row) + '/' + str(col)
-        urls.append(url)
+    if urls_file != 'list_urls':
+        urls = []
+        zoom_max = 0
+        tilematrixsets_list = list(tilematrixsets.items())
+        for key, value in tilematrixsets_list:
+            if key == config['tilematrixset']:
+                break
+            zoom_max += 1
         
-    with open(test_dir+'/urls', 'w') as f:
-        for url in urls:
-             f.write(url+'\n')
-             
+        for i in range(number_urls):
+            zoomlevel = random.randint(0,zoom_max)
+            tiles = tuple(tilematrixsets_list[zoomlevel])[1]
+            row_max, col_max = tiles[0], tiles[1]
+            row = random.randint(0,row_max-1)
+            col = random.randint(0,col_max-1)
+            if use_date is True:
+                date_str = random_time(start_time, end_time, interval) + '/'
+            url = base_url +'/' + style + '/' + date_str + config['tilematrixset'] + '/' + str(zoomlevel) + '/' + str(row) + '/' + str(col)
+            urls.append(url)
+            
+        with open(test_dir+'/urls', 'w') as f:
+            for url in urls:
+                 f.write(url+'\n')
+        
     # run the test script
     requests = math.floor(number_requests/number_users)
     if requests >= 100:
@@ -79,7 +126,7 @@ def run_test(test_dir, server, group_name,
         requests = 100
     else:
         reps = 1
-    run_test_commands = ['bash', 'run_test.sh', 'urls', group_name, test_dir, str(reps), str(requests), str(number_users)]
+    run_test_commands = ['bash', 'run_test.sh', urls_file, group_name, test_dir, str(reps), str(requests), str(number_users)]
     print('Running in ' + test_dir + ': ' + ' '.join([str(v) for v in run_test_commands]))
     with open(test_dir+'/siege_out.txt','w+') as fout:
         with open(test_dir+'/siege_err.txt','w+') as ferr:
@@ -94,7 +141,7 @@ def run_test(test_dir, server, group_name,
 
 def analyze_results(test_dir):
     analyze_commands = ['python3.6', 'analyze_event_log.py', '-e', test_dir + '/' + test_dir + '.json']
-    print('Running: ' + ' '.join([str(v) for v in analyze_commands]))
+    print('\nRunning: ' + ' '.join([str(v) for v in analyze_commands]))
     with open(test_dir+'/'+test_dir+'.results.txt','w+') as fout:
         analyze = subprocess.run(analyze_commands, stdout=fout,stderr=fout)
         fout.seek(0)
@@ -145,13 +192,6 @@ parser.add_argument(
     default=100,
     help='Total number of random l/r/c URLs (ignored if list_urls file is found)')
 parser.add_argument(
-    '-d',
-    '--number_dates',
-    dest='number_dates',
-    action='store',
-    default=20,
-    help='Number of dates to randomize from periods list')
-parser.add_argument(
     '-a',
     '--analysis_only',
     dest='analysis_only',
@@ -162,5 +202,5 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.analysis_only == False:
-    run_test(args.test_dir, args.server, args.group, int(args.number_requests), int(args.number_users), int(args.number_urls), int(args.number_dates))
+    run_test(args.test_dir, args.server, args.group, int(args.number_requests), int(args.number_users), int(args.number_urls))
 analyze_results(args.test_dir)

@@ -1,0 +1,4 @@
+description: "250m PNG MRFs"
+base_url: "http://$ONEARTH_HOST/profiler/MOG13Q4_LQD_NDVI_NRT"
+period: "2018-01-01T00:00:00/2018-01-30T00:00:00/P1D"
+tilematrixset: "250m"

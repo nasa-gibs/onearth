@@ -9,10 +9,10 @@ Runs an OnEarth profiling test. Each test should have a directory (e.g. test0)
 that contains a YAML configuration file like the following:
 
 ```
-description: "Single 500m JPEG MRF"
-base_url: "http://$ONEARTH_HOST/profiler/BlueMarble"
-periods: []
-tilematrixset: "500m"
+description: "Single 250m JPEG MRF with TIME"
+base_url: "http://$ONEARTH_HOST/profiler/VNGCR_LQD_I1-M4-M3_NRT"
+period: "2018-01-16T00:00:00/2018-02-14T00:00:00/P1D"
+tilematrixset: "250m"
 ```
 
 $ONEARTH_HOST is a keyword that will be replaced by the --server option.
@@ -22,7 +22,7 @@ A run_test.sh template needs to be included for now, but will be replaced later.
 ```
 usage: oe_profiler.py [-h] [-t TEST_DIR] [-s SERVER] [-g GROUP]
                       [-r NUMBER_REQUESTS] [-c NUMBER_USERS] [-u NUMBER_URLS]
-                      [-d NUMBER_DATES] [-a]
+                      [-a]
 
 Runs an OnEarth profiling test.
 
@@ -41,8 +41,6 @@ optional arguments:
   -u NUMBER_URLS, --number_urls NUMBER_URLS
                         Total number of random l/r/c URLs (ignored if
                         list_urls file is found)
-  -d NUMBER_DATES, --number_dates NUMBER_DATES
-                        Number of dates to randomize from periods list
   -a, --analysis_only   Just analyze results; do not send requests
 ```
 

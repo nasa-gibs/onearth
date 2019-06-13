@@ -1,0 +1,4 @@
+description: "Single 250m JPEG MRF with random TIME"
+base_url: "http://$ONEARTH_HOST/profiler/VNGCR_LQD_I1-M4-M3_NRT"
+period: "2018-01-16T00:00:00/2018-02-14T00:00:00/P1D"
+tilematrixset: "250m"
