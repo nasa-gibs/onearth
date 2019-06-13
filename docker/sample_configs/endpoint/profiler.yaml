@@ -1,4 +1,5 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
+time_service_keys: ["profiler"]
 gc_service_uri: "http://onearth-capabilities/profiler/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/profiler/"

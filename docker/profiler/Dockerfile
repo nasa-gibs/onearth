@@ -2,28 +2,19 @@ FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 RUN yum install -y epel-release 
-RUN yum install -y python-pip httpd
+RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y python36u python36u-devel python36u-pip httpd siege
 
 # Copy OnEarth profiler source
 RUN mkdir -p /home/oe2/onearth/profiler
 WORKDIR /home/oe2
 COPY ./profiler /home/oe2/onearth/profiler
-
-# Get and install node
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash \
-    && . /root/.nvm/nvm.sh \
-    && nvm install 6.10 \
-    && nvm install node \
-    && nvm use node
-
+    
 # AWS CLI
-RUN pip install awscli --upgrade
+RUN pip3.6 install awscli --upgrade
 
-# Install siege
-RUN yum install -y siege
-
-# Install numpy
-RUN pip install numpy
+# Install python deps
+RUN pip3.6 install numpy pyaml
 
 # Run performance test
 WORKDIR /home/oe2/onearth/profiler

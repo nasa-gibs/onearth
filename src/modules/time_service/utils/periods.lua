@@ -388,6 +388,7 @@ end
 -- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name
 -- Routine called by Redis. Read all dates, create periods, and replace old period entries
 -- with new list.
+redis.replicate_commands()
 local dates = {}
 local cursor = "0"
 repeat

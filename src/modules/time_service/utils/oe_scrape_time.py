@@ -46,6 +46,7 @@ def keyMapper(acc, obj):
         acc[proj][layer_name]['dates'].add(date)
     except ValueError:
         print('Incorrect data format for ' + filename + ', should be YYYYDDDhhmmss')
+        return acc
 
     return acc
 
@@ -82,6 +83,9 @@ def updateDateService(redis_uri,
     objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
     r = redis.Redis(host=redis_uri, port=redis_port)
+    with open('periods.lua', 'r') as f:
+        lua_script = f.read()
+    date_script = r.register_script(lua_script)
 
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
@@ -99,15 +103,11 @@ def updateDateService(redis_uri,
             print(f'Configuring layer: {layer}')
 
             tag_str = f'{tag}:' if tag else ''
-            for date in sorted_parsed_dates:
+            for date in sorted_parsed_dates[0:30]:
                 r.sadd(f'{proj}:{tag_str}layer:{layer}:dates', date.isoformat())
                 if reproject and str(proj) == 'epsg4326':
                     r.sadd(f'epsg3857:{tag_str}layer:{layer}:dates', date.isoformat())
 
-            with open('periods.lua', 'r') as f:
-                lua_script = f.read()
-
-            date_script = r.register_script(lua_script)
             date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
             if reproject and str(proj) == 'epsg4326':
                 date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])

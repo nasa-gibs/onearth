@@ -1,5 +1,6 @@
 source_gc_uri: "http://onearth-tile-services/profiler/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
 time_service_uri: "http://onearth-time-service/time_service/time"
+time_service_keys: ["profiler"]
 gc_service_uri: "http://onearth-capabilities/profiler_reproject/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/profiler/"

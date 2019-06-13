@@ -8,7 +8,7 @@ deployed and configured and that it is accessible.
 
 To build the image, copy the Dockerfile to the top directory `cp ./docker/profiler/Dockerfile/ .`, and then build using the Dockerfile `docker build -t nasagibs/onearth-profiler .` 
 
-Environment variables for AWS CLI tools must be passed into the Docker container on startup:
+Environment variables for AWS CLI tools can be passed into the Docker container on startup as needed (use IAM Roles if running on AWS):
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_REGION
@@ -23,21 +23,22 @@ information.
 
 ### Performance Test Suite
 
-testP0 -- 100,000 Requests / 100 Users / 20 URLs / Single 500m JPEG MRF
+test0 -- 100,000 Requests / 100 Users / 20 URLs / Single 500m JPEG MRF
 
-testP1 -- 100,000 Requests / 100 Users / 20 URLs / Single 250m JPEG MRF with TIME
+test1 -- 100,000 Requests / 100 Users / 20 URLs / Single 250m JPEG MRF with TIME
 
-testP2 -- 100,000 Requests / 100 Users / 68,273 URLs / Single 250m JPEG MRF
+test2 -- 100,000 Requests / 100 Users / 68,273 URLs / Single 250m JPEG MRF
 
-testP3 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m JPEG MRFs
+test3 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m JPEG MRFs
 
-testP4 -- 100,000 Requests / 1 Users / 68,273 URLs / Single 250m JPEG MRF
+test4 -- 100,000 Requests / 1 Users / 68,273 URLs / Single 250m JPEG MRF
 
-testP5 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m PNG MRFs
+test5 -- 100,000 Requests / 100 Users / 100,000 URLs / 100 250m PNG MRFs
 
-testP6 -- Mod Reproject 100,000 Requests / 100 Users / 87,381 URLs / Single 500m JPEG MRF
+test6 -- Mod Reproject 100,000 Requests / 100 Users / 87,381 URLs / Single 500m JPEG MRF
 
-To run the test suite, run the following command in the docker image.
-/home/perf/onearth/docker/profiler/start_profiler.sh $GROUP_NAME $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $AWS_REGION
+To run all tests in the test suite, run the following command in the Docker image.
+/home/oe2/onearth/profiler/start_profiler.sh $ONEARTH_HOST $ONEARTH_GROUP_NAME
 
-$GROUP_NAME is the AWS instance name where OnEarth is deployed
+$ONEARTH_HOST is the IP address or host name of the OnEarth server
+$ONEARTH_GROUP_NAME is the AWS instance name where OnEarth is deployed

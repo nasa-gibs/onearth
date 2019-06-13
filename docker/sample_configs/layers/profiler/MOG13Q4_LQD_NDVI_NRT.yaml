@@ -15,7 +15,7 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   idx_path: "/onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/"
-  data_file_uri: "{S3_URL}/profiler/"
-  year_dir: false
+  data_file_uri: "{S3_URL}/profiler/MOG13Q4_LQD_NDVI_NRT/"
+  year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/onearth/empty_tiles/MOG13Q4_LQD_NDVI_NRT.png"

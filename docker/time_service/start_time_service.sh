@@ -352,6 +352,7 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 else
 	# Load time periods by scraping S3 bucket
 	cd /home/oe2/onearth/src/modules/time_service/utils/
+	python3.6 oe_scrape_time.py -r -b $S3_URL $REDIS_HOST
 	python3.6 oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST
 	python3.6 oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST	
 fi
