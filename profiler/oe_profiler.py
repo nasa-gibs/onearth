@@ -25,7 +25,7 @@ from datetime import datetime
 
 version = '2.2.2'
 
-tilematrixsets = {
+tilematrixsets_geo = {
     '64km': [1,2], 
     '32km': [2,3],
     '16km': [3,5],
@@ -77,6 +77,8 @@ def run_test(test_dir, server, group_name,
     
     if 'GoogleMaps' in config['tilematrixset']: # Use Web Mercator tilematrixsets
         tilematrixsets = tilematrixsets_wm
+    else:
+        tilematrixsets = tilematrixsets_geo
     
     urls_file = 'urls'
     if os.path.isfile(test_dir + '/list_urls'):
