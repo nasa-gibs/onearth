@@ -191,13 +191,6 @@ local function dateAtInterval(baseDate, interval, dateList, unit)
 				return date
 			end
 		end
-	elseif unit == "day" then
-		local nextDate = addDaysToDate(baseDate, interval)
-		for i, date in ipairs(dateList) do
-			if date == nextDate then
-				return date
-			end
-		end
 	end
 	return false
 end
@@ -266,6 +259,10 @@ local function isValidPeriod(size, unit)
 	return true
 end
 
+local function dateSort(a, b)
+	return dateToEpoch(a) < dateToEpoch(b)
+end
+
 local function getLatestDate(dates)
 	local maxEpoch = 0
 	for i, date in ipairs(dates) do
@@ -275,123 +272,107 @@ local function getLatestDate(dates)
 	return epochToDate(maxEpoch)
 end
 
+local function epochListToDateList(epochList)
+	local dateList = {}
+	for _, epoch in ipairs(epochList) do
+		dateList[#dateList + 1] = epochToDate(epoch)
+	end
+	return dateList
+end
+
+local function periodExists(size, unit, epochDateList, periods)
+	for _, period in ipairs(periods) do
+		if period["size"] == size and period["unit"] == unit and listContainsList(period["dates"], epochListToDateList(epochDateList)) then
+			return true
+		end
+	end
+	return false
+end
+
 local function calculatePeriods(dates)
 	local periods = {}
+	table.sort(dates, dateSort)
+
+	local datesInPeriods = {} -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.
 
 	-- Check for year matches
-	for i, date in ipairs(dates) do
-		local tail = date:sub(5)
+	for _, date1 in ipairs(dates) do
+		if not itemInList(date1, datesInPeriods) then
+			local tail = date1:sub(5)
+			local baseYear = tonumber(date1:sub(1, 4))
 
-		local baseYear = tonumber(date:sub(1, 4))
-		
-		local possibleMatches = {}
-		for i, d in ipairs(dates) do
-			if d ~= date and d:sub(5) == tail and tonumber(d:sub(1, 4)) > baseYear then
-				possibleMatches[#possibleMatches + 1] = d
-			end
-		end
-		
-		for i, possibleMatch in ipairs(possibleMatches) do
-			local year = tonumber(possibleMatch:sub(1, 4))
-			local interval = year - baseYear
-			
-			local nextInterval = dateAtInterval(possibleMatch, interval, possibleMatches, "year")
-			if nextInterval then
-				local dateList = {date, possibleMatch}
-				
-				-- At least one match, find the end
-				while nextInterval do
-					dateList[#dateList + 1] = nextInterval
-					nextInterval = dateAtInterval(nextInterval, interval, possibleMatches, "year")
+			for _, date2 in ipairs(dates) do
+				local date2Year = tonumber(date2:sub(1, 4))
+				if not itemInList(date2, datesInPeriods) 
+					and date1 ~= date2 
+					and date2:sub(5) == tail 
+					and date2Year > baseYear 
+				then
+					local interval = date2Year - baseYear				
+					local nextDateInInterval = dateAtInterval(date2, interval, dates, "year")
+
+					if nextDateInInterval then
+						-- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
+						local dateList = {date1, date2}
+						while nextDateInInterval do
+							dateList[#dateList+1] = nextDateInInterval
+							nextDateInInterval = dateAtInterval(nextDateInInterval, interval, dates, "year")
+						end
+
+						datesInPeriods = concat(datesInPeriods, dateList)
+						periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
+					end
 				end
-
-				periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
 			end
 		end
 	end
+
 
 	-- Check for time period matches
-	for i, date in ipairs(dates) do
-		for idx, d in ipairs(dates) do
-			if i ~= idx then
-				local dateEpoch1 = dateToEpoch(date)
-				local dateEpoch2 = dateToEpoch(d)
-				if dateEpoch1 < dateEpoch2 then
-					local intervalInSec = dateEpoch2 - dateEpoch1
-					local nextInterval = dateAtFixedInterval(dateEpoch2, intervalInSec, dates)
-					if nextInterval then
-						local epochDateList = {dateEpoch1, dateEpoch2}
-						while nextInterval do
-							epochDateList[#epochDateList + 1] = nextInterval
-							nextInterval = dateAtFixedInterval(nextInterval, intervalInSec, dates)
-						end		
-						
-						local dateList = {}
-						for i, epoch in ipairs(epochDateList) do
-							dateList[#dateList + 1] = epochToDate(epoch)
+	for _, date1 in ipairs(dates) do
+		if not itemInList(date1, datesInPeriods) then
+			for _, date2 in ipairs(dates) do
+				if not itemInList(date2, datesInPeriods) and date1 ~= date2 then
+					local dateEpoch1 = dateToEpoch(date1)
+					local dateEpoch2 = dateToEpoch(date2)
+					if dateEpoch1 < dateEpoch2 then
+						local intervalInSec = dateEpoch2 - dateEpoch1
+						local nextDateInInterval = dateAtFixedInterval(dateEpoch2, intervalInSec, dates)
+						if nextDateInInterval then
+							local epochDateList = {dateEpoch1, dateEpoch2}
+							local size, unit = calcIntervalFromSeconds(intervalInSec)
+
+							while nextDateInInterval do
+								epochDateList[#epochDateList + 1] = nextDateInInterval
+								nextDateInInterval = dateAtFixedInterval(nextDateInInterval, intervalInSec, dates)
+							end
+							
+							local dateList = {}
+							for i, epoch in ipairs(epochDateList) do
+								dateList[#dateList + 1] = epochToDate(epoch)
+							end
+
+							if isValidPeriod(size, unit) then
+								datesInPeriods = concat(datesInPeriods, dateList)
+								periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
+							end
 						end
-
-						local size, unit = calcIntervalFromSeconds(intervalInSec)
-						if isValidPeriod(size, unit) then
-							periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-						end
 					end
 				end
 			end
 		end
 	end
 
-	-- Remove duplicates and periods that are contained by other periods
-	local deduped = {}
-	local dupeIndexes = {}
-	for i, period in ipairs(periods) do
-		if not itemInList(i, dupeIndexes) then
-			for idx, p in ipairs(periods) do
-				if i ~= idx and not itemInList(idx, dupeIndexes) then
-					if listEqualsList(period["dates"], p["dates"]) then
-						dupeIndexes[#dupeIndexes + 1] = idx
-					end
-				end
-			end
-			deduped[#deduped + 1] = period
-		end
-	end
-
-	local reducedPeriods = {}
-	local redundantIndexes = {}
-	for i, period in ipairs(deduped) do
-		if not itemInList(i, redundantIndexes) then
-			for idx, p in ipairs(deduped) do
-				if i ~= idx and not itemInList(idx, redundantIndexes) and #period["dates"] > #p["dates"] then
-					if listContainsList(period["dates"], p["dates"]) then
-						redundantIndexes[#redundantIndexes + 1] = idx
-					end
-				end
-			end
-			reducedPeriods[#reducedPeriods + 1] = period
-		end
-	end
-
-
-	-- Any dates that didn't end up in any period are loner dates
-	local function dateInPeriods(date, periods) 
-		for i, period in ipairs(periods) do
-			if itemInList(date, period["dates"]) then
-				return true
-			end
-		end
-		return false
-	end
-
-	for i, date in ipairs(dates) do
-		if not dateInPeriods(date, reducedPeriods) then
-			reducedPeriods[#reducedPeriods + 1] = {dates={date}}
+	-- Leftover dates are loners
+	for _, date in ipairs(dates) do
+		if not itemInList(date, datesInPeriods) then
+			periods[#periods + 1] = {dates={date}}
 		end
 	end
 
 	-- Create formatted list
 	local periodStrings = {}
-	for _, period in pairs(reducedPeriods) do
+	for _, period in pairs(periods) do
 		local periodStr
 		if #period["dates"] > 1 then
 			periodStr =  period["dates"][1] .. "/" .. period["dates"][#period["dates"]] .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
@@ -416,10 +397,10 @@ repeat
 until cursor == "0"
 
 local periodStrings = calculatePeriods(dates)
+if redis.call("EXISTS", KEYS[1] .. ":periods") then
+	redis.call("DEL", KEYS[1] .. ":periods")
+end
 for i, periodString in ipairs(periodStrings) do
-	if redis.call("EXISTS", KEYS[1] .. ":periods") then
-		redis.call("DEL", KEYS[1] .. ":periods")
-	end
 	redis.call("SADD", KEYS[1] .. ":periods", periodString)
 end
 local defaultDate = getLatestDate(dates)
