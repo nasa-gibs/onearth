@@ -333,9 +333,9 @@ def mrf_block_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blo
     if uly > Decimal(ymax):
         uly = ymax
     if lrx > Decimal(xmax):
-        lrx = str(Decimal(xmax))
+        lrx = Decimal(xmax)
     if lry < Decimal(ymin):
-        lry = str(Decimal(ymin))
+        lry = Decimal(ymin)
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
