@@ -12,6 +12,7 @@ COPY ./docker/demo/oe2_status.conf /etc/httpd/conf.d/
 # Set Apache configuration for optimized threading
 COPY ./docker/00-mpm.conf /etc/httpd/conf.modules.d/
 COPY ./docker/10-worker.conf /etc/httpd/conf.modules.d/
+COPY ./docker/cors.conf /etc/httpd/conf.d/
 
 # Copy demo files
 COPY ./src/demo /var/www/html/demo
