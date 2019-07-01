@@ -19,12 +19,14 @@ OnEarth is actively maintained by the NASA Global Imagery Browse Services (GIBS)
 
 ## Modules
 
-* [mod_mrf](https://github.com/nasa-gibs/mod_mrf)
-* [mod_ahtse_lua](https://github.com/nasa-gibs/mod_ahtse_lua)
-* [mod_receive](https://github.com/nasa-gibs/mod_receive)
-* [mod_reproject](https://github.com/nasa-gibs/mod_reproject)
-* [mod_sfim](https://github.com/nasa-gibs/mod_sfim)
-* [mod_twms](https://github.com/nasa-gibs/mod_twms)
+* [AHTSE Modules](https://github.com/lucianpls/AHTSE)
+  * [mod_mrf](https://github.com/nasa-gibs/mod_mrf) - https://github.com/nasa-gibs/mod_mrf
+  * [mod_ahtse_lua](https://github.com/lucianpls/mod_ahtse_lua) - https://github.com/lucianpls/mod_ahtse_lua
+  * [mod_ahtse_png](https://github.com/lucianpls/mod_ahtse_png) - https://github.com/lucianpls/mod_ahtse_png
+  * [mod_receive](https://github.com/nasa-gibs/mod_receive) - https://github.com/nasa-gibs/mod_receive
+  * [mod_reproject](https://github.com/nasa-gibs/mod_reproject) - https://github.com/nasa-gibs/mod_reproject
+  * [mod_sfim](https://github.com/nasa-gibs/mod_sfim) - https://github.com/nasa-gibs/mod_sfim
+  * [mod_twms](https://github.com/nasa-gibs/mod_twms) - https://github.com/nasa-gibs/mod_twms
 * [mod_wmts_wrapper](src/modules/mod_wmts_wrapper/README.md)
 * [GetCapabilities Service](src/modules/gc_service/README.md)
 * [Time Service](src/modules/time_service/README.md)

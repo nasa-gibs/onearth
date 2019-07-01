@@ -1,4 +1,8 @@
-INCLUDES = -I /usr/include/httpd -I /usr/include/apr-1
 MOD_PATH = /usr/lib64/httpd/modules
 HTTPD_INCLUDES_PATH = /usr/include/httpd
-
+INCLUDES = -I $(HTTPD_INCLUDES_PATH) -I /usr/include/apr-1 -I /home/oe2/libahtse/src
+DEST = $(MOD_PATH)
+APXS = apxs
+LIBTOOL = /usr/lib64/apr-1/build/libtool
+CP = cp
+# DEBUG = -DDEBUG
