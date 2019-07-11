@@ -375,9 +375,13 @@ local function calculatePeriods(dates)
 	for _, period in pairs(periods) do
 		local periodStr
 		if #period["dates"] > 1 then
-			periodStr =  period["dates"][1] .. "/" .. period["dates"][#period["dates"]] .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
-		else
-			periodStr = period["dates"][1]
+		  if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
+		    periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
+		  else
+		    periodStr =  string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][#period["dates"]], 0, 10) .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
+		  end
+		else -- assume 1 day if single date is found
+			periodStr = string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][1], 0, 10) .. "/P1D"
 		end
 		periodStrings[#periodStrings + 1] = periodStr
 	end
@@ -406,4 +410,7 @@ for i, periodString in ipairs(periodStrings) do
 end
 
 local defaultDate = dates[#dates]
+if string.sub(dates[#dates], 12) == "00:00:00" then
+  defaultDate = string.sub(dates[#dates], 0, 10)
+end
 redis.call("SET", KEYS[1] .. ":default", defaultDate)
