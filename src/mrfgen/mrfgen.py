@@ -582,7 +582,8 @@ class rw_lock:
 
 lock = rw_lock() # used to ensure that gdal_merge doesn't happen at the same time as a parallel insert
 
-def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, merge, working_dir, no_cpus):
+def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                   target_extents, target_epsg, nodata, merge, working_dir, no_cpus):
     """
     Launches multiple workers each handling a fraction of the tiles to be merged into the final mrf file. 
     Also sets the mrf to be mp_safe to allow for simultaneous access. Generally 2-6 workers is ideal. 
@@ -602,15 +603,15 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
 
     if len(tiles) == 1 or no_pools == 1:
         log_info_mssg("making serial call since not enough tiles or cores")
-        errors = run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, merge, working_dir)
+        errors =  run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             target_extents, target_epsg, nodata, merge, working_dir)
     else: 
         log_info_mssg("making parallel call with length of tiles is {}, mrf is {}\n".format(len(tiles), mrf))
 
         func = functools.partial(run_mrf_insert, mrf=mrf, insert_method = insert_method, \
             resize_resampling = resize_resampling, target_x = target_x, target_y = target_y, \
-                mrf_blocksize = mrf_blocksize, source_extents = source_extents, target_extents = target_extents, \
-                    source_epsg = source_epsg, target_epsg = target_epsg, nodata = nodata, merge = merge, \
-                        working_dir = working_dir, parallel=True)
+                mrf_blocksize = mrf_blocksize, target_extents = target_extents, target_epsg = target_epsg, \
+                    nodata = nodata, merge = merge, working_dir = working_dir, parallel=True)
 
         with open(mrf) as f: # make mp_safe
             data = f.read()
@@ -638,7 +639,8 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
 
     return errors
 
-def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, merge, working_dir, parallel=False):
+def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                   target_extents, target_epsg, nodata, merge, working_dir, parallel=False):    
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -654,6 +656,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
         nodata -- nodata value
         merge -- Merge over transparent regions of imagery
         working_dir -- Directory to use for temporary files
+        parallel -- mrf_insert should be mp_safe (default False)
     """
     errors = 0
     t_xmin, t_ymin, t_xmax, t_ymax  = target_extents
@@ -691,7 +694,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             if should_lock:
                 lock.up_read()
 
-            errors += run_mrf_insert(mrf, [cut_tile], insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+            errors += run_mrf_insert([cut_tile], mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                                      target_extents, target_epsg, nodata, True, working_dir)
             continue
         # check if image crosses antimeridian
@@ -704,7 +707,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                                                               working_dir)
             if should_lock:
                 lock.up_read()
-            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
+            errors += run_mrf_insert([left_half, right_half], mrf, insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
             continue
 
@@ -1883,9 +1886,11 @@ if len(mrf_list) > 0:
         con = None
         
     if mrf_parallel:
-        errors += parallel_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir, mrf_cores) # TODO this was changed
+        errors += parallel_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
-        errors += run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir) # TODO this was changed
+        errors += run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -2211,12 +2216,14 @@ else:
     # Get largest dimension, usually X.
     actual_size=max([int(sizeX), int(sizeY)])
 
-# Insert if there were are input tiles to process
+# Insert if there are input tiles to process
 if len(alltiles) > 0:
     if mrf_parallel:
-        errors += parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir, mrf_cores)
+        errors += parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
-        errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
+        errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
 
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
