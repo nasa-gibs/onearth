@@ -16,3 +16,5 @@ build
 /src/test/results/
 /src/test/test_*_results.xml
 /tmp/
+*.pyc
+__pycache__
