@@ -64,6 +64,9 @@
 #  <mrf_nocopy>true</mrf_nocopy>
 #  <mrf_noaddo>false</mrf_noaddo>
 #  <mrf_merge>false</mrf_merge>
+#  <mrf_parallel>false</mrf_parallel>
+#  <mrf_cores>4</mrf_cores>
+#  <mrf_clean>true</mrf_clean>
 # </mrfgen_configuration>
 #
 
@@ -97,6 +100,7 @@ import multiprocessing
 import datetime
 from contextlib import contextmanager # used to build context pool 
 import functools
+import mrf_utils
 
 versionNumber = '1.3.6'
 oe_utils.basename = None
@@ -1281,6 +1285,18 @@ else:
     except:
         mrf_parallel = False
 
+    # run the mrf_clean utility to reduce the size of the generated MRFs, defaults to False unless parallel is true
+    try:
+        if get_dom_tag_value(dom, 'mrf_clean') == "true":
+            mrf_clean = True
+        else:
+            mrf_clean = False
+    except:
+        if mrf_parallel:
+            mrf_clean = True
+        else:
+            mrf_clean = False
+
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
@@ -1402,6 +1418,7 @@ log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
 log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
+log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -2299,19 +2316,37 @@ else:
                          'Check stderr file: ',
                          gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
+
+
+def clean_mrf(data_filename): # cleans mrf files in place
+    def index_name(mrf_name):
+        bname, ext = os.path.splitext(mrf_name)
+        return bname + os.extsep + "idx"
+
+    bname, ext = os.path.splitext(data_filename)
+    target_path = bname + os.extsep + "tmp" + os.extsep + ext
     
+    mrf_utils.mrf_clean(data_filename, target_path)
+
+    os.rename(target_path, data_filename)
+    os.rename(index_name(target_path), index_name(data_filename))
+
+if mrf_clean:
+    log_info_mssg("running mrf_clean on data file {}".format(out_filename))
+    clean_mrf(out_filename)
+
 # Rename MRFs
 if mrf_name != '':
     output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
     if (output_dir+output_mrf) != mrf_filename:
         log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
         shutil.move(mrf_filename, output_dir+output_mrf)
-    if (output_dir+output_idx) != idx_filename:
-        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
-        shutil.move(idx_filename, output_dir+output_idx)
     if (output_dir+output_data) != out_filename:
         log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
         shutil.move(out_filename, output_dir+output_data)
+    if (output_dir+output_idx) != idx_filename:
+        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+        shutil.move(idx_filename, output_dir+output_idx)
     if data_only == False:
         if os.path.isfile(mrf_filename+".aux.xml"):
             log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
