@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ColorMaps xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://gibs.earthdata.nasa.gov/schemas/ColorMap_v1.3.xsd">
+  <ColorMap title="No Data">
+    <Entries>
+      <ColorMapEntry rgb="0,0,0" transparent="true" nodata="true" ref="0"/>
+    </Entries>
+    <Legend type="classification">
+      <LegendEntry rgb="0,0,0" tooltip="No Data" id="0"/>
+    </Legend>
+  </ColorMap>
+  <ColorMap title="Dust Score">
+    <Entries>
+      <ColorMapEntry rgb="255,254,227" transparent="false" value="[360,360.65)" ref="1"/>
+      <ColorMapEntry rgb="255,251,209" transparent="false" value="[360.65,380)" ref="2"/>
+      <ColorMapEntry rgb="254,241,175" transparent="false" value="[380,400)" ref="3"/>
+      <ColorMapEntry rgb="254,222,135" transparent="false" value="[400,420)" ref="4"/>
+      <ColorMapEntry rgb="254,196,79" transparent="false" value="[420,440)" ref="5"/>
+      <ColorMapEntry rgb="254,160,48" transparent="false" value="[440,460)" ref="6"/>
+      <ColorMapEntry rgb="242,125,27" transparent="false" value="[460,480)" ref="7"/>
+      <ColorMapEntry rgb="219,93,10" transparent="false" value="[480,500)" ref="8"/>
+      <ColorMapEntry rgb="182,65,2" transparent="false" value="[500,1000]" ref="9"/>
+    </Entries>
+    <Legend type="continuous" minLabel="360" maxLabel="&gt;= 500">
+      <LegendEntry rgb="255,254,227" tooltip="360 – 360.65" id="1"/>
+      <LegendEntry rgb="255,251,209" tooltip="360.65 – 380" id="2"/>
+      <LegendEntry rgb="254,241,175" tooltip="380 – 400" id="3"/>
+      <LegendEntry rgb="254,222,135" tooltip="400 – 420" id="4"/>
+      <LegendEntry rgb="254,196,79" tooltip="420 – 440" id="5"/>
+      <LegendEntry rgb="254,160,48" tooltip="440 – 460" id="6"/>
+      <LegendEntry rgb="242,125,27" tooltip="460 – 480" id="7"/>
+      <LegendEntry rgb="219,93,10" tooltip="480 – 500" id="8"/>
+      <LegendEntry rgb="182,65,2" tooltip="&gt;= 500" id="9"/>
+    </Legend>
+  </ColorMap>
+</ColorMaps>
