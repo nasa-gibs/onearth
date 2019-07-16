@@ -1513,7 +1513,7 @@ if source_epsg == "detect" or source_epsg != target_epsg:
         temp_tile = None
         tile_path = os.path.dirname(tile)
         tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
-        tile_vrt = os.path.join(tile_path, tile_basename + "_reproject.vrt")
+        tile_vrt = os.path.join(working_dir, tile_basename + "_reproject.vrt")
 
         if source_epsg == "detect":
             s_epsg = get_image_epsg(tile)
