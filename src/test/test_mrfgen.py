@@ -976,58 +976,10 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         self.output_img = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.png")
         self.compare_img = os.path.join(testdata_path, "test_comp7a.png")
 
-        # Set up SMTP server
-        server = DebuggingServerThread()
-        server.start()
-        old_stdout = sys.stdout
-        sys.stdout = new_stdout = StringIO()
-
         # generate MRF
         #pdb.set_trace()
         cmd = "mrfgen -c " + test_config7a + " -s --email_logging_level WARN"
         run_command(cmd, show_output=DEBUG)
-        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # for out in process.communicate():
-        #     if DEBUG:
-        #         print out
-
-        # Take down SMTP server
-        sys.stdout = old_stdout
-        result = new_stdout.getvalue()
-        server.stop()
-
-        # Check result
-#         self.assertTrue("Subject: [WARN/ONEARTH] triggered by mrfgen" in result)
-#         self.assertTrue("From: earth@localhost.test" in result)
-#         self.assertTrue("To: space@localhost.test" in result)
-#         self.assertTrue("category: mrfgen" in result)
-      
-        # Set up SMTP server
-        server = DebuggingServerThread()
-        server.start()
-        old_stdout = sys.stdout
-        sys.stdout = new_stdout = StringIO()
-
-        # generate MRF
-        #pdb.set_trace()
-        cmd = "mrfgen -c " + test_config7b + " -s --email_server=localhost:1025 --email_sender=earth@localhost.test --email_recipient=space@localhost.test --email_logging_level ERROR"
-        run_command(cmd, show_output=DEBUG)
-        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # for out in process.communicate():
-        #     if DEBUG:
-        #         print out
-
-        # Take down SMTP server
-        sys.stdout = old_stdout
-        result2 = new_stdout.getvalue()
-        print result2
-        server.stop()
-
-        # Check result
-        self.assertTrue("Subject: [ERROR/ONEARTH] triggered by mrfgen" in result2)
-        self.assertTrue("From: earth@localhost.test" in result2)
-        self.assertTrue("To: space@localhost.test" in result2)
-        self.assertTrue("category: mrfgen" in result2)
    
     def test_generate_mrf(self):
         # Check MRF generation succeeded
@@ -1094,6 +1046,95 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.staging_area)
 
+class TestMRFGeneration_email_notification(unittest.TestCase):
+
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
+        self.tmp_area = os.path.join(self.staging_area, 'tmp')
+        test_config7a = os.path.join(testdata_path, "mrfgen_test_config7a.xml")
+        test_config7b = os.path.join(testdata_path, "mrfgen_test_config7b.xml")
+
+        # Make empty dirs for mrfgen output
+        mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
+        [make_dir_tree(os.path.join(self.staging_area, path)) for path in mrfgen_dirs]
+
+        # Create non-paletted PNG using pct2rgb.py
+        if DEBUG:
+            print "Generating global image: non-paletted PNG"
+        shutil.copytree(os.path.join(testdata_path, 'obpg'), os.path.join(self.tmp_area, 'obpg'))
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_tiff = os.path.join(self.tmp_area, "obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff")
+        run_command('pct2rgb.py -of GTIFF -rgba ' + self.input_tiff + ' ' + self.output_tiff, show_output=DEBUG)
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_tiff = os.path.join(self.tmp_area, "obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff")
+        run_command('pct2rgb.py -of GTIFF -rgba ' + self.input_tiff + ' ' + self.output_tiff, show_output=DEBUG)
+        self.input_tiff = os.path.join(self.tmp_area, "obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff")
+        self.output_tiff = os.path.join(self.tmp_area, "obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff")
+        run_command('pct2rgb.py -of GTIFF -rgba ' + self.input_tiff + ' ' + self.output_tiff, show_output=DEBUG)
+        shutil.copytree(os.path.join(self.tmp_area, 'obpg'), os.path.join(self.staging_area, 'obpg'))
+
+        # create copy of colormap
+        shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
+        shutil.copy2(os.path.join(testdata_path, "colormaps/ColorMap_v1.2_Sample.xml"), os.path.join(self.staging_area, 'working_dir'))
+
+        # Copy empty output tile and input imagery
+        shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
+
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.mrf")
+        self.output_ppg = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.ppg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.idx")
+        self.output_img = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp7a.png")
+
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+
+        # generate MRF
+        cmd = "mrfgen -c " + test_config7a + " -s --email_logging_level WARN"
+        run_command(cmd, show_output=DEBUG)
+
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result = new_stdout.getvalue()
+        server.stop()
+
+        # Check result
+#         self.assertTrue("Subject: [WARN/ONEARTH] triggered by mrfgen" in result)
+#         self.assertTrue("From: earth@localhost.test" in result)
+#         self.assertTrue("To: space@localhost.test" in result)
+#         self.assertTrue("category: mrfgen" in result)
+      
+        # Set up SMTP server
+        server = DebuggingServerThread()
+        server.start()
+        old_stdout = sys.stdout
+        sys.stdout = new_stdout = StringIO()
+
+        # generate MRF
+        cmd = "mrfgen -c " + test_config7b + " -s --email_server=localhost:1025 --email_sender=earth@localhost.test --email_recipient=space@localhost.test --email_logging_level ERROR"
+        run_command(cmd, show_output=DEBUG)
+
+        # Take down SMTP server
+        sys.stdout = old_stdout
+        result2 = new_stdout.getvalue()
+        server.stop()
+
+        # Check result
+        self.assertTrue("Subject: [ERROR/ONEARTH] triggered by mrfgen" in result2)
+        self.assertTrue("From: earth@localhost.test" in result2)
+        self.assertTrue("To: space@localhost.test" in result2)
+        self.assertTrue("category: mrfgen" in result2)
+   
+    def test_generate_mrf(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+
+    def tearDown(self):
+        shutil.rmtree(self.staging_area)
 
 class TestMRFGeneration_nonpaletted_badcolormap(unittest.TestCase):
     
@@ -1217,7 +1258,8 @@ if __name__ == '__main__':
                        'geo_granule': TestMRFGeneration_OBPG,
                        'mercator_granule': TestMRFGeneration_OBPG_webmerc,
                        'tiled_z': TestMRFGeneration_tiled_z,
-                       'mrf_generation_nonpaletted_colormap': TestMRFGeneration_nonpaletted_colormap
+                       'mrf_generation_nonpaletted_colormap': TestMRFGeneration_nonpaletted_colormap,
+                       'email_notification': TestMRFGeneration_email_notification
                        }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(available_tests.keys())
     parser = OptionParser()
