@@ -100,7 +100,6 @@ import multiprocessing
 import datetime
 from contextlib import contextmanager # used to build context pool 
 import functools
-import mrf_utils
 
 versionNumber = '1.3.6'
 oe_utils.basename = None
@@ -642,6 +641,27 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
     log_info_mssg("Errors {}, mrf {}".format(errors, mrf))
 
     return errors
+
+def clean_mrf(data_filename): # cleans mrf files in place.
+    def index_name(mrf_name):
+        bname, ext = os.path.splitext(mrf_name)
+        return bname + os.extsep + "idx"
+
+    bname, ext = os.path.splitext(data_filename)
+    target_path = bname + os.extsep + "tmp" + os.extsep + ext
+    
+    mrf_status = subprocess.Popen(["mrf_clean.py", data_filename, target_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = mrf_status.communicate()
+
+    log_info_mssg(out)
+    
+    if mrf_status.status_code != 0:
+        log_info_mssg("mrf_clean returned with status code {}".format(mrf_status.status_code))
+
+    # mrf_utils.mrf_clean(data_filename, target_path)
+
+    os.rename(target_path, data_filename)
+    os.rename(index_name(target_path), index_name(data_filename))
 
 def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                    target_extents, target_epsg, nodata, merge, working_dir, parallel=False):    
@@ -1285,7 +1305,7 @@ else:
     except:
         mrf_parallel = False
 
-    # run the mrf_clean utility to reduce the size of the generated MRFs, defaults to False unless parallel is true
+    # run the mrf_clean utility to reduce the size of the generated MRFs, defaults to mrf_parallel.
     try:
         if get_dom_tag_value(dom, 'mrf_clean') == "true":
             mrf_clean = True
@@ -2317,24 +2337,10 @@ else:
                          gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
 
-
-def clean_mrf(data_filename): # cleans mrf files in place
-    def index_name(mrf_name):
-        bname, ext = os.path.splitext(mrf_name)
-        return bname + os.extsep + "idx"
-
-    bname, ext = os.path.splitext(data_filename)
-    target_path = bname + os.extsep + "tmp" + os.extsep + ext
-    
-    mrf_utils.mrf_clean(data_filename, target_path)
-
-    os.rename(target_path, data_filename)
-    os.rename(index_name(target_path), index_name(data_filename))
-
 if mrf_clean:
     log_info_mssg("running mrf_clean on data file {}".format(out_filename))
     clean_mrf(out_filename)
-
+    
 # Rename MRFs
 if mrf_name != '':
     output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
