@@ -391,7 +391,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         
         # Warp the input image VRT to have the right resolution
         warp_vrt_tile = working_dir + os.path.basename(tile) + ".warp.vrt"
-        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT', '-tr',
+        gdal_warp_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr',
                                   str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)),
                                   str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)),
                                   vrt_tile, warp_vrt_tile]
@@ -472,7 +472,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
     cutline_right = cutline_template.replace('$values',cutline_values.format(Decimal(antimeridian), Decimal(uly), Decimal(new_lrx), Decimal(lry)))
     
     # Create VRT of input tile
-    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
+    gdalbuildvrt_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
     log_the_command(gdalbuildvrt_command_list)
     gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdalbuildvrt.wait()
@@ -486,16 +486,18 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         log_the_command(gdal_edit_command_list)
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         gdal_edit.wait()  
+
     
     # cut the input at the antimeridian into left and right halves
-    left_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    right_cut_command_list = ['gdalwarp', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+    left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+    right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
     log_the_command(left_cut_command_list)
     left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     left_cut.wait()
     left_cut_stderr = left_cut.stderr.read()
     if len(left_cut_stderr) > 0:
         log_sig_err(left_cut_stderr, sigevent_url)
+
     log_the_command(right_cut_command_list)
     right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     right_cut.wait()
@@ -531,7 +533,7 @@ def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     if float(lry) < float(ymin):
         lry = ymin
     cut_tile = working_dir + os.path.basename(tile) + '._cut.vrt'
-    gdalwarp_command_list = ['gdalwarp', '-of', 'VRT', '-te', ulx, lry, lrx, uly, tile, cut_tile]
+    gdalwarp_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-te', ulx, lry, lrx, uly, tile, cut_tile]
     log_the_command(gdalwarp_command_list)
     subprocess.call(gdalwarp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return cut_tile
@@ -1471,6 +1473,17 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 except:
                     errors += 1
                     log_sig_err("ERROR: " + mssg, sigevent_url)
+
+
+                # Save projection information for EPSG detection
+                try:
+                    if os.path.isfile(working_dir+'/'+tile_basename+'.png.aux.xml'):
+                        shutil.copy(working_dir+'/'+tile_basename+'.png.aux.xml', output_tile_path+'/'+output_tile_basename+'.png.aux.xml')
+                    else:
+                        log_info_mssg("Geolocation file does not exist for tile: " + tile)
+                except:
+                    errors += 1
+                    log_sig_err("ERROR: " + mssg, sigevent_url)
                     
                 # add transparency flag for custom color map
                 add_transparency = True
@@ -1530,7 +1543,7 @@ if source_epsg == "detect" or source_epsg != target_epsg:
 
             # if the source and target EPSGs are not the same, create a VRT
 
-            gdalwarp_command_list = ['gdalwarp', '-q', '-of', 'vrt', '-s_srs', s_epsg, '-t_srs', target_epsg, tile, tile_vrt]
+            gdalwarp_command_list = ['gdalwarp', '-q', '-overwrite', '-of', 'vrt', '-s_srs', s_epsg, '-t_srs', target_epsg, tile, tile_vrt]
 
             # Log the gdalbuildvrt command.
             log_the_command(gdalwarp_command_list)
