@@ -64,6 +64,9 @@
 #  <mrf_nocopy>true</mrf_nocopy>
 #  <mrf_noaddo>false</mrf_noaddo>
 #  <mrf_merge>false</mrf_merge>
+#  <mrf_parallel>false</mrf_parallel>
+#  <mrf_cores>4</mrf_cores>
+#  <mrf_clean>true</mrf_clean>
 # </mrfgen_configuration>
 #
 
@@ -91,6 +94,12 @@ from overtiffpacker import pack
 from decimal import *
 from osgeo import gdal
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
+
+import collections
+import multiprocessing
+import datetime
+from contextlib import contextmanager # used to build context pool 
+import functools
 
 versionNumber = '1.3.6'
 oe_utils.basename = None
@@ -538,13 +547,129 @@ def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     subprocess.call(gdalwarp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return cut_tile
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                   target_extents, target_epsg, nodata, merge, working_dir):
+@contextmanager
+def poolcontext(*args, **kwargs):
+    pool = multiprocessing.Pool(*args, **kwargs)
+    yield pool
+    pool.terminate()
+
+class rw_lock:
+    def __init__(self):
+        self.counter = multiprocessing.Value('i', 0)
+        self.cond = multiprocessing.Condition(lock=self.counter.get_lock())
+
+    def down_read(self):
+        self.cond.acquire()
+        self.counter.value += 1
+
+        self.cond.release()
+        
+    def up_read(self):
+        self.cond.acquire()
+        self.counter.value -= 1
+
+        if self.counter.value == 0:
+            self.cond.notify()
+
+        self.cond.release()
+
+    def down_write(self):
+        self.cond.acquire()
+
+        while self.counter.value != 0:
+            self.cond.wait()
+
+    def up_write(self):
+        self.cond.notify()
+        self.cond.release()
+
+lock = rw_lock() # used to ensure that gdal_merge doesn't happen at the same time as a parallel insert
+
+def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                   target_extents, target_epsg, nodata, merge, working_dir, no_cpus):
+    """
+    Launches multiple workers each handling a fraction of the tiles to be merged into the final mrf file. 
+    Also sets the mrf to be mp_safe to allow for simultaneous access. Generally 2-6 workers is ideal. 
+    There can be some degredation in performance for large numbers of workers. We use the rw_lock to 
+    synchronize access between the processes, since gdal_merge must be performed while no other process is running
+    mrf_insert.
+
+    Arguments:
+        tiles ... working_dir: Same as mrf_insert
+        no_cpus (int) -- Number of CPUs to run mrf_insert in parallel
+    """
+
+    log_info_mssg("parallel_mrf_insert with mrf {}".format(mrf))
+
+    no_pools = min(multiprocessing.cpu_count() - 1, len(tiles), no_cpus)
+    log_info_mssg("no_pools for parallel mrf_insert is {} for mrf {}".format(no_pools, mrf))
+
+    if len(tiles) == 1 or no_pools == 1:
+        log_info_mssg("making serial call since not enough tiles or cores")
+        errors =  run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             target_extents, target_epsg, nodata, merge, working_dir)
+    else: 
+        log_info_mssg("making parallel call with length of tiles is {}, mrf is {}\n".format(len(tiles), mrf))
+
+        func = functools.partial(run_mrf_insert, mrf=mrf, insert_method = insert_method, \
+            resize_resampling = resize_resampling, target_x = target_x, target_y = target_y, \
+                mrf_blocksize = mrf_blocksize, target_extents = target_extents, target_epsg = target_epsg, \
+                    nodata = nodata, merge = merge, working_dir = working_dir, parallel=True)
+
+        with open(mrf) as f: # make mp_safe
+            data = f.read()
+            data = data.replace("<Raster>", "<Raster mp_safe=\"on\">")
+        
+        with open(mrf, "w") as f: # overwrite mrf
+            f.write(data)
+
+        log_info_mssg("Splitting list of length {} into chunks of size {}".format(len(tiles), len(tiles) // no_pools))
+
+        def chunks(l, n):
+            for i in xrange(0, len(l), n):
+                yield l[i:i+n]
+
+        partition = chunks(tiles, len(tiles) // no_pools)
+
+        with poolcontext(processes=no_pools) as pool:
+            results = pool.map(func, partition, 1)
+
+        log_info_mssg("mrf {} map finished, results are type {}, {}".format(mrf, type(results), results))
+
+        errors = sum(results)
+
+    log_info_mssg("Errors {}, mrf {}".format(errors, mrf))
+
+    return errors
+
+def clean_mrf(data_filename): # cleans mrf files in place.
+    def index_name(mrf_name):
+        bname, ext = os.path.splitext(mrf_name)
+        return bname + os.extsep + "idx"
+
+    bname, ext = os.path.splitext(data_filename)
+    target_path = bname + os.extsep + "tmp" + os.extsep + ext
+    
+    mrf_status = subprocess.Popen(["mrf_clean.py", data_filename, target_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = mrf_status.communicate()
+
+    log_info_mssg(out)
+    
+    if mrf_status.status_code != 0:
+        log_info_mssg("mrf_clean returned with status code {}".format(mrf_status.status_code))
+
+    # mrf_utils.mrf_clean(data_filename, target_path)
+
+    os.rename(target_path, data_filename)
+    os.rename(index_name(target_path), index_name(data_filename))
+
+def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                   target_extents, target_epsg, nodata, merge, working_dir, parallel=False):    
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
-        mrf -- An existing MRF file
         tiles -- List of tiles to insert
+        mrf -- An existing MRF file
         insert_method -- The resampling method to use {Avg, NearNb}
         resize_resampling -- The resampling method to use for gdalwarp
         target_x -- The target resolution for x
@@ -555,6 +680,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         nodata -- nodata value
         merge -- Merge over transparent regions of imagery
         working_dir -- Directory to use for temporary files
+        parallel -- mrf_insert should be mp_safe (default False)
     """
     errors = 0
     t_xmin, t_ymin, t_xmax, t_ymax  = target_extents
@@ -564,13 +690,22 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
     log_info_mssg("Inserting new tiles into " + mrf)
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
 
+    should_lock = parallel and merge
+
+    if should_lock:
+        global lock
+
     for tile in tiles:
+        if should_lock:
+            lock.down_read()
 
         s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(tile)
 
         if os.path.splitext(tile)[1] == ".vrt" and not ("_cut." in tile or "_reproject." in tile):
             #ignore temp VRTs unless it's an antimeridian cut or reprojected source image
             log_info_mssg("Skipping insert of " + tile)
+            if should_lock:
+                lock.up_read()    
             continue
 
         # check if image fits within extents
@@ -580,7 +715,10 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
            (float(s_ymin) < float(t_ymin)):
             log_info_mssg(tile + " falls outside of extents for " + target_epsg)
             cut_tile = crop_to_extents(tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_extents, working_dir)
-            errors += run_mrf_insert(mrf, [cut_tile], insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+            if should_lock:
+                lock.up_read()
+
+            errors += run_mrf_insert([cut_tile], mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                                      target_extents, target_epsg, nodata, True, working_dir)
             continue
         # check if image crosses antimeridian
@@ -591,15 +729,25 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                                                               str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
                                                               str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y)),
                                                               working_dir)
-
-            errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y,
+            if should_lock:
+                lock.up_read()
+            errors += run_mrf_insert([left_half, right_half], mrf, insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
             continue
 
         if merge: # merge tile with existing imagery if true
+            if should_lock:
+                lock.up_read()
+                lock.down_write()
+
             log_info_mssg("Image extents " + str([s_xmin, s_ymax, s_xmax, s_ymin]))
             tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                              t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
+                             
+            if should_lock:
+                lock.up_write()
+                lock.down_read()
+
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
 
         diff_res, ps = diff_resolution([tile, mrf])
@@ -629,11 +777,20 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             tile_vrt.wait()
 
             if merge: # merge tile with existing imagery
+                if should_lock:
+                    lock.up_read()
+                    lock.down_write()
+                    
                 s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(vrt_tile) # get new extents
                 log_info_mssg("Image extents " + str(extents))
                 tile = gdalmerge(mrf, vrt_tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                                  t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
                 mrf_insert_command_list.append(tile)
+
+                if should_lock:
+                    lock.up_write()
+                    lock.down_read()
+
             else:
                 mrf_insert_command_list.append(vrt_tile)
         else:
@@ -662,11 +819,14 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if ".merge." in tile:
             remove_file(tile)
         remove_file(vrt_tile)
-
-    for tile in tiles:
+        
         temp_vrt_files = glob.glob(working_dir + os.path.basename(tile) + "*vrt*")
         for vrt in temp_vrt_files:
             remove_file(vrt)
+
+        if should_lock:
+            lock.up_read()
+            
     return errors
 
 
@@ -1062,7 +1222,7 @@ else:
             if level.isdigit() == False:
                 log_sig_exit("ERROR", "'" + level + "' is not a valid overview value.", sigevent_url)
         if len(overview_levels) > 1:
-            overview = int(overview_levels[1])/int(overview_levels[0])
+            overview = int(overview_levels[1]) / int(overview_levels[0])
         else:
             overview = 2
     except:
@@ -1129,6 +1289,34 @@ else:
             noaddo = True
     except:
         noaddo = False
+
+    # mrf_cores (max number of cpu cores to run on if mrf_parallel is set, defaults to 4
+    try:
+        mrf_cores = int(get_dom_tag_value(dom, 'mrf_cores'))
+    except:
+        mrf_cores = 4 # multiprocessing.cpu_count()
+
+    # mrf_parallel (run mrf_insert in parallel), defaults to False
+    try:
+        if get_dom_tag_value(dom, 'mrf_parallel') == "true":
+            mrf_parallel = True
+        else:
+            mrf_parallel = False
+    except:
+        mrf_parallel = False
+
+    # run the mrf_clean utility to reduce the size of the generated MRFs, defaults to mrf_parallel.
+    try:
+        if get_dom_tag_value(dom, 'mrf_clean') == "true":
+            mrf_clean = True
+        else:
+            mrf_clean = False
+    except:
+        if mrf_parallel:
+            mrf_clean = True
+        else:
+            mrf_clean = False
+
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
@@ -1248,6 +1436,9 @@ log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
+log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
+log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
+log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -1730,8 +1921,12 @@ if len(mrf_list) > 0:
             log_info_mssg("No ZDB record created")
     else:
         con = None
-
-    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+        
+    if mrf_parallel:
+        errors += parallel_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
+    else:
+        errors += run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
     
     # Clean up
@@ -2058,9 +2253,13 @@ else:
     # Get largest dimension, usually X.
     actual_size=max([int(sizeX), int(sizeY)])
 
-# Insert if there were are input tiles to process
+# Insert if there are input tiles to process
 if len(alltiles) > 0:
-    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+    if mrf_parallel:
+        errors += parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
+    else:
+        errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
 
 # Create pyramid only if idx (MRF index file) was successfully created.
@@ -2137,6 +2336,10 @@ else:
                          'Check stderr file: ',
                          gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
+
+if mrf_clean:
+    log_info_mssg("running mrf_clean on data file {}".format(out_filename))
+    clean_mrf(out_filename)
     
 # Rename MRFs
 if mrf_name != '':
@@ -2144,12 +2347,12 @@ if mrf_name != '':
     if (output_dir+output_mrf) != mrf_filename:
         log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
         shutil.move(mrf_filename, output_dir+output_mrf)
-    if (output_dir+output_idx) != idx_filename:
-        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
-        shutil.move(idx_filename, output_dir+output_idx)
     if (output_dir+output_data) != out_filename:
         log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
         shutil.move(out_filename, output_dir+output_data)
+    if (output_dir+output_idx) != idx_filename:
+        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+        shutil.move(idx_filename, output_dir+output_idx)
     if data_only == False:
         if os.path.isfile(mrf_filename+".aux.xml"):
             log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))

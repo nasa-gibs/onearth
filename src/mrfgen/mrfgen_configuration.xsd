@@ -148,6 +148,9 @@ limitations under the License.
   <xs:element name="quality_prec" type="xs:float" nillable="true"/>
   <xs:element name="mrf_name" type="xs:string" nillable="true"/>
   <xs:element name="mrf_nocopy" type="xs:boolean" nillable="true" default="true"/>
+  <xs:element name="mrf_clean" type="xs:boolean" nillable="true"/>
+  <xs:element name="mrf_parallel" type="xs:boolean" nillable="true" default="false"/>
+  <xs:element name="mrf_cores" type="xs:integer" nillable="true"/>
   <xs:element name="mrf_noaddo" type="xs:boolean" nillable="true" default="false"/>
   <xs:element name="mrf_merge" type="xs:boolean" nillable="true" default="false"/>
   <xs:element name="mrf_strict_palette" type="xs:boolean" nillable="true" default="false"/>
