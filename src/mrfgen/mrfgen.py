@@ -100,6 +100,7 @@ import multiprocessing
 import datetime
 from contextlib import contextmanager # used to build context pool 
 import functools
+import random
 
 versionNumber = '1.3.6'
 oe_utils.basename = None
@@ -589,10 +590,11 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
                    target_extents, target_epsg, nodata, merge, working_dir, no_cpus):
     """
     Launches multiple workers each handling a fraction of the tiles to be merged into the final mrf file. 
-    Also sets the mrf to be mp_safe to allow for simultaneous access. Generally 2-6 workers is ideal. 
+    Also sets the mrf to be mp_safe to allow for simultaneous access. Generally 2-4 workers is ideal. 
     There can be some degredation in performance for large numbers of workers. We use the rw_lock to 
     synchronize access between the processes, since gdal_merge must be performed while no other process is running
-    mrf_insert.
+    mrf_insert. If mrf_maxsize is None, will run mrf_insert with max_size max(2 * total size of input tiles, 50GB). 
+    Otherwise uses mrf_maxsize. 
 
     Arguments:
         tiles ... working_dir: Same as mrf_insert
@@ -607,14 +609,20 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
     if len(tiles) == 1 or no_pools == 1:
         log_info_mssg("making serial call since not enough tiles or cores")
         errors =  run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                             target_extents, target_epsg, nodata, merge, working_dir)
-    else: 
-        log_info_mssg("making parallel call with length of tiles is {}, mrf is {}\n".format(len(tiles), mrf))
+                             target_extents, target_epsg, nodata, merge, working_dir, max_size=mrf_maxsize)
+    else:         
+        if mrf_maxsize is None:
+            total_size = sum([os.stat(tile).st_size for tile in tiles])
+            max_size = max(2 * total_size, 50E9)
+        else:
+            max_size = mrf_maxsize
+
+        log_info_mssg("making parallel call with length of tiles is {}, mrf is {}, max_size is {} bytes\n".format(len(tiles), mrf, max_size))
 
         func = functools.partial(run_mrf_insert, mrf=mrf, insert_method = insert_method, \
             resize_resampling = resize_resampling, target_x = target_x, target_y = target_y, \
                 mrf_blocksize = mrf_blocksize, target_extents = target_extents, target_epsg = target_epsg, \
-                    nodata = nodata, merge = merge, working_dir = working_dir, parallel=True)
+                    nodata = nodata, merge = merge, working_dir = working_dir, mp_safe=True, max_size=max_size)
 
         with open(mrf) as f: # make mp_safe
             data = f.read()
@@ -629,6 +637,7 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
             for i in xrange(0, len(l), n):
                 yield l[i:i+n]
 
+        random.shuffle(tiles) # shuffle tiles to avoid overlaps as much as possible
         partition = chunks(tiles, len(tiles) // no_pools)
 
         with poolcontext(processes=no_pools) as pool:
@@ -648,23 +657,21 @@ def clean_mrf(data_filename): # cleans mrf files in place.
         return bname + os.extsep + "idx"
 
     bname, ext = os.path.splitext(data_filename)
-    target_path = bname + os.extsep + "tmp" + os.extsep + ext
+    target_path = bname + os.extsep + "tmp" + ext
     
     mrf_status = subprocess.Popen(["mrf_clean.py", data_filename, target_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = mrf_status.communicate()
 
     log_info_mssg(out)
     
-    if mrf_status.status_code != 0:
-        log_info_mssg("mrf_clean returned with status code {}".format(mrf_status.status_code))
-
-    # mrf_utils.mrf_clean(data_filename, target_path)
+    if mrf_status.returncode != 0:
+        log_info_mssg("mrf_clean returned with status code {}".format(mrf_status.returncode))
 
     os.rename(target_path, data_filename)
     os.rename(index_name(target_path), index_name(data_filename))
 
 def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                   target_extents, target_epsg, nodata, merge, working_dir, parallel=False):    
+                   target_extents, target_epsg, nodata, merge, working_dir, mp_safe=False, max_size=None):    
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
@@ -680,7 +687,8 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
         nodata -- nodata value
         merge -- Merge over transparent regions of imagery
         working_dir -- Directory to use for temporary files
-        parallel -- mrf_insert should be mp_safe (default False)
+        mp_safe -- mrf_insert should be mp_safe (default False)
+        max_size -- run clean_mrf on target mrf when this size is reached (in bytes)
     """
     errors = 0
     t_xmin, t_ymin, t_xmax, t_ymax  = target_extents
@@ -690,12 +698,16 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
     log_info_mssg("Inserting new tiles into " + mrf)
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
 
-    should_lock = parallel and merge
+    should_lock = mp_safe
 
     if should_lock:
         global lock
 
-    for tile in tiles:
+    def data_name(mrf_name):
+        bname, ext = os.path.splitext(mrf_name)
+        return bname + os.extsep + get_extension(mrf_compression_type)
+
+    for i, tile in enumerate(tiles):
         if should_lock:
             lock.down_read()
 
@@ -705,7 +717,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             #ignore temp VRTs unless it's an antimeridian cut or reprojected source image
             log_info_mssg("Skipping insert of " + tile)
             if should_lock:
-                lock.up_read()    
+                lock.up_read()
             continue
 
         # check if image fits within extents
@@ -826,7 +838,18 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
 
         if should_lock:
             lock.up_read()
-            
+        
+        if max_size is not None:
+            if os.stat(data_name(mrf)).st_size > max_size:
+                if should_lock:
+                    lock.down_write()
+                if os.stat(data_name(mrf)).st_size > max_size:
+                    log_info_mssg_with_timestamp("cleaning data file {} with size {}".format(data_name(mrf), os.stat(data_name(mrf)).st_size))
+                    clean_mrf(data_name(mrf))
+                    log_info_mssg_with_timestamp("done cleaning data file {}. now has size {}".format(data_name(mrf), os.stat(data_name(mrf)).st_size))
+                if should_lock:
+                    lock.up_write()
+
     return errors
 
 
@@ -1317,6 +1340,12 @@ else:
         else:
             mrf_clean = False
 
+    # set a maximum size for the mrf before running mrf_clean. used to manage MRF sizes for mrf_parallel and mrf_noaddo
+    try:
+        mrf_maxsize = int(get_dom_tag_value(dom, 'mrf_maxsize'))
+    except:
+        mrf_maxsize = None
+
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
@@ -1439,6 +1468,7 @@ log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
 log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
 log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
+log_info_mssg(str().join(['config mrf_maxsize:             ', str(mrf_maxsize)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -1857,6 +1887,18 @@ mrf_filename=str().join([output_dir, basename, '.mrf'])
 # The .idx file is the index compnent of the MRF format.
 idx_filename=str().join([output_dir, basename, '.idx'])
 
+def get_extension(compression_type):
+    if compression_type == 'PNG' or compression_type == 'PPNG' or compression_type == 'EPNG':
+        return "ppg"
+    elif compression_type == 'JPG' or compression_type == 'JPEG':
+        return "pjg"
+    elif compression_type == 'TIF' or compression_type == 'TIFF':
+        return "ptf"
+    elif compression_type == 'LERC':
+        return "lrc"
+    else:
+        return None
+
 # The image component of MRF is .pjg, .ppg, .ptf, or lrc depending on compression type.
 if mrf_compression_type == 'PNG' or mrf_compression_type == 'PPNG' or mrf_compression_type == 'EPNG':
     # Output filename.
@@ -1927,7 +1969,7 @@ if len(mrf_list) > 0:
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
         errors += run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, max_size=mrf_maxsize)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -2260,7 +2302,8 @@ if len(alltiles) > 0:
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
         errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir)
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, maxsize=mrf_maxsize)
+
 
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
@@ -2336,11 +2379,11 @@ else:
                          'Check stderr file: ',
                          gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
-
+    
 if mrf_clean:
     log_info_mssg("running mrf_clean on data file {}".format(out_filename))
     clean_mrf(out_filename)
-    
+
 # Rename MRFs
 if mrf_name != '':
     output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
@@ -2387,3 +2430,4 @@ try:
 except urllib2.URLError:
     None
 sys.exit(errors)
+
