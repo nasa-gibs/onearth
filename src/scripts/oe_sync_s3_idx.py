@@ -29,28 +29,32 @@ import shutil
 def keyMapper(acc, obj):
     keyElems = obj['Key'].split("/")
 
-    proj = keyElems[0]
-    layer_name = keyElems[1]
-    if len(keyElems) > 3:
-        year = keyElems[2]
-        if len(keyElems) > 4:
-            day = keyElems[3]
-        else:
-            day = None
-    else:
-        year = None
-        day = None
     filename = keyElems[-1]
+    if len(keyElems) > 1:
+        proj = keyElems[0]
+        if len(keyElems) > 2:
+            layer_name = keyElems[1]
+        else:
+            layer_name = ''
+        if len(keyElems) > 3:
+            year = keyElems[2]
+            if len(keyElems) > 4:
+                day = keyElems[3]
+            else:
+                day = None
+        else:
+            year = None
+            day = None
 
-    if not acc.get(proj):
-        acc[proj] = {}
-        
-    if not acc[proj].get(layer_name):
-        acc[proj][layer_name] = {'idx': set([])}
-
-    if filename.endswith('.idx.tgz') or filename.endswith('.idx'):
-        idx = (year + '/' if year is not None else '') + (day + '/' if day is not None else '') + filename
-        acc[proj][layer_name]['idx'].add(idx)
+        if not acc.get(proj):
+            acc[proj] = {}
+            
+        if not acc[proj].get(layer_name):
+            acc[proj][layer_name] = {'idx': set([])}
+    
+        if filename.endswith('.idx.tgz') or filename.endswith('.idx'):
+            idx = (year + '/' if year is not None else '') + (day + '/' if day is not None else '') + filename
+            acc[proj][layer_name]['idx'].add(idx)
 
     return acc
 
@@ -110,14 +114,17 @@ def syncIdx(bucket,
                     os.mkdir(filepath)
                 print(f'Downloading file: {proj}/{layer}/{s3_file}')
                 filename = dir_proj_layer + '/' + s3_file
-                s3.download_file(bucket, proj + '/' + layer + '/' + s3_file, filename)
+                s3.download_file(bucket, str(proj + '/' + layer + '/' + s3_file).replace('//','/'), filename)
                 if filename.endswith('.tgz'):
                     print(f'Extracting file: {filename}')
                     tar = tarfile.open(filename, "r:gz")
                     os.mkdir(filepath+'/tmp')
                     tar.extractall(path=filepath+'/tmp')
                     tar.close()
-                    os.rename(filepath+'/tmp/'+os.listdir(filepath+'/tmp')[0], filename.replace('.tgz',''))
+                    try:
+                        os.rename(filepath+'/tmp/'+os.listdir(filepath+'/tmp')[0], filename.replace('.tgz',''))
+                    except Exception as e:
+                        print(f'ERROR extracting file: {filename}')
                     shutil.rmtree(filepath+'/tmp')
                     os.remove(filename)
                 
