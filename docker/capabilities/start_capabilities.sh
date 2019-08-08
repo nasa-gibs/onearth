@@ -54,15 +54,31 @@ chmod -R 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
+mkdir -p /etc/onearth/config/layers/epsg3031/best/
+mkdir -p /etc/onearth/config/layers/epsg3413/best/
+mkdir -p /etc/onearth/config/layers/epsg4326/best/
+mkdir -p /etc/onearth/config/layers/epsg3031/std/
+mkdir -p /etc/onearth/config/layers/epsg3413/std/
+mkdir -p /etc/onearth/config/layers/epsg4326/std/
+mkdir -p /etc/onearth/config/layers/epsg3031/nrt/
+mkdir -p /etc/onearth/config/layers/epsg3413/nrt/
+mkdir -p /etc/onearth/config/layers/epsg4326/nrt/
+
+# Scrape OnEarth configs from S3
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
 
 # Copy sample configs
 cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
-
-# Scrape OnEarth configs from S3
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
 
 # Replace with S3 URL
 sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml # in case there is a preceding slash

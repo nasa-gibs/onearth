@@ -33,12 +33,19 @@ mkdir -p /var/www/html/twms/epsg3857/best
 mkdir -p /var/www/html/twms/epsg3857/std
 mkdir -p /var/www/html/twms/epsg3857/nrt
 
-# Copy sample configs
+# Create config directories
 mkdir -p /onearth
 chmod -R 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
+
+# Scrape OnEarth configs from S3
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+
+# Copy sample configs
 cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+
+# Copy tilematrixsets config file
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
 
 # Run reproject config tools
