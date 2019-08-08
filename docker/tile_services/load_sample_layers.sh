@@ -49,8 +49,9 @@ mkdir -p /var/www/html/twms/epsg3413/std
 mkdir -p /var/www/html/twms/epsg3413/nrt
 
 # Copy empty tiles
-mkdir -p /onearth/empty_tiles/
-cp ../empty_tiles/* /onearth/empty_tiles/
+mkdir -p /etc/onearth/empty_tiles/
+cp ../empty_tiles/* /etc/onearth/empty_tiles/
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
 
 # Create config directories
 chmod -R 755 /onearth
