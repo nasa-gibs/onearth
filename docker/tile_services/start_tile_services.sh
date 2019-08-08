@@ -30,6 +30,10 @@ cp ../test_imagery/*date_test_year_dir-2017* /var/www/html/mrf_endpoint/date_tes
 cp oe2_test_mod_mrf_date_year_dir.conf /etc/httpd/conf.d
 cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
 
+# Set up proxy to colormaps
+cp colormaps.conf /etc/httpd/conf.d
+sed -i 's@{S3_CONFIGS}@'$S3_CONFIGS'@g' /etc/httpd/conf.d/colormaps.conf
+
 # Sync IDX files if true
 if [ "$IDX_SYNC" = true ]; then
     python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx
