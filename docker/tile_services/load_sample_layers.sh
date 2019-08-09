@@ -48,11 +48,6 @@ mkdir -p /var/www/html/twms/epsg3413/best
 mkdir -p /var/www/html/twms/epsg3413/std
 mkdir -p /var/www/html/twms/epsg3413/nrt
 
-# Copy empty tiles
-mkdir -p /etc/onearth/empty_tiles/
-cp ../empty_tiles/* /etc/onearth/empty_tiles/
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
-
 # Create config directories
 chmod -R 755 /onearth
 mkdir -p /onearth/layers
@@ -67,6 +62,29 @@ mkdir -p /etc/onearth/config/layers/epsg4326/std/
 mkdir -p /etc/onearth/config/layers/epsg3031/nrt/
 mkdir -p /etc/onearth/config/layers/epsg3413/nrt/
 mkdir -p /etc/onearth/config/layers/epsg4326/nrt/
+
+# Set up colormaps
+mkdir -p /etc/onearth/colormaps/
+mkdir -p /etc/onearth/colormaps/v1.0/
+mkdir -p /etc/onearth/colormaps/v1.2/
+mkdir -p /etc/onearth/colormaps/v1.3/
+mkdir -p /etc/onearth/colormaps/v1.3/output
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.2' -b $S3_CONFIGS -p colormaps/v1.2
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3
+for f in /etc/onearth/colormaps/v1.3/*
+do
+	echo "Generating HTML for $f"
+	base=$(basename $f)
+	html=${base/"xml"/"html"}
+	/usr/bin/colorMaptoHTML.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
+done
+ln -s /etc/onearth/colormaps /var/www/html/colormaps
+
+# Copy empty tiles
+mkdir -p /etc/onearth/empty_tiles/
+cp ../empty_tiles/* /etc/onearth/empty_tiles/
+python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
 
 # Scrape OnEarth configs from S3
 python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint

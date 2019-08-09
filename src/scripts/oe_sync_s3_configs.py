@@ -33,8 +33,8 @@ def keyMapper(acc, obj):
     if not acc.get('config'):
         acc = {'config': set([])}
 
-    # works with yaml configs or images (e.g., empty tiles)
-    if filename.endswith('.yaml') or filename.endswith('.jpeg') or filename.endswith('.jpg') or filename.endswith('.png'):
+    # works with yaml/xml configs or images (e.g., empty tiles)
+    if filename.endswith('.yaml') or filename.endswith('.xml') or filename.endswith('.jpeg') or filename.endswith('.jpg') or filename.endswith('.png'):
         acc['config'].add(filename)
 
     return acc

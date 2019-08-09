@@ -49,6 +49,7 @@ RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_co
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_idx.py /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
+RUN cp /home/oe2/onearth/src/colormaps/bin/colorMaptoHTML.py /usr/bin/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
