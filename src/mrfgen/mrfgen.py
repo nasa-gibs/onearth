@@ -2302,7 +2302,7 @@ if len(alltiles) > 0:
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
         errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
-                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, maxsize=mrf_maxsize)
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, max_size=mrf_maxsize)
 
 
 # Create pyramid only if idx (MRF index file) was successfully created.
