@@ -58,4 +58,4 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/
 
 WORKDIR /home/oe2/onearth/docker/tile_services
-CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $S3_CONFIGS $IDX_SYNC $DEBUG_LOGGING
+CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $IDX_SYNC $DEBUG_LOGGING $S3_CONFIGS

@@ -18,4 +18,4 @@ source_mrf:
   data_file_uri: "{S3_URL}/epsg3413/MODIS_Aqua_CorrectedReflectance_TrueColor_v6_STD/"
   year_dir: true
   bbox: -180,-90,180,90
-  empty_tile: "/onearth/empty_tiles/Blank_RGB_512.jpg"
+  empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"

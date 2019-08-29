@@ -1,11 +1,11 @@
-layer_id: "SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending"
+layer_id: "SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending_v7_STD"
 layer_title: "Cloud Liquid Water (Ascending, Local PM, DMSP-F10 / SSMI)"
-layer_name: "SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending tileset"
+layer_name: "SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending_v7_STD tileset"
 projection: "EPSG:4326"
 tilematrixset: "2km"
 mime_type: "image/png"
 static: false
-abstract: "SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending abstract"
+abstract: "SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending_v7_STD abstract"
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.0/SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
@@ -17,8 +17,8 @@ source_mrf:
   bands: 1
   tile_size_x: 512
   tile_size_y: 512
-  idx_path: "/onearth/idx/epsg4326/SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending/"
-  data_file_uri: "{S3_URL}/epsg4326/SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending/"
+  idx_path: "/onearth/idx/epsg4326/SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending_v7_STD/"
+  data_file_uri: "{S3_URL}/epsg4326/SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending_v7_STD/"
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGBA_512.png"

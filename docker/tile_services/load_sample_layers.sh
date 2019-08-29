@@ -1,7 +1,7 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
-S3_CONFIGS=${3:-gitc-dev-onearth-configs}
+S3_CONFIGS=$3
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -69,34 +69,46 @@ mkdir -p /etc/onearth/colormaps/v1.0/
 mkdir -p /etc/onearth/colormaps/v1.2/
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.2' -b $S3_CONFIGS -p colormaps/v1.2
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3
-for f in /etc/onearth/colormaps/v1.3/*
-do
-	echo "Generating HTML for $f"
-	base=$(basename $f)
-	html=${base/"xml"/"html"}
-	/usr/bin/colorMaptoHTML.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
-done
+if [ -z "$S3_CONFIGS" ]
+then
+	echo "S3_CONFIGS not set for colormaps"
+else
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.2' -b $S3_CONFIGS -p colormaps/v1.2
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3
+	
+	for f in /etc/onearth/colormaps/v1.3/*
+	do
+		echo "Generating HTML for $f"
+		base=$(basename $f)
+		html=${base/"xml"/"html"}
+		/usr/bin/colorMaptoHTML.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
+	done
+fi
+
 ln -s /etc/onearth/colormaps /var/www/html/colormaps
 
 # Copy empty tiles
 mkdir -p /etc/onearth/empty_tiles/
 cp ../empty_tiles/* /etc/onearth/empty_tiles/
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
 
 # Scrape OnEarth configs from S3
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
+if [ -z "$S3_CONFIGS" ]
+then
+	echo "S3_CONFIGS not set for OnEarth configs"
+else
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
+fi
 
 # Copy sample configs
 cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/

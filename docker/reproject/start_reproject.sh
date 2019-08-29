@@ -1,5 +1,6 @@
 #!/bin/sh
 DEBUG_LOGGING=${1:-false}
+S3_CONFIGS=$2
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -40,7 +41,12 @@ mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
 
 # Scrape OnEarth configs from S3
-python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+if [ -z "$S3_CONFIGS" ] 
+then
+	echo "S3_CONFIGS not set"
+else
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+fi
 
 # Copy sample configs
 cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/

@@ -18,4 +18,4 @@ source_mrf:
   data_file_uri: "{S3_URL}/profiler/MOG13Q4_LQD_NDVI_NRT/"
   year_dir: true
   bbox: -180,-90,180,90
-  empty_tile: "/onearth/empty_tiles/MOG13Q4_LQD_NDVI_NRT.png"
+  empty_tile: "/etc/onearth/empty_tiles/MOG13Q4_LQD_NDVI_NRT.png"
