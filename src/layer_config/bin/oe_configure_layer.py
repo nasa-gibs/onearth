@@ -881,12 +881,13 @@ def get_file_from_time(timestr, fileNamePrefix, include_year_dir, has_zdb):
 
 def generate_legend(colormap, output, legend_url, format, orientation):
     """
-    Generate an SVG legend graphic from GIBS color map.
+    Generate a legend graphic from GIBS color map. 
+    Returns: WMTS <LegendURL> metadata tag, legend width, legend height.
     Arguments:
         colormap -- the color map file name
         output -- the output file name
         legend_url -- URL to access legend from GetCapabilities
-        format -- the format of the legend ('png' or 'svg'
+        format -- the format of the legend ('png' or 'svg')
         orientation -- the orientation of the legend
     """
 
@@ -897,7 +898,9 @@ def generate_legend(colormap, output, legend_url, format, orientation):
     print "Orientation: " + orientation
     pt = 1.25  #pixels in point
 
-    legend_url_template = ''
+    legend_url_metadata = ''
+    width  = ''
+    height = ''
 
     if format not in ["svg","png"]:
         log_sig_err("Error generating legend; Invalid format: " + format, sigevent_url)
@@ -927,9 +930,10 @@ def generate_legend(colormap, output, legend_url, format, orientation):
             print "Color map last modified on: " + str(colormap_time)
             print "Legend last modified on: " + str(legend_time)
             if colormap_time > legend_time:
-                print "Updated color map found"
-                print "Generating new legend"
+                print "Updated color map found, generating new legend"
                 run_command(cmd, sigevent_url)
+            else:
+                print "Updated color map not found, skipping legend generation"
         except Exception, e:
             log_sig_err("Error generating legend: " + str(e), sigevent_url)
 
@@ -948,10 +952,10 @@ def generate_legend(colormap, output, legend_url, format, orientation):
             svg.close()
 
             if orientation == 'horizontal':
-                legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
+                legend_url_metadata = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
                     legend_url, int(width), int(height))
             else:
-                legend_url_template = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
+                legend_url_metadata = '<LegendURL format="image/svg+xml" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
                     legend_url, int(width), int(height))
 
 
@@ -967,10 +971,10 @@ def generate_legend(colormap, output, legend_url, format, orientation):
             height = outputInfo["size"][1]
 
             if orientation == 'horizontal':
-                legend_url_template = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
+                legend_url_metadata = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/horizontal" xlink:href="%s" xlink:title="GIBS Color Map Legend: Horizontal" width="%d" height="%d"/>' % (
                     legend_url, int(width), int(height))
             else:
-                legend_url_template = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
+                legend_url_metadata = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
                 legend_url, int(width), int(height))
 
     except IOError:
@@ -978,7 +982,7 @@ def generate_legend(colormap, output, legend_url, format, orientation):
         log_sig_err(mssg, sigevent_url)
 
 
-    return legend_url_template
+    return legend_url_metadata, width, height
 
 
 def generate_empty_tile(colormap, output, width, height):
@@ -2456,10 +2460,10 @@ for conf in conf_files:
         print '\n' + wmts_mrf_filename + ' configured successfully\n'
 
         # generate legend if requested
-        legendUrl_svg_vertical = ''
-        legendUrl_svg_horizontal = ''
-        legendUrl_png_horizontal = ''
-        if legend == True and default_colormap != None:
+        legendUrl_svg_v_meta = ''
+        legendUrl_svg_h_meta = ''
+        legendUrl_png_h = ''
+        if legend and default_colormap:
             colormap_value = default_colormap.firstChild.nodeValue
             colormap_location = default_colormap.attributes['location'].value
             if colormap_location == '':
@@ -2480,20 +2484,22 @@ for conf in conf_files:
                 if environment.legendUrl != None:
                     if legend_output != '':
                         # These URLs _are_ used in the WMTS capabilities
-                        legendUrl_svg_vertical = generate_legend(
+                        legendUrl_svg_v_meta, legendUrl_svg_v_width, legendUrl_svg_v_height = generate_legend(
                             colormap_path, legend_output + '_V.svg',
                             environment.legendUrl + legend_identifier + '_V.svg',
                             'svg', 'vertical')
-                        legendUrl_svg_horizontal = generate_legend(
+                        legendUrl_svg_h_meta, legendUrl_svg_h_width, legendUrl_svg_h_height = generate_legend(
                             colormap_path, legend_output + '_H.svg',
                             environment.legendUrl + legend_identifier + '_H.svg',
                             'svg', 'horizontal')
 
                         # This URL _is not_ used in the WMTS capabilities
-                        legendUrl_png_horizontal = generate_legend(
+                        legendUrl_png_h_meta, legendUrl_png_h_width, legendUrl_png_h_height = generate_legend(
                             colormap_path, legend_output + '_H.png',
                             environment.legendUrl + legend_identifier + '_H.png',
                             'png', 'horizontal')
+                        # saving this for later since WMS doesn't use the <LegendURL> metadata tag
+                        legendUrl_png_h_url = environment.legendUrl + legend_identifier + '_H.png'
                 else:
                     message = "Legend URL has not been defined for environment with cache location: " + environment.cache
                     log_sig_err(message, sigevent_url)
@@ -2714,9 +2720,9 @@ for conf in conf_files:
             if '$Identifier' in line:
                 line = line.replace("$Identifier", identifier)
             if '$LegendURL_vertical' in line:
-                line = line.replace("$LegendURL_vertical", legendUrl_svg_vertical)
+                line = line.replace("$LegendURL_vertical", legendUrl_svg_v_meta)
             if '$LegendURL_horizontal' in line:
-                line = line.replace("$LegendURL_horizontal", legendUrl_svg_horizontal)
+                line = line.replace("$LegendURL_horizontal", legendUrl_svg_h_meta)
             if '$ColorMap' in line:
                 if colormaps == None or default_colormap == None:
                     line = ''
@@ -3009,8 +3015,8 @@ $Patterns</TiledGroup>"""
         layer_xml.writelines(layer_output)
         layer_xml.close()
 
-    # Create mapfile (if specified by user)
-    if create_mapfile is True and compression != "MVT" and environment.mapfileStagingLocation is not None:  # don't create mapfiles for protocol buffers (i.e,. vector tiles)
+    # Create mapfile if requested and this is not a vector tile product
+    if create_mapfile and compression != "MVT" and environment.mapfileStagingLocation is not None:
         # Write mapfile info for layer
         mapfile_name = os.path.join(environment.mapfileStagingLocation,
                                     identifier + '.map')
@@ -3027,6 +3033,7 @@ $Patterns</TiledGroup>"""
             miny = projection.lowercorner[1]
             maxx = projection.uppercorner[0]
             maxy = projection.uppercorner[1]
+
 
             # Write mapfile lines
             mapfile.write("LAYER\n")
@@ -3096,17 +3103,26 @@ $Patterns</TiledGroup>"""
                         '/')[1]
                     timeExtent = timeExtent + timeElement.firstChild.data.strip(
                     ) + ","
-                mapfile.write("\t\t\"wms_timeextent\"\t\t\"" +
+                mapfile.write("\t\t\"wms_timeextent\"\t\"" +
                               timeExtent.rstrip(',') + "\"\n")
-                mapfile.write("\t\t\"wms_timedefault\"\t\t\"" + defaultDate +
+                mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate +
                               "\"\n")
             if wmsGroupName:
                 mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName +
                               "\"\n")
+
+            if legend and legendUrl_png_h_url:
+                mapfile.write("\t\t\"wms_style\"\t\t\t\t\"default\"\n")
+                mapfile.write("\t\t\"wms_style_default_legendurl_width\"\t\"" + str(legendUrl_png_h_width) + "\"\n")
+                mapfile.write("\t\t\"wms_style_default_legendurl_height\"\t\"" + str(legendUrl_png_h_height) + "\"\n")
+                mapfile.write("\t\t\"wms_style_default_legendurl_format\"\t\"image/png\"\n")
+                mapfile.write("\t\t\"wms_style_default_legendurl_href\"\t\"" + legendUrl_png_h_url + "\"\n")
+
             if vectorType:
                 mapfile.write(
                     '\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
                 mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
+
             mapfile.write("\tEND\n")
             datacon = "DATA"
             if vectorType:
@@ -3245,9 +3261,7 @@ if no_wmts == False:
             try:
                 run_command(cmd, sigevent_url)
             except:
-                log_sig_err(
-                    "Error in generating binary cache config using command: " +
-                    cmd, sigevent_url)
+                log_sig_err("Error in generating binary cache config using command: " + cmd, sigevent_url)
             cmd = depth + '/oe_create_cache_config -cxd ' + wmts_endpoint.path + " " + wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.xml'
             try:
                 run_command(cmd, sigevent_url)
