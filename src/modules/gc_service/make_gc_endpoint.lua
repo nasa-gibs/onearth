@@ -30,6 +30,7 @@ local config = {
     twms_gc_header_file=${twms_gc_header_file},
     base_uri_gc=${base_uri_gc},
     base_uri_gts=${base_uri_gts},
+    base_uri_meta=${base_uri_meta},
     target_epsg_code=${target_epsg_code},
     time_service_keys=${time_service_keys}
 }
@@ -135,6 +136,7 @@ local function create_config(endpointConfigFilename)
         :gsub("${twms_gc_header_file}", addQuotes(endpointConfig["gc_service"]["twms_gc_header_file"]) or "nil")
         :gsub("${base_uri_gc}", addQuotes(endpointConfig["base_uri_gc"]) or "nil")
         :gsub("${base_uri_gts}", addQuotes(endpointConfig["base_uri_gts"]) or "nil")
+        :gsub("${base_uri_meta}", endpointConfig["base_uri_meta"] and addQuotes(endpointConfig["base_uri_meta"]) or "nil")
         :gsub("${target_epsg_code}", endpointConfig["target_epsg_code"] and addQuotes(endpointConfig["target_epsg_code"]) or "nil")
         :gsub("${time_service_keys}", dateServiceKeyString)
     lfs.mkdir(internalEndpoint)

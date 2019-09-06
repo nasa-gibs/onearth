@@ -402,7 +402,7 @@ local function makeTWMSGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsg
     return layerElem
 end
 
-local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC)
+local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC, baseUriMeta)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
@@ -468,7 +468,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
         for _, metadata in pairs(config.metadata) do
             local metadataNode = xml.new("ows:Metadata")
             for key, value in pairs(metadata) do
-                metadataNode:set_attrib(key, value)
+                metadataNode:set_attrib(key, string.gsub(value, "{base_uri_meta}", baseUriMeta or ""))
             end
             layerElem:add_child(metadataNode)
         end
@@ -532,7 +532,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
     end
 
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"])
+        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
     end
     if fileAttrs["mode"] == "directory" then
         -- Only going down a single directory level
@@ -540,7 +540,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = buildFunc(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"])
+                 tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
             end
         end
     end
