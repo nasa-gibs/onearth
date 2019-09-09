@@ -7,9 +7,9 @@
     http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
     version="1.0.0">
     <ows:ServiceIdentification>
-        <ows:Title xml:lang="en">OnEarth</ows:Title>
+        <ows:Title xml:lang="en">NASA Global Imagery Browse Services for EOSDIS</ows:Title>
         <ows:Abstract xml:lang="en">
-            OnEarth Server
+            Near real time imagery from multiple NASA instruments
         </ows:Abstract>
         <ows:Keywords>
             <ows:Keyword>World</ows:Keyword>
@@ -21,8 +21,8 @@
         <ows:AccessConstraints>none</ows:AccessConstraints>
     </ows:ServiceIdentification>
     <ows:ServiceProvider>
-        <ows:ProviderName></ows:ProviderName>
-        <ows:ProviderSite xlink:href="http://localhost/"/>
+        <ows:ProviderName>National Aeronautics and Space Administration</ows:ProviderName>
+        <ows:ProviderSite xlink:href="https://earthdata.nasa.gov/"/>
         <ows:ServiceContact>
             <ows:IndividualName></ows:IndividualName>
             <ows:PositionName></ows:PositionName>
@@ -42,14 +42,14 @@
         <ows:Operation name="GetCapabilities">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="http://localhost/oe-status/1.0.0/WMTSCapabilities.xml">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>RESTful</ows:Value>
                             </ows:AllowedValues>
                         </ows:Constraint>
                     </ows:Get>
-                    <ows:Get xlink:href="http://localhost/oe-status/wmts.cgi?">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>KVP</ows:Value>
@@ -62,14 +62,14 @@
         <ows:Operation name="GetTile">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="http://localhost/oe-status/">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>RESTful</ows:Value>
                             </ows:AllowedValues>
                         </ows:Constraint>
                     </ows:Get>
-                    <ows:Get xlink:href="http://localhost/oe-status/wmts.cgi?">
+                    <ows:Get xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>KVP</ows:Value>
@@ -80,5 +80,5 @@
             </ows:DCP>
         </ows:Operation>
     </ows:OperationsMetadata>
-    <ServiceMetadataURL xlink:href="http://localhost/oe-status/1.0.0/WMTSCapabilities.xml"/>
+    <ServiceMetadataURL xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"/>
 </Capabilities>

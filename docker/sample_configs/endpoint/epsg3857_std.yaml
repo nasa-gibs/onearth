@@ -1,4 +1,4 @@
-source_gc_uri: "http://onearth-tile-services/wmts/epsg4326/std/1.0.0/WMTSCapabilities.xml"
+source_gc_uri: "http://onearth-tile-services/wmts/epsg4326/std/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
 time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3857", "std"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg3857/std/gc"
@@ -14,9 +14,9 @@ gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3857/std"
   external_endpoint: "/wmts/epsg3857/std/gc"
   config_prefix: "epsg3857_std_gc_service"
-  gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
-  gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
-  twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
+  gc_header_file: "/etc/onearth/config/conf/epsg3857_std_header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/epsg3857_std_header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/epsg3857_std_header_twms_gc.xml"
 wmts_service:
   internal_endpoint: "/var/www/html/wmts/epsg3857/std"
   external_endpoint: "/wmts/epsg3857/std"

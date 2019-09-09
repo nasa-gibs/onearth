@@ -82,6 +82,7 @@ else
 fi
 
 # Copy sample configs
+cp ../sample_configs/conf/* /etc/onearth/config/conf/
 cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 

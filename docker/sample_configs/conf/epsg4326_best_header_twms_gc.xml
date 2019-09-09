@@ -1,15 +1,17 @@
 <WMT_MS_Capabilities version="1.1.1">
 <Service>
 <Name>OGC:WMS</Name>
-<Title>OnEarth</Title>
+<Title>NASA Global Imagery Browse Services for EOSDIS</Title>
 <Abstract>
-OnEarth Server
+Near real time imagery from multiple NASA instruments
 </Abstract>
 <KeywordList>
+<Keyword>GIBS</Keyword>
+<Keyword>NASA</Keyword>
 <Keyword>WMS</Keyword>
-<Keyword>OnEarth</Keyword>
+<Keyword>Earth</Keyword>
 </KeywordList>
-<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/oe-status/" xlink:type="simple"/>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg4326/best/" xlink:type="simple"/>
 <ContactInformation>
 <ContactPersonPrimary>
 <ContactPerson/>
@@ -27,7 +29,7 @@ OnEarth Server
 <DCPType>
 <HTTP>
 <Get>
-<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/oe-status/twms.cgi?" xlink:type="simple"/>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?" xlink:type="simple"/>
 </Get>
 </HTTP>
 </DCPType>
@@ -38,7 +40,7 @@ OnEarth Server
 <DCPType>
 <HTTP>
 <Get>
-<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/oe-status/twms.cgi?" xlink:type="simple"/>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?" xlink:type="simple"/>
 </Get>
 </HTTP>
 </DCPType>
@@ -48,7 +50,7 @@ OnEarth Server
 <DCPType>
 <HTTP>
 <Get>
-<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/oe-status/twms.cgi?" xlink:type="simple"/>
+<OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?" xlink:type="simple"/>
 </Get>
 </HTTP>
 </DCPType>
@@ -60,7 +62,7 @@ OnEarth Server
 <VendorSpecificCapabilities/>
 <UserDefinedSymbolization SupportSLD="0" UserLayer="0" UserStyle="1" RemoteWFS="0"/>
 <Layer queryable="0">
-<Title>OnEarth</Title>
+<Title>Global Imagery Browse Services</Title>
 <SRS>EPSG:4326</SRS>
 <CRS>EPSG:4326</CRS>
 </Layer>

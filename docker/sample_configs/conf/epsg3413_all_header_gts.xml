@@ -1,16 +1,16 @@
 <WMS_Tile_Service version="0.1.0">
   <Service>
-    <Name>OnEarth:WMS:Tile</Name>
+    <Name>GIBS:WMS:Tile</Name>
     <Title>WMS Tile Service</Title>
     <Abstract>Tiled WMS service, tiled in a global grid</Abstract>
     <KeywordList>
       <Keyword>WMS</Keyword>
       <Keyword>Tile</Keyword>
-      <Keyword>OnEarth</Keyword>
+      <Keyword>GIBS</Keyword>
       <Keyword>Global</Keyword>
       <Keyword>Earth</Keyword>
     </KeywordList>
-    <OnlineResource xlink:href="http://localhost/oe-status/" xlink:type="simple" xmlns:xlink="http://www.w3.orf/1999/xlink"/>
+    <OnlineResource xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg3413/all/" xlink:type="simple" xmlns:xlink="http://www.w3.orf/1999/xlink"/>
     <ContactInformation>
       <ContactPersonPrimary>
         <ContactPerson></ContactPerson>

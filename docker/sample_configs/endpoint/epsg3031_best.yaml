@@ -12,9 +12,9 @@ gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3031/best"
   external_endpoint: "/wmts/epsg3031/best/gc"
   config_prefix: "epsg3031_best_gc_service"
-  gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
-  gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
-  twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
+  gc_header_file: "/etc/onearth/config/conf/epsg3031_best_header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/epsg3031_best_header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/epsg3031_best_header_twms_gc.xml"
 wmts_service:
   internal_endpoint: "/var/www/html/wmts/epsg3031/best"
   external_endpoint: "/wmts/epsg3031/best"
