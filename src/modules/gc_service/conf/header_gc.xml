@@ -80,4 +80,5 @@
             </ows:DCP>
         </ows:Operation>
     </ows:OperationsMetadata>
+    <ServiceMetadataURL xlink:href="https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"/>
 </Capabilities>

@@ -575,7 +575,6 @@ local function makeGC(endpointConfig)
     local dom = xml.parse(headerFile:read("*all"))
     headerFile:close()
 
-
     -- Build contents section
     local contentsElem = xml.elem("Contents")
     local layers = getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
@@ -596,8 +595,21 @@ local function makeGC(endpointConfig)
         end
     end
 
+    -- Add contents section
     dom:add_direct_child(contentsElem)
+
+    -- Move ServiceMetadataURL below contents
+    local serviceMetadataURL = dom:get_elements_with_name("ServiceMetadataURL")[1]
+    local function removeServiceMetadataURL(x)
+      if (x == serviceMetadataURL) then
+        return nil
+      end
+      return x
+    end
+    dom:maptags(removeServiceMetadataURL)
+    dom:add_direct_child(serviceMetadataURL)
     return xml.tostring(dom)
+    
 end
 
 
