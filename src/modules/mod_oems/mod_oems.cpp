@@ -683,6 +683,10 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 			ap_filter_rec_t *receive_filter = NULL;
 			if (!cfg->disable_oemstime) {
 		    	receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
+			} else {
+				if (strlen(time) == 0) {
+					time = "default";
+				}
 			}
 		    if (receive_filter != NULL) {
 		    	ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
