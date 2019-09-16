@@ -613,7 +613,11 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    if (r->prev != 0) {
 	    	prev_last_layer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
 	    	prev_last_layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
-			last_layer = (char*)apr_pcalloc(r->pool,max_chars+strlen(prev_last_layer));
+	    	if (prev_last_layer != 0) {
+	    		last_layer = (char*)apr_pcalloc(r->pool,max_chars+strlen(prev_last_layer));
+	    	} else {
+	    		last_layer = (char*)apr_pcalloc(r->pool,max_chars);
+	    	}
 	    } else {
 	    	last_layer = (char*)apr_pcalloc(r->pool,max_chars);
 	    }
