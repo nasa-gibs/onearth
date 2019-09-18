@@ -637,9 +637,19 @@ local function makeTWMSGC(endpointConfig)
     -- Parse header
     local headerFile = assert(io.open(endpointConfig["twms_gc_header_file"], "r"),
         "Can't open TWMS GC header file at:" .. endpointConfig["twms_gc_header_file"])
-    local dom = xml.parse(headerFile:read("*all"))
+    local content = {}
+    local doctype = ""
+    if headerFile then
+      for line in headerFile:lines() do
+          if string.match(line, "DOCTYPE") then
+            doctype = line -- parser doesn't like DOCTYPE, so we take it out and prepend again later
+          else
+            content[#content+1] = line
+          end
+      end
+    end
     headerFile:close()
-
+    local dom = xml.parse(table.concat(content,"\n"))
 
     -- Add layers to <Capability> section
     local capabilityElems = dom:get_elements_with_name("Capability")
@@ -659,7 +669,7 @@ local function makeTWMSGC(endpointConfig)
         baseLayerElem:add_direct_child(layer)
     end
 
-    return xml.tostring(dom)
+    return doctype .. xml.tostring(dom)
 end
 
 local function generateFromEndpointConfig()
