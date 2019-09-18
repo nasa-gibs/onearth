@@ -10,7 +10,7 @@
       <Keyword>Global</Keyword>
       <Keyword>Earth</Keyword>
     </KeywordList>
-    <OnlineResource xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg3031/best/" xlink:type="simple" xmlns:xlink="http://www.w3.orf/1999/xlink"/>
+    <OnlineResource xlink:href="https://gibs.earthdata.nasa.gov/twms/epsg3031/best/" xlink:type="simple" xmlns:xlink="http://www.w3.org/1999/xlink"/>
     <ContactInformation>
       <ContactPersonPrimary>
         <ContactPerson></ContactPerson>
