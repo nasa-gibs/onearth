@@ -40,16 +40,18 @@ chmod -R 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
 
+# Copy sample configs
+cp ../sample_configs/conf/* /etc/onearth/config/conf/
+cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ] 
 then
 	echo "S3_CONFIGS not set"
 else
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
 fi
-
-# Copy sample configs
-cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 
 # Copy tilematrixsets config file
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
