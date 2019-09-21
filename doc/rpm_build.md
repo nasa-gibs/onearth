@@ -102,7 +102,7 @@ sudo yum-builddep deploy/onearth/onearth.spec
 Enable newer gcc compiler if using CentOS 6
 
 ```Shell
-scl enable devtoolset-6 bash
+scl enable devtoolset-7 bash
 ```
 
 Build the RPM:

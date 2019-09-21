@@ -33,7 +33,7 @@ BuildRequires:  turbojpeg-devel
 BuildRequires:  python-pip
 %if 0%{?centos}  == 6
 BuildRequires:  centos-release-scl
-BuildRequires:  devtoolset-6-toolchain
+BuildRequires:  devtoolset-7-toolchain
 %endif
 Requires:	httpd
 Requires:	gibs-gdal

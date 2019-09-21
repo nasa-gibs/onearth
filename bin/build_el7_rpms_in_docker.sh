@@ -12,8 +12,6 @@ cat > dist/build_rpms.sh <<EOS
 
 set -evx
 
-yum install -y centos-release-scl
-
 yum install -y \
   @buildsys-build \
   gcc-c++ \
@@ -42,6 +40,7 @@ chown -R root:root /build
   git submodule update --init --recursive
   yum-builddep -y deploy/onearth/onearth.spec
   make download
+  make onearth-rpm
   make onearth-rpm
 )
 
