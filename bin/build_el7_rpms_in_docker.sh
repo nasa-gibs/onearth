@@ -16,7 +16,6 @@ yum install -y centos-release-scl
 
 yum install -y \
   @buildsys-build \
-  devtoolset-6-toolchain \
   gcc-c++ \
   geos-devel \
   giflib-devel \
@@ -43,7 +42,7 @@ chown -R root:root /build
   git submodule update --init --recursive
   yum-builddep -y deploy/onearth/onearth.spec
   make download
-  scl enable devtoolset-6 "make onearth-rpm"
+  make onearth-rpm
 )
 
 cp /build/dist/onearth-*.rpm /dist/
