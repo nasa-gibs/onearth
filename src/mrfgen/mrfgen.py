@@ -487,20 +487,19 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
     gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdalbuildvrt.wait()
     tile = temp_tile
-    tile_left = tile+".left_cut.vrt"
-    tile_right = tile+".right_cut.vrt" 
+    tile_left = tile + ".left_cut.vrt"
+    tile_right = tile + ".right_cut.vrt"
 
     if Decimal(lrx) <= Decimal(antimeridian):
         # modify input into >180 space if not already
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
         log_the_command(gdal_edit_command_list)
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        gdal_edit.wait()  
+        gdal_edit.wait()
 
-    
-    # cut the input at the antimeridian into left and right halves
+    # Cut the input at the antimeridian into left and right halves
     left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+
     log_the_command(left_cut_command_list)
     left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     left_cut.wait()
@@ -508,18 +507,25 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
     if len(left_cut_stderr) > 0:
         log_sig_err(left_cut_stderr, sigevent_url)
 
-    log_the_command(right_cut_command_list)
-    right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    right_cut.wait()
-    right_cut_stderr = right_cut.stderr.read()
-    if len(right_cut_stderr) > 0:
-        log_sig_err(right_cut_stderr, sigevent_url)
-    
-    # flip the origin longitude of the right half
-    gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian)*-1), uly, lrx, lry]
-    log_the_command(gdal_edit_command_list)
-    gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdal_edit.wait()  
+    # Make sure that when we make the right cut that there will be at least one pixel
+    if (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
+        log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
+        tile_right = None
+    else:
+        right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right,
+                                  tile, tile_right]
+        log_the_command(right_cut_command_list)
+        right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        right_cut.wait()
+        right_cut_stderr = right_cut.stderr.read()
+        if len(right_cut_stderr) > 0:
+            log_sig_err(right_cut_stderr, sigevent_url)
+
+        # flip the origin longitude of the right half
+        gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian) * -1), uly, lrx, lry]
+        log_the_command(gdal_edit_command_list)
+        gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        gdal_edit.wait()
 
     return (tile_left, tile_right)
 
@@ -743,7 +749,13 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                                                               working_dir)
             if should_lock:
                 lock.up_read()
-            errors += run_mrf_insert([left_half, right_half], mrf, insert_method, resize_resampling, target_x, target_y,
+
+            # The right half of the split could be None if there wasn't a full pixel beyond the antimeridian
+            if right_half:
+                errors += run_mrf_insert([left_half, right_half], mrf, insert_method, resize_resampling, target_x, target_y,
+                                     mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
+            else:
+                errors += run_mrf_insert([left_half], mrf, insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
             continue
 
