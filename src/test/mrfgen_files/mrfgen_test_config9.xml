@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<mrfgen_configuration>
+ <date_of_data>20190927</date_of_data>
+ <parameter_name>vns</parameter_name>
+ <input_dir>mrfgen_files/antimeridian_crossing</input_dir> 
+ <output_dir>mrfgen_test_data/output_dir</output_dir>
+ <working_dir>mrfgen_test_data/working_dir</working_dir>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGBA_256.png</mrf_empty_tile_filename>
+ <mrf_blocksize>512</mrf_blocksize>
+ <mrf_compression_type>PNG</mrf_compression_type>
+ <overview_resampling>nearest</overview_resampling>
+ <resize_resampling>near</resize_resampling>
+ <target_x>2048</target_x>
+ <source_epsg>4326</source_epsg>
+ <target_extents>-180,-90,180,90</target_extents>
+ <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
+ <mrf_merge>true</mrf_merge>
+ <mrf_nocopy>true</mrf_nocopy>
+</mrfgen_configuration>
