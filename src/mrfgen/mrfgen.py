@@ -1416,7 +1416,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             # ONEARTH-348 - Validate the palette, but don't do anything about it yet
             # For now, we won't enforce any issues, but will log issues validating imagery
             if strict_palette:
-               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v ', '-c', colormap, '-i', alltiles[i]]
+               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
       
                # Log the oe_validate_palette.py command.
                log_the_command(oe_validate_palette_command_list)
