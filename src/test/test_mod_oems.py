@@ -557,6 +557,18 @@ class TestModOEMS(unittest.TestCase):
             print 'URL: ' + req_url
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers with no time does not match what\'s expected. URL: ' + req_url)
+        
+    def test_request_wms_getlegendgraphic(self):
+        """
+        31. Test GetLegendGraphic request
+        """
+        ref_hash = '13b34c39c2fda83972a2df4cc2b5c394'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=getlegendGRAPHIC&layer=Terra_Orbit_Dsc_Dots&FORMAT=image/png'
+        if DEBUG:
+            print '\nTesting: Request WMS GetLegendGraphic'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS GetLegendGraphic does not match what\'s expected. URL: ' + req_url)
 
     # TEARDOWN
 
