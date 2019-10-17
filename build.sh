@@ -5,7 +5,6 @@ OE_VERSION=${1:-latest}
 cp ./docker/tile_services/Dockerfile .
 docker build --no-cache -t nasagibs/onearth-tile-services:$OE_VERSION .
 rm Dockerfile
-exit 0
 
 # Build the onearth-time-service image
 cp ./docker/time_service/Dockerfile .
