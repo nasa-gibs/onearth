@@ -9,6 +9,12 @@ RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
+# Setup cron for logrotate
+RUN yum install -y cronie
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+    chmod 755 /etc/cron.hourly/logrotate && \
+    cp /home/oe2/onearth/docker/tile_services/logrotate.httpd /etc/logrotate.d/httpd
+
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
