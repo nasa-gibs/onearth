@@ -5,7 +5,7 @@
 <!-- end of DOCTYPE declaration -->
 <WMT_MS_Capabilities version="1.1.1">
 
-<!-- MapServer version 7.0.1 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=THREADS SUPPORTS=GEOS INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
+<!-- MapServer version 7.0.1 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
 
 <Service>
   <Name>OGC:WMS</Name>
@@ -45,6 +45,8 @@
       <Format>application/vnd.google-earth.kml.xml</Format>
       <Format>application/vnd.google-earth.kmz</Format>
       <Format>image/png; mode=8bit</Format>
+      <Format>application/x-pdf</Format>
+      <Format>image/svg+xml</Format>
       <Format>image/tiff</Format>
       <DCPType>
         <HTTP>
@@ -53,6 +55,17 @@
         </HTTP>
       </DCPType>
     </GetMap>
+    <GetLegendGraphic>
+      <Format>image/png</Format>
+      <Format>image/jpeg</Format>
+      <Format>image/png; mode=8bit</Format>
+      <DCPType>
+        <HTTP>
+          <Get><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Get>
+          <Post><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Post>
+        </HTTP>
+      </DCPType>
+    </GetLegendGraphic>
   </Request>
   <Exception>
     <Format>application/vnd.ogc.se_xml</Format>
