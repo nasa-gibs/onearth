@@ -64,6 +64,9 @@
 #  <mrf_nocopy>true</mrf_nocopy>
 #  <mrf_noaddo>false</mrf_noaddo>
 #  <mrf_merge>false</mrf_merge>
+#  <mrf_parallel>false</mrf_parallel>
+#  <mrf_cores>4</mrf_cores>
+#  <mrf_clean>true</mrf_clean>
 # </mrfgen_configuration>
 #
 
@@ -85,10 +88,19 @@ import imghdr
 import sqlite3
 import math
 import oe_utils
+import json
+import re
 from overtiffpacker import pack
 from decimal import *
 from osgeo import gdal
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
+
+import collections
+import multiprocessing
+import datetime
+from contextlib import contextmanager # used to build context pool 
+import functools
+import random
 
 versionNumber = '2.2.2'
 oe_utils.basename = None
@@ -161,24 +173,27 @@ def diff_resolution(tiles):
         return (False, next_x)
     
     log_info_mssg("Checking for different resolutions in tiles")
-    res = ""
+    res = None
     for tile in tiles:
-        gdalinfo_command_list=['gdalinfo', tile]
+        gdalinfo_command_list=['gdalinfo', '-json', tile]
         gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        for line in gdalinfo.stdout.readlines():
-            if "Pixel Size =" in line:
-                if res == "":
-                    res = line.split("=")[1].strip()
-                    log_info_mssg("Input tile pixel size is: " + res)
-                    res_x = float(res.split(',')[0].replace('(',''))
-                    res_y = float(res.split(',')[1].replace(')',''))
-                else:
-                    next_res = line.split("=")[1].strip()
-                    next_x = float(next_res.split(',')[0].replace('(',''))
-                    next_y = float(next_res.split(',')[1].replace(')',''))
-                    if res_x != next_x and res_y != next_y:
-                        log_info_mssg("Different tile resolutions detected")
-                        return (True, next_x)              
+        tileInfo = json.loads(gdalinfo.stdout.read())
+
+        tile_res_x = float(tileInfo["geoTransform"][1])
+        tile_res_y = float(tileInfo["geoTransform"][5])
+
+        if not res:
+            log_info_mssg("Input tile pixel size is: " + str(tile_res_x) + ", " + str(tile_res_y))
+            res   = tile_res_x
+            res_x = tile_res_x
+            res_y = tile_res_y
+        else:
+            next_x = tile_res_x
+            next_y = tile_res_y
+            if res_x != next_x and res_y != next_y:
+                log_info_mssg("Different tile resolutions detected")
+                return (True, next_x)
+
     return (False, next_x)
 
 def is_global_image(tile, xmin, ymin, xmax, ymax):
@@ -192,54 +207,77 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
         ymax -- Maximum y value
     """
     log_info_mssg("Checking for global image")
-    upper_left = False
+    upper_left  = False
     lower_right = False
-    gdalinfo_command_list=['gdalinfo', tile]
-    gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    for line in gdalinfo.stdout.readlines():
-        if "Upper Left" in line:
-            in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
-            if int(round(float(in_xmin.strip()))) <= int(round(float(xmin))) and int(round(float(in_ymax.strip().split(' ')[0]))) >= int(round(float(ymax))):
-                upper_left = True
-        if "Lower Right" in line:
-            in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
-            if int(round(float(in_xmax.strip()))) >= int(round(float(xmax))) and int(round(float(in_ymin.strip().split(' ')[0]))) <= int(round(float(ymin))):
-                lower_right = True
-    if upper_left == True and lower_right == True:
+
+    gdalinfo_command_list = ['gdalinfo', '-json', tile]
+    gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    tileInfo = json.loads(gdalinfo.stdout.read())
+
+    in_xmin = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
+    in_ymax = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
+    in_xmax = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
+    in_ymin = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
+
+    if int(round(float(in_xmin))) <= int(round(float(xmin))) and int(round(float(in_ymax))) >= int(round(float(ymax))):
+        upper_left = True
+    if int(round(float(in_xmax))) >= int(round(float(xmax))) and int(round(float(in_ymin))) <= int(round(float(ymin))):
+        lower_right = True
+
+    if upper_left and lower_right:
         log_info_mssg(tile + " is a global image")
         return True
     else:
         return False
-    
-def is_granule_image(tile):
+
+def get_image_epsg(tile):
     """
-    Test if input tile is a granule image
+    Get image EPSG code
     Argument:
         tile -- Tile to test
     """
-    log_info_mssg("Checking for granule image")
-    is_granule = False
-    gdalinfo_command_list=['gdalinfo', tile]
-    gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    for line in gdalinfo.stdout.readlines():
-        if "Size is " in line:
-            x, y = line.replace("Size is ","").split(",")[:2]
-            if int(x) != int(y):
-                is_granule = True
-        if "Upper Left" in line:
-            in_xmin,in_ymax = line.replace("Upper Left","").replace("(","").replace(")","").split(",")[:2]
-            ulx = in_xmin.strip()
-            uly = in_ymax.strip().split(' ')[0]
-        if "Lower Right" in line:
-            in_xmax,in_ymin = line.replace("Lower Right","").replace("(","").replace(")","").split(",")[:2]
-            lrx = in_xmax.strip()
-            lry = in_ymin.strip().split(' ')[0]
+    log_info_mssg("Getting image epsg")
+
+    gdalinfo_command_list = ['gdalinfo', '-json', tile]
+    gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    tileInfo = json.loads(gdalinfo.stdout.read())
+
+    wkt = tileInfo["coordinateSystem"]["wkt"]
+
+    epsg = None
+    if wkt != "":
+        lastAuth = wkt.rfind("AUTHORITY")
+        if lastAuth != -1:
+            m = re.search(".*EPSG.*([0-9]{4}).*", wkt[lastAuth:])
+            if m:
+                epsg = "EPSG:" + m.group(1)
+
+    return epsg
+
+def get_image_extents(tile):
+    """
+    Get image extents
+    Argument:
+        tile -- Tile to test
+    """
+    log_info_mssg("Getting image extents")
+
+    gdalinfo_command_list = ['gdalinfo', '-json', tile]
+    log_the_command(gdalinfo_command_list)
+
+    gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    tileInfo = json.loads(gdalinfo.stdout.read())
+
+    ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
+    uly = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
+    lrx = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
+    lry = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
+
     try:
-        log_info_mssg((tile + " is NOT a granule image", tile + " is a granule image")[is_granule])
-        return (is_granule, [ulx, uly, lrx, lry])
+        return [ulx, uly, lrx, lry]
     except:
         log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)
-        
+
 def has_color_table(tile):
     """
     Test if input tile has a color table
@@ -248,15 +286,18 @@ def has_color_table(tile):
     """
     log_info_mssg("Checking for color table in " + tile)
     has_color_table = False
-    gdalinfo_command_list=['gdalinfo', tile]
+
+    gdalinfo_command_list=['gdalinfo', '-json', tile]
     gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    for line in gdalinfo.stdout.readlines():
-        if "Color Table" in line:
-            has_color_table = True
+    tileInfo = json.loads(gdalinfo.stdout.read())
+
+    for band in tileInfo["bands"]:
+        has_color_table |= "colorTable" in band
+
     log_info_mssg(("No color table found","Color table found in image")[has_color_table])
     return has_color_table
 
-def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
+def mrf_block_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
     """
     Aligns granule image to fit in a MRF block
     Arguments:
@@ -277,9 +318,7 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     y_res = Decimal(target_y)/y_len
     x_size = abs(lrx-ulx) * x_res
     y_size = abs(lry-uly) * y_res
-    x_pixelsize = (Decimal(xmax)-Decimal(xmin))/Decimal(target_x)
-    y_pixelsize = (Decimal(ymin)-Decimal(ymax))/Decimal(target_y)
-    log_info_mssg ("x-res: " + str(x_res) + ", y-res: " + str(y_res) + ", x-size: " + str(x_size) + ", y-size: " + str(y_size) + ", x-pixelsize: " + str(x_pixelsize) + ", y-pixelsize: " + str(y_pixelsize))
+    log_info_mssg ("x-res: " + str(x_res) + ", y-res: " + str(y_res) + ", x-size: " + str(x_size) + ", y-size: " + str(y_size))
 
     # figure out appropriate block size that covers extent of granule    
     block_x = Decimal(mrf_blocksize)
@@ -304,13 +343,14 @@ def granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_block
     if uly > Decimal(ymax):
         uly = ymax
     if lrx > Decimal(xmax):
-        lrx = str(Decimal(xmax) - x_pixelsize)
+        lrx = Decimal(xmax)
     if lry < Decimal(ymin):
-        lry = str(Decimal(ymin) - y_pixelsize)
+        lry = Decimal(ymin)
             
     return (str(ulx), str(uly), str(lrx), str(lry))
 
-def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg):
+def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata,
+              resize_resampling, working_dir, target_epsg):
     """
     Runs gdalmerge and returns merged tile
     Arguments:
@@ -331,8 +371,9 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     """
     if resize_resampling == '':
         resize_resampling = "average" # use average as default for RGBA
-    ulx, uly, lrx, lry = granule_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
+    ulx, uly, lrx, lry = mrf_block_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize)
     new_tile = working_dir + os.path.basename(tile)+".merge.tif"
+
     if has_color_table(tile) == True:
         gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
         if nodata != "":
@@ -342,6 +383,7 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
             gdal_merge_command_list.append(nodata)
         gdal_merge_command_list.append(mrf)
         gdal_merge_command_list.append(tile)
+
     else: # use gdalbuildvrt/gdalwarp/gdal_translate for RGBA imagery
         
         # Build a VRT, adding SRS to the input. Technically, if this is a TIF we wouldn't have to do that
@@ -359,7 +401,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         
         # Warp the input image VRT to have the right resolution
         warp_vrt_tile = working_dir + os.path.basename(tile) + ".warp.vrt"
-        gdal_warp_command_list = ['gdalwarp', '-of', 'VRT', '-tr', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), vrt_tile, warp_vrt_tile]
+        gdal_warp_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr',
+                                  str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)),
+                                  str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)),
+                                  vrt_tile, warp_vrt_tile]
         log_the_command(gdal_warp_command_list)
         gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_warp.stderr.readlines()
@@ -389,7 +434,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
 
         # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
         new_tile = working_dir + os.path.basename(tile)+".merge.vrt"
-        gdal_merge_command_list = ['gdal_translate', '-outsize', str(int(round((Decimal(lrx)-Decimal(ulx))/((Decimal(xmax)-Decimal(xmin))/Decimal(target_x))))), str(int(round((Decimal(lry)-Decimal(uly))/((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))))), '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
+        gdal_merge_command_list = ['gdal_translate', '-outsize',
+                                   str(int(round((Decimal(lrx)-Decimal(ulx))/((Decimal(xmax)-Decimal(xmin))/Decimal(target_x))))),
+                                   str(int(round((Decimal(lry)-Decimal(uly))/((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))))),
+                                   '-projwin', ulx, uly, lrx, lry, '-of', 'VRT', combined_vrt_tile, new_tile]
         
     # Execute the merge
     log_the_command(gdal_merge_command_list)
@@ -403,19 +451,19 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge.wait()
     return new_tile
 
-def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_epsg, target_epsg, working_dir):
+def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, working_dir):
     """
     Splits up a tile that crosses the antimeridian
     Arguments:
         tile -- Tile to insert
-        extents -- spatial extents as ulx, uly, lrx, lry
+        source_extents -- spatial extents as ulx, uly, lrx, lry
         antimeridian -- The antimeridian for the projection
         xres -- output x resolution
         yres -- output y resolution
         working_dir -- Directory to use for temporary files
     """
     temp_tile = working_dir + os.path.basename(tile) + '.temp.vrt'
-    ulx, uly, lrx, lry = extents
+    ulx, uly, lrx, lry = source_extents
     if Decimal(lrx) <= Decimal(antimeridian):
         new_lrx = str(Decimal(lrx)+Decimal(antimeridian)*2)
     else:
@@ -434,44 +482,52 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     cutline_right = cutline_template.replace('$values',cutline_values.format(Decimal(antimeridian), Decimal(uly), Decimal(new_lrx), Decimal(lry)))
     
     # Create VRT of input tile
-    gdalbuildvrt_command_list = ['gdalwarp', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
+    gdalbuildvrt_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
     log_the_command(gdalbuildvrt_command_list)
     gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     gdalbuildvrt.wait()
     tile = temp_tile
-    tile_left = tile+".left_cut.vrt"
-    tile_right = tile+".right_cut.vrt" 
-    
-    if Decimal(extents[2]) <= Decimal(antimeridian):
+    tile_left = tile + ".left_cut.vrt"
+    tile_right = tile + ".right_cut.vrt"
+
+    if Decimal(lrx) <= Decimal(antimeridian):
         # modify input into >180 space if not already
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
         log_the_command(gdal_edit_command_list)
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        gdal_edit.wait()  
-    
-    # cut the input at the antimeridian into left and right halves
-    left_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    right_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+        gdal_edit.wait()
+
+    # Cut the input at the antimeridian into left and right halves
+    left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+
     log_the_command(left_cut_command_list)
     left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     left_cut.wait()
     left_cut_stderr = left_cut.stderr.read()
     if len(left_cut_stderr) > 0:
         log_sig_err(left_cut_stderr, sigevent_url)
-    log_the_command(right_cut_command_list)
-    right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    right_cut.wait()
-    right_cut_stderr = right_cut.stderr.read()
-    if len(right_cut_stderr) > 0:
-        log_sig_err(right_cut_stderr, sigevent_url)
-    
-    # flip the origin longitude of the right half
-    gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian)*-1), uly, lrx, lry]
-    log_the_command(gdal_edit_command_list)
-    gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdal_edit.wait()  
 
-    return (tile_left,  tile_right)
+    # Make sure that when we make the right cut that there will be at least one pixel
+    if (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
+        log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
+        tile_right = None
+    else:
+        right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right,
+                                  tile, tile_right]
+        log_the_command(right_cut_command_list)
+        right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        right_cut.wait()
+        right_cut_stderr = right_cut.stderr.read()
+        if len(right_cut_stderr) > 0:
+            log_sig_err(right_cut_stderr, sigevent_url)
+
+        # flip the origin longitude of the right half
+        gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian) * -1), uly, lrx, lry]
+        log_the_command(gdal_edit_command_list)
+        gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        gdal_edit.wait()
+
+    return (tile_left, tile_right)
 
 def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     """
@@ -482,7 +538,7 @@ def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
         projection_extents -- The spatial extents of the projection as xmin, ymin, xmax, ymax
         working_dir -- Directory to use for temporary files
     """
-    ulx, uly, lrx, lry = tile_extents
+    ulx, uly, lrx, lry     = tile_extents
     xmin, ymin, xmax, ymax = projection_extents
     if float(ulx) < float(xmin):
         ulx = xmin
@@ -493,101 +549,287 @@ def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     if float(lry) < float(ymin):
         lry = ymin
     cut_tile = working_dir + os.path.basename(tile) + '._cut.vrt'
-    gdalwarp_command_list = ['gdalwarp', '-of', 'VRT', '-te', ulx, lry, lrx, uly, tile, cut_tile]
+    gdalwarp_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-te', ulx, lry, lrx, uly, tile, cut_tile]
     log_the_command(gdalwarp_command_list)
     subprocess.call(gdalwarp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return cut_tile
 
-def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, merge, working_dir):
+@contextmanager
+def poolcontext(*args, **kwargs):
+    pool = multiprocessing.Pool(*args, **kwargs)
+    yield pool
+    pool.terminate()
+
+class rw_lock:
+    def __init__(self):
+        self.counter = multiprocessing.Value('i', 0)
+        self.cond = multiprocessing.Condition(lock=self.counter.get_lock())
+
+    def down_read(self):
+        self.cond.acquire()
+        self.counter.value += 1
+
+        self.cond.release()
+        
+    def up_read(self):
+        self.cond.acquire()
+        self.counter.value -= 1
+
+        if self.counter.value == 0:
+            self.cond.notify()
+
+        self.cond.release()
+
+    def down_write(self):
+        self.cond.acquire()
+
+        while self.counter.value != 0:
+            self.cond.wait()
+
+    def up_write(self):
+        self.cond.notify()
+        self.cond.release()
+
+lock = rw_lock() # used to ensure that gdal_merge doesn't happen at the same time as a parallel insert
+
+def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                   target_extents, target_epsg, nodata, merge, working_dir, no_cpus):
+    """
+    Launches multiple workers each handling a fraction of the tiles to be merged into the final mrf file. 
+    Also sets the mrf to be mp_safe to allow for simultaneous access. Generally 2-4 workers is ideal. 
+    There can be some degredation in performance for large numbers of workers. We use the rw_lock to 
+    synchronize access between the processes, since gdal_merge must be performed while no other process is running
+    mrf_insert. If mrf_maxsize is None, will run mrf_insert with max_size max(2 * total size of input tiles, 50GB). 
+    Otherwise uses mrf_maxsize. 
+
+    Arguments:
+        tiles ... working_dir: Same as mrf_insert
+        no_cpus (int) -- Number of CPUs to run mrf_insert in parallel
+    """
+
+    log_info_mssg("parallel_mrf_insert with mrf {}".format(mrf))
+
+    no_pools = min(multiprocessing.cpu_count() - 1, len(tiles), no_cpus)
+    log_info_mssg("no_pools for parallel mrf_insert is {} for mrf {}".format(no_pools, mrf))
+
+    if len(tiles) == 1 or no_pools == 1:
+        log_info_mssg("making serial call since not enough tiles or cores")
+        errors =  run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             target_extents, target_epsg, nodata, merge, working_dir, max_size=mrf_maxsize)
+    else:         
+        if mrf_maxsize is None:
+            total_size = sum([os.stat(tile).st_size for tile in tiles])
+            max_size = max(2 * total_size, 50E9)
+        else:
+            max_size = mrf_maxsize
+
+        log_info_mssg("making parallel call with length of tiles is {}, mrf is {}, max_size is {} bytes\n".format(len(tiles), mrf, max_size))
+
+        func = functools.partial(run_mrf_insert, mrf=mrf, insert_method = insert_method, \
+            resize_resampling = resize_resampling, target_x = target_x, target_y = target_y, \
+                mrf_blocksize = mrf_blocksize, target_extents = target_extents, target_epsg = target_epsg, \
+                    nodata = nodata, merge = merge, working_dir = working_dir, mp_safe=True, max_size=max_size)
+
+        with open(mrf) as f: # make mp_safe
+            data = f.read()
+            data = data.replace("<Raster>", "<Raster mp_safe=\"on\">")
+        
+        with open(mrf, "w") as f: # overwrite mrf
+            f.write(data)
+
+        log_info_mssg("Splitting list of length {} into chunks of size {}".format(len(tiles), len(tiles) // no_pools))
+
+        def chunks(l, n):
+            for i in xrange(0, len(l), n):
+                yield l[i:i+n]
+
+        random.shuffle(tiles) # shuffle tiles to avoid overlaps as much as possible
+        partition = chunks(tiles, len(tiles) // no_pools)
+
+        with poolcontext(processes=no_pools) as pool:
+            results = pool.map(func, partition, 1)
+
+        log_info_mssg("mrf {} map finished, results are type {}, {}".format(mrf, type(results), results))
+
+        errors = sum(results)
+
+    log_info_mssg("Errors {}, mrf {}".format(errors, mrf))
+
+    return errors
+
+def clean_mrf(data_filename): # cleans mrf files in place.
+    def index_name(mrf_name):
+        bname, ext = os.path.splitext(mrf_name)
+        return bname + os.extsep + "idx"
+
+    bname, ext = os.path.splitext(data_filename)
+    target_path = bname + os.extsep + "tmp" + ext
+    
+    mrf_status = subprocess.Popen(["mrf_clean.py", data_filename, target_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = mrf_status.communicate()
+
+    log_info_mssg(out)
+    
+    if mrf_status.returncode != 0:
+        log_info_mssg("mrf_clean returned with status code {}".format(mrf_status.returncode))
+
+    os.rename(target_path, data_filename)
+    os.rename(index_name(target_path), index_name(data_filename))
+
+def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                   target_extents, target_epsg, nodata, merge, working_dir, mp_safe=False, max_size=None):    
     """
     Inserts a list of tiles into an existing MRF
     Arguments:
-        mrf -- An existing MRF file
         tiles -- List of tiles to insert
+        mrf -- An existing MRF file
         insert_method -- The resampling method to use {Avg, NearNb}
         resize_resampling -- The resampling method to use for gdalwarp
         target_x -- The target resolution for x
         target_y -- The target resolution for y
         mrf_blocksize -- The block size of MRF tiles
-        source_extents -- Full extents of the source imagery
         target_extents -- Full extents of the target imagery
-        source_epsg -- The source EPSG code
         target_epsg -- The target EPSG code
         nodata -- nodata value
         merge -- Merge over transparent regions of imagery
         working_dir -- Directory to use for temporary files
+        mp_safe -- mrf_insert should be mp_safe (default False)
+        max_size -- run clean_mrf on target mrf when this size is reached (in bytes)
     """
     errors = 0
-    xmin, ymin, xmax, ymax = target_extents
-    s_xmin, s_ymin, s_xmax, s_ymax = source_extents
+    t_xmin, t_ymin, t_xmax, t_ymax  = target_extents
+
     if target_y == '':
         target_y = float(int(target_x)/2)
-    log_info_mssg("Inserting new tiles to " + mrf)
+    log_info_mssg("Inserting new tiles into " + mrf)
     mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
-    for tile in tiles:
-        if os.path.splitext(tile)[1] == ".vrt" and "_cut." not in tile: #ignore temp VRTs unless it's an antimeridian cut
+
+    should_lock = mp_safe
+
+    if should_lock:
+        global lock
+
+    def data_name(mrf_name):
+        bname, ext = os.path.splitext(mrf_name)
+        return bname + os.extsep + get_extension(mrf_compression_type)
+
+    for i, tile in enumerate(tiles):
+        if should_lock:
+            lock.down_read()
+
+        s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(tile)
+
+        if os.path.splitext(tile)[1] == ".vrt" and not ("_cut." in tile or "_reproject." in tile):
+            #ignore temp VRTs unless it's an antimeridian cut or reprojected source image
             log_info_mssg("Skipping insert of " + tile)
+            if should_lock:
+                lock.up_read()
             continue
-        granule, extents = is_granule_image(tile)
-        diff_res, ps = diff_resolution([tile, mrf])
-        log_info_mssg("Pixel size " + repr(ps))
-        if source_epsg == 'EPSG:3031' or source_epsg == 'EPSG:3413':
-            # check if granule fits within extents
-            if (float(extents[0]) < float(s_xmin)) or (float(extents[1]) > float(s_ymax)) or (float(extents[2]) > float(s_xmax)) or (float(extents[3]) < float(s_ymin)):
-                log_info_mssg(tile + " falls outside of extents for " + source_epsg)
-                cut_tile = crop_to_extents(tile, extents, source_extents, working_dir)
-                errors += run_mrf_insert(mrf, [cut_tile], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
-                continue
-        else:
-            # check if granule crosses antimeridian
-            if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
-                log_info_mssg(tile + " crosses antimeridian")
-                left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
-                errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
-                continue
-        if merge == True and target_epsg == source_epsg: # merge tile with existing imagery if true and same projection
-            log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
-            tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
-            diff_res = False # gdalmerge has corrected the resolutions
+
+        # check if image fits within extents
+        if (float(s_xmin) < float(t_xmin)) or \
+           (float(s_ymax) > float(t_ymax)) or \
+           (float(s_xmax) > float(t_xmax)) or \
+           (float(s_ymin) < float(t_ymin)):
+            log_info_mssg(tile + " falls outside of extents for " + target_epsg)
+            cut_tile = crop_to_extents(tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_extents, working_dir)
+            if should_lock:
+                lock.up_read()
+
+            errors += run_mrf_insert([cut_tile], mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                                     target_extents, target_epsg, nodata, True, working_dir)
+            continue
+        # check if image crosses antimeridian
+        elif target_epsg in ['EPSG:4326','EPSG:3857'] and (((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or
+                                                            (float(s_xmax) > float(t_xmax))):
+            log_info_mssg(tile + " crosses antimeridian")
+            left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
+                                                              str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
+                                                              str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y)),
+                                                              working_dir)
+            if should_lock:
+                lock.up_read()
+
+            # The right half of the split could be None if there wasn't a full pixel beyond the antimeridian
+            if right_half:
+                errors += run_mrf_insert([left_half, right_half], mrf, insert_method, resize_resampling, target_x, target_y,
+                                     mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
+            else:
+                errors += run_mrf_insert([left_half], mrf, insert_method, resize_resampling, target_x, target_y,
+                                     mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
+            continue
+
+        if merge: # merge tile with existing imagery if true
+            if should_lock:
+                lock.up_read()
+                lock.down_write()
+
+            log_info_mssg("Image extents " + str([s_xmin, s_ymax, s_xmax, s_ymin]))
+            tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
+                             t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
+                             
+            if should_lock:
+                lock.up_write()
+                lock.down_read()
+
         vrt_tile = working_dir + os.path.basename(tile)+".vrt"
+
+        diff_res, ps = diff_resolution([tile, mrf])
+
         if diff_res:
             # convert tile to matching resolution
             if resize_resampling == '':
                 resize_resampling = "near" # use nearest neighbor as default
-            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y))]
-            if target_epsg != source_epsg:
-                tile_vrt_command_list.append('-s_srs')
-                tile_vrt_command_list.append(source_epsg)
-                tile_vrt_command_list.append('-t_srs')
-                tile_vrt_command_list.append(target_epsg)
-            if is_global_image(tile, xmin, ymin, xmax, ymax) == True and len(tiles) == 1:
+
+            tile_vrt_command_list = ['gdalwarp', '-of', 'VRT', '-r', resize_resampling, '-overwrite', '-tr',
+                                     str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
+                                     str((Decimal(t_ymin)-Decimal(t_ymax))/Decimal(target_y))]
+
+            # build the vrt for the entire projection if we have one image that covers the entire projection
+            # TODO ... not sure this is needed actually...
+            if is_global_image(tile, t_xmin, t_ymin, t_xmax, t_ymax) and len(tiles) == 1:
                 tile_vrt_command_list.append('-te')
-                tile_vrt_command_list.append(xmin)
-                tile_vrt_command_list.append(ymin)
-                tile_vrt_command_list.append(xmax)
-                tile_vrt_command_list.append(ymax)
+                tile_vrt_command_list.append(t_xmin)
+                tile_vrt_command_list.append(t_ymin)
+                tile_vrt_command_list.append(t_xmax)
+                tile_vrt_command_list.append(t_ymax)
+
             tile_vrt_command_list.append(tile)
             tile_vrt_command_list.append(vrt_tile)
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tile_vrt.wait()
-            if merge == True and target_epsg != source_epsg: # merge tile with existing imagery after reprojection
-                granule, extents = is_granule_image(vrt_tile) # get new extents
-                log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
-                tile = gdalmerge(mrf, vrt_tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
+
+            if merge: # merge tile with existing imagery
+                if should_lock:
+                    lock.up_read()
+                    lock.down_write()
+                    
+                s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(vrt_tile) # get new extents
+                log_info_mssg("Image extents " + str(extents))
+                tile = gdalmerge(mrf, vrt_tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
+                                 t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
                 mrf_insert_command_list.append(tile)
+
+                if should_lock:
+                    lock.up_write()
+                    lock.down_read()
+
             else:
                 mrf_insert_command_list.append(vrt_tile)
         else:
             mrf_insert_command_list.append(tile)
+
         mrf_insert_command_list.append(mrf)
         log_the_command(mrf_insert_command_list)
+
         try:
             mrf_insert = subprocess.Popen(mrf_insert_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             mrf_insert_command_list.pop()
             mrf_insert_command_list.pop()
         except OSError:
             log_sig_exit('ERROR', "mrf_insert tool cannot be found.", sigevent_url)
+
         insert_message = mrf_insert.stderr.readlines()
         for message in insert_message:
             if 'Access window out of range' in message:
@@ -600,12 +842,26 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         # clean up      
         if ".merge." in tile:
             remove_file(tile)
-            tile = tile.split('.vrt.merge.')[0]
         remove_file(vrt_tile)
-    for tile in tiles:
+        
         temp_vrt_files = glob.glob(working_dir + os.path.basename(tile) + "*vrt*")
         for vrt in temp_vrt_files:
             remove_file(vrt)
+
+        if should_lock:
+            lock.up_read()
+        
+        if max_size is not None:
+            if os.stat(data_name(mrf)).st_size > max_size:
+                if should_lock:
+                    lock.down_write()
+                if os.stat(data_name(mrf)).st_size > max_size:
+                    log_info_mssg_with_timestamp("cleaning data file {} with size {}".format(data_name(mrf), os.stat(data_name(mrf)).st_size))
+                    clean_mrf(data_name(mrf))
+                    log_info_mssg_with_timestamp("done cleaning data file {}. now has size {}".format(data_name(mrf), os.stat(data_name(mrf)).st_size))
+                if should_lock:
+                    lock.up_write()
+
     return errors
 
 
@@ -905,16 +1161,16 @@ else:
         input_dir = get_dom_tag_value(dom, 'input_dir')
     except: 
         input_dir = None
-    output_dir             =get_dom_tag_value(dom, 'output_dir')
+    output_dir = get_dom_tag_value(dom, 'output_dir')
     try:
         working_dir            =get_dom_tag_value(dom, 'working_dir')
         working_dir = add_trailing_slash(check_abs_path(working_dir))
     except: # use /tmp/ as default
         working_dir            ='/tmp/'
     try:
-        logfile_dir            =get_dom_tag_value(dom, 'logfile_dir')
+        logfile_dir = get_dom_tag_value(dom, 'logfile_dir')
     except: #use working_dir if not specified
-        logfile_dir            =working_dir
+        logfile_dir = working_dir
     try:
         mrf_name=get_dom_tag_value(dom, 'mrf_name')
     except:
@@ -941,36 +1197,45 @@ else:
     except:
         outsize = ''
         try:
-            target_x               =get_dom_tag_value(dom, 'target_x')
+            target_x = get_dom_tag_value(dom, 'target_x')
         except:
             target_x = '' # if no target_x then use rasterXSize and rasterYSize from VRT file
         try:
-            target_y               =get_dom_tag_value(dom, 'target_y')
+            target_y = get_dom_tag_value(dom, 'target_y')
         except:
             target_y = ''
     # EPSG code projection.
     try:
-        target_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
+        target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
     except:
         target_epsg = 'EPSG:4326' # default to geographic
     try:
-        source_epsg        = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
+        if get_dom_tag_value(dom, 'source_epsg') == "detect":
+            source_epsg = "detect"
+        else:
+            source_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
     except:
         source_epsg = 'EPSG:4326' # default to geographic
-    # Target extents.
+
+    # Source extents.
     try:
-        extents        =get_dom_tag_value(dom, 'extents')
+        extents = get_dom_tag_value(dom, 'extents')
     except:
         extents = '-180,-90,180,90' # default to geographic
-    xmin, ymin, xmax, ymax = extents.split(',')
+    source_xmin, source_ymin, source_xmax, source_ymax = extents.split(',')
+
+    # Target extents.
     try:
-        target_extents        =get_dom_tag_value(dom, 'target_extents')
+        target_extents = get_dom_tag_value(dom, 'target_extents')
     except:
         if target_epsg == 'EPSG:3857':
             target_extents = '-20037508.34,-20037508.34,20037508.34,20037508.34'
+        elif target_epsg in ['EPSG:3413','EPSG:3031']:
+            target_extents = '-4194304,-4194304,4194304,4194304'
         else:
-            target_extents = extents # default to extents
+            target_extents = '-180,-90,180,90'
     target_xmin, target_ymin, target_xmax, target_ymax = target_extents.split(',')
+
     # Input files.
     try:
         input_files = get_input_files(dom)
@@ -979,19 +1244,20 @@ else:
     except:
         if input_dir == None:
             if mrf_empty_tile_filename != '':
-                input_files = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename, target_epsg, xmin, ymin, xmax, ymax)
+                input_files = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename,
+                                         target_epsg, target_xmin, target_ymin, target_xmax, target_ymax)
             else:
                 log_sig_exit('ERROR', "<input_files> or <input_dir> or <mrf_empty_tile_filename> is required", sigevent_url)
         else:
-            input_files = ''
+            input_files = None
     # overview levels
     try:
-        overview_levels       =get_dom_tag_value(dom, 'overview_levels').split(' ')
+        overview_levels = get_dom_tag_value(dom, 'overview_levels').split(' ')
         for level in overview_levels:
             if level.isdigit() == False:
                 log_sig_exit("ERROR", "'" + level + "' is not a valid overview value.", sigevent_url)
-        if len(overview_levels>1):
-            overview = overview_levels[1]/overview_levels[0]
+        if len(overview_levels) > 1:
+            overview = int(overview_levels[1]) / int(overview_levels[0])
         else:
             overview = 2
     except:
@@ -999,12 +1265,12 @@ else:
         overview = 2
     # resampling method
     try:
-        overview_resampling        =get_dom_tag_value(dom, 'overview_resampling')
+        overview_resampling = get_dom_tag_value(dom, 'overview_resampling')
     except:
         overview_resampling = 'nearest'    
     # gdalwarp resampling method for resizing
     try:
-        resize_resampling        =get_dom_tag_value(dom, 'resize_resampling')
+        resize_resampling = get_dom_tag_value(dom, 'resize_resampling')
         if resize_resampling == "none":
             resize_resampling = ''
     except:
@@ -1058,6 +1324,40 @@ else:
             noaddo = True
     except:
         noaddo = False
+
+    # mrf_cores (max number of cpu cores to run on if mrf_parallel is set, defaults to 4
+    try:
+        mrf_cores = int(get_dom_tag_value(dom, 'mrf_cores'))
+    except:
+        mrf_cores = 4 # multiprocessing.cpu_count()
+
+    # mrf_parallel (run mrf_insert in parallel), defaults to False
+    try:
+        if get_dom_tag_value(dom, 'mrf_parallel') == "true":
+            mrf_parallel = True
+        else:
+            mrf_parallel = False
+    except:
+        mrf_parallel = False
+
+    # run the mrf_clean utility to reduce the size of the generated MRFs, defaults to mrf_parallel.
+    try:
+        if get_dom_tag_value(dom, 'mrf_clean') == "true":
+            mrf_clean = True
+        else:
+            mrf_clean = False
+    except:
+        if mrf_parallel:
+            mrf_clean = True
+        else:
+            mrf_clean = False
+
+    # set a maximum size for the mrf before running mrf_clean. used to manage MRF sizes for mrf_parallel and mrf_noaddo
+    try:
+        mrf_maxsize = int(get_dom_tag_value(dom, 'mrf_maxsize'))
+    except:
+        mrf_maxsize = None
+
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
@@ -1130,8 +1430,7 @@ if colormap != '' and '://' not in colormap:
      colormap = check_abs_path(colormap)
 
 # Log all of the configuration information.
-log_info_mssg_with_timestamp(str().join(['config XML file:  ', 
-                                          configuration_filename]))
+log_info_mssg_with_timestamp(str().join(['config XML file:  ', configuration_filename]))
                                           
 # Copy configuration file to working_dir (if it's not already there)
 # so that the MRF can be recreated if needed.
@@ -1148,7 +1447,7 @@ if os.path.dirname(configuration_filename) != os.path.dirname(working_dir):
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
 log_info_mssg(str().join(['config date_of_data:            ', date_of_data]))
 log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
-if input_files != '':
+if input_files != None:
     log_info_mssg(str().join(['config input_files:             ', input_files]))
 if input_dir != None:
     log_info_mssg(str().join(['config input_dir:               ', input_dir]))
@@ -1178,6 +1477,10 @@ log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
+log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
+log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
+log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
+log_info_mssg(str().join(['config mrf_maxsize:             ', str(mrf_maxsize)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -1256,7 +1559,7 @@ units = None
 
 # Get list of all tile filenames.
 alltiles = []
-if input_files != '':
+if input_files != None:
     input_files = input_files.strip()
     alltiles = input_files.split(',')
 if input_dir != None:
@@ -1273,14 +1576,20 @@ for tile in alltiles:
     striptiles.append(tile.strip())
 alltiles = striptiles
 
-if len(alltiles) == 0: # No tiles, check for possible tiffs
+if len(alltiles) == 0 and input_dir != None: # No tiles, check for possible tiffs
     alltiles=glob.glob(str().join([input_dir, '*.tif*']))
 
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     tiff_compress = "JPEG"
 else: # Default to png
     tiff_compress = "PNG"
-    
+
+# Sanity check to make sure all of the input files exist
+for i, tile in enumerate(alltiles):
+    if not os.path.exists(tile):
+        log_info_mssg("Missing input file: " + tile)
+        log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
 # Filter out bad JPEGs
 goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
@@ -1293,8 +1602,7 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             img = gdal.Open(tile)
         except RuntimeError as e:
             log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
-            
-        
+
         if img.RasterCount == 1:
             errors += 1
             log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
@@ -1314,13 +1622,16 @@ if mrf_compression_type == 'PPNG' and colormap != '':
         # Check input PNGs/TIFFs if RGBA, then convert       
         if tile.lower().endswith(('.png', '.tif', '.tiff')):
             
-            # Run the gdal_info on tile.
-            gdalinfo_command_list=['gdalinfo', tile]
-            log_the_command(gdalinfo_command_list)
-            gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            gdalinfo_command_list = ['gdalinfo', '-json', tile]
+            gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            tileInfo = json.loads(gdalinfo.stdout.read())
+
+            has_palette = False
+            for band in tileInfo["bands"]:
+                has_palette |= (band["colorInterpretation"] == "Palette")
 
             # Read gdal_info output
-            if "ColorInterp=Palette" not in gdalinfo.stdout.read():
+            if not has_palette:
                 if '.tif' in tile.lower():
                     # Convert TIFF files to PNG
                     log_info_mssg("Converting TIFF file " + tile + " to " + tiff_compress)
@@ -1344,7 +1655,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 output_tile = working_dir + tile_basename+'_indexed.png'
                 output_tile_path = os.path.dirname(output_tile)
                 output_tile_basename, output_tile_extension = os.path.splitext(os.path.basename(output_tile))
-                
+
                 # Create the RGBApng2Palpng command.
                 if vrtnodata == "":
                     fill = 0
@@ -1354,13 +1665,13 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                                              '-fill='+str(fill), '-of='+output_tile, tile]
                 # Log the RGBApng2Palpng command.
                 log_the_command(RGBApng2Palpng_command_list)
-         
+
                 # Execute RGBApng2Palpng.
                 try:
                     RGBApng2Palpng = subprocess.Popen(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 except OSError:
                     log_sig_exit('ERROR', "RGBApng2Palpng tool cannot be found.", sigevent_url)
-                
+
                 RGBApng2Palpng.wait()
                 if RGBApng2Palpng.returncode != None:
                     if  0 < RGBApng2Palpng.returncode < 255:
@@ -1395,6 +1706,17 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 except:
                     errors += 1
                     log_sig_err("ERROR: " + mssg, sigevent_url)
+
+
+                # Save projection information for EPSG detection
+                try:
+                    if os.path.isfile(working_dir+'/'+tile_basename+'.png.aux.xml'):
+                        shutil.copy(working_dir+'/'+tile_basename+'.png.aux.xml', output_tile_path+'/'+output_tile_basename+'.png.aux.xml')
+                    else:
+                        log_info_mssg("Geolocation file does not exist for tile: " + tile)
+                except:
+                    errors += 1
+                    log_sig_err("ERROR: " + mssg, sigevent_url)
                     
                 # add transparency flag for custom color map
                 add_transparency = True
@@ -1404,7 +1726,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             # ONEARTH-348 - Validate the palette, but don't do anything about it yet
             # For now, we won't enforce any issues, but will log issues validating imagery
             if strict_palette:
-               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v ', '-c', colormap, '-i', alltiles[i]]
+               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
       
                # Log the oe_validate_palette.py command.
                log_the_command(oe_validate_palette_command_list)
@@ -1427,7 +1749,59 @@ if mrf_compression_type == 'PPNG' and colormap != '':
         if temp_tile != None:
             remove_file(temp_tile)
             remove_file(temp_tile+'.aux.xml')
-            remove_file(temp_tile.split('.')[0]+'.wld')     
+            remove_file(temp_tile.split('.')[0]+'.wld')
+
+# Create VRTs with the target EPSG for input images if the source EPSG is different or is to be detected:
+if source_epsg == "detect" or source_epsg != target_epsg:
+    log_info_mssg("source EPSG != target EPSG or source EPSG is to be detected; Creating VRTs for each input tile in target EPSG")
+
+    for i, tile in enumerate(alltiles):
+        temp_tile = None
+        tile_path = os.path.dirname(tile)
+        tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
+        tile_vrt = os.path.join(working_dir, tile_basename + "_reproject.vrt")
+
+        if source_epsg == "detect":
+            s_epsg = get_image_epsg(tile)
+        else:
+            s_epsg = source_epsg
+
+        if not s_epsg:
+            # if EPSG can't be determined, remove the tile
+            errors += 1
+            log_sig_warn(tile + " has undetectable EPSG", sigevent_url)
+            del alltiles[i]
+        elif s_epsg != target_epsg:
+            log_info_mssg("Creating VRT for input tile: " + tile)
+
+            # if the source and target EPSGs are not the same, create a VRT
+
+            gdalwarp_command_list = ['gdalwarp', '-q', '-overwrite', '-of', 'vrt', '-s_srs', s_epsg, '-t_srs', target_epsg, tile, tile_vrt]
+
+            # Log the gdalbuildvrt command.
+            log_the_command(gdalwarp_command_list)
+
+            # Capture stderr to record skipped .png files that are not valid PNG+World.
+            gdalwarp_stderr_filename = str().join([working_dir, basename, '_gdalwarp_stderr.txt'])
+            # Open stderr file for write.
+            gdalwarp_stderr_file = open(gdalwarp_stderr_filename, 'w+')
+
+            # ---------------------------------------------------------------------------
+            # Execute gdalwarp.
+            subprocess.call(gdalwarp_command_list, stderr=gdalwarp_stderr_file)
+            # ---------------------------------------------------------------------------
+
+            gdalwarp_stderr_file.seek(0)
+            gdalwarp_stderr = gdalwarp_stderr_file.read()
+            if "Error" in gdalwarp_stderr:
+                log_info_mssg(gdalwarp_stderr)
+                log_sig_err('ERROR', "Error creating VRT for input image", sigevent_url)
+                gdalwarp_stderr_file.close()
+                del alltiles[i]
+                continue
+
+            # If we made it this far, the VRT was created successfully, so replace it in the input list
+            alltiles[i] = tile_vrt
 
 # Create an encoded PNG from GeoTIFF
 if mrf_compression_type == 'EPNG':
@@ -1440,6 +1814,7 @@ if mrf_compression_type == 'EPNG':
         output_tile = working_dir+tile_basename+'.png'
         # Check if input is TIFF      
         if tile.lower().endswith(('.tif', '.tiff')):
+            # NOTE: Did not convert to JSON parsing because of a lack of test data
             # Get Scale and Offset from gdalinfo
             gdalinfo_command_list = ['gdalinfo', tile]    
             log_the_command(gdalinfo_command_list)
@@ -1486,32 +1861,10 @@ if mrf_compression_type == 'EPNG':
 # sort
 alltiles.sort()
 
-# check for different resolutions
-diff_res, res = diff_resolution(alltiles)
+# Just always set nocopy to True. It's simpler that way
+nocopy=True
+log_info_mssg("Setting MRF nocopy to " + str(nocopy))
 
-# determine if nocopy should be used if not set
-if nocopy == None:
-    if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
-        if is_global_image(alltiles[0],xmin, ymin, xmax, ymax) == True:
-            # Don't do inserts if we have a single global image
-            nocopy = False
-        else:
-            nocopy = True
-    elif len(alltiles) == 1 and alltiles[0].endswith('empty.vrt') == True: #empty VRT, use nocopy
-        nocopy = True
-    else:
-        if (res*8) < (float(mrf_blocksize)/float(target_x)):
-            # Avoid inserts if the target MRF resolution is too low
-            nocopy = False
-        elif source_epsg != target_epsg:
-            # Avoid inserts if reprojecting
-            nocopy = False
-        else:
-            nocopy = True
-    log_info_mssg("Setting MRF nocopy to " + str(nocopy)) 
-
-#UNTIL MRF PARTIAL UPDATES ARE IMPLEMENTED, PROCESS ENTIRE GLOBE IF ANY NEW 
-#TILES ARE DETECTED.
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
 try:
@@ -1546,6 +1899,18 @@ mrf_filename=str().join([output_dir, basename, '.mrf'])
 # The .idx file is the index compnent of the MRF format.
 idx_filename=str().join([output_dir, basename, '.idx'])
 
+def get_extension(compression_type):
+    if compression_type == 'PNG' or compression_type == 'PPNG' or compression_type == 'EPNG':
+        return "ppg"
+    elif compression_type == 'JPG' or compression_type == 'JPEG':
+        return "pjg"
+    elif compression_type == 'TIF' or compression_type == 'TIFF':
+        return "ptf"
+    elif compression_type == 'LERC':
+        return "lrc"
+    else:
+        return None
+
 # The image component of MRF is .pjg, .ppg, .ptf, or lrc depending on compression type.
 if mrf_compression_type == 'PNG' or mrf_compression_type == 'PPNG' or mrf_compression_type == 'EPNG':
     # Output filename.
@@ -1578,12 +1943,15 @@ if overview_resampling[:4].lower() == 'near':
     insert_method = 'NearNb'
 else:
     insert_method = 'Avg'
+
 for tile in list(alltiles):
     if '.mrf' in tile.lower():
         mrf_list.append(tile)
         alltiles.remove(tile)
-if len(mrf_list) == 0 and input_files == '':
+
+if len(mrf_list) == 0 and input_files == None:
     mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
+
 # Should only be one MRF, so use that one
 if len(mrf_list) > 0:
     mrf = mrf_list[0]
@@ -1608,7 +1976,12 @@ if len(mrf_list) > 0:
     else:
         con = None
         
-    errors += run_mrf_insert(mrf, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
+    if mrf_parallel:
+        errors += parallel_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
+    else:
+        errors += run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, max_size=mrf_maxsize)
     
     # Clean up
     remove_file(all_tiles_filename)
@@ -1620,6 +1993,8 @@ if len(mrf_list) > 0:
         # sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
+
+    # Exit mrfgen because we are done
     sys.exit(errors)
     
   
@@ -1640,24 +2015,25 @@ if zlevels != '':
 else:
     con = None
     gdal_mrf_filename = mrf_filename
-    
-        
-# Create the gdalbuildvrt command.
-#RESCALE BLUE MARBLE AND USE BLOCKSIZE=256.
-#CONSIDER DOING THIS FOR EVERY SOTO DATASET.
-#xres=str(360./65536)
-#yres=xres
-#              '-resolution', 'user', '-tr', xres, yres,
-#              '-addalpha',
-#target_x=str(360.0/int(target_x))
-#target_y=target_x
 
-gdalbuildvrt_command_list=['gdalbuildvrt','-q', '-te', xmin, ymin, xmax, ymax,'-input_file_list', all_tiles_filename]
-# use resolution?
-if diff_res == True and target_x != '':
-    xres = repr(abs((float(xmax)-float(xmin))/float(target_x)))
+
+gdalbuildvrt_command_list=['gdalbuildvrt', '-q', '-input_file_list', all_tiles_filename]
+
+# all tiles are now in the target_epsg because:
+#   a) source_epsg == target_epsg
+#       OR
+#   b) source_epsg != target_epsg and we've fixed that by replacing the tile with a VRT
+
+# Set the extents and EPSG based on the target since we know that that the EPSG of all tiles is the target EPSG
+gdalbuildvrt_command_list.extend(['-te', target_xmin, target_ymin, target_xmax, target_ymax])
+gdalbuildvrt_command_list.append('-a_srs')
+gdalbuildvrt_command_list.append(target_epsg)
+
+if target_x != '':
+    # set the output resolution if a target size has been provided
+    xres = repr(abs((float(target_xmax)-float(target_xmin))/float(target_x)))
     if target_y != '':
-        yres = repr(abs((float(ymin)-float(ymax))/float(target_y)))
+        yres = repr(abs((float(target_ymin)-float(target_ymax))/float(target_y)))
     else:
         yres = xres
     log_info_mssg("x resolution: " + xres + ", y resolution: " + yres)
@@ -1666,15 +2042,15 @@ if diff_res == True and target_x != '':
     gdalbuildvrt_command_list.append('-tr')
     gdalbuildvrt_command_list.append(xres)
     gdalbuildvrt_command_list.append(yres)
-if source_epsg != "":
-    gdalbuildvrt_command_list.append('-a_srs')
-    gdalbuildvrt_command_list.append(source_epsg)
+
 if vrtnodata != "":
+    # set the nodata values if provided
     gdalbuildvrt_command_list.append('-vrtnodata')
     gdalbuildvrt_command_list.append(vrtnodata)
     gdalbuildvrt_command_list.append('-srcnodata')
     gdalbuildvrt_command_list.append(vrtnodata)
-    
+
+
 # add VRT filename at the end        
 gdalbuildvrt_command_list.append(vrt_filename)
 # Log the gdalbuildvrt command.
@@ -1690,19 +2066,13 @@ gdalbuildvrt_stderr_file=open(gdalbuildvrt_stderr_filename, 'w')
 subprocess.call(gdalbuildvrt_command_list, stderr=gdalbuildvrt_stderr_file)
 #---------------------------------------------------------------------------
 
-# Reproject to target EPSG
-if target_epsg != source_epsg:
-    log_info_mssg("Converting tiles to " + target_epsg)
-    gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', reprojection_resampling, '-s_srs', source_epsg, '-t_srs', target_epsg, '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-multi', vrt_filename, vrt_filename.replace('.vrt','_reproj.vrt')]
-    log_the_command(gdal_warp_command_list)
-    subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
-    vrt_filename = vrt_filename.replace('.vrt','_reproj.vrt')
-
 # use gdalwarp if resize with resampling method is declared
 if resize_resampling != '':
     if target_y == '':
         target_y = str(int(target_x)/2)
-    gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y), '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-overwrite', vrt_filename, vrt_filename.replace('.vrt','_resample.vrt')]
+    gdal_warp_command_list = ['gdalwarp', '-of', 'VRT' ,'-r', resize_resampling, '-ts', str(target_x), str(target_y),
+                              '-te', target_xmin, target_ymin, target_xmax, target_ymax, '-overwrite', vrt_filename,
+                              vrt_filename.replace('.vrt','_resample.vrt')]
     log_the_command(gdal_warp_command_list)
     subprocess.call(gdal_warp_command_list, stderr=gdalbuildvrt_stderr_file)
     vrt_filename = vrt_filename.replace('.vrt','_resample.vrt')
@@ -1744,6 +2114,7 @@ if len(vrt_output) == 0:
 # Create mrf only if vrt was successful.
 vrtf=get_modification_time(vrt_filename)
 remove_file(gdalbuildvrt_stderr_filename)
+
 # Set the compression type for gdal_translate (-co NAME=VALUE).
 if mrf_compression_type == 'PNG' or mrf_compression_type == 'EPNG':
     # Unpaletted PNG.
@@ -1764,6 +2135,7 @@ else:
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 # Insert color map into VRT if provided
+# TODO This could be problematic if we're overwriting with a different palette than what is in the imagery.
 if colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
     colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
@@ -1819,16 +2191,15 @@ if target_x != x_size:
         target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
         log_info_mssg('Calculating target_y ' + target_y)
     if resize_resampling == '':
-        log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' + ', but <resize_resampling> flag has not been set.', sigevent_url)
+        log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' +
+                     ', but <resize_resampling> flag has not been set.', sigevent_url)
 else: #don't bother calculating y
     if target_y == '':
         target_y=y_size
         log_info_mssg('Setting target_y from VRT to ' + target_y)
     elif target_y != y_size:
         log_sig_warn('Target y size (' + target_y +') differs from raster y size (' + y_size + ')', sigevent_url)
-    
-# if target_epsg == "EPSG:3857":
-#     target_y = target_x
+
 
 #-----------------------------------------------------------------------
 # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
@@ -1850,7 +2221,7 @@ if compress == "COMPRESS=LERC":
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
-if nocopy == True:
+if nocopy:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
     if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
@@ -1877,12 +2248,15 @@ subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
 gdal_translate_stderr_file.close()
 
 # Copy vrt to output
-if data_only == False:
+if not data_only:
     shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
 
 # Clean up.
 vrt_files = glob.glob(str().join([working_dir, basename, '*.vrt']))
 for vrt in vrt_files:
+    # remove VRT from alltiles if it was a temp file
+    if vrt in alltiles:
+       alltiles.remove(vrt)
     remove_file(vrt)
 
 # Check if MRF was created.
@@ -1933,14 +2307,15 @@ else:
     # Get largest dimension, usually X.
     actual_size=max([int(sizeX), int(sizeY)])
 
-# Run gdaladdo by default
-run_addo = True
+# Insert if there are input tiles to process
+if len(alltiles) > 0:
+    if mrf_parallel:
+        errors += parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
+    else:
+        errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+                             [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, max_size=mrf_maxsize)
 
-# Insert into nocopy
-if nocopy==True:
-    errors += run_mrf_insert(gdal_mrf_filename, alltiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, [xmin, ymin, xmax, ymax], [target_xmin, target_ymin, target_xmax, target_ymax], source_epsg, target_epsg, vrtnodata, merge, working_dir)
-    if noaddo or len(alltiles) <= 1:
-        run_addo = False # don't run gdaladdo if UNIFORM_SCALE has been set
 
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
@@ -1948,8 +2323,9 @@ compare_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
 old_stats=os.stat(idx_filename)
 if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
-    
-    if run_addo == True and (overview_levels == '' or int(overview_levels[0])>1):
+
+    # Run gdaladdo if noaddo==False, we have more than one tile, and we have none or >1 overviews
+    if (not noaddo) and (len(alltiles) > 1) and (overview_levels == '' or int(overview_levels[0]) > 1):
         # Create the gdaladdo command.
         gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
                                str(gdal_mrf_filename)]
@@ -2007,7 +2383,7 @@ else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
     log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
     log_info_mssg('idxf should be >= vrtf')
-    if nocopy==True:
+    if nocopy:
         mssg = mrf_filename + ' already exists'
     else:
         mssg=str().join(['Unsuccessful:  gdal_translate   ',
@@ -2016,18 +2392,22 @@ else:
                          gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
     
+if mrf_clean:
+    log_info_mssg("running mrf_clean on data file {}".format(out_filename))
+    clean_mrf(out_filename)
+
 # Rename MRFs
 if mrf_name != '':
     output_mrf, output_idx, output_data, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
     if (output_dir+output_mrf) != mrf_filename:
         log_info_mssg(str().join(['Moving ',mrf_filename, ' to ', output_dir+output_mrf]))
         shutil.move(mrf_filename, output_dir+output_mrf)
-    if (output_dir+output_idx) != idx_filename:
-        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
-        shutil.move(idx_filename, output_dir+output_idx)
     if (output_dir+output_data) != out_filename:
         log_info_mssg(str().join(['Moving ',out_filename, ' to ', output_dir+output_data]))
         shutil.move(out_filename, output_dir+output_data)
+    if (output_dir+output_idx) != idx_filename:
+        log_info_mssg(str().join(['Moving ',idx_filename, ' to ', output_dir+output_idx]))
+        shutil.move(idx_filename, output_dir+output_idx)
     if data_only == False:
         if os.path.isfile(mrf_filename+".aux.xml"):
             log_info_mssg(str().join(['Moving ',mrf_filename+".aux.xml", ' to ', working_dir+output_aux]))
@@ -2039,7 +2419,7 @@ if mrf_name != '':
     out_filename = output_dir+output_data
     
 # Leave only MRF data, index, and header files
-if data_only == True:
+if data_only:
     remove_file(log_filename)
     remove_file(output_dir+"/"+basename+".mrf.aux.xml")
     remove_file(working_dir+"/"+basename+".configuration_file.xml")
@@ -2062,3 +2442,4 @@ try:
 except urllib2.URLError:
     None
 sys.exit(errors)
+

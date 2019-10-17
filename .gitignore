@@ -17,3 +17,5 @@ build
 /src/test/test_*_results.xml
 /tmp/
 .vscode/*
+*.pyc
+__pycache__

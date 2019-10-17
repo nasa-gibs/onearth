@@ -277,7 +277,7 @@ img_color_idx = len(img_colortable)
 
 # Populate initial lists
 for i, img_color in enumerate(img_colortable):
-    if img_color in ignore_colors:
+    if img_color.rgba in ignore_colors:
         if verbose:
             log_info_mssg("Ignoring color: " + ignore_color)
         continue
