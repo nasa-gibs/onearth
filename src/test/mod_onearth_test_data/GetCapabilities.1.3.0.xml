@@ -43,8 +43,6 @@
       <ns0:Format>application/vnd.google-earth.kml.xml</ns0:Format>
       <ns0:Format>application/vnd.google-earth.kmz</ns0:Format>
       <ns0:Format>image/png; mode=8bit</ns0:Format>
-      <ns0:Format>application/x-pdf</ns0:Format>
-      <ns0:Format>image/svg+xml</ns0:Format>
       <ns0:Format>image/tiff</ns0:Format>
       <ns0:DCPType>
         <ns0:HTTP>

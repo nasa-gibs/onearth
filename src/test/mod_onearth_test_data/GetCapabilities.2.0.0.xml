@@ -1,349 +1,346 @@
-<ns0:WFS_Capabilities xmlns:ns0="http://www.opengis.net/wfs/2.0" xmlns:ns2="http://www.opengis.net/ows/1.1" xmlns:ns3="http://www.w3.org/1999/xlink" xmlns:ns4="http://www.opengis.net/fes/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0.0" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd">
-  <ns2:ServiceIdentification>
-    <ns2:Title>NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:4326)</ns2:Title>
-    <ns2:Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery.</ns2:Abstract>
-    <ns2:Keywords>
-      <ns2:Keyword>GIBS</ns2:Keyword>
-      <ns2:Keyword>NASA</ns2:Keyword>
-      <ns2:Keyword>WFS</ns2:Keyword>
-      <ns2:Keyword>Earth</ns2:Keyword>
-    </ns2:Keywords>
-    <ns2:ServiceType codeSpace="OGC">WFS</ns2:ServiceType>
-    <ns2:ServiceTypeVersion>2.0.0</ns2:ServiceTypeVersion>
-    <ns2:Fees>NONE</ns2:Fees>
-    <ns2:AccessConstraints>NONE</ns2:AccessConstraints>
-  </ns2:ServiceIdentification>
-  <ns2:ServiceProvider>
-    <ns2:ProviderName>GIBS User Support</ns2:ProviderName>
-    <ns2:ProviderSite ns3:href="http://localhost/wfs/epsg4326/" ns3:type="simple" />
-    <ns2:ServiceContact>
-      <ns2:IndividualName>GIBS User Support</ns2:IndividualName>
-      <ns2:PositionName>GIBS User Support</ns2:PositionName>
-      <ns2:ContactInfo>
-        <ns2:Phone>
-          <ns2:Voice />
-          
-          <ns2:Facsimile />
-          
-        </ns2:Phone>
-        <ns2:Address>
-          <ns2:DeliveryPoint />
-          
-          <ns2:City />
-          
-          <ns2:AdministrativeArea />
-          
-          <ns2:PostalCode />
-          
-          <ns2:Country />
-          
-          <ns2:ElectronicMailAddress>support@earthdata.nasa.gov</ns2:ElectronicMailAddress>
-        </ns2:Address>
-        <ns2:OnlineResource ns3:href="http://localhost/wfs/epsg4326/" ns3:type="simple" />
-        <ns2:HoursOfService />
-        
-        <ns2:ContactInstructions />
-        
-      </ns2:ContactInfo>
-      <ns2:Role />
-      
-    </ns2:ServiceContact>
-  </ns2:ServiceProvider>
-  <ns2:OperationsMetadata>
-    <ns2:Operation name="GetCapabilities">
-      <ns2:DCP>
-        <ns2:HTTP>
-          <ns2:Get ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-          <ns2:Post ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-        </ns2:HTTP>
-      </ns2:DCP>
-      <ns2:Parameter name="AcceptVersions">
-        <ns2:AllowedValues>
-          <ns2:Value>2.0.0</ns2:Value>
-          <ns2:Value>1.1.0</ns2:Value>
-          <ns2:Value>1.0.0</ns2:Value>
-        </ns2:AllowedValues>
-      </ns2:Parameter>
-      <ns2:Parameter name="AcceptFormats">
-        <ns2:AllowedValues>
-          <ns2:Value>text/xml</ns2:Value>
-        </ns2:AllowedValues>
-      </ns2:Parameter>
-      <ns2:Parameter name="Sections">
-        <ns2:AllowedValues>
-          <ns2:Value>ServiceIdentification</ns2:Value>
-          <ns2:Value>ServiceProvider</ns2:Value>
-          <ns2:Value>OperationsMetadata</ns2:Value>
-          <ns2:Value>FeatureTypeList</ns2:Value>
-          <ns2:Value>Filter_Capabilities</ns2:Value>
-        </ns2:AllowedValues>
-      </ns2:Parameter>
-    </ns2:Operation>
-    <ns2:Operation name="DescribeFeatureType">
-      <ns2:DCP>
-        <ns2:HTTP>
-          <ns2:Get ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-          <ns2:Post ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-        </ns2:HTTP>
-      </ns2:DCP>
-      <ns2:Parameter name="outputFormat">
-        <ns2:AllowedValues>
-          <ns2:Value>application/gml+xml; version=3.2</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/3.2.1</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/3.1.1</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/2.1.2</ns2:Value>
-        </ns2:AllowedValues>
-      </ns2:Parameter>
-    </ns2:Operation>
-    <ns2:Operation name="GetFeature">
-      <ns2:DCP>
-        <ns2:HTTP>
-          <ns2:Get ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-          <ns2:Post ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-        </ns2:HTTP>
-      </ns2:DCP>
-      <ns2:Parameter name="outputFormat">
-        <ns2:AllowedValues>
-          <ns2:Value>application/gml+xml; version=3.2</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/3.2.1</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/3.1.1</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/2.1.2</ns2:Value>
-          <ns2:Value>application/json; subtype=geojson</ns2:Value>
-          <ns2:Value>text/csv</ns2:Value>
-        </ns2:AllowedValues>
-      </ns2:Parameter>
-    </ns2:Operation>
-    <ns2:Operation name="GetPropertyValue">
-      <ns2:DCP>
-        <ns2:HTTP>
-          <ns2:Get ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-          <ns2:Post ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-        </ns2:HTTP>
-      </ns2:DCP>
-      <ns2:Parameter name="outputFormat">
-        <ns2:AllowedValues>
-          <ns2:Value>application/gml+xml; version=3.2</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/3.2.1</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/3.1.1</ns2:Value>
-          <ns2:Value>text/xml; subtype=gml/2.1.2</ns2:Value>
-        </ns2:AllowedValues>
-      </ns2:Parameter>
-    </ns2:Operation>
-    <ns2:Operation name="ListStoredQueries">
-      <ns2:DCP>
-        <ns2:HTTP>
-          <ns2:Get ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-          <ns2:Post ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-        </ns2:HTTP>
-      </ns2:DCP>
-    </ns2:Operation>
-    <ns2:Operation name="DescribeStoredQueries">
-      <ns2:DCP>
-        <ns2:HTTP>
-          <ns2:Get ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-          <ns2:Post ns3:href="http://localhost/wfs/epsg4326/?" ns3:type="simple" />
-        </ns2:HTTP>
-      </ns2:DCP>
-    </ns2:Operation>
-    <ns2:Parameter name="version">
-      <ns2:AllowedValues>
-        <ns2:Value>2.0.0</ns2:Value>
-        <ns2:Value>1.1.0</ns2:Value>
-        <ns2:Value>1.0.0</ns2:Value>
-      </ns2:AllowedValues>
-    </ns2:Parameter>
-    <ns2:Constraint name="ImplementsBasicWFS">
-      <ns2:NoValues />
-      <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsTransactionalWFS">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsLockingWFS">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="KVPEncoding">
-      <ns2:NoValues />
-      <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="XMLEncoding">
-      <ns2:NoValues />
-      <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="SOAPEncoding">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsInheritance">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsRemoteResolve">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsResultPaging">
-      <ns2:NoValues />
-      <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsStandardJoins">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsSpatialJoins">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsTemporalJoins">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ImplementsFeatureVersioning">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="ManageStoredQueries">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="PagingIsTransactionSafe">
-      <ns2:NoValues />
-      <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-    </ns2:Constraint>
-    <ns2:Constraint name="QueryExpressions">
-      <ns2:AllowedValues>
-        <ns2:Value>wfs:Query</ns2:Value>
-        <ns2:Value>wfs:StoredQuery</ns2:Value>
-      </ns2:AllowedValues>
-    </ns2:Constraint>
-  </ns2:OperationsMetadata>
-  <ns0:FeatureTypeList>
-    <ns0:FeatureType>
-      <ns0:Name>ms:Terra_Orbit_Dsc_Dots</ns0:Name>
-      <ns0:Title>Terra_Orbit_Dsc_Dots</ns0:Title>
-      <ns0:DefaultCRS>urn:ogc:def:crs:EPSG::4326</ns0:DefaultCRS>
-      <ns0:OutputFormats>
-        <ns0:Format>application/gml+xml; version=3.2</ns0:Format>
-        <ns0:Format>text/xml; subtype=gml/3.2.1</ns0:Format>
-        <ns0:Format>text/xml; subtype=gml/3.1.1</ns0:Format>
-        <ns0:Format>text/xml; subtype=gml/2.1.2</ns0:Format>
-        <ns0:Format>application/json; subtype=geojson</ns0:Format>
-        <ns0:Format>text/csv</ns0:Format>
-      </ns0:OutputFormats>
-      <ns2:WGS84BoundingBox dimensions="2">
-        <ns2:LowerCorner>-179.925 -81.847</ns2:LowerCorner>
-        <ns2:UpperCorner>179.94 81.846</ns2:UpperCorner>
-      </ns2:WGS84BoundingBox>
-    </ns0:FeatureType>
-  </ns0:FeatureTypeList>
-  <ns4:Filter_Capabilities>
-    <ns4:Conformance>
-      <ns4:Constraint name="ImplementsQuery">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsAdHocQuery">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsFunctions">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsResourceId">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsMinStandardFilter">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsStandardFilter">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsMinSpatialFilter">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsSpatialFilter">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsMinTemporalFilter">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsTemporalFilter">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsVersionNav">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsSorting">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsExtendedOperators">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsMinimumXPath">
-        <ns2:NoValues />
-        <ns2:DefaultValue>TRUE</ns2:DefaultValue>
-      </ns4:Constraint>
-      <ns4:Constraint name="ImplementsSchemaElementFunc">
-        <ns2:NoValues />
-        <ns2:DefaultValue>FALSE</ns2:DefaultValue>
-      </ns4:Constraint>
-    </ns4:Conformance>
-    <ns4:Id_Capabilities>
-      <ns4:ResourceIdentifier name="fes:ResourceId" />
-    </ns4:Id_Capabilities>
-    <ns4:Scalar_Capabilities>
-      <ns4:LogicalOperators />
-      <ns4:ComparisonOperators>
-        <ns4:ComparisonOperator name="PropertyIsEqualTo" />
-        <ns4:ComparisonOperator name="PropertyIsNotEqualTo" />
-        <ns4:ComparisonOperator name="PropertyIsLessThan" />
-        <ns4:ComparisonOperator name="PropertyIsGreaterThan" />
-        <ns4:ComparisonOperator name="PropertyIsLessThanOrEqualTo" />
-        <ns4:ComparisonOperator name="PropertyIsGreaterThanOrEqualTo" />
-        <ns4:ComparisonOperator name="PropertyIsLike" />
-        <ns4:ComparisonOperator name="PropertyIsBetween" />
-      </ns4:ComparisonOperators>
-    </ns4:Scalar_Capabilities>
-    <ns4:Spatial_Capabilities>
-      <ns4:GeometryOperands>
-        <ns4:GeometryOperand name="gml:Point" />
-        <ns4:GeometryOperand name="gml:MultiPoint" />
-        <ns4:GeometryOperand name="gml:LineString" />
-        <ns4:GeometryOperand name="gml:MultiLineString" />
-        <ns4:GeometryOperand name="gml:Curve" />
-        <ns4:GeometryOperand name="gml:MultiCurve" />
-        <ns4:GeometryOperand name="gml:Polygon" />
-        <ns4:GeometryOperand name="gml:MultiPolygon" />
-        <ns4:GeometryOperand name="gml:Surface" />
-        <ns4:GeometryOperand name="gml:MultiSurface" />
-        <ns4:GeometryOperand name="gml:Box" />
-        <ns4:GeometryOperand name="gml:Envelope" />
-      </ns4:GeometryOperands>
-      <ns4:SpatialOperators>
-        <ns4:SpatialOperator name="BBOX" />
-      </ns4:SpatialOperators>
-    </ns4:Spatial_Capabilities>
-    <ns4:Temporal_Capabilities>
-      <ns4:TemporalOperands>
-        <ns4:TemporalOperand name="gml:TimePeriod" />
-        <ns4:TemporalOperand name="gml:TimeInstant" />
-      </ns4:TemporalOperands>
-      <ns4:TemporalOperators>
-        <ns4:TemporalOperator name="During" />
-      </ns4:TemporalOperators>
-    </ns4:Temporal_Capabilities>
-  </ns4:Filter_Capabilities>
-</ns0:WFS_Capabilities>
+<?xml version="1.0" encoding="UTF-8"?>
+<wfs:WFS_Capabilities version="2.0.0" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns="http://www.opengis.net/wfs/2.0" xmlns:ms="http://mapserver.gis.umn.edu/mapserver" xmlns:fes="http://www.opengis.net/fes/2.0" xmlns:wfs="http://www.opengis.net/wfs/2.0">
+<ows:ServiceIdentification>
+<ows:Title>NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:4326)</ows:Title>
+<ows:Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services. These services are designed with the goal of advancing user interactions with EOSDIS' inter-disciplinary data through enhanced visual representation and discovery.</ows:Abstract>
+<ows:Keywords>
+<ows:Keyword>GIBS</ows:Keyword>
+<ows:Keyword>NASA</ows:Keyword>
+<ows:Keyword>WFS</ows:Keyword>
+<ows:Keyword>Earth</ows:Keyword>
+</ows:Keywords>
+<ows:ServiceType codeSpace="OGC">WFS</ows:ServiceType>
+<ows:ServiceTypeVersion>2.0.0</ows:ServiceTypeVersion>
+<ows:Fees>NONE</ows:Fees>
+<ows:AccessConstraints>NONE</ows:AccessConstraints>
+</ows:ServiceIdentification>
+<ows:ServiceProvider>
+<ows:ProviderName>GIBS User Support</ows:ProviderName>
+<ows:ProviderSite xlink:href="http://localhost/wfs/epsg4326/" xlink:type="simple"/>
+<ows:ServiceContact>
+<ows:IndividualName>GIBS User Support</ows:IndividualName>
+<ows:PositionName>GIBS User Support</ows:PositionName>
+<ows:ContactInfo>
+<ows:Phone>
+<ows:Voice/><!--WARNING: Optional metadata "ows_contactvoicetelephone" was missing for ows:Voice-->
+<ows:Facsimile/><!--WARNING: Optional metadata "ows_contactfacsimiletelephone" was missing for ows:Facsimile-->
+</ows:Phone>
+<ows:Address>
+<ows:DeliveryPoint/><!--WARNING: Optional metadata "ows_address" was missing for ows:DeliveryPoint-->
+<ows:City/><!--WARNING: Optional metadata "ows_city" was missing for ows:City-->
+<ows:AdministrativeArea/><!--WARNING: Optional metadata "ows_stateorprovince" was missing for ows:AdministrativeArea-->
+<ows:PostalCode/><!--WARNING: Optional metadata "ows_postcode" was missing for ows:PostalCode-->
+<ows:Country/><!--WARNING: Optional metadata "ows_country" was missing for ows:Country-->
+<ows:ElectronicMailAddress>support@earthdata.nasa.gov</ows:ElectronicMailAddress>
+</ows:Address>
+<ows:OnlineResource xlink:href="http://localhost/wfs/epsg4326/" xlink:type="simple"/>
+<ows:HoursOfService/><!--WARNING: Optional metadata "ows_hoursofservice" was missing for ows:HoursOfService-->
+<ows:ContactInstructions/><!--WARNING: Optional metadata "ows_contactinstructions" was missing for ows:ContactInstructions-->
+</ows:ContactInfo>
+<ows:Role/><!--WARNING: Optional metadata "ows_role" was missing for ows:Role-->
+</ows:ServiceContact>
+</ows:ServiceProvider>
+<ows:OperationsMetadata>
+<ows:Operation name="GetCapabilities">
+<ows:DCP>
+<ows:HTTP>
+<ows:Get xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+<ows:Post xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+</ows:HTTP>
+</ows:DCP>
+<ows:Parameter name="AcceptVersions">
+<ows:AllowedValues>
+<ows:Value>2.0.0</ows:Value>
+<ows:Value>1.1.0</ows:Value>
+<ows:Value>1.0.0</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+<ows:Parameter name="AcceptFormats">
+<ows:AllowedValues>
+<ows:Value>text/xml</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+<ows:Parameter name="Sections">
+<ows:AllowedValues>
+<ows:Value>ServiceIdentification</ows:Value>
+<ows:Value>ServiceProvider</ows:Value>
+<ows:Value>OperationsMetadata</ows:Value>
+<ows:Value>FeatureTypeList</ows:Value>
+<ows:Value>Filter_Capabilities</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+</ows:Operation>
+<ows:Operation name="DescribeFeatureType">
+<ows:DCP>
+<ows:HTTP>
+<ows:Get xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+<ows:Post xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+</ows:HTTP>
+</ows:DCP>
+<ows:Parameter name="outputFormat">
+<ows:AllowedValues>
+<ows:Value>application/gml+xml; version=3.2</ows:Value>
+<ows:Value>text/xml; subtype=gml/3.2.1</ows:Value>
+<ows:Value>text/xml; subtype=gml/3.1.1</ows:Value>
+<ows:Value>text/xml; subtype=gml/2.1.2</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+</ows:Operation><ows:Operation name="GetFeature">
+<ows:DCP>
+<ows:HTTP>
+<ows:Get xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+<ows:Post xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+</ows:HTTP>
+</ows:DCP>
+<ows:Parameter name="outputFormat">
+<ows:AllowedValues>
+<ows:Value>application/gml+xml; version=3.2</ows:Value>
+<ows:Value>text/xml; subtype=gml/3.2.1</ows:Value>
+<ows:Value>text/xml; subtype=gml/3.1.1</ows:Value>
+<ows:Value>text/xml; subtype=gml/2.1.2</ows:Value>
+<ows:Value>application/json; subtype=geojson</ows:Value>
+<ows:Value>text/csv</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+</ows:Operation>
+<ows:Operation name="GetPropertyValue">
+<ows:DCP>
+<ows:HTTP>
+<ows:Get xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+<ows:Post xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+</ows:HTTP>
+</ows:DCP>
+<ows:Parameter name="outputFormat">
+<ows:AllowedValues>
+<ows:Value>application/gml+xml; version=3.2</ows:Value>
+<ows:Value>text/xml; subtype=gml/3.2.1</ows:Value>
+<ows:Value>text/xml; subtype=gml/3.1.1</ows:Value>
+<ows:Value>text/xml; subtype=gml/2.1.2</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+</ows:Operation>
+<ows:Operation name="ListStoredQueries">
+<ows:DCP>
+<ows:HTTP>
+<ows:Get xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+<ows:Post xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+</ows:HTTP>
+</ows:DCP>
+</ows:Operation>
+<ows:Operation name="DescribeStoredQueries">
+<ows:DCP>
+<ows:HTTP>
+<ows:Get xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+<ows:Post xlink:href="http://localhost/wfs/epsg4326/?" xlink:type="simple"/>
+</ows:HTTP>
+</ows:DCP>
+</ows:Operation>
+<ows:Parameter name="version">
+<ows:AllowedValues>
+<ows:Value>2.0.0</ows:Value>
+<ows:Value>1.1.0</ows:Value>
+<ows:Value>1.0.0</ows:Value>
+</ows:AllowedValues>
+</ows:Parameter>
+<ows:Constraint name="ImplementsBasicWFS">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsTransactionalWFS">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsLockingWFS">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="KVPEncoding"
+><ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="XMLEncoding">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</ows:Constraint><ows:Constraint name="SOAPEncoding">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsInheritance">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsRemoteResolve">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsResultPaging">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsStandardJoins">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsSpatialJoins">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsTemporalJoins">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ImplementsFeatureVersioning">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="ManageStoredQueries">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="PagingIsTransactionSafe">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</ows:Constraint>
+<ows:Constraint name="QueryExpressions">
+<ows:AllowedValues>
+<ows:Value>wfs:Query</ows:Value>
+<ows:Value>wfs:StoredQuery</ows:Value>
+</ows:AllowedValues>
+</ows:Constraint>
+</ows:OperationsMetadata>
+<FeatureTypeList>
+<FeatureType>
+<Name>ms:Terra_Orbit_Dsc_Dots</Name>
+<DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+<OutputFormats>
+<Format>application/gml+xml; version=3.2</Format>
+<Format>text/xml; subtype=gml/3.2.1</Format>
+<Format>text/xml; subtype=gml/3.1.1</Format>
+<Format>text/xml; subtype=gml/2.1.2</Format>
+<Format>application/json; subtype=geojson</Format>
+<Format>text/csv</Format>
+</OutputFormats>
+<ows:WGS84BoundingBox dimensions="2">
+<ows:LowerCorner>-179.925 -81.847</ows:LowerCorner
+><ows:UpperCorner>179.94 81.846</ows:UpperCorner>
+</ows:WGS84BoundingBox>
+</FeatureType>
+</FeatureTypeList>
+<fes:Filter_Capabilities>
+<fes:Conformance>
+<fes:Constraint name="ImplementsQuery">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsAdHocQuery">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsFunctions">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsResourceId">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsMinStandardFilter">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsStandardFilter">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsMinSpatialFilter">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsSpatialFilter">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsMinTemporalFilter">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsTemporalFilter">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsVersionNav">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsSorting">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsExtendedOperators">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsMinimumXPath">
+<ows:NoValues/>
+<ows:DefaultValue>TRUE</ows:DefaultValue>
+</fes:Constraint>
+<fes:Constraint name="ImplementsSchemaElementFunc">
+<ows:NoValues/>
+<ows:DefaultValue>FALSE</ows:DefaultValue>
+</fes:Constraint>
+</fes:Conformance>
+<fes:Id_Capabilities>
+<fes:ResourceIdentifier name="fes:ResourceId"/>
+</fes:Id_Capabilities>
+<fes:Scalar_Capabilities>
+<fes:LogicalOperators/>
+<fes:ComparisonOperators>
+<fes:ComparisonOperator name="PropertyIsEqualTo"/>
+<fes:ComparisonOperator name="PropertyIsNotEqualTo"/>
+<fes:ComparisonOperator name="PropertyIsLessThan"/>
+<fes:ComparisonOperator name="PropertyIsGreaterThan"/>
+<fes:ComparisonOperator name="PropertyIsLessThanOrEqualTo"/>
+<fes:ComparisonOperator name="PropertyIsGreaterThanOrEqualTo"/>
+<fes:ComparisonOperator name="PropertyIsLike"/>
+<fes:ComparisonOperator name="PropertyIsBetween"/>
+</fes:ComparisonOperators>
+</fes:Scalar_Capabilities>
+<fes:Spatial_Capabilities>
+<fes:GeometryOperands>
+<fes:GeometryOperand name="gml:Point"/>
+<fes:GeometryOperand name="gml:MultiPoint"/>
+<fes:GeometryOperand name="gml:LineString"/>
+<fes:GeometryOperand name="gml:MultiLineString"/>
+<fes:GeometryOperand name="gml:Curve"/>
+<fes:GeometryOperand name="gml:MultiCurve"/>
+<fes:GeometryOperand name="gml:Polygon"/>
+<fes:GeometryOperand name="gml:MultiPolygon"/>
+<fes:GeometryOperand name="gml:Surface"/>
+<fes:GeometryOperand name="gml:MultiSurface"/>
+<fes:GeometryOperand name="gml:Box"/>
+<fes:GeometryOperand name="gml:Envelope"/>
+</fes:GeometryOperands>
+<fes:SpatialOperators>
+<fes:SpatialOperator name="Equals"/>
+<fes:SpatialOperator name="Disjoint"/>
+<fes:SpatialOperator name="Touches"/>
+<fes:SpatialOperator name="Within"/>
+<fes:SpatialOperator name="Overlaps"/>
+<fes:SpatialOperator name="Crosses"/>
+<fes:SpatialOperator name="Intersects"/>
+<fes:SpatialOperator name="Contains"/>
+<fes:SpatialOperator name="DWithin"/>
+<fes:SpatialOperator name="Beyond"/>
+<fes:SpatialOperator name="BBOX"/>
+</fes:SpatialOperators>
+</fes:Spatial_Capabilities>
+<fes:Temporal_Capabilities>
+<fes:TemporalOperands>
+<fes:TemporalOperand name="gml:TimePeriod"/>
+<fes:TemporalOperand name="gml:TimeInstant"/>
+</fes:TemporalOperands><fes:TemporalOperators>
+<fes:TemporalOperator name="During"/>
+</fes:TemporalOperators>
+</fes:Temporal_Capabilities>
+</fes:Filter_Capabilities>
+</wfs:WFS_Capabilities>

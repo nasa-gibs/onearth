@@ -1,11 +1,6 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE WMT_MS_Capabilities SYSTEM "http://schemas.opengis.net/wms/1.1.1/WMS_MS_Capabilities.dtd" [
-<!ELEMENT VendorSpecificCapabilities EMPTY>
-]>
-<!-- end of DOCTYPE declaration -->
-<WMT_MS_Capabilities version="1.1.1">
+<WMT_MS_Capabilities xmlns:ns0="http://www.w3.org/1999/xlink" version="1.1.1">
 
-<!-- MapServer version 7.0.1 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
+
 
 <Service>
   <Name>OGC:WMS</Name>
@@ -17,7 +12,7 @@
       <Keyword>WMS</Keyword>
       <Keyword>Earth</Keyword>
   </KeywordList>
-  <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/>
+  <OnlineResource ns0:href="http://localhost/wms/epsg4326/?" />
   <ContactInformation>
     <ContactPersonPrimary>
       <ContactPerson>GIBS User Support</ContactPerson>
@@ -34,8 +29,8 @@
       <Format>application/vnd.ogc.wms_xml</Format>
       <DCPType>
         <HTTP>
-          <Get><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Get>
-          <Post><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Post>
+          <Get><OnlineResource ns0:href="http://localhost/wms/epsg4326/?" /></Get>
+          <Post><OnlineResource ns0:href="http://localhost/wms/epsg4326/?" /></Post>
         </HTTP>
       </DCPType>
     </GetCapabilities>
@@ -45,13 +40,11 @@
       <Format>application/vnd.google-earth.kml.xml</Format>
       <Format>application/vnd.google-earth.kmz</Format>
       <Format>image/png; mode=8bit</Format>
-      <Format>application/x-pdf</Format>
-      <Format>image/svg+xml</Format>
       <Format>image/tiff</Format>
       <DCPType>
         <HTTP>
-          <Get><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Get>
-          <Post><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Post>
+          <Get><OnlineResource ns0:href="http://localhost/wms/epsg4326/?" /></Get>
+          <Post><OnlineResource ns0:href="http://localhost/wms/epsg4326/?" /></Post>
         </HTTP>
       </DCPType>
     </GetMap>
@@ -61,8 +54,8 @@
       <Format>image/png; mode=8bit</Format>
       <DCPType>
         <HTTP>
-          <Get><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Get>
-          <Post><OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://localhost/wms/epsg4326/?"/></Post>
+          <Get><OnlineResource ns0:href="http://localhost/wms/epsg4326/?" /></Get>
+          <Post><OnlineResource ns0:href="http://localhost/wms/epsg4326/?" /></Post>
         </HTTP>
       </DCPType>
     </GetLegendGraphic>
@@ -72,8 +65,8 @@
     <Format>application/vnd.ogc.se_inimage</Format>
     <Format>application/vnd.ogc.se_blank</Format>
   </Exception>
-  <VendorSpecificCapabilities/>
-  <UserDefinedSymbolization SupportSLD="1" UserLayer="0" UserStyle="1" RemoteWFS="0"/>
+  <VendorSpecificCapabilities />
+  <UserDefinedSymbolization RemoteWFS="0" SupportSLD="1" UserLayer="0" UserStyle="1" />
   <Layer>
     <Name>NASA_GIBS_4326</Name>
     <Title>NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)</Title>
@@ -86,74 +79,74 @@
     </KeywordList>
     <SRS>EPSG:4326</SRS>
     <SRS>EPSG:3857</SRS>
-    <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-    <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+    <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>test_legacy_subdaily_jpg</Name>
         <Title>test_legacy_subdaily_jpg</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2012-02-29T14:00:00Z" nearestValue="1">2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Extent>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+        <Dimension name="time" units="ISO8601" />
+        <Extent default="2012-02-29T14:00:00Z" name="time" nearestValue="1">2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Extent>
     </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>test_weekly_jpg</Name>
         <Title>test_weekly_jpg</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2012-02-29" nearestValue="1">2012-02-22/2012-02-29/P7D</Extent>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+        <Dimension name="time" units="ISO8601" />
+        <Extent default="2012-02-29" name="time" nearestValue="1">2012-02-22/2012-02-29/P7D</Extent>
     </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>test_nonyear_jpg</Name>
         <Title>test_nonyear_jpg</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2016-02-29" nearestValue="1">2016-05-01/2016-02-29/P1D</Extent>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+        <Dimension name="time" units="ISO8601" />
+        <Extent default="2016-02-29" name="time" nearestValue="1">2016-05-01/2016-02-29/P1D</Extent>
     </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>snap_test_3a</Name>
         <Title>snap_test_3a</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2016-01-01" nearestValue="1">2015-01-01/2016-01-01/P1M</Extent>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+        <Dimension name="time" units="ISO8601" />
+        <Extent default="2016-01-01" name="time" nearestValue="1">2015-01-01/2016-01-01/P1M</Extent>
     </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>snap_test_3b</Name>
         <Title>snap_test_3b</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2016-01-01" nearestValue="1">2015-01-01/2016-01-01/P3M</Extent>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+        <Dimension name="time" units="ISO8601" />
+        <Extent default="2016-01-01" name="time" nearestValue="1">2015-01-01/2016-01-01/P3M</Extent>
     </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>test_static_jpg</Name>
         <Title>test_static_jpg</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
     </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
+    <Layer cascaded="0" opaque="0" queryable="0">
         <Name>Terra_Orbit_Dsc_Dots</Name>
         <Title>Terra_Orbit_Dsc_Dots</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <BoundingBox SRS="EPSG:4326" minx="-180" miny="-90" maxx="180" maxy="90"/>
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2016-03-05" nearestValue="1">2016-03-05/2016-03-05/P1D</Extent>
+        <LatLonBoundingBox maxx="180" maxy="90" minx="-180" miny="-90" />
+        <BoundingBox SRS="EPSG:4326" maxx="180" maxy="90" minx="-180" miny="-90" />
+        <Dimension name="time" units="ISO8601" />
+        <Extent default="2016-03-05" name="time" nearestValue="1">2016-03-05/2016-03-05/P1D</Extent>
         <Style>
           <Name>default</Name>
           <Title>default</Title>
-          <LegendURL width="113" height="35">
+          <LegendURL height="35" width="113">
              <Format>image/png</Format>
-             <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/wms/epsg4326/?version=1.1.1&amp;service=WMS&amp;request=GetLegendGraphic&amp;layer=Terra_Orbit_Dsc_Dots&amp;format=image/png&amp;STYLE=default"/>
+             <OnlineResource ns0:href="http://localhost/wms/epsg4326/?version=1.1.1&amp;service=WMS&amp;request=GetLegendGraphic&amp;layer=Terra_Orbit_Dsc_Dots&amp;format=image/png&amp;STYLE=default" ns0:type="simple" />
           </LegendURL>
         </Style>
     </Layer>
