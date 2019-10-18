@@ -6,10 +6,11 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 echo 'Starting Apache server'
-/usr/sbin/apachectl
+/usr/sbin/httpd -k restart
 sleep 2
 
 # Tail the apache logs
+crond
 exec tail -qF \
   /etc/httpd/logs/access.log \
   /etc/httpd/logs/error.log \
