@@ -10,6 +10,7 @@ RUN yum install -y luarocks-2.3.0
 RUN yum install -y redis-3.2.12
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum install -y python36u-3.6.7 python36u-devel-3.6.7 python36u-pip-9.0.1
+RUN yum install -y cronie
 
 #Install pip 3.6 dependencies
 RUN pip3.6 install requests==2.21.0
@@ -32,6 +33,7 @@ RUN HOME="/tmp" rpm -ivh httpd-*.src.rpm
 RUN yum-builddep -y httpd-2.4.6
 WORKDIR /tmp/rpmbuild/SPECS
 RUN HOME="/tmp" rpmbuild -bp httpd.spec
+RUN ls /home/oe2/onearth
 RUN cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES
 RUN patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch
 RUN HOME="/tmp" rpmbuild -ba httpd.spec

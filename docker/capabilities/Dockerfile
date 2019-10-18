@@ -36,6 +36,9 @@ RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 # Install additional configuration tools
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
+# Setup cron for logrotate
+RUN cp /home/oe2/onearth/docker/logrotate.daily.httpd /etc/logrotate.d/httpd
+
 WORKDIR /home/oe2/onearth/docker/capabilities
 CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $S3_CONFIGS
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/

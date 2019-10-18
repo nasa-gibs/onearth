@@ -22,4 +22,9 @@ WORKDIR /home/oe2/onearth/docker/time_service
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
+# Setup cron for logrotate
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+    chmod 755 /etc/cron.hourly/logrotate && \
+    cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
+
 CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING

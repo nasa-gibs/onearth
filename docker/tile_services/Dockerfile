@@ -57,5 +57,10 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/
 
+# Setup cron for logrotate
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+    chmod 755 /etc/cron.hourly/logrotate && \
+    cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
+
 WORKDIR /home/oe2/onearth/docker/tile_services
 CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $IDX_SYNC $DEBUG_LOGGING $S3_CONFIGS

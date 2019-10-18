@@ -42,5 +42,10 @@ WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
+# Setup cron for logrotate
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+    chmod 755 /etc/cron.hourly/logrotate && \
+    cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
+
 WORKDIR /home/oe2/onearth/docker/reproject
 CMD sh start_reproject.sh $DEBUG_LOGGING $S3_CONFIGS

@@ -71,7 +71,7 @@ cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 
 # Scrape OnEarth configs from S3
-if [ -z "$S3_CONFIGS" ] 
+if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set"
 else
@@ -123,6 +123,7 @@ echo 'Starting Apache server'
 sleep 2
 
 # Tail the apache logs
+crond
 exec tail -qF \
   /etc/httpd/logs/access.log \
   /etc/httpd/logs/error.log \

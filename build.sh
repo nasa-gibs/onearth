@@ -27,7 +27,9 @@ docker build --no-cache -t nasagibs/onearth-demo:$OE_VERSION .
 rm Dockerfile
 
 # Build the onearth-wms image
-docker build --no-cache -t nasagibs/onearth-wms:$OE_VERSION ./docker/wms_service/
+cp ./docker/wms_service/Dockerfile .
+docker build --no-cache -t nasagibs/onearth-wms:$OE_VERSION .
+rm Dockerfile
 
 # Build the onearth-tools image
 cp ./docker/tools/Dockerfile .
