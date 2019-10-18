@@ -154,7 +154,7 @@ class TestDateService(unittest.TestCase):
         test_layers = [('test1_all_records', '2012-01-01',
                         '2012-01-01/2016-01-01/P1Y'),
                        ('test2_all_records', '2015-02-01T12:00:00',
-                        '2012-01-01T00:00:00/2016-01-01T23:59:59/P1S')]
+                        '2012-01-01T00:00:00/2016-01-01T23:59:59/PT1S')]
 
         seed_redis_data(test_layers)
 
@@ -263,11 +263,11 @@ class TestDateService(unittest.TestCase):
         test_layers = [
             # Snap to beginning
             ('test1_hour_snap', '2012-01-01T00:00:00',
-             '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/PT2H',
              '2012-01-01T01:30:00Z', '2012-01-01T00:00:00Z'),
             # Snap to interval
             ('test2_hour_snap', '2012-01-01T00:00:00',
-             '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/PT2H',
              '2012-01-01T02:30:00Z', '2012-01-01T02:00:00Z'),
         ]
 
@@ -291,11 +291,11 @@ class TestDateService(unittest.TestCase):
         test_layers = [
             # Snap to beginning
             ('test1_minute_snap', '2012-01-01T00:00:00',
-             '2012-01-01T00:00:00/2016-01-01T00:00:00/P6MM',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/PT6M',
              '2012-01-01T00:05:00Z', '2012-01-01T00:00:00Z'),
             # Snap to interval
             ('test2_minute_snap', '2012-01-01T00:00:00',
-             '2012-01-01T00:00:00/2016-01-01T00:00:00/P6MM',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/PT6M',
              '2012-01-01T00:14:00Z', '2012-01-01T00:12:00Z'),
         ]
 
@@ -319,11 +319,11 @@ class TestDateService(unittest.TestCase):
         test_layers = [
             # Snap to beginning
             ('test1_second_snap', '2012-01-01T00:00:00',
-             '2012-01-01T00:00:00/2016-01-01T00:00:00/P11S',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/PT11S',
              '2012-01-01T00:00:10Z', '2012-01-01T00:00:00Z'),
             # Snap to interval
             ('test2_second_snap', '2012-01-01T00:00:00',
-             '2012-01-01T00:00:00/2016-01-01T00:00:00/P11S',
+             '2012-01-01T00:00:00/2016-01-01T00:00:00/PT11S',
              '2012-01-01T00:00:12Z', '2012-01-01T00:00:11Z'),
         ]
 
@@ -356,7 +356,7 @@ class TestDateService(unittest.TestCase):
 
     def test_bad_date_error(self):
         test_layer = ('test1_bad_date', '2012-01-01T00:00:00',
-                      '2012-01-01T00:00:00/2016-01-01T00:00:00/P2H',
+                      '2012-01-01T00:00:00/2016-01-01T00:00:00/PT2H',
                       '2012-01-01T01:30:00', '2012-01-01T00:00:00Z')
 
         seed_redis_data([test_layer])

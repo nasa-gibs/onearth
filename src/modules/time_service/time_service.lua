@@ -265,6 +265,9 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
                 if req_date > start_date then
                     local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
                     local interval_size = string.match(parsed_period[3], "%a+$")
+                    if string.sub(parsed_period[3], 1, 2) == "PT" and interval_size == "M" then
+                      interval_size = "MM"
+                    end
                     snap_date = get_snap_date(start_date:copy(), req_date, end_date, interval_length, interval_size)
                     break
                 end
