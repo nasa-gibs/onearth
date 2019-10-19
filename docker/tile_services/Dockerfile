@@ -58,7 +58,7 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/
 
 # Setup cron for logrotate
-RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+RUN mkdir -p /etc/cron.hourly && mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 

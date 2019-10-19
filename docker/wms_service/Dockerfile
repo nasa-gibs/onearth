@@ -31,7 +31,7 @@ COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/
 RUN cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
 
 # Setup cron for logrotate
-RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+RUN mkdir -p /etc/cron.hourly &&mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
