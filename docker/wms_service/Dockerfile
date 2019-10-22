@@ -1,4 +1,4 @@
-FROM nasagibs/onearth-deps:latest
+FROM nasagibs/onearth-deps:2.2.2
 
 RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 gdal-devel-1.11.4 python2-pip-8.1.2
 
