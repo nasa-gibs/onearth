@@ -1,31 +1,50 @@
 #!/bin/python
 
+import argparse
 import requests
 import sys
+import yaml
 from lxml import etree
+from pathlib import Path
 
-GC_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml'
-TEMPLATE = 'template.map'
-HEADER = 'header.map'
+MAPFILE_TEMPLATE = 'template.map'
 TILE_LEVELS = {'2km': '5', '1km': '6', '500m': '7', '250m': '8',
                '125m': '9', '62.5m': '10', '31.25m': '11', '15.625m': '12'}
+APACHE_CONFIG = '/etc/httpd/conf.d/oe2_wms.conf'
+APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}>
+        SetHandler fcgid-script
+        Options ExecCGI
+        SetEnv MS_MAPFILE {mapfile_location}
+</Directory>
+"""
 
-r = requests.get(GC_URL)
+def strip_trailing_slash(string):
+    if string.endswith('/'):
+        string = string[:len(string) - 1]
+    return string
 
-try:
-    outfilename = sys.argv[1]
-except IndexError:
-    print 'No output file specified!'
-    sys.exit()
+# Parse arguments
+parser = argparse.ArgumentParser(description='Make WMS endpoint.')
+parser.add_argument('endpoint_config', type=str, help='an endpoint config YAML file')
+args = parser.parse_args()
+endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
+print('Using endpoint config ' + args.endpoint_config)
+outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
+header = Path(endpoint_config['mapserver']['mapfile_header'])
+internal_endpoint = Path(endpoint_config['mapserver']['internal_endpoint'])
+tms_defs_file = Path(endpoint_config['tms_defs_file'])
 
+# Get source GetCapabilities
+gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
+print('Fetching ' + gc_url)                   
+r = requests.get(gc_url)
 if (r.status_code != 200):
-    print "Cant' get GC file from url" + GC_URL
+    print("Cant' get GC file from url" + gc_url)
     sys.exit()
 
+# Read GetCapabilities
 root = etree.fromstring(r.content)
-
 layers = root.find('{*}Contents').findall('{*}Layer')
-
 layer_strings = []
 
 for layer in layers:
@@ -72,14 +91,14 @@ for layer in layers:
     etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
     etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
 
-    with open(TEMPLATE, 'r') as f:
+    with open(MAPFILE_TEMPLATE, 'r') as f:
         template_string = f.read()
     template_string = template_string.replace('${layer_name}', layer_name).replace(
-        '${data_xml}', etree.tostring(out_root))
+        '${data_xml}', etree.tostring(out_root).decode())
 
     layer_strings.append(template_string)
 
-with open(HEADER, 'r') as f:
+with open(header, 'r') as f:
     header_string = f.read()
 
 with open(outfilename, 'w+') as outfile:
@@ -88,3 +107,12 @@ with open(outfilename, 'w+') as outfile:
         outfile.write(layer_string)
         outfile.write('\n')
     outfile.write('END')
+    print('Generated ' + str(outfilename))
+
+with open(APACHE_CONFIG, 'r+') as apache_config:
+    config_string = apache_config.read()
+    directory_string = APACHE_CONFIG_TEMPLATE.replace('{internal_endpoint}', str(internal_endpoint)).replace('{mapfile_location}', str(outfilename))
+    if not directory_string in config_string:
+        apache_config.write(directory_string)
+        apache_config.write('\n')
+        print('Updated ' + APACHE_CONFIG)

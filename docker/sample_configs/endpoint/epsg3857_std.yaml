@@ -24,3 +24,8 @@ wmts_service:
 twms_service:
   internal_endpoint: "/var/www/html/twms/epsg3857/std"
   external_endpoint: "/twms/epsg3857/std"
+mapserver:
+  internal_endpoint: "/var/www/html/wms/epsg3857/std"
+  mapfile_header:  "/etc/onearth/config/mapserver/epsg3857.header"
+  mapfile_location: "/etc/onearth/config/mapserver/epsg3857_std.map"
+  source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/std/1.0.0/WMTSCapabilities.xml"
