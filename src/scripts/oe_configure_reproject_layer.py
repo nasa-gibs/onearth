@@ -97,7 +97,7 @@ DIMENSION_TEMPLATE = """"wms_timeextent" "{periods}"
 
 VALIDATION_TEMPLATE = """
         VALIDATION
-            "time"                  "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            "time"                  "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2})|(default)$"
             "default_time"          "{default}"
         END
 """
