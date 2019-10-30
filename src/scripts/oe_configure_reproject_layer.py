@@ -80,6 +80,7 @@ MAPFILE_TEMPLATE = """LAYER
                 "wms_srs"               "EPSG:{target_epsg}"
                 "wms_extent"            "{target_bbox}"
                 {dimension_info}
+                {style_info}
         END
         DATA    '{data_xml}'
         PROJECTION
@@ -93,6 +94,13 @@ DIMENSION_TEMPLATE = """"wms_timeextent" "{periods}"
                 "wms_timeitem" "TIME"
                 "wms_timedefault" "{default}"
                 "wms_timeformat" "YYYY-MM-DD, YYYY-MM-DDTHH:MM:SSZ"
+"""
+
+STYLE_TEMPLATE = """"wms_style" "default"
+                "wms_style_default_legendurl_width" "{width}"
+                "wms_style_default_legendurl_height" "{height}"
+                "wms_style_default_legendurl_format" "image/png"
+                "wms_style_default_legendurl_href" "{href}"
 """
 
 VALIDATION_TEMPLATE = """
@@ -965,6 +973,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             # Use the template to create the new Mapfile snippet
             dimension_info = ''
             validation_info = ''
+            style_info = ''
             if not static:
                 default_datetime = dest_dim_elem.findtext('{*}Default')
                 period_str = ','.join(
@@ -973,6 +982,19 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                                                                    ('{default}', default_datetime)])
                 validation_info = VALIDATION_TEMPLATE.replace(
                     '{default}', default_datetime)
+
+            # If the source EPSG:4326 layer has a legend, then add that to the EPSG:3857 layer also
+            legendUrlElems = []
+
+            for styleElem in layer.findall('{*}Style'):
+               legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
+
+            for legendUrlElem in legendUrlElems:
+                attributes = legendUrlElem.attrib
+                if attributes[xlink + 'role'].endswith("horizontal"):
+                    style_info = bulk_replace(STYLE_TEMPLATE, [('{width}', attributes["width"]),
+                                                               ('{height}', attributes["height"]),
+                                                               ('{href}', attributes[xlink + 'href'].replace(".svg",".png"))])
 
             # Mapserver automatically converts to RGBA and works better if we
             # specify that for png layers
@@ -989,7 +1011,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
             mapfile_snippet = bulk_replace(
                 MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
-                                   ('{dimension_info}', dimension_info), ('{validation_info}', validation_info), ('{src_epsg}', src_epsg), ('{target_epsg}', target_epsg), ('{target_bbox}', ', '.join(target_bbox))])
+                                   ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info), ('{src_epsg}', src_epsg),
+                                   ('{target_epsg}', target_epsg), ('{target_bbox}', ', '.join(target_bbox))])
 
             mapfile_name = os.path.join(
                 mapfile_staging_location, identifier + '.map')
