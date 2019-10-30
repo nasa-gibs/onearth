@@ -1,6 +1,6 @@
 FROM nasagibs/onearth-deps:2.2.2
 
-RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 gdal-devel-1.11.4 python2-pip-8.1.2
+RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 gdal-devel-1.11.4
 RUN pip3 install requests==2.21.0 lxml==4.3.0
 
 COPY ./ /home/oe2/onearth/
@@ -26,6 +26,10 @@ RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
+
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
+RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
 # Copy setups
 COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/

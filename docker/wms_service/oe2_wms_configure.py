@@ -20,7 +20,7 @@ APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}>
 
 def strip_trailing_slash(string):
     if string.endswith('/'):
-        string = string[:len(string) - 1]
+        string = string[:-1]
     return string
 
 # Parse arguments
@@ -31,7 +31,7 @@ endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
 print('Using endpoint config ' + args.endpoint_config)
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
-internal_endpoint = Path(endpoint_config['mapserver']['internal_endpoint'])
+internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
 tms_defs_file = Path(endpoint_config['tms_defs_file'])
 
 # Get source GetCapabilities
@@ -91,17 +91,17 @@ for layer in layers:
     etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
     etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
 
-    with open(MAPFILE_TEMPLATE, 'r') as f:
+    with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
         template_string = f.read()
     template_string = template_string.replace('${layer_name}', layer_name).replace(
         '${data_xml}', etree.tostring(out_root).decode())
 
     layer_strings.append(template_string)
 
-with open(header, 'r') as f:
+with open(header, 'r', encoding='utf-8') as f:
     header_string = f.read()
 
-with open(outfilename, 'w+') as outfile:
+with open(outfilename, 'w+', encoding='utf-8') as outfile:
     outfile.write(header_string)
     for layer_string in layer_strings:
         outfile.write(layer_string)
@@ -109,7 +109,7 @@ with open(outfilename, 'w+') as outfile:
     outfile.write('END')
     print('Generated ' + str(outfilename))
 
-with open(APACHE_CONFIG, 'r+') as apache_config:
+with open(APACHE_CONFIG, 'r+', encoding='utf-8') as apache_config:
     config_string = apache_config.read()
     directory_string = APACHE_CONFIG_TEMPLATE.replace('{internal_endpoint}', str(internal_endpoint)).replace('{mapfile_location}', str(outfilename))
     if not directory_string in config_string:
