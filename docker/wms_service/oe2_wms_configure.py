@@ -4,6 +4,7 @@ import argparse
 import requests
 import sys
 import yaml
+import shutil
 from lxml import etree
 from pathlib import Path
 
@@ -135,13 +136,14 @@ for layer in layers:
 with open(header, 'r', encoding='utf-8') as f:
     header_string = f.read()
 
-with open(outfilename, 'w+', encoding='utf-8') as outfile:
+with open(str(outfilename)+'_tmp', 'w+', encoding='utf-8') as outfile:
     outfile.write(header_string)
     for layer_string in layer_strings:
         outfile.write(layer_string)
         outfile.write('\n')
     outfile.write('END')
-    print('Generated ' + str(outfilename))
+shutil.move(str(outfilename)+'_tmp', outfilename)
+print('Generated ' + str(outfilename))
 
 with open(APACHE_CONFIG, 'r+', encoding='utf-8') as apache_config:
     config_string = apache_config.read()
