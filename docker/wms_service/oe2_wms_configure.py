@@ -17,6 +17,23 @@ APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}>
         SetEnv MS_MAPFILE {mapfile_location}
 </Directory>
 """
+DIMENSION_TEMPLATE = """"wms_timeextent" "{periods}"
+                "wms_timeitem" "TIME"
+                "wms_timedefault" "{default}"
+                "wms_timeformat" "YYYY-MM-DD, YYYY-MM-DDTHH:MM:SSZ"
+"""
+STYLE_TEMPLATE = """"wms_style" "default"
+                "wms_style_default_legendurl_width" "{width}"
+                "wms_style_default_legendurl_height" "{height}"
+                "wms_style_default_legendurl_format" "image/png"
+                "wms_style_default_legendurl_href" "{href}"
+"""
+VALIDATION_TEMPLATE = """
+        VALIDATION
+            "time"                  "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2})|(default)$"
+            "default_time"          "{default}"
+        END
+"""
 
 def strip_trailing_slash(string):
     if string.endswith('/'):
@@ -33,6 +50,7 @@ outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
 tms_defs_file = Path(endpoint_config['tms_defs_file'])
+projection = endpoint_config['epsg_code']
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
@@ -61,9 +79,25 @@ for layer in layers:
     bands_count = 4 if resource_url.get('format') == 'image/png' else 3
     template_string = resource_url.get('template')
 
+    dimension_info = ''
+    validation_info = ''
+    style_info = ''
+    
     dimension = layer.find('{*}Dimension')
-    has_time = dimension is not None and dimension.findtext(
-        '{*}Identifier') == 'time' or False
+    has_time = dimension is not None and dimension.findtext('{*}Identifier') == 'Time' or False
+    if has_time:
+        default_datetime = dimension.findtext('{*}Default')
+        period_str = ','.join(elem.text for elem in dimension.findall("{*}Value"))
+        dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
+        validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
+        
+        legendUrlElems = []
+        for styleElem in layer.findall('{*}Style'):
+           legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
+        for legendUrlElem in legendUrlElems:
+            attributes = legendUrlElem.attrib
+            if attributes[xlink + 'role'].endswith("horizontal"):
+                style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes[xlink + 'href']).replace(".svg",".png")
 
     out_root = etree.Element('GDAL_WMS')
 
@@ -82,7 +116,7 @@ for layer in layers:
     etree.SubElement(data_window_element, 'TileCountY').text = '1'
     etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
-    etree.SubElement(out_root, 'Projection').text = 'EPSG:4326'
+    etree.SubElement(out_root, 'Projection').text = projection
     etree.SubElement(out_root, 'BlockSizeX').text = '512'
     etree.SubElement(out_root, 'BlockSizeY').text = '512'
     etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
@@ -93,8 +127,8 @@ for layer in layers:
 
     with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
         template_string = f.read()
-    template_string = template_string.replace('${layer_name}', layer_name).replace(
-        '${data_xml}', etree.tostring(out_root).decode())
+    template_string = template_string.replace('${layer_name}', layer_name).replace('${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
+        '${data_xml}', etree.tostring(out_root).decode()).replace('${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
 
     layer_strings.append(template_string)
 

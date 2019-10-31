@@ -17,15 +17,14 @@ RUN make && make install
 WORKDIR /tmp
 RUN wget http://download.osgeo.org/mapserver/mapserver-7.0.7.tar.gz
 RUN tar xf mapserver-7.0.7.tar.gz
-COPY docker/wms_service/mapwms.patch /tmp/mapserver-7.0.7
 WORKDIR /tmp/mapserver-7.0.7
-RUN patch < mapwms.patch
 RUN mkdir build
 WORKDIR /tmp/mapserver-7.0.7/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
+RUN rm -rf /tmp/*
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/

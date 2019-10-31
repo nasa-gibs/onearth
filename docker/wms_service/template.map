@@ -2,23 +2,15 @@ LAYER
         NAME    "${layer_name}"
         TYPE    RASTER
         STATUS  ON
-        VALIDATION
-                "PRODUCTYEAR"             "^[0-9]{4}$"
-                "PRODUCTMONTH"            "^[0-9]{2}$"
-                "PRODUCTDAY"              "^[0-9]{2}$"
-                "default_PRODUCTYEAR"   "YYYY"
-                "default_PRODUCTDAY"    "DD"
-                "default_PRODUCTMONTH"  "MM"
-                "time"                  "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-                "default_time"          "default"
-        END
         METADATA
                 "wms_title"             "${layer_name}"
                 "wms_extent"            "-180 -90 180 90"
-
+                ${dimension_info}
+                ${style_info}
         END
         DATA    '${data_xml}'
         PROJECTION
-                "init=epsg:4326"
+                "init=${epsg_code}"
         END
+        ${validation_info}
 END
