@@ -56,7 +56,7 @@ import urllib2
 import xml.dom.minidom
 from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, check_abs_path
 
-versionNumber = '2.2.2'
+versionNumber = '2.2.3'
 colormap_filename = None
     
 class ColorEntry:
