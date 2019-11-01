@@ -1,0 +1,12 @@
+sans                            /usr/share/fonts/Vera.ttf
+sans-bold                       /usr/share/fonts/VeraBd.ttf
+sans-italic                     /usr/share/fonts/VeraIt.ttf
+sans-bold-italic                /usr/share/fonts/VeraBi.ttf
+serif                           /usr/share/fonts/VeraSe.ttf
+serif-bold                      /usr/share/fonts/VeraSeBd.ttf
+mono                            /usr/share/fonts/VeraMono.ttf
+mono-bold                       /usr/share/fonts/VeraMoBd.ttf
+mono-italic                     /usr/share/fonts/VeraMoIt.ttf
+mono-bold-italic                /usr/share/fonts/VeraMoBi.ttf
+verdana				            /usr/share/fonts/verdana.ttf
+verdana-bold			        /usr/share/fonts/verdanab.ttf

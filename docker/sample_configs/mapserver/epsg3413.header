@@ -6,6 +6,15 @@ MAP
   Extent                -4194300.000 -4194200.000 4194200.000 4194300.000
   ImageColor            0 0 0
 
+  FontSet         "/etc/onearth/config/mapserver/fonts.txt"
+  SymbolSet       "/etc/onearth/config/mapserver/symbols.sym"
+
+  ##Debug Params##
+  CONFIG "MS_ERRORFILE" "/var/log/mapserver/error.log"
+  Debug 3
+  CONFIG "CPL_DEBUG" "ON"
+  CONFIG "PROJ_DEBUG" "ON"
+
   OUTPUTFORMAT
     NAME                "png"
     DRIVER              AGG/PNG

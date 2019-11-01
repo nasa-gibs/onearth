@@ -6,6 +6,15 @@ MAP
   Extent                -20037508.34 -20037508.34 20037508.34 20037508.34
   ImageColor            0 0 0
 
+  FontSet         "/etc/onearth/config/mapserver/fonts.txt"
+  SymbolSet       "/etc/onearth/config/mapserver/symbols.sym"
+
+  ##Debug Params##
+  CONFIG "MS_ERRORFILE" "/var/log/mapserver/error.log"
+  Debug 3
+  CONFIG "CPL_DEBUG" "ON"
+  CONFIG "PROJ_DEBUG" "ON"
+
   OUTPUTFORMAT
     NAME                "png"
     DRIVER              AGG/PNG
@@ -66,7 +75,7 @@ MAP
 
   WEB
     METADATA
-      "wms_title"               "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:3857)"
+      "wms_title"               "NASA Global Imagery Browse Services for EOSDIS WMS (Web Mercator - EPSG:3857)"
       "wms_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
       "wms_onlineresource"      "http://gibs.earthdata.nasa.gov/wms/epsg3857/"
       "wms_keywordlist"			"GIBS,NASA,WMS,Earth"
@@ -80,7 +89,7 @@ MAP
       "wms_layerlimit"			"5"
       # Uncomment the line below to enable WFS
       # "wfs_enable_request" "*"
-      "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:3857)"
+      "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Web Mercator - EPSG:3857)"
       "wfs_onlineresource" 		"http://gibs.earthdata.nasa.gov/wfs/mapserv"
       "wfs_keywordlist"			"GIBS,NASA,WFS,Earth"
       "wfs_fees"				"NONE"

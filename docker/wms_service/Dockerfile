@@ -33,9 +33,15 @@ RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 # Copy setups
 COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/
 RUN cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
+RUN mkdir -p /etc/onearth/config/mapserver
+COPY docker/wms_service/fonts.txt /etc/onearth/config/mapserver/
+COPY docker/wms_service/symbols.sym /etc/onearth/config/mapserver/
+COPY docker/wms_service/fonts/* /usr/share/fonts/
+RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
 
 # Setup cron for logrotate
-RUN mkdir -p /etc/cron.hourly &&mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+COPY docker/wms_service/logrotate.daily.mapserver /etc/logrotate.d/mapserver
+RUN mkdir -p /etc/cron.hourly && cp /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
