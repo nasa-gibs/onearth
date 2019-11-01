@@ -2462,7 +2462,7 @@ for conf in conf_files:
         # generate legend if requested
         legendUrl_svg_v_meta = ''
         legendUrl_svg_h_meta = ''
-        legendUrl_png_h = ''
+        legendUrl_png_h_url  = None
         if legend and default_colormap:
             colormap_value = default_colormap.firstChild.nodeValue
             colormap_location = default_colormap.attributes['location'].value
