@@ -7,10 +7,9 @@ import yaml
 import shutil
 from lxml import etree
 from pathlib import Path
+from decimal import Decimal
 
 MAPFILE_TEMPLATE = 'template.map'
-TILE_LEVELS = {'2km': '5', '1km': '6', '500m': '7', '250m': '8',
-               '125m': '9', '62.5m': '10', '31.25m': '11', '15.625m': '12'}
 APACHE_CONFIG = '/etc/httpd/conf.d/oe2_wms.conf'
 APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}>
         SetHandler fcgid-script
@@ -36,6 +35,25 @@ VALIDATION_TEMPLATE = """
         END
 """
 
+def get_map_bounds(bbox, epsg, scale_denominator, tilesize, matrix_width, matrix_height):
+    upper_left_x, lower_right_y, lower_right_x, upper_left_y = bbox
+    pixelsize = Decimal(str(0.00028))
+    if epsg == "EPSG:4326":
+        units = Decimal(str(111319.490793274)) # convert to meters
+    else:
+        units = Decimal(str(1))
+    size = round((tilesize*2)*(scale_denominator/units)*(pixelsize/2),8)
+    lower_right_y = str((-1*size*matrix_height) + Decimal(upper_left_y))
+    lower_right_x = str(Decimal(upper_left_x) + size*matrix_width)
+    return [upper_left_x, lower_right_y, lower_right_x, upper_left_y]
+
+def get_tile_level(tms, tilematrixsets):
+    tile_level = 0
+    for tilematrixset in tilematrixsets:
+        if tilematrixset.findtext('{*}Identifier') == tms:
+            tile_level = len(tilematrixset.findall('{*}TileMatrix')) - 1
+    return str(tile_level)
+
 def strip_trailing_slash(string):
     if string.endswith('/'):
         string = string[:-1]
@@ -50,8 +68,9 @@ print('Using endpoint config ' + args.endpoint_config)
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
-tms_defs_file = Path(endpoint_config['tms_defs_file'])
 projection = endpoint_config['epsg_code']
+if 'target_epsg_code' in endpoint_config:
+    projection = endpoint_config['target_epsg_code']
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
@@ -66,15 +85,27 @@ root = etree.fromstring(r.content)
 layers = root.find('{*}Contents').findall('{*}Layer')
 layer_strings = []
 
+tilematrixsets = root.find('{*}Contents').findall('{*}TileMatrixSet')
+tm = tilematrixsets[0].findall('{*}TileMatrix')
+scale_denominator = Decimal(tm[0].findtext('{*}ScaleDenominator'))
+tile_width = int(tm[0].findtext('{*}TileWidth'))
+tile_height = int(tm[0].findtext('{*}TileHeight'))
+matrix_width = int(tm[0].findtext('{*}MatrixWidth'))
+matrix_height = int(tm[0].findtext('{*}MatrixHeight'))
+
 for layer in layers:
     layer_name = layer.findtext('{*}Identifier')
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
-    bbox = layer.find('{*}WGS84BoundingBox')
+    bbox = layer.find('{*}BoundingBox')
+    if bbox is None:
+        bbox = layer.find('{*}WGS84BoundingBox')
 
     upper_left_x = bbox.findtext('{*}LowerCorner').split(' ')[0]
     upper_left_y = bbox.findtext('{*}UpperCorner').split(' ')[1]
     lower_right_x = bbox.findtext('{*}UpperCorner').split(' ')[0]
     lower_right_y = bbox.findtext('{*}LowerCorner').split(' ')[1]
+    
+    bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], projection, scale_denominator, tile_width, matrix_width, matrix_height)
 
     resource_url = layer.find('{*}ResourceURL')
     bands_count = 4 if resource_url.get('format') == 'image/png' else 3
@@ -108,18 +139,18 @@ for layer in layers:
         '{TileMatrixSet}', tms).replace('{Time}', '%time%').replace('{TileMatrix}', '${z}').replace('{TileRow}', '${y}').replace('{TileCol}', '${x}')
 
     data_window_element = etree.SubElement(out_root, 'DataWindow')
-    etree.SubElement(data_window_element, 'UpperLeftX').text = '-180.0'
-    etree.SubElement(data_window_element, 'UpperLeftY').text = '90'
-    etree.SubElement(data_window_element, 'LowerRightX').text = '396.0'
-    etree.SubElement(data_window_element, 'LowerRightY').text = '-198'
-    etree.SubElement(data_window_element, 'TileLevel').text = TILE_LEVELS[tms]
-    etree.SubElement(data_window_element, 'TileCountX').text = '2'
-    etree.SubElement(data_window_element, 'TileCountY').text = '1'
+    etree.SubElement(data_window_element, 'UpperLeftX').text = str(bounds[0])
+    etree.SubElement(data_window_element, 'UpperLeftY').text = str(bounds[3])
+    etree.SubElement(data_window_element, 'LowerRightX').text = str(bounds[2])
+    etree.SubElement(data_window_element, 'LowerRightY').text = str(bounds[1])
+    etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
+    etree.SubElement(data_window_element, 'TileCountX').text = str(matrix_width)
+    etree.SubElement(data_window_element, 'TileCountY').text = str(matrix_height)
     etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
     etree.SubElement(out_root, 'Projection').text = projection
-    etree.SubElement(out_root, 'BlockSizeX').text = '512'
-    etree.SubElement(out_root, 'BlockSizeY').text = '512'
+    etree.SubElement(out_root, 'BlockSizeX').text = str(tile_width)
+    etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
     etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
 
     etree.SubElement(out_root, 'Cache')
