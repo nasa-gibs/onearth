@@ -67,7 +67,7 @@ def run_test(test_dir, server, group_name,
     print('Server: ' + server)
     print('Log group: ' + group_name)
     with open(test_dir+'/test.yaml', 'r') as f:
-        config = yaml.load(f.read())
+        config = yaml.safe_load(f.read())
 
     base_url = config['base_url'].replace('$ONEARTH_HOST', server)
     print('Description: ' + config['description'])

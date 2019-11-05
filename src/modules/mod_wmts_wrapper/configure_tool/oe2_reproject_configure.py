@@ -779,7 +779,7 @@ if __name__ == '__main__':
         help='TileMatrixSets definition XML file')
     args = parser.parse_args()
 
-    endpoint_config = yaml.load(Path(args.endpoint_config).read_text())
+    endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
     if args.tms_defs:
         endpoint_config['tms_defs_file'] = args.tms_defs
     build_configs(endpoint_config)
