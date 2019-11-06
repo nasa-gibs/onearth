@@ -268,6 +268,12 @@ def log_the_command(command_list):
     # Send to log.
     log_info_mssg_with_timestamp(spaced_command)
 
+def bulk_replace(source_str, replace_list):
+    out_str = source_str
+    for item in replace_list:
+        out_str = out_str.replace(item[0], item[1])
+    return out_str
+
 def get_modification_time(filename):
     """
     Return (fake) floating point value of posix modification time for a file.
