@@ -16,10 +16,10 @@ The WMS container uses additional "mapserver configuration options in the OnEart
 
 ### Options
 
-* **internal_endpoint**: The internal directory within the container for Apache HTTPD.
-* **mapfile_header**: The common mapfile "header" used for all layers in the endpoint.
-* **mapfile_location**: The output location of the mapfile.
-* **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers.
+* **internal_endpoint**: The internal directory within the container for Apache HTTPD
+* **mapfile_header**: The common mapfile "header" used for all layers in the endpoint
+* **mapfile_location**: The output location of the mapfile
+* **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers
 
 "epsg_code" is required as a top-level endpoint configuration item.
 

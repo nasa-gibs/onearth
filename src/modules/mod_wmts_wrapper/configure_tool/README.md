@@ -24,7 +24,7 @@ used.
 
 #### Running the tool
 
-`oe2_wmts_configure.py endpoint_config`
+`oe2_wmts_configure.py [endpoint_config]`
 
 This tool requires 2 configuration files to work:
 
