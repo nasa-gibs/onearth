@@ -1,20 +1,46 @@
-# OnEarth 2 WMS Service Container
+# OnEarth 2 WMS Service
 
 This container uses Mapserver/GDAL to serve GIBS layers in WMS format. It uses
 the GDAL WMS driver to create imagery from existing GIBS WMTS sources.
 
-## Configuration tool
+## Configuration Tool
 
 This container includes a basic tool to set up all the layers specified in a
 particular GetCapabilities file.
 
-The syntax is: `oe2_wms_configure.py {endpoint_config}`.
+The syntax is: `oe2_wms_configure.py {endpoint_config}`
 
-## Default container setup
+## Endpoint Config Options
+
+The WMS container uses additional "mapserver configuration options in the OnEarth endpoint configs.
+
+### Options
+
+* **internal_endpoint**: The internal directory within the container for Apache HTTPD.
+* **mapfile_header**: The common mapfile "header" used for all layers in the endpoint.
+* **mapfile_location**: The output location of the mapfile.
+* **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers.
+
+"epsg_code" is required as a top-level endpoint configuration item.
+
+* **epsg_code**: The EPSG code associated with the map projection for the endpoint (e.g. EPSG:4326)
+
+Example:
+```
+mapserver:
+  internal_endpoint: "/var/www/html/wms/epsg4326/best"
+  mapfile_header:  "/etc/onearth/config/mapserver/epsg4326.header"
+  mapfile_location: "/etc/onearth/config/mapserver/epsg4326_best.map"
+  source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
+epsg_code: "EPSG:4326"
+ ```
+See [OnEarth Configuration](../../doc/configuration.md) for more information about OnEarth configuration files.
+
+## Default Container Setup
 
 The default container WMS endpoint is at `http://localhost:8083/wms/epsg4326/best/wms.cgi`. Currently, it
 configures all the layers available at the
 `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/` endpoint.
 
 Sample url:
-http://localhost:8083/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=MODIS_Terra_SurfaceReflectance_Bands121&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=768&BBOX=-135%2C-270%2C135%2C270&time=2012-01-01
+http://localhost:8083/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=MODIS_Terra_SurfaceReflectance_Bands121&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=768&BBOX=-90%2C-180%2C90%2C180&time=2019-09-01
