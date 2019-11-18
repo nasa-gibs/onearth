@@ -95,7 +95,7 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 `time_service_keys` (optional) -- Array of keys to be used with the date
 service. Keys will be positioned in the order configured.
 
-'gc_service_uri' (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
+`source_gc_uri` (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
 
 **wmts_service options**
 
@@ -272,10 +272,6 @@ in the Tile Matrix Set definition file.
 `tms_defs_file` (optional) -- If using a Tile Matrix Sets file different from
 the one bundled with the script, you can define it here instead of using the
 command line parameter.
-
-`apache_config_location` (optional) -- Location that the main Apache
-configuration files will be stored (this will need to be somewhere Apache is
-configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 
 **wmts_service options**
 
