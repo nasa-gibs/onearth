@@ -13,9 +13,14 @@ OnEarth is actively maintained by the NASA Global Imagery Browse Services (GIBS)
 
 ## Docker Containers
 
-* [OnEarth](docker/README.md)
-* [OnEarth Time Service](docker/time_service/README.md)
-* [OnEarth WMS](docker/wms_service/README.md)
+* [onearth-tile-services](docker/README.md)
+* [onearth-time-service](docker/time_service/README.md)
+* [onearth-capabilities](src/modules/gc_service/README.md)
+* [onearth-reproject](src/modules/mod_wmts_wrapper/configure_tool/README.md)
+* [onearth-wms](docker/wms_service/README.md)
+* [onearth-demo](src/demo/README.md)
+
+These containers are available at: https://hub.docker.com/u/nasagibs
 
 ## Modules
 

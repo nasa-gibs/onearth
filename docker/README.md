@@ -20,14 +20,40 @@ By default, the containers use a Docker network `oe2` to communicate with each o
 
 ## Configuration Options
 
-Several environment variables may be set to specify the location of configuration items.
+OnEarth Docker containers accept the following environment variables. Use the `--env`, `-e` or `--env-file` options when starting the container with Docker. Amazon ECS also supports environment variables.
 
-* **REDIS_HOST**: Redis endpoint URL
-* **S3_URL**: http URL to the S3 bucket containing MRFs
-* **EMPTY_TILES_URL**: URL to S3 bucket or web link containing empty tiles
-* **LEGENDS_URL**: URL to S3 bucket or web link containing legend images
-* **COLORMAPS_URL**: URL to S3 bucket or web link containing colormaps
-* **STYLESHEETS_URL**: URL to S3 bucket or web link containing stylesheets
+### onearth-capabilities
+* S3_URL: HTTP URL to the public S3 bucket containing MRFs
+    (e.g., http://gitc-test-imagery.s3.amazonaws.com)
+* REDIS_HOST: Redis endpoint URL
+    (e.g., gitc.0001.use1.cache.amazonaws.com)
+* DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
+* S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+
+### onearth-reproject
+* DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
+* S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+
+### onearth-tile-services
+* S3_URL: HTTP URL to the public S3 bucket containing MRFs
+    (e.g., http://gitc-test-imagery.s3.amazonaws.com)
+* REDIS_HOST: Redis endpoint URL
+    (e.g., gitc.0001.use1.cache.amazonaws.com)
+* IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk with those found in the S3 URL
+* DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
+* S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+
+### onearth-time-service
+* S3_URL: HTTP URL to the public S3 bucket containing MRFs
+    (e.g., http://gitc-test-imagery.s3.amazonaws.com)
+* REDIS_HOST: Redis endpoint URL
+    (e.g., gitc.0001.use1.cache.amazonaws.com)
+* DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
+
+### onearth-wms
+* S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+
+See [OnEarth Configuration](../doc/configuration.md) for more information.
 
 ### Test Layers
 
