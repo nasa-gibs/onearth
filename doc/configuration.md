@@ -1,8 +1,20 @@
 # OnEarth Configuration
 
-This documentation will go through the steps needed to configure OnEarth with imagery layers.
+This documentation will go through the steps needed to configure an OnEarth container to serve visualization products.
 
-## Configurations Used
+
+## Containers
+The following Containers are deployed to provide OnEarth services within a deployment.
+
+1. onearth-tile-services: Image containing OnEarth services for WMTS (KVP GetMap / REST z/y/x tile) and TWMS (KVP GetTile)
+2. onearth-time-service: Image containing the OnEarth Time Service
+3. onearth-reproject: Image containing OnEarth Reproject Service
+4. onearth-wms: Image containing OnEarth WMS and MapServer
+5. onearth-capabilities: Image containing OnEarth WMTS/TWMS GetCapabilities/GetTileService services
+
+
+## Configuration File Locations
+The following configuration files are to be placed in the specified location within a container, when required for an OnEarth service.
 
 1. OnEarth YAML Endpoint Configuration
     * Contains information about how endpoints should be set up in Apache
@@ -37,8 +49,8 @@ This documentation will go through the steps needed to configure OnEarth with im
 11. Vector Style Sheets (for Vectors only)
     * Reference JSON styles to be used by map clients for vector layers
     * Not yet implemented in OnEarth v2.x
-
-## Container Environment Variables
+    
+## Container Configuration Variables
 
 OnEarth Docker containers accept the following environment variables. Use the `--env`, `-e` or `--env-file` options when starting the container with Docker. Amazon ECS also supports environment variables.
 
@@ -75,7 +87,7 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 
 ## Loading Configurations from S3
 
-Configuration files from `onearth-capabilities`, `onearth-reproject`, `onearth-tile-services`, and `onearth-wms` can be pulled down from an S3 bucket instead of from a file system mount. The containers are automatically configured to copy files from the bucket specified in the `S3_CONFIGS` environment variable if it is used.
+Configuration files for the `onearth-capabilities`, `onearth-reproject`, `onearth-tile-services`, and `onearth-wms` containers can be pulled down from an S3 bucket instead of from a file system mount. The containers are automatically configured to copy files from the bucket specified in the `S3_CONFIGS` environment variable if it is used.
 
 The S3 bucket must be configured in the following manner (replace {s3-configs} with your S3 bucket name):
 
