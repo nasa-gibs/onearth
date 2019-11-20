@@ -61,7 +61,7 @@ cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/epsg3857/all/wms.cgi
 cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/epsg3857/best/wms.cgi
 
 # Make endpoint configurations
-sleep 10
+sleep 20
 sh load_endpoints.sh
 
 echo 'Starting Apache server'

@@ -5,6 +5,7 @@ import requests
 import sys
 import yaml
 import shutil
+import time
 from lxml import etree
 from pathlib import Path
 from decimal import Decimal
@@ -74,11 +75,28 @@ if 'target_epsg_code' in endpoint_config:
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
-print('Fetching ' + gc_url)                   
-r = requests.get(gc_url)
-if (r.status_code != 200):
-    print("Cant' get GC file from url" + gc_url)
-    sys.exit()
+print('Fetching ' + gc_url)
+attempt = 1
+retries = 10
+duration = 30 # in seconds
+try:
+    r = requests.get(gc_url)
+    if r.status_code != 200:
+        print("Can't get GetCapabilities file from url " + gc_url)
+        sys.exit()
+except:
+    while attempt < retries:
+        time.sleep(duration)
+        attempt = attempt + 1
+        try:
+            r = requests.get(source_gc_uri)
+            if r.status_code == 200:
+                break
+        except:
+            print("Failed attempt " + str(attempt) + " to connect to " + gc_url)
+    if attempt == retries:
+        print("Can't get GetCapabilities file from url " + gc_url)
+        sys.exit()
 
 # Read GetCapabilities
 root = etree.fromstring(r.content)
