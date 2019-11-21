@@ -536,7 +536,7 @@ def make_layer_config(endpoint_config, layer):
 
 def get_layer_config(layer_config_path):
     with layer_config_path.open() as f:
-        config = yaml.safe_load(f.read())
+        config = yaml.load(f.read())
     return {'path': layer_config_path, 'config': config}
 
 
