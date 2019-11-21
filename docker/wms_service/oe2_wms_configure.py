@@ -70,8 +70,6 @@ outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
 projection = endpoint_config['epsg_code']
-if 'target_epsg_code' in endpoint_config:
-    projection = endpoint_config['target_epsg_code']
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
