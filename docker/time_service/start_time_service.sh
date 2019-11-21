@@ -355,6 +355,8 @@ else
 	python3.6 oe_scrape_time.py -r -b $S3_URL $REDIS_HOST
 	python3.6 oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST
 	python3.6 oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST
+	python3.6 oe_scrape_time.py -r -t std -b $S3_URL $REDIS_HOST
+	python3.6 oe_scrape_time.py -r -t nrt -b $S3_URL $REDIS_HOST
 fi
 
 # Tail the apache logs

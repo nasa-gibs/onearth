@@ -1,0 +1,29 @@
+time_service_uri: "http://onearth-time-service/time_service/time"
+time_service_keys: ["epsg4326", "nrt"]
+gc_service_uri: "http://onearth-capabilities/wmts/epsg4326/nrt/gc"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+layer_config_source: "/etc/onearth/config/layers/epsg4326/nrt/"
+apache_config_location: "/etc/httpd/conf.d/"
+base_uri_gc: "http://onearth-tile-services/wmts/epsg4326/nrt/"
+base_uri_gts: "http://onearth-tile-services/twms/epsg4326/nrt/"
+base_uri_meta: "https://gibs.earthdata.nasa.gov"
+epsg_code: "EPSG:4326"
+gc_service:
+  internal_endpoint: "/var/www/html/wmts/epsg4326/nrt"
+  external_endpoint: "/wmts/epsg4326/nrt/gc"
+  config_prefix: "epsg4326_nrt_gc_service"
+  gc_header_file: "/etc/onearth/config/conf/epsg4326_nrt_header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/epsg4326_nrt_header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/epsg4326_nrt_header_twms_gc.xml"
+wmts_service:
+  internal_endpoint: "/var/www/html/wmts/epsg4326/nrt"
+  external_endpoint: "/wmts/epsg4326/nrt"
+  config_prefix: "epsg4326_nrt"
+twms_service:
+  internal_endpoint: "/var/www/html/twms/epsg4326/nrt"
+  external_endpoint: "/twms/epsg4326/nrt"
+mapserver:
+  internal_endpoint: "/var/www/html/wms/epsg4326/nrt"
+  mapfile_header:  "/etc/onearth/config/mapserver/epsg4326.header"
+  mapfile_location: "/etc/onearth/config/mapserver/epsg4326_nrt.map"
+  source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/nrt/1.0.0/WMTSCapabilities.xml"
