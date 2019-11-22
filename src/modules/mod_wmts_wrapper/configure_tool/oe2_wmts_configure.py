@@ -479,7 +479,7 @@ def make_layer_config(endpoint_config, layer):
          ('{tile_size_x}', str(tile_size_x)),
          ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
          ('{idx_path}', idx_path),
-         ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
+         ('{skipped_levels}', '1')])
 
     # Handle optionals like EmptyTile
     empty_tile_config = None
@@ -518,7 +518,7 @@ def make_layer_config(endpoint_config, layer):
              ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
              ('{source_postfix}', source_postfix),
              ('{source_path}', source_path), ('{bbox}', bbox),
-             ('{skipped_levels}', '1' if 'EPSG:4326' in projection else '0')])
+             ('{skipped_levels}', '1')])
 
         try:
             twms_internal_endpoint = strip_trailing_slash(
