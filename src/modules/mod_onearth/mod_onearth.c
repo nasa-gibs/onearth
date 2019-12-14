@@ -818,6 +818,7 @@ static char postamble[]="</ServiceException></ServiceExceptionReport>" ;
     ap_rputs(preamble, r);
     ap_rputs(message  ,r);
     ap_rputs(postamble,r);
+    ap_rflush(r);
     return OK; // Request handled
 }
 
