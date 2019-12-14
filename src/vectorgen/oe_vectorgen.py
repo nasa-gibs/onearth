@@ -56,7 +56,7 @@ try:
 except:
     sys.exit('ERROR: cannot find GDAL/OGR modules')
 
-versionNumber = '1.3.5'
+versionNumber = '1.3.6'
 basename = None
 
 def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
@@ -65,6 +65,8 @@ def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_ur
     Arguments:
         in_filename -- the input GeoJSON
         out_filename -- the output Shapefile
+        source_epsg -- the EPSG code of source file
+        target_epsg -- the EPSG code of target file
         sigevent_url -- the URL for SigEvent
     """
     if source_epsg == target_epsg:
@@ -73,15 +75,20 @@ def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_ur
         ogr2ogr_command_list = ['ogr2ogr', '-f', 'ESRI Shapefile', '-fieldTypeToString', 'Date,Time,DateTime', '-s_srs', source_epsg, '-t_srs', target_epsg, out_filename, in_filename]
     run_command(ogr2ogr_command_list, sigevent_url)
 
-def shp2geojson(in_filename, out_filename, sigevent_url):
+def shp2geojson(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
     """
     Converts Esri Shapefile into GeoJSON.
     Arguments:
         in_filename -- the input Shapefile
         out_filename -- the output GeoJSON file
+        source_epsg -- the EPSG code of source file
+        target_epsg -- the EPSG code of target file
         sigevent_url -- the URL for SigEvent
     """
-    ogr2ogr_command_list = ['ogr2ogr', '-f', 'GeoJSON', out_filename, in_filename]
+    if source_epsg == target_epsg:
+        ogr2ogr_command_list = ['ogr2ogr', '-f', 'GeoJSON', out_filename, in_filename]
+    else:
+        ogr2ogr_command_list = ['ogr2ogr', '-f', 'GeoJSON', '-s_srs', source_epsg, '-t_srs', target_epsg, out_filename, in_filename]
     run_command(ogr2ogr_command_list, sigevent_url)
 
 if __name__ == '__main__':
@@ -264,8 +271,8 @@ if __name__ == '__main__':
                 filters = list(map(parse_filter, comparisons))
                 filter_list.append({'logic': logic, 'filters': filters})
 
-        if output_format == 'mrf':
-            log_sig_warn('"MRF" output format not supported, using "MVT-MRF" instead', sigevent_url)
+        if output_format not in ['mvt-mrf', 'esri shapefile', 'geojson']:
+            log_sig_warn(output_format + ' output format not supported, using "MVT-MRF" instead', sigevent_url)
             output_format = 'mvt-mrf'
         if output_format == 'mvt-mrf':
             try:
@@ -410,7 +417,7 @@ if __name__ == '__main__':
     out_filename = output_dir + out_filename
             
     if len(alltiles) > 0:
-        if output_format == "esri shapefile":
+        if output_format == 'esri shapefile':
             for tile in alltiles:
                 geojson2shp(tile, out_basename, source_epsg, target_epsg, sigevent_url)
                 files = glob.glob(out_basename+"/*")
@@ -420,7 +427,8 @@ if __name__ == '__main__':
                     shutil.move(out_basename+"/"+title+ext, out_filename+ext)
                 shutil.rmtree(out_basename)
                 mssg=str().join(['Output created:  ', out_filename+".shp"])
-        elif output_format == "mvt-mrf": # Create MVT-MRF
+                
+        elif output_format == 'mvt-mrf': # Create MVT-MRF
             for idx, tile in enumerate(alltiles):
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
                 if source_epsg != target_epsg:
@@ -428,10 +436,8 @@ if __name__ == '__main__':
                     ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1] else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
                     run_command(ogr2ogr_command_list, sigevent_url)
                     alltiles[idx] = outfile
-                
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
             create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents, tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
-            
             files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
             for mfile in files:
                 title, ext = os.path.splitext(os.path.basename(mfile))
@@ -443,6 +449,12 @@ if __name__ == '__main__':
                     shutil.move(working_dir+"/"+title+ext, out_filename+ext)
             mssg=str().join(['Output created:  ', out_filename+".mrf"])
             
+        elif output_format == 'geojson':
+            print alltiles
+            for tile in alltiles:
+                shp2geojson(tile, out_basename+".json", source_epsg, target_epsg, sigevent_url)
+                shutil.move(out_basename+".json", out_filename+".json")
+                mssg=str().join(['Output created:  ', out_filename+".json"])
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
     

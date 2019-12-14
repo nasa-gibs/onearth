@@ -90,7 +90,7 @@ from decimal import *
 from osgeo import gdal
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
-versionNumber = '1.3.5'
+versionNumber = '1.3.6'
 oe_utils.basename = None
 
 #-------------------------------------------------------------------------------
@@ -414,11 +414,14 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
     """
     temp_tile = working_dir + os.path.basename(tile) + '.temp.vrt'
     ulx, uly, lrx, lry = extents
+
+    # Shift the image to be geolocated within a [0,antimeridian*2] longitudinal space
     if Decimal(lrx) <= Decimal(antimeridian):
         new_lrx = str(Decimal(lrx)+Decimal(antimeridian)*2)
     else:
         new_lrx = lrx
         lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
+
     cutline_template = """
     {
       "type": "Polygon",
@@ -447,29 +450,35 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         gdal_edit.wait()  
     
-    # cut the input at the antimeridian into left and right halves
+    # Cut the input at the antimeridian into left and right halves
     left_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    right_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
     log_the_command(left_cut_command_list)
     left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     left_cut.wait()
     left_cut_stderr = left_cut.stderr.read()
     if len(left_cut_stderr) > 0:
         log_sig_err(left_cut_stderr, sigevent_url)
-    log_the_command(right_cut_command_list)
-    right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    right_cut.wait()
-    right_cut_stderr = right_cut.stderr.read()
-    if len(right_cut_stderr) > 0:
-        log_sig_err(right_cut_stderr, sigevent_url)
-    
-    # flip the origin longitude of the right half
-    gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian)*-1), uly, lrx, lry]
-    log_the_command(gdal_edit_command_list)
-    gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdal_edit.wait()  
 
-    return (tile_left,  tile_right)
+    # Make sure that when we cut the image, there will be at least one pixel
+    if (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
+        log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
+        tile_right = None
+    else:
+        right_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right, tile, tile_right]
+        log_the_command(right_cut_command_list)
+        right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        right_cut.wait()
+        right_cut_stderr = right_cut.stderr.read()
+        if len(right_cut_stderr) > 0:
+            log_sig_err(right_cut_stderr, sigevent_url)
+
+        # flip the origin longitude of the right half
+        gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian)*-1), uly, lrx, lry]
+        log_the_command(gdal_edit_command_list)
+        gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        gdal_edit.wait()  
+
+    return (tile_left, tile_right)
 
 def crop_to_extents(tile, tile_extents, projection_extents, working_dir):
     """
@@ -541,7 +550,12 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
             if ((float(extents[0])-float(s_xmax)) > float(extents[2])) or (float(extents[2]) > float(s_xmax)):
                 log_info_mssg(tile + " crosses antimeridian")
                 left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
-                errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
+
+                # The right half of the split could be None if there wasn't a full pixel beyond the antimeridian
+                if right_half:
+                    errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
+                else:
+                    errors += run_mrf_insert(mrf, [left_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
                 continue
         if merge == True and target_epsg == source_epsg: # merge tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
@@ -1402,7 +1416,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             # ONEARTH-348 - Validate the palette, but don't do anything about it yet
             # For now, we won't enforce any issues, but will log issues validating imagery
             if strict_palette:
-               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v ', '-c', colormap, '-i', alltiles[i]]
+               oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
       
                # Log the oe_validate_palette.py command.
                log_the_command(oe_validate_palette_command_list)

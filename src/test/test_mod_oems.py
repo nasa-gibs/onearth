@@ -201,7 +201,6 @@ class TestModOEMS(unittest.TestCase):
         """
         8. Request WMS GetCapabilities 1.1.1
         """
-        ref_hash = '91d5f50860dc4324a805791191683588'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WMS GetCapablities 1.1.1'
@@ -226,9 +225,8 @@ class TestModOEMS(unittest.TestCase):
         
     def test_wms_get_capabilities_1_3_0(self):
         """
-        9. FAIL!!! Request WMS GetCapabilities 1.3.0
+        9. Request WMS GetCapabilities 1.3.0
         """
-        ref_hash = 'dfbd4b79796c78db32df08eddc8ff14c'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WMS GetCapablities 1.3.0'
@@ -242,6 +240,7 @@ class TestModOEMS(unittest.TestCase):
             xml_check = True
         except:
             xml_check = False
+
         self.assertTrue(xml_check, 'WMS GetCapabilities 1.3.0 response is not a valid XML file. URL: ' + req_url)
 
         refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.1.3.0.xml'))
@@ -253,9 +252,8 @@ class TestModOEMS(unittest.TestCase):
         
     def test_wfs_get_capabilities_2_0_0(self):
         """
-        10. FAIL!!! Request WFS GetCapabilities 2.0.0
+        10. Request WFS GetCapabilities 2.0.0
         """
-        ref_hash = '74541c28d6b94185c1139073b309dd29'
         req_url = 'http://localhost/onearth/test/wfs/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WFS GetCapablities 2.0.0'
@@ -557,6 +555,18 @@ class TestModOEMS(unittest.TestCase):
             print 'URL: ' + req_url
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers with no time does not match what\'s expected. URL: ' + req_url)
+        
+    def test_request_wms_getlegendgraphic(self):
+        """
+        31. Test GetLegendGraphic request
+        """
+        ref_hash = '13b34c39c2fda83972a2df4cc2b5c394'
+        req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=getlegendGRAPHIC&layer=Terra_Orbit_Dsc_Dots&FORMAT=image/png'
+        if DEBUG:
+            print '\nTesting: Request WMS GetLegendGraphic'
+            print 'URL: ' + req_url
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS GetLegendGraphic does not match what\'s expected. URL: ' + req_url)
 
     # TEARDOWN
 

@@ -33,7 +33,7 @@
 
 /*
  * mod_oems.cpp: Mapserver wrapper module for OnEarth
- * Version 1.3.5
+ * Version 1.3.6
  */
 
 #include "mod_oems.h"
@@ -552,8 +552,12 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 		char *layer_times = (char*)apr_pcalloc(r->pool,max_chars);
 		char *exceptions = (char*)apr_pcalloc(r->pool,max_chars);
 
+		if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // Use layer instead of layers if GetLegendGraphic request
+			get_param(args,"layer",layers);
+		} else {
+			get_param(args,"layers",layers);
+		}
 		get_param(args,"transparent",transparent);
-		get_param(args,"layers",layers);
 		get_param(args,"styles",styles);
 		get_param(args,"width",width);
 		get_param(args,"height",height);
@@ -613,7 +617,11 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    if (r->prev != 0) {
 	    	prev_last_layer = (char *) apr_table_get(r->prev->notes, "oems_clayer");
 	    	prev_last_layers = (char *) apr_table_get(r->prev->notes, "oems_layers");
-			last_layer = (char*)apr_pcalloc(r->pool,max_chars+strlen(prev_last_layer));
+	    	if (prev_last_layer != 0) {
+	    		last_layer = (char*)apr_pcalloc(r->pool,max_chars+strlen(prev_last_layer));
+	    	} else {
+	    		last_layer = (char*)apr_pcalloc(r->pool,max_chars);
+	    	}
 	    } else {
 	    	last_layer = (char*)apr_pcalloc(r->pool,max_chars);
 	    }
@@ -683,6 +691,10 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 			ap_filter_rec_t *receive_filter = NULL;
 			if (!cfg->disable_oemstime) {
 		    	receive_filter = ap_get_output_filter_handle("OEMSTIME_OUT");
+			} else {
+				if (strlen(time) == 0) {
+					time = "default";
+				}
 			}
 		    if (receive_filter != NULL) {
 		    	ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, NULL, r, r->connection);
@@ -704,9 +716,13 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    	layers = apr_psprintf(r->pool,"INVALIDTIME");
 	    }
 
-	    args = cfg->disable_oemstime
-	    	? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
-			: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,layer_times,layer_years,maplayerops);
+	    if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // Use LAYER instead of LAYERS if GetLegendGraphic request
+	    	args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&LAYER=%s&MAP=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&SLD_VERSION=1.1.0%s","WMS",request,version,format,layers,mapfile,width,height,exceptions,maplayerops);
+	    } else {
+			args = cfg->disable_oemstime
+				? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
+				: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,layer_times,layer_years,maplayerops);
+	    }
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
 		char *typenames = (char*)apr_pcalloc(r->pool,max_chars);

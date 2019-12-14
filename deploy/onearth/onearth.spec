@@ -1,6 +1,6 @@
 Name:		onearth
-Version:	1.3.5
-Release:	7%{?dist}
+Version:	1.3.6
+Release:	5%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -33,7 +33,7 @@ BuildRequires:  turbojpeg-devel
 BuildRequires:  python-pip
 %if 0%{?centos}  == 6
 BuildRequires:  centos-release-scl
-BuildRequires:  devtoolset-6-toolchain
+BuildRequires:  devtoolset-7-toolchain
 %endif
 Requires:	httpd
 Requires:	gibs-gdal

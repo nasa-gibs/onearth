@@ -5,7 +5,7 @@
 <ns0:Service>
   <ns0:Name>WMS</ns0:Name>
   <ns0:Title>NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)</ns0:Title>
-  <ns0:Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS' inter-disciplinary data through enhanced visual representation and discovery.</ns0:Abstract>
+  <ns0:Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery.</ns0:Abstract>
   <ns0:KeywordList>
       <ns0:Keyword>GIBS</ns0:Keyword>
       <ns0:Keyword>NASA</ns0:Keyword>
@@ -51,6 +51,17 @@
         </ns0:HTTP>
       </ns0:DCPType>
     </ns0:GetMap>
+    <ns3:GetLegendGraphic>
+      <ns0:Format>image/png</ns0:Format>
+      <ns0:Format>image/jpeg</ns0:Format>
+      <ns0:Format>image/png; mode=8bit</ns0:Format>
+      <ns0:DCPType>
+        <ns0:HTTP>
+          <ns0:Get><ns0:OnlineResource ns2:href="http://localhost/wms/epsg4326/?" /></ns0:Get>
+          <ns0:Post><ns0:OnlineResource ns2:href="http://localhost/wms/epsg4326/?" /></ns0:Post>
+        </ns0:HTTP>
+      </ns0:DCPType>
+    </ns3:GetLegendGraphic>
   </ns0:Request>
   <ns0:Exception>
     <ns0:Format>XML</ns0:Format>
@@ -61,7 +72,7 @@
   <ns0:Layer>
     <ns0:Name>NASA_GIBS_4326</ns0:Name>
     <ns0:Title>NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)</ns0:Title>
-    <ns0:Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS' inter-disciplinary data through enhanced visual representation and discovery.</ns0:Abstract>
+    <ns0:Abstract>The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery.</ns0:Abstract>
     <ns0:KeywordList>
         <ns0:Keyword>GIBS</ns0:Keyword>
         <ns0:Keyword>NASA</ns0:Keyword>
