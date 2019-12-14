@@ -2473,6 +2473,7 @@ static int mrf_handler(request_rec *r)
   }
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
+  ap_rflush(r);
 
   // Got a hit, do we log anything?
   if (!hit_count--) {
