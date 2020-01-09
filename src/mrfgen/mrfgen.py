@@ -451,15 +451,21 @@ def split_across_antimeridian(tile, extents, antimeridian, xres, yres, source_ep
         gdal_edit.wait()  
     
     # Cut the input at the antimeridian into left and right halves
-    left_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
-    log_the_command(left_cut_command_list)
-    left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    left_cut.wait()
-    left_cut_stderr = left_cut.stderr.read()
-    if len(left_cut_stderr) > 0:
-        log_sig_err(left_cut_stderr, sigevent_url)
 
-    # Make sure that when we cut the image, there will be at least one pixel
+    # Make sure that when we cut the image, there will be at least one pixel on the left
+    if (Decimal(antimeridian) - Decimal(ulx)) < Decimal(xres):
+        log_info_mssg("Skipping left_cut for granule because the resulting image would be < 1 pixel wide")
+        tile_left = None
+    else:
+        left_cut_command_list = ['gdalwarp', '-s_srs', source_epsg, '-t_srs', target_epsg, '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+        log_the_command(left_cut_command_list)
+        left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        left_cut.wait()
+        left_cut_stderr = left_cut.stderr.read()
+        if len(left_cut_stderr) > 0:
+            log_sig_err(left_cut_stderr, sigevent_url)
+
+    # Make sure that when we cut the image, there will be at least one pixel on the right
     if (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
         log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
         tile_right = None
@@ -535,6 +541,7 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
         if os.path.splitext(tile)[1] == ".vrt" and "_cut." not in tile: #ignore temp VRTs unless it's an antimeridian cut
             log_info_mssg("Skipping insert of " + tile)
             continue
+
         granule, extents = is_granule_image(tile)
         diff_res, ps = diff_resolution([tile, mrf])
         log_info_mssg("Pixel size " + repr(ps))
@@ -551,12 +558,22 @@ def run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, targe
                 log_info_mssg(tile + " crosses antimeridian")
                 left_half, right_half = split_across_antimeridian(tile, extents, s_xmax, str((Decimal(s_xmax)-Decimal(s_xmin))/Decimal(target_x)), str((Decimal(s_ymin)-Decimal(s_ymax))/Decimal(target_y)), source_epsg, target_epsg, working_dir)
 
+                tiles = []
+
+                # The left half of the split could be None if there wasn't a full pixel beyond the antimeridian
+                if left_half:
+                    tiles.append(left_half)
+
                 # The right half of the split could be None if there wasn't a full pixel beyond the antimeridian
                 if right_half:
-                    errors += run_mrf_insert(mrf, [left_half, right_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
+                    tiles.append(right_half)
+
+                if len(tiles) > 0:
+                    errors += run_mrf_insert(mrf, tiles, insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
                 else:
-                    errors += run_mrf_insert(mrf, [left_half], insert_method, resize_resampling, target_x, target_y, mrf_blocksize, source_extents, target_extents, source_epsg, target_epsg, nodata, True, working_dir)
+                    log_sig_err("No tiles to insert after splitting across antimeridian", sigevent_url)
                 continue
+
         if merge == True and target_epsg == source_epsg: # merge tile with existing imagery if true and same projection
             log_info_mssg(("Tile","Granule")[granule] + " extents " + str(extents))
             tile = gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin, xmax, ymax, nodata, resize_resampling, working_dir, target_epsg)
