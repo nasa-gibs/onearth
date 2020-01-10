@@ -144,8 +144,8 @@ for layer in layers:
            legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
         for legendUrlElem in legendUrlElems:
             attributes = legendUrlElem.attrib
-            if attributes[xlink + 'role'].endswith("horizontal"):
-                style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes[xlink + 'href']).replace(".svg",".png")
+            if attributes['{http://www.w3.org/1999/xlink}role'].endswith("horizontal"):
+                style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes['{http://www.w3.org/1999/xlink}href']).replace(".svg",".png")
 
     out_root = etree.Element('GDAL_WMS')
 
