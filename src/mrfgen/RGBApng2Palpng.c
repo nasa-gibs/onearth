@@ -306,8 +306,17 @@ int return_code=0;
     			} while(c != EOF);;
     		    fclose(lut);
     		    free(buffer);
-    		}
 
+    			// fill in palette with 0,0,0,0 values
+    			for (; j<256; j++) {
+                    dest_pal->red = dest_pal->green = dest_pal->blue = 0;
+                    dest_pal++;  // Not sure  if this is needed
+
+                    redarr[j] = greenarr[j] = bluearr[j] = alphaarr[j] = 0
+
+                    if ( verbose ) fprintf(stderr, "RGBA: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
+    			}
+    		}
     	} else {
 			for (j=0; j<256; j++)
 			  if ( fscanf(lut, "%d %d %d %d", &red, &green, &blue, &alpha) != 4 ) {
