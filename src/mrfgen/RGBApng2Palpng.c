@@ -312,7 +312,7 @@ int return_code=0;
                     dest_pal->red = dest_pal->green = dest_pal->blue = 0;
                     dest_pal++;  // Not sure  if this is needed
 
-                    redarr[j] = greenarr[j] = bluearr[j] = alphaarr[j] = 0
+                    redarr[j] = greenarr[j] = bluearr[j] = alphaarr[j] = 0;
 
                     if ( verbose ) fprintf(stderr, "RGBA: %d %d %d %d \n", redarr[j], greenarr[j] , bluearr[j], alphaarr[j]);
     			}
