@@ -31,6 +31,7 @@ limitations under the License.
  <tile_size>256</tile_size>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>
+ <buffer_size>5</buffer_size>
  <feature_filters>
     <filter_block logic="AND">
         <notEquals name="direction" value="Ascending"/>

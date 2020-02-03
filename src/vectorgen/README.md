@@ -75,6 +75,9 @@ For dense datasets, this option can help improve client performance, as the topm
 
 **`<cluster_reduce_rate>` (MVT only)** - Another way to optimize tile size and performance, this option culls points that are within one pixel of each other. For example, at a rate of 2, any group of points within 1px of each other will be reduced (by random selection) to the square root of their previous number. No cluster reduction is done on the highest (overview) zoom level.
 
+**buffer_size** - The buffer size around each tile to avoid cutting off features and styling elements such as labels.
+Default is 5 (pixel size in map units at each zoom level) which allows enough room for most styling.  
+
 **email_server** - The SMTP server where email notifications are sent from.
 
 **email_recipient** - The recipient address for email notifications.

@@ -66,6 +66,7 @@ def create_vector_mrf(input_file_path,
                       filter_list,
                       feature_reduce_rate=2.5,
                       cluster_reduce_rate=2,
+                      buffer_size=5,
                       debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
@@ -89,6 +90,8 @@ def create_vector_mrf(input_file_path,
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
             Default is 2 (retain the square root of the total points in the cluster).
+        buffer_size (float) -- The buffer size around each tile to avoid cutting off features and styling elements such as labels.
+            Default is 5 (pixel size in map units at each zoom level) which allows enough room for most styling.     
         debug (bool) -- Toggle verbose output messages and MVT file artifacts (MVT tile files will be created in addition to MRF)
     """
     # Get projection and calculate overview levels if necessary
@@ -210,7 +213,7 @@ def create_vector_mrf(input_file_path,
                 tile_bbox = shapely.geometry.box(min_x, min_y, max_x, max_y)
 
                 # MVT tiles usually have a buffer around the edges for rendering purposes
-                tile_buffer = 5 * (tile_matrix['tile_size_in_map_units'] / 256)
+                tile_buffer = buffer_size * (tile_matrix['tile_size_in_map_units'] / 256)
                 tile_buffer_bbox = shapely.geometry.box(
                     min_x - tile_buffer, min_y - tile_buffer,
                     max_x + tile_buffer, max_y + tile_buffer)
