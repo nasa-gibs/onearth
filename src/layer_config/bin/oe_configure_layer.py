@@ -2375,14 +2375,15 @@ for conf in conf_files:
         # Time elements
         detected_times = []
         if static == False:
-            timeElements = []
             for time in times:
-                detected_times = detect_time(time, archiveLocation,
+                detected_times += detect_time(time, archiveLocation,
                                              fileNamePrefix, year, has_zdb)
-                for detected_time in detected_times:
-                    timeElements.append(mrf_dom.createElement('Time'))
-                    timeElements[-1].appendChild(
-                        mrf_dom.createTextNode(detected_time))
+
+            timeElements = []
+            for detected_time in detected_times:
+                timeElements.append(mrf_dom.createElement('Time'))
+                timeElements[-1].appendChild(
+                    mrf_dom.createTextNode(detected_time))
 
             for timeElement in timeElements:
                 twms.appendChild(timeElement)
@@ -2508,16 +2509,23 @@ for conf in conf_files:
                 log_sig_err(message, sigevent_url)
 
     else:  # Vectors
+        # Vectors aren't supporting z-slices
         has_zdb = False
+
+        # Detect times for product based on layer configuration <Time> elements
         detected_times = []
-        timeElements = []
         if static == False:
             for time in times:
-                detected_times = detect_time(time, archiveLocation,
-                                             fileNamePrefix, year, has_zdb)
+                detected_times += detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb)
+
+        # Clear legend variables
+        legendUrl_svg_v_meta = ''
+        legendUrl_svg_h_meta = ''
+        legendUrl_png_h_url  = None
+
 
     # generate archive links if requested
-    if links == True:
+    if links:
         if len(detected_times) > 0:
             print "Generating archive links for " + fileNamePrefix
             generate_links(detected_times, archiveLocation, fileNamePrefix,
@@ -2829,7 +2837,7 @@ for conf in conf_files:
                     line = line.replace('$TMSLimits', '')
                 tilematrixset_line = line
 
-            if static == True or len(timeElements) == 0:
+            if static == True or len(detected_times) == 0:
                 if any(x in line for x in [
                         'Dimension', '<ows:Identifier>Time</ows:Identifier>',
                         '<ows:UOM>ISO8601</ows:UOM>', '$DefaultDate',
@@ -2841,18 +2849,15 @@ for conf in conf_files:
             else:
                 if '$DefaultDate' in line:
                     defaultDate = ''
-                    for timeElement in timeElements:
-                        defaultDate = timeElement.firstChild.data.strip(
-                        ).split('/')[1]
+                    for detected_time in detected_times:
+                        defaultDate = detected_time.strip().split('/')[1]
                     line = line.replace("$DefaultDate", defaultDate)
                 if '$DateRange' in line:
-                    line = line.replace(
-                        "$DateRange", timeElements[0].firstChild.data.strip())
-                    iterTime = iter(timeElements)
+                    line = line.replace("$DateRange", detected_times[0].strip())
+                    iterTime = iter(detected_times)
                     next(iterTime)
-                    for timeElement in iterTime:
-                        line = line + "             " + timeElement.toxml(
-                        ).replace('Time', 'Value') + "\n"
+                    for detected_time in iterTime:
+                        line += "             <Value>" + detected_time + "</Value>\n"
             # remove extra white space from lines
             line = line[3:]
             layer_output = layer_output + line
@@ -3095,14 +3100,12 @@ $Patterns</TiledGroup>"""
             mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
             mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny +
                           " " + maxx + " " + maxy + "\"\n")
-            if not static and len(timeElements) > 0:
+            if not static and len(detected_times) > 0:
                 defaultDate = ''
-                timeExtent = ''
-                for timeElement in timeElements:
-                    defaultDate = timeElement.firstChild.data.strip().split(
-                        '/')[1]
-                    timeExtent = timeExtent + timeElement.firstChild.data.strip(
-                    ) + ","
+                timeExtent  = ''
+                for detected_time in detected_times:
+                    defaultDate = detected_time.strip().split('/')[1]
+                    timeExtent = timeExtent + detected_time.strip() + ","
                 mapfile.write("\t\t\"wms_timeextent\"\t\"" +
                               timeExtent.rstrip(',') + "\"\n")
                 mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate +
