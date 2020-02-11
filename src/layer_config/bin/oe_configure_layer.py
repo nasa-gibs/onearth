@@ -2970,7 +2970,7 @@ for conf in conf_files:
                                                               ('{Patterns}', patterns)])
 
 
-        # Write out another GTS XML file
+        # Write out the GTS XML file
         try:
             layer_xml = open(twms_mrf_filename.replace('.mrf', '_gts.xml'), 'w+')
             layer_xml.writelines(layer_output)
@@ -2981,11 +2981,9 @@ for conf in conf_files:
 
         # If the TiledGroupName does not follow our "standard" naming convention, write out another GTS XML file
         if tiledGroupName != identifier.replace("_", " ") + " tileset":
-            layer_output.replace(tiledGroupName, identifier.replace("_", " ") + " tileset")
-
             try:
                 layer_xml = open(twms_mrf_filename.replace('.mrf', '_new_gts.xml'), 'w+')
-                layer_xml.writelines(layer_output)
+                layer_xml.writelines(layer_output.replace(tiledGroupName, identifier.replace("_", " ") + " tileset"))
                 layer_xml.close()
             except IOError:
                 mssg = str().join(['Cannot read layer XML file:  ', twms_mrf_filename.replace('.mrf', '_new_gts.xml')])
