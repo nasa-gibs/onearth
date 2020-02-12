@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import add_trailing_slash, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
+from oe_utils import add_trailing_slash, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command, bulk_replace
 import requests
 import math
 import functools
@@ -112,14 +112,6 @@ VALIDATION_TEMPLATE = """
 
 
 versionNumber = '1.3.7'
-
-
-def bulk_replace(source_str, replace_list):
-    out_str = source_str
-    for item in replace_list:
-        out_str = out_str.replace(item[0], item[1])
-    return out_str
-
 
 def get_epsg_code_for_proj_string(proj_string):
     # For some reason OSR can't parse this version of the 3857 CRS.

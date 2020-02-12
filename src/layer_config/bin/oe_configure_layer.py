@@ -80,7 +80,7 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
-from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command
+from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, bulk_replace
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -2902,11 +2902,10 @@ for conf in conf_files:
         layer_xml.close()
 
     # create TWMS layer metadata for GetCapabilities
-    if no_twms == False and vectorType is None:
+    if not no_twms and vectorType is None:
         try:
             # Open layer XML file
-            layer_xml = open(
-                twms_mrf_filename.replace('.mrf', '_gc.xml'), 'w+')
+            layer_xml = open(twms_mrf_filename.replace('.mrf', '_gc.xml'), 'w+')
         except IOError:
             mssg = str().join([
                 'Cannot read layer XML file:  ',
@@ -2914,111 +2913,87 @@ for conf in conf_files:
             ])
             log_sig_exit('ERROR', mssg, sigevent_url)
 
-        twms_layer_template = """    <Layer queryable=\"0\">
-      <Name>$Identifier</Name>
-      <Title xml:lang=\"en\">$Title</Title>
-      <Abstract xml:lang=\"en\">$Abstract</Abstract>
-      <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\"/>
+        TWMS_GC_LAYER_TEMPLATE = """    <Layer queryable=\"0\">
+      <Name>{Identifier}</Name>
+      <Title xml:lang=\"en\">{Title}</Title>
+      <Abstract xml:lang=\"en\">{Abstract}</Abstract>
+      <LatLonBoundingBox minx=\"{min}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
       <Style>
-        <Name>default</Name> <Title xml:lang=\"en\">(default) Default style</Title>
+        <Name>default</Name> 
+        <Title xml:lang=\"en\">(default) Default style</Title>
       </Style>
-      <ScaleHint min=\"10\" max=\"100\"/> <MinScaleDenominator>100</MinScaleDenominator>
-      </Layer>"""
+      <ScaleHint min=\"10\" max=\"100\"/> 
+      <MinScaleDenominator>100</MinScaleDenominator>
+      </Layer>
+"""
 
-        layer_output = ""
-        lines = twms_layer_template.splitlines(True)
-        for line in lines:
-            # replace lines in template
-            if '</Layer>' in line:
-                line = ' ' + line + '\n'
-            if '$Identifier' in line:
-                line = line.replace("$Identifier", identifier)
-            if '$Title' in line:
-                line = line.replace("$Title", title)
-            if '$Abstract' in line:
-                line = line.replace("$Abstract", abstract)
-            if '$minx' in line:
-                line = line.replace("$minx", projection.lowercorner[0])
-            if '$miny' in line:
-                line = line.replace("$miny", projection.lowercorner[1])
-            if '$maxx' in line:
-                line = line.replace("$maxx", projection.uppercorner[0])
-            if '$maxy' in line:
-                line = line.replace("$maxy", projection.uppercorner[1])
-            layer_output = layer_output + line
+        layer_output = bulk_replace(TWMS_GC_LAYER_TEMPLATE, [('{$Identifier}', identifier),
+                                                             ('{Title}', title),
+                                                             ('{Abstract}', abstract),
+                                                             ('{minx}', projection.lowercorner[0]),
+                                                             ('{miny}', projection.lowercorner[1]),
+                                                             ('{maxx}', projection.uppercorner[0]),
+                                                             ('{maxy}', projection.uppercorner[1])])
         layer_xml.writelines(layer_output)
         layer_xml.close()
 
     # create TWMS layer metadata for GetTileService
-    if no_twms == False and vectorType is None:
+    if not no_twms and vectorType is None:
+
+        TWMS_GTS_LAYER_TEMPLATE = """<TiledGroup>
+    <Name>{TiledGroupName}</Name>
+    <Title xml:lang=\"en\">{Title}</Title>
+    <Abstract xml:lang=\"en\">{Abstract}</Abstract>
+    <Projection>{Projection}</Projection>
+    <Pad>0</Pad>
+    <Bands>{Bands}</Bands>
+    <LatLonBoundingBox minx=\"{min}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
+    <Key>{time}</Key>
+{Patterns}</TiledGroup>
+"""
+
+        patterns = ""
+        cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
         try:
-            # Open layer XML file
-            layer_xml = open(
-                twms_mrf_filename.replace('.mrf', '_gts.xml'), 'w+')
+            print '\nRunning command: ' + cmd
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process.wait()
+            for output in process.stdout:
+                patterns = patterns + output
+        except:
+            log_sig_err("Error running command " + cmd, sigevent_url)
+
+        layer_output = bulk_replace(TWMS_GTS_LAYER_TEMPLATE, [('{TiledGroupName}', tiledGroupName),
+                                                              ('{Title}', title),
+                                                              ('{Abstract}', abstract),
+                                                              ('{Projection}', projection.wkt),
+                                                              ('{Bands}', "4" if mrf_format == 'image/png' else bands),
+                                                              ('{minx}', projection.lowercorner[0]),
+                                                              ('{miny}', projection.lowercorner[1]),
+                                                              ('{maxx}', projection.uppercorner[0]),
+                                                              ('{maxy}', projection.uppercorner[1]),
+                                                              ('{Patterns}', patterns)])
+
+
+        # Write out the GTS XML file
+        try:
+            layer_xml = open(twms_mrf_filename.replace('.mrf', '_gts.xml'), 'w+')
+            layer_xml.writelines(layer_output)
+            layer_xml.close()
         except IOError:
-            mssg = str().join([
-                'Cannot read layer XML file:  ',
-                twms_mrf_filename.replace('.mrf', '_gts.xml')
-            ])
+            mssg = str().join(['Cannot read layer XML file:  ', twms_mrf_filename.replace('.mrf', '_gts.xml') ])
             log_sig_exit('ERROR', mssg, sigevent_url)
 
-        twms_layer_template = """<TiledGroup>
-    <Name>$TiledGroupName</Name>
-    <Title xml:lang=\"en\">$Title</Title>
-    <Abstract xml:lang=\"en\">$Abstract</Abstract>
-    <Projection>$Projection</Projection>
-    <Pad>0</Pad>
-    <Bands>$Bands</Bands>
-    <LatLonBoundingBox minx=\"$minx\" miny=\"$miny\" maxx=\"$maxx\" maxy=\"$maxy\" />
-    <Key>${time}</Key>
-$Patterns</TiledGroup>"""
+        # If the TiledGroupName does not follow our "standard" naming convention, write out another GTS XML file
+        if tiledGroupName != identifier.replace("_", " ") + " tileset":
+            try:
+                layer_xml = open(twms_mrf_filename.replace('.mrf', '_new_gts.xml'), 'w+')
+                layer_xml.writelines(layer_output.replace(tiledGroupName, identifier.replace("_", " ") + " tileset"))
+                layer_xml.close()
+            except IOError:
+                mssg = str().join(['Cannot read layer XML file:  ', twms_mrf_filename.replace('.mrf', '_new_gts.xml')])
+                log_sig_err('ERROR', mssg, sigevent_url)
 
-        layer_output = ""
-        lines = twms_layer_template.splitlines(True)
-        for line in lines:
-            # replace lines in template
-            if '</TiledGroup>' in line:
-                line = ' ' + line + '\n'
-            if '$TiledGroupName' in line:
-                line = line.replace("$TiledGroupName", tiledGroupName)
-            if '$Title' in line:
-                line = line.replace("$Title", title)
-            if '$Abstract' in line:
-                line = line.replace("$Abstract", abstract)
-            if '$Projection' in line:
-                line = line.replace("$Projection", projection.wkt)
-            if '$Bands' in line:
-                if mrf_format == 'image/png':
-                    line = line.replace("$Bands", "4")  # GDAL wants 4 for PNGs
-                else:
-                    line = line.replace("$Bands", bands)
-            if '$minx' in line:
-                line = line.replace("$minx", projection.lowercorner[0])
-            if '$miny' in line:
-                line = line.replace("$miny", projection.lowercorner[1])
-            if '$maxx' in line:
-                line = line.replace("$maxx", projection.uppercorner[0])
-            if '$maxy' in line:
-                line = line.replace("$maxy", projection.uppercorner[1])
-            if '$Patterns' in line:
-                patterns = ""
-                cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
-                try:
-                    print '\nRunning command: ' + cmd
-                    process = subprocess.Popen(
-                        cmd,
-                        shell=True,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
-                    process.wait()
-                    for output in process.stdout:
-                        patterns = patterns + output
-                except:
-                    log_sig_err("Error running command " + cmd, sigevent_url)
-                line = line.replace("$Patterns", patterns)
-            layer_output = layer_output + line
-        layer_xml.writelines(layer_output)
-        layer_xml.close()
 
     # Create mapfile if requested and this is not a vector tile product
     if create_mapfile and compression != "MVT" and environment.mapfileStagingLocation is not None:
@@ -3205,10 +3180,8 @@ if no_twms == False:
             layer_xml = ""
             for xml_file in sorted(
                     os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
-                if xml_file.endswith(
-                        "_gc.xml") and xml_file != "getCapabilities.xml":
-                    layer_xml = layer_xml + open(
-                        twms_endpoint.path + '/' + str(xml_file), 'r').read()
+                if xml_file.endswith("_gc.xml") and xml_file != "getCapabilities.xml":
+                    layer_xml = layer_xml + open(twms_endpoint.path + '/' + str(xml_file), 'r').read()
             getCapabilities_file = twms_endpoint.path + '/getCapabilities.xml'
             getCapabilities_base = open(getCapabilities_file, 'r+')
             gc_lines = getCapabilities_base.readlines()
@@ -3230,12 +3203,9 @@ if no_twms == False:
         if twms_endpoint.getTileService:
             # Add layer metadata to getTileService
             layer_xml = ""
-            for xml_file in sorted(
-                    os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
-                if xml_file.endswith(
-                        "_gts.xml") and xml_file != "getTileService.xml":
-                    layer_xml = layer_xml + open(
-                        twms_endpoint.path + '/' + str(xml_file), 'r').read()
+            for xml_file in sorted(os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
+                if xml_file.endswith("_gts.xml") and xml_file != "getTileService.xml":
+                    layer_xml = layer_xml + open(twms_endpoint.path + '/' + str(xml_file), 'r').read()
             getTileService_file = twms_endpoint.path + '/getTileService.xml'
             getTileService_base = open(getTileService_file, 'r+')
             gc_lines = getTileService_base.readlines()
