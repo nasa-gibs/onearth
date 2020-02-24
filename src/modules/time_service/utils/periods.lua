@@ -326,49 +326,64 @@ local function calculatePeriods(dates)
 			end
 		end
 	end
-
-
-	-- Check for time period matches
-	for _, date1 in ipairs(dates) do
-		if not itemInList(date1, datesInPeriods) then
-			for _, date2 in ipairs(dates) do
-				if not itemInList(date2, datesInPeriods) and date1 ~= date2 then
-					local dateEpoch1 = dateToEpoch(date1)
-					local dateEpoch2 = dateToEpoch(date2)
-					if dateEpoch1 < dateEpoch2 then
-						local intervalInSec = dateEpoch2 - dateEpoch1
-						local nextDateInInterval = dateAtFixedInterval(dateEpoch2, intervalInSec, dates)
-						if nextDateInInterval then
-							local epochDateList = {dateEpoch1, dateEpoch2}
-							local size, unit = calcIntervalFromSeconds(intervalInSec)
-
-							while nextDateInInterval do
-								epochDateList[#epochDateList + 1] = nextDateInInterval
-								nextDateInInterval = dateAtFixedInterval(nextDateInInterval, intervalInSec, dates)
-							end
-							
-							local dateList = {}
-							for i, epoch in ipairs(epochDateList) do
-								dateList[#dateList + 1] = epochToDate(epoch)
-							end
-
-							if isValidPeriod(size, unit) then
-								datesInPeriods = concat(datesInPeriods, dateList)
-								periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-
-	-- Leftover dates are loners
-	for _, date in ipairs(dates) do
-		if not itemInList(date, datesInPeriods) then
-			periods[#periods + 1] = {dates={date}}
-		end
-	end
+  
+  if dates[4] ~= nil then
+    -- Figure out the size and interval of the period based on first 3 values
+    local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
+    local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
+    local diff3 = math.abs(dateToEpoch(dates[3]) - dateToEpoch(dates[4]))
+    if (diff1 == diff2) and (diff2 == diff3) then
+      local size, unit = calcIntervalFromSeconds(diff1)
+      if isValidPeriod(size, unit) then
+        local dateList = {}
+        dateList[1] = dates[1] -- set start time to first time
+        for i, date1 in ipairs(dates) do
+          local dateEpoch1 = dateToEpoch(date1)
+          if dates[i+1] == nil then
+            dateList[#dateList + 1] = date1
+            periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
+          else            
+            local dateEpoch2 = dateToEpoch(dates[i+1])
+            local diff = math.abs(dateEpoch2 - dateEpoch1)
+            if diff ~= diff1 then
+              dateList[#dateList + 1] = date1
+              local period = {}
+              period[1] = dateList[1]
+              period[2] = dateList[2]
+              periods[#periods + 1] = {size=size, dates=period, unit=unit}
+              dateList[1] = dates[i+1]
+              dateList[2] = nil
+            end
+          end
+        end
+      end
+    else -- More complicated scenarios
+      -- Check for monthly periods
+      if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff3 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) or (diff3 % 5270400 == 0) then
+        local size = math.floor(diff1/2419200)
+        local unit = "month"
+        local dateList = {}
+        dateList[1] = dates[1] -- set start time to first time
+        dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
+        periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
+        -- TODO: Detect gaps in monthly periods
+      else
+        -- Leftover dates are loners
+        for _, date in ipairs(dates) do
+          if not itemInList(date, datesInPeriods) then
+            periods[#periods + 1] = {dates={date}}
+          end
+        end
+      end
+    end
+  else
+    -- Leftover dates are loners
+    for _, date in ipairs(dates) do
+      if not itemInList(date, datesInPeriods) then
+        periods[#periods + 1] = {dates={date}}
+      end
+    end
+  end
 
 	-- Create formatted list
 	local periodStrings = {}
@@ -389,12 +404,22 @@ local function calculatePeriods(dates)
 	return periodStrings
 end
 
--- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name
+-- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name , date_time
 -- Routine called by Redis. Read all dates, create periods, and replace old period entries
 -- with new list.
 redis.replicate_commands()
 local dates = {}
 local cursor = "0"
+
+-- GITC mod: Add new date and only update if there was a change
+if ARGV[1] ~= nil then
+  local result = redis.call("SADD", KEYS[1] .. ":dates", ARGV[1])
+  if result == 0 then
+    return
+  end
+end
+-- End GITC mod
+
 repeat
 	local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor)
 	dates = concat(dates, scan[2])
