@@ -434,6 +434,8 @@ for i, periodString in ipairs(periodStrings) do
 	redis.call("SADD", KEYS[1] .. ":periods", periodString)
 end
 
+table.sort(dates, dateSort)
+
 local defaultDate = dates[#dates]
 if string.sub(dates[#dates], 12) == "00:00:00" then
   defaultDate = string.sub(dates[#dates], 0, 10)
