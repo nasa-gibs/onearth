@@ -368,10 +368,14 @@ local function calculatePeriods(dates)
         periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
         -- TODO: Detect gaps in monthly periods
       else
-        -- Leftover dates are loners
+        -- Use seconds for subdaily and days otherwise 
         for _, date in ipairs(dates) do
           if not itemInList(date, datesInPeriods) then
-            periods[#periods + 1] = {dates={date}}
+            local unit = "day"
+            if(diff1<86400) then
+              unit = "second"
+            end
+            periods[#periods + 1] = {size=1, dates={date}, unit=unit}
           end
         end
       end
@@ -380,7 +384,7 @@ local function calculatePeriods(dates)
     -- Leftover dates are loners
     for _, date in ipairs(dates) do
       if not itemInList(date, datesInPeriods) then
-        periods[#periods + 1] = {dates={date}}
+        periods[#periods + 1] = {size=1, dates={date}, unit="day"}
       end
     end
   end
@@ -389,15 +393,15 @@ local function calculatePeriods(dates)
 	local periodStrings = {}
 	for _, period in pairs(periods) do
 		local periodStr
-		if #period["dates"] > 1 then
-		  if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
-		    periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
-		  else
-		    periodStr =  string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][#period["dates"]], 0, 10) .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
-		  end
-		else -- assume 1 day if single date is found
-			periodStr = string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][1], 0, 10) .. "/P1D"
-		end
+	  if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
+	    periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
+	    if period["unit"] == "minute" then
+	     -- Remove the MM hack for minutes
+	     periodStr = periodStr:sub(1, #periodStr - 1)
+	    end
+	  else
+	    periodStr =  string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][#period["dates"]], 0, 10) .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
+	  end
 		periodStrings[#periodStrings + 1] = periodStr
 	end
 
