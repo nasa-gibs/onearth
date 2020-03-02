@@ -368,23 +368,36 @@ local function calculatePeriods(dates)
         periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
         -- TODO: Detect gaps in monthly periods
       else
-        -- Use seconds for subdaily and days otherwise 
-        for _, date in ipairs(dates) do
-          if not itemInList(date, datesInPeriods) then
-            local unit = "day"
-            if(diff1<86400) then
-              unit = "second"
+        -- Use seconds for subdaily and days otherwise
+        local unit = "day"
+        if (diff1<86400) then
+          unit = "second"
+          local dateList = {}
+          dateList[1] = dates[1] -- set start time to first time
+          dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
+          periods[#periods + 1] = {size=1, dates=dateList, unit=unit}
+        else
+          for _, date in ipairs(dates) do
+            if not itemInList(date, datesInPeriods) then
+              periods[#periods + 1] = {size=1, dates={date}, unit=unit}
             end
-            periods[#periods + 1] = {size=1, dates={date}, unit=unit}
           end
         end
       end
     end
   else
-    -- Leftover dates are loners
+    -- Leftover times are likely loners
+    -- Determine if subdaily or not (assume daily if single)
+    local unit = "day"
+    if dates[2] ~= nil then
+      local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
+      if (diff1<86400) then
+        unit = "second"
+       end
+    end
     for _, date in ipairs(dates) do
       if not itemInList(date, datesInPeriods) then
-        periods[#periods + 1] = {size=1, dates={date}, unit="day"}
+        periods[#periods + 1] = {size=1, dates={date}, unit=unit}
       end
     end
   end
