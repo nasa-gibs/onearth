@@ -20,6 +20,7 @@ from functools import reduce
 from datetime import datetime
 import redis
 import argparse
+from pathlib import Path
 
 
 def keyMapper(acc, obj):
@@ -33,6 +34,8 @@ def keyMapper(acc, obj):
     year = keyElems[2]
     day = len(keyElems) == 4 and keyElems[3] or None
     filename = keyElems[-1]
+    if Path(filename).suffix not in ['.ppg', '.pjg', '.ptf', '.pvt', '.lerc']:
+        return acc # ignore non-MRF data files
 
     if not acc.get(proj):
         acc[proj] = {}
