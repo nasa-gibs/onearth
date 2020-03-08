@@ -2,6 +2,7 @@
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
 DEBUG_LOGGING=${3:-false}
+FORCE_TIME_SCRAPE=${4:-false}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -352,11 +353,19 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 else
 	# Load time periods by scraping S3 bucket
 	cd /home/oe2/onearth/src/modules/time_service/utils/
-	python3.6 oe_scrape_time.py -r -b $S3_URL $REDIS_HOST
-	python3.6 oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST
-	python3.6 oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST
-	python3.6 oe_scrape_time.py -r -t std -b $S3_URL $REDIS_HOST
-	python3.6 oe_scrape_time.py -r -t nrt -b $S3_URL $REDIS_HOST
+	if [ "$FORCE_TIME_SCRAPE" = true ]; then
+		python3.6 oe_scrape_time.py -r -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -r -t std -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -r -t nrt -b $S3_URL $REDIS_HOST
+	else
+		python3.6 oe_scrape_time.py -c -r -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -c -r -t all -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -c -r -t best -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -c -r -t std -b $S3_URL $REDIS_HOST
+		python3.6 oe_scrape_time.py -c -r -t nrt -b $S3_URL $REDIS_HOST
+	fi
 fi
 
 # Tail the apache logs

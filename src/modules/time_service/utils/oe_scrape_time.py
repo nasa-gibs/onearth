@@ -73,16 +73,25 @@ def updateDateService(redis_uri,
                       s3_uri=None,
                       tag=None,
                       layer_name=None,
-                      reproject=False):
+                      reproject=False,
+                      check_exists=False):
+    r = redis.Redis(host=redis_uri, port=redis_port)
+    created = r.mget('created')[0]
+    if created is None:
+        created_time = datetime.now().timestamp()
+        r.set('created', created_time)
+        print('New database created ' + str(created_time))
+    elif check_exists:
+        print(f'Data already exists - skipping time scrape for {tag}')
+        return
+    
     session = boto3.session.Session()
-
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
 
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
     objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
-    r = redis.Redis(host=redis_uri, port=redis_port)
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
@@ -162,6 +171,13 @@ parser.add_argument(
     dest='reproject',
     help='If layer uses epsg4326, add a record for epsg3857 as well',
     action='store_true')
+parser.add_argument(
+    '-c',
+    '--check_exists',
+    default=False,
+    dest='check_exists',
+    help='Check if data already exists; if it does, then don\'t rebuild',
+    action='store_true')
 
 args = parser.parse_args()
 
@@ -172,4 +188,5 @@ updateDateService(
     s3_uri=args.s3_uri,
     tag=args.tag,
     layer_name=args.layer,
-    reproject=args.reproject)
+    reproject=args.reproject,
+    check_exists=args.check_exists)
