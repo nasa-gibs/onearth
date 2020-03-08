@@ -91,27 +91,31 @@ def syncIdx(bucket,
         print(f'Configuring projection: {proj}')
         dir_proj = dir + '/' + proj
         if os.path.isdir(dir_proj) == False:
-            os.mkdir(dir_proj)
+            os.makedirs(dir_proj)
             
         for layer, data in layers.items():
             print(f'Configuring layer: {layer}')
             dir_proj_layer = dir + '/' + proj + '/' + layer
             if os.path.isdir(dir_proj_layer) == False:
-                os.mkdir(dir_proj_layer)
+                os.makedirs(dir_proj_layer)
                 
             # Find existing files on file system
             if force: # we don't care about existing files when forcing overwrite
                 fs_files = []
             else:
                 fs_list = list(Path(dir_proj_layer).rglob("*.[iI][dD][xX]"))
-                fs_files = [str(f).replace(dir_proj_layer+'/','')+'.tgz' for f in fs_list]
+                fs_files = [str(f).replace(dir_proj_layer+'/','') for f in fs_list]
             s3_files = [v for v in data['idx']]
+            # We need another list for the extracted names
+            s3_files_idx = [v.replace('.tgz','') for v in data['idx']]
             
             # Copy files from S3 that aren't on file system
-            for s3_file in list(set(s3_files) - set(fs_files)):
+            for s3_file in list(set(s3_files_idx) - set(fs_files)):
+                if s3_file + '.tgz' in s3_files:
+                    s3_file = s3_file + '.tgz'
                 filepath = os.path.dirname(dir_proj_layer + '/' + s3_file)
                 if os.path.isdir(filepath) == False:
-                    os.mkdir(filepath)
+                    os.makedirs(filepath)
                 print(f'Downloading file: {proj}/{layer}/{s3_file}')
                 filename = dir_proj_layer + '/' + s3_file
                 s3.download_file(bucket, str(proj + '/' + layer + '/' + s3_file).replace('//','/'), filename)
@@ -129,7 +133,7 @@ def syncIdx(bucket,
                     os.remove(filename)
                 
             # Delete files from file system that aren't on S3
-            for fs_file in list(set(fs_files) - set(s3_files)):
+            for fs_file in list(set(fs_files) - set(s3_files_idx)):
                 fs_idx = dir_proj_layer + '/' + fs_file.replace('.tgz','')
                 if os.path.isfile(fs_idx):
                     print(f'Deleting file not found on S3: {fs_idx}')
