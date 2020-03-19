@@ -17,8 +17,8 @@ if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set for OnEarth configs"
 else
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 fi
 
 # Copy tilematrixsets config file
@@ -70,6 +70,7 @@ sleep 2
 
 # Tail the apache logs
 crond
-exec tail -qF \
+exec tail -qFn 1000 \
+  /var/log/onearth/config.log \
   /etc/httpd/logs/access_log \
   /etc/httpd/logs/error_log

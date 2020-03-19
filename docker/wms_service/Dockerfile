@@ -39,9 +39,11 @@ COPY docker/wms_service/fonts.txt /etc/onearth/config/mapserver/
 COPY docker/wms_service/symbols.sym /etc/onearth/config/mapserver/
 COPY docker/wms_service/fonts/* /usr/share/fonts/
 RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
+RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
 
 # Setup cron for logrotate
 COPY docker/wms_service/logrotate.daily.mapserver /etc/logrotate.d/mapserver
+COPY docker/logrotate.daily.onearth /etc/logrotate.d/onearth
 RUN mkdir -p /etc/cron.hourly && cp /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd

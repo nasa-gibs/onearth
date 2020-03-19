@@ -1,0 +1,6 @@
+/var/log/onearth/config.log {
+	copytruncate
+	rotate 5
+	daily
+	dateext
+}
