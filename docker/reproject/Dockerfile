@@ -42,6 +42,9 @@ WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
+# Create OnEarth config log
+RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
+
 # Setup cron for logrotate
 RUN mkdir -p /etc/cron.hourly && mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
     chmod 755 /etc/cron.hourly/logrotate && \

@@ -36,6 +36,9 @@ RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 # Install additional configuration tools
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
+# Create OnEarth config log
+RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
+
 # Setup cron for logrotate
 RUN cp /home/oe2/onearth/docker/logrotate.daily.httpd /etc/logrotate.d/httpd
 

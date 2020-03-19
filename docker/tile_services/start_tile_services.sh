@@ -32,7 +32,7 @@ cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mr
 
 # Sync IDX files if true
 if [ "$IDX_SYNC" = true ]; then
-    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx
+    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx >>/var/log/onearth/config.log 2>&1
 fi
 
 # Set Apache logs to debug log level
@@ -42,7 +42,7 @@ if [ "$DEBUG_LOGGING" = true ]; then
 fi
 
 # Load GIBS sample layers
-sh load_sample_layers.sh $S3_URL $REDIS_HOST $S3_CONFIGS
+sh load_sample_layers.sh $S3_URL $REDIS_HOST $S3_CONFIGS >>/var/log/onearth/config.log 2>&1
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
@@ -50,7 +50,8 @@ sleep 2
 
 # Tail the apache logs
 crond
-exec tail -qF \
+exec tail -qFn 10000 \
+  /var/log/onearth/config.log \
   /etc/httpd/logs/access.log \
   /etc/httpd/logs/error.log \
   /etc/httpd/logs/access_log \

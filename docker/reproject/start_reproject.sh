@@ -49,8 +49,8 @@ if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set"
 else
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 fi
 
 # Copy tilematrixsets config file
@@ -58,8 +58,8 @@ cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.
 
 # Run reproject config tools
 sleep 10
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 # Set Apache logs to debug log level
 if [ "$DEBUG_LOGGING" = true ]; then
@@ -73,10 +73,10 @@ sleep 2
 
 # Load additional endpoints
 echo 'Loading additional endpoints'
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_nrt.yaml
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml >>/var/log/onearth/config.log 2>&1
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml >>/var/log/onearth/config.log 2>&1
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml >>/var/log/onearth/config.log 2>&1
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_nrt.yaml >>/var/log/onearth/config.log 2>&1
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
@@ -84,7 +84,8 @@ sleep 2
 
 # Tail the apache logs
 crond
-exec tail -qF \
+exec tail -qFn 10000 \
+  /var/log/onearth/config.log \
   /etc/httpd/logs/access.log \
   /etc/httpd/logs/error.log \
   /etc/httpd/logs/access_log \

@@ -75,17 +75,17 @@ if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set"
 else
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt >>/var/log/onearth/config.log 2>&1
 fi
 
 # Replace with S3 URL
@@ -95,26 +95,26 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
 # Make GC Service
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status_reproject.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_reproject.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_best.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_std.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_all.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_nrt.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_best.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_std.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_all.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_nrt.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_best.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_std.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_all.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_nrt.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_best.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_std.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_all.yaml
-lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_nrt.yaml
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/profiler_reproject.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_best.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_std.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_all.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg4326_nrt.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_best.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_std.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_all.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3857_nrt.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_best.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_std.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_all.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3031_nrt.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_best.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_std.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_all.yaml >>/var/log/onearth/config.log 2>&1
+lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua /etc/onearth/config/endpoint/epsg3413_nrt.yaml >>/var/log/onearth/config.log 2>&1
 
 # Set Apache logs to debug log level
 if [ "$DEBUG_LOGGING" = true ]; then
@@ -128,7 +128,8 @@ sleep 2
 
 # Tail the apache logs
 crond
-exec tail -qF \
+exec tail -qFn 10000 \
+  /var/log/onearth/config.log \
   /etc/httpd/logs/access.log \
   /etc/httpd/logs/error.log \
   /etc/httpd/logs/access_log \
