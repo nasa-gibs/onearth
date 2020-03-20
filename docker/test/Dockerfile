@@ -2,19 +2,22 @@
 
 FROM nasagibs/onearth-deps:2.2.3
 
-# Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm"
-
 # Install mrfgen and OnEarth utils dependencies
 RUN yum install -y proj-4.8.0 proj-devel-4.8.0
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
 RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5 pyparsing-1.5.6 python-tornado-4.2.1 python-pycxx-devel-6.2.4 python-dateutil-1.5 python-pypng-0.0.16 python-lxml-3.2.1 python-nose-1.3.7 python-unittest2-1.1.0 python-matplotlib-1.2.0 python2-pip-8.1.2
-RUN pip install apacheconfig==0.2.8
-RUN pip install numpy==1.10.4
+RUN pip install apacheconfig==0.2.8 numpy==1.10.4
+
+# Install wms dependencies
+RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0
+RUN pip3.6 install requests==2.21.0 lxml==4.3.0
+
+# Install GDAL
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-devel-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm"
 
 # Install vectorgen dependencies
-RUN yum install -y libxslt-devel-1.1.28 chrpath-0.16
+RUN yum install -y libxslt-devel-1.1.28 chrpath-0.16 && \
+	yum clean all
 WORKDIR /tmp
 RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
 RUN tar xzf spatialindex-src-1.8.5.tar.gz
@@ -70,6 +73,27 @@ RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth_time_service-0.1-1.rockspec
 
+# FastCGI module
+WORKDIR /tmp
+RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN tar xf mod_fcgid-2.3.9.tar.gz
+WORKDIR /tmp/mod_fcgid-2.3.9
+RUN APXS=/usr/bin/apxs ./configure.apxs
+RUN make && make install
+
+# Mapserver
+WORKDIR /tmp
+RUN wget http://download.osgeo.org/mapserver/mapserver-7.0.7.tar.gz
+RUN tar xf mapserver-7.0.7.tar.gz
+WORKDIR /tmp/mapserver-7.0.7
+RUN mkdir build
+WORKDIR /tmp/mapserver-7.0.7/build
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 ../
+RUN make && make install
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
+RUN ldconfig -v
+RUN rm -rf /tmp/*
+
 # Install GC Service configs
 WORKDIR /home/oe2/onearth/src/modules/gc_service
 RUN luarocks make onearth_gc_gts-0.1-1.rockspec
@@ -99,6 +123,9 @@ RUN install -m 755 src/colormaps/bin/colorMaptoSLD.py -D /usr/bin/colorMaptoSLD.
 RUN install -m 755 src/colormaps/bin/SLDtoColorMap.py -D /usr/bin/SLDtoColorMap.py
 RUN install -m 755 src/vectorgen/oe_vectorgen.py -D /usr/bin/oe_vectorgen
 RUN install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py
+RUN install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py
+RUN install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py
+RUN install -m 755 docker/wms_service/oe2_wms_configure.py -D /usr/bin/oe2_wms_configure.py
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
