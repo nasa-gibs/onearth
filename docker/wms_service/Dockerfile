@@ -1,6 +1,7 @@
 FROM nasagibs/onearth-deps:2.2.3
 
-RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 gdal-devel-1.11.4 && \
+RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 && \
+	yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-devel-2.4.4-1.el7.x86_64.rpm" && \
 	yum clean all
 RUN pip3 install requests==2.21.0 lxml==4.3.0
 
@@ -16,12 +17,12 @@ RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-7.0.7.tar.gz
-RUN tar xf mapserver-7.0.7.tar.gz
-WORKDIR /tmp/mapserver-7.0.7
+RUN wget http://download.osgeo.org/mapserver/mapserver-7.4.3.tar.gz
+RUN tar xf mapserver-7.4.3.tar.gz
+WORKDIR /tmp/mapserver-7.4.3
 RUN mkdir build
-WORKDIR /tmp/mapserver-7.0.7/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 ../
+WORKDIR /tmp/mapserver-7.4.3/build
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v

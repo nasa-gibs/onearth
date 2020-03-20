@@ -17,8 +17,8 @@ WORKDIR /tmp
 RUN \
   touch /var/lib/rpm/* \
   && yum install -y epel-release
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm" && \
+	yum clean all
 
 # Copy binaries and libs
 RUN cp /usr/bin/*mrf* /var/task/bin

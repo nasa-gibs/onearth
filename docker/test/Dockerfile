@@ -13,7 +13,7 @@ RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-d
 RUN pip3.6 install requests==2.21.0 lxml==4.3.0
 
 # Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-devel-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-devel-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-apps-2.4.4-1.el7.x86_64.rpm"
 
 # Install vectorgen dependencies
 RUN yum install -y libxslt-devel-1.1.28 chrpath-0.16 && \
@@ -83,12 +83,12 @@ RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-7.0.7.tar.gz
-RUN tar xf mapserver-7.0.7.tar.gz
-WORKDIR /tmp/mapserver-7.0.7
+RUN wget http://download.osgeo.org/mapserver/mapserver-7.4.3.tar.gz
+RUN tar xf mapserver-7.4.3.tar.gz
+WORKDIR /tmp/mapserver-7.4.3
 RUN mkdir build
-WORKDIR /tmp/mapserver-7.0.7/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 ../
+WORKDIR /tmp/mapserver-7.4.3/build
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
