@@ -3,7 +3,11 @@
 FROM centos:7
 
 # Install HTTPD and mod_ssl
-RUN yum install -y httpd-2.4.6 mod_ssl
+RUN yum install -y httpd-2.4.6 mod_ssl perl && \
+	yum clean all
+
+RUN mkdir -p /home/oe2
+COPY ./docker/demo/start_demo.sh /home/oe2/
 
 # Copy Apache configs
 COPY ./docker/demo/oe2_demo.conf /etc/httpd/conf.d/
@@ -18,5 +22,5 @@ COPY ./docker/cors.conf /etc/httpd/conf.d/
 COPY ./src/demo /var/www/html/demo
 
 # Start HTTPD server
-CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
-EXPOSE 80
+WORKDIR /home/oe2
+CMD sh start_demo.sh $DEBUG_LOGGING
