@@ -9,7 +9,7 @@ RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5
 RUN pip install apacheconfig==0.2.8 numpy==1.10.4
 
 # Install wms dependencies
-RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0
+RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel
 RUN pip3.6 install requests==2.21.0 lxml==4.3.0
 
 # Install GDAL
@@ -88,7 +88,7 @@ RUN tar xf mapserver-7.4.3.tar.gz
 WORKDIR /tmp/mapserver-7.4.3
 RUN mkdir build
 WORKDIR /tmp/mapserver-7.4.3/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
