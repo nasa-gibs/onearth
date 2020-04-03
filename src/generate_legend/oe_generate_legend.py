@@ -222,7 +222,7 @@ def parse_colormaps(colormap_location, verbose):
 
 def parse_colormap(colormap_xml, verbose):
     
-    dom = xml.dom.minidom.parseString(ET.tostring(colormap_xml)
+    dom = xml.dom.minidom.parseString(ET.tostring(colormap_xml))
            
     colormap_element = dom.getElementsByTagName("ColorMap")[0]
     try:
