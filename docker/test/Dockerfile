@@ -9,7 +9,7 @@ RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5
 RUN pip install apacheconfig==0.2.8 numpy==1.10.4
 
 # Install wms dependencies
-RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel
+RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2
 RUN pip3.6 install requests==2.21.0 lxml==4.3.0
 
 # Install GDAL
@@ -88,7 +88,7 @@ RUN tar xf mapserver-7.4.3.tar.gz
 WORKDIR /tmp/mapserver-7.4.3
 RUN mkdir build
 WORKDIR /tmp/mapserver-7.4.3/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 ../
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
@@ -126,6 +126,17 @@ RUN install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_
 RUN install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py
 RUN install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py
 RUN install -m 755 docker/wms_service/oe2_wms_configure.py -D /usr/bin/oe2_wms_configure.py
+
+# Copy WMS setups
+COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/
+RUN cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
+RUN mkdir -p /etc/onearth/config/mapserver
+COPY docker/wms_service/fonts.txt /etc/onearth/config/mapserver/
+COPY docker/wms_service/symbols.sym /etc/onearth/config/mapserver/
+COPY docker/wms_service/fonts/* /usr/share/fonts/
+RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
+RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
+RUN mkdir /usr/share/proj/ && cp /usr/lib64/python2.7/site-packages/fiona/proj_data/epsg /usr/share/proj/
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf

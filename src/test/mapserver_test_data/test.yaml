@@ -1,0 +1,10 @@
+time_service_uri: "http://onearth-time-service/time_service/time"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+apache_config_location: "/etc/httpd/conf.d/"
+base_uri_meta: "https://gibs.earthdata.nasa.gov"
+epsg_code: "EPSG:4326"
+mapserver:
+  internal_endpoint: "/build/test/ci_tests/wms/test"
+  mapfile_header:  "/etc/onearth/config/mapserver/test.header"
+  mapfile_location: "/etc/onearth/config/mapserver/test.map"
+  source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
