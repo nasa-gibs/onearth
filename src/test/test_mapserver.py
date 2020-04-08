@@ -120,7 +120,7 @@ class TestMapserver(unittest.TestCase):
         """
         5. Request tile with date from "year" layer via WMS
         """
-        ref_hash = 'cbf79a63d8a539bf7769eded5538fe9d'
+        ref_hash = 'b66c0096d12f89b50623a8f2f9e86f24'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22'
         if DEBUG:
             print '\nTesting: Request tile with date from "year" layer via WMS'
@@ -147,7 +147,7 @@ class TestMapserver(unittest.TestCase):
             xml_check = False
         self.assertTrue(xml_check, 'WMS GetCapabilities 1.1.1 response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.1.1.1.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mapserver_test_data/GetCapabilities.1.1.1.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -174,7 +174,7 @@ class TestMapserver(unittest.TestCase):
 
         self.assertTrue(xml_check, 'WMS GetCapabilities 1.3.0 response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.1.3.0.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mapserver_test_data/GetCapabilities.1.3.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -185,7 +185,7 @@ class TestMapserver(unittest.TestCase):
         """
         10. Request WFS GetCapabilities 2.0.0
         """
-        req_url = 'http://localhost/onearth/test/wfs/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
         if DEBUG:
             print '\nTesting WFS GetCapablities 2.0.0'
             print 'URL: ' + req_url
@@ -200,7 +200,7 @@ class TestMapserver(unittest.TestCase):
             xml_check = False
         self.assertTrue(xml_check, 'WMS GetCapabilities 2.0.0 response is not a valid XML file. URL: ' + req_url)
 
-        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mod_onearth_test_data/GetCapabilities.2.0.0.xml'))
+        refXMLtree = ElementTree.parse(os.path.join(os.getcwd(), 'mapserver_test_data/GetCapabilities.2.0.0.xml'))
         refXMLroot = refXMLtree.getroot()
         refXMLdict = XmlDictConfig(refXMLroot)
 
@@ -211,7 +211,7 @@ class TestMapserver(unittest.TestCase):
         """
         11. Request erroneous layer via WMS
         """
-        ref_hash = '35a5f708101eb4a452d9cc3da3adb5e4'
+        ref_hash = '8ff06e9113d2ebbfebb2505c2c8e864e'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=blah&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print '\nTesting: Request erroneous layer via WMS'
@@ -223,7 +223,7 @@ class TestMapserver(unittest.TestCase):
         """
         12. Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS
         """
-        ref_hash = '93fccd7bcd34f4ff179498c09b4876e8'
+        ref_hash = '8aa5908b251f3d9122a25ae93ec9fef2'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg,test_legacy_subdaily_jpg&map.layer[test_legacy_subdaily_jpg]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print '\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS'
@@ -319,7 +319,7 @@ class TestMapserver(unittest.TestCase):
         """
         20. Request tile with time (sub-daily) and snap to available date time via WMS
         """
-        ref_hash = 'dbb24bb1dcb5346de0a44523040d0b93'
+        ref_hash = 'cd18076fca03c636843c5b664097c17f'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print '\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS'
@@ -371,7 +371,7 @@ class TestMapserver(unittest.TestCase):
             JSON_check = False
         self.assertTrue(JSON_check, 'WFS GeoJSON response is not a valid JSON file. URL: ' + req_url)
 
-        with open(os.path.join(os.getcwd(), 'mod_onearth_test_data/wfs_geojson.txt')) as JSONfile:
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/wfs_geojson.txt')) as JSONfile:
             refJSONdict = json.load(JSONfile)
 
         check_result = check_dicts(JSONdict, refJSONdict)
@@ -408,7 +408,7 @@ class TestMapserver(unittest.TestCase):
             JSON_check = False
         self.assertTrue(JSON_check, 'WFS with time GeoJSON response is not a valid JSON file. URL: ' + req_url)
 
-        with open(os.path.join(os.getcwd(), 'mod_onearth_test_data/wfs_geojson_time.txt')) as JSONfile:
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/wfs_geojson_time.txt')) as JSONfile:
             refJSONdict = json.load(JSONfile)
 
         check_result = check_dicts(JSONdict, refJSONdict)
