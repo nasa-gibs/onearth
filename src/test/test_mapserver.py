@@ -59,11 +59,6 @@ class TestMapserver(unittest.TestCase):
     def setUpClass(self):
         # Get the path of the test data -- we assume that the script is in the parent dir of the data dir
         testdata_path = os.path.join(os.getcwd(), 'mapserver_test_data')
-                
-        # create links for mapserv
-        mapserver_location = '/usr/local/bin/mapserv'
-        
-        restart_apache()
 
     def test_request_wms_no_time_jpg(self):
         """
@@ -71,10 +66,10 @@ class TestMapserver(unittest.TestCase):
         All the tile tests follow this template.
         """
         # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = 'fc752eb8b1a1690ed9dcaed84f4d1d78'
+        ref_hash = 'f22eb8446a4411ba6843d24d3fbd3721'
 
         # The URL of the tile to be requested
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=BlueMarble_ShadedRelief_Bathymetry&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
 
         # Debug message (if DEBUG is set)
         if DEBUG:
@@ -89,8 +84,8 @@ class TestMapserver(unittest.TestCase):
         """
         2. Request current (no time) PNG via WMS
         """
-        ref_hash = '061526e93a1b0aabac024b7b35fd881e'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=BlueMarble_ShadedRelief_Bathymetry&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
+        ref_hash = '2a14051fb08e4bd18cbe349dd51bcbba'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print '\nTesting: Request current (no TIME) PNG via WMS'
             print 'URL: ' + req_url
@@ -101,8 +96,8 @@ class TestMapserver(unittest.TestCase):
         """
         3. Request current (time=default) JPEG tile via WMS
         """
-        ref_hash = 'fc752eb8b1a1690ed9dcaed84f4d1d78'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=BlueMarble_ShadedRelief_Bathymetry&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
+        ref_hash = 'f22eb8446a4411ba6843d24d3fbd3721'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print '\nTesting: Request current (time=default) JPEG tile via WMS'
             print 'URL: ' + req_url
@@ -113,8 +108,8 @@ class TestMapserver(unittest.TestCase):
         """
         4. Request current (time=default) PNG tile via WMS
         """
-        ref_hash = '061526e93a1b0aabac024b7b35fd881e'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=BlueMarble_ShadedRelief_Bathymetry&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
+        ref_hash = '2a14051fb08e4bd18cbe349dd51bcbba'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print '\nTesting: Request current (time=default) PNG tile via WMS'
             print 'URL: ' + req_url
@@ -508,7 +503,6 @@ class TestMapserver(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        # Delete Apache test config
         restart_apache()
 
 if __name__ == '__main__':

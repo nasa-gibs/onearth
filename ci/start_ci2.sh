@@ -13,16 +13,21 @@ cp ../docker/time_service/onearth_time_service.conf /etc/httpd/conf.d
 sed -i 's@/var/www/html@/build/test/ci_tests@g' /etc/httpd/conf.d/onearth_time_service.conf
 mkdir -p /build/test/ci_tests/time_service/
 cp ../docker/time_service/time_service.lua /build/test/ci_tests/time_service/
+sed -i 's@{REDIS_HOST}@'127.0.0.1'@g' /build/test/ci_tests/time_service/time_service.lua
 
-# Configs for mapserver
+# Configs for services
 mkdir -p /etc/onearth/config/conf/
-cp ../src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
+cp ../src/modules/gc_service/conf/* /etc/onearth/config/conf/
+mkdir -p /etc/onearth/empty_tiles/
+cp ../docker/empty_tiles/* /etc/onearth/empty_tiles/
 mkdir -p /etc/onearth/config/mapserver/
 cp ../src/test/mapserver_test_data/test.header /etc/onearth/config/mapserver/
 mkdir -p /build/test/ci_tests/wms/test
 cp /var/www/cgi-bin/mapserv.fcgi /build/test/ci_tests/wms/test/wms.cgi
 cp ../docker/wms_service/template.map .
-python3.6 /usr/bin/oe2_wms_configure.py ../src/test/mapserver_test_data/test.yaml
+
+python3.6 /usr/bin/oe2_wmts_configure.py ../src/test/mapserver_test_data/test_endpoint.yaml
+lua ../src/modules/gc_service/make_gc_endpoint.lua ../src/test/mapserver_test_data/test_endpoint.yaml
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
@@ -32,7 +37,7 @@ echo 'Starting Redis server'
 /usr/bin/redis-server &
 sleep 2
 
-# Add some test data to redis for profiling
+# Add some test data to redis for tests
 /usr/bin/redis-cli  -n 0 DEL layer:test_daily_png
 /usr/bin/redis-cli  -n 0 SET layer:test_daily_png:default "2012-02-29"
 /usr/bin/redis-cli  -n 0 SADD layer:test_daily_png:periods "2012-02-29/2012-02-29/P1D"
@@ -85,9 +90,9 @@ sleep 2
 /usr/bin/redis-cli  -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"
 /usr/bin/redis-cli  -n 0 SAVE
 
-# Tail the apache logs
-exec tail -qF \
-  /etc/httpd/logs/access.log \
-  /etc/httpd/logs/error.log \
-  /etc/httpd/logs/access_log \
-  /etc/httpd/logs/error_log
+# MapServer configs
+python3.6 /usr/bin/oe2_wms_configure.py ../src/test/mapserver_test_data/test.yaml
+
+echo 'Restarting Apache server'
+/usr/sbin/httpd -k restart
+sleep 2
