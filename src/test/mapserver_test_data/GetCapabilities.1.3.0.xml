@@ -97,6 +97,7 @@
         <Keyword>Earth</Keyword>
     </KeywordList>
     <CRS>EPSG:4326</CRS>
+    <CRS>EPSG:3857</CRS>
     <EX_GeographicBoundingBox>
         <westBoundLongitude>-180</westBoundLongitude>
         <eastBoundLongitude>180</eastBoundLongitude>
@@ -106,8 +107,8 @@
     <BoundingBox CRS="EPSG:4326"
                 minx="-90" miny="-180" maxx="90" maxy="180" />
     <Layer queryable="0" opaque="0" cascaded="0">
-        <Name>test_static_jpg</Name>
-        <Title>test_static_jpg</Title>
+        <Name>Terra_Orbit_Dsc_Dots</Name>
+        <Title>Terra_Orbit_Dsc_Dots</Title>
         <CRS>EPSG:4326</CRS>
         <EX_GeographicBoundingBox>
             <westBoundLongitude>-180</westBoundLongitude>
@@ -117,10 +118,19 @@
         </EX_GeographicBoundingBox>
         <BoundingBox CRS="EPSG:4326"
                     minx="-90" miny="-180" maxx="90" maxy="180" />
+        <Dimension name="time" units="ISO8601" default="2016-03-05" nearestValue="0">2016-03-05/2016-03-05/P1D</Dimension>
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
-          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_static_jpg"/>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=Terra_Orbit_Dsc_Dots"/>
         </MetadataURL>
+        <Style>
+          <Name>default</Name>
+          <Title>default</Title>
+          <LegendURL width="113" height="35">
+             <Format>image/png</Format>
+             <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?version=1.3.0&amp;service=WMS&amp;request=GetLegendGraphic&amp;sld_version=1.1.0&amp;layer=Terra_Orbit_Dsc_Dots&amp;format=image/png&amp;STYLE=default"/>
+          </LegendURL>
+        </Style>
     </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
         <Name>test_weekly_jpg</Name>
@@ -141,6 +151,23 @@
         </MetadataURL>
     </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>test_static_jpg</Name>
+        <Title>test_static_jpg</Title>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+            <westBoundLongitude>-180</westBoundLongitude>
+            <eastBoundLongitude>180</eastBoundLongitude>
+            <southBoundLatitude>-90</southBoundLatitude>
+            <northBoundLatitude>90</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="EPSG:4326"
+                    minx="-90" miny="-180" maxx="90" maxy="180" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_static_jpg"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
         <Name>test_legacy_subdaily_jpg</Name>
         <Title>test_legacy_subdaily_jpg</Title>
         <CRS>EPSG:4326</CRS>
@@ -156,6 +183,42 @@
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_legacy_subdaily_jpg"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>snap_test_3a</Name>
+        <Title>snap_test_3a</Title>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+            <westBoundLongitude>-180</westBoundLongitude>
+            <eastBoundLongitude>180</eastBoundLongitude>
+            <southBoundLatitude>-90</southBoundLatitude>
+            <northBoundLatitude>90</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="EPSG:4326"
+                    minx="-90" miny="-180" maxx="90" maxy="180" />
+        <Dimension name="time" units="ISO8601" default="2015-01-01" nearestValue="0">1948-01-01/1948-03-01/P1M,2015-01-01/2016-01-01/P1M</Dimension>
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=snap_test_3a"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>snap_test_3b</Name>
+        <Title>snap_test_3b</Title>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+            <westBoundLongitude>-180</westBoundLongitude>
+            <eastBoundLongitude>180</eastBoundLongitude>
+            <southBoundLatitude>-90</southBoundLatitude>
+            <northBoundLatitude>90</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="EPSG:4326"
+                    minx="-90" miny="-180" maxx="90" maxy="180" />
+        <Dimension name="time" units="ISO8601" default="2015-01-01" nearestValue="0">2015-01-01/2016-01-01/P3M</Dimension>
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=snap_test_3b"/>
         </MetadataURL>
     </Layer>
   </Layer>

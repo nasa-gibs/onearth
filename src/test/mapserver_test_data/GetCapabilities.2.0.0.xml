@@ -109,6 +109,8 @@
           <ows:Value>text/xml; subtype=gml/3.2.1</ows:Value>
           <ows:Value>text/xml; subtype=gml/3.1.1</ows:Value>
           <ows:Value>text/xml; subtype=gml/2.1.2</ows:Value>
+          <ows:Value>application/json; subtype=geojson</ows:Value>
+          <ows:Value>text/csv</ows:Value>
         </ows:AllowedValues>
       </ows:Parameter>
     </ows:Operation>
@@ -218,7 +220,26 @@
       </ows:AllowedValues>
     </ows:Constraint>
   </ows:OperationsMetadata>
-  <FeatureTypeList/>
+  <FeatureTypeList>
+    <FeatureType>
+      <Name>ms:Terra_Orbit_Dsc_Dots</Name>
+      <Title>Terra_Orbit_Dsc_Dots</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+        <Format>application/json; subtype=geojson</Format>
+        <Format>text/csv</Format>
+      </OutputFormats>
+      <ows:WGS84BoundingBox dimensions="2">
+        <ows:LowerCorner>-179.925 -81.847</ows:LowerCorner>
+        <ows:UpperCorner>179.94 81.846</ows:UpperCorner>
+      </ows:WGS84BoundingBox>
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Terra_Orbit_Dsc_Dots"/>
+    </FeatureType>
+  </FeatureTypeList>
   <fes:Filter_Capabilities>
     <fes:Conformance>
       <fes:Constraint name="ImplementsQuery">

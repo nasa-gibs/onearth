@@ -84,7 +84,7 @@ MAP
       "wms_contactposition"		"GIBS User Support"
       "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
       "wms_enable_request"      "GetMap GetCapabilities GetStyles GetLegendGraphic"
-      "wms_srs"                 "EPSG:4326"
+      "wms_srs"                 "EPSG:4326 EPSG:3857"
       "wms_connectiontimeout"   "180"
       "wms_layerlimit"			"5"
       # Uncomment the line below to enable WFS
@@ -116,5 +116,60 @@ MAP
         POINTS
                 1 1
         END
+  END
+  
+  LAYER
+	NAME	"Terra_Orbit_Dsc_Dots"
+	TYPE	POINT
+	STATUS	ON
+	VALIDATION
+		"default_Terra_Orbit_Dsc_Dots_TIME"		"TTTTTTT"
+		"Terra_Orbit_Dsc_Dots_TIME"			"^[0-9]{7}$"
+		"default_Terra_Orbit_Dsc_Dots_YEAR"	"YYYY"
+		"Terra_Orbit_Dsc_Dots_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+		"wms_title"		"Terra_Orbit_Dsc_Dots"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2016-03-05/2016-03-05/P1D"
+		"wms_timedefault"		"2016-03-05"
+		"wfs_getfeature_formatlist"		"geojson,csv"
+		"gml_include_items"		"all"
+	END
+	DATA	"/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/Terra_Orbit_Dsc_Dots/YYYY/Terra_Orbit_Dsc_DotsTTTTTTT_.shp"
+	PROJECTION
+		"init=epsg:4326"
+	END
+   LabelItem       "LABEL"
+   ClassItem       "TIME"
+    Class
+        Name            "Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][0,5]$/
+        Style
+            Symbol      "circle"
+            Size        10
+            Color       242 135 34
+        End
+
+        Label
+            Color           255 255 255
+            OutlineColor    128 128 128
+            Type            truetype
+            Size            7.5
+            Position        Auto
+            Partials        False
+            Buffer          10
+        End
+    End
+
+    Class
+        Name            "Non-Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][1,2,3,4,6,7,8,9]$/
+        Style
+            Symbol      "circle"
+            Size        7.5
+            Color       242 135 34
+        End
+    End
   END
 
