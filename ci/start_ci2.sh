@@ -5,62 +5,39 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-# Change default dir to /build/test/ci_tests
 cp httpd.conf /etc/httpd/conf/
+mkdir -p /build/test/ci_tests
 
-# Copy date_service config
-cp time_service/onearth_time_service.conf /etc/httpd/conf.d
-mkdir -p /build/test/ci_tests/time_service
-cp time_service/time_service.lua /build/test/ci_tests/time_service
+# Copy time_service config
+cp ../docker/time_service/onearth_time_service.conf /etc/httpd/conf.d
+sed -i 's@/var/www/html@/build/test/ci_tests@g' /etc/httpd/conf.d/onearth_time_service.conf
+mkdir -p /build/test/ci_tests/time_service/
+cp ../docker/time_service/time_service.lua /build/test/ci_tests/time_service/
+sed -i 's@{REDIS_HOST}@'127.0.0.1'@g' /build/test/ci_tests/time_service/time_service.lua
 
-# Copy config stuff
-mkdir -p /build/test/ci_tests/mrf_endpoint/test_daily_png/default/EPSG4326_16km
-cp -r ../src/test/ci_tests/test_imagery /build/test/ci_tests/
-cp ../src/test/ci_tests/mrf_test.conf /etc/httpd/conf.d
-cp layer_configs/test_mod_mrf_daily_png*.config /build/test/ci_tests/mrf_endpoint/test_daily_png/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/test_legacy_subdaily_jpg/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_legacy_subdaily_jpg*.config /build/test/ci_tests/mrf_endpoint/test_legacy_subdaily_jpg/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/test_nonyear_jpg/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_nonyear_jpg*.config /build/test/ci_tests/mrf_endpoint/test_nonyear_jpg/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/test_static_jpg/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_static_jpg*.config /build/test/ci_tests/mrf_endpoint/test_static_jpg/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/test_weekly_jpg/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_weekly_jpg*.config /build/test/ci_tests/mrf_endpoint/test_weekly_jpg/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_1a/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_1a*.config /build/test/ci_tests/mrf_endpoint/snap_test_1a/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_2a/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_2a*.config /build/test/ci_tests/mrf_endpoint/snap_test_2a/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_3a/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_3a*.config /build/test/ci_tests/mrf_endpoint/snap_test_3a/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_3b/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_3b*.config /build/test/ci_tests/mrf_endpoint/snap_test_3b/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_3c/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_3c*.config /build/test/ci_tests/mrf_endpoint/snap_test_3c/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_3d/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_3d*.config /build/test/ci_tests/mrf_endpoint/snap_test_3d/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_4a/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_4a*.config /build/test/ci_tests/mrf_endpoint/snap_test_4a/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_4b/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_4b*.config /build/test/ci_tests/mrf_endpoint/snap_test_4b/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_4c/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_4c*.config /build/test/ci_tests/mrf_endpoint/snap_test_4c/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_5a/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_5a*.config /build/test/ci_tests/mrf_endpoint/snap_test_5a/default/EPSG4326_16km/
-mkdir -p /build/test/ci_tests/mrf_endpoint/snap_test_year_boundary/default/EPSG4326_16km
-cp layer_configs/test_mod_mrf_snap_year_boundary*.config /build/test/ci_tests/mrf_endpoint/snap_test_year_boundary/default/EPSG4326_16km/
+# Configs for services
+mkdir -p /etc/onearth/config/conf/
+cp ../src/modules/gc_service/conf/* /etc/onearth/config/conf/
+mkdir -p /etc/onearth/empty_tiles/
+cp ../docker/empty_tiles/* /etc/onearth/empty_tiles/
+mkdir -p /etc/onearth/config/mapserver/
+cp ../src/test/mapserver_test_data/test.header /etc/onearth/config/mapserver/
+mkdir -p /build/test/ci_tests/wms/test
+cp /var/www/cgi-bin/mapserv.fcgi /build/test/ci_tests/wms/test/wms.cgi
+cp ../docker/wms_service/template.map .
 
-# GIBS sample configs
-
+python3.6 /usr/bin/oe2_wmts_configure.py ../src/test/mapserver_test_data/test_endpoint.yaml
+lua ../src/modules/gc_service/make_gc_endpoint.lua ../src/test/mapserver_test_data/test_endpoint.yaml
 
 echo 'Starting Apache server'
-/usr/sbin/apachectl
+/usr/sbin/httpd -k start
 sleep 2
 
 echo 'Starting Redis server'
 /usr/bin/redis-server &
 sleep 2
 
-# Add some test data to redis for profiling
+# Add some test data to redis for tests
 /usr/bin/redis-cli  -n 0 DEL layer:test_daily_png
 /usr/bin/redis-cli  -n 0 SET layer:test_daily_png:default "2012-02-29"
 /usr/bin/redis-cli  -n 0 SADD layer:test_daily_png:periods "2012-02-29/2012-02-29/P1D"
@@ -113,9 +90,9 @@ sleep 2
 /usr/bin/redis-cli  -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"
 /usr/bin/redis-cli  -n 0 SAVE
 
-# Tail the apache logs
-exec tail -qF \
-  /etc/httpd/logs/access.log \
-  /etc/httpd/logs/error.log \
-  /etc/httpd/logs/access_log \
-  /etc/httpd/logs/error_log
+# MapServer configs
+python3.6 /usr/bin/oe2_wms_configure.py ../src/test/mapserver_test_data/test.yaml
+
+echo 'Restarting Apache server'
+/usr/sbin/httpd -k restart
+sleep 2

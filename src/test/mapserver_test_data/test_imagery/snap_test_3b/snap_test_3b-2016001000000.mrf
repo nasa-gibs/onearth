@@ -1,0 +1,13 @@
+<MRF_META>
+  <Raster>
+    <Size x="8192" y="4096" c="3" />
+    <PageSize x="512" y="512" c="3" />
+    <Compression>JPEG</Compression>
+    <Quality>80</Quality>
+  </Raster>
+  <Rsets model="uniform" scale="2" />
+  <GeoTags>
+    <BoundingBox minx="-180.00000000" miny="-90.00000000" maxx="180.00000000" maxy=" 90.00000000" />
+    <Projection>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</Projection>
+  </GeoTags>
+</MRF_META>

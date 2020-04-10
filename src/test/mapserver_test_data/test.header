@@ -1,0 +1,175 @@
+MAP
+  Name                  "NASA_GIBS_EPSG4326"
+  UNITS                 dd
+  MAXSIZE               20000
+  SIZE                  1600 1200
+  Extent                -180 -90 180 90
+  ImageColor            0 0 0
+
+  FontSet         "/etc/onearth/config/mapserver/fonts.txt"
+  SymbolSet       "/etc/onearth/config/mapserver/symbols.sym"
+
+  ##Debug Params##
+  CONFIG "MS_ERRORFILE" "/var/log/mapserver/error.log"
+  Debug 3
+  CONFIG "CPL_DEBUG" "ON"
+  CONFIG "PROJ_DEBUG" "ON"
+
+  OUTPUTFORMAT
+    NAME                "png"
+    DRIVER              AGG/PNG
+    MIMETYPE            "image/png"
+    IMAGEMODE           RGBA
+    EXTENSION           "png"
+    FORMATOPTION        "GAMMA=0.75"
+  END
+
+  OUTPUTFORMAT
+    NAME "jpeg"
+    DRIVER AGG/JPEG
+    MIMETYPE "image/jpeg"
+    IMAGEMODE RGB
+    EXTENSION "jpg"
+    FORMATOPTION "GAMMA=0.75"
+  END
+  
+  OUTPUTFORMAT
+    NAME        "kml"
+    DRIVER      KML
+    MIMETYPE    "application/vnd.google-earth.kml.xml"
+    IMAGEMODE   RGB
+    EXTENSION   "kml"
+  END
+
+  OUTPUTFORMAT
+    NAME        "kmz"
+    DRIVER      KMZ
+    MIMETYPE    "application/vnd.google-earth.kmz"
+    IMAGEMODE   RGB
+    EXTENSION   "kmz"
+  END
+
+  OUTPUTFORMAT
+    NAME "csv"
+    DRIVER "OGR/CSV"
+    MIMETYPE "text/csv"
+    FORMATOPTION "LCO:GEOMETRY=AS_WKT"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "FILENAME=result.csv"
+  END
+
+  OUTPUTFORMAT
+    NAME "geojson"
+    DRIVER "OGR/GEOJSON"
+    FORMATOPTION "STORAGE=stream"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "LCO:COORDINATE_PRECISION=3"
+    FORMATOPTION "LCO:WRITE_BBOX=YES"
+    MIMETYPE "application/json; subtype=geojson"
+  END
+
+  Projection  #Output Projection
+    "init=epsg:4326"
+  End
+
+  WEB
+    METADATA
+      "wms_title"               "NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)"
+      "wms_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
+      "wms_onlineresource"      "http://gibs.earthdata.nasa.gov/wms/epsg4326/"
+      "wms_keywordlist"			"GIBS,NASA,WMS,Earth"
+      "wms_contactperson"		"GIBS User Support"
+      "wms_contactorganization"	"GIBS User Support"
+      "wms_contactposition"		"GIBS User Support"
+      "wms_contactelectronicmailaddress"	"support@earthdata.nasa.gov"
+      "wms_enable_request"      "GetMap GetCapabilities GetStyles GetLegendGraphic"
+      "wms_srs"                 "EPSG:4326 EPSG:3857"
+      "wms_connectiontimeout"   "180"
+      "wms_layerlimit"			"5"
+      # Uncomment the line below to enable WFS
+      "wfs_enable_request" "*"
+      "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:4326)"
+      "wfs_onlineresource" 		"http://gibs.earthdata.nasa.gov/wfs/mapserv"
+      "wfs_keywordlist"			"GIBS,NASA,WFS,Earth"
+      "wfs_fees"				"NONE"
+      "wfs_accessconstraints" 	"NONE"
+      "wfs_contactorganization"	"NASA Global Imagery Browse Services"
+      "wfs_service_onlineresource"	"http://gibs.earthdata.nasa.gov/wfs/mapserv"
+      "wfs_contactperson"		"GIBS User Support"
+      "wfs_contactorganization"	"GIBS User Support"
+      "wfs_contactposition"		"GIBS User Support"
+      "wfs_contactelectronicmailaddress"	"support@earthdata.nasa.gov"     
+      "wfs_srs"            		"EPSG:4326"
+      "wfs_abstract"			"The Global Imagery Browse Services (GIBS) system is a core EOSDIS component which provides a scalable, responsive, highly available, and community standards based set of imagery services.  These services are designed with the goal of advancing user interactions with EOSDIS’ inter-disciplinary data through enhanced visual representation and discovery."
+    END
+    VALIDATION
+      "default_TIME"            "default"
+      "TIME"                    "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2})|(default)$"
+    END
+  END
+  
+  SYMBOL
+        NAME "circle"
+        TYPE ellipse
+        FILLED true
+        POINTS
+                1 1
+        END
+  END
+  
+  LAYER
+	NAME	"Terra_Orbit_Dsc_Dots"
+	TYPE	POINT
+	STATUS	ON
+	VALIDATION
+		"default_Terra_Orbit_Dsc_Dots_TIME"		"TTTTTTT"
+		"Terra_Orbit_Dsc_Dots_TIME"			"^[0-9]{7}$"
+		"default_Terra_Orbit_Dsc_Dots_YEAR"	"YYYY"
+		"Terra_Orbit_Dsc_Dots_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+		"wms_title"		"Terra_Orbit_Dsc_Dots"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2016-03-05/2016-03-05/P1D"
+		"wms_timedefault"		"2016-03-05"
+		"wfs_getfeature_formatlist"		"geojson,csv"
+		"gml_include_items"		"all"
+	END
+	DATA	"/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/Terra_Orbit_Dsc_Dots/YYYY/Terra_Orbit_Dsc_DotsTTTTTTT_.shp"
+	PROJECTION
+		"init=epsg:4326"
+	END
+   LabelItem       "LABEL"
+   ClassItem       "TIME"
+    Class
+        Name            "Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][0,5]$/
+        Style
+            Symbol      "circle"
+            Size        10
+            Color       242 135 34
+        End
+
+        Label
+            Color           255 255 255
+            OutlineColor    128 128 128
+            Type            truetype
+            Size            7.5
+            Position        Auto
+            Partials        False
+            Buffer          10
+        End
+    End
+
+    Class
+        Name            "Non-Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][1,2,3,4,6,7,8,9]$/
+        Style
+            Symbol      "circle"
+            Size        7.5
+            Color       242 135 34
+        End
+    End
+  END
+
