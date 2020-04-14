@@ -21,10 +21,10 @@ from datetime import datetime
 import redis
 import argparse
 from pathlib import Path
-
+import csv, gzip
 
 def keyMapper(acc, obj):
-    keyElems = obj['Key'].split("/")
+    keyElems = obj.split("/")
 
     if len(keyElems) <= 3:  # Don't do anything with static layers
         return acc
@@ -53,15 +53,33 @@ def keyMapper(acc, obj):
 
     return acc
 
+def invenGetAllKeys(conn, bucket):
+    keys = []
+    kwargs = {'Bucket': bucket,'Prefix': 'inventory/'+bucket+'/entire/data/'}
+    respInv = conn.list_objects_v2(**kwargs)
+
+    try:
+        objects = respInv['Contents']
+    except KeyError:
+        return False
+    print('Using S3 Inventory')
+    lastest_inventory = max(objects, key=lambda x: x['LastModified'])
+    conn.download_file(bucket, lastest_inventory['Key'], 'tmpInventory.csv.gz')
+
+    with gzip.open('tmpInventory.csv.gz', mode = 'rt') as f:
+        reader = csv.reader(f)
+        keys = list(map(lambda x:x[1], reader))
+    return keys
 
 # https://alexwlchan.net/2017/07/listing-s3-keys/
 def getAllKeys(conn, bucket):
     keys = []
     kwargs = {'Bucket': bucket}
-
+    print('Using boto list_objects_v2')
     while True:
         resp = conn.list_objects_v2(**kwargs)
-        keys = keys + resp['Contents']
+        for obj in resp['Contents']:
+            keys.append(obj['Key'])
 
         try:
             kwargs['ContinuationToken'] = resp['NextContinuationToken']
@@ -93,7 +111,12 @@ def updateDateService(redis_uri,
 
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
-    objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
+
+    invenKeys=invenGetAllKeys(s3, bucket)
+    if(invenKeys):
+        objects = reduce(keyMapper, invenKeys, {})
+    else:
+        objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
