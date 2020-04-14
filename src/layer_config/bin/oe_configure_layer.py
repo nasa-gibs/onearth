@@ -2927,7 +2927,7 @@ for conf in conf_files:
       </Layer>
 """
 
-        layer_output = bulk_replace(TWMS_GC_LAYER_TEMPLATE, [('{$Identifier}', identifier),
+        layer_output = bulk_replace(TWMS_GC_LAYER_TEMPLATE, [('{Identifier}', identifier),
                                                              ('{Title}', title),
                                                              ('{Abstract}', abstract),
                                                              ('{minx}', projection.lowercorner[0]),
