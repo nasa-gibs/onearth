@@ -244,6 +244,15 @@ if __name__ == '__main__':
         except: 
             buffer_size = 5
 
+        # Buffer on the edges
+        try:
+            if get_dom_attr_value(dom, "buffer_size", "edges") == "false":
+                buffer_edges = False
+            else:
+                buffer_edges = True
+        except:
+            buffer_edges = False
+
         # Filtering options
         filter_list = []
         filter_options = dom.getElementsByTagName('feature_filters')
@@ -377,6 +386,7 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config buffer_size:             ', str(buffer_size)]))
+    log_info_mssg(str().join(['config buffer_edges:            ', str(buffer_edges)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
     log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
     log_info_mssg(str().join(['vectorgen current_cycle_time:   ', current_cycle_time]))
@@ -444,7 +454,9 @@ if __name__ == '__main__':
                     run_command(ogr2ogr_command_list, sigevent_url)
                     alltiles[idx] = outfile
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
-            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents, tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate, buffer_size=buffer_size)
+            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents,
+                              tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate,
+                              cluster_reduce_rate=cluster_reduce_rate, buffer_size=buffer_size, buffer_edges=buffer_edges)
             files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
             for mfile in files:
                 title, ext = os.path.splitext(os.path.basename(mfile))
