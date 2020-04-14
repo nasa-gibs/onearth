@@ -77,6 +77,7 @@ For dense datasets, this option can help improve client performance, as the topm
 
 **buffer_size** - The buffer size around each tile to avoid cutting off features and styling elements such as labels.
 Default is 5 (pixel size in map units at each zoom level) which allows enough room for most styling.  
+- An **edges** attribute indicates whether the buffering should be applied to the edges of the tile matrix.
 
 **email_server** - The SMTP server where email notifications are sent from.
 
