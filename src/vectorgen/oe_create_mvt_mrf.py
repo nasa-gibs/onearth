@@ -67,6 +67,7 @@ def create_vector_mrf(input_file_path,
                       feature_reduce_rate=2.5,
                       cluster_reduce_rate=2,
                       buffer_size=5,
+                      buffer_edges=False,
                       debug=False):
     """
     Creates a MVT MRF stack using the specified TileMatrixSet.
@@ -91,7 +92,9 @@ def create_vector_mrf(input_file_path,
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
             Default is 2 (retain the square root of the total points in the cluster).
         buffer_size (float) -- The buffer size around each tile to avoid cutting off features and styling elements such as labels.
-            Default is 5 (pixel size in map units at each zoom level) which allows enough room for most styling.     
+            Default is 5 (pixel size in map units at each zoom level) which allows enough room for most styling.
+        buffer_edges (boolean) -- Flag indicating whether buffering should be performed on the edges of the tile matrix.
+            Default is False
         debug (bool) -- Toggle verbose output messages and MVT file artifacts (MVT tile files will be created in addition to MRF)
     """
     # Get projection and calculate overview levels if necessary
@@ -204,19 +207,28 @@ def create_vector_mrf(input_file_path,
         for y in xrange(tile_matrix['matrix_height']):
             for x in xrange(tile_matrix['matrix_width']):
                 # Get tile bounds
-                min_x = tile_matrix['matrix_extents'][0] + (
-                    x * tile_matrix['tile_size_in_map_units'])
-                max_y = tile_matrix['matrix_extents'][3] - (
-                    y * tile_matrix['tile_size_in_map_units'])
-                max_x = min_x + tile_matrix['tile_size_in_map_units']
-                min_y = max_y - tile_matrix['tile_size_in_map_units']
+                tile_size = tile_matrix['tile_size_in_map_units']
+
+                min_x = tile_matrix['matrix_extents'][0] + (x * tile_size)
+                max_y = tile_matrix['matrix_extents'][3] - (y * tile_size)
+                max_x = min_x + tile_size
+                min_y = max_y - tile_size
                 tile_bbox = shapely.geometry.box(min_x, min_y, max_x, max_y)
 
-                # MVT tiles usually have a buffer around the edges for rendering purposes
-                tile_buffer = buffer_size * (tile_matrix['tile_size_in_map_units'] / 256)
+                # If we're buffering around the edges, then use the same min/max buffer for all dimensions and tiles
+                if buffer_edges:
+                    tile_min_x_buffer = tile_max_x_buffer = tile_min_y_buffer = tile_max_y_buffer = (buffer_size * (tile_size / 256))
+
+                # Else, set the min/max buffer to 0 if we're on an edge
+                else:
+                    tile_min_x_buffer = buffer_size * (tile_size / 256) if x != 0 else 0
+                    tile_max_x_buffer = buffer_size * (tile_size / 256) if x != (tile_matrix['matrix_width'] - 1) else 0
+                    tile_min_y_buffer = buffer_size * (tile_size / 256) if y != 0 else 0
+                    tile_max_y_buffer = buffer_size * (tile_size / 256) if y != (tile_matrix['matrix_height'] - 1) else 0
+
                 tile_buffer_bbox = shapely.geometry.box(
-                    min_x - tile_buffer, min_y - tile_buffer,
-                    max_x + tile_buffer, max_y + tile_buffer)
+                    min_x - tile_min_x_buffer, min_y - tile_min_y_buffer,
+                    max_x + tile_max_x_buffer, max_y + tile_max_y_buffer)
 
                 if debug:
                     print "Processing tile: {0}/{1}/{2}\r".format(z, x, y)
@@ -231,8 +243,7 @@ def create_vector_mrf(input_file_path,
                     ]:
                         geometry = shapely.geometry.shape(feature['geometry'])
                         # If the feature isn't fully contained in the tile bounds, we need to clip it.
-                        if not shapely.geometry.shape(
-                                feature['geometry']).within(tile_buffer_bbox):
+                        if not shapely.geometry.shape(feature['geometry']).within(tile_buffer_bbox):
                             geometry = tile_buffer_bbox.intersection(geometry)
                         new_feature = {
                             'geometry': geometry,

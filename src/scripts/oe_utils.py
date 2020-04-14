@@ -302,6 +302,17 @@ def get_dom_tag_value(dom, tag_name):
     value=tag[0].firstChild.data.strip()
     return value
 
+def get_dom_attr_value(dom, tag_name, attr_name):
+    """
+    Return value of a tag's attribute from dom (XML file).
+    Arguments:
+        tag_name -- name of dom tag in which the attribute is found.
+        attr_name -- name of dom attribute for which the value should be returned.
+    """
+    tag=dom.getElementsByTagName(tag_name)
+    value=tag[0].attributes[attr_name].value
+    return value
+
 def remove_file(filename):
     """
     Delete a file or link, and report this action to the log.
