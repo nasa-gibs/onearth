@@ -63,7 +63,8 @@ def create_vector_mrf(input_file_path,
                       tile_size,
                       overview_levels,
                       projection_str,
-                      filter_list,
+                      feature_filters,
+                      overview_filters,
                       feature_reduce_rate=2.5,
                       cluster_reduce_rate=2,
                       buffer_size=5,
@@ -86,7 +87,8 @@ def create_vector_mrf(input_file_path,
         tile_size (int) -- Pixel size of the tiles to be generated.
         overview_levels (list int) -- A list of the overview levels to be used (i.e., a level of 2 will render a level that's 1/2 the width and height of the base level)
         projection_str (str) -- EPSG code for the projection to be used.
-        filter_list (list object) -- List of options for filtering features
+        feature_filters (list object) -- List of options for filtering features during the initial processing
+        overview_filters (list object) -- Map of zLevels to list of options for filtering features for overviews
         feature_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce features for each successive zoom level.
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
@@ -124,51 +126,44 @@ def create_vector_mrf(input_file_path,
 
     spatial_dbs = []
     source_schemas = []
-    # Dump contents of shapefile into a mutable rtree spatial database for faster searching.
+    # Dump contents of input vector file into a mutable rtree spatial database for faster searching.
     for input_file in input_file_path:
-        print 'Processing ' + input_file
-        with fiona.open(input_file) as shapefile:
+        print("Processing" + input_file)
+        with fiona.open(input_file) as f:
             try:
-                spatial_db = rtree.index.Index(
-                    rtree_index_generator(list(shapefile), filter_list))
+                spatial_db = rtree.index.Index(rtree_index_generator(list(f), feature_filters, debug))
             except rtree.core.RTreeError as e:
-                print 'ERROR -- problem importing feature data. If you have filters configured, the source dataset may have no features that pass. Err: {0}'.format(
-                    e)
+                print("ERROR -- problem importing feature data. If you have filters configured, the source dataset "
+                      "may have no features that pass. Err: {0}".format(e))
                 sys.exit()
             spatial_dbs.append(spatial_db)
-            source_schema = shapefile.schema['geometry']
+            source_schema = f.schema['geometry']
             source_schemas.append(source_schema)
             if debug:
-                print 'Points to process: ' + str(
-                    spatial_db.count(spatial_db.bounds))
+                print("Total features to process: " + str(spatial_db.count(spatial_db.bounds)))
 
-    # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right, top-bottom and write them
-    # successively to the MRF.
+
+    # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right,
+    # top-bottom and write them successively to the MRF.
     for i, tile_matrix in enumerate(reversed(tile_matrices)):
         z = len(tile_matrices) - i - 1
+        z_orig_features = sum([spatial_dbs[idx].count(spatial_dbs[idx].bounds) for idx, spatial_db in enumerate(spatial_dbs)])
 
         for idx, spatial_db in enumerate(spatial_dbs):
             # We do general point rate reduction randomly, deleting those items from the
             # spatial index. The highest zoom level is never reduced.
-            if source_schemas[
-                    idx] == 'Point' and feature_reduce_rate and z != len(
-                        tile_matrices) - 1:
+            if source_schemas[idx] == 'Point' and feature_reduce_rate and z != len(tile_matrices) - 1:
                 feature_count = spatial_dbs[idx].count(spatial_dbs[idx].bounds)
-                num_points_to_delete = int(feature_count - math.floor(
-                    feature_count / feature_reduce_rate))
+                num_points_to_delete = int(feature_count - math.floor(feature_count / feature_reduce_rate))
                 if debug:
-                    print 'Deleting ' + str(
-                        num_points_to_delete) + ' points from dataset'
-                for feature in random.sample([
-                        feature for feature in spatial_dbs[idx].intersection(
-                            spatial_dbs[idx].bounds, objects=True)
-                ], num_points_to_delete):
+                    print("Rate reduced " + str(num_points_to_delete) + " features from zoom level")
+                for feature in random.sample([feature for feature in spatial_dbs[idx].intersection(
+                      spatial_dbs[idx].bounds, objects=True)], num_points_to_delete):
                     spatial_dbs[idx].delete(feature.id, feature.bbox)
 
-            # Here we're culling points that are less than a pixel away from each other. We use a queue to keep track of them and avoid looking at points twice.
-            if source_schemas[
-                    idx] == 'Point' and cluster_reduce_rate and z != len(
-                        tile_matrices) - 1:
+            # Here we're culling points that are less than a pixel away from each other. We use a queue to keep track
+            # of them and avoid looking at points twice.
+            if source_schemas[idx] == 'Point' and cluster_reduce_rate and z != len(tile_matrices) - 1:
                 feature_queue = [
                     item for item in spatial_dbs[idx].intersection(
                         spatial_dbs[idx].bounds, objects=True)
@@ -202,8 +197,14 @@ def create_vector_mrf(input_file_path,
                                 if item.id == point.id
                             ]
 
+        # Capture how many features are left after feature and cluster reduction
+        z_rdct_features = sum([spatial_dbs[idx].count(spatial_dbs[idx].bounds) for idx, spatial_db in enumerate(spatial_dbs)])
+
         # Start making tiles. We figure out the tile's bbox, then search for all the features that intersect with that bbox,
         # then turn the resulting list into an MVT tile and write the tile.
+        z_tile_features = 0
+        z_fltr_features = 0
+
         for y in xrange(tile_matrix['matrix_height']):
             for x in xrange(tile_matrix['matrix_width']):
                 # Get tile bounds
@@ -231,33 +232,53 @@ def create_vector_mrf(input_file_path,
                     max_x + tile_max_x_buffer, max_y + tile_max_y_buffer)
 
                 if debug:
-                    print "Processing tile: {0}/{1}/{2}\r".format(z, x, y)
-                    print 'Tile Bounds: ' + str(tile_bbox.bounds)
+                    print("Processing tile: {0}/{1}/{2}\r".format(z, x, y))
+                    print("Tile Bounds: " + str(tile_bbox.bounds))
 
-                # Iterate through the shapefile geometry and grab anything in this tile's bounds
+                # Iterate through the feature geometry and grab anything in this tile's bounds
                 tile_features = []
                 for spatial_db in spatial_dbs:
-                    for feature in [
-                            item.object for item in spatial_db.intersection(
-                                tile_buffer_bbox.bounds, objects=True)
-                    ]:
+                    for feature in [item.object for item in spatial_db.intersection(
+                          tile_buffer_bbox.bounds, objects=True)]:
+
                         geometry = shapely.geometry.shape(feature['geometry'])
                         # If the feature isn't fully contained in the tile bounds, we need to clip it.
                         if not shapely.geometry.shape(feature['geometry']).within(tile_buffer_bbox):
                             geometry = tile_buffer_bbox.intersection(geometry)
+
                         new_feature = {
                             'geometry': geometry,
                             'properties': feature['properties']
                         }
                         tile_features.append(new_feature)
 
+                # Keep a running count of how many features make their way into tiles in this zoom level before
+                # we filter them out in the overview filters
+                z_tile_features += len(tile_features)
+
+                # Filter features based on overview feature filters
+                if str(z) in overview_filters:
+                    before_count = len(tile_features)
+                    filtered_features = [f for f in tile_features if passes_filters(f, overview_filters[str(z)], debug)]
+                    tile_features = filtered_features
+                    after_count = len(tile_features)
+
+                    if debug:
+                        print("Filtered features in tile from " + str(before_count) + " to " + str(after_count))
+
+                # Keep a running count of how many features end up in the tiles in this zoom level after overview filtering
+                z_fltr_features += len(tile_features)
+
                 # Create MVT tile from the features in this tile (Only doing single layers for now)
                 new_layer = {'name': layer_name, 'features': tile_features}
+
                 # Have to change the default rounding if in Python 2.6 due to Decimal rounding issues.
                 if sys.version_info < (2, 7):
                     round_fn = py_26_round_fn
                 else:
                     round_fn = None
+
+                # Encode the MVT
                 mvt_tile = mapbox_vector_tile.encode(
                     [new_layer],
                     quantize_bounds=tile_bbox.bounds,
@@ -266,9 +287,11 @@ def create_vector_mrf(input_file_path,
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    mvt_filename = os.path.join(
-                        os.getcwd(), 'tiles/test_{0}_{1}_{2}.mvt'.format(
-                            z, x, y))
+                    mvt_dir = os.path.join(os.getcwd(), 'tiles')
+                    if not os.path.exists(mvt_dir):
+                        os.mkdir(mvt_dir)
+
+                    mvt_filename = os.path.join(mvt_dir, 'test_{0}_{1}_{2}.mvt'.format(z, x, y))
                     with open(mvt_filename, 'w+') as f:
                         f.write(mvt_tile)
 
@@ -288,6 +311,9 @@ def create_vector_mrf(input_file_path,
                     tile_index = notile
                 fidx.write(tile_index)
 
+        if debug:
+            print("Z-Level (" + str(z) + ") Tile Filtering - Orig: {0} / Reduced: {1} / Tiles: {2} / Filtered: {3}".
+                  format(z_orig_features, z_rdct_features, z_tile_features, z_fltr_features))
     fidx.close()
     fout.close()
     return
@@ -436,40 +462,46 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 
 
 # This is the recommended way of building an rtree index.
-def rtree_index_generator(features, filter_list):
+def rtree_index_generator(features, feature_filters, debug=False):
     for idx, feature in enumerate(features):
         try:
-            if len(filter_list) == 0 or passes_filters(feature, filter_list):
-                yield (idx, shapely.geometry.shape(feature['geometry']).bounds,
-                       feature)
+            if len(feature_filters) == 0 or passes_filters(feature, feature_filters, debug):
+                yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
         except ValueError as e:
             print "WARN - " + str(e)
 
 
-def passes_filters(feature, filter_list):
-    return any(
-        map(lambda filter_block: filter_block_func(feature, filter_block),
-            filter_list))
+def passes_filters(feature, filter_list, debug=False):
+    return any(map(lambda filter_block: filter_block_func(feature, filter_block, debug), filter_list))
 
 
-def filter_block_func(feature, filter_block):
+def filter_block_func(feature, filter_block, debug=False):
     if filter_block['logic'].lower() == "and":
-        return all(
-            map(lambda comp: filter_func(feature, comp),
-                filter_block['filters']))
+        return all(map(lambda comp: filter_func(feature, comp, debug), filter_block['filters']))
     else:
-        return any(
-            map(lambda comp: filter_func(feature, comp),
-                filter_block['filters']))
+        return any(map(lambda comp: filter_func(feature, comp, debug), filter_block['filters']))
 
 
-def filter_func(feature, comparison):
+def filter_func(feature, comparison, debug=False):
     property_value = str(feature['properties'].get(comparison['name']))
-    equality = comparison['comparison'] == 'equals'
-    regexp = comparison['regexp']
-    if regexp:
-        result = regexp.search(property_value)
+
+    if comparison['comparison'] in ['equals', 'notEquals']:
+        equality = comparison['comparison'] == 'equals'
+        regexp = comparison['regexp']
+        if regexp:
+            result = regexp.search(property_value)
+        else:
+            result = feature['properties'].get(comparison['name']) == comparison['value']
+        return result if equality else not result
     else:
-        result = feature['properties'].get(
-            comparison['name']) == comparison['value']
-    return result if equality else not result
+        values = sorted(set([float(comparison['value']), float(feature['properties'].get(comparison['name']))]))
+
+        filterValIdx = values.index(comparison['value'])
+
+        result = (comparison['comparison'] in ['ge', 'le'] and len(values) == 1) or + \
+                 (comparison['comparison'] in ['ge', 'gt'] and filterValIdx == 0) or + \
+                 (comparison['comparison'] in ['le', 'lt'] and filterValIdx == 1)
+
+        if debug and not result:
+            print(str(feature['properties'].get(comparison['name'])) + " not " + comparison['comparison'] + " than " + str(comparison['value']))
+        return result

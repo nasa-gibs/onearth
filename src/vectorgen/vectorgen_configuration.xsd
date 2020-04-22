@@ -75,8 +75,6 @@ limitations under the License.
   <xs:element name="target_extents" nillable="true" type="xs:string"/>
   <xs:element name="overview_levels" nillable="true" type="xs:string"/>
   <xs:element name="tile_size" nillable="true" type="xs:integer"/>
-  <xs:element default="0" name="feature_reduce_rate" type="xs:float"/>
-  <xs:element default="0" name="cluster_reduce_rate" type="xs:float"/>
   <xs:element default="5" name="buffer_size">
     <xs:complexType>
       <xs:simpleContent>
@@ -86,49 +84,62 @@ limitations under the License.
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
+  <xs:element default="2.5" name="feature_reduce_rate" type="xs:float"/>
+  <xs:element default="2" name="cluster_reduce_rate" type="xs:float"/>
   <xs:element name="email_server" nillable="true" type="xs:string"/>
   <xs:element name="email_recipient" nillable="true" type="xs:string"/>
   <xs:element name="feature_filters">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="filter_block">
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element maxOccurs="unbounded" minOccurs="0" name="equals">
-                <xs:complexType>
-                  <xs:simpleContent>
-                    <xs:extension base="xs:string">
-                      <xs:attribute name="name" type="xs:string" use="optional"/>
-                      <xs:attribute name="value" type="xs:string" use="optional"/>
-                      <xs:attribute name="regexp" type="xs:string" use="optional"/>
-                    </xs:extension>
-                  </xs:simpleContent>
-                </xs:complexType>
-              </xs:element>
-              <xs:element maxOccurs="unbounded" minOccurs="0" name="notEquals">
-                <xs:complexType>
-                  <xs:simpleContent>
-                    <xs:extension base="xs:string">
-                      <xs:attribute name="name" type="xs:string" use="optional"/>
-                      <xs:attribute name="regexp" type="xs:string" use="optional"/>
-                      <xs:attribute name="value" type="xs:string" use="optional"/>
-                    </xs:extension>
-                  </xs:simpleContent>
-                </xs:complexType>
-              </xs:element>
-            </xs:sequence>
-            <xs:attribute name="logic" use="required">
-              <xs:simpleType>
-                <xs:restriction base="xs:string">
-                  <xs:enumeration value="OR"/>
-                  <xs:enumeration value="AND"/>
-                </xs:restriction>
-              </xs:simpleType>
-            </xs:attribute>
-          </xs:complexType>
-        </xs:element>
+        <xs:element name="filter_block" type="filterType" maxOccurs="unbounded" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="overview_filters">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="filter_block" type="filterType" maxOccurs="unbounded" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
   <xs:element name="identifier" nillable="true" type="xs:string"/>
+
+  <xs:complexType name="filterType">
+    <xs:sequence>
+      <xs:element name="equals" type="stringFilterType" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element name="notEquals" type="stringFilterType" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element name="ge" type="numberFilterType" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element name="gt" type="numberFilterType" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element name="le" type="numberFilterType" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element name="lt" type="numberFilterType" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="logic" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="OR"/>
+          <xs:enumeration value="AND"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="z-level" type="xs:int" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="stringFilterType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:string" use="optional"/>
+        <xs:attribute name="regexp" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="numberFilterType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:float" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
 </xs:schema>
