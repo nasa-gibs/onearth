@@ -143,6 +143,16 @@ def create_vector_mrf(input_file_path,
                 print("Total features to process: " + str(spatial_db.count(spatial_db.bounds)))
 
 
+    # Insert latitude and longitude features into point features if those properties don't already exist
+    for idx, spatial_db in enumerate(spatial_dbs):
+        if source_schemas[idx] != 'Point': continue
+
+        for feature in [item.object for item in spatial_db.intersection(spatial_dbs[idx].bounds, objects=True)]:
+            if "Latitude" not in feature['properties'] and "Longitude" not in feature['properties']:
+                geometry = shapely.geometry.shape(feature['geometry'])
+                feature['properties']["Longitude"] = geometry.coords[0]
+                feature['properties']["Latitude"] = geometry.coords[1]
+
     # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right,
     # top-bottom and write them successively to the MRF.
     for i, tile_matrix in enumerate(reversed(tile_matrices)):
