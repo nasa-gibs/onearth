@@ -1600,10 +1600,13 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 
         try:
             img = gdal.Open(tile)
-        except RuntimeError as e:
-            errors += 1
-            log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
-            continue
+            
+            if img is None:
+                errors += 1
+                log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
+                continue
+        except RuntimeError as e:                
+            log_sig_exit('ERROR', 'Failed to execute gdal.Open', sigevent_url)
 
         if img.RasterCount == 1:
             errors += 1
