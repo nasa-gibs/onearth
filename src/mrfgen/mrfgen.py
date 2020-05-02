@@ -102,7 +102,7 @@ from contextlib import contextmanager # used to build context pool
 import functools
 import random
 
-versionNumber = '1.3.6'
+versionNumber = '1.4.0'
 oe_utils.basename = None
 
 #-------------------------------------------------------------------------------
