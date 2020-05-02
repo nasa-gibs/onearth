@@ -56,7 +56,7 @@ try:
 except:
     sys.exit('ERROR: cannot find GDAL/OGR modules')
 
-versionNumber = '1.3.6'
+versionNumber = '1.3.7'
 basename = None
 
 def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):
@@ -237,6 +237,21 @@ if __name__ == '__main__':
             tile_layer_name = get_dom_tag_value(dom, "identifier")
         except: 
             tile_layer_name = parameter_name
+            
+        # Buffer size
+        try:
+            buffer_size = float(get_dom_tag_value(dom, "buffer_size"))
+        except: 
+            buffer_size = 5
+
+        # Buffer on the edges
+        try:
+            if get_dom_attr_value(dom, "buffer_size", "edges") == "false":
+                buffer_edges = False
+            else:
+                buffer_edges = True
+        except:
+            buffer_edges = False
 
         # Filtering options
         filter_list = []
@@ -370,6 +385,8 @@ if __name__ == '__main__':
         log_info_mssg(str().join(['config overview_levels:         ', str(overview_levels)]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
+    log_info_mssg(str().join(['config buffer_size:             ', str(buffer_size)]))
+    log_info_mssg(str().join(['config buffer_edges:            ', str(buffer_edges)]))
     log_info_mssg(str().join(['config target_epsg:             ', target_epsg]))
     log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
     log_info_mssg(str().join(['vectorgen current_cycle_time:   ', current_cycle_time]))
@@ -437,7 +454,9 @@ if __name__ == '__main__':
                     run_command(ogr2ogr_command_list, sigevent_url)
                     alltiles[idx] = outfile
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
-            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents, tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate)
+            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents,
+                              tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate,
+                              cluster_reduce_rate=cluster_reduce_rate, buffer_size=buffer_size, buffer_edges=buffer_edges)
             files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
             for mfile in files:
                 title, ext = os.path.splitext(os.path.basename(mfile))

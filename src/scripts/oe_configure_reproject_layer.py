@@ -38,7 +38,7 @@ with oe_configure_layer.
 
 import sys
 from lxml import etree
-from oe_utils import add_trailing_slash, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command
+from oe_utils import add_trailing_slash, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, run_command, bulk_replace
 import requests
 import math
 import functools
@@ -111,15 +111,7 @@ VALIDATION_TEMPLATE = """
 """
 
 
-versionNumber = '1.3.6'
-
-
-def bulk_replace(source_str, replace_list):
-    out_str = source_str
-    for item in replace_list:
-        out_str = out_str.replace(item[0], item[1])
-    return out_str
-
+versionNumber = '1.3.7'
 
 def get_epsg_code_for_proj_string(proj_string):
     # For some reason OSR can't parse this version of the 3857 CRS.
@@ -196,7 +188,14 @@ def make_gdal_tms_xml(layer, bands, src_epsg):
     if src_epsg == '3857':
         tile_levels = tms.split('GoogleMapsCompatible_Level')[1]
     else:
-        tile_levels = TILE_LEVELS[tms]
+        try:
+            tile_levels = TILE_LEVELS[tms]
+        except KeyError:
+            try:
+                tile_levels = TILE_LEVELS[tms.split('_')[1]]
+            except KeyError as e:
+                print("ERROR:" + e.message + " is not a valid TileMatrixSet")
+                exit
     etree.SubElement(data_window_element, 'TileLevel').text = tile_levels
     etree.SubElement(data_window_element,
                      'TileCountX').text = '2' if src_epsg in ['4326','3413','3031'] else '1'
@@ -557,8 +556,12 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 except png.FormatError:
                     # No palette, check for greyscale
                     if sample_png.asDirect()[3]['greyscale'] is True:
-                        bands = 1
-                        print identifier + ' is greyscale'
+                        if sample_png.asDirect()[3]['alpha'] is True:
+                            bands = 2
+                            print identifier + ' is greyscale + alpha'
+                        else:
+                            bands = 1
+                            print identifier + ' is greyscale'
                     else:  # Check for alpha
                         if sample_png.asDirect()[3]['alpha'] is True:
                             bands = 4

@@ -35,6 +35,7 @@ limitations under the License.
         <xs:element minOccurs="0" ref="overview_levels"/>
         <xs:element minOccurs="0" ref="feature_reduce_rate"/>
         <xs:element minOccurs="0" ref="cluster_reduce_rate"/>
+        <xs:element minOccurs="0" ref="buffer_size"/>
         <xs:element minOccurs="0" ref="email_server"/>
         <xs:element minOccurs="0" ref="email_recipient"/>
         <xs:element minOccurs="0" ref="feature_filters"/>
@@ -74,8 +75,17 @@ limitations under the License.
   <xs:element name="target_extents" nillable="true" type="xs:string"/>
   <xs:element name="overview_levels" nillable="true" type="xs:string"/>
   <xs:element name="tile_size" nillable="true" type="xs:integer"/>
-  <xs:element default="2.5" name="feature_reduce_rate" type="xs:float"/>
-  <xs:element default="2" name="cluster_reduce_rate" type="xs:float"/>
+  <xs:element default="0" name="feature_reduce_rate" type="xs:float"/>
+  <xs:element default="0" name="cluster_reduce_rate" type="xs:float"/>
+  <xs:element default="5" name="buffer_size">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:float">
+          <xs:attribute name="edges" type="xs:boolean" use="optional"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="email_server" nillable="true" type="xs:string"/>
   <xs:element name="email_recipient" nillable="true" type="xs:string"/>
   <xs:element name="feature_filters">

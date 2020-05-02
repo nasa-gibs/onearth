@@ -268,6 +268,12 @@ def log_the_command(command_list):
     # Send to log.
     log_info_mssg_with_timestamp(spaced_command)
 
+def bulk_replace(source_str, replace_list):
+    out_str = source_str
+    for item in replace_list:
+        out_str = out_str.replace(item[0], item[1])
+    return out_str
+
 def get_modification_time(filename):
     """
     Return (fake) floating point value of posix modification time for a file.
@@ -294,6 +300,17 @@ def get_dom_tag_value(dom, tag_name):
     """
     tag=dom.getElementsByTagName(tag_name)
     value=tag[0].firstChild.data.strip()
+    return value
+
+def get_dom_attr_value(dom, tag_name, attr_name):
+    """
+    Return value of a tag's attribute from dom (XML file).
+    Arguments:
+        tag_name -- name of dom tag in which the attribute is found.
+        attr_name -- name of dom attribute for which the value should be returned.
+    """
+    tag=dom.getElementsByTagName(tag_name)
+    value=tag[0].attributes[attr_name].value
     return value
 
 def remove_file(filename):

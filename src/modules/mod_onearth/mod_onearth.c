@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.3.6
+ * Version 1.3.7
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache
@@ -818,6 +818,7 @@ static char postamble[]="</ServiceException></ServiceExceptionReport>" ;
     ap_rputs(preamble, r);
     ap_rputs(message  ,r);
     ap_rputs(postamble,r);
+    ap_rflush(r);
     return OK; // Request handled
 }
 
@@ -2473,6 +2474,7 @@ static int mrf_handler(request_rec *r)
   }
   ap_set_content_length(r,this_record->size);
   ap_rwrite(this_data,this_record->size,r);
+  ap_rflush(r);
 
   // Got a hit, do we log anything?
   if (!hit_count--) {
