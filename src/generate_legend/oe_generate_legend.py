@@ -206,7 +206,8 @@ def parse_colormaps(colormap_location, verbose):
             raise Exception(msg)
             sys.exit(1)
     
-    tree=ET.fromstring(dom.toxml())
+    xmlParser = ET.XMLParser(encoding='utf-8')
+    tree=ET.fromstring(dom.toxml().encode('utf-8'), parser=xmlParser)
     colormaps = []   
     if tree.tag == 'ColorMap':
         colormaps.append(tree)
