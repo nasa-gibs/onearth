@@ -8,4 +8,8 @@ COPY run-onearth.sh /usr/local/bin/run-onearth.sh
 
 RUN yum install -y /rpms/onearth-*.el7.*.rpm && yum clean all
 
-CMD ["/usr/local/bin/run-onearth.sh"]
+ENV LCDIR=/etc/onearth/config
+RUN sed -i 's/Order allow,deny/Require all granted/g' /etc/httpd/conf.d/onearth-demo.conf
+
+# Start HTTPD server
+CMD sh /usr/local/bin/run-onearth.sh
