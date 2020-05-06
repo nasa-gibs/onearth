@@ -202,7 +202,6 @@ def create_vector_mrf(input_file_path,
 
         # Start making tiles. We figure out the tile's bbox, then search for all the features that intersect with that bbox,
         # then turn the resulting list into an MVT tile and write the tile.
-        z_tile_features = 0
         z_fltr_features = 0
 
         for y in xrange(tile_matrix['matrix_height']):
@@ -251,10 +250,6 @@ def create_vector_mrf(input_file_path,
                             'properties': feature['properties']
                         }
                         tile_features.append(new_feature)
-
-                # Keep a running count of how many features make their way into tiles in this zoom level before
-                # we filter them out in the overview filters
-                z_tile_features += len(tile_features)
 
                 # Filter features based on overview feature filters
                 if str(z) in overview_filters:
@@ -312,8 +307,8 @@ def create_vector_mrf(input_file_path,
                 fidx.write(tile_index)
 
         if debug:
-            print("Z-Level (" + str(z) + ") Tile Filtering - Orig: {0} / Reduced: {1} / Tiles: {2} / Filtered: {3}".
-                  format(z_orig_features, z_rdct_features, z_tile_features, z_fltr_features))
+            print("Z-Level (" + str(z) + ") Tile Filtering - Orig: {0} / Reduced: {1} / Filtered: {2}".
+                  format(z_orig_features, z_rdct_features, z_fltr_features))
     fidx.close()
     fout.close()
     return
