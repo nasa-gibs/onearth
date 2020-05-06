@@ -316,15 +316,15 @@ if __name__ == '__main__':
                 if logic.lower() != "and" and logic.lower() != "or":
                     raise ValueError('Invalid value for "logic" attribute -- must be AND or OR')
 
-                # Validate z-level
-                zLevel = filter_element.getAttribute('z-level')
+                # Validate filter zoom level
+                zLevel = filter_element.getAttribute('zoom')
                 if not zLevel:
-                    raise ValueError('"z-level" attribute not provided for <filter_block>')
+                    raise ValueError('"zoom" attribute not provided for <filter_block>')
                 else:
                     try:
                         int(zLevel)
                     except:
-                        raise ValueError('"z-level" attribute must be integer')
+                        raise ValueError('"zoom" attribute must be integer')
 
                 # Get filters
                 comparisons = filter_element.getElementsByTagName('equals') + \

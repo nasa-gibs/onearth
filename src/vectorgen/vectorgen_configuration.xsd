@@ -121,7 +121,7 @@ limitations under the License.
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
-    <xs:attribute name="z-level" type="xs:int" use="optional"/>
+    <xs:attribute name="zoom" type="xs:int" use="optional"/>
   </xs:complexType>
 
   <xs:complexType name="stringFilterType">

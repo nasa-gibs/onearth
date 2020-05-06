@@ -39,7 +39,7 @@ limitations under the License.
     </filter_block>
 </feature_filters>
 <overview_filters>
-   <filter_block logic="AND" z-level="0">
+   <filter_block logic="AND" zoom="0">
        <lt name="RFP" value="1000"/>
        <ge name="RFP" value="20"/>
    </filter_block>
