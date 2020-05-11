@@ -88,19 +88,33 @@ Default is 5 (pixel size in map units at each zoom level) which allows enough ro
 ### Feature Filtering (MVT only)
 vectorgen can be configured to pass all the features in a dataset through a set of filters. Features whose metadata passes the filters will be added to the output MVT MRF.
 
-Here is a sample filter block:
+Here is a sample set of feature filters:
 
 ```
 <feature_filters>
     <filter_block logic="OR">
-        <equals name="id" value="some_id"/>
+        <equals name="id" value="some_value"/>
         <notEquals name="datetime" regexp="^should_not_start_with"/>
     </filter_block>
 </feature_filters>
+<overview_filters>
+    <filter_block logic="AND" zoom="0">
+        <lt name="RFP" value="some_numeric_value"/>
+        <ge name="RFP" value="some_numeric_value"/>
+    </filter_block>
+</overview_filters>
 ```
 
-**`<feature_filters`>** - This element should appear only once. This contains all the filter data. A feature will be added to the MVT MRF only if it passes **all** the <filter_block> elements.
+**`<feature_filters>`** - This element should appear only once.  It contains one or more `filter_block` elements that specify filter tests that are applied to all feature data. A feature will be added to the MVT MRF only if it passes **all** the <filter_block> elements.
 
-**`filter_block`** - Defines a single filter set and the logic used to evaluate it. The `logic` attribute is a boolean parameter used to combine all the results of the sub-filters.
+**`<overview_filters>`** - This element should appear only once.  It contains one or more `filter_block` elements that specify filter tests that are applied to feature data that have passed the `feature_filters`. A feature will be added to the specified MVT MRF TileMatrixLevel (e.g. 'zoom') only if it passes **all** the corresponding <filter_block> elements.
 
-**`equals`** and **`notEquals`** - An `equals` test will pass if the metadata property with the given `name` is equal to the given `value` or passes the given `regexp` (if both are present, the regexp is used). A `notEquals` test does the opposite. Regular expression strings must be valid Python regexps.
+**`<filter_block>`** - Defines a single filter set and the logic used to evaluate it. The `logic` attribute is a boolean parameter (`OR` or `AND`) used to combine all the results of the tests (e.g. `equals`).  Filter blocks within a `overview_filters` element must also provide the `zoom` attribute, which is the value of the TileMatrixSet level to which the filter will be applied.
+
+**Filter Tests** - One or more of the following tests are provided within the `filter_block` element.  The `value` attribute is required to specify the corresponding metadata property to which tests are applied.  Either the `value` or `regexp` attributes may be provided for string properties, only `value` is supported for numerical properties.  Regular expression strings must be valid Python regexps.
+  1. `equals` - An `equals` test will pass if the metadata property with the given `name` is equal to the given `value` or passes the given `regexp` (if both are present, the regexp is used).
+  2. `notEquals` -  A `notEquals` test does the opposite of `equals`. 
+  3. `lt` - A `lt` test will pass if the value of the metadata property with the given `name` is less than the given `value`. (Values are converted to floats for comparison)
+  4. `le` - A `le` test will pass if the value of the metadata property with the given `name` is less than or equal to the given `value`. (Values are converted to floats for comparison)
+  5. `gt` - A `gt` test will pass if the value of the metadata property with the given `name` is greater than the given `value`. (Values are converted to floats for comparison)
+  6. `ge` - A `ge` test will pass if the value of the metadata property with the given `name` is greater than or equal to the given `value`. (Values are converted to floats for comparison)
