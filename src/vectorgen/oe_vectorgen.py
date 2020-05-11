@@ -42,6 +42,7 @@
 from optparse import OptionParser
 from oe_utils import *
 from oe_create_mvt_mrf import create_vector_mrf
+from datetime import datetime
 import glob
 import logging
 import os
@@ -90,6 +91,34 @@ def shp2geojson(in_filename, out_filename, source_epsg, target_epsg, sigevent_ur
     else:
         ogr2ogr_command_list = ['ogr2ogr', '-f', 'GeoJSON', '-s_srs', source_epsg, '-t_srs', target_epsg, out_filename, in_filename]
     run_command(ogr2ogr_command_list, sigevent_url)
+
+
+def parse_filter(elem):
+    name = elem.getAttribute('name')
+    if not name:
+        raise ValueError('No "name" attribute found for {0} element'.format(elem.nodeName))
+
+    value = elem.getAttribute('value')
+    regexp_str = elem.getAttribute('regexp')
+    regexp = None
+    if regexp_str:
+        try:
+            regexp = re.compile(regexp_str)
+        except:
+            print "ERROR -- problem compiling regexp string {0}. Make sure it's a valid Python regular expression.".format(
+                regexp_str)
+            sys.exit()
+    if not value and not regexp:
+        raise ValueError('No "value" or "regexp" attribute found for {0} element'.format(elem.nodeName))
+
+    if elem.nodeName in ['ge', 'gt', 'le', 'lt']:
+        try:
+            value = float(value)
+        except:
+            raise ValueError('"value" attribute must be numerical')
+
+    return {'comparison': elem.nodeName, 'name': name, 'value': value, 'regexp': regexp}
+
 
 if __name__ == '__main__':
     
@@ -237,7 +266,7 @@ if __name__ == '__main__':
             tile_layer_name = get_dom_tag_value(dom, "identifier")
         except: 
             tile_layer_name = parameter_name
-            
+
         # Buffer size
         try:
             buffer_size = float(get_dom_tag_value(dom, "buffer_size"))
@@ -253,8 +282,8 @@ if __name__ == '__main__':
         except:
             buffer_edges = False
 
-        # Filtering options
-        filter_list = []
+        # Feature Filtering options
+        feature_filters = []
         filter_options = dom.getElementsByTagName('feature_filters')
         if len(filter_options):
             for filter_element in filter_options[0].getElementsByTagName('filter_block'):
@@ -266,25 +295,49 @@ if __name__ == '__main__':
                     raise ValueError('Invalid value for "logic" attribute -- must be AND or OR')
 
                 # Get filters
-                comparisons = filter_element.getElementsByTagName('equals') + filter_element.getElementsByTagName('notEquals')
-                def parse_filter(elem):
-                    name = elem.getAttribute('name')
-                    if not name:
-                        raise ValueError('No "name" attribute found for {0} element'.format(elem.nodeName))
-                    value = elem.getAttribute('value')
-                    regexp_str = elem.getAttribute('regexp')
-                    regexp = None
-                    if regexp_str:
-                        try:
-                            regexp = re.compile(regexp_str)
-                        except:
-                            print "ERROR -- problem compiling regexp string {0}. Make sure it's a valid Python regular expression.".format(regexp_str)
-                            sys.exit()
-                    if not value and not regexp:
-                        raise ValueError('No "value" or "regexp" attribute found for {0} element'.format(elem.nodeName))
-                    return {'comparison': elem.nodeName, 'name': name, 'value': value, 'regexp': regexp}
+                comparisons = filter_element.getElementsByTagName('equals') + \
+                              filter_element.getElementsByTagName('notEquals') + \
+                              filter_element.getElementsByTagName('lt') + \
+                              filter_element.getElementsByTagName('le') + \
+                              filter_element.getElementsByTagName('gt') + \
+                              filter_element.getElementsByTagName('ge')
                 filters = list(map(parse_filter, comparisons))
-                filter_list.append({'logic': logic, 'filters': filters})
+                feature_filters.append({'logic': logic, 'filters': filters})
+
+        # Overview filtering options
+        overview_filters = {}
+        filter_options = dom.getElementsByTagName('overview_filters')
+        if len(filter_options):
+            for filter_element in filter_options[0].getElementsByTagName('filter_block'):
+                # Validate filter logic
+                logic = filter_element.getAttribute('logic')
+                if not logic:
+                    raise ValueError('"logic" attribute not provided for <filter_block>')
+                if logic.lower() != "and" and logic.lower() != "or":
+                    raise ValueError('Invalid value for "logic" attribute -- must be AND or OR')
+
+                # Validate filter zoom level
+                zLevel = filter_element.getAttribute('zoom')
+                if not zLevel:
+                    raise ValueError('"zoom" attribute not provided for <filter_block>')
+                else:
+                    try:
+                        int(zLevel)
+                    except:
+                        raise ValueError('"zoom" attribute must be integer')
+
+                # Get filters
+                comparisons = filter_element.getElementsByTagName('equals') + \
+                              filter_element.getElementsByTagName('notEquals') + \
+                              filter_element.getElementsByTagName('lt') + \
+                              filter_element.getElementsByTagName('le') + \
+                              filter_element.getElementsByTagName('gt') + \
+                              filter_element.getElementsByTagName('ge')
+                filters = list(map(parse_filter, comparisons))
+
+                if zLevel not in overview_filters:
+                    overview_filters[zLevel] = []
+                overview_filters[zLevel].append({'logic': logic, 'filters': filters})
 
         if output_format not in ['mvt-mrf', 'esri shapefile', 'geojson']:
             log_sig_warn(output_format + ' output format not supported, using "MVT-MRF" instead', sigevent_url)
@@ -419,16 +472,16 @@ if __name__ == '__main__':
     alltiles = striptiles
     
     if len(time_of_data) == 6:
-        mrf_date = datetime.datetime.strptime(str(date_of_data)+str(time_of_data),"%Y%m%d%H%M%S")
+        mrf_date = datetime.strptime(str(date_of_data)+str(time_of_data),"%Y%m%d%H%M%S")
     else: 
-        mrf_date = datetime.datetime.strptime(date_of_data,"%Y%m%d")
+        mrf_date = datetime.strptime(date_of_data, "%Y%m%d")
     out_filename = output_name.replace('{$parameter_name}', parameter_name)
     time_params = []
     for i, char in enumerate(out_filename):
         if char == '%':
             time_params.append(char+out_filename[i+1])
     for time_param in time_params:
-        out_filename = out_filename.replace(time_param,datetime.datetime.strftime(mrf_date,time_param))
+        out_filename = out_filename.replace(time_param ,datetime.strftime(mrf_date,time_param))
     
     out_basename = working_dir + basename
     out_filename = output_dir + out_filename
@@ -450,13 +503,15 @@ if __name__ == '__main__':
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
                 if source_epsg != target_epsg:
                     outfile = os.path.join(working_dir, basename + '_reproject_' + str(idx) + os.path.splitext(tile)[1])
-                    ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1] else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
+                    ogr2ogr_command_list = ['ogr2ogr', '-preserve_fid', '-f', "GeoJSON" if "json" in os.path.splitext(tile)[1]
+                        else "ESRI Shapefile", '-s_srs', source_epsg, '-t_srs', target_epsg, outfile, tile]
                     run_command(ogr2ogr_command_list, sigevent_url)
                     alltiles[idx] = outfile
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
             create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents,
-                              tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate,
-                              cluster_reduce_rate=cluster_reduce_rate, buffer_size=buffer_size, buffer_edges=buffer_edges)
+                              tile_size, overview_levels, target_epsg, feature_filters, overview_filters,
+                              feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate,
+                              buffer_size=buffer_size, buffer_edges=buffer_edges, debug=False)
             files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
             for mfile in files:
                 title, ext = os.path.splitext(os.path.basename(mfile))
