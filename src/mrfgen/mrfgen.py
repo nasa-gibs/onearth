@@ -1944,7 +1944,7 @@ remove_file(vrt_filename)
 
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
-if overview_resampling[:4].lower() == 'near':
+if overview_resampling[:4].lower() == 'near' or overview_resampling == 'NNb':
     insert_method = 'NNb'
 else:
     insert_method = 'Avg'
