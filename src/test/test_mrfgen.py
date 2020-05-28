@@ -275,7 +275,10 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
         mrf = None
 
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
         
 
 class TestMRFGeneration_polar(unittest.TestCase):
@@ -360,15 +363,18 @@ class TestMRFGeneration_polar(unittest.TestCase):
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
-        filesize = os.path.getsize(self.output_img)
-        print "Comparing file size: " + self.output_img + " " + str(filesize) + " bytes"
-        self.assertEqual(filesize, 758628, "Output image does not match")
+        if DEBUG:
+            print "Comparing: " + self.output_img + " to " + self.compare_img
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
         mrf = None
         
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
         
 
 class TestMRFGeneration_mercator(unittest.TestCase):
@@ -463,7 +469,10 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         mrf = None
 
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
         
 class TestMRFGeneration_OBPG(unittest.TestCase):
     
@@ -701,8 +710,11 @@ class TestMRFGeneration_OBPG(unittest.TestCase):
             con.close()
 
     def tearDown(self):
-        [os.remove(os.path.join(self.input_dir, file)) for file in os.listdir(self.input_dir) if not file.endswith('.tiff')]
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            [os.remove(os.path.join(self.input_dir, file)) for file in os.listdir(self.input_dir) if not file.endswith('.tiff')]
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
         
 class TestMRFGeneration_OBPG_webmerc(unittest.TestCase):
     
@@ -821,8 +833,11 @@ class TestMRFGeneration_OBPG_webmerc(unittest.TestCase):
             con.close()
 
     def tearDown(self):
-        [os.remove(os.path.join(self.input_dir, file)) for file in os.listdir(self.input_dir) if not file.endswith('.tiff')]
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            [os.remove(os.path.join(self.input_dir, file)) for file in os.listdir(self.input_dir) if not file.endswith('.tiff')]
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
 class TestMRFGeneration_tiled_z(unittest.TestCase):
     '''
@@ -936,7 +951,10 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
             con.close()
 
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
 
 class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
@@ -1048,7 +1066,10 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         mrf = None
 
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
 class TestMRFGeneration_email_notification(unittest.TestCase):
 
@@ -1250,7 +1271,10 @@ class TestMRFGeneration_nonpaletted_badcolormap(unittest.TestCase):
         mrf = None
 
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
         
 class TestMRFGeneration_mixed_projections(unittest.TestCase):
     
@@ -1343,7 +1367,10 @@ class TestMRFGeneration_mixed_projections(unittest.TestCase):
         mrf = None
         
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
 class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
     
@@ -1436,7 +1463,10 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         mrf = None
         
     def tearDown(self):
-        shutil.rmtree(self.staging_area)        
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
 if __name__ == '__main__':
     # Parse options before running tests
