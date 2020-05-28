@@ -49,6 +49,7 @@ from cStringIO import StringIO
 from oe_test_utils import DebuggingServerThread, make_dir_tree, mrfgen_run_command as run_command
 
 DEBUG = False
+SAVE_RESULTS = False
 
 year = datetime.datetime.now().strftime('%Y')
 doy = int(datetime.datetime.now().strftime('%j'))-1
@@ -164,7 +165,10 @@ class TestMRFGeneration(unittest.TestCase):
         mrf = None
         
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
 
 class TestMRFGeneration_nonpaletted(unittest.TestCase):
@@ -1300,8 +1304,10 @@ if __name__ == '__main__':
                       help='Specify XML output file (default is test_mrfgen_results.xml')
     parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Display verbose debugging messages')
     parser.add_option('-t', '--test', action='append', type='choice', dest='test', choices=available_tests.keys(), help=test_help_text)
+    parser.add_option('-s', '--save-results', action='store_true', dest='save_results', help='Save staging area results')
     (options, args) = parser.parse_args()
     DEBUG = options.debug
+    SAVE_RESULTS = options.save_results
 
     # Have to delete the arguments as they confuse unittest
     del sys.argv[1:]
