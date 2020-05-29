@@ -28,6 +28,7 @@ limitations under the License.
  <resize_resampling>near</resize_resampling>
  <extents>-180,-90,180,90</extents>
  <colormap>mrfgen_test_data/working_dir/MODIS_Aqua_Chlorophyll_A.xml</colormap>
+ <mrf_strict_palette>true</mrf_strict_palette>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_merge>true</mrf_merge>

@@ -1635,6 +1635,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             for band in tileInfo["bands"]:
                 has_palette |= (band["colorInterpretation"] == "Palette")
 
+
             # Read gdal_info output
             if not has_palette:
                 if '.tif' in tile.lower():
@@ -1726,7 +1727,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 # add transparency flag for custom color map
                 add_transparency = True
             else:
-                log_info_mssg("Paletted image verified")
+                log_info_mssg("Paletted image found for PPNG output, no palettization required")
 
             # ONEARTH-348 - Validate the palette, but don't do anything about it yet
             # For now, we won't enforce any issues, but will log issues validating imagery
