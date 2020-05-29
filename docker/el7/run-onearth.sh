@@ -5,8 +5,10 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
+oe_configure_layer --create_mapfile --layer_dir=/etc/onearth/config/layers/ --generate_links
+
 echo 'Starting Apache server'
-/usr/sbin/apachectl
+/usr/sbin/httpd -k start
 
 # Tail the apache logs
 exec tail -qF \

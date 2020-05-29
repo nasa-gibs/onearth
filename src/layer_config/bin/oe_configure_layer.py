@@ -1650,6 +1650,10 @@ for conf in conf_files:
         except:
             wmsGroupName = None
         try:
+            wmsLayerGroupName = get_dom_tag_value(dom, 'WMSLayerGroupName')
+        except:
+            wmsLayerGroupName = None
+        try:
             abstract = get_dom_tag_value(dom, 'Abstract')
         except:
             abstract = identifier + " abstract"
@@ -1973,6 +1977,8 @@ for conf in conf_files:
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
     if wmsGroupName:
         log_info_mssg('config: WMSGroupName: ' + wmsGroupName)
+    if wmsLayerGroupName:
+        log_info_mssg('config: WMSLayerGroupName: ' + wmsLayerGroupName)
     if emptyTile:
         log_info_mssg('config: EmptyTile: ' + emptyTile)
     if str(emptyTileSize) != "":
@@ -3081,13 +3087,13 @@ for conf in conf_files:
                 for detected_time in detected_times:
                     defaultDate = detected_time.strip().split('/')[1]
                     timeExtent = timeExtent + detected_time.strip() + ","
-                mapfile.write("\t\t\"wms_timeextent\"\t\"" +
-                              timeExtent.rstrip(',') + "\"\n")
-                mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate +
-                              "\"\n")
+                mapfile.write("\t\t\"wms_timeextent\"\t\"" + timeExtent.rstrip(',') + "\"\n")
+                mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate + "\"\n")
             if wmsGroupName:
-                mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName +
-                              "\"\n")
+                mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName + "\"\n")
+
+            if wmsLayerGroupName is not None:
+                mapfile.write("\t\t\"wms_layer_group\"\t\t\"" + wmsLayerGroupName + "\"\n")
 
             if legend and legendUrl_png_h_url:
                 mapfile.write("\t\t\"wms_style\"\t\t\t\t\"default\"\n")
