@@ -54,6 +54,7 @@ limitations under the License.
   <xs:element name="Abstract" type="xs:string"/>
   <xs:element name="TiledGroupName" type="xs:string"/>
   <xs:element name="WMSGroupName" type="xs:string"/>
+  <xs:element name="WMSLayerGroupName" type="xs:string"/>
   <xs:element name="ArchiveLocation" nillable="true">
     <xs:complexType mixed="true">
       <xs:attribute name="static" use="required" type="xs:boolean"/>
