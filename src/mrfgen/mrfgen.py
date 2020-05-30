@@ -1744,7 +1744,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
    
                   if oeValidatePalette.returncode != None:
                       if  oeValidatePalette.returncode != 0:
-                          mssg = "oe_validate_palette.py: " + str(oeValidatePalette.returncode) + " colors in image not found in color table"
+                          mssg = "oe_validate_palette.py: Mismatching palette entries between the image and colormap; Resulting image may be invalid"
                           log_sig_warn(mssg, sigevent_url)
    
                except OSError:
