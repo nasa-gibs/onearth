@@ -385,8 +385,13 @@ if len(image_only) > 0 or len(colormap_only) > 0:
         sig_status = 'ERROR'
 else:
     sig_status = 'INFO'
+
 try:
     sigevent(sig_status, summary, sigevent_url)
 except urllib2.URLError:
     None
-sys.exit(len(image_only))
+
+exit_code = 0
+exit_code += 1 if len(image_only) > 0 else 0
+exit_code += 2 if len(colormap_only) > 0 else 0
+sys.exit(exit_code)
