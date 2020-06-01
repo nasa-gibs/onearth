@@ -1,0 +1,18 @@
+<ColorMaps>
+<ColorMap title="Water Product">
+  <Entries>
+    <ColorMapEntry rgb="0,0,0" transparent="true" sourceValue="0" nodata="true" ref="0"/>
+    <ColorMapEntry rgb="175,175,175" transparent="false" sourceValue="255" ref="1"/>
+    <ColorMapEntry rgb="50,210,245" transparent="false" sourceValue="1" ref="2"/>
+    <ColorMapEntry rgb="255,255,0" transparent="false" sourceValue="2" ref="3"/>
+    <ColorMapEntry rgb="250,30,36" transparent="false" sourceValue="3" ref="4"/>
+  </Entries>
+  <Legend type="classification">
+    <LegendEntry rgb="0,0,0" tooltip="No Water" id="0"/>
+    <LegendEntry rgb="175,175,175" tooltip="Insufficient Data" id="1"/>
+    <LegendEntry rgb="50,210,245" tooltip="Surface Water" id="2"/>
+    <LegendEntry rgb="255,255,0" tooltip="Recurring Flood" id="3"/>
+    <LegendEntry rgb="250,30,36" tooltip="Flood" id="4"/>
+  </Legend>
+</ColorMap>
+</ColorMaps>
