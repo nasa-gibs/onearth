@@ -1118,9 +1118,12 @@ class TestMRFGeneration_email_notification(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
 
     def tearDown(self):
-        shutil.rmtree(self.staging_area)
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print "Leaving test results in : " + self.staging_area
 
-
+        
 class TestMRFGeneration_mixed_projections(unittest.TestCase):
     
     def setUp(self):
