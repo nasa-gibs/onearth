@@ -781,6 +781,7 @@ class TestMRFGeneration_granule(unittest.TestCase):
         test_config4a = os.path.join(testdata_path, "mrfgen_test_config4a.xml")
         test_config4b = os.path.join(testdata_path, "mrfgen_test_config4b.xml")
         test_config4c = os.path.join(testdata_path, "mrfgen_test_config4c.xml")
+        test_config4d = os.path.join(testdata_path, "mrfgen_test_config4d.xml")
 
         # Make source image dir
         make_dir_tree(self.input_dir, ignore_existing=True)
@@ -799,32 +800,30 @@ class TestMRFGeneration_granule(unittest.TestCase):
         self.output_img_a = os.path.join(self.staging_area, "output_dir/OBPG2015336_.png")
         self.output_img_b = os.path.join(self.staging_area, "output_dir/OBPG2015336_Z0.png")
         self.output_img_c = os.path.join(self.staging_area, "output_dir/OBPG2015336_Z1.png")
+        self.output_img_d = os.path.join(self.staging_area, "output_dir/OBPG2015336_Z2.png")
         self.compare_img_b = os.path.join(testdata_path, "test_comp4b.png")
         self.compare_img_c = os.path.join(testdata_path, "test_comp4c.png")
-        
-        # download tiles
-        # Note that there are weird hang-up issues running these processes in shell mode.
-        #pdb.set_trace()
-#         quiet = '' if DEBUG else '-q'
-#         cmd = 'wget -r ' + quiet + ' --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -T 60 -P ' + self.input_dir + ' https://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/'
-#         run_command(cmd, show_output=DEBUG)
+        self.compare_img_d = os.path.join(testdata_path, "test_comp4d.png")
 
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
         if DEBUG:
             print "Generating empty MRF with No Copy option"
-        # process = subprocess.call(['mrfgen', '-c', test_config4a])
+
         #pdb.set_trace()
         run_command("mrfgen -c " + test_config4a, show_output=DEBUG)
         if DEBUG:
             print "Generating global composite using granules with existing NoCopy MRF at z=0"
-        # process = subprocess.call(['mrfgen', '-c', test_config4b])
         run_command("mrfgen -c " + test_config4b, show_output=DEBUG)
         run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf+':MRF:Z0 ' + self.output_img_b, show_output=DEBUG)
         if DEBUG:
             print "Generating global image with single granules with existing NoCopy MRF at z=1"
         run_command("mrfgen -c " + test_config4c, show_output=DEBUG)
         run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf+':MRF:Z1 ' + self.output_img_c, show_output=DEBUG)
+        if DEBUG:
+            print "Generating global image with single granules with existing NoCopy MRF at z=2"
+        run_command("mrfgen -c " + test_config4d, show_output=DEBUG)
+        run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf + ':MRF:Z2 ' + self.output_img_d, show_output=DEBUG)
            
     def test_generate_mrf(self):
         '''
@@ -979,7 +978,52 @@ class TestMRFGeneration_granule(unittest.TestCase):
             print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
             print "Comparing: " + self.output_img_c + " to " + self.compare_img_c
         self.assertTrue(filecmp.cmp(self.output_img_c, self.compare_img_c), "Output granule image does not match")
-        
+
+        '''
+        This portion covers the following test cases:        
+            Same as previous item, but with the 'NNb' resampling method
+        '''
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf + ":MRF:Z2")
+        driver = dataset.GetDriver()
+        if DEBUG:
+            print 'Driver:', str(driver.LongName)
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+
+        if DEBUG:
+            print 'Projection:', str(dataset.GetProjection())
+        self.assertEqual(str(dataset.GetProjection()),
+                         'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+
+        if DEBUG:
+            print 'Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount
+        self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
+
+        geotransform = dataset.GetGeoTransform()
+        if DEBUG:
+            print 'Origin: (', geotransform[0], ',', geotransform[3], ')'
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+        if DEBUG:
+            print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
+        self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
+        self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
+
+        band = dataset.GetRasterBand(1)
+        if DEBUG:
+            print 'Overviews:', band.GetOverviewCount()
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+
+        # Convert and compare MRF
+        img = gdal.Open(self.output_img_d)
+        if DEBUG:
+            print 'Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount
+            print "Comparing: " + self.output_img_d + " to " + self.compare_img_d
+        self.assertTrue(filecmp.cmp(self.output_img_d, self.compare_img_d), "Output granule image does not match")
+
+
         img = None
         
         # Test ZDB
@@ -992,7 +1036,7 @@ class TestMRFGeneration_granule(unittest.TestCase):
         lid = int(cur.fetchone()[0])
         if DEBUG:
             print "Number of records: " + str(lid)
-        self.assertEqual(lid, 2, "Number of records not matching in ZDB")
+        self.assertEqual(lid, 3, "Number of records not matching in ZDB")
         # Check for matching keys
         cur.execute("SELECT key_str FROM ZINDEX where z=0;")
         key_str = cur.fetchone()[0]
