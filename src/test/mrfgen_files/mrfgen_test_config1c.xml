@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mrfgen_configuration>
+ <date_of_data>20141004</date_of_data>
+ <parameter_name>MYR4ODLOLLDY</parameter_name>
+ <input_dir>mrfgen_files/MYR4ODLOLLDY</input_dir>
+ <output_dir>mrfgen_test_data/output_dir</output_dir>
+ <working_dir>mrfgen_test_data/working_dir</working_dir>
+ <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
+ <mrf_blocksize>512</mrf_blocksize>
+ <mrf_compression_type>PPNG</mrf_compression_type>
+ <target_x>4096</target_x>
+ <mrf_nocopy>false</mrf_nocopy>
+ <overview_resampling>NNb</overview_resampling>
+</mrfgen_configuration>
