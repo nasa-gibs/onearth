@@ -74,19 +74,7 @@ class TestMRFGeneration_paletted(unittest.TestCase):
         self.output_idx = os.path.join(self.staging_area, "output_dir/MYR4ODLOLLDY2014277_.idx")
         self.output_img = os.path.join(self.staging_area, "output_dir/MYR4ODLOLLDY2014277_.png")
         self.compare_img = os.path.join(testdata_path, "test_comp1.png")
-        
-        # download tile
-#         image_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/%s/MYR4ODLOLLDY_global_%s%s_10km.png" % (year,year,doy)
-#         world_url = "http://lance2.modaps.eosdis.nasa.gov/imagery/elements/MODIS/MYR4ODLOLLDY/%s/MYR4ODLOLLDY_global_%s%s_10km.pgw" % (year,year,doy)
-#         image_name = self.input_dir + image_url.split('/')[-1]
-#         world_name = self.input_dir + world_url.split('/')[-1]
-#         print "Downloading", image_url
-#         image_file=urllib.URLopener()
-#         image_file.retrieve(image_url,image_name)
-#         print "Downloading", world_url
-#         world_file=urllib.URLopener()
-#         world_file.retrieve(world_url,world_name)
-            
+
         #generate MRF
         #pdb.set_trace()
         run_command("mrfgen -c " + test_config, show_output=DEBUG)
@@ -570,13 +558,13 @@ class TestMRFGeneration_polar_avg(unittest.TestCase):
 
         img = None
         mrf = None
-        
+
     def tearDown(self):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
             print "Leaving test results in : " + self.staging_area
-        
+
 
 class TestMRFGeneration_mercator(unittest.TestCase):
     
@@ -603,11 +591,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         #pdb.set_trace()
         cmd = "mrfgen -c " + test_config
         run_command(cmd, show_output=DEBUG)
-        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # for out in process.communicate():
-        #     if DEBUG:
-        #         print out
-        
+
     def test_generate_mrf(self):
         # Check MRF generation succeeded
         self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
@@ -1083,10 +1067,6 @@ class TestMRFGeneration_granule_webmerc(unittest.TestCase):
         self.output_img = os.path.join(self.staging_area, "output_dir/OBPG_webmerc2015336_.png")
         self.compare_img = os.path.join(testdata_path, "test_comp5.png")
 
-        # download tiles
-        #pdb.set_trace()
-#         run_command('wget -r --no-parent --reject "index.html*" --cut-dirs=7 -nH -nc -q -T 60 -P ' + self.input_dir + ' https://oceancolor.gsfc.nasa.gov/BRS/MODISA/L2FRBRS/OC/LAC/2015/336/', show_output=DEBUG)
-            
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
         
@@ -1210,12 +1190,6 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
         self.compare_img = os.path.join(testdata_path, "test_comp6.jpg")
 
         #pdb.set_trace()
-        # Get sample input tiles (if they haven't been created yet)
-        if not os.path.isfile(os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.jpg')):
-            run_command('gdal_translate -of JPEG -co WORLDFILE=YES -outsize 512 512 -projwin -90 45 -81 36 \'<GDAL_WMS><Service name="TMS"><ServerUrl>http://map1.vis.earthdata.nasa.gov/wmts-geo/MODIS_Terra_CorrectedReflectance_TrueColor/default/2016-01-24/EPSG4326_250m/${z}/${y}/${x}.jpg</ServerUrl></Service><DataWindow><UpperLeftX>-180.0</UpperLeftX><UpperLeftY>90</UpperLeftY><LowerRightX>396.0</LowerRightX><LowerRightY>-198</LowerRightY><TileLevel>8</TileLevel><TileCountX>2</TileCountX><TileCountY>1</TileCountY><YOrigin>top</YOrigin></DataWindow><Projection>EPSG:4326</Projection><BlockSizeX>512</BlockSizeX><BlockSizeY>512</BlockSizeY><BandsCount>3</BandsCount></GDAL_WMS>\' ' + os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_0.jpg'), show_output=DEBUG)
-        if not os.path.isfile(os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.jpg')):
-            run_command('gdal_translate -of JPEG -co WORLDFILE=YES -outsize 512 512 -projwin -81 45 -72 36 \'<GDAL_WMS><Service name="TMS"><ServerUrl>http://map1.vis.earthdata.nasa.gov/wmts-geo/MODIS_Terra_CorrectedReflectance_TrueColor/default/2016-01-24/EPSG4326_250m/${z}/${y}/${x}.jpg</ServerUrl></Service><DataWindow><UpperLeftX>-180.0</UpperLeftX><UpperLeftY>90</UpperLeftY><LowerRightX>396.0</LowerRightX><LowerRightY>-198</LowerRightY><TileLevel>8</TileLevel><TileCountX>2</TileCountX><TileCountY>1</TileCountY><YOrigin>top</YOrigin></DataWindow><Projection>EPSG:4326</Projection><BlockSizeX>512</BlockSizeX><BlockSizeY>512</BlockSizeY><BandsCount>3</BandsCount></GDAL_WMS>\' ' + os.path.join(testdata_path, 'MORCR143LLDY/MODIS_Terra_CorrectedReflectance_TrueColor_1.jpg'), show_output=DEBUG)
-
         #generate MRF
         run_command("mrfgen -c " + test_config, show_output=DEBUG)
         run_command('gdal_translate -of JPEG -outsize 1024 512 -projwin -10018754.1713946 5621521.48619207 -8015003.3371157 4300621.37204427 ' + self.output_mrf+':MRF:Z0 ' + self.output_img, show_output=DEBUG)
