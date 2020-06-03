@@ -106,6 +106,8 @@ limitations under the License.
         <xs:enumeration value="average_mp"/>
         <xs:enumeration value="average_magphase"/>
         <xs:enumeration value="mode"/>
+        <xs:enumeration value="avg"/>
+        <xs:enumeration value="nnb"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
