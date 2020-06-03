@@ -1047,7 +1047,7 @@ class TestMRFGeneration_granule(unittest.TestCase):
         key_str = cur.fetchone()[0]
         if DEBUG:
             print key_str
-        self.assertEqual(key_str, '20151202000000', "Time for Z=1 does not match in ZDB")
+        self.assertEqual(key_str, '20151202100000', "Time for Z=1 does not match in ZDB")
         if con:
             con.close()
 

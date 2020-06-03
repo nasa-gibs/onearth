@@ -36,5 +36,5 @@ limitations under the License.
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_merge>true</mrf_merge>
  <mrf_z_levels>3</mrf_z_levels>
- <mrf_z_key type="string">20151202000000</mrf_z_key>
+ <mrf_z_key type="string">20151202200000</mrf_z_key>
 </mrfgen_configuration>
