@@ -55,7 +55,7 @@ year = datetime.datetime.now().strftime('%Y')
 doy = int(datetime.datetime.now().strftime('%j'))-1
 
 
-class TestMRFGeneration(unittest.TestCase):
+class TestMRFGeneration_paletted(unittest.TestCase):
     
     def setUp(self):
         testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
@@ -286,7 +286,7 @@ class TestMRFGeneration_polar(unittest.TestCase):
     def setUp(self):
         testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
         self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
-        test_config = os.path.join(testdata_path, "mrfgen_test_config2.xml")
+        test_config = os.path.join(testdata_path, "mrfgen_test_config2a.xml")
 
         # Make source image dir
         input_dir = os.path.join(testdata_path, 'MORCR143ARDY')
@@ -383,7 +383,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
     def setUp(self):
         testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
         self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
-        test_config = os.path.join(testdata_path, "mrfgen_test_config3.xml")
+        test_config = os.path.join(testdata_path, "mrfgen_test_config3a.xml")
 
         # Make empty dirs for mrfgen output
         mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
@@ -1318,7 +1318,7 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
 
 if __name__ == '__main__':
     # Parse options before running tests
-    available_tests = {'mrf_generation': TestMRFGeneration,
+    available_tests = {'mrf_generation_paletted': TestMRFGeneration_paletted,
                        'mrf_generation_nonpaletted': TestMRFGeneration_nonpaletted,
                        'polar_mrf': TestMRFGeneration_polar,
                        'mercator_mrf': TestMRFGeneration_mercator,
