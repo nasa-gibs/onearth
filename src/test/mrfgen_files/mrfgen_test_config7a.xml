@@ -13,15 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <mrfgen_configuration>
- <date_of_data>20151202</date_of_data>
- <parameter_name>OBPG_webmerc</parameter_name>
- <input_files>
-  <file>mrfgen_test_data/obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff</file>
-  <!-- crossing the antimeridian while reprojecting is currently not working
-  <file>mrfgen_test_data/obpg/A2015336000500.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff</file>
-  <file>mrfgen_test_data/obpg/A2015336001000.L2_LAC_OC.nc_CHLOR_A_FRBRS_RGBA.tiff</file>
-   -->
- </input_files>
+ <date_of_data>20190925</date_of_data>
+ <parameter_name>Flood_webmerc</parameter_name>
+ <input_dir>mrfgen_test_data/flood/</input_dir>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
  <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
@@ -35,7 +29,8 @@ limitations under the License.
  <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
  <extents>-180,-90,180,90</extents>
- <colormap>mrfgen_test_data/working_dir/MODIS_Aqua_Chlorophyll_A.xml</colormap>
+ <colormap>mrfgen_test_data/working_dir/MODIS_Combined_Flood.xml</colormap>
+ <mrf_strict_palette>true</mrf_strict_palette>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_merge>false</mrf_merge>
