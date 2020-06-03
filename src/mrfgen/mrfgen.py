@@ -498,14 +498,21 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         gdal_edit.wait()
 
     # Cut the input at the antimeridian into left and right halves
-    left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
 
-    log_the_command(left_cut_command_list)
-    left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    left_cut.wait()
-    left_cut_stderr = left_cut.stderr.read()
-    if len(left_cut_stderr) > 0:
-        log_sig_err(left_cut_stderr, sigevent_url)
+    # Make sure that when we cut the image, there will be at least one pixel on the left
+    if (Decimal(antimeridian) - Decimal(ulx)) < Decimal(xres):
+        log_info_mssg("Skipping left_cut for granule because the resulting image would be < 1 pixel wide")
+        tile_left = None
+    else:
+        left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+
+        log_the_command(left_cut_command_list)
+        left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        left_cut.wait()
+        left_cut_stderr = left_cut.stderr.read()
+
+        if len(left_cut_stderr) > 0:
+            log_sig_err(left_cut_stderr, sigevent_url)
 
     # Make sure that when we make the right cut that there will be at least one pixel
     if (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
@@ -683,7 +690,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
     Arguments:
         tiles -- List of tiles to insert
         mrf -- An existing MRF file
-        insert_method -- The resampling method to use {Avg, NearNb}
+        insert_method -- The resampling method to use {Avg, NNb}
         resize_resampling -- The resampling method to use for gdalwarp
         target_x -- The target resolution for x
         target_y -- The target resolution for y
@@ -1945,8 +1952,8 @@ remove_file(vrt_filename)
 
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
-if overview_resampling[:4].lower() == 'near':
-    insert_method = 'NearNb'
+if overview_resampling[:4].lower() == 'near' or overview_resampling.lower() == 'nnb':
+    insert_method = 'NNb'
 else:
     insert_method = 'Avg'
 

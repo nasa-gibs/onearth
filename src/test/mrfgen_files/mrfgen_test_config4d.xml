@@ -17,8 +17,8 @@ limitations under the License.
  <parameter_name>OBPG</parameter_name>
  <input_files>
   <file>mrfgen_test_data/output_dir/OBPG2015336_.mrf</file>
+  <file>mrfgen_files/obpg/A2015336000000.L2_LAC_OC.nc_CHLOR_A_FRBRS.tiff</file>
  </input_files>
- <input_dir>mrfgen_files/obpg</input_dir>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
  <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
@@ -27,7 +27,7 @@ limitations under the License.
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <outsize>40960 20480</outsize>
- <overview_resampling>nearest</overview_resampling>
+ <overview_resampling>NNb</overview_resampling>
  <resize_resampling>near</resize_resampling>
  <extents>-180,-90,180,90</extents>
  <colormap>mrfgen_test_data/working_dir/MODIS_Aqua_Chlorophyll_A.xml</colormap>
@@ -36,5 +36,5 @@ limitations under the License.
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_merge>true</mrf_merge>
  <mrf_z_levels>3</mrf_z_levels>
- <mrf_z_key type="string">20151202</mrf_z_key>
+ <mrf_z_key type="string">20151202200000</mrf_z_key>
 </mrfgen_configuration>

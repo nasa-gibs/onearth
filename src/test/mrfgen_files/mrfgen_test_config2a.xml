@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mrfgen_configuration>
+ <date_of_data>20170905</date_of_data>
+ <parameter_name>MORCR143ARDY</parameter_name>
+ <input_dir>mrfgen_files/MORCR143ARDY</input_dir>
+ <output_dir>mrfgen_test_data/output_dir</output_dir>
+ <working_dir>mrfgen_test_data/working_dir</working_dir>
+ <logfile_dir>mrfgen_test_data/logfile_dir</logfile_dir>
+ <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGB_512.jpg</mrf_empty_tile_filename>
+ <vrtnodata>0</vrtnodata>
+ <mrf_blocksize>512</mrf_blocksize>
+ <mrf_compression_type>JPEG</mrf_compression_type>
+ <overview_resampling>average</overview_resampling>
+ <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
+ <source_epsg>3413</source_epsg>
+ <extents>-4194304,-4194304,4194304,4194304</extents>
+ <target_epsg>3413</target_epsg>
+ <target_extents>-4194304,-4194304,4194304,4194304</target_extents>
+ <target_x>2048</target_x>
+</mrfgen_configuration>

@@ -11,5 +11,5 @@
  <mrf_compression_type>PPNG</mrf_compression_type>
  <target_x>4096</target_x>
  <mrf_nocopy>false</mrf_nocopy>
- <overview_resampling>nearest</overview_resampling>
+ <overview_resampling>NNb</overview_resampling>
 </mrfgen_configuration>

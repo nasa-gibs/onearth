@@ -10,6 +10,7 @@
  <vrtnodata>0</vrtnodata>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>JPEG</mrf_compression_type>
+ <overview_resampling>Avg</overview_resampling>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <source_epsg>3413</source_epsg>
  <extents>-4194304,-4194304,4194304,4194304</extents>
