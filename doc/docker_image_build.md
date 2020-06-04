@@ -4,8 +4,6 @@
 
 A Docker image that's configured to run OnEarth can be built using the **./bin/build_el7_docker_image.sh** script.  The script takes a single parameter, the tag to apply to the image.
 
-The new images is built from a Docker image that has the gibs-gdal RPMs installed already. The name of that image is set in the **docker/el7/gibs-gdal-image.txt** file.
-
 Example of building an OnEarth Docker image:
 
 `./bin/build_el7_docker_image.sh nasagibs/onearth:1.4.0`

@@ -23,7 +23,7 @@ rm -f \
   tmp/docker/rpms/onearth-demo-*.el7.centos.noarch.rpm
 cp docker/el7/run-onearth.sh tmp/docker/run-onearth.sh
 
-BASE_IMAGE=$(cat ./docker/el7/gibs-gdal-image.txt)
+BASE_IMAGE="centos:7"
 echo "FROM ${BASE_IMAGE}" > tmp/docker/Dockerfile
 egrep -v '^FROM ' < docker/el7/Dockerfile >> tmp/docker/Dockerfile
 

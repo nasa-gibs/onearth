@@ -21,9 +21,7 @@ These instructions assume that Docker is installed and running.  On a Mac, you
 can easily install Docker using [Docker Community Edition for Mac](https://store.docker.com/editions/community/docker-ce-desktop-mac).
 
 The onearth RPMs are built inside of a Docker container which manages all of the
-dependencies required in order to build the RPMs.  It is expected that the container
-will be started from a Docker image that has the gibs-gdal RPMs installed already.
-The name of that image is set in the **docker/el7/gibs-gdal-image.txt** file.
+dependencies required in order to build the RPMs.
 
 Once Docker is installed and running, the Enterprise Linux 7 RPMs can be built with:
 

@@ -12,6 +12,8 @@ cat > dist/build_rpms.sh <<EOS
 
 set -evx
 
+yum install -y epel-release
+
 yum install -y \
   @buildsys-build \
   gcc-c++ \
@@ -26,7 +28,13 @@ yum install -y \
   rsync \
   swig \
   wget \
-  yum-utils
+  yum-utils \
+  apr-devel \
+  proj-devel
+  
+yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" \
+  "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-devel-2.4.4-1.el7.x86_64.rpm"
+ 
 
 mkdir -p /build
 rsync -av \
@@ -41,7 +49,6 @@ chown -R root:root /build
   yum-builddep -y deploy/onearth/onearth.spec
   make download
   make onearth-rpm
-  make onearth-rpm
 )
 
 cp /build/dist/onearth-*.rpm /dist/
@@ -53,6 +60,6 @@ docker run \
   --rm \
   --volume "$(pwd):/source:ro" \
   --volume "$(pwd)/dist:/dist" \
-  "$(cat docker/el7/gibs-gdal-image.txt)" /dist/build_rpms.sh
+  centos:7 /dist/build_rpms.sh
 
 rm dist/build_rpms.sh
