@@ -404,7 +404,7 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 
 %post vectorgen
 /sbin/ldconfig
-pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
+pip install Fiona==1.8.13.post1 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 %files test
 %defattr(-,gibs,gibs,-)

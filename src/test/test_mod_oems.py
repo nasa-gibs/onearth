@@ -376,7 +376,7 @@ class TestModOEMS(unittest.TestCase):
         """
         19. Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
-        ref_hash = 'cc013129f771402ccf443ff729e3fe52'
+        ref_hash = '12e1e4e98764bb8ca4df0d6ae43d1140'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3a,snap_test_3b&map.layer[snap_test_3a]=OPACITY+50&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG:3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&TIME=2015-01-01'
         if DEBUG:
             print '\nTesting: Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS'
@@ -450,7 +450,7 @@ class TestModOEMS(unittest.TestCase):
         """
         23. Request CSV from vector source file via WFS
         """
-        ref_hash = '416ff6eeedf4150c358bdade4994718f'
+        ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv'
         if DEBUG:
             print '\nTesting: Request CSV from vector source file via WFS'
@@ -487,7 +487,7 @@ class TestModOEMS(unittest.TestCase):
         """
         25. Request CSV from vector source file with time via WFS
         """
-        ref_hash = '416ff6eeedf4150c358bdade4994718f'
+        ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv&TIME=2016-03-05'
         if DEBUG:
             print '\nTesting: Request CSV from vector source file with time via WFS'
