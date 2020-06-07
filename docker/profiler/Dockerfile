@@ -2,7 +2,7 @@ FROM centos:7
 
 RUN yum groupinstall -y "Development Tools"
 RUN yum install -y epel-release 
-RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
 RUN yum install -y python36u python36u-devel python36u-pip httpd siege
 
 # Copy OnEarth profiler source
