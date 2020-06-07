@@ -1,6 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM nasagibs/onearth-deps:2.2.3
+FROM nasagibs/onearth-deps:2.3.0
 
 RUN mkdir -p /var/www
 

@@ -23,7 +23,7 @@ import subprocess
 from datetime import timedelta
 from datetime import datetime
 
-version = '2.2.3'
+version = '2.3.0'
 
 tilematrixsets_geo = {
     '64km': [1,2], 
