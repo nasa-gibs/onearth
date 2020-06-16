@@ -22,6 +22,13 @@ WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/jiyinyiyong/json-lua.git
+WORKDIR /tmp/json-lua/
+RUN sed -i 's/git:/https:/' json-lua-0.1-3.rockspec
+RUN luarocks make json-lua-0.1-3.rockspec
+
 # Install GC Service configs
 RUN mkdir -p /etc/onearth/config/endpoint
 RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
