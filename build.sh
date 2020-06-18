@@ -38,5 +38,5 @@ rm Dockerfile
 
 # Build the onearth-profiler image
 cp ./docker/profiler/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-profiler:$OE_VERSION .
+docker build --no-cache --squash -t nasagibs/onearth-profiler:$OE_VERSION .
 rm Dockerfile
