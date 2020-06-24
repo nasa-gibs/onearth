@@ -51,6 +51,9 @@ RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_idx.py /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 RUN cp /home/oe2/onearth/src/colormaps/bin/colorMaptoHTML.py /usr/bin/
 
+# Copy Apache configs
+COPY ./docker/tile_services/oe2_proxy.conf /etc/httpd/conf.d/
+
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
