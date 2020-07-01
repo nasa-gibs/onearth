@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<vectorgen_configuration>
+<feature_id>
  <date_of_data>20160429</date_of_data>
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
@@ -26,6 +26,7 @@ limitations under the License.
  <source_epsg>4326</source_epsg>
  <target_x>2560</target_x>
  <target_y>1280</target_y>
+ <feature_id create="false">ident</feature_id>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>
 </vectorgen_configuration>

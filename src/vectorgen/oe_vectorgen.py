@@ -211,6 +211,23 @@ if __name__ == '__main__':
             source_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
         except:
             source_epsg = 'EPSG:4326' # default to geographic
+
+        # Unique feature id property name
+        try:
+            feature_id = float(get_dom_tag_value(dom, "feature_id"))
+
+            # Create the unique feature id during processing
+            try:
+                if get_dom_attr_value(dom, "feature_id", "create") == "true":
+                    create_feature_id = True
+                else:
+                    create_feature_id = False
+            except:
+                create_feature_id = False
+        except:
+            feature_id = "UID"
+            create_feature_id = True
+
         # Rate at which to reduce features
         try:
             feature_reduce_rate = float(get_dom_tag_value(dom, 'feature_reduce_rate'))
@@ -383,6 +400,8 @@ if __name__ == '__main__':
         log_info_mssg(str().join(['config target_y:                ', str(target_y) if target_y else 'Not specified']))
         log_info_mssg(str().join(['config target_extents:          ', str(target_extents)]))
         log_info_mssg(str().join(['config overview_levels:         ', str(overview_levels)]))
+    log_info_mssg(str().join(['config feature_id:              ', str(feature_id)]))
+    log_info_mssg(str().join(['config create_feature_id:       ', str(create_feature_id)]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config buffer_size:             ', str(buffer_size)]))
@@ -456,7 +475,8 @@ if __name__ == '__main__':
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
             success = create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y,
                                         target_extents, tile_size, overview_levels, target_epsg, filter_list,
-                                        feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate,
+                                        feature_id, create_feature_id, feature_reduce_rate=feature_reduce_rate,
+                                        cluster_reduce_rate=cluster_reduce_rate,
                                         buffer_size=buffer_size, buffer_edges=buffer_edges)
             if not success: errors += 1
 

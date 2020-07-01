@@ -29,6 +29,7 @@ limitations under the License.
  <target_x>2048</target_x>
  <target_extents>-20037508.3428,-20037508.3428,20037508.3428,20037508.3428</target_extents>
  <tile_size>256</tile_size>
+ <feature_id create="true">UID</feature_id>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>
  <buffer_size edges="true">5</buffer_size>
@@ -37,5 +38,5 @@ limitations under the License.
         <notEquals name="direction" value="Ascending"/>
         <equals name="direction" regexp="Transitional"/>
     </filter_block>
-</feature_filters>
+  </feature_filters>
 </vectorgen_configuration>

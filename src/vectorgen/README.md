@@ -67,6 +67,9 @@ Please note that because the dimensions of the vector pyramid are arbitrary, thi
 
 **`<tile_size>` (MVT only)** - The tile size, in pixels relative to `<target_x>`. Match this up to any raster layers you wish to use these tiles with.
 
+**`<feature_id>` (MVT only)** - The property name which contains a unique identifier for features in the input file(s). Defaults to `UID`.
+- A **create** attribute indicates whether the property should be created during processing.  Defaults to `true` if `<feature_id>` is not provided; Defaults to `false` if `<feature_id>` is provided.  If created, value will be an integer counter.
+
 **`<feature_reduce_rate>` (MVT only)** - In order to increase performance and reduce tile size, `oe_vectorgen` can drop features from lower zoom levels. For example, with a rate of 2.5, all the features in the overview zoom level (i.e., the highest) will be retained. For each successive zoom level, 1 feature (chosen randomly) will be retained for every 2.5 in the previous zoom level.
 
 For dense datasets, this option can help improve client performance, as the topmost zoom levels won't have the entire dataset crammed into one or two tiles.

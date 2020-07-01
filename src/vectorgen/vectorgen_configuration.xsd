@@ -33,6 +33,7 @@ limitations under the License.
         <xs:element minOccurs="0" ref="target_extents"/>
         <xs:element minOccurs="0" ref="tile_size"/>
         <xs:element minOccurs="0" ref="overview_levels"/>
+        <xs:element minOccurs="0" ref="feature_id"/>
         <xs:element minOccurs="0" ref="feature_reduce_rate"/>
         <xs:element minOccurs="0" ref="cluster_reduce_rate"/>
         <xs:element minOccurs="0" ref="buffer_size"/>
@@ -75,19 +76,26 @@ limitations under the License.
   <xs:element name="target_extents" nillable="true" type="xs:string"/>
   <xs:element name="overview_levels" nillable="true" type="xs:string"/>
   <xs:element name="tile_size" nillable="true" type="xs:integer"/>
+  <xs:element default="UID" name="feature_id">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:boolean">
+          <xs:attribute name="create" type="xs:boolean" use="optional"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
   <xs:element default="0" name="feature_reduce_rate" type="xs:float"/>
   <xs:element default="0" name="cluster_reduce_rate" type="xs:float"/>
   <xs:element default="5" name="buffer_size">
     <xs:complexType>
       <xs:simpleContent>
-        <xs:extension base="xs:float">
+        <xs:extension base="xs:boolean">
           <xs:attribute name="edges" type="xs:boolean" use="optional"/>
         </xs:extension>
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
-  <xs:element name="email_server" nillable="true" type="xs:string"/>
-  <xs:element name="email_recipient" nillable="true" type="xs:string"/>
   <xs:element name="feature_filters">
     <xs:complexType>
       <xs:sequence>
@@ -131,4 +139,6 @@ limitations under the License.
     </xs:complexType>
   </xs:element>
   <xs:element name="identifier" nillable="true" type="xs:string"/>
+  <xs:element name="email_server" nillable="true" type="xs:string"/>
+  <xs:element name="email_recipient" nillable="true" type="xs:string"/>
 </xs:schema>
