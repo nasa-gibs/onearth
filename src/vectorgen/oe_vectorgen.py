@@ -454,18 +454,24 @@ if __name__ == '__main__':
                     run_command(ogr2ogr_command_list, sigevent_url)
                     alltiles[idx] = outfile
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
-            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents,
-                              tile_size, overview_levels, target_epsg, filter_list, feature_reduce_rate=feature_reduce_rate,
-                              cluster_reduce_rate=cluster_reduce_rate, buffer_size=buffer_size, buffer_edges=buffer_edges)
-            files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
+            success = create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y,
+                                        target_extents, tile_size, overview_levels, target_epsg, filter_list,
+                                        feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate,
+                                        buffer_size=buffer_size, buffer_edges=buffer_edges)
+            if not success: errors += 1
+
+            files = [os.path.join(working_dir, basename + ".mrf"),
+                     os.path.join(working_dir, basename + ".idx"),
+                     os.path.join(working_dir, basename + ".pvt")]
+
             for mfile in files:
                 title, ext = os.path.splitext(os.path.basename(mfile))
                 if ext not in [".log",".xml"]:
-                    log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
+                    log_info_mssg(str().join(['Moving ', os.path.join(working_dir, title+ext), ' to ', out_filename+ext]))
                     if os.path.isfile(out_filename+ext):
-                        log_sig_warn(out_filename+ext + " already exists...overwriting", sigevent_url)
-                        os.remove(out_filename+ext)
-                    shutil.move(working_dir+"/"+title+ext, out_filename+ext)
+                        log_sig_warn(out_filename + ext + " already exists...overwriting", sigevent_url)
+                        os.remove(out_filename + ext)
+                    shutil.move(os.path.join(working_dir, title+ext), out_filename+ext)
             mssg=str().join(['Output created:  ', out_filename+".mrf"])
             
         elif output_format == 'geojson':
@@ -483,4 +489,5 @@ if __name__ == '__main__':
         # sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
+
     sys.exit(errors)

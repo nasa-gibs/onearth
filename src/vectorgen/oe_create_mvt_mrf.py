@@ -133,9 +133,9 @@ def create_vector_mrf(input_file_path,
                 spatial_db = rtree.index.Index(
                     rtree_index_generator(list(shapefile), filter_list))
             except rtree.core.RTreeError as e:
-                sys.exit()
                 log_info_mssg('ERROR -- problem importing feature data. If you have filters configured, ' \
                               'the source dataset may have no features that pass. Err: {0}'.format(e))
+                return False
             spatial_dbs.append(spatial_db)
             source_schema = shapefile.schema['geometry']
             source_schemas.append(source_schema)
@@ -290,7 +290,8 @@ def create_vector_mrf(input_file_path,
 
     fidx.close()
     fout.close()
-    return
+
+    return True
 
 
 # UTILITY FUNCTIONS
