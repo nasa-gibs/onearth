@@ -266,9 +266,11 @@ def create_vector_mrf(input_file_path,
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    mvt_filename = os.path.join(
-                        os.getcwd(), 'tiles/test_{0}_{1}_{2}.mvt'.format(
-                            z, x, y))
+                    tiles_dir    = os.path.join(os.getcwd(), 'tiles')
+                    if not os.path.exists(tiles_dir): os.makedirs(tiles_dir)
+
+                    mvt_filename = os.path.join(tiles_dir, 'test_{0}_{1}_{2}.mvt'.format(z, x, y))
+
                     with open(mvt_filename, 'w+') as f:
                         f.write(mvt_tile)
 
