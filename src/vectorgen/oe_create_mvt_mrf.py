@@ -50,6 +50,7 @@ import mapbox_vector_tile
 from osgeo import osr
 import decimal
 import re
+from oe_utils import *
 
 
 # Main tile-creation function.
@@ -126,21 +127,20 @@ def create_vector_mrf(input_file_path,
     source_schemas = []
     # Dump contents of shapefile into a mutable rtree spatial database for faster searching.
     for input_file in input_file_path:
-        print 'Processing ' + input_file
+        log_info_mssg('Processing ' + input_file)
         with fiona.open(input_file) as shapefile:
             try:
                 spatial_db = rtree.index.Index(
                     rtree_index_generator(list(shapefile), filter_list))
             except rtree.core.RTreeError as e:
-                print 'ERROR -- problem importing feature data. If you have filters configured, the source dataset may have no features that pass. Err: {0}'.format(
-                    e)
                 sys.exit()
+                log_info_mssg('ERROR -- problem importing feature data. If you have filters configured, ' \
+                              'the source dataset may have no features that pass. Err: {0}'.format(e))
             spatial_dbs.append(spatial_db)
             source_schema = shapefile.schema['geometry']
             source_schemas.append(source_schema)
             if debug:
-                print 'Points to process: ' + str(
-                    spatial_db.count(spatial_db.bounds))
+                log_info_mssg('Points to process: ' + str(spatial_db.count(spatial_db.bounds)))
 
     # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right, top-bottom and write them
     # successively to the MRF.
