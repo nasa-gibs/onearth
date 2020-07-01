@@ -125,13 +125,13 @@ def create_vector_mrf(input_file_path,
 
     spatial_dbs = []
     source_schemas = []
+
     # Dump contents of shapefile into a mutable rtree spatial database for faster searching.
     for input_file in input_file_path:
         log_info_mssg('Processing ' + input_file)
         with fiona.open(input_file) as shapefile:
             try:
-                spatial_db = rtree.index.Index(
-                    rtree_index_generator(list(shapefile), filter_list))
+                spatial_db = rtree.index.Index(rtree_index_generator(list(shapefile), filter_list))
             except rtree.core.RTreeError as e:
                 log_info_mssg('ERROR -- problem importing feature data. If you have filters configured, ' \
                               'the source dataset may have no features that pass. Err: {0}'.format(e))
@@ -437,14 +437,21 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 
 # UTILITY STUFF
 
-
 # This is the recommended way of building an rtree index.
-def rtree_index_generator(features, filter_list):
+def rtree_index_generator(features, filter_list, assign_id=False):
+
     for idx, feature in enumerate(features):
         try:
             if len(filter_list) == 0 or passes_filters(feature, filter_list):
-                yield (idx, shapely.geometry.shape(feature['geometry']).bounds,
-                       feature)
+                if assign_id:
+                    # Update (or initialize) the static feature id counter if we are assigning feature IDs
+                    try:
+                        rtree_index_generator.feature_id += 1
+                    except AttributeError:
+                        rtree_index_generator.feature_id = 1
+                    feature['properties']["UID"] = rtree_index_generator.feature_id
+
+                yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
         except ValueError as e:
             print "WARN - " + str(e)
 
