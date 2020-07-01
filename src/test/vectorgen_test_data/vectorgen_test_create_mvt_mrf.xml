@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<feature_id>
+<vectorgen_configuration>
  <date_of_data>20160429</date_of_data>
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
