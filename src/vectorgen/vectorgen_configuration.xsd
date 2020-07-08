@@ -79,7 +79,7 @@ limitations under the License.
   <xs:element default="UID" name="feature_id">
     <xs:complexType>
       <xs:simpleContent>
-        <xs:extension base="xs:boolean">
+        <xs:extension base="xs:string">
           <xs:attribute name="create" type="xs:boolean" use="optional"/>
         </xs:extension>
       </xs:simpleContent>
@@ -90,7 +90,7 @@ limitations under the License.
   <xs:element default="5" name="buffer_size">
     <xs:complexType>
       <xs:simpleContent>
-        <xs:extension base="xs:boolean">
+        <xs:extension base="xs:float">
           <xs:attribute name="edges" type="xs:boolean" use="optional"/>
         </xs:extension>
       </xs:simpleContent>
