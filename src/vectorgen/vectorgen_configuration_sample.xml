@@ -18,7 +18,7 @@ limitations under the License.
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
   <file>test.geojson</file>
- </input_files> 
+ </input_files>
  <overview_levels>2 4 8</overview_levels>
  <output_dir>output_dir/</output_dir>
  <working_dir>working_dir/</working_dir>
@@ -29,6 +29,7 @@ limitations under the License.
  <target_x>2048</target_x>
  <target_extents>-20037508.3428,-20037508.3428,20037508.3428,20037508.3428</target_extents>
  <tile_size>256</tile_size>
+ <feature_id create="true">UID</feature_id>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>
  <buffer_size edges="true">5</buffer_size>
@@ -37,11 +38,11 @@ limitations under the License.
         <notEquals name="direction" value="Ascending"/>
         <equals name="direction" regexp="Transitional"/>
     </filter_block>
-</feature_filters>
-<overview_filters>
-   <filter_block logic="AND" zoom="0">
-       <lt name="RFP" value="1000"/>
-       <ge name="RFP" value="20"/>
-   </filter_block>
-</overview_filters>
+  </feature_filters>
+  <overview_filters>
+    <filter_block logic="AND" zoom="0">
+      <lt name="RFP" value="1000"/>
+      <ge name="RFP" value="20"/>
+    </filter_block>
+  </overview_filters>
 </vectorgen_configuration>
