@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2002-2018, California Institute of Technology.
+# Copyright (c) 2002-2020, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -298,9 +298,9 @@ def format_source_url(source_url, reproj_tms):
                                      reproj_tms['identifier'])
 
 
-def make_proxy_config(proxy_path):
+def make_proxy_config(proxy_path, docker_host_name):
     return bulk_replace(PROXY_TEMPLATE,
-                        [('{remote_endpoint}', proxy_path['remote_path']),
+                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(docker_host_name), '172.17.0.1') if docker_host_name else proxy_path['remote_path']),
                          ('{local_endpoint}', proxy_path['local_path'])])
 
 
@@ -579,6 +579,16 @@ def build_configs(endpoint_config):
         endpoint_config['time_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
+    
+    # Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
+    docker_host_name = None
+    if endpoint_config.get('docker_host_name'):
+        docker_host_name = endpoint_config['docker_host_name']
+        source_gc_uri = source_gc_uri.replace(docker_host_name, '172.17.0.1')     
+    else:
+        print(
+            '\nNo "docker_host_name" configured.'
+        )
 
     # Get output TMS definitions (provided by local file)
     if not endpoint_config.get('tms_defs_file'):
@@ -748,7 +758,7 @@ def build_configs(endpoint_config):
          ('{gc_service_block}', gc_service_block)])
 
     apache_config_str += '\n' + '\n'.join(
-        make_proxy_config(proxy_path)
+        make_proxy_config(proxy_path, docker_host_name)
         for proxy_path in endpoint_config['proxy_paths'])
     if endpoint_config['date_service_info']:
         apache_config_str += '\n' + DATE_SERVICE_TEMPLATE.replace(
