@@ -34,6 +34,7 @@ RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
 # Copy setups
 COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/
+COPY docker/cors.conf /etc/httpd/conf.d/
 RUN cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
 RUN mkdir -p /etc/onearth/config/mapserver
 COPY docker/wms_service/fonts.txt /etc/onearth/config/mapserver/

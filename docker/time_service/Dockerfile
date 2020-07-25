@@ -25,9 +25,11 @@ WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth_time_service-0.1-1.rockspec
 
 # Set Apache configuration for optimized threading
+WORKDIR /home/oe2/onearth/docker
+RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
+    cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
+    cp cors.conf /etc/httpd/conf.d/
 WORKDIR /home/oe2/onearth/docker/time_service
-RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/
-RUN cp 10-worker.conf /etc/httpd/conf.modules.d/
 
 # Create OnEarth config log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
