@@ -327,12 +327,11 @@ local function calculatePeriods(dates)
 		end
 	end
   
-  if dates[4] ~= nil then
+  if dates[3] ~= nil then
     -- Figure out the size and interval of the period based on first 3 values
     local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
     local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
-    local diff3 = math.abs(dateToEpoch(dates[3]) - dateToEpoch(dates[4]))
-    if (diff1 == diff2) and (diff2 == diff3) then
+    if (diff1 == diff2) then
       local size, unit = calcIntervalFromSeconds(diff1)
       if isValidPeriod(size, unit) then
         local dateList = {}
@@ -359,7 +358,7 @@ local function calculatePeriods(dates)
       end
     else -- More complicated scenarios
       -- Check for monthly periods
-      if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff3 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) or (diff3 % 5270400 == 0) then
+      if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) then
         local size = math.floor(diff1/2419200)
         local unit = "month"
         local dateList = {}
@@ -417,7 +416,7 @@ local function calculatePeriods(dates)
 	  end
 		periodStrings[#periodStrings + 1] = periodStr
 	end
-
+  table.sort(periodStrings)
 	return periodStrings
 end
 
