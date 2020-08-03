@@ -675,6 +675,7 @@ static int handler(request_rec *r)
 
     // Looks fine, set the outgoing etag and then the image
     apr_table_set(r->headers_out, "ETag", ETag);
+    apr_table_set(r->headers_out, "Access-Control-Allow-Origin", "*");
     return send_image(r, buffer, static_cast<apr_size_t>(index.size));
 }
 
