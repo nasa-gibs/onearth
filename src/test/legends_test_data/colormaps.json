@@ -1,0 +1,121 @@
+{
+    "AIRS_Dust_Score_Ocean_Day": {
+        "colormap": "AIRS_Dust_Score_Ocean_Day.xml", 
+        "png_h": "ccae08657c7c6cae2786abef2631e4b4", 
+        "png_v": "7c2661b70b4fb9f0797c19ce217ec0db", 
+        "svg_h": "9445f1c8bd948df85159aca2e038d99b", 
+        "svg_v": "d76a716478d14823ca40862089daf792"
+    }, 
+    "AIRS_Prata_SO2_Index_Day": {
+        "colormap": "AIRS_Prata_SO2_Index_Day.xml", 
+        "png_h": "ac674a645599658f3cffffe9594d051a", 
+        "png_v": "93f198768311b03217b61f523d91ae5e", 
+        "svg_h": "46adbbed499a09b1141bb2777f26c858", 
+        "svg_v": "20fe6bfdbc71e5ef099792250693333d"
+    }, 
+    "AMSR2_Cloud_Liquid_Water_Day": {
+        "colormap": "AMSR2_Cloud_Liquid_Water_Day.xml", 
+        "png_h": "d4ab03049daac89acf3dcc4b1bfd1a57", 
+        "png_v": "9610fefaefa309c7909b2d7aab264bfe", 
+        "svg_h": "1086e06319d010e514e050f574e104d1", 
+        "svg_v": "36287252b8847bee3c3525601f4e2009"
+    }, 
+    "AMSR2_Sea_Ice_Concentration_25km": {
+        "colormap": "AMSR2_Sea_Ice_Concentration_25km.xml", 
+        "png_h": "a01497c2da4bf48b2de76d3742e7629a", 
+        "png_v": "01eff7e6c95c3b202a7d73fbbe502cb3", 
+        "svg_h": "7d464928f1bb1503a0b14fe8b557ebe4", 
+        "svg_v": "3b1cd4939d66bb2b879d63abf234d5e4"
+    }, 
+    "AMSRE_Snow_Depth_Over_Ice": {
+        "colormap": "AMSRE_Snow_Depth_Over_Ice.xml", 
+        "png_h": "4a93900231ece5f9da662de2ceaccadd", 
+        "png_v": "09238e0590870cbbac779c6fadbfb511", 
+        "svg_h": "9041262ec583ba8592b9ae1f38aee653", 
+        "svg_v": "b72c73f352b09b4f9dd2ee6595d62d29"
+    }, 
+    "CERES_EBAF_TOA_Incoming_Solar_Flux_Monthly": {
+        "colormap": "CERES_EBAF_TOA_Incoming_Solar_Flux_Monthly.xml", 
+        "png_h": "009110c3438695dc5e3dd5157bf2145b", 
+        "png_v": "cdade799bd3b2e4a3b413bf955e48c79", 
+        "svg_h": "8379510c7f8429265721048ecbb09eec", 
+        "svg_v": "d5143ce6e999c4ec390a5355236ec144"
+    }, 
+    "MEaSUREs_Daily_Landscape_Freeze_Thaw_AMSRE.xml": {
+        "colormap": "MEaSUREs_Daily_Landscape_Freeze_Thaw_AMSRE.xml", 
+        "png_h": "e56ce0ccaf266a5a8c7f3adf6d67c900", 
+        "png_v": "358097f777be7731d8fa2672dbe39a61", 
+        "svg_h": "cd58b2f6eb054f74bee648bda34ba8bc", 
+        "svg_v": "347678da297f993c3e6d3afa5ed41e39"
+    }, 
+    "MODIS_Aqua_Cloud_Effective_Radius_PCL": {
+        "colormap": "MODIS_Aqua_Cloud_Effective_Radius_PCL.xml", 
+        "png_h": "59112ae74e5f077cdf4bc22f6c8a0cb9", 
+        "png_v": "29496cde4064a1b24227d1b6027889f2", 
+        "svg_h": "d730f439097679ee6543d60037c80cb5", 
+        "svg_v": "4a2aff4083c8149e5ead2a09e6021076"
+    }, 
+    "MODIS_Aqua_Cloud_Phase_Infrared_Day": {
+        "colormap": "MODIS_Aqua_Cloud_Phase_Infrared_Day.xml", 
+        "png_h": "275d0800a83e6fa2393ca611add820a1", 
+        "png_v": "6a632ef8c6b08bfd56006eb8ee8bbf4f", 
+        "svg_h": "154771716af88eebfa5293a82b294491", 
+        "svg_v": "237a6bd038d4c37fc8553cf29663399a"
+    }, 
+    "MODIS_Aqua_Cloud_Water_Path": {
+        "colormap": "MODIS_Aqua_Cloud_Water_Path.xml", 
+        "png_h": "57ccfcabb11d7c8181aa0ddf69b19314", 
+        "png_v": "df8bc0f653733d80101933dce403c990", 
+        "svg_h": "ccf358624d571b04c0b4dcaea67d252a", 
+        "svg_v": "fdbc2821d6cd4d6a995b7f8c1ff57fdd"
+    }, 
+    "MODIS_Aqua_Data_No_Data": {
+        "colormap": "MODIS_Aqua_Data_No_Data.xml", 
+        "png_h": "3f75e9a4946cb4d88db8a5cc94fc6b71", 
+        "png_v": "c84f6158c889c4da770b1746973d7b08", 
+        "svg_h": "7775b3d170d42155135a6673f46edd5b", 
+        "svg_v": "fcb21e1427149d12c2e2b0628099c270"
+    }, 
+    "MODIS_Aqua_Sea_Ice": {
+        "colormap": "MODIS_Aqua_Sea_Ice.xml", 
+        "png_h": "73d0ed3eebcc82343e365fcac0305546", 
+        "png_v": "8bfbc8baee68c0bd7d5b1220cbefe2fd", 
+        "svg_h": "b5fd21de2732a7da570a2470bef5129f", 
+        "svg_v": "f146eff37798fff0a4562989a4d0d51b"
+    }, 
+    "MODIS_Combined_Value_Added_AOD.xml": {
+        "colormap": "MODIS_Combined_Value_Added_AOD.xml", 
+        "png_h": "0b50b371664d9496b66c14453515ab9f", 
+        "png_v": "bb7462be78d40c85badc474ec4de70cc", 
+        "svg_h": "2ccda65d691dd5a35a86a0e098bafbc3", 
+        "svg_v": "6ff53e0bcc4162266dbf6c0b04b46ebb"
+    }, 
+    "MODIS_Water_Mask": {
+        "colormap": "MODIS_Water_Mask.xml", 
+        "png_h": "1e89deb5393df5c57075a1b4f041f67f", 
+        "png_v": "65105fb03a319786108e3020236c14ea", 
+        "svg_h": "6e7655087f5ed439dfbd59b983984dc6", 
+        "svg_v": "bae9c752b4d24af572421f4d9771fe17"
+    }, 
+    "MOPITT_CO_Daily_Surface_Mixing_Ratio_Day": {
+        "colormap": "MOPITT_CO_Daily_Surface_Mixing_Ratio_Day.xml", 
+        "png_h": "9bffe764c23e07bc8bd5b232e8db93fe", 
+        "png_v": "3695cb46fe9e6425c0169338d46e44f3", 
+        "svg_h": "9662ab0cf1caec13d842b7b6aedf0f67", 
+        "svg_v": "92f2d9144f3ad29c265dc8734dc0a8f5"
+    }, 
+    "SMAP_L1_Passive_Brightness_Temp_Fore_H_RFI": {
+        "colormap": "SMAP_L1_Passive_Brightness_Temp_Fore_H_RFI.xml", 
+        "png_h": "7caf75a6a2f70ca63bd6d20e54e46dfd", 
+        "png_v": "fcdb9c53dd3773c6858fb3fa04bcbec3", 
+        "svg_h": "5845b711392deab66467399df344a261", 
+        "svg_v": "d9ba34c2eed23976c6f94c5878b7ea4f"
+    }, 
+    "SMAP_L4_Uncertainty_Mean_Net_Ecosystem_Exchange": {
+        "colormap": "SMAP_L4_Uncertainty_Mean_Net_Ecosystem_Exchange.xml", 
+        "png_h": "0c00deff62fda7f5ad8cea59c3e4418d", 
+        "png_v": "761af8a24c8d9fc52db1d59e90da55f1", 
+        "svg_h": "02b811d69ffafa3a6826649a2ac737e5", 
+        "svg_v": "9abca411e4b2dcdb04c6fd044a77af3b"
+    }
+}
