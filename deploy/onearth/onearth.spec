@@ -1,33 +1,29 @@
 Name:		onearth
 Version:	1.4.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
 URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
-Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.tar.gz
-Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
-Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-Source4:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
-Source6:	https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
-Source7:	https://pypi.python.org/packages/6a/8a/718fd7d3458f9fab8e67186b00abdd345b639976bc7fb3ae722e1b026a50/pyparsing-2.2.0-py2.py3-none-any.whl
-Source8:	https://pypi.python.org/packages/3a/59/bfb842d06d90d3c1b55e097726061eb51da34dc4b23b6591c202094318cf/parse_apache_configs-0.0.2.tar.gz
+Source1:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
+Source2:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+Source3:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
 Source4:    https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 
-BuildRequires:	httpd-devel
+BuildRequires:	cmake
 BuildRequires:	chrpath
-BuildRequires:	gibs-gdal-devel
-BuildRequires:	libpng-devel
-BuildRequires:	gcc-c++
 BuildRequires:	freetype-devel
+BuildRequires:	gcc-c++
+BuildRequires:	gibs-gdal-devel
+BuildRequires:	httpd-devel
+BuildRequires:	libpng-devel
 BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
-BuildRequires:	cmake
 BuildRequires:  turbojpeg-devel
-BuildRequires:  python-pip
-Requires:	gibs-gdal
 Requires:	httpd = 2.4.6
+Requires:	gibs-gdal >= 2.4.4
+Requires:	gibs-gdal-apps >= 2.4.4
 Requires:   sqlite
 Requires:   libxml2
 Requires:   mod_ssl
@@ -50,7 +46,6 @@ Demonstration of OnEarth
 Summary:	Vector data processing for OnEarth
 Requires:	libxml2-devel
 Requires:	libxslt-devel
-Requires:	python-pip
 Requires:	gibs-gdal-devel
 
 %description vectorgen
@@ -63,19 +58,11 @@ Requires:	chrpath
 Requires:	gcc-c++
 Requires:	agg
 Requires:	agg-devel
-Requires:	pyparsing
 Requires:	python-devel
-Requires:	python-tornado
 Requires:	python-pycxx-devel
-Requires:	python-dateutil
-Requires:	python-pypng
-Requires:	python-lxml
-Requires:	python-nose
-Requires:   python-unittest2
 Requires:	freetype-devel
-Requires:	gibs-gdal > 0.9.0
-Provides:	python-matplotlib = 1.5.1
-Obsoletes:	python-matplotlib < 1.5.1
+Requires:	gibs-gdal >= 2.4.4
+Requires:	gibs-gdal-apps >= 2.4.4
 BuildArch:	noarch
 
 %description tools
@@ -84,7 +71,8 @@ Auxiliary configuration tools for OnEarth including Legend Generator
 %package mrfgen
 Summary:	MRF generator for OnEarth
 Requires:   onearth-tools
-Requires:	gibs-gdal > 0.9.0
+Requires:	gibs-gdal >= 2.4.4
+Requires:	gibs-gdal-apps >= 2.4.4
 
 %description mrfgen
 MRF generator for OnEarth
@@ -93,11 +81,6 @@ MRF generator for OnEarth
 Summary:	Layer configuration tools for OnEarth
 Requires:	%{name} = %{version}-%{release}
 Requires:   onearth-tools
-Requires:	python-dateutil
-Requires:	python-lxml
-Requires:   python-unittest2
-Requires:   python-requests
-Requires:	python-pip
 BuildArch:	noarch
 
 %description config
@@ -134,9 +117,6 @@ cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
 cp %{SOURCE4} upstream
-cp %{SOURCE6} upstream
-cp %{SOURCE7} upstream
-cp %{SOURCE8} upstream
 
 %build
 make onearth PREFIX=%{_prefix}
@@ -262,13 +242,12 @@ rm -rf %{buildroot}
 
 %files
 %{_libdir}/httpd/modules/*
-%{_libdir}/httpd/modules/mod_proxy/*
 %defattr(-,gibs,gibs,775)
 %dir %{_datadir}/onearth
 %defattr(775,gibs,gibs,775)
 %{_datadir}/onearth/apache
 %{_datadir}/onearth/empty_tiles
-%defattr(755,root,root,-)
+%defattr(755,root,root,755)
 %{_bindir}/oe_create_cache_config
 %{_datadir}/cgicc
 
@@ -303,12 +282,6 @@ done
 %{_bindir}/colorMaptoHTML.py
 %{_bindir}/colorMaptoSLD.py
 %{_bindir}/SLDtoColorMap.py
-%{_datadir}/mpl
-
-%post tools
-cd %{_datadir}/mpl/
-python setup.py build
-python setup.py install
 
 %files config
 %defattr(664,gibs,gibs,775)
@@ -323,19 +296,6 @@ python setup.py install
 %{_bindir}/oe_configure_layer
 %{_bindir}/oe_configure_reproject_layer.py
 %{_bindir}/oe_validate_configs.py
-%{_datadir}/lxml
-%{_datadir}/pyparsing
-%{_datadir}/parse_apache_configs
-
-%post config
-cd %{_datadir}/lxml
-tar -czvf lxml-3.8.0.tar.gz lxml-3.8.0
-pip install --no-index --find-links %{_datadir}/lxml lxml
-cd %{_datadir}/pyparsing
-pip install --upgrade --no-index --find-links %{_datadir}/pyparsing pyparsing
-cd %{_datadir}/parse_apache_configs
-tar -czvf parse_apache_configs-0.0.2.tar.gz parse_apache_configs-0.0.2
-pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apache_configs
 
 %files mrfgen
 %defattr(664,gibs,gibs,775)
@@ -365,7 +325,7 @@ rm %{_datadir}/onearth/demo/examples/default/lib/*
 if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/reproject-demo.conf; fi
 
 %files mapserver
-%defattr(755,root,root,-)
+%defattr(755,root,root,755)
 %{_libdir}/libmapserver.so*
 %{_includedir}/mapserver/*
 %{python_sitearch}/_mapscript*
@@ -382,17 +342,15 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_bindir}/tile4ms
 
 %files vectorgen
-%defattr(755,root,root,-)
+%defattr(755,root,root,755)
 %{_datadir}/onearth/vectorgen
 %{_libdir}/libspatialindex*
 %{_libdir}/pkgconfig/libspatialindex.pc
 %{_includedir}/spatialindex/*
-%{_datarootdir}/onearth/vectorgen/*
 %{_bindir}/oe_vectorgen
 
 %post vectorgen
 /sbin/ldconfig
-pip install Fiona==1.8.13.post1 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 %files test
 %defattr(-,gibs,gibs,-)
