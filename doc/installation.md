@@ -29,7 +29,7 @@ Install OnEarth packages
 sudo yum -y install onearth-*
 ```
 
-Python packages via pip from requirements.txt file; required for OnEarth configuration and MRF generation tools
+Python packages via pip from the [requirements.txt](../docker/el7/pip-requirements.txt) file; required for OnEarth configuration and MRF generation tools
 
 ```
 sudo pip install -r pip-requirements.txt
