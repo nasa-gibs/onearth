@@ -10,15 +10,10 @@ Source1:	https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.t
 Source2:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source3:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
 Source4:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
-%if 0%{?centos}  == 6
-Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
-%endif
-%if 0%{?centos}  == 7
-Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
-%endif
 Source6:	https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
 Source7:	https://pypi.python.org/packages/6a/8a/718fd7d3458f9fab8e67186b00abdd345b639976bc7fb3ae722e1b026a50/pyparsing-2.2.0-py2.py3-none-any.whl
 Source8:	https://pypi.python.org/packages/3a/59/bfb842d06d90d3c1b55e097726061eb51da34dc4b23b6591c202094318cf/parse_apache_configs-0.0.2.tar.gz
+Source4:    https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 
 BuildRequires:	httpd-devel
 BuildRequires:	chrpath
@@ -31,12 +26,8 @@ BuildRequires:  sqlite-devel
 BuildRequires:	cmake
 BuildRequires:  turbojpeg-devel
 BuildRequires:  python-pip
-%if 0%{?centos}  == 6
-BuildRequires:  centos-release-scl
-BuildRequires:  devtoolset-7-toolchain
-%endif
-Requires:	httpd
 Requires:	gibs-gdal
+Requires:	httpd = 2.4.6
 Requires:   sqlite
 Requires:   libxml2
 Requires:   mod_ssl
@@ -143,7 +134,6 @@ cp %{SOURCE1} upstream
 cp %{SOURCE2} upstream
 cp %{SOURCE3} upstream
 cp %{SOURCE4} upstream
-cp %{SOURCE5} upstream
 cp %{SOURCE6} upstream
 cp %{SOURCE7} upstream
 cp %{SOURCE8} upstream
@@ -363,9 +353,7 @@ pip install --no-index --find-links %{_datadir}/parse_apache_configs parse_apach
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/onearth-demo.conf
 
 %post demo
-%if 0%{?centos}  == 7
 sed -i 's/#Require/Require/g' /etc/httpd/conf.d/onearth-demo.conf
-%endif
 cd %{_datadir}/onearth/apache/kml
 make WEB_HOST=localhost/onearth/twms/epsg4326
 mv %{_datadir}/onearth/apache/kml/kmlgen.cgi \

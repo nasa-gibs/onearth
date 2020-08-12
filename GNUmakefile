@@ -26,17 +26,12 @@ MPL_ARTIFACT=matplotlib-1.5.1.tar.gz
 MPL_URL=https://pypi.python.org/packages/source/m/matplotlib/$(MPL_ARTIFACT)
 CGICC_ARTIFACT=cgicc-3.2.16.tar.gz
 CGICC_URL=http://ftp.gnu.org/gnu/cgicc/$(CGICC_ARTIFACT)
+
 SPATIALINDEX_ARTIFACT=spatialindex-src-1.8.5.tar.gz
 SPATIALINDEX_URL=http://download.osgeo.org/libspatialindex/$(SPATIALINDEX_ARTIFACT)
 
-HTTPD_VERSION=$(shell rpm -q --qf "%{VERSION}" $(shell rpm -q --whatprovides redhat-release))
-ifeq ($(HTTPD_VERSION), 6)
-        HTTPD_ARTIFACT=httpd-2.2.15.tar.gz
-        LINE=933
-else
-		HTTPD_ARTIFACT=httpd-2.4.6.tar.gz
-		LINE=735
-endif
+HTTPD_ARTIFACT=httpd-2.4.6.tar.gz
+LINE=735
 HTTPD_URL=https://archive.apache.org/dist/httpd/$(HTTPD_ARTIFACT)
 
 MAPSERVER_VERSION=7.0.1

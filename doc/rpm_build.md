@@ -29,7 +29,14 @@ Once Docker is installed and running, the Enterprise Linux 7 RPMs can be built w
 ./bin/build_el7_rpms_in_docker.sh
 ```
 
-The generated RPMs will be written to the `dist` directory.
+The generated RPMs will be written to the `dist` directory.  
+
+Note: You must first run the following command in the root directory this repository to download the legacy OnEarth 
+submodules that are required for the build, but are not included within the main onearth GitHub repository.
+
+```
+git submodule update -f --init --recursive
+```
 
 ## Verbose Build Instructions
 
