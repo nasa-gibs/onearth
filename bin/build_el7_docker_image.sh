@@ -19,8 +19,7 @@ rm -rf tmp/docker
 mkdir -p tmp/docker/rpms
 cp dist/onearth-*.rpm tmp/docker/rpms/
 rm -f \
-  tmp/docker/rpms/onearth-debuginfo-*.rpm \
-  tmp/docker/rpms/onearth-demo-*.rpm
+  tmp/docker/rpms/onearth-debuginfo-*.rpm
 cp docker/el7/run-onearth.sh tmp/docker/run-onearth.sh
 cp docker/el7/pip-requirements.txt tmp/docker/pip-requirements.txt
 
