@@ -1,5 +1,6 @@
 #!/bin/sh
 S3_CONFIGS=$1
+ENDPOINT_REFRESH=$2 # Interval for refreshing the WMS endpoints in minutes
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -63,6 +64,16 @@ cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/epsg3857/best/wms.cgi
 # Make endpoint configurations
 sleep 20
 sh load_endpoints.sh
+
+# Set up cron job for refreshing endpoints
+if [ -z "$ENDPOINT_REFRESH" ]
+then
+	echo "ENDPOINT_REFRESH not set...using default of 60 minutes"
+	echo "*/60 * * * * /home/oe2/onearth/docker/wms_service/load_endpoints.sh" >> /etc/crontab
+else
+	echo "*/$ENDPOINT_REFRESH * * * * /home/oe2/onearth/docker/wms_service/load_endpoints.sh" >> /etc/crontab
+fi
+crontab /etc/crontab
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k restart

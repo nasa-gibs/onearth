@@ -50,8 +50,5 @@ RUN mkdir -p /etc/cron.hourly && cp /etc/cron.daily/logrotate /etc/cron.hourly/l
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
-# Refresh endpoints hourly
-RUN cp /home/oe2/onearth/docker/wms_service/load_endpoints.sh /etc/cron.hourly/load_endpoints.sh
-
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh $S3_CONFIGS
+CMD sh start_wms_service.sh $S3_CONFIGS $ENDPOINT_REFRESH

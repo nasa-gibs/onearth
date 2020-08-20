@@ -52,6 +52,7 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 
 ### onearth-wms
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* ENDPOINT_REFRESH: Interval for refreshing the WMS endpoints in minutes
 
 See [OnEarth Configuration](../doc/configuration.md) for more information.
 
