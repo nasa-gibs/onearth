@@ -6,7 +6,7 @@ This tool is used to help automate the generation of MRF files. It takes in a li
 
 Yum install
 ```Shell
-sudo yum -y install onearth-mrfgen-*.el6.x86_64.rpm
+sudo yum -y install onearth-mrfgen-*.x86_64.rpm
 ```
 
 Manual install

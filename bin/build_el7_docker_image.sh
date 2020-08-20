@@ -17,11 +17,11 @@ fi
 
 rm -rf tmp/docker
 mkdir -p tmp/docker/rpms
-cp dist/onearth-*.el7.*.rpm tmp/docker/rpms/
+cp dist/onearth-*.rpm tmp/docker/rpms/
 rm -f \
-  tmp/docker/rpms/onearth-debuginfo-*.el7.centos.x86_64.rpm \
-  tmp/docker/rpms/onearth-demo-*.el7.centos.noarch.rpm
+  tmp/docker/rpms/onearth-debuginfo-*.rpm
 cp docker/el7/run-onearth.sh tmp/docker/run-onearth.sh
+cp docker/el7/pip-requirements.txt tmp/docker/pip-requirements.txt
 
 BASE_IMAGE="centos:7"
 echo "FROM ${BASE_IMAGE}" > tmp/docker/Dockerfile

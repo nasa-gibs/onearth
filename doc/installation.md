@@ -1,27 +1,11 @@
 ## Installation
 
-This are instructions on how to install OnEarth on CentOS/RedHat Linux 6.4 or greater.
+This are instructions on how to install OnEarth on CentOS/RedHat Linux 7.5 or greater.
 
 ## Preconditions
 
-* Apache 2.2 or 2.4
-* Python 2.6 or 2.7
-
-If needed, some dependencies on CentOS/RedHat 6 machines may be obtained by installing:
-
-EPEL Repository
-
-```
-sudo yum -y install epel-release
-```
-
-Postgres Repository RPM
-
-```
-ELVERSION=\`rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release)\`
-
-sudo yum -y install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-${ELVERSION}-x86_64/pgdg-centos96-9.6-3.noarch.rpm
-```
+* Apache 2.4
+* Python 2.7
 
 ## RPM Installation
 
@@ -33,28 +17,22 @@ Unpackage the release .tar.gz file
 tar -zxvf onearth-*.tar.gz
 ```
 
-GIBS GDAL with the MRF driver
+Install GIBS GDAL with the MRF driver
 
 ```
 sudo yum -y install gibs-gdal-*
-```
-
-Optional Python packages via pip (included in onearth-config RPM); required for OnEarth configuration tools if RPM cannot run pip
-
-```
-sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
-```
-
-Optional Python packages via pip (included in onearth-vector RPM); required for OnEarth vectorgen if RPM cannot run pip
-
-```
-sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
 ```
 
 Install OnEarth packages
 
 ```
 sudo yum -y install onearth-*
+```
+
+Install python packages via pip from the [requirements.txt](../docker/el7/pip-requirements.txt) file; required for OnEarth configuration and MRF generation tools
+
+```
+sudo pip install -r pip-requirements.txt
 ```
 
 For manual installation or to install or another OS, please refer to the specific component:

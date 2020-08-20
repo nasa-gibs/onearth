@@ -168,9 +168,9 @@ class TestLayerConfig(unittest.TestCase):
     def test_layer_config_legends(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_legend_generation.xml')
-        h_png_legend_ref_hash = 'f937aa0d047d9075f6ab76894bb7fb17'
-        h_svg_legend_ref_hash = '1766e4a987db87ad13c385f631aa309b'
-        v_svg_legend_ref_hash = '81c385706fc1be436f70ac206069045e'
+        h_png_legend_ref_hash = '5ef7d304d3493afb85fbbdcde70247e0'
+        h_svg_legend_ref_hash = '45eeefe1a331b3efc8f4f938b8023003'
+        v_svg_legend_ref_hash = 'ff6bed2e74dd0b6756158c6f649352ae'
 
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -233,9 +233,9 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['twms_staging_location'])
 
         # Check if hashes are kosher
-        self.assertEqual(h_png_legend_ref_hash, h_png_legend_hash, 'Horizontal PNG legend generated does not match expected.')
-        self.assertEqual(h_svg_legend_ref_hash, h_svg_legend_hash, 'Horizontal SVG legend generated does not match expected.')
-        self.assertEqual(v_svg_legend_ref_hash, v_svg_legend_hash, 'Vertical SVG legend generated does not match expected.')
+        self.assertEqual(h_png_legend_ref_hash, h_png_legend_hash, 'Horizontal PNG legend generated does not match expected. ' + str(h_png_legend_hash))
+        self.assertEqual(h_svg_legend_ref_hash, h_svg_legend_hash, 'Horizontal SVG legend generated does not match expected. ' + str(h_svg_legend_hash))
+        self.assertEqual(v_svg_legend_ref_hash, v_svg_legend_hash, 'Vertical SVG legend generated does not match expected. ' + str (v_svg_legend_hash))
 
     def test_versioned_colormaps(self):
         # Set locations of the config files we're using for this test

@@ -54,9 +54,7 @@ oe_generate_legend = "oe_generate_legend.py"
 class TestOELegends(unittest.TestCase):
     
     def setUp(self):
-        self.colormaps_json = "colormaps.el7.json"
-        if "el6" in platform.release(): # Result varies on release
-            self.colormaps_json = self.colormaps_json.replace("el7","el6")
+        self.colormaps_json = "colormaps.json"
         self.testdata_path = os.path.join(os.getcwd(), 'legends_test_data/')
         test_config = open(self.testdata_path + self.colormaps_json, "r")
         self.colormaps = eval(test_config.read())
