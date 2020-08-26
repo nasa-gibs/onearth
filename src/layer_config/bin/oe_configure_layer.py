@@ -1644,7 +1644,7 @@ for conf in conf_files:
         try:
             tiledGroupName = get_dom_tag_value(dom, 'TiledGroupName')
         except:
-            tiledGroupName = identifier + " tileset"
+            tiledGroupName = identifier.replace("_", " ") + " tileset"
         try:
             wmsGroupName = get_dom_tag_value(dom, 'WMSGroupName')
         except:
@@ -2989,16 +2989,6 @@ for conf in conf_files:
         except IOError:
             mssg = str().join(['Cannot read layer XML file:  ', twms_mrf_filename.replace('.mrf', '_gts.xml') ])
             log_sig_exit('ERROR', mssg, sigevent_url)
-
-        # If the TiledGroupName does not follow our "standard" naming convention, write out another GTS XML file
-        if tiledGroupName != identifier.replace("_", " ") + " tileset":
-            try:
-                layer_xml = open(twms_mrf_filename.replace('.mrf', '_new_gts.xml'), 'w+')
-                layer_xml.writelines(layer_output.replace(tiledGroupName, identifier.replace("_", " ") + " tileset"))
-                layer_xml.close()
-            except IOError:
-                mssg = str().join(['Cannot read layer XML file:  ', twms_mrf_filename.replace('.mrf', '_new_gts.xml')])
-                log_sig_err('ERROR', mssg, sigevent_url)
 
 
     # Create mapfile if requested and this is not a vector tile product
