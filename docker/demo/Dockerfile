@@ -2,6 +2,9 @@
 
 FROM centos:7
 
+# Upgrade all existing packages
+RUN yum -y update && yum clean all
+
 # Install HTTPD and mod_ssl
 RUN yum install -y httpd-2.4.6 mod_ssl perl && \
 	yum clean all
