@@ -237,7 +237,7 @@ if __name__ == '__main__':
         type='string',
         dest='outfile',
         default='test_mod_mrf_results.xml',
-        help='Specify XML output file (default is test_date_service_results.xml'
+        help='Specify XML output file (default is test_mod_mrf_results.xml'
     )
 
     parser.add_option(

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2002-2018, California Institute of Technology.
+# Copyright (c) 2002-2020, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,7 @@
 # limitations under the License.
 
 #
-# Tests for date service
+# Tests for time service
 #
 
 import os
@@ -497,8 +497,8 @@ if __name__ == '__main__':
         action='store',
         type='string',
         dest='outfile',
-        default='test_date_service_results.xml',
-        help='Specify XML output file (default is test_date_service_results.xml'
+        default='test_time_service_results.xml',
+        help='Specify XML output file (default is test_time_service_results.xml'
     )
     parser.add_option(
         '-d',

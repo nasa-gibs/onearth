@@ -403,8 +403,8 @@ if __name__ == '__main__':
         action='store',
         type='string',
         dest='outfile',
-        default='test_date_service_results.xml',
-        help='Specify XML output file (default is test_date_service_results.xml'
+        default='test_mod_reproject_results.xml',
+        help='Specify XML output file (default is test_mod_reproject_results.xml'
     )
 
     parser.add_option(

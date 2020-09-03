@@ -22,6 +22,61 @@ import redis
 import argparse
 from pathlib import Path
 import csv, gzip
+import botocore.session
+from botocore.stub import Stubber
+
+TEST_RESPONSE = {
+    'IsTruncated': False, 
+    'Name': 'test-bucket',
+    'MaxKeys': 1000, 'Prefix': '',
+    'Contents': [
+        {'Key': 'epsg4326/', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"0"', 'Size': 0, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017001000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"11"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017001000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"12"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017001000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"13"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017002000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"21"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017002000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"22"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017002000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"23"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017003000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"31"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017003000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"32"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017003000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"33"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017004000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"41"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017004000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"42"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017004000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"43"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+    ],
+    'EncodingType': 'url',
+    'ResponseMetadata': {
+        'RequestId': 'abc123',
+        'HTTPStatusCode': 200,
+        'HostId': 'abc123'
+    }
+}
 
 def keyMapper(acc, obj):
     keyElems = obj.split("/")
@@ -54,18 +109,20 @@ def keyMapper(acc, obj):
     return acc
 
 def invenGetAllKeys(conn, bucket):
-    keys = []
-    kwargs = {'Bucket': bucket,'Prefix': 'inventory/'+bucket+'/entire/data/'}
-    respInv = conn.list_objects_v2(**kwargs)
-
-    try:
-        objects = respInv['Contents']
-    except KeyError:
+    if (bucket == 'test-bucket'):
         return False
-    print('Using S3 Inventory')
-    lastest_inventory = max(objects, key=lambda x: x['LastModified'])
-    conn.download_file(bucket, lastest_inventory['Key'], 'tmpInventory.csv.gz')
-
+    if (bucket != 'test-inventory'):
+        keys = []
+        kwargs = {'Bucket': bucket,'Prefix': 'inventory/'+bucket+'/entire/data/'}
+        respInv = conn.list_objects_v2(**kwargs)
+    
+        try:
+            objects = respInv['Contents']
+        except KeyError:
+            return False
+        print('Using S3 Inventory')
+        lastest_inventory = max(objects, key=lambda x: x['LastModified'])
+        conn.download_file(bucket, lastest_inventory['Key'], 'tmpInventory.csv.gz')
     with gzip.open('tmpInventory.csv.gz', mode = 'rt') as f:
         reader = csv.reader(f)
         keys = list(map(lambda x:x[1], reader))
@@ -106,8 +163,15 @@ def updateDateService(redis_uri,
         print(f'Data already exists - skipping time scrape for {tag}')
         return
     
-    session = boto3.session.Session()
-    s3 = session.client(service_name='s3', endpoint_url=s3_uri)
+    # Use mock S3 if test
+    if bucket == 'test-bucket':
+        s3 = botocore.session.get_session().create_client('s3')
+        stubber = Stubber(s3)
+        stubber.add_response('list_objects_v2', TEST_RESPONSE)
+        stubber.activate()
+    else:
+        session = boto3.session.Session()
+        s3 = session.client(service_name='s3', endpoint_url=s3_uri)
 
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
