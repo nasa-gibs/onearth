@@ -28,3 +28,4 @@ mapserver:
   mapfile_header:  "/etc/onearth/config/mapserver/epsg3413.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg3413_std.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg3413/std/1.0.0/WMTSCapabilities.xml"
+  replace_with_local: "https://gibs.earthdata.nasa.gov"

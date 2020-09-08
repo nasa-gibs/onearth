@@ -126,6 +126,10 @@ for layer in layers:
     resource_url = layer.find('{*}ResourceURL')
     bands_count = 4 if resource_url.get('format') == 'image/png' else 3
     template_string = resource_url.get('template')
+    # Replace matching host names with local Docker host IP http://172.17.0.1 so that connections stay local
+    if endpoint_config['mapserver'].get('replace_with_local'):
+        replace_with_local = endpoint_config['mapserver']['replace_with_local']
+        template_string = template_string.replace(replace_with_local, 'http://172.17.0.1')
 
     dimension_info = ''
     validation_info = ''

@@ -15,6 +15,7 @@ The following entries are found in the `mapserver` section of the endpoint confi
 * **mapfile_header**: The common mapfile "header" used for all layers in the endpoint
 * **mapfile_location**: The output location of the mapfile within the container
 * **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers
+* **replace_with_local**: Replace this part of the source pattern with the Docker host so that connections stay local
 
 "epsg_code" is required as a top-level endpoint configuration item.
 
