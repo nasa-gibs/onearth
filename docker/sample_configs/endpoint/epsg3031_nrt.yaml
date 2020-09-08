@@ -8,7 +8,7 @@ base_uri_gc: "http://localhost/wmts/epsg3031/nrt/"
 base_uri_gts: "http://localhost/twms/epsg3031/nrt/"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:3031"
-docker_host_name: "localhost"
+replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3031/nrt"
   external_endpoint: "/wmts/epsg3031/nrt/gc"

@@ -9,7 +9,7 @@ base_uri_gts: "http://localhost/oe-status_reproject"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:4326"
 target_epsg_code: "EPSG:3857"
-docker_host_name: "localhost"
+replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/oe-status_reproject"
   external_endpoint: "/oe-status_reproject/gc"

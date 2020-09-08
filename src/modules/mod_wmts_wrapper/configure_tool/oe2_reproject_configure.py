@@ -298,9 +298,9 @@ def format_source_url(source_url, reproj_tms):
                                      reproj_tms['identifier'])
 
 
-def make_proxy_config(proxy_path, docker_host_name):
+def make_proxy_config(proxy_path, replace_with_local):
     return bulk_replace(PROXY_TEMPLATE,
-                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(docker_host_name), '172.17.0.1') if docker_host_name else proxy_path['remote_path']),
+                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(replace_with_local), '172.17.0.1') if replace_with_local else proxy_path['remote_path']),
                          ('{local_endpoint}', proxy_path['local_path'])])
 
 
@@ -581,13 +581,13 @@ def build_configs(endpoint_config):
         print(f"Endpoint config is missing required config element {err}")
     
     # Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
-    docker_host_name = None
-    if endpoint_config.get('docker_host_name'):
-        docker_host_name = endpoint_config['docker_host_name']
-        source_gc_uri = source_gc_uri.replace(docker_host_name, '172.17.0.1')     
+    replace_with_local = None
+    if endpoint_config.get('replace_with_local'):
+        replace_with_local = endpoint_config['replace_with_local']
+        source_gc_uri = source_gc_uri.replace(replace_with_local, '172.17.0.1')     
     else:
         print(
-            '\nNo "docker_host_name" configured.'
+            '\nNo "replace_with_local" configured.'
         )
 
     # Get output TMS definitions (provided by local file)
@@ -758,7 +758,7 @@ def build_configs(endpoint_config):
          ('{gc_service_block}', gc_service_block)])
 
     apache_config_str += '\n' + '\n'.join(
-        make_proxy_config(proxy_path, docker_host_name)
+        make_proxy_config(proxy_path, replace_with_local)
         for proxy_path in endpoint_config['proxy_paths'])
     if endpoint_config['date_service_info']:
         apache_config_str += '\n' + DATE_SERVICE_TEMPLATE.replace(
