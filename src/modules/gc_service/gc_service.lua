@@ -312,7 +312,7 @@ local function makeGTS(endpointConfig)
         epsgCode = "EPSG:" .. epsgCode
     end
 
-    local targetEpsgCode = endpointConfig["target_epsg_code"]
+    local targetEpsgCode = endpointConfig["reproject"]["target_epsg_code"]
     if targetEpsgCode then
         if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode
@@ -560,7 +560,7 @@ local function makeGC(endpointConfig)
         epsgCode = "EPSG:" .. epsgCode
     end
 
-    local targetEpsgCode = endpointConfig["target_epsg_code"]
+    local targetEpsgCode = endpointConfig["reproject"]["target_epsg_code"]
     if targetEpsgCode then
         if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode
@@ -625,7 +625,7 @@ local function makeTWMSGC(endpointConfig)
         epsgCode = "EPSG:" .. epsgCode
     end
 
-    local targetEpsgCode = endpointConfig["target_epsg_code"]
+    local targetEpsgCode = endpointConfig["reproject"]["target_epsg_code"]
     if targetEpsgCode then
         if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode

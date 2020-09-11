@@ -1,6 +1,4 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
-target_epsg_code: "EPSG:3857"
-source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"
 gc_service_uri: "/oe2_gc_service"
 include_layers: 
@@ -16,3 +14,6 @@ wmts_service:
 twms_service:
   internal_endpoint: "/var/www/html/twms"
   external_endpoint: "/twms"
+reproject:
+  target_epsg_code: "EPSG:3857"
+  source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"

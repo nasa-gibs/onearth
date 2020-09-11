@@ -75,40 +75,43 @@ twms_service:
 
 ##### Configuration Options:
 
-`time_service_uri` (optional) -- OnEarth allows for the use of a time service, which performs lookups and time-snapping for tile requests. If you have time-sensitive layers, set this parameter to the URL of the time service. For more information, consult the docs for the OnEarth time service.
+Configurations:
 
-`layer_config_source` (required) -- This can be a path either to a single layer
-configuration YAML file, or a directory containing multiple layer config files.
-In the case of a directory, the tool will parse all files in that directory with
-a `.yaml` extension. _Note that the tool will not recurse the contents of
-subdirectories if they are present._
-
-`base_idx_path` (optional) -- If all the IDX files for your layers are container
-in a base location on disk -- and if the layer configs themselves list IDX paths
-as relative paths from that location, make sure this is included. Otherwise,
-leave it out. (Read on to the layer configuration section for more information.)
-
-`apache_config_location` (optional) -- Location that the main Apache
-configuration files will be stored (this will need to be somewhere Apache is
-configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
-
-`time_service_keys` (optional) -- Array of keys to be used with the date
-service. Keys will be positioned in the order configured.
-
-`source_gc_uri` (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
-
-**wmts_service options**
-
-- `internal_endpoint` -- Location on disk where all the configuration files for the WMTS layers should be stored
-- `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.
-- `config_prefix` -- Filename prefix to be used for the Apache config that's generated.
-
-**twms_service options**
-
-- `internal_endpoint` -- Location on disk where all the configuration files for the TWMS layers should be stored
-- `external_endpoint` -- Relative URL that the endpoint should appear at. The configuration tool will automatically build `Alias` configurations.
-
-**Note that the configuration tool will only configure a TWMS endpoint if the `twms_service` block is configured.**
+* **apache_config_location**: The output location of Apache HTTPD configurations
+* **base_uri_gc**: The base URI of the endpoint for WMTS GetCapabilities layers
+* **base_uri_gts**: The base URI of the endpoint for TWMS GetCapabilities/GetTileService layers
+* **base_uri_meta**: The base URI of the endpoint for metadata files (e.g. colormaps, legends, styles) layers
+* **epsg_code**: The EPSG code of the map projection of the layers (e.g. EPSG:4326)
+* **gc_service_uri**: The URI of the WMTS GetCapabilities endpoint
+* **layer_config_source**: Directory location of the layer configuration files
+* **time_service_keys**: Array of keys to be used with the Time
+Service; keys will be positioned in the order configured
+* **time_service_uri**: The URI of the Time Service endpoint
+* **tms_defs_file**: The location of the Tile Matrix Sets definition XML file
+* **gc_service**: Configurations specific only to GetCapabilities Service
+  * **config_prefix**: Filename prefix to be used for the Apache config that is generated
+  * **internal_endpoint**: Location on disk where all the configuration files for the WMTS layers should be stored
+  * **external_endpoint**: Relative URL that the endpoint should appear; the configuration tool will automatically build `Alias` configurations
+  * **gc_header_file**: The location of the WMTS GetCapabilities header XML file
+  * **gts_header_file**: The location of the TWMS GetTileService header XML file
+  * **twms_gc_header_file**: The location of the TWMS GetCapabilities header XML file
+* **wmts_service**: Configurations specific only to WMTS Service
+  * **config_prefix**: Filename prefix to be used for the Apache config that is generated
+  * **internal_endpoint**: Location on disk where all the configuration files for the WMTS layers should be stored
+  * **external_endpoint**: Relative URL that the endpoint should appear; the configuration tool will automatically build `Alias` configurations
+* **twms_service**: Configurations specific only to TWMS Service
+  * **internal_endpoint**: Location on disk where all the configuration files for the WMTS layers should be stored
+  * **external_endpoint**: Relative URL that the endpoint should appear; the configuration tool will automatically build `Alias` configurations
+* **mapserver**: Configurations specific only to WMS Service (i.e., MapServer)
+  * **internal_endpoint**: The internal directory within the container for Apache HTTPD
+  * **mapfile_header**: The common mapfile "header" used for all layers in the endpoint
+  * **mapfile_location**: The output location of the mapfile.
+  * **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers
+  * **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
+* **reproject**: Configurations specific only to reproject (i.e., mod_reproject)
+  * **target_epsg_code**: If a reproject endpoint, this is the target projection that source imagery will be reprojected to
+  * **source_gc_uri**: If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint
+  * **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
 
 #### Layer Configuration
 
@@ -232,8 +235,6 @@ The endpoint configuration should be a YAML file in the following format:
 
 ```
 time_service_uri: "http://onearth-time-service/time_service/time"
-target_epsg_code: "EPSG:3857"
-source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 tms_defs_file: "/etc/oe2/tilematrixsets.xml"
 gc_service_uri: "/oe2_gc_service"
 include_layers:
@@ -249,6 +250,9 @@ wmts_service:
 twms_service:
   internal_endpoint: "/var/www/html/twms"
   external_endpoint: "/twms"
+reproject:
+  target_epsg_code: "EPSG:3857"
+  source_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
 ```
 
 ##### Configuration Options:
@@ -265,13 +269,17 @@ service. Keys will be positioned in the order configured.
 
 `gc_service_uri` (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
 
-`target_epsg_code` (required) -- The projection that your source imagery will be
-reprojected to. Note that this projection must have Tile Matrix Sets configured
-in the Tile Matrix Set definition file.
-
 `tms_defs_file` (optional) -- If using a Tile Matrix Sets file different from
 the one bundled with the script, you can define it here instead of using the
 command line parameter.
+
+**reproject options**
+
+- `target_epsg_code` (required) -- The projection that your source imagery will be
+reprojected to. Note that this projection must have Tile Matrix Sets configured
+in the Tile Matrix Set definition file.
+- `source_gc_uri` (required) -- If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint.
+- `replace_with_local` (optional) -- Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
 
 **wmts_service options**
 

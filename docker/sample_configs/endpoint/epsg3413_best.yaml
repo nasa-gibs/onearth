@@ -8,7 +8,6 @@ base_uri_gc: "http://localhost/wmts/epsg3413/best/"
 base_uri_gts: "http://localhost/twms/epsg3413/best/"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:3413"
-replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3413/best"
   external_endpoint: "/wmts/epsg3413/best/gc"

@@ -69,7 +69,6 @@ base_uri_gc: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/"
 base_uri_gts: "https://gibs.earthdata.nasa.gov/twms/epsg4326/best/"
 epsg_code: "EPSG:4326"
 endpoint: "/gc_service"
-target_epsg_code: "EPSG:3857"
 gc_service:
   internal_endpoint: "/var/www/html/"
   external_endpoint: "/gc"
@@ -77,6 +76,8 @@ gc_service:
   gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
   gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
   twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
+reproject:
+  target_epsg_code: "EPSG:3857"
 ```
 
 ##### Configuration Options:
@@ -103,6 +104,8 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 templates for each layer.
 
 `epsg_code` (required) -- The EPSG code of the layers for this GC/GTS file.
+
+**reproject config options (optional)**
 
 `target_epsg_code` (optional) -- The destination EPSG code of the layers for
 this GC/GTS file. To be used in conjunction with `mod_reproject`. The outgoing

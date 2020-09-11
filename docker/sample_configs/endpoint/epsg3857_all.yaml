@@ -1,4 +1,3 @@
-source_gc_uri: "http://localhost/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml"
 time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3857", "all"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg3857/all/gc"
@@ -9,8 +8,6 @@ base_uri_gc: "http://localhost/wmts/epsg3857/all"
 base_uri_gts: "http://localhost/twms/epsg3857/all"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:4326"
-target_epsg_code: "EPSG:3857"
-replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/wmts/epsg3857/all"
   external_endpoint: "/wmts/epsg3857/all/gc"
@@ -30,3 +27,7 @@ mapserver:
   mapfile_header:  "/etc/onearth/config/mapserver/epsg3857.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg3857_all.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml"
+reproject:
+  target_epsg_code: "EPSG:3857"
+  source_gc_uri: "http://localhost/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml"
+  replace_with_local: "localhost"

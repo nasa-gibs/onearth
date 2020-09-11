@@ -7,7 +7,6 @@ base_uri_gc: "http://localhost/oe-status"
 base_uri_gts: "http://localhost/oe-status"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:4326"
-replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/oe-status"
   external_endpoint: "/oe-status/gc"

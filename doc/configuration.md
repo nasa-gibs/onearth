@@ -127,9 +127,6 @@ Configurations:
 Service; keys will be positioned in the order configured
 * **time_service_uri**: The URI of the Time Service endpoint
 * **tms_defs_file**: The location of the Tile Matrix Sets definition XML file
-* **source_gc_uri**: If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint
-* **target_epsg_code**: If a reproject endpoint, this is the target projection that source imagery will be reprojected to
-* **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
 * **gc_service**: Configurations specific only to GetCapabilities Service
   * **config_prefix**: Filename prefix to be used for the Apache config that is generated
   * **internal_endpoint**: Location on disk where all the configuration files for the WMTS layers should be stored
@@ -149,6 +146,11 @@ Service; keys will be positioned in the order configured
   * **mapfile_header**: The common mapfile "header" used for all layers in the endpoint
   * **mapfile_location**: The output location of the mapfile.
   * **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers
+  * **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
+* **reproject**: Configurations specific only to reproject (i.e., mod_reproject)
+  * **target_epsg_code**: If a reproject endpoint, this is the target projection that source imagery will be reprojected to
+  * **source_gc_uri**: If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint
+  * **replace_with_local**: Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
 
 Sample endpoint configuration:
 ```
@@ -162,9 +164,6 @@ layer_config_source: "/etc/onearth/config/layers/epsg4326/best/"
 time_service_keys: ["epsg3857", "best"]
 time_service_uri: "http://onearth-time-service/time_service/time"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
-source_gc_uri: "http://localhost/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
-target_epsg_code: "EPSG:3857"
-replace_with_local: "localhost"
 gc_service:
   config_prefix: "epsg3857_best_gc_service"
   internal_endpoint: "/var/www/html/wmts/epsg3857/best"
@@ -184,6 +183,10 @@ mapserver:
   mapfile_header:  "/etc/onearth/config/mapserver/epsg3857.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg3857_best.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml"
+reproject:
+  source_gc_uri: "http://localhost/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
+  target_epsg_code: "EPSG:3857"
+  replace_with_local: "localhost"
 ```
 See [docker/sample_configs/endpoint](../docker/sample_configs/endpoint) for more samples.
 
@@ -199,6 +202,7 @@ tilematrixset: "TileMatrixSet identifier"
 mime_type: "Outgoing MIME type for tiles and type used in GetCapabilities"
 static: "Boolean indicating if layer has a TIME dimension"
 projection: "EPSG:CODE"
+alias: "Replace the user facing Layer ID with this name"
 ```
 
 ### Required for GetCapabilities/GetTileService
@@ -257,5 +261,5 @@ source_mrf:
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGBA_512.png"
-  ```
+```
 See [docker/sample_configs/layers](../docker/sample_configs/layers) for more samples.

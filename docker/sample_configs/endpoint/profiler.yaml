@@ -8,7 +8,6 @@ base_uri_gc: "http://localhost/profiler/"
 base_uri_gts: "http://localhost/profiler/"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:4326"
-replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/profiler"
   external_endpoint: "/profiler/gc"

@@ -574,17 +574,17 @@ def get_proxy_paths(layers):
 def build_configs(endpoint_config):
     # Check endpoint configs for necessary stuff
     try:
-        target_proj = endpoint_config['target_epsg_code']
-        source_gc_uri = endpoint_config['source_gc_uri']
+        target_proj = endpoint_config['reproject']['target_epsg_code']
+        source_gc_uri = endpoint_config['reproject']['source_gc_uri']
         endpoint_config['time_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
     
     # Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
     replace_with_local = None
-    if endpoint_config.get('replace_with_local'):
-        replace_with_local = endpoint_config['replace_with_local']
-        source_gc_uri = source_gc_uri.replace(replace_with_local, '172.17.0.1')     
+    if endpoint_config['reproject']['replace_with_local']:
+        replace_with_local = endpoint_config['reproject']['replace_with_local']
+        source_gc_uri = source_gc_uri.replace(replace_with_local, '172.17.0.1')
     else:
         print(
             '\nNo "replace_with_local" configured.'

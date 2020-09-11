@@ -1,4 +1,3 @@
-source_gc_uri: "http://localhost/oe-status/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
 time_service_uri: "http://onearth-time-service/time_service/time"
 gc_service_uri: "http://onearth-capabilities/oe-status_reproject/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
@@ -8,8 +7,6 @@ base_uri_gc: "http://localhost/oe-status_reproject"
 base_uri_gts: "http://localhost/oe-status_reproject"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:4326"
-target_epsg_code: "EPSG:3857"
-replace_with_local: "localhost"
 gc_service:
   internal_endpoint: "/var/www/html/oe-status_reproject"
   external_endpoint: "/oe-status_reproject/gc"
@@ -24,3 +21,7 @@ wmts_service:
 twms_service:
   internal_endpoint: "/var/www/html/oe-status_reproject"
   external_endpoint: "/oe-status_reproject"
+reproject:
+  target_epsg_code: "EPSG:3857"
+  replace_with_local: "localhost"
+  source_gc_uri: "http://localhost/oe-status/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"

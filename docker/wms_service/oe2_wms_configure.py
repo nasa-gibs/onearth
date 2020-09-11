@@ -87,7 +87,7 @@ except:
         time.sleep(duration)
         attempt = attempt + 1
         try:
-            r = requests.get(source_gc_uri)
+            r = requests.get(gc_url)
             if r.status_code == 200:
                 break
         except:
