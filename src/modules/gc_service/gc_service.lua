@@ -560,7 +560,7 @@ local function makeGC(endpointConfig)
         epsgCode = "EPSG:" .. epsgCode
     end
 
-    local targetEpsgCode = endpointConfig["reproject"]["target_epsg_code"]
+    local targetEpsgCode = endpointConfig["reproject"] and endpointConfig["reproject"]["target_epsg_code"] or nil
     if targetEpsgCode then
         if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
             targetEpsgCode = "EPSG:" .. targetEpsgCode
