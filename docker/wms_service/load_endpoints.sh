@@ -2,6 +2,7 @@
 
 # Refresh endpoints
 
+python3.6 /usr/bin/oe2_wms_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 python3.6 /usr/bin/oe2_wms_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml >>/var/log/onearth/config.log 2>&1
 python3.6 /usr/bin/oe2_wms_configure.py /etc/onearth/config/endpoint/epsg4326_nrt.yaml >>/var/log/onearth/config.log 2>&1
 python3.6 /usr/bin/oe2_wms_configure.py /etc/onearth/config/endpoint/epsg4326_all.yaml >>/var/log/onearth/config.log 2>&1

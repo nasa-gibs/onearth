@@ -28,6 +28,7 @@ cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.
 
 # Create endpoints
 cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
+mkdir -p /var/www/html/wms/oe-status_reproject
 mkdir -p /var/www/html/wms/epsg4326/std
 mkdir -p /var/www/html/wms/epsg4326/nrt
 mkdir -p /var/www/html/wms/epsg4326/all
@@ -44,6 +45,7 @@ mkdir -p /var/www/html/wms/epsg3857/std
 mkdir -p /var/www/html/wms/epsg3857/nrt
 mkdir -p /var/www/html/wms/epsg3857/all
 mkdir -p /var/www/html/wms/epsg3857/best
+cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/oe-status_reproject/wms.cgi
 cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/epsg4326/std/wms.cgi
 cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/epsg4326/nrt/wms.cgi
 cp /var/www/cgi-bin/mapserv.fcgi /var/www/html/wms/epsg4326/all/wms.cgi
