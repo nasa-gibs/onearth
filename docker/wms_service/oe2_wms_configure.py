@@ -129,7 +129,7 @@ for layer in layers:
     # Replace matching host names with local Docker host IP http://172.17.0.1 so that connections stay local
     if endpoint_config['mapserver'].get('replace_with_local'):
         replace_with_local = endpoint_config['mapserver']['replace_with_local']
-        template_string = template_string.replace(replace_with_local, 'http://172.17.0.1')
+        template_string = template_string.replace(replace_with_local, 'http://172.17.0.1:8080')
 
     dimension_info = ''
     validation_info = ''
