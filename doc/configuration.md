@@ -186,7 +186,7 @@ mapserver:
 reproject:
   source_gc_uri: "http://localhost/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
   target_epsg_code: "EPSG:3857"
-  replace_with_local: "localhost"
+  replace_with_local: "http://localhost"
 ```
 See [docker/sample_configs/endpoint](../docker/sample_configs/endpoint) for more samples.
 

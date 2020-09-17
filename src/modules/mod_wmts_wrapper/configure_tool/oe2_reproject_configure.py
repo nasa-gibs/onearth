@@ -300,7 +300,7 @@ def format_source_url(source_url, reproj_tms):
 
 def make_proxy_config(proxy_path, replace_with_local):
     return bulk_replace(PROXY_TEMPLATE,
-                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(replace_with_local), '172.17.0.1') if replace_with_local else proxy_path['remote_path']),
+                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(replace_with_local), 'http://172.17.0.1') if replace_with_local else proxy_path['remote_path']),
                          ('{local_endpoint}', proxy_path['local_path'])])
 
 
@@ -584,7 +584,7 @@ def build_configs(endpoint_config):
     replace_with_local = None
     if endpoint_config['reproject']['replace_with_local']:
         replace_with_local = endpoint_config['reproject']['replace_with_local']
-        source_gc_uri = source_gc_uri.replace(replace_with_local, '172.17.0.1')
+        source_gc_uri = source_gc_uri.replace(replace_with_local, 'http://172.17.0.1')
     else:
         print(
             '\nNo "replace_with_local" configured.'

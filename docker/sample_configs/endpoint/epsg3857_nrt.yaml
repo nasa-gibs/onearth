@@ -30,4 +30,4 @@ mapserver:
 reproject:
   target_epsg_code: "EPSG:3857"
   source_gc_uri: "http://localhost/wmts/epsg4326/nrt/1.0.0/WMTSCapabilities.xml"
-  replace_with_local: "localhost"
+  replace_with_local: "http://localhost"
