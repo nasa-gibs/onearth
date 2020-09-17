@@ -25,13 +25,13 @@ available periods.
 for the specified layer.
 
 `/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DD` or
-`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DDTHH:MM:SS` -- provides the
+`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DDThh:hh:ssZ` -- provides the
 filename and snap date for the specified layer.
 
 The database can be split into multiple parts so as to separate layer
 information by projection, endpoint, etc. Up to 5 additional keys can be
 specified in the URL request, i.e.:
-`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DD&key1=geographic&key2=best`
+`/{endpoint}?layer={layer_name}&datetime=YYYY-MM-DD&key1=epsg4326&key2=best`
 
 `time_service` currently uses a Redis database for queries, but other handlers can
 be easily added.
@@ -85,7 +85,7 @@ for each layer configured:
 
 `layer:[layer_name]:default` -- A string with the current default date for the
 layer specified by `[layer_name]`. Should be in either `YYYY-MM-DD` or
-`YYYY-MM-DDTHH:MM:SS` format.
+`YYYY-MM-DDThh:mm:ssZ` format.
 
 `layer:[layer_name]:periods` -- A set of strings in the following format:
 `start_date/end_date/P[interval_number][interval_size]`. For example,
@@ -107,7 +107,7 @@ in the following location:
 `geographic:best:layer:test_layer:default"2015-06-01"`
 
 These additional keys can be specified in the request parameters:
-`time_service?key1=geographic&key2=best`. They are processed in order. Up to 5
+`time_service?key1=epsg4326&key2=best`. They are processed in order. Up to 5
 additional keys are allowed.
 
 ### Create the Lua configuration script
