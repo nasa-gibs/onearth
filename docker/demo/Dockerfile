@@ -14,7 +14,6 @@ COPY ./docker/demo/start_demo.sh /home/oe2/
 
 # Copy Apache configs
 COPY ./docker/demo/oe2_demo.conf /etc/httpd/conf.d/
-COPY ./docker/demo/oe2_status.conf /etc/httpd/conf.d/
 
 # Set Apache configuration for optimized threading
 COPY ./docker/00-mpm.conf /etc/httpd/conf.modules.d/
