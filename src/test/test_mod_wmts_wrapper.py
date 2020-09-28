@@ -38,7 +38,7 @@ import os
 import sys
 import unittest2 as unittest
 import xmlrunner
-from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request, redis_running, seed_redis_data, remove_redis_layer, bulk_replace
+from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request, redis_running, seed_redis_data, remove_redis_layer, bulk_replace, check_response_code
 from optparse import OptionParser
 import shutil
 from subprocess import Popen, PIPE
@@ -770,6 +770,24 @@ class TestModWmtsWrapper(unittest.TestCase):
                                 'TILEMATRIX',
                                 'TILEMATRIX is not a valid integer')
 
+    def test_REST_bad_tilematrix_range(self):
+        for module in ('mrf', 'reproject'):
+            for fmt in ('date', 'date_yeardir', 'nodate'):
+                if module == 'reproject' and fmt == 'date_yeardir':
+                    continue
+
+                module_url = 'mod_wmts_wrapper_' + module
+                layer_name = 'test_{}_{}'.format(module, fmt)
+
+                tms = 'GoogleMapsCompatible_Level3' if module == 'reproject' else '16km'
+                test_url = '{}/{}/{}/default/{}/{}/10/0/0.jpg'.format(
+                    base_url, module_url, layer_name,
+                    '' if fmt == 'nodate' else 'default', tms)
+
+                test_wmts_error(self, test_url, 400, 'TileOutOfRange',
+                                'TILEMATRIX',
+                                'TILEMATRIX is out of range, maximum value is 3')
+
     def test_REST_row_out_of_range(self):
         for module in ('mrf', 'reproject'):
             for fmt in ('date', 'date_yeardir', 'nodate'):
@@ -857,6 +875,14 @@ class TestModWmtsWrapper(unittest.TestCase):
 
                 test_wmts_error(self, test_url, 400, 'InvalidParameterValue',
                                 'FORMAT', 'FORMAT is invalid for LAYER')
+                
+    def test_REST_bad_url(self):
+        for module in ('mrf', 'reproject'):
+            module_url = 'mod_wmts_wrapper_' + module
+            test_url = '{}/{}/0.png'.format(
+                base_url, module_url)
+            test_wmts_error(self, test_url, 400, 'InvalidParameterValue',
+                            'LAYER', 'LAYER does not exist')
 
     # KvP Tests
 
@@ -1233,11 +1259,27 @@ class TestModWmtsWrapper(unittest.TestCase):
                 tms = 'GoogleMapsCompatible_Level3' if module == 'reproject' else '16km'
                 test_url = '{}/{}/wmts.cgi?version=1.0.0&layer={}&service=wmts&request=gettile&format=image/jpeg&tilematrixset={}&tilematrix=0&tilerow=0&tilecol=0&time=86753-09'.format(
                     base_url, module_url, layer_name, tms)
-
                 test_wmts_error(
                     self, test_url, 400, 'InvalidParameterValue', 'TIME',
                     'Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ'
                 )
+                
+    def test_kvp_bad_time_out_of_range(self):
+        for module in ('mrf', 'reproject'):
+            for fmt in ('date', 'date_yeardir'):
+                if module == 'reproject' and fmt == 'date_yeardir':
+                    continue
+
+                module_url = 'mod_wmts_wrapper_' + module
+                layer_name = 'test_{}_{}'.format(module, fmt)
+
+                tms = 'GoogleMapsCompatible_Level3' if module == 'reproject' else '16km'
+                test_url = '{}/{}/wmts.cgi?version=1.0.0&layer={}&service=wmts&request=gettile&format=image/jpeg&tilematrixset={}&tilematrix=0&tilerow=0&tilecol=0&time=2020-01-01'.format(
+                    base_url, module_url, layer_name, tms)
+                if module == 'reproject':
+                    self.assertTrue(check_response_code(test_url, 200, 'Not Found'))
+                else:
+                    self.assertTrue(check_response_code(test_url, 404, 'Not Found'))
 
     # Tile Handling
     def test_mod_mrf_nodate_tile(self):
@@ -1275,6 +1317,12 @@ class TestModWmtsWrapper(unittest.TestCase):
             errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
                 tile_url)
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
+            
+    def test_mod_mrf_date_out_of_range(self):
+        for test in [('2000-01-01','2020-01-01')]:
+            tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_mrf_date/default/{}/16km/0/0/0.jpg'.format(
+                test[0])
+            self.assertTrue(check_response_code(tile_url, 404, 'Not Found'))
 
     def test_mod_reproject_nodate_tile(self):
         tile_url = 'http://localhost/mod_wmts_wrapper_reproject/test_reproject_nodate/default/GoogleMapsCompatible_Level3/0/0/0.jpg'

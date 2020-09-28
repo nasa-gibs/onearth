@@ -43,7 +43,7 @@ from optparse import OptionParser
 import time
 import shutil
 from subprocess import Popen, PIPE
-from oe_test_utils import bulk_replace, redis_running, make_dir_tree, seed_redis_data, restart_apache, check_tile_request, remove_redis_layer
+from oe_test_utils import bulk_replace, redis_running, make_dir_tree, seed_redis_data, restart_apache, check_tile_request, remove_redis_layer, check_response_code
 
 base_url = 'http://localhost'
 apache_conf_dir = '/etc/httpd/conf.d'
@@ -509,6 +509,91 @@ class TestModTwms(unittest.TestCase):
         date = '2012-01-01'
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(
+            check_result,
+            'TWMS JPG request does not match what\'s expected. URL: ' +
+            req_url)
+        
+    def test_request_twms_time_out_of_range(self):
+        date = '2020-01-01'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        self.assertTrue(check_response_code(req_url, 404, 'Not Found'))
+        
+    def test_request_twms_invalid_request(self):
+        req_url = '{}/{}/{}/twms.cgi?request=GetNothing'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date')
+
+        self.assertTrue(check_response_code(req_url, 400, 'Bad Request'))
+
+    def test_request_twms_invalid_bbox(self):
+        date = '2012-01-01'
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-1800,-1980,1080,900&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        self.assertTrue(check_response_code(req_url, 400, 'Bad Request'))
+        
+    def test_request_twms_invalid_layers(self):
+        date = '2012-01-01'
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test_invalid&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        self.assertTrue(check_response_code(req_url, 400, 'Bad Request'))
+        
+    def test_request_twms_invalid_srs(self):
+        date = '2012-01-01'
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:99999&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(
+            check_result,
+            'TWMS JPG request does not match what\'s expected. URL: ' +
+            req_url)
+        
+    def test_request_twms_invalid_width(self):
+        date = '2012-01-01'
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=999&height=512&bbox=-180,-198,108,90&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(
+            check_result,
+            'TWMS JPG request does not match what\'s expected. URL: ' +
+            req_url)
+        
+    def test_request_twms_invalid_height(self):
+        date = '2012-01-01'
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=999&bbox=-180,-198,108,90&time={}'.format(
+            base_url, self.endpoint_prefix_twms,
+            self.endpoint_prefix_twms + '_date', date)
+
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(
+            check_result,
+            'TWMS JPG request does not match what\'s expected. URL: ' +
+            req_url)
+        
+    def test_request_twms_invalid_format(self):
+        date = '2012-01-01'
+        ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
+        req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fblah&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
             base_url, self.endpoint_prefix_twms,
             self.endpoint_prefix_twms + '_date', date)
 
