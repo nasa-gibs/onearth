@@ -27,7 +27,7 @@ limitations under the License.
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PPNG</mrf_compression_type>
  <outsize>40960 20480</outsize>
- <overview_resampling>nearest</overview_resampling>
+ <overview_resampling>NNB</overview_resampling>
  <resize_resampling>near</resize_resampling>
  <extents>-180,-90,180,90</extents>
  <colormap>mrfgen_test_data/working_dir/MODIS_Aqua_Chlorophyll_A.xml</colormap>
