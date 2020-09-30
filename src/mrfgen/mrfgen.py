@@ -690,7 +690,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
     Arguments:
         tiles -- List of tiles to insert
         mrf -- An existing MRF file
-        insert_method -- The resampling method to use {Avg, NNb}
+        insert_method -- The resampling method to use {Avg, NearNb}
         resize_resampling -- The resampling method to use for gdalwarp
         target_x -- The target resolution for x
         target_y -- The target resolution for y
@@ -1953,7 +1953,7 @@ remove_file(vrt_filename)
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
 if overview_resampling[:4].lower() == 'near' or overview_resampling.lower() == 'nnb':
-    insert_method = 'NNb'
+    insert_method = 'NearNb'
 else:
     insert_method = 'Avg'
 
