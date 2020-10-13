@@ -22,9 +22,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,8 +36,8 @@
 #
 # Example:
 #
-#  vectorgen.py 
-#   -c vectorgen_configuration_file.xml 
+#  vectorgen.py
+#   -c vectorgen_configuration_file.xml
 
 from optparse import OptionParser
 from oe_utils import *
@@ -121,17 +121,17 @@ def parse_filter(elem):
 
 
 if __name__ == '__main__':
-    
+
     # Declare counter for errors
     errors = 0
-    
+
     # Define command line options and args.
     parser = OptionParser(version = versionNumber)
     parser.add_option('-c', '--configuration_filename',
                       action='store', type='string', dest='configuration_filename',
                       default='./vectorgen_configuration_file.xml',
                       help='Full path of configuration filename.  Default:  ./vectorgen_configuration_file.xml')
-    parser.add_option("-s", "--send_email", action="store_true", dest="send_email", 
+    parser.add_option("-s", "--send_email", action="store_true", dest="send_email",
                       default=False, help="Send email notification for errors and warnings.")
     parser.add_option('--email_server', action='store', type='string', dest='email_server',
                       default='', help='The server where email is sent from (overrides configuration file value)')
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                       default='', help='The sender for email notifications (overrides configuration file value)')
     parser.add_option('--email_logging_level', action='store', type='string', dest='email_logging_level',
                   default='ERROR', help='Logging level for email notifications: ERROR, WARN, or INFO.  Default: ERROR')
-    
+
     # Read command line args.
     (options, args) = parser.parse_args()
     # Configuration filename.
@@ -161,12 +161,12 @@ if __name__ == '__main__':
         sigevent_url = (email_server, email_recipient, email_sender, logging_level)
     else:
         sigevent_url = ''
-    
-    # Get current time, which is written to a file as the previous cycle time.  
-    # Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles 
+
+    # Get current time, which is written to a file as the previous cycle time.
+    # Time format is "yyyymmdd.hhmmss".  Do this first to avoid any gap where tiles
     # may get passed over because they were created while this script is running.
     current_cycle_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
-    
+
     # Read XML configuration file.
     try:
         # Open file.
@@ -180,23 +180,23 @@ if __name__ == '__main__':
         # Parameter name.
         parameter_name = get_dom_tag_value(dom, 'parameter_name')
         date_of_data = get_dom_tag_value(dom, 'date_of_data')
-    
+
         # Define output basename
-        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time, '_', str(os.getpid())])    
-        
+        basename=str().join([parameter_name, '_', date_of_data, '___', 'vectorgen_', current_cycle_time, '_', str(os.getpid())])
+
         # Get default email server and recipient if not override
         if email_server == '':
-            try: 
+            try:
                 email_server = get_dom_tag_value(dom, 'email_server')
             except:
                 email_server = ''
         if email_recipient == '':
-            try: 
+            try:
                 email_recipient = get_dom_tag_value(dom, 'email_recipient')
             except:
                 email_recipient = ''
         if email_sender == '':
-            try: 
+            try:
                 email_sender = get_dom_tag_value(dom, 'email_sender')
             except:
                 email_sender = ''
@@ -204,16 +204,16 @@ if __name__ == '__main__':
             sigevent_url = (email_server, email_recipient, email_sender, logging_level)
             if email_recipient == '':
                 log_sig_err("No email recipient provided for notifications.", sigevent_url)
-        
+
         # for sub-daily imagery
-        try: 
+        try:
             time_of_data = get_dom_tag_value(dom, 'time_of_data')
         except:
             time_of_data = ''
         # Directories.
         try:
             input_dir = get_dom_tag_value(dom, 'input_dir')
-        except: 
+        except:
             input_dir = None
         output_dir = get_dom_tag_value(dom, 'output_dir')
         try:
@@ -240,6 +240,23 @@ if __name__ == '__main__':
             source_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'source_epsg'))
         except:
             source_epsg = 'EPSG:4326' # default to geographic
+
+        # Unique feature id property name
+        try:
+            feature_id = float(get_dom_tag_value(dom, "feature_id"))
+
+            # Create the unique feature id during processing
+            try:
+                if get_dom_attr_value(dom, "feature_id", "create") == "true":
+                    create_feature_id = True
+                else:
+                    create_feature_id = False
+            except:
+                create_feature_id = False
+        except:
+            feature_id = "UID"
+            create_feature_id = True
+
         # Rate at which to reduce features
         try:
             feature_reduce_rate = float(get_dom_tag_value(dom, 'feature_reduce_rate'))
@@ -264,13 +281,13 @@ if __name__ == '__main__':
         # Identifier for MVT tile content
         try:
             tile_layer_name = get_dom_tag_value(dom, "identifier")
-        except: 
+        except:
             tile_layer_name = parameter_name
 
         # Buffer size
         try:
             buffer_size = float(get_dom_tag_value(dom, "buffer_size"))
-        except: 
+        except:
             buffer_size = 5
 
         # Buffer on the edges
@@ -383,30 +400,30 @@ if __name__ == '__main__':
                 overview_levels = None
         # Close file.
         config_file.close()
-    
+
     # Make certain each directory exists and has a trailing slash.
     if input_dir != None:
         input_dir = add_trailing_slash(check_abs_path(input_dir))
     output_dir = add_trailing_slash(check_abs_path(output_dir))
     logfile_dir = add_trailing_slash(check_abs_path(logfile_dir))
-    
+
     # Save script_dir
     script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
-    
+
     # Verify logfile_dir first so that the log can be started.
     verify_directory_path_exists(logfile_dir, 'logfile_dir', sigevent_url)
     # Initialize log file.
     log_filename=str().join([logfile_dir, basename, '.log'])
     logging.basicConfig(filename=log_filename, level=logging.INFO)
-    
+
     # Verify remaining directory paths.
     if input_dir != None:
         verify_directory_path_exists(input_dir, 'input_dir', sigevent_url)
     verify_directory_path_exists(output_dir, 'output_dir', sigevent_url)
     verify_directory_path_exists(working_dir, 'working_dir', sigevent_url)
-    
+
     # Log all of the configuration information.
-    log_info_mssg_with_timestamp(str().join(['config XML file:                ', configuration_filename]))                                      
+    log_info_mssg_with_timestamp(str().join(['config XML file:                ', configuration_filename]))
     # Copy configuration file to working_dir (if it's not already there) so that the output can be recreated if needed.
     if os.path.dirname(configuration_filename) != os.path.dirname(working_dir):
         config_preexisting=glob.glob(configuration_filename)
@@ -436,6 +453,8 @@ if __name__ == '__main__':
         log_info_mssg(str().join(['config target_y:                ', str(target_y) if target_y else 'Not specified']))
         log_info_mssg(str().join(['config target_extents:          ', str(target_extents)]))
         log_info_mssg(str().join(['config overview_levels:         ', str(overview_levels)]))
+    log_info_mssg(str().join(['config feature_id:              ', str(feature_id)]))
+    log_info_mssg(str().join(['config create_feature_id:       ', str(create_feature_id)]))
     log_info_mssg(str().join(['config feature_reduce_rate:     ', str(feature_reduce_rate)]))
     log_info_mssg(str().join(['config cluster_reduce_rate:     ', str(cluster_reduce_rate)]))
     log_info_mssg(str().join(['config buffer_size:             ', str(buffer_size)]))
@@ -444,19 +463,19 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config source_epsg:             ', source_epsg]))
     log_info_mssg(str().join(['vectorgen current_cycle_time:   ', current_cycle_time]))
     log_info_mssg(str().join(['vectorgen basename:             ', basename]))
-    
+
     # Verify that date is 8 characters.
     if len(date_of_data) != 8:
         mssg='Format for <date_of_data> (in vectorgen XML config file) is:  yyyymmdd'
         log_sig_exit('ERROR', mssg, sigevent_url)
-        
+
     if time_of_data != '' and len(time_of_data) != 6:
         mssg='Format for <time_of_data> (in vectorgen XML config file) is:  HHMMSS'
         log_sig_exit('ERROR', mssg, sigevent_url)
-    
+
     # Change directory to working_dir.
     os.chdir(working_dir)
-    
+
     # Get list of all tile filenames.
     alltiles = []
     if input_files != '':
@@ -465,15 +484,15 @@ if __name__ == '__main__':
     if input_dir != None: # search for only .shp or json/geojson files
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.shp']))
         alltiles = alltiles + glob.glob(str().join([input_dir, '*json']))
-    
+
     striptiles = []
     for tile in alltiles:
         striptiles.append(tile.strip())
     alltiles = striptiles
-    
+
     if len(time_of_data) == 6:
         mrf_date = datetime.strptime(str(date_of_data)+str(time_of_data),"%Y%m%d%H%M%S")
-    else: 
+    else:
         mrf_date = datetime.strptime(date_of_data, "%Y%m%d")
     out_filename = output_name.replace('{$parameter_name}', parameter_name)
     time_params = []
@@ -482,10 +501,10 @@ if __name__ == '__main__':
             time_params.append(char+out_filename[i+1])
     for time_param in time_params:
         out_filename = out_filename.replace(time_param ,datetime.strftime(mrf_date,time_param))
-    
+
     out_basename = working_dir + basename
     out_filename = output_dir + out_filename
-            
+
     if len(alltiles) > 0:
         if output_format == 'esri shapefile':
             for tile in alltiles:
@@ -497,7 +516,7 @@ if __name__ == '__main__':
                     shutil.move(out_basename+"/"+title+ext, out_filename+ext)
                 shutil.rmtree(out_basename)
                 mssg=str().join(['Output created:  ', out_filename+".shp"])
-                
+
         elif output_format == 'mvt-mrf': # Create MVT-MRF
             for idx, tile in enumerate(alltiles):
                 # create_vector_mrf can handle GeoJSON and Shapefile, but the file's projection has to match the desired output
@@ -508,21 +527,27 @@ if __name__ == '__main__':
                     run_command(ogr2ogr_command_list, sigevent_url)
                     alltiles[idx] = outfile
             log_info_mssg("Creating vector mrf with " + ', '.join(alltiles))
-            create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y, target_extents,
-                              tile_size, overview_levels, target_epsg, feature_filters, overview_filters,
-                              feature_reduce_rate=feature_reduce_rate, cluster_reduce_rate=cluster_reduce_rate,
-                              buffer_size=buffer_size, buffer_edges=buffer_edges, debug=False)
-            files = [working_dir+"/"+basename+".mrf",working_dir+"/"+basename+".idx",working_dir+"/"+basename+".pvt"]
+            success = create_vector_mrf(alltiles, working_dir, basename, tile_layer_name, target_x, target_y,
+                                        target_extents, tile_size, overview_levels, target_epsg, feature_filters, overview_filters,
+                                        feature_id, create_feature_id, feature_reduce_rate=feature_reduce_rate,
+                                        cluster_reduce_rate=cluster_reduce_rate,
+                                        buffer_size=buffer_size, buffer_edges=buffer_edges, debug=False)
+            if not success: errors += 1
+
+            files = [os.path.join(working_dir, basename + ".mrf"),
+                     os.path.join(working_dir, basename + ".idx"),
+                     os.path.join(working_dir, basename + ".pvt")]
+
             for mfile in files:
                 title, ext = os.path.splitext(os.path.basename(mfile))
                 if ext not in [".log",".xml"]:
-                    log_info_mssg(str().join(['Moving ', working_dir+"/"+title+ext, ' to ', out_filename+ext]))
+                    log_info_mssg(str().join(['Moving ', os.path.join(working_dir, title+ext), ' to ', out_filename+ext]))
                     if os.path.isfile(out_filename+ext):
-                        log_sig_warn(out_filename+ext + " already exists...overwriting", sigevent_url)
-                        os.remove(out_filename+ext)
-                    shutil.move(working_dir+"/"+title+ext, out_filename+ext)
+                        log_sig_warn(out_filename + ext + " already exists...overwriting", sigevent_url)
+                        os.remove(out_filename + ext)
+                    shutil.move(os.path.join(working_dir, title+ext), out_filename+ext)
             mssg=str().join(['Output created:  ', out_filename+".mrf"])
-            
+
         elif output_format == 'geojson':
             print alltiles
             for tile in alltiles:
@@ -531,11 +556,12 @@ if __name__ == '__main__':
                 mssg=str().join(['Output created:  ', out_filename+".json"])
     else:
         log_sig_exit('ERROR', "No valid input files found", sigevent_url)
-    
+
     # Send to log.
     try:
         log_info_mssg(mssg)
         # sigevent('INFO', mssg, sigevent_url)
     except urllib2.URLError:
         None
+
     sys.exit(errors)

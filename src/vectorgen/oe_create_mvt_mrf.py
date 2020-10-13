@@ -50,6 +50,7 @@ import mapbox_vector_tile
 from osgeo import osr
 import decimal
 import re
+from oe_utils import *
 
 
 # Main tile-creation function.
@@ -65,6 +66,8 @@ def create_vector_mrf(input_file_path,
                       projection_str,
                       feature_filters,
                       overview_filters,
+                      feature_id,
+                      create_feature_id,
                       feature_reduce_rate=2.5,
                       cluster_reduce_rate=2,
                       buffer_size=5,
@@ -89,6 +92,8 @@ def create_vector_mrf(input_file_path,
         projection_str (str) -- EPSG code for the projection to be used.
         feature_filters (list object) -- List of options for filtering features during the initial processing
         overview_filters (list object) -- Map of zLevels to list of options for filtering features for overviews
+        feature_id (str) -- Identifier name of the unique feature property.
+        create_feature_id (boolean) -- Flag indicating whether the unique feature id should be created during processing.
         feature_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce features for each successive zoom level.
             Defaults to 2.5 (1 feature retained for every 2.5 in the previous zoom level)
         cluster_reduce_rate (float) -- (currently only for Point data) Rate at which to reduce points in clusters of 1px or less.
@@ -126,21 +131,27 @@ def create_vector_mrf(input_file_path,
 
     spatial_dbs = []
     source_schemas = []
-    # Dump contents of input vector file into a mutable rtree spatial database for faster searching.
+
+    # Dump contents of shapefile into a mutable rtree spatial database for faster searching.
     for input_file in input_file_path:
-        print("Processing" + input_file)
+        log_info_mssg('Processing ' + input_file)
         with fiona.open(input_file) as f:
             try:
-                spatial_db = rtree.index.Index(rtree_index_generator(list(f), feature_filters, debug))
+                spatial_db = rtree.index.Index(rtree_index_generator(list(f), feature_filters,
+                                                                     feature_id, create_feature_id))
             except rtree.core.RTreeError as e:
-                print("ERROR -- problem importing feature data. If you have filters configured, the source dataset "
-                      "may have no features that pass. Err: {0}".format(e))
-                sys.exit()
+                log_info_mssg('ERROR -- problem importing feature data. If you have filters configured, ' \
+                              'the source dataset may have no features that pass. Err: {0}'.format(e))
+                return False
+            except ValueError as e:
+                log_info_mssg('ERROR -- problem processing feature data. Err: {0}'.format(e))
+                return False
+
             spatial_dbs.append(spatial_db)
             source_schema = f.schema['geometry']
             source_schemas.append(source_schema)
             if debug:
-                print("Total features to process: " + str(spatial_db.count(spatial_db.bounds)))
+                log_info_mssg('Points to process: ' + str(spatial_db.count(spatial_db.bounds)))
 
 
     # Build tilematrix pyramid from the bottom (highest zoom) up. We generate tiles left-right,
@@ -282,11 +293,11 @@ def create_vector_mrf(input_file_path,
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
-                    mvt_dir = os.path.join(os.getcwd(), 'tiles')
-                    if not os.path.exists(mvt_dir):
-                        os.mkdir(mvt_dir)
+                    tiles_dir = os.path.join(os.getcwd(), 'tiles')
+                    if not os.path.exists(tiles_dir):
+                        os.mkdir(tiles_dir)
 
-                    mvt_filename = os.path.join(mvt_dir, 'test_{0}_{1}_{2}.mvt'.format(z, x, y))
+                    mvt_filename = os.path.join(tiles_dir, 'test_{0}_{1}_{2}.mvt'.format(z, x, y))
                     with open(mvt_filename, 'w+') as f:
                         f.write(mvt_tile)
 
@@ -311,7 +322,8 @@ def create_vector_mrf(input_file_path,
                   format(z_orig_features, z_rdct_features, z_fltr_features))
     fidx.close()
     fout.close()
-    return
+
+    return True
 
 
 # UTILITY FUNCTIONS
@@ -455,12 +467,23 @@ def build_mrf_dom(tile_matrices, extents, tile_size, proj):
 
 # UTILITY STUFF
 
-
 # This is the recommended way of building an rtree index.
-def rtree_index_generator(features, feature_filters, debug=False):
+def rtree_index_generator(features, filter_list, feature_id, create_feature_id):
+
     for idx, feature in enumerate(features):
         try:
-            if len(feature_filters) == 0 or passes_filters(feature, feature_filters, debug):
+            if len(filter_list) == 0 or passes_filters(feature, filter_list):
+                if create_feature_id:
+                    if feature_id in feature['properties']:
+                        raise ValueError("Unique ID Property (" + feature_id + " already exists; Cannot create")
+
+                    # Update (or initialize) the static feature id counter if we are assigning feature IDs
+                    try:
+                        rtree_index_generator.feature_id_value += 1
+                    except AttributeError:
+                        rtree_index_generator.feature_id_value = 1
+                    feature['properties'][feature_id] = rtree_index_generator.feature_id_value
+
                 yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
         except ValueError as e:
             print "WARN - " + str(e)
