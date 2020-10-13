@@ -8,6 +8,5 @@ mapbox_vector_tile==0.4.0
 lxml==3.8.0
 pillow==5.4.1
 numpy==1.10.4
-fiona
-requests
-rtree
+fiona==1.8.4
+rtree==0.8.3
