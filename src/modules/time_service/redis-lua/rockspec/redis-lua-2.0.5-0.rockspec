@@ -2,7 +2,7 @@ package = "redis-lua"
 version = "2.0.5-0"
 
 source = {
-   url = "https://github.com/nasa-gibs/onearth/tree/2.3.0/src/modules/time_service/redis-lua",
+   url = "https://github.com/nasa-gibs/onearth/tree/2.3.1/src/modules/time_service/redis-lua",
    md5 = "46e962a4f5361c82473ccd33d4b18003"
 }
 

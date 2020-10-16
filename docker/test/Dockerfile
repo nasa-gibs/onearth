@@ -1,6 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM nasagibs/onearth-deps:2.3.0
+FROM nasagibs/onearth-deps:2.3.1
 
 # Install mrfgen and OnEarth utils dependencies
 RUN yum install -y proj-4.8.0 proj-devel-4.8.0
