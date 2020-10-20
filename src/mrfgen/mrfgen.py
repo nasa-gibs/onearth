@@ -734,10 +734,11 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             continue
 
         # check if image fits within extents
-        if (float(s_xmin) < float(t_xmin)) or \
-           (float(s_ymax) > float(t_ymax)) or \
-           (float(s_xmax) > float(t_xmax)) or \
-           (float(s_ymin) < float(t_ymin)):
+        if target_epsg in ['EPSG:3031','EPSG:3413'] and \
+            ((float(s_xmin) < float(t_xmin)) or \
+            (float(s_ymax) > float(t_ymax)) or \
+            (float(s_xmax) > float(t_xmax)) or \
+            (float(s_ymin) < float(t_ymin))):
             log_info_mssg(tile + " falls outside of extents for " + target_epsg)
             cut_tile = crop_to_extents(tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_extents, working_dir)
             if should_lock:
