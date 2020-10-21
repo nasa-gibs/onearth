@@ -468,7 +468,8 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         new_lrx = str(Decimal(lrx)+Decimal(antimeridian)*2)
     else:
         new_lrx = lrx
-        lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
+        if Decimal(lrx) >= Decimal(antimeridian) + Decimal(xres):
+            lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
     cutline_template = """
     {
       "type": "Polygon",
@@ -734,10 +735,11 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             continue
 
         # check if image fits within extents
-        if (float(s_xmin) < float(t_xmin)) or \
-           (float(s_ymax) > float(t_ymax)) or \
-           (float(s_xmax) > float(t_xmax)) or \
-           (float(s_ymin) < float(t_ymin)):
+        if target_epsg in ['EPSG:3031','EPSG:3413','EPSG:3857'] and \
+            ((float(s_xmin) < float(t_xmin)) or \
+            (float(s_ymax) > float(t_ymax)) or \
+            (float(s_xmax) > float(t_xmax)) or \
+            (float(s_ymin) < float(t_ymin))):
             log_info_mssg(tile + " falls outside of extents for " + target_epsg)
             cut_tile = crop_to_extents(tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_extents, working_dir)
             if should_lock:
@@ -757,13 +759,21 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             if should_lock:
                 lock.up_read()
 
+            tiles = []
+
+            # The left half of the split could be None if there wasn't a full pixel beyond the antimeridian
+            if left_half:
+                tiles.append(left_half)
+
             # The right half of the split could be None if there wasn't a full pixel beyond the antimeridian
             if right_half:
-                errors += run_mrf_insert([left_half, right_half], mrf, insert_method, resize_resampling, target_x, target_y,
+                tiles.append(right_half)
+
+            if len(tiles) > 0:
+                errors += run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
             else:
-                errors += run_mrf_insert([left_half], mrf, insert_method, resize_resampling, target_x, target_y,
-                                     mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
+                log_sig_err("No tiles to insert after splitting across antimeridian", sigevent_url)
             continue
 
         if merge: # merge tile with existing imagery if true
