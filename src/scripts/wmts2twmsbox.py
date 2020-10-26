@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -57,9 +57,9 @@ def wmts2twmsbox(top_left_bbox, col, row):
         row -- WMTS TILEROW value.
     """
     
-    print "Top Left BBOX:",top_left_bbox
-    print "TILECOL="+str(int(col))
-    print "TILEROW="+str(int(row))
+    print("Top Left BBOX:",top_left_bbox)
+    print("TILECOL="+str(int(col)))
+    print("TILEROW="+str(int(row)))
 
     # parse top_left_bbox to individual values
     top_left_bbox = top_left_bbox.split(",")
@@ -80,7 +80,7 @@ def wmts2twmsbox(top_left_bbox, col, row):
     
     # calculate scale denominator for reference
     scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
-    print "Scale Denominator: %f" % round(scale_denominator,10)
+    print("Scale Denominator: %f" % round(scale_denominator,10))
     
     return "Request BBOX: " + str(round(request_minx,10))+","+str(round(request_miny,10))+","+str(round(request_maxx,10))+","+str(round(request_maxy,10))
 
@@ -93,16 +93,16 @@ def wmts2twmsbox_scale(scale_denominator, col, row):
         row -- WMTS TILEROW value.
     """
     
-    print "Scale Denominator:",str(scale_denominator)
-    print "TILECOL="+str(col)
-    print "TILEROW="+str(row)
+    print("Scale Denominator:",str(scale_denominator))
+    print("TILECOL="+str(col))
+    print("TILEROW="+str(row))
     
     size = ((tilesize*2)*scale_denominator/units)*(pixelsize/2)
     
     # calculate additional top_left values for reference
     top_left_maxx = top_left_minx + size
     top_left_miny = top_left_maxy - size
-    print "Top Left BBOX: " + format(round(top_left_minx,10),'f')+","+format(round(top_left_miny,10),'f') +","+format(round(top_left_maxx,10),'f')+","+format(round(top_left_maxy,10),'f')
+    print("Top Left BBOX: " + format(round(top_left_minx,10),'f')+","+format(round(top_left_miny,10),'f') +","+format(round(top_left_maxx,10),'f')+","+format(round(top_left_maxy,10),'f'))
     
     # calculate new bounding box based on col and row
     request_minx = top_left_minx + (col*size) 
@@ -146,28 +146,28 @@ if not options.row:
     parser.error('row is required')
     
 if options.epsg == "4326":
-    print "Using EPSG:4326"
+    print("Using EPSG:4326")
     units = Decimal(str(111319.490793274))
     tilesize = Decimal(str(512))
     pixelsize = Decimal(str(0.00028))
     top_left_minx = Decimal(str(-180))
     top_left_maxy = Decimal(str(90))
 elif options.epsg == "3857":
-    print "Using EPSG:3857"
+    print("Using EPSG:3857")
     units = Decimal(str(1))
     tilesize = Decimal(str(256))
     pixelsize = Decimal(str(0.00028))
     top_left_minx = Decimal(str(-20037508.34278925))
     top_left_maxy = Decimal(str(20037508.34278925))
 elif options.epsg == "3031":
-    print "Using EPSG:3031"
+    print("Using EPSG:3031")
     units = Decimal(str(1))
     tilesize = Decimal(str(512))
     pixelsize = Decimal(str(0.00028))
     top_left_minx = Decimal(str(-4194304))
     top_left_maxy = Decimal(str(4194304))
 elif options.epsg == "3413":
-    print "Using EPSG:3413"
+    print("Using EPSG:3413")
     units = Decimal(str(1))
     tilesize = Decimal(str(512))
     pixelsize = Decimal(str(0.00028))
@@ -177,13 +177,13 @@ else:
     parser.error('Projection is not supported')
     
 if options.tilesize:
-    print "Using tilesize: " + str(options.tilesize)
+    print("Using tilesize: " + str(options.tilesize))
     tilesize = Decimal(str(options.tilesize))
 
 # Run translation based on given parameters
 if options.scale_denominator:
-    print (wmts2twmsbox_scale(Decimal(str(options.scale_denominator)),int(options.col),int(options.row)))
+    print((wmts2twmsbox_scale(Decimal(str(options.scale_denominator)),int(options.col),int(options.row))))
 elif options.top_left_bbox:
-    print (wmts2twmsbox(options.top_left_bbox,int(options.col),int(options.row)))
+    print((wmts2twmsbox(options.top_left_bbox,int(options.col),int(options.row))))
 else:
     parser.error('Either top_left_bbox or scale_denominator is required')

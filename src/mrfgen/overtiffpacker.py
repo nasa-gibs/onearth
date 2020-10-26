@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -51,7 +51,7 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
         nodata.append(tiffds.GetRasterBand(1).GetNoDataValue())
     if rawnodata is not None:
         del nodata[:]
-        for k in xrange(len(rawnodata)):
+        for k in range(len(rawnodata)):
             nodata.append(float(rawnodata[k]))
     scale = tiffds.GetRasterBand(1).GetScale()
     offset = tiffds.GetRasterBand(1).GetOffset()
@@ -67,24 +67,24 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
     ptiffraster.SetMetadata(metadata)
 
     overviewlist = []
-    for i in xrange(tiffds.GetRasterBand(1).GetOverviewCount()):
+    for i in range(tiffds.GetRasterBand(1).GetOverviewCount()):
         overviewlist.append(tiffds.GetRasterBand(1).XSize / tiffds.GetRasterBand(1).GetOverview(i).XSize + 1)
 
     ptiffraster.BuildOverviews(overviewlist=overviewlist)
 
-    print "Getting statistics in source data..."
+    print("Getting statistics in source data...")
     if minmax is None:
         if rawnodata is not None:
             minmax = [float("inf"), float("-inf")]
             stride = 5
 
-            for j in xrange(0, tiffds.GetRasterBand(1).YSize, stride):
+            for j in range(0, tiffds.GetRasterBand(1).YSize, stride):
                 if (tiffds.GetRasterBand(1).YSize - j) < stride:
                     stride = tiffds.GetRasterBand(1).YSize % stride
                 mask = np.zeros((stride, tiffds.GetRasterBand(1).XSize))
                 tiffdsa = tiffds.GetRasterBand(1).ReadAsArray(xoff=0, yoff=j, win_xsize=tiffds.GetRasterBand(1).XSize,
                                                               win_ysize=stride).astype(np.float32)
-                for k in xrange(len(rawnodata)):
+                for k in range(len(rawnodata)):
                     mask[tiffdsa == nodata[k]] = 1
                 masktiffdsa = ma.MaskedArray(tiffdsa, mask)
                 thismin = np.amin(masktiffdsa)
@@ -102,18 +102,18 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
     if scaleoffset is not None:
         pscale = scaleoffset[0]
         poffset = scaleoffset[1]
-    print "New scale is %.9f" % pscale
-    print "New offset is %f" % poffset
+    print("New scale is %.9f" % pscale)
+    print("New offset is %f" % poffset)
 
     if calcscaleoffset:
         return
 
-    print "Reading in source data..."
+    print("Reading in source data...")
 
-    for i in xrange(1, numbands + 1):
-        print "Writing band %d data..." % i
+    for i in range(1, numbands + 1):
+        print("Writing band %d data..." % i)
         stride = 5
-        for j in xrange(0, tiffds.GetRasterBand(1).YSize, stride):
+        for j in range(0, tiffds.GetRasterBand(1).YSize, stride):
             if (tiffds.GetRasterBand(1).YSize - j) < stride:
                 stride = tiffds.GetRasterBand(1).YSize % stride
                 # if j % 200 == 0:
@@ -127,7 +127,7 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
                 np.add(tiffdsa, offset, tiffdsa)
 
             if i <= 3:
-                for k in xrange(len(nodata)):
+                for k in range(len(nodata)):
                     tiffdsa[tiffdsa == nodata[k]] = poffset
                 np.subtract(tiffdsa, poffset, tiffdsa)
                 if not noverifydata:
@@ -141,7 +141,7 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
             if i == 4:
                 nodatadsa = np.empty(tiffdsa.shape)
                 np.ndarray.fill(nodatadsa, 0x000000ff)
-                for k in xrange(len(nodata)):
+                for k in range(len(nodata)):
                     nodatadsa[tiffdsa == nodata[k]] = 0
                 tiffdsa = nodatadsa
             ptiffraster.GetRasterBand(i).WriteArray(tiffdsa, xoff=0, yoff=j)
@@ -153,7 +153,7 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
                 ptiffraster.GetRasterBand(i).SetNoDataValue(0)
         ptiffraster.FlushCache()
 
-    for j in xrange(len(overviewlist)):
+    for j in range(len(overviewlist)):
         tiffdsa = tiffds.GetRasterBand(1).GetOverview(j).ReadAsArray().astype(np.float32)
 
         if scale is not None:
@@ -161,7 +161,7 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
         if offset is not None:
             np.add(tiffdsa, offset, tiffdsa)
 
-        for i in xrange(1, numbands + 1):
+        for i in range(1, numbands + 1):
             if i <= 3:
                 np.subtract(tiffdsa, poffset, tiffdsa)
                 np.multiply(tiffdsa, pscale, tiffdsa)
@@ -171,10 +171,10 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
             if i == 4:
                 nodatadsa = np.empty(tiffdsa.shape)
                 np.ndarray.fill(nodatadsa, 0x000000ff)
-                for k in xrange(len(nodata)):
+                for k in range(len(nodata)):
                     nodatadsa[tiffdsa == nodata[k]] = 0
                 tiffdsa = nodatadsa
-            print "Writing band %d, overview %d data..." % (i, j)
+            print("Writing band %d, overview %d data..." % (i, j))
             ptiffraster.GetRasterBand(i).GetOverview(j).WriteArray(tiffdsa)
             ptiffraster.GetRasterBand(i).GetOverview(j).SetScale(pscale)
             ptiffraster.GetRasterBand(i).GetOverview(j).SetOffset(poffset)

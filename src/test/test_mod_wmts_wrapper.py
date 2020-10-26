@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -58,7 +58,7 @@ class TestModWmtsWrapperErrorHandling(unittest.TestCase):
         try:
             file_text_replace(base_apache_config, self.output_apache_config, '{testpath}', test_config_path)
         except IOError as e:
-            print "Can't write file: {0}. Error: {1}".format(self.output_apache_config, e)
+            print("Can't write file: {0}. Error: {1}".format(self.output_apache_config, e))
 
         restart_apache()
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )

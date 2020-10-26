@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -40,7 +40,7 @@ import sys
 import unittest2 as unittest
 import struct
 import glob
-import StringIO
+import io
 import gzip
 import fiona
 import fiona.crs
@@ -64,7 +64,12 @@ class TestVectorgen(unittest.TestCase):
         # Unless DEBUG is set, the artifacts will be wiped when the test concludes.
         self.test_data_path = os.path.join(os.getcwd(), 'vectorgen_test_data')
         self.main_artifact_path = os.path.join(os.getcwd(), 'vectorgen_test_artifacts')
+
+        print('main_artifact_path = ' + self.main_artifact_path)
+        
         os.makedirs(self.main_artifact_path)
+
+        print('dir exists = ' + str(os.path.isdir(self.main_artifact_path)))
 
         # Set config files for individual tests
         self.mrf_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf.xml')
@@ -80,22 +85,22 @@ class TestVectorgen(unittest.TestCase):
         try:
             input_file = config_dom.getElementsByTagName('file')[0].firstChild.nodeValue
         except IndexError:
-            print 'Problem reading {0} -- can\'t find "input_files" tag. Aborting test.'.format(self.mrf_test_config)
+            print('Problem reading {0} -- can\'t find "input_files" tag. Aborting test.'.format(self.mrf_test_config))
             sys.exit()
         try:
             prefix = config_dom.getElementsByTagName('output_name')[0].firstChild.nodeValue
         except IndexError:
-            print 'Problem reading {0} -- can\'t find "output_name" tag. Aborting test.'.format(self.mrf_test_config)
+            print('Problem reading {0} -- can\'t find "output_name" tag. Aborting test.'.format(self.mrf_test_config))
             sys.exit()
         try:
             working_dir = config_dom.getElementsByTagName('working_dir')[0].firstChild.nodeValue
         except IndexError:
-            print 'Problem reading {0} -- can\'t find "working_dir" tag. Aborting test.'.format(self.mrf_test_config)
+            print('Problem reading {0} -- can\'t find "working_dir" tag. Aborting test.'.format(self.mrf_test_config))
             sys.exit()
         try:
             output_dir = config_dom.getElementsByTagName('output_dir')[0].firstChild.nodeValue
         except IndexError:
-            print 'Problem reading {0} -- can\'t find "output_dir" tag. Aborting test.'.format(self.mrf_test_config)
+            print('Problem reading {0} -- can\'t find "output_dir" tag. Aborting test.'.format(self.mrf_test_config))
             sys.exit()
         try:
             source_epsg = config_dom.getElementsByTagName('source_epsg')[0].firstChild.nodeValue
@@ -110,6 +115,9 @@ class TestVectorgen(unittest.TestCase):
         # Create artifact paths
         output_dir = os.path.join(artifact_path, output_dir)
         working_dir = os.path.join(artifact_path, working_dir)
+
+        print("output_dir = " + output_dir)
+
         os.makedirs(artifact_path)
         os.makedirs(output_dir)
         os.makedirs(working_dir)
@@ -150,7 +158,7 @@ class TestVectorgen(unittest.TestCase):
             last_byte = idx.read(16)
         top_tile_feature_count = 0
         for byte in (first_byte, penultimate_byte, last_byte):
-            tile_buffer = StringIO.StringIO()
+            tile_buffer = io.BytesIO()
             offset = struct.unpack('>q', byte[0:8])[0]
             size = struct.unpack('>q', byte[8:16])[0]
             with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
@@ -169,7 +177,7 @@ class TestVectorgen(unittest.TestCase):
                 self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
             # Check the top 2 tiles to see if they have any features (they should)
             if byte != first_byte:
-                top_tile_feature_count += len(tile[tile.keys()[0]]['features'])
+                top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
     def test_shapefile_generation(self):
@@ -249,7 +257,7 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )

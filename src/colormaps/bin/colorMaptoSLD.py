@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ def generateSLD_v1_0_0(gibsColorMaps, layerName, rgbaOrder) :
     print("   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">")
 
     print("  <NamedLayer>")
-    print("    <se:Name>" + layerName + "</se:Name>")
+    print(("    <se:Name>" + layerName + "</se:Name>"))
     print("    <UserStyle>")    
     print("      <se:Title>GIBS Imagery Style</se:Title>")
     print("      <se:FeatureTypeStyle>")    
@@ -108,34 +108,34 @@ def generateSLD_v1_0_0(gibsColorMaps, layerName, rgbaOrder) :
                     quantity = str(m.group(1))
                     label    = str(m.group(1)) + " - " + str(m.group(2))
                 
-                    print("              <se:ColorMapEntry " + 
+                    print(("              <se:ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
             		        "quantity=\""+ quantity + "\" " + 
-                		    "label=\""+ label + "\" />")        
+                		    "label=\""+ label + "\" />"))        
                 		    
                     quantity = str(m.group(2))
                     label    = str(m.group(2))
                 
-                    print("              <se:ColorMapEntry " + 
+                    print(("              <se:ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
             		        "quantity=\""+ quantity + "\" " + 
-            		        "label=\""+ label + "\" />")  
+            		        "label=\""+ label + "\" />"))  
             	else:  
                     quantity = str(m.group(1))
                     label    = str(m.group(1))
                 
-                    print("              <se:ColorMapEntry " + 
+                    print(("              <se:ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
             		        "quantity=\""+ quantity + "\" " + 
-            		        "label=\""+ label + "\" />")            
+            		        "label=\""+ label + "\" />"))            
             else:
                 quantity = str(m.group(1))
                 label    = str(m.group(1)) + " - " + str(m.group(2))#cmEntry.label
                 
-                print("              <se:ColorMapEntry " + 
+                print(("              <se:ColorMapEntry " + 
                         "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
             		    "quantity=\""+ quantity + "\" " + 
-            		    "label=\""+ label + "\" />")
+            		    "label=\""+ label + "\" />"))
  
     print("            </se:ColorMap>")     
     print("          </se:RasterSymbolizer>")    
@@ -159,7 +159,7 @@ def generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder) :
     print("   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">")
 
     print("  <NamedLayer>")
-    print("    <se:Name>" + layerName + "</se:Name>")
+    print(("    <se:Name>" + layerName + "</se:Name>"))
     print("    <UserStyle>")    
     print("      <se:Name>GIBS Imagery Style</se:Name>")
     print("      <se:CoverageStyle>")    
@@ -177,7 +177,7 @@ def generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder) :
             
             fallbackValue = RGBToHex(rgba,rgbaOrder)
            
-    print("              <se:Categorize fallbackValue=\"" + fallbackValue + "\">")          
+    print(("              <se:Categorize fallbackValue=\"" + fallbackValue + "\">"))          
     print("                <se:LookupValue>Rasterdata</se:LookupValue>")          
     
     firstValue = True
@@ -186,12 +186,12 @@ def generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder) :
         for cmEntry in colorMap.cmEntries:
             
             if firstValue:
-                print("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>")          
+                print(("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"))          
                 firstValue = False
             else:
                 threshold = str(re.match(r"\[([0-9\.\-\+e]*),[0-9\.\-\+e]*", cmEntry.value).group(1))
-                print("                <se:Threshold>" + threshold + "</se:Threshold>")     
-                print("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>")     
+                print(("                <se:Threshold>" + threshold + "</se:Threshold>"))     
+                print(("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"))     
           
     print("              </se:Categorize>")     
     print("            </se:ColorMap>")     
@@ -215,7 +215,7 @@ def parseColorMap(sourceXml):
     for cMapNode in xmldoc.documentElement.getElementsByTagName("ColorMap") :
         
         entriesNode     = cMapNode.getElementsByTagName("Entries")[0]
-        entriesAttrDict = dict(cMapNode.attributes.items())
+        entriesAttrDict = dict(list(cMapNode.attributes.items()))
         
         gibsCMap            = GIBS_ColorMap()
         gibsCMap.cmEntries  = []
@@ -226,7 +226,7 @@ def parseColorMap(sourceXml):
 
     
         for cMapEntryNode in cMapNode.getElementsByTagName("ColorMapEntry") :
-            cMapEntryAttrDict = dict(cMapEntryNode.attributes.items())
+            cMapEntryAttrDict = dict(list(cMapEntryNode.attributes.items()))
 
             gibsCMapEntry             = GIBS_ColorMapEntry()
             
@@ -316,7 +316,7 @@ def main(argv):
         elif version == "1.1.0":
             generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder)
         else:
-            print("Invalid version specified: " + version + ". Must be 1.1.0 or 1.0.0")
+            print(("Invalid version specified: " + version + ". Must be 1.1.0 or 1.0.0"))
             exit(-1)
     else:
         print("Version not specified")

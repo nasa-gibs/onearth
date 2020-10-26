@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -49,7 +49,6 @@ import os
 import sys
 import time
 import xml.dom.minidom
-import string
 import shutil
 import re
 try:
@@ -105,8 +104,8 @@ def parse_filter(elem):
         try:
             regexp = re.compile(regexp_str)
         except:
-            print "ERROR -- problem compiling regexp string {0}. Make sure it's a valid Python regular expression.".format(
-                regexp_str)
+            print("ERROR -- problem compiling regexp string {0}. Make sure it's a valid Python regular expression.".format(
+                regexp_str))
             sys.exit()
     if not value and not regexp:
         raise ValueError('No "value" or "regexp" attribute found for {0} element'.format(elem.nodeName))
@@ -230,7 +229,7 @@ if __name__ == '__main__':
         except:
             # default to GIBS naming convention
             output_name = '{$parameter_name}%Y%j_'
-        output_format = string.lower(get_dom_tag_value(dom, 'output_format'))
+        output_format = get_dom_tag_value(dom, 'output_format').lower()
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -549,7 +548,7 @@ if __name__ == '__main__':
             mssg=str().join(['Output created:  ', out_filename+".mrf"])
 
         elif output_format == 'geojson':
-            print alltiles
+            print(alltiles)
             for tile in alltiles:
                 shp2geojson(tile, out_basename+".json", source_epsg, target_epsg, sigevent_url)
                 shutil.move(out_basename+".json", out_filename+".json")
@@ -561,7 +560,7 @@ if __name__ == '__main__':
     try:
         log_info_mssg(mssg)
         # sigevent('INFO', mssg, sigevent_url)
-    except urllib2.URLError:
+    except urllib.error.URLError:
         None
 
     sys.exit(errors)

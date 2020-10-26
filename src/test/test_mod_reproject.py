@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -45,7 +45,7 @@ from shutil import move, rmtree
 from optparse import OptionParser
 import datetime
 from xml.etree import cElementTree as ElementTree
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
 
 DEBUG = False
@@ -180,8 +180,8 @@ class TestModReproject(unittest.TestCase):
 
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) JPG tile via WMTS')
+            print('URL: ' + req_url)
 
         # Downloads the tile and checks it against the reference hash.
         check_result = check_tile_request(req_url, ref_hash)
@@ -202,8 +202,8 @@ class TestModReproject(unittest.TestCase):
 
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) JPG tile via WMTS REST')
+            print('URL: ' + req_url)
 
         # Downloads the tile and checks it against the reference hash.
         check_result = check_tile_request(req_url, ref_hash)
@@ -217,8 +217,8 @@ class TestModReproject(unittest.TestCase):
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -230,8 +230,8 @@ class TestModReproject(unittest.TestCase):
         req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS REST PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -243,8 +243,8 @@ class TestModReproject(unittest.TestCase):
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PPNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PPNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -256,8 +256,8 @@ class TestModReproject(unittest.TestCase):
         req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/GoogleMapsCompatible_Level3/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PPNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PPNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS REST PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -269,8 +269,8 @@ class TestModReproject(unittest.TestCase):
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (time=default) JPG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) JPG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -283,8 +283,8 @@ class TestModReproject(unittest.TestCase):
         req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (time=default) JPG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) JPG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS REST JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -295,8 +295,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -307,8 +307,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS REST PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -319,8 +319,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PPNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PPNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -331,8 +331,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/wmts/test_daily_png/default/default/GoogleMapsCompatible_Level3/0/0/0.png'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PPNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PPNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS REST PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -344,8 +344,8 @@ class TestModReproject(unittest.TestCase):
 #http://localhost:4000/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=2012-02-29
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nNEED TIME SPECIFIED!!! Testing: Request current (no TIME) JPG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nNEED TIME SPECIFIED!!! Testing: Request current (no TIME) JPG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
 
@@ -356,8 +356,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nTesting: Request current (no TIME) PNG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) PNG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + req_url)
 
@@ -368,8 +368,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nTesting: Request current (no TIME) PPNG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) PPNG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PPNG request does not match what\'s expected. URL: ' + req_url)
 
@@ -382,8 +382,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -394,8 +394,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
         req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-22/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -406,8 +406,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '7c7fcdfaea0faf91afdd690eb7fe4dea'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-22'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -418,8 +418,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date  from "non-year layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -430,8 +430,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/test_nonyear_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date  from "non-year layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -444,8 +444,8 @@ class TestModReproject(unittest.TestCase):
 #request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image/jpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date from "non-year layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "non-year layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -456,8 +456,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -468,8 +468,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
         req_url = 'http://localhost/reproject/test/wmts/test_legacy_subdaily_jpg/default/2012-02-29T12:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) legacy subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -480,8 +480,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'fd4fe96d84e4f10e61029890293fa3c8'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -525,8 +525,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -537,8 +537,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -549,8 +549,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -561,8 +561,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -573,8 +573,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/test_nonyear_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -585,8 +585,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_nonyear_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTIME NEEDED!!! Testing: Request tile with no date from "non-year layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -597,8 +597,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'fd81999878be17f66c28b18c3cce3179'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -609,8 +609,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'fd81999878be17f66c28b18c3cce3179'
         req_url = 'http://localhost/reproject/test/wmts/test_legacy_subdaily_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -621,8 +621,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'fd81999878be17f66c28b18c3cce3179'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_legacy_subdaily_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nERROR!!! Testing: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -666,8 +666,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_static_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile from static layer with no time via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS static notime request does not match what\'s expected. URL: ' + req_url)
 
@@ -678,8 +678,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/test_static_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile from static layer with no time via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) static notime request does not match what\'s expected. URL: ' + req_url)
 
@@ -690,8 +690,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
         if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile from static layer with no time via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS static notime request does not match what\'s expected. URL: ' + req_url)
 
@@ -702,8 +702,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
         if DEBUG:
-            print '\nTesting: Request current (default TIME) JPG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (default TIME) JPG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
 
@@ -714,8 +714,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
         if DEBUG:
-            print '\nTesting: Request current (default TIME) PNG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (default TIME) PNG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + req_url)
 
@@ -726,8 +726,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&time=default'
         if DEBUG:
-            print '\nTesting: Request current (default TIME) PPNG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (default TIME) PPNG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PPNG request does not match what\'s expected. URL: ' + req_url)
 
@@ -738,8 +738,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '6df00a0095f3df8586572988f6cb7e84'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?request=GetMap&layers=test_daily_png&srs=EPSG:3857&format=image%2Fpng&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS PNG request with date does not match what\'s expected. URL: ' + req_url)
 
@@ -752,8 +752,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
-            print '\nTesting WMTS GetCapablities'
-            print 'URL: ' + req_url
+            print('\nTesting WMTS GetCapablities')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -780,8 +780,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/reproject/test/wmts/1.0.0/WMTSCapabilities.xml'
         if DEBUG:
-            print '\nTesting WMTS (REST) GetCapablities'
-            print 'URL: ' + req_url
+            print('\nTesting WMTS (REST) GetCapablities')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -807,8 +807,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '8663c1e1d45e4be1cdaefc8e6749ead4'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?Request=GetCapabilities'
         if DEBUG:
-            print '\nTesting TWMS GetCapablities'
-            print 'URL: ' + req_url
+            print('\nTesting TWMS GetCapablities')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -835,8 +835,8 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '7555d5ad3cca96aa8cbc8a36f5e04f19'
         req_url = 'http://localhost/reproject/test/twms/twms.cgi?Request=GetTileService'
         if DEBUG:
-            print '\nTesting TWMS GetTileService'
-            print 'URL: ' + req_url
+            print('\nTesting TWMS GetTileService')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -866,7 +866,7 @@ class TestModReproject(unittest.TestCase):
         params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
                   'time=default', 'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
         if DEBUG:
-            print '\nTesting URL Parameter Insensitivity'
+            print('\nTesting URL Parameter Insensitivity')
         for _ in range(10):
             test_params = []
             for param in params:
@@ -879,7 +879,7 @@ class TestModReproject(unittest.TestCase):
                 test_params.append('='.join(param_split))
             req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?' + '&'.join(test_params)
             if DEBUG:
-                print 'Trying URL: ' + req_url
+                print('Trying URL: ' + req_url)
             check_result = check_tile_request(req_url, ref_hash)
             self.assertTrue(check_result, 'URL parameter case insensitivity request does not match what\'s expected. URL: ' + req_url)
 
@@ -892,13 +892,13 @@ class TestModReproject(unittest.TestCase):
         params = ['layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
                   'time=default', 'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0']
         if DEBUG:
-            print 'Testing URL Parameter Reordering'
+            print('Testing URL Parameter Reordering')
         for _ in range(20):
             random.shuffle(params)
             param_string = '&'.join(params)
             req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?' + param_string
             if DEBUG:
-                print 'Trying URL: ' + req_url
+                print('Trying URL: ' + req_url)
             check_result = check_tile_request(req_url, ref_hash)
             self.assertTrue(check_result, 'URL parameter case insensitivity request does not match what\'s expected. URL: ' + req_url)
 
@@ -910,7 +910,7 @@ class TestModReproject(unittest.TestCase):
         params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'version=1.0.0',
                   'TileMatrixSet=GoogleMapsCompatible_Level3', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
         if DEBUG:
-            print '\nTesting WMTS Error Handling'
+            print('\nTesting WMTS Error Handling')
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
@@ -918,7 +918,7 @@ class TestModReproject(unittest.TestCase):
             response_code = 400
             response_value = 'MissingParameterValue'
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -952,7 +952,7 @@ class TestModReproject(unittest.TestCase):
         )
         for req_url in invalid_parameter_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -962,7 +962,7 @@ class TestModReproject(unittest.TestCase):
         response_value = 'OperationNotSupported'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetLegendGraphic&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         if DEBUG:
-            print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+            print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
         check_code = check_response_code(req_url, response_code, response_value)
         error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
         self.assertTrue(check_code, error)
@@ -978,7 +978,7 @@ class TestModReproject(unittest.TestCase):
         )
         for req_url in tile_outofrange_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -992,7 +992,7 @@ class TestModReproject(unittest.TestCase):
         )
         for url in empty_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(url)
+                print('Using URL: {0}, expecting empty tile'.format(url))
             check_result = check_tile_request(url, ref_hash)
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
@@ -1000,7 +1000,7 @@ class TestModReproject(unittest.TestCase):
         ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
         req_url = 'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-29&twoplustwo=five'
         if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will be ignored'
+            print('Using URL: {0}, expecting bad parameter will be ignored')
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Bad parameter request is not ignored. URL: ' + url)
 
@@ -1011,7 +1011,7 @@ class TestModReproject(unittest.TestCase):
         # MissingParameterValue test
         params = ('test_weekly_jpg', 'default', 'GoogleMapsCompatible_Level3', '0', '0', '0.jpeg')
         if DEBUG:
-            print '\nTesting WMTS REST Error Handling'
+            print('\nTesting WMTS REST Error Handling')
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
@@ -1019,10 +1019,10 @@ class TestModReproject(unittest.TestCase):
             #response_code = 400
             response_value = 'InvalidParameterValue'
             if DEBUG:
-                print 'Using URL: {0}, expecting response value of {1}'.format(req_url, response_value)
+                print('Using URL: {0}, expecting response value of {1}'.format(req_url, response_value))
             try:
-                response = urllib2.urlopen(req_url)
-            except urllib2.HTTPError as e:
+                response = urllib.request.urlopen(req_url)
+            except urllib.error.HTTPError as e:
                 response = e
 
             # Check if the response is valid XML
@@ -1072,11 +1072,11 @@ class TestModReproject(unittest.TestCase):
             #if DEBUG:
                 #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             if DEBUG:
-                print '\nTesting WTMS REST Error Invalid Parameters'
+                print('\nTesting WTMS REST Error Invalid Parameters')
 
             try:
-                response = urllib2.urlopen(req_url)
-            except urllib2.HTTPError as e:
+                response = urllib.request.urlopen(req_url)
+            except urllib.error.HTTPError as e:
                 response = e
 
             # Check if the response is valid XML
@@ -1110,7 +1110,7 @@ class TestModReproject(unittest.TestCase):
         )
         for req_url in tile_outofrange_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -1124,17 +1124,17 @@ class TestModReproject(unittest.TestCase):
         )
         for url in empty_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(url)
+                print('Using URL: {0}, expecting empty tile'.format(url))
             check_result = check_tile_request(url, ref_hash)
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
         # Test unknown parameter
         req_url = 'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-29/GoogleMapsCompatible_Level3/0/0/0/five.jpeg'
         if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will return XML'.format(req_url)
+            print('Using URL: {0}, expecting bad parameter will return XML'.format(req_url))
         try:
-            response = urllib2.urlopen(req_url)
-        except urllib2.HTTPError as e:
+            response = urllib.request.urlopen(req_url)
+        except urllib.error.HTTPError as e:
             response = e
 
         # Check if the response is valid XML
@@ -1161,7 +1161,7 @@ class TestModReproject(unittest.TestCase):
 #request=GetMap&layers=test_weekly_jpg&srs=EPSG:3857&format=image%2Fjpeg&styles=&width=256&height=256&bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925&TIME=2012-02-29
         params = ('layers=test_weekly_jpg', 'srs=EPSG:3857', 'format=image%2Fjpeg', 'styles=', 'width=256', 'height=256', 'bbox=-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925')
         if DEBUG:
-            print '\nTesting TWMS Error Handling'
+            print('\nTesting TWMS Error Handling')
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
@@ -1170,7 +1170,7 @@ class TestModReproject(unittest.TestCase):
                 # expected tile
                 ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
                 if DEBUG:
-                    print 'Using URL: {0}, expecting tile'.format(req_url)
+                    print('Using URL: {0}, expecting tile'.format(req_url))
                 check_result = check_tile_request(req_url, ref_hash)
                 self.assertTrue(check_result, 'The TWMS response for missing parameter does not match what\'s expected. URL: ' + req_url)
             else:
@@ -1178,7 +1178,7 @@ class TestModReproject(unittest.TestCase):
                 #response_value = 'MissingParameterValue'
                 response_value = 'Bad'
                 if DEBUG:
-                    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                    print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
                 check_code = check_response_code(req_url, response_code, response_value)
                 error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
                 self.assertTrue(check_code, error)
@@ -1207,14 +1207,14 @@ class TestModReproject(unittest.TestCase):
                 # expected tile
                 ref_hash = '4e34c9517e0c30b1253bd499de4f8d12'
                 if DEBUG:
-                    print 'Using URL: {0}, expecting tile'.format(req_url)
+                    print('Using URL: {0}, expecting tile'.format(req_url))
                 check_result = check_tile_request(req_url, ref_hash)
                 self.assertTrue(check_result, 'The TWMS response for missing parameter does not match what\'s expected. URL: ' + req_url)
             else:
                 response_code = 400
                 response_value = 'Bad'
                 if DEBUG:
-                    print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                    print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
                 check_code = check_response_code(req_url, response_code, response_value)
                 error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
                 self.assertTrue(check_code, error)
@@ -1255,7 +1255,7 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )

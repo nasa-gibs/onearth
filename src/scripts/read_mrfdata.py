@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2015, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -43,7 +43,8 @@ versionNumber = '1.4.0'
     
 #-------------------------------------------------------------------------------   
 
-print 'read_mrfdata.py v' + versionNumber
+print('Python v' + sys.version)
+print('read_mrfdata.py v' + versionNumber)
 
 usageText = 'read_mrfdata.py --input [mrf_data_file] --output [output_file] (--offset INT --size INT) OR (--index [index_file] --tile INT)'
 
@@ -111,8 +112,8 @@ else:
     
 if index != None:
     if options.verbose:
-        print "Reading " + index
-    idx = open(index, 'r')
+        print("Reading " + index)
+    idx = open(index, 'rb')
     
     idx.seek(16*tile)
     byte = idx.read(16)
@@ -121,17 +122,17 @@ if index != None:
     idx.close() 
     
     if options.verbose: 
-        print "Read from index at offset " + str(16*tile) + " for 16 bytes"
-        print "Got data file offset " + str(offset) + ", size " + str(size)
+        print("Read from index at offset " + str(16*tile) + " for 16 bytes")
+        print("Got data file offset " + str(offset) + ", size " + str(size))
    
    
 out = open(output, 'w')
-mrf_data = open(input, 'r')
+mrf_data = open(input, 'rb')
 
 mrf_data.seek(offset)
 image = mrf_data.read(size)
 out.write(image)
 
-print "Wrote " + output
+print("Wrote " + output)
 mrf_data.close()
 out.close()  

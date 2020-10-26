@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -45,7 +45,7 @@ from shutil import rmtree
 from optparse import OptionParser
 import datetime
 from xml.etree import cElementTree as ElementTree
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_valid_mvt
 
 DEBUG = False
@@ -158,8 +158,8 @@ class TestModOnEarth(unittest.TestCase):
 
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) JPG tile via WMTS')
+            print('URL: ' + req_url)
 
         # Downloads the tile and checks it against the reference hash.
         check_result = check_tile_request(req_url, ref_hash)
@@ -180,8 +180,8 @@ class TestModOnEarth(unittest.TestCase):
 
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) JPG tile via WMTS REST')
+            print('URL: ' + req_url)
 
         # Downloads the tile and checks it against the reference hash.
         check_result = check_tile_request(req_url, ref_hash)
@@ -195,8 +195,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -208,8 +208,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/EPSG4326_16km/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS REST PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -221,8 +221,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PPNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PPNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -234,8 +234,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/EPSG4326_16km/0/0/0.png'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no time) PPNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no time) PPNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMTS REST PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -247,8 +247,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (time=default) JPG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) JPG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -261,8 +261,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/default/EPSG4326_16km/0/0/0.jpeg'
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (time=default) JPG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) JPG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS REST JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -273,8 +273,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -285,8 +285,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/default/EPSG4326_16km/0/0/0.png'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS REST PNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -297,8 +297,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_daily_png&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=0&TileCol=0&TileRow=0&TIME=default'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PPNG tile via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PPNG tile via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -309,8 +309,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/wmts/test_daily_png/default/default/EPSG4326_16km/0/0/0.png'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PPNG tile via WMTS REST'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PPNG tile via WMTS REST')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (TIME=default) WMTS REST PPNG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -321,8 +321,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) JPG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current JPG request does not match what\'s expected. URL: ' + req_url)
 
@@ -333,8 +333,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request current (no TIME) PNG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) PNG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PNG request does not match what\'s expected. URL: ' + req_url)
 
@@ -345,8 +345,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request current (no TIME) PPNG tile via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) PPNG tile via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS current PPNG request does not match what\'s expected. URL: ' + req_url)
 
@@ -359,8 +359,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-22'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -371,8 +371,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
         req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-22/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -383,8 +383,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '9b38d90baeeebbcadbc8560a29481a5e'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-22'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -395,8 +395,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date  from "non-year layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -407,8 +407,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/test_nonyear_jpg/default/2012-02-29/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date  from "non-year layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -419,8 +419,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date from "non-year layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "non-year layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -431,8 +431,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '5a39c4e335d05295160a7bec4961002d'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -443,8 +443,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '5a39c4e335d05295160a7bec4961002d'
         req_url = 'http://localhost/onearth/test/wmts/test_legacy_subdaily_jpg/default/2012-02-29T12:00:00Z/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) legacy subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -455,8 +455,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '5a39c4e335d05295160a7bec4961002d'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -467,8 +467,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T16:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -479,8 +479,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
         req_url = 'http://localhost/onearth/test/wmts/test_zindex_jpg/default/2012-02-29T16:00:00Z/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -500,8 +500,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -512,8 +512,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -524,8 +524,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS no date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -536,8 +536,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_nonyear_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "non-year layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "non-year layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -548,8 +548,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/test_nonyear_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "non-year layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "non-year layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -560,8 +560,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_nonyear_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request tile with no date from "non-year layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date from "non-year layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS no date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -572,8 +572,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_legacy_subdaily_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -584,8 +584,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/wmts/test_legacy_subdaily_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -596,8 +596,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3affdef85d2c83cbbb9d010296f1b5f2' 
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_legacy_subdaily_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date and time (legacy sub-daily) from "year" layer via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS legacy no date and time subdaily request does not match what\'s expected. URL: ' + req_url)
 
@@ -608,8 +608,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile with no date and time (z-level) from "year" layer via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date and time (z-level) from "year" layer via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -620,8 +620,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
         req_url = 'http://localhost/onearth/test/wmts/test_zindex_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile with no date and time (z-level) from "year" layer via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with no date and time (z-level) from "year" layer via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -641,8 +641,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_static_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
         if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via WMTS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile from static layer with no time via WMTS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS static notime request does not match what\'s expected. URL: ' + req_url)
 
@@ -653,8 +653,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/test_static_jpg/default/EPSG4326_16km/0/0/0.jpeg'
         if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via WMTS (REST)'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile from static layer with no time via WMTS (REST)')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMTS (REST) static notime request does not match what\'s expected. URL: ' + req_url)
 
@@ -665,8 +665,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&layers=test_static_jpg&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90'
         if DEBUG:
-            print '\nTesting: Request tile from static layer with no time via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile from static layer with no time via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS static notime request does not match what\'s expected. URL: ' + req_url)
 
@@ -677,8 +677,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '944c7ce9355cb0aa29930dc16ab03db6'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_daily_png&amp;srs=EPSG:4326&amp;format=image%2Fpng&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date via TWMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date via TWMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'TWMS PNG request with date does not match what\'s expected. URL: ' + req_url)
 
@@ -690,8 +690,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29'
         search_string = '<name>2012-02-29 test_weekly_jpg</name>'
         if DEBUG:
-            print '\nTesting: Request tile with date via KML'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date via KML')
+            print('URL: ' + req_url)
 
         response = get_url(req_url)
         
@@ -715,8 +715,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=2012-02-29T12:00:00Z'
         search_string = '<name>2012-02-29 test_weekly_jpg</name>'
         if DEBUG:
-            print '\nTesting: Request tile with date and time via KML'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time via KML')
+            print('URL: ' + req_url)
 
         response = get_url(req_url)
         
@@ -740,8 +740,8 @@ class TestModOnEarth(unittest.TestCase):
         req_url = 'http://localhost/onearth/test/twms/kmlgen.cgi?layers=test_weekly_jpg&time=R10/2012-02-29/P1D'
         search_string = '<name>2012-02-29 test_weekly_jpg</name>'
         if DEBUG:
-            print '\nTesting: Request tile with date range via KML'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date range via KML')
+            print('URL: ' + req_url)
 
         response = get_url(req_url)
         
@@ -766,8 +766,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?Request=GetCapabilities'
         if DEBUG:
-            print '\nTesting WMTS GetCapablities'
-            print 'URL: ' + req_url
+            print('\nTesting WMTS GetCapablities')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -793,8 +793,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = 'b49538ed143340f11230eac8b8f9ecca'
         req_url = 'http://localhost/onearth/test/wmts/1.0.0/WMTSCapabilities.xml'
         if DEBUG:
-            print '\nTesting WMTS (REST) GetCapablities'
-            print 'URL: ' + req_url
+            print('\nTesting WMTS (REST) GetCapablities')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -820,8 +820,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = 'd2536cb2c0681c56b005eb9d60336326'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetCapabilities'
         if DEBUG:
-            print '\nTesting TWMS GetCapablities'
-            print 'URL: ' + req_url
+            print('\nTesting TWMS GetCapablities')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -847,8 +847,8 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '7555d5ad3cca96aa8cbc8a36f5e04f19'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?Request=GetTileService'
         if DEBUG:
-            print '\nTesting TWMS GetTileService'
-            print 'URL: ' + req_url
+            print('\nTesting TWMS GetTileService')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -878,7 +878,7 @@ class TestModOnEarth(unittest.TestCase):
         params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
                   'time=default', 'TileMatrixSet=EPSG4326_16km', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
         if DEBUG:
-            print '\nTesting URL Parameter Insensitivity'
+            print('\nTesting URL Parameter Insensitivity')
         for _ in range(10):
             test_params = []
             for param in params:
@@ -891,7 +891,7 @@ class TestModOnEarth(unittest.TestCase):
                 test_params.append('='.join(param_split))
             req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?' + '&'.join(test_params)
             if DEBUG:
-                print 'Trying URL: ' + req_url
+                print('Trying URL: ' + req_url)
             check_result = check_tile_request(req_url, ref_hash)
             self.assertTrue(check_result, 'URL parameter case insensitivity request does not match what\'s expected. URL: ' + req_url)
 
@@ -904,13 +904,13 @@ class TestModOnEarth(unittest.TestCase):
         params = ['layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'request=GetTile', 'version=1.0.0',
                   'time=default', 'TileMatrixSet=EPSG4326_16km', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0']
         if DEBUG:
-            print 'Testing URL Parameter Reordering'
+            print('Testing URL Parameter Reordering')
         for _ in range(20):
             random.shuffle(params)
             param_string = '&'.join(params)
             req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?' + param_string
             if DEBUG:
-                print 'Trying URL: ' + req_url
+                print('Trying URL: ' + req_url)
             check_result = check_tile_request(req_url, ref_hash)
             self.assertTrue(check_result, 'URL parameter case insensitivity request does not match what\'s expected. URL: ' + req_url)
 
@@ -922,7 +922,7 @@ class TestModOnEarth(unittest.TestCase):
         params = ('layer=test_weekly_jpg', 'TileMatrix=0', 'Service=WMTS', 'version=1.0.0',
                   'TileMatrixSet=EPSG4326_16km', 'format=image%2Fjpeg', 'tilecol=0', 'tilerow=0')
         if DEBUG:
-            print '\nTesting WMTS Error Handling'
+            print('\nTesting WMTS Error Handling')
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
@@ -930,7 +930,7 @@ class TestModOnEarth(unittest.TestCase):
             response_code = 400
             response_value = 'MissingParameterValue'
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -964,7 +964,7 @@ class TestModOnEarth(unittest.TestCase):
         )
         for req_url in invalid_parameter_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -974,7 +974,7 @@ class TestModOnEarth(unittest.TestCase):
         response_value = 'OperationNotSupported'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetLegendGraphic&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=default'
         if DEBUG:
-            print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+            print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
         check_code = check_response_code(req_url, response_code, response_value)
         error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
         self.assertTrue(check_code, error)
@@ -990,7 +990,7 @@ class TestModOnEarth(unittest.TestCase):
         )
         for req_url in tile_outofrange_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -1004,7 +1004,7 @@ class TestModOnEarth(unittest.TestCase):
         )
         for url in empty_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(url)
+                print('Using URL: {0}, expecting empty tile'.format(url))
             check_result = check_tile_request(url, ref_hash)
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
@@ -1012,7 +1012,7 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer=test_weekly_jpg&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&time=2012-02-29&twoplustwo=five'
         if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will be ignored'
+            print('Using URL: {0}, expecting bad parameter will be ignored')
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Bad parameter request is not ignored. URL: ' + url)
 
@@ -1023,7 +1023,7 @@ class TestModOnEarth(unittest.TestCase):
         # MissingParameterValue test
         params = ('test_weekly_jpg', 'default', 'EPSG4326_16km', '0', '0', '0.jpeg')
         if DEBUG:
-            print '\nTesting WMTS REST Error Handling'
+            print('\nTesting WMTS REST Error Handling')
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
@@ -1032,7 +1032,7 @@ class TestModOnEarth(unittest.TestCase):
             #response_value = 'MissingParameterValue'
             response_value = 'Not Found'
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -1064,12 +1064,12 @@ class TestModOnEarth(unittest.TestCase):
             #if DEBUG:
                 #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             if DEBUG:
-                print '\nTesting WTMS REST Error Invalid Parameters'
-                print req_url
+                print('\nTesting WTMS REST Error Invalid Parameters')
+                print(req_url)
 
             try:
-                response = urllib2.urlopen(req_url)
-            except urllib2.HTTPError as e:
+                response = urllib.request.urlopen(req_url)
+            except urllib.error.HTTPError as e:
                 response = e
 
             # Check if the response is valid XML
@@ -1103,7 +1103,7 @@ class TestModOnEarth(unittest.TestCase):
         )
         for req_url in tile_outofrange_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
+                print('Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value))
             check_code = check_response_code(req_url, response_code, response_value)
             error = 'The WMTS REST response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(req_url, response_code)
             self.assertTrue(check_code, error)
@@ -1117,7 +1117,7 @@ class TestModOnEarth(unittest.TestCase):
         )
         for url in empty_urls:
             if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(url)
+                print('Using URL: {0}, expecting empty tile'.format(url))
             check_result = check_tile_request(url, ref_hash)
             self.assertTrue(check_result, 'Request for empty tile outside date range does not match what\'s expected. URL: ' + url)
 
@@ -1125,7 +1125,7 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '3f84501587adfe3006dcbf59e67cd0a3'
         req_url = 'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-29/EPSG4326_16km/0/0/0/five.jpeg'
         if DEBUG:
-            print 'Using URL: {0}, expecting bad parameter will be ignored'
+            print('Using URL: {0}, expecting bad parameter will be ignored')
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Bad parameter request is not ignored. URL: ' + url)
 
@@ -1136,7 +1136,7 @@ class TestModOnEarth(unittest.TestCase):
         # MissingParameterValue test
         params = ('layers=test_weekly_jpg', 'srs=EPSG:4326', 'width=512', 'height=512', 'bbox=-180,-198,108,90')
         if DEBUG:
-            print '\nTesting TWMS Error Handling'
+            print('\nTesting TWMS Error Handling')
         for i in range(len(params)):
             param_list = list(params)
             param_list.pop(i)
@@ -1145,7 +1145,7 @@ class TestModOnEarth(unittest.TestCase):
             # check for empty tile
             ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
             if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(req_url)
+                print('Using URL: {0}, expecting empty tile'.format(req_url))
             if 'bbox' in req_url:
                 check_result = check_tile_request(req_url, ref_hash)
             else:
@@ -1187,14 +1187,14 @@ class TestModOnEarth(unittest.TestCase):
             # check for empty tile
             ref_hash = 'fb28bfeba6bbadac0b5bef96eca4ad12'
             if DEBUG:
-                print 'Using URL: {0}, expecting empty tile'.format(req_url)
+                print('Using URL: {0}, expecting empty tile'.format(req_url))
             check_result = check_tile_request(req_url, ref_hash)
             self.assertTrue(check_result, 'The TWMS response for Invalid Parameter does not match what\'s expected. URL: ' + req_url)
 
         # Test Invalid time format for Bad Time
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=2012-02-290'
         if DEBUG:
-            print 'Using URL: {0}, expecting XML error message'.format(req_url)
+            print('Using URL: {0}, expecting XML error message'.format(req_url))
             response = get_url(req_url)
             # Check if the response is valid XML
             try:
@@ -1209,14 +1209,14 @@ class TestModOnEarth(unittest.TestCase):
         ref_hash = '8dd7e330d7ab0ead5ee71e7179c170d1'
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print 'Using URL: {0}, expecting empty transparent tile'.format(req_url)
+            print('Using URL: {0}, expecting empty transparent tile'.format(req_url))
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'The TWMS response for Missing FORMAT does not match what\'s expected. URL: ' + req_url)
         
         # Test format is Invalid for Bad FORMAT Value
         req_url = 'http://localhost/onearth/test/twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fblah&amp;styles=&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         if DEBUG:
-            print 'Using URL: {0}, expecting XML error message'.format(req_url)
+            print('Using URL: {0}, expecting XML error message'.format(req_url))
             response = get_url(req_url)
             # Check if the response is valid XML
             try:
@@ -1249,13 +1249,13 @@ class TestModOnEarth(unittest.TestCase):
                  ('2017-01-01', 'black'),
                  ('2014-12-31', 'black'))
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Daily date (P1D)'
-            print 'Time Period 1a: 2015-01-01/2016-12-31/P1D'
+            print('\nTesting Date Snapping: Regular Daily date (P1D)')
+            print('Time Period 1a: 2015-01-01/2016-12-31/P1D')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 1a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1268,13 +1268,13 @@ class TestModOnEarth(unittest.TestCase):
                  ('2015-02-01', 'black'),
                  ('2014-12-31', 'black'))
         if DEBUG:
-            print '\nTesting Date Snapping: Irregular Daily date (PID with gaps)'
-            print 'Time Period 2a: 2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D'
+            print('\nTesting Date Snapping: Irregular Daily date (PID with gaps)')
+            print('Time Period 2a: 2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 2a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1290,13 +1290,13 @@ class TestModOnEarth(unittest.TestCase):
                  ('2016-02-01', 'black'),
                  ('2014-12-31', 'black'))
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period 3a: 2015-01-01/2016-01-01/P1M & 1948-01-01/1948-03-01/P1M'
+            print('\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)')
+            print('Time Period 3a: 2015-01-01/2016-01-01/P1M & 1948-01-01/1948-03-01/P1M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1311,13 +1311,13 @@ class TestModOnEarth(unittest.TestCase):
                  ('2016-04-01', 'black'),
                  ('2014-12-31', 'black'))
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period 3b: 2015-01-01/2016-01-01/P3M'
+            print('\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)')
+            print('Time Period 3b: 2015-01-01/2016-01-01/P3M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1336,13 +1336,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period 3c: 1990-01-01/2016-01-01/P1Y'
+            print('\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)')
+            print('Time Period 3c: 1990-01-01/2016-01-01/P1Y')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3c requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1359,13 +1359,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)'
-            print 'Time Period 3d: 1990-01-01/2016-01-01/P1Y'
+            print('\nTesting Date Snapping: Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)')
+            print('Time Period 3d: 1990-01-01/2016-01-01/P1Y')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 3d requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1387,13 +1387,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods'
-            print 'Time Period 4a: 2000-01-01/2000-06-01/P1M,2000-07-03/2000-07-03/P1M,2000-08-01/2000-12-01/P1M'
+            print('\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods')
+            print('Time Period 4a: 2000-01-01/2000-06-01/P1M,2000-07-03/2000-07-03/P1M,2000-08-01/2000-12-01/P1M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 4a requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1410,13 +1410,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods'
-            print 'Time Period 4b: 2001-01-01/2001-12-27/P8D, 2002-01-01/2002-12-27/P8D'
+            print('\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods')
+            print('Time Period 4b: 2001-01-01/2001-12-27/P8D, 2002-01-01/2002-12-27/P8D')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 4b requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1432,22 +1432,22 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods'
-            print 'Time Period 4c: 2010-01-01/2010-01-01/P385D'
+            print('\nTesting Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods')
+            print('Time Period 4c: 2010-01-01/2010-01-01/P385D')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test 4c requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
 
     def test_snapping_5a(self):
         layer_name = 'snap_test_5a'
-        expected_date = datetime.date(2002, 12, 01)
+        expected_date = datetime.date(2002, 12, 0o1)
         if DEBUG:
-            print '\nTesting snapping test 5a'
+            print('\nTesting snapping test 5a')
         while (expected_date.year < 2012):
             end_date = expected_date.replace(year=expected_date.year + 1) + datetime.timedelta(days=-1)
             req_date = expected_date
@@ -1470,13 +1470,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M'
+            print('\nTesting Date Snapping: Periods stretching across one day')
+            print('Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1492,13 +1492,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day'
-            print 'Time Period: 2018-01-01T00:00:00/2018-01-01T23:54:00/PT6M'
+            print('\nTesting Date Snapping: Periods stretching across one day')
+            print('Time Period: 2018-01-01T00:00:00/2018-01-01T23:54:00/PT6M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1514,13 +1514,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day'
-            print 'Time Period: 2018-01-01T00:00:00/2018-01-01T23:59:00/PT60S'
+            print('\nTesting Date Snapping: Periods stretching across one day')
+            print('Time Period: 2018-01-01T00:00:00/2018-01-01T23:59:00/PT60S')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1535,13 +1535,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M'
+            print('\nTesting Date Snapping: Periods stretching across one day (z-level)')
+            print('Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:55:00Z/PT5M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1556,13 +1556,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M'
+            print('\nTesting Date Snapping: Periods stretching across one day (z-level)')
+            print('Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:54:00Z/PT6M')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1578,13 +1578,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across one day (z-level)'
-            print 'Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S'
+            print('\nTesting Date Snapping: Periods stretching across one day (z-level)')
+            print('Time Period: 2018-01-01T00:00:00Z/2018-01-01T23:59:00Z/PT60S')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods during a day {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1597,13 +1597,13 @@ class TestModOnEarth(unittest.TestCase):
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
         if DEBUG:
-            print '\nTesting Date Snapping: Periods stretching across a year boundary'
-            print 'Time Period year boundary: 2000-09-03/2000-09-03/P144D'
+            print('\nTesting Date Snapping: Periods stretching across a year boundary')
+            print('Time Period year boundary: 2000-09-03/2000-09-03/P144D')
         for request_date, expected_date in tests:
             req_url = self.snap_test_url_template.format(layer_name, request_date)
             if DEBUG:
-                print 'Requesting {0}, expecting {1}'.format(request_date, expected_date)
-                print 'URL: ' + req_url
+                print('Requesting {0}, expecting {1}'.format(request_date, expected_date))
+                print('URL: ' + req_url)
             response_date = test_snap_request(self.tile_hashes, req_url)
             error = 'Snapping test for periods stretching across a year boundary requested date {0}, expected {1}, but got {2}. \nURL: {3}'.format(request_date, expected_date, response_date, req_url)
             self.assertEqual(expected_date, response_date, error)
@@ -1612,7 +1612,7 @@ class TestModOnEarth(unittest.TestCase):
         layer_name = 'mvt_test'
         req_url = 'http://localhost/onearth/test/wmts/wmts.cgi?layer={0}&tilematrixset=EPSG4326_16km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application%2Fvnd.mapbox-vector-tile&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-01-01'.format(layer_name)
         if DEBUG:
-            print '\nTesting for Valid MVT Tile'
+            print('\nTesting for Valid MVT Tile')
         mvt_tile = get_url(req_url)
         self.assertTrue(check_valid_mvt(mvt_tile), 'Output tile for MVT test layer is not a valid MVT tile.')
 
@@ -1649,7 +1649,7 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ def parseColorMaps(sourceXml, fileName) :
 
     for colorMapNode in xmldoc.documentElement.getElementsByTagName("ColorMap") :
 
-        colorMapAttrDict = dict(colorMapNode.attributes.items())
+        colorMapAttrDict = dict(list(colorMapNode.attributes.items()))
         colorMap  = ColorMap()
         colorMap.title   = colorMapAttrDict.get('title', '')
         colorMap.units   = colorMapAttrDict.get('units', '')
@@ -162,7 +162,7 @@ def parseColorMaps(sourceXml, fileName) :
 ## START Parse Entries ##
 def parseEntries(entriesNode):
 
-    entriesAttrDict = dict(entriesNode.attributes.items())
+    entriesAttrDict = dict(list(entriesNode.attributes.items()))
 
     entries = Entries()
     entries.minLabel = entriesAttrDict.get('minLabel', '')
@@ -171,7 +171,7 @@ def parseEntries(entriesNode):
 
     for entryNode in entriesNode.getElementsByTagName("ColorMapEntry") :
 
-       entryAttrDict = dict(entryNode.attributes.items())
+       entryAttrDict = dict(list(entryNode.attributes.items()))
 
        cmEntry = ColorMapEntry()
 
@@ -203,7 +203,7 @@ def parseEntries(entriesNode):
 ## START Parse Legend ##
 def parseLegend(legendNode):
 
-    legendAttrDict = dict(legendNode.attributes.items())
+    legendAttrDict = dict(list(legendNode.attributes.items()))
 
     legend = Legend()
     legend.type     = legendAttrDict.get('type', '')
@@ -213,7 +213,7 @@ def parseLegend(legendNode):
 
     for entryNode in legendNode.getElementsByTagName("LegendEntry") :
 
-       legendAttrDict = dict(entryNode.attributes.items())
+       legendAttrDict = dict(list(entryNode.attributes.items()))
 
        legendEntry = LegendEntry()
 

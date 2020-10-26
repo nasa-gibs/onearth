@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ def hexToRGB(hexValue):
         g = int(hexValue[2:4], 16)
         b = int(hexValue[4:6], 16)
     else:
-		print("Invalid Hex Value: " + str(hexValue))
+		print(("Invalid Hex Value: " + str(hexValue)))
 		r=g=b=-1
 
     return [r,g,b]
@@ -189,7 +189,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                 sldCMapEntries = []
                 
                 for colorMapEntryNode in colorMapNode.getElementsByTagName("ColorMapEntry"):
-                    attrDict = dict(colorMapEntryNode.attributes.items())
+                    attrDict = dict(list(colorMapEntryNode.attributes.items()))
 
                     sldCMapEntry = SLD_v1_0_0_ColorMapEntry()
                                         
@@ -306,7 +306,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 categorizeNode = rasterSymNode.getElementsByTagName("se:Categorize")[0]
                 
                 # <se:Categorize fallbackValue="#78c818">
-                attrDict = dict(categorizeNode.attributes.items())
+                attrDict = dict(list(categorizeNode.attributes.items()))
                         
                 
                 # Add a colormap for the no data value based on the fallbackValue
@@ -336,9 +336,9 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 # Process the SLD entries into the XML ColorMap
                 gibsCMap  = GIBS_ColorMap()
                         
-                prevValue      = sys.maxint
-                currValue      = sys.maxint
-                firstValue     = sys.maxint
+                prevValue      = sys.maxsize
+                currValue      = sys.maxsize
+                firstValue     = sys.maxsize
                 prevRGB        = [-1,-1,-1]
                 currRGB        = [-1,-1,-1]
                 firstRGB       = [-1,-1,-1]
@@ -355,14 +355,14 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                     if catChildNode.nodeName == "se:Value":
                         currRGB = hexToRGB(catChildNode.firstChild.nodeValue)
                     
-                        if prevValue != sys.maxint:
+                        if prevValue != sys.maxsize:
                             sldColorMap.append([currValue,currRGB])
                    
                     # <se:Threshold>52</se:Threshold>
                     if catChildNode.nodeName == "se:Threshold":
                         currValue = float(catChildNode.firstChild.nodeValue)
 
-                        if prevValue == sys.maxint:
+                        if prevValue == sys.maxsize:
                             sldColorMap.append([currValue,currRGB])
                         
                         prevValue = currValue
@@ -448,13 +448,13 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 #print(gibsColorMap)
                 #exit()
                 
-                prevValue = sys.maxint
+                prevValue = sys.maxsize
 
                 # Loop through the GIBS colormap entries.
                 for cmItem in gibsColorMap[0:-1]:
                                    
                     # If prevValue is sys.maxint, then this is the first Threshold. Add a colormap entry for (-INF,currValue)
-                    if prevValue == sys.maxint:
+                    if prevValue == sys.maxsize:
                         gibsCMapEntry             = GIBS_ColorMapEntry()
                         gibsCMapEntry.transparent = (defaultOpacity == 0.0)
                         gibsCMapEntry.rgb         = cmItem[1]
@@ -677,7 +677,7 @@ def main(argv):
        sys.exit(-1)
 
     sldXmldoc = minidom.parse(sldFile)
-    attrDict = dict(sldXmldoc.documentElement.attributes.items())
+    attrDict = dict(list(sldXmldoc.documentElement.attributes.items()))
     
     if 'version' in attrDict:
         if attrDict['version'] == "1.0.0":
@@ -685,7 +685,7 @@ def main(argv):
         elif attrDict['version'] == "1.1.0":
             gibsColorMaps = parseSLD_v1_1_0(sldFile, layerName, units, offset, factor, rgbaOrder, format, densify)
         else:
-            print("Invalid version specified: " + attrDict['version'])
+            print(("Invalid version specified: " + attrDict['version']))
             exit(-1)
         
         generateColorMap(gibsColorMaps, units, format, colormapFile)

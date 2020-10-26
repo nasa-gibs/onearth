@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2015, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -45,7 +45,8 @@ versionNumber = '1.4.0'
     
 #-------------------------------------------------------------------------------   
 
-print 'read_mrf.py v' + versionNumber
+print('Python v' + sys.version)
+print('read_mrf.py v' + versionNumber)
 
 usageText = 'read_mrf.py --input [mrf_file] --output [output_file] (--tilematrix INT --tilecol INT --tilerow INT) OR (--offset INT --size INT) OR (--tile INT)'
 
@@ -107,7 +108,7 @@ if len(mrfDoc.getElementsByTagName('Raster')) > 0:
 
     if len(rasterElem.getElementsByTagName('Size')):
         sizeElem  = rasterElem.getElementsByTagName('Size')[0]
-        sizeAttrs = dict(sizeElem.attributes.items())
+        sizeAttrs = dict(list(sizeElem.attributes.items()))
 
         mrf_x = int(sizeAttrs['x'])
         mrf_y = int(sizeAttrs['y'])
@@ -123,18 +124,18 @@ if len(mrfDoc.getElementsByTagName('Raster')) > 0:
             mrf_type = "MVT"
 
 else:
-    print "\nMissing Raster element in MRF, exiting."
+    print("\nMissing Raster element in MRF, exiting.")
     exit(-1)
 
 
 if options.verbose:
-    print "\nMRF type: " + mrf_type
+    print("\nMRF type: " + mrf_type)
 
 size = None
 
 if options.verbose:
-    print "MRF x: " + str(mrf_x) + " y: " + str(mrf_y)
-    print "Ratio " + str(mrf_x/mrf_y)
+    print("MRF x: " + str(mrf_x) + " y: " + str(mrf_y))
+    print("Ratio " + str(mrf_x/mrf_y))
     
 index = input.replace(".mrf",".idx")
 if mrf_type == "JPEG":
@@ -168,15 +169,15 @@ if str(options.zlevel) == "None":
     z = None
     z_size = None
     if mrf_z:
-        print "Error: z-level must be specified for this input"
+        print("Error: z-level must be specified for this input")
         exit(1)
 else:
     z = options.zlevel
     z_size = mrf_z
     if options.verbose:
-        print "Using z-level:" + str(z) + " and MRF z-size:" + str(z_size)
+        print("Using z-level:" + str(z) + " and MRF z-size:" + str(z_size))
     if z >= z_size:
-        print "Error: Specified z-level is greater than the maximum size"
+        print("Error: Specified z-level is greater than the maximum size")
         exit(1)
     
 w = int(math.ceil(float(mrf_x)/512))
@@ -191,8 +192,8 @@ idx_size = os.path.getsize(index)
 len_tiles = idx_size/16
 
 if options.verbose:
-    print "Number of tiles " + str(len_tiles)
-    print "\n--Pyramid structure--"
+    print("Number of tiles " + str(len_tiles))
+    print("\n--Pyramid structure--")
 
 levels = []
 rows = []
@@ -221,8 +222,8 @@ else:
 if options.verbose:   
     for idx, val in enumerate(levels):
         if idx > 0: 
-            print "Level " + str(len(levels)-idx-1) + ": " + str(levels[idx]) + " tiles, " + str(rows[idx-1]) + " rows, " + str(cols[idx-1]) + " columns"
-    print "\n"
+            print("Level " + str(len(levels)-idx-1) + ": " + str(levels[idx]) + " tiles, " + str(rows[idx-1]) + " rows, " + str(cols[idx-1]) + " columns")
+    print("\n")
 
 if options.tilematrix != None:
     if options.tilerow == None or options.tilecol == None:
@@ -236,14 +237,14 @@ if options.tilematrix != None:
         message = "Looking up tilematrix level:" + str(options.tilematrix) + ", tile row:" + str(options.tilerow) + ", tile col:" + str(options.tilecol)
         if z >= 0:
             message = message + ", z-level:" + str(z)
-        print message
-        print "Level contains " + str(row) + " rows, " + str(col) + " columns"
+        print(message)
+        print("Level contains " + str(row) + " rows, " + str(col) + " columns")
     
     if (options.tilerow) > row-1:
-        print "Tile row exceeds the maximum (" + str(row-1) + ") for this level"
+        print("Tile row exceeds the maximum (" + str(row-1) + ") for this level")
         exit(1)
     if (options.tilecol) > col-1:
-        print "Tile col exceeds the maximum (" + str(col-1) + ") for this level"
+        print("Tile col exceeds the maximum (" + str(col-1) + ") for this level")
         exit(1)
       
     level_start = 0
@@ -257,13 +258,13 @@ if options.tilematrix != None:
         tile = tile + (z * level_size) 
     
     if options.verbose:
-        print "Tiles for level begin at: " + str(level_start+1)
-        print "Using tile: " + str(tile+1)
+        print("Tiles for level begin at: " + str(level_start+1))
+        print("Using tile: " + str(tile+1))
     
 if index != None and tile != None:
     if options.verbose:
-        print "\nReading " + index
-    idx = open(index, 'r')
+        print("\nReading " + index)
+    idx = open(index, 'rb')
     
     idx.seek(16*tile)
     byte = idx.read(16)
@@ -272,26 +273,26 @@ if index != None and tile != None:
     idx.close() 
     
     if options.verbose: 
-        print "Read from index at offset " + str(16*tile) + " for 16 bytes"
-        print "Got data file offset " + str(offset) + ", size " + str(size)
+        print("Read from index at offset " + str(16*tile) + " for 16 bytes")
+        print("Got data file offset " + str(offset) + ", size " + str(size))
    
 
 if options.verbose:
-    print "\nReading " + datafile   
+    print("\nReading " + datafile)   
 
 if size != None and offset !=None:
     if options.verbose:
-        print "Read from data file at offset " + str(offset) + " for " + str(size) + " bytes"
+        print("Read from data file at offset " + str(offset) + " for " + str(size) + " bytes")
         
     out = open(output, 'w')
-    mrf_data = open(datafile, 'r')
+    mrf_data = open(datafile, 'rb')
     mrf_data.seek(offset)
     image = mrf_data.read(size)
     out.write(image)
     
-    print "Wrote " + output
+    print("Wrote " + output)
     mrf_data.close()
     out.close()  
 else:
-    print "Error: Tile could not be located"
+    print("Error: Tile could not be located")
     exit(1)

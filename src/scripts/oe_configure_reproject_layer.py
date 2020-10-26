@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -54,9 +54,10 @@ import cgi
 import hashlib
 from decimal import Decimal
 import copy
+from functools import reduce
+import importlib
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+importlib.reload(sys)
 
 EARTH_RADIUS = 6378137.0
 MIME_TO_EXTENSION = {
@@ -159,15 +160,15 @@ def get_proj_bbox(epsg_code):
         return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
     elif epsg_code == '3031':
         return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
-    print "WARNING: unsupported <TargetEpsgCode> specified ({0}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code)
+    print("WARNING: unsupported <TargetEpsgCode> specified ({0}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code))
     return None
 
 
 def make_gdal_tms_xml(layer, bands, src_epsg):
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
 
-    bbox = map(str, get_bbox_for_proj_string(
-        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
+    bbox = list(map(str, get_bbox_for_proj_string(
+        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=(src_epsg not in ['4326','3413','3031']))))
 
     resource_url = layer.find('{*}ResourceURL')
     template_string = resource_url.get('template')
@@ -194,7 +195,7 @@ def make_gdal_tms_xml(layer, bands, src_epsg):
             try:
                 tile_levels = TILE_LEVELS[tms.split('_')[1]]
             except KeyError as e:
-                print("ERROR:" + e.message + " is not a valid TileMatrixSet")
+                print(("ERROR:" + e.message + " is not a valid TileMatrixSet"))
                 exit
     etree.SubElement(data_window_element, 'TileLevel').text = tile_levels
     etree.SubElement(data_window_element,
@@ -486,10 +487,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         src_layer = copy.copy(layer)
         identifier = layer.findtext(ows + 'Identifier')
         if debug:
-            print 'Configuring layer: ' + identifier
+            print('Configuring layer: ' + identifier)
         if identifier in layer_exclude_list:
             if debug:
-                print 'Skipping layer: ' + identifier
+                print('Skipping layer: ' + identifier)
             continue
         if layer_include_list and identifier not in layer_include_list:
             continue
@@ -503,7 +504,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
         #HACK
         if len(layer_tilematrixsets) == 0:
-           print("No layer_tilematrixsets. Skipping layer: " + identifier)
+           print(("No layer_tilematrixsets. Skipping layer: " + identifier))
            continue
 
         out_tilematrixsets = []
@@ -530,7 +531,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             if 'image/png' in src_format:
                 sample_tile_url = layer.find('{*}ResourceURL').get('template').replace('{Time}', 'default')\
                     .replace('{TileMatrixSet}', src_tilematrixset_name).replace('{TileMatrix}', '0').replace('{TileRow}', '0').replace('{TileCol}', '0')
-                print 'Checking for palette for PNG layer: ' + identifier
+                print('Checking for palette for PNG layer: ' + identifier)
                 r = requests.get(sample_tile_url)
                 if r.status_code != 200:
                     if "Invalid time format" in r.text:  # Try taking out TIME if server doesn't like the request
@@ -552,23 +553,23 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 try:
                     if sample_png.palette():
                         bands = 1
-                        print identifier + ' contains palette'
+                        print(identifier + ' contains palette')
                 except png.FormatError:
                     # No palette, check for greyscale
                     if sample_png.asDirect()[3]['greyscale'] is True:
                         if sample_png.asDirect()[3]['alpha'] is True:
                             bands = 2
-                            print identifier + ' is greyscale + alpha'
+                            print(identifier + ' is greyscale + alpha')
                         else:
                             bands = 1
-                            print identifier + ' is greyscale'
+                            print(identifier + ' is greyscale')
                     else:  # Check for alpha
                         if sample_png.asDirect()[3]['alpha'] is True:
                             bands = 4
-                            print identifier + ' is RGBA'
+                            print(identifier + ' is RGBA')
                         else:
                             bands = 3
-                            print identifier + ' is RGB'
+                            print(identifier + ' is RGB')
 
             # Now figure out the configuration for the destination layer.
             # Start by getting the output TileMatrixSet that most closely
@@ -616,7 +617,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 break
             if dest_file_ext in ['.tif', '.lerc', '.mvt']:
                 mssg = identifier + " file type is not supported for reproject: " + dest_file_type
-                print mssg
+                print(mssg)
                 break
 
             if wmts:
@@ -790,7 +791,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                                       for sfile in sorted(os.listdir(wmts_staging_location), key=str.lower)
                                       if sfile.endswith('.conf') and not sfile.startswith(wmts_apache_config_basename)]
                     for layer_path in layer_snippets:
-                        with open(layer_path, 'r') as f:
+                        with open(layer_path, 'rb') as f:
                             wmts_apache_config_file.write(f.read())
             except IOError:
                 log_sig_exit('ERROR', "Can't write WMTS staging apache config: " +
@@ -1008,8 +1009,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
             if not target_epsg:
                 target_epsg = src_epsg
-            target_bbox = map(
-                str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
+            target_bbox = list(map(
+                str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031']))))
             target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
 
             mapfile_snippet = bulk_replace(
@@ -1034,23 +1035,23 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     shutil.rmtree(layer_endpoint)
                 layer_staging_path = os.path.join(
                     wmts_staging_location, layer_dir)
-                print '\nCopying reprojected WMTS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+                print('\nCopying reprojected WMTS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint))
                 shutil.copytree(layer_staging_path, layer_endpoint)
 
             # Copy the WMTS Apache config to the specified directory (like
             # conf.d)
             apache_conf_path = os.path.join(
                 wmts_apache_config_location, wmts_apache_config_basename + '.conf')
-            print '\nCopying reprojected WMTS layer Apache config {0} -> {1}'.format(apache_staging_conf_path, apache_conf_path)
+            print('\nCopying reprojected WMTS layer Apache config {0} -> {1}'.format(apache_staging_conf_path, apache_conf_path))
             try:
                 shutil.copyfile(apache_staging_conf_path, apache_conf_path)
-            except IOError, e:  # Try with sudo if permission denied
+            except IOError as e:  # Try with sudo if permission denied
                 if 'Permission denied' in str(e):
                     cmd = ['sudo', 'cp', apache_staging_conf_path,
                            apache_conf_path]
                     try:
                         run_command(cmd, sigevent_url)
-                    except Exception, e:
+                    except Exception as e:
                         log_sig_exit('ERROR', str(e), sigevent_url)
 
         if create_gc:
@@ -1137,24 +1138,24 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     shutil.rmtree(layer_endpoint)
                 layer_staging_path = os.path.join(
                     twms_staging_location, layer_dir)
-                print '\nCopying reprojected TWMS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint)
+                print('\nCopying reprojected TWMS layer directories: {0} -> {1} '.format(layer_staging_path, layer_endpoint))
                 shutil.copytree(layer_staging_path, layer_endpoint)
 
             # Copy the TWMS Apache config to the specified directory (like
             # conf.d)
             twms_apache_conf_path = os.path.join(
                 twms_apache_config_location, twms_apache_config_basename + '.conf')
-            print '\nCopying reprojected TWMS layer Apache config {0} -> {1}'.format(twms_apache_staging_conf_path, twms_apache_conf_path)
+            print('\nCopying reprojected TWMS layer Apache config {0} -> {1}'.format(twms_apache_staging_conf_path, twms_apache_conf_path))
             try:
                 shutil.copyfile(twms_apache_staging_conf_path,
                                 twms_apache_conf_path)
-            except IOError, e:  # Try with sudo if permission denied
+            except IOError as e:  # Try with sudo if permission denied
                 if 'Permission denied' in str(e):
                     cmd = ['sudo', 'cp', twms_apache_staging_conf_path,
                            twms_apache_conf_path]
                     try:
                         run_command(cmd, sigevent_url)
-                    except Exception, e:
+                    except Exception as e:
                         log_sig_exit('ERROR', str(e), sigevent_url)
 
         # Configure base GC file for TWMS
@@ -1237,10 +1238,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
-    print 'OnEarth Reproject layer config tool (for use with mod_reproject)'
+    print('OnEarth Reproject layer config tool (for use with mod_reproject)')
 
     if 'LCDIR' not in os.environ:
-        print 'LCDIR environment variable not set.\nLCDIR should point to your OnEarth layer_config directory.\n'
+        print('LCDIR environment variable not set.\nLCDIR should point to your OnEarth layer_config directory.\n')
         lcdir = os.path.abspath(os.path.dirname(__file__) + '/..')
     else:
         lcdir = os.environ['LCDIR']
@@ -1301,7 +1302,7 @@ if __name__ == '__main__':
 
     layer_config_path = options.layer_config_path
     if not layer_config_path:
-        print 'No layer config XML specified'
+        print('No layer config XML specified')
         sys.exit()
 
     # Send email.
@@ -1323,7 +1324,7 @@ if __name__ == '__main__':
         lcdir, '/conf/gettileservice_base.xml')
     base_wmts_gc = os.path.join(lcdir, '/conf/getcapabilities_base_wmts.xml')
 
-    print 'Using ' + lcdir + ' as $LCDIR.'
+    print('Using ' + lcdir + ' as $LCDIR.')
 
     if not xml:
         log_info_mssg(
