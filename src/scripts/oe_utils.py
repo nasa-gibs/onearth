@@ -414,20 +414,6 @@ def run_command(cmd, sigevent_url):
             log_sig_err(error.strip(), sigevent_url)
             raise Exception(error.strip())
 
-
-def dump_file(filename):
-
-    print("!!!===================== dump_file: (" + filename + ")")
-
-    file=open(filename,"rb")
-
-   # mime = guess_type(file)
-
-    str = file.read().decode("utf-8")
-    file.close()
-    print(str)
-    print("=== end dump_file ===")
-
 def get_environment(environmentConfig, email_meta):
     """
     Gets environment metadata from an environment configuration file.

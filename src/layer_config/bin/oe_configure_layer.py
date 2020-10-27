@@ -80,7 +80,7 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
-from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, bulk_replace, dump_file
+from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, bulk_replace
 import importlib
 
 importlib.reload(sys)
@@ -277,7 +277,9 @@ def get_pretty_xml(xml_dom):
     parser = etree.XMLParser(strip_cdata=False)
     xml = etree.fromstring(xml_dom.toxml(), parser)
     pretty_xml = etree.tostring(xml, encoding='UTF-8', xml_declaration=True, pretty_print=True).decode("utf-8")
-    return pretty_xml
+
+    # Remove xml header.  Some old software can't read XML files with it
+    return '\n'.join(pretty_xml.split('\n')[1:])
 
 
 def delete_mapfile_layer(mapfile, layerName):
@@ -2943,7 +2945,6 @@ for conf in conf_files:
         layer_xml.writelines(layer_output)
         layer_xml.close()
 
-        dump_file(twms_mrf_filename.replace('.mrf', '_gc.xml'))
     # create TWMS layer metadata for GetTileService
     if not no_twms and vectorType is None:
 
@@ -2962,7 +2963,6 @@ for conf in conf_files:
         patterns = ""
         cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
         run_command("cp " + twms_mrf_filename + " /", sigevent_url)
-        dump_file(twms_mrf_filename)
         try:
             print('\nRunning command: ' + cmd)
             process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -3160,7 +3160,6 @@ if no_twms == False:
             run_command(cmd, sigevent_url)
             cmd = depth + '/oe_create_cache_config -cbd ' + twms_endpoint.path + " " + twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.config'
             run_command(cmd, sigevent_url)
-            dump_file(twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.config')
         if no_cache == False:
             if twms_endpoint.cacheConfigLocation:
                 print('\nCopying: ' + twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.config' + ' -> ' + twms_endpoint.cacheConfigLocation + '/' + twms_endpoint.cacheConfigBasename + '.config')
@@ -3231,7 +3230,6 @@ if no_wmts == False:
         if wmts_endpoint.cacheConfigBasename:
             print("\nRunning commands for endpoint: " + wmts_endpoint.path)
             cmd = depth + '/oe_create_cache_config -cbd ' + wmts_endpoint.path + " " + wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.config'
-            dump_file(wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.config')
             try:
                 run_command(cmd, sigevent_url)
             except:
