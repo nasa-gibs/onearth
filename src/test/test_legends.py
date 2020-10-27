@@ -87,23 +87,24 @@ class TestOELegends(unittest.TestCase):
             svg_h_hash = value["svg_h"]
             png_v_file = open(filename + "_v.png", "rb")
             png_h_file = open(filename + "_h.png", "rb")
-            svg_v_file = open(filename + "_v.svg", "rb")
+            svg_v_file = open(filename + "_v.svg", "r")
             svg_v_file_str = ""
-            svg_v_file_str = re.sub(b'(id="[#A-Za-z0-9]{11,15}")', b'', svg_v_file.read())
-            svg_v_file_str = re.sub(b'(xlink:href="[#A-Za-z0-9]{12}")', b'', svg_v_file_str)
-            svg_v_file_str = re.sub(b'(clip-path="url\([#A-Za-z0-9]{12}\)")', b'', svg_v_file_str)
-            svg_h_file = open(filename + "_h.svg", "rb")
+            svg_v_file_str = re.sub('(id="[#A-Za-z0-9]{11,15}")', '', svg_v_file.read())
+            svg_v_file_str = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', svg_v_file_str)
+            svg_v_file_str = re.sub(r'(clip-path="url\([#A-Za-z0-9]{12}\)")', '', svg_v_file_str)
+
+            svg_h_file = open(filename + "_h.svg", "r")
             svg_h_file_str = ""
-            svg_h_file_str = re.sub(b'(id="[#A-Za-z0-9]{11,15}")', b'', svg_h_file.read())
-            svg_h_file_str = re.sub(b'(xlink:href="[#A-Za-z0-9]{12}")', b'', svg_h_file_str)
-            svg_h_file_str = re.sub(b'(clip-path="url\([#A-Za-z0-9]{12}\)")', b'', svg_h_file_str)
+            svg_h_file_str = re.sub('(id="[#A-Za-z0-9]{11,15}")', '', svg_h_file.read())
+            svg_h_file_str = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', svg_h_file_str)
+            svg_h_file_str = re.sub(r'(clip-path="url\([#A-Za-z0-9]{12}\)")', '', svg_h_file_str)
             hasher.update(png_v_file.read())
             new_colormaps[key]["png_v"] = hasher.hexdigest()
             hasher.update(png_h_file.read())
             new_colormaps[key]["png_h"] = hasher.hexdigest()
-            hasher.update(svg_v_file_str)
+            hasher.update(svg_v_file_str.encode('utf-8'))
             new_colormaps[key]["svg_v"] = hasher.hexdigest()
-            hasher.update(svg_h_file_str)
+            hasher.update(svg_h_file_str.encode('utf-8'))
             new_colormaps[key]["svg_h"] = hasher.hexdigest()
             png_v_file.close()
             png_h_file.close()
@@ -125,14 +126,13 @@ class TestOELegends(unittest.TestCase):
         self.assertTrue(filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'), 'Inconsistent legends found')
 
     def tearDown(self):
-        print('terdown')
-    #    if filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'):
-    #        os.remove(self.testdata_path + 'new_colormaps.json')
-    #    else:
-    #        f = open(self.testdata_path + 'new_colormaps.json', 'r')
-    #        print("\nResults:\n")
-    #        print(f.read())
-    #        f.close()
+        if filecmp.cmp(self.testdata_path + self.colormaps_json, self.testdata_path + 'new_colormaps.json'):
+            os.remove(self.testdata_path + 'new_colormaps.json')
+        else:
+            f = open(self.testdata_path + 'new_colormaps.json', 'r')
+            print("\nResults:\n")
+            print(f.read())
+            f.close()
 
 if __name__ == '__main__':
     # Parse options before running tests

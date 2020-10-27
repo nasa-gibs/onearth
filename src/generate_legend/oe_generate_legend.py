@@ -48,7 +48,7 @@ print((mpl.matplotlib_fname()))
 from matplotlib import pyplot
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
-from io import StringIO
+from io import BytesIO
 #import numpy as np
 import math
 import re
@@ -103,7 +103,7 @@ class ColorMap:
         return xml
 
     def __str__(self):
-        return self.__repr__().encode(sys.stdout.encoding)
+        return self.__repr__()
 
 
 class ColorMapEntry:
@@ -212,11 +212,11 @@ def parse_colormaps(colormap_location, verbose):
     if tree.tag == 'ColorMap':
         colormaps.append(tree)
         if verbose:
-            print('-------------------\n' +  ET.tostring(tree, encoding='utf8', method='xml') + '\n-------------------')
+            print('-------------------\n' +  ET.tostring(tree, encoding='utf8', method='xml').decode("utf-8") + '\n-------------------')
     for colormap in tree.findall('ColorMap'):
         colormaps.append(colormap)
         if verbose:
-            print('-------------------\n' + ET.tostring(colormap, encoding='utf8', method='xml') + '\n-------------------')
+            print('-------------------\n' + ET.tostring(colormap, encoding='utf8', method='xml').decode("utf-8") + '\n-------------------')
     
     return colormaps
 
@@ -696,7 +696,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     fs = 8
                 if len(colormap.title) > 16:
                     title_words = colormap.title.split(" ")
-                    half = (len(title_words)/2)
+                    half = int(len(title_words)/2)
                     if len(title_words) > 2: half += 1
                     title = ""
                     for word in title_words[0:half]:
@@ -742,7 +742,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             t.set_gid('tooltip_%d' % i)
         
         # Save the figure
-        f = StringIO()
+        f = BytesIO()
         plt.savefig(f, transparent=True, format="svg")     
         
         # Create XML tree from the SVG file
