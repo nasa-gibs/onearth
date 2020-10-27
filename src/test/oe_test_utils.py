@@ -216,6 +216,10 @@ def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
     """
     # print('\nRunning command: ' + cmd)
     process = subprocess.run(shlex.split(cmd), universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    print('run_command stdout: ' + process.stdout)
+    print('**************************************************************************************')
+
     for line in process.stdout:
         if line:
             if show_output is True or 'error' in line.lower() or ignore_warnings and 'warning' in line.lower():
@@ -602,16 +606,9 @@ def check_apache_running():
     return True
 
 
-def ordered_d(obj): 
-    """
-    Recursively sort any lists it finds (and convert dictionaries to lists of (key, value) pairs 
-    """
-    if isinstance(obj, dict):
-        return sorted((k, ordered_d(v)) for k, v in list(obj.items()))
-    if isinstance(obj, list):
-        return sorted(ordered_d(x) for x in obj)
-    else:
-        return obj
+def order_dict(dictionary):
+    return {k: order_dict(v) if isinstance(v, dict) else v
+            for k, v in sorted(dictionary.items())}
 
 
 def check_dicts(d, ref_d):
@@ -621,7 +618,7 @@ def check_dicts(d, ref_d):
         d -- dict to compare
         ref_d -- reference dict being compared against
     """
-    if ordered_d(ref_d) == ordered_d(d) :
+    if order_dict(ref_d) == order_dict(d) :
         return True
     else:
         return False
