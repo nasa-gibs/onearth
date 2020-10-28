@@ -468,8 +468,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         new_lrx = str(Decimal(lrx)+Decimal(antimeridian)*2)
     else:
         new_lrx = lrx
-        if Decimal(lrx) >= Decimal(antimeridian) + Decimal(xres):
-            lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
+        lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
     cutline_template = """
     {
       "type": "Polygon",
@@ -491,7 +490,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
     tile_left = tile + ".left_cut.vrt"
     tile_right = tile + ".right_cut.vrt"
 
-    if Decimal(lrx) <= Decimal(antimeridian):
+    if Decimal(source_extents[2]) <= Decimal(antimeridian):
         # modify input into >180 space if not already
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
         log_the_command(gdal_edit_command_list)
