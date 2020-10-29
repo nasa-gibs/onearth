@@ -43,7 +43,6 @@ versionNumber = '1.4.0'
     
 #-------------------------------------------------------------------------------   
 
-print('Python v' + sys.version)
 print('read_mrfdata.py v' + versionNumber)
 
 usageText = 'read_mrfdata.py --input [mrf_data_file] --output [output_file] (--offset INT --size INT) OR (--index [index_file] --tile INT)'
@@ -126,7 +125,7 @@ if index != None:
         print("Got data file offset " + str(offset) + ", size " + str(size))
    
    
-out = open(output, 'w')
+out = open(output, 'wb')
 mrf_data = open(input, 'rb')
 
 mrf_data.seek(offset)

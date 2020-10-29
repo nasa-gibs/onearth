@@ -45,7 +45,6 @@ versionNumber = '1.4.0'
     
 #-------------------------------------------------------------------------------   
 
-print('Python v' + sys.version)
 print('read_mrf.py v' + versionNumber)
 
 usageText = 'read_mrf.py --input [mrf_file] --output [output_file] (--tilematrix INT --tilecol INT --tilerow INT) OR (--offset INT --size INT) OR (--tile INT)'
@@ -166,7 +165,7 @@ else:
     data_type = '>q'
   
 if str(options.zlevel) == "None":
-    z = None
+    z = -1
     z_size = None
     if mrf_z:
         print("Error: z-level must be specified for this input")
@@ -284,7 +283,7 @@ if size != None and offset !=None:
     if options.verbose:
         print("Read from data file at offset " + str(offset) + " for " + str(size) + " bytes")
         
-    out = open(output, 'w')
+    out = open(output, 'wb')
     mrf_data = open(datafile, 'rb')
     mrf_data.seek(offset)
     image = mrf_data.read(size)

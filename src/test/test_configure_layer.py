@@ -1010,7 +1010,6 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
 
-    @unittest.skip("demonstrating skipping")
     def test_send_email_command_line(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
