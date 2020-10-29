@@ -463,13 +463,16 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         working_dir -- Directory to use for temporary files
     """
     temp_tile = working_dir + os.path.basename(tile) + '.temp.vrt'
+    log_info_mssg("Splitting across antimeridian with " + temp_tile)
     ulx, uly, lrx, lry = source_extents
     if Decimal(lrx) <= Decimal(antimeridian):
+        # create a new lrx on the other side of the antimeridian
         new_lrx = str(Decimal(lrx)+Decimal(antimeridian)*2)
     else:
+        # just use the original lrx for the right cut (left cut uses this for the ulx)
         new_lrx = lrx
-        if Decimal(lrx) >= Decimal(antimeridian) + Decimal(xres):
-            lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
+        # this is the output lrx for the right cut 
+        lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
     cutline_template = """
     {
       "type": "Polygon",
@@ -491,7 +494,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
     tile_left = tile + ".left_cut.vrt"
     tile_right = tile + ".right_cut.vrt"
 
-    if Decimal(lrx) <= Decimal(antimeridian):
+    if Decimal(source_extents[2]) <= Decimal(antimeridian):
         # modify input into >180 space if not already
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
         log_the_command(gdal_edit_command_list)
@@ -515,8 +518,12 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         if len(left_cut_stderr) > 0:
             log_sig_err(left_cut_stderr, sigevent_url)
 
-    # Make sure that when we make the right cut that there will be at least one pixel
-    if (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
+    if tile_right.count('.right_cut.vrt') > 1:
+        # Something is wrong here; prevent going into a loop
+        log_sig_err("Image right_cut has already been queued for insert: " + tile_right, sigevent_url)
+        tile_right = None
+    elif (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
+        # Make sure that when we make the right cut that there will be at least one pixel
         log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
         tile_right = None
     else:
@@ -534,6 +541,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         log_the_command(gdal_edit_command_list)
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         gdal_edit.wait()
+        print("Cut and edited tile_right extents: " + ",".join(get_image_extents(tile_right)))
 
     return (tile_left, tile_right)
 
@@ -706,6 +714,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
     """
     errors = 0
     t_xmin, t_ymin, t_xmax, t_ymax  = target_extents
+    print("Target extents: " + ",".join([t_xmin, t_ymin, t_xmax, t_ymax]))
 
     if target_y == '':
         target_y = float(int(target_x)/2)
@@ -726,6 +735,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             lock.down_read()
 
         s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(tile)
+        print("Source extents: " + ",".join([s_xmin, s_ymax, s_xmax, s_ymin]))
 
         if os.path.splitext(tile)[1] == ".vrt" and not ("_cut." in tile or "_reproject." in tile):
             #ignore temp VRTs unless it's an antimeridian cut or reprojected source image
@@ -759,18 +769,20 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             if should_lock:
                 lock.up_read()
 
-            tiles = []
+            insert_tiles = []
 
             # The left half of the split could be None if there wasn't a full pixel beyond the antimeridian
             if left_half:
-                tiles.append(left_half)
+                log_info_mssg('Will insert left half ' + left_half)
+                insert_tiles.append(left_half)
 
             # The right half of the split could be None if there wasn't a full pixel beyond the antimeridian
             if right_half:
-                tiles.append(right_half)
+                log_info_mssg('Will insert right half ' + right_half)
+                insert_tiles.append(right_half)
 
-            if len(tiles) > 0:
-                errors += run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, target_y,
+            if len(insert_tiles) > 0:
+                errors += run_mrf_insert(insert_tiles, mrf, insert_method, resize_resampling, target_x, target_y,
                                      mrf_blocksize, target_extents, target_epsg, nodata, True, working_dir)
             else:
                 log_sig_err("No tiles to insert after splitting across antimeridian", sigevent_url)
@@ -781,7 +793,6 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                 lock.up_read()
                 lock.down_write()
 
-            log_info_mssg("Image extents " + str([s_xmin, s_ymax, s_xmax, s_ymin]))
             tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                              t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
                              
