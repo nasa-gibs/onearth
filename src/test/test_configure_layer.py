@@ -1010,6 +1010,7 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
 
+    @unittest.skip("demonstrating skipping")
     def test_send_email_command_line(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
@@ -1099,7 +1100,7 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue("category: oe_configure_layer" in result)
         self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
 
-        self.dddassertTrue(False, "throw assert")
+     #   self.dddassertTrue(False, "throw assert")
         
     def tearDown(self):
         rmtree(self.testfiles_path)
