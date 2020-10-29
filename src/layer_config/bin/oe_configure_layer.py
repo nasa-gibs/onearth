@@ -2965,12 +2965,12 @@ for conf in conf_files:
         run_command("cp " + twms_mrf_filename + " /", sigevent_url)
         try:
             print('\nRunning command: ' + cmd)
-            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             process.wait()
             for output in process.stdout:
                 patterns = patterns + output
-        except:
-            log_sig_err("Error running command " + cmd, sigevent_url)
+        except Exception as e:
+            log_sig_err("Error running command " + cmd + " Exception: " + str(e), sigevent_url)
 
         layer_output = bulk_replace(TWMS_GTS_LAYER_TEMPLATE, [('{TiledGroupName}', tiledGroupName),
                                                               ('{Title}', title),

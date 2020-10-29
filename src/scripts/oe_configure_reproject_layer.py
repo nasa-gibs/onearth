@@ -213,7 +213,7 @@ def make_gdal_tms_xml(layer, bands, src_epsg):
     etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
     etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
 
-    return etree.tostring(out_root)
+    return etree.tostring(out_root).decode("utf-8")
 
 
 def sort_tilematrixset(tilematrixset):
@@ -517,7 +517,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 matrices[0].findtext('{*}ScaleDenominator'))
             src_width = int(round(2 * math.pi * EARTH_RADIUS /
                                   (src_scale_denominator * 0.28E-3)))
-            src_height = src_width / 2
+            src_height = int(round(src_width / 2))
             src_levels = len(matrices)
             src_pagesize_width = matrices[0].findtext('{*}TileWidth')
             src_pagesize_height = matrices[0].findtext('{*}TileHeight')
@@ -655,7 +655,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     src_cfg.write('SkippedLevels 1\n')
                     src_cfg.write('BoundingBox {0}\n'.format(src_bbox))
                     src_cfg.seek(0)
-                    hasher.update(src_cfg.read())
+                    hasher.update(src_cfg.read().encode('utf-8'))
 
                 dest_cfg_filename = identifier + '_reproject.config'
                 with open(os.path.join(wmts_staging_path, dest_cfg_filename), 'w+') as dest_cfg:
@@ -676,7 +676,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                     dest_cfg.write('Oversample On\n')
                     dest_cfg.write('ExtraLevels 3\n')
                     dest_cfg.seek(0)
-                    hasher.update(dest_cfg.read())
+                    hasher.update(dest_cfg.read().encode('utf-8'))
                     dest_cfg.write('ETagSeed {0}\n'.format(hasher.hexdigest()))
                     # dest_cfg.write('SkippedLevels 1\n')
 
@@ -791,7 +791,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                                       for sfile in sorted(os.listdir(wmts_staging_location), key=str.lower)
                                       if sfile.endswith('.conf') and not sfile.startswith(wmts_apache_config_basename)]
                     for layer_path in layer_snippets:
-                        with open(layer_path, 'rb') as f:
+                        with open(layer_path, 'r') as f:
                             wmts_apache_config_file.write(f.read())
             except IOError:
                 log_sig_exit('ERROR', "Can't write WMTS staging apache config: " +
@@ -839,7 +839,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             try:
                 with open(os.path.join(wmts_staging_location, wmts_gc_snippet_filename), 'w+') as wmts_gc_snippet:
                     wmts_gc_snippet.write(
-                        etree.tostring(layer, pretty_print=True))
+                        etree.tostring(layer, pretty_print=True).decode("utf-8"))
             except IOError:
                 log_sig_exit(
                     'ERROR', 'Could not create staging XML snippet', sigevent_url)
@@ -1084,7 +1084,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                                 xlink + 'href'] = wmts_service_url + 'wmts.cgi?'
                         else:
                             getUrl.attrib[xlink + 'href'] = wmts_service_url
-                        lines[idx] = (' ' * spaces) + etree.tostring(getUrl, pretty_print=True).replace(
+                        lines[idx] = (' ' * spaces) + etree.tostring(getUrl, pretty_print=True).decode("utf-8").replace(
                             'Get', 'ows:Get').replace(' xmlns:xlink="http://www.w3.org/1999/xlink"', '').replace('/>', '>')
                     if 'ServiceMetadataURL' in lines[idx]:
                         spaces = lines[idx].index('<')
@@ -1094,7 +1094,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                             serviceMetadataUrlLine)
                         serviceMetadataUrl.attrib[
                             xlink + 'href'] = wmts_service_url + '1.0.0/WMTSCapabilities.xml'
-                        lines[idx] = (' ' * spaces) + etree.tostring(serviceMetadataUrl, pretty_print=True).replace(
+                        lines[idx] = (' ' * spaces) + etree.tostring(serviceMetadataUrl, pretty_print=True).decode("utf-8").replace(
                             ' xmlns:xlink="http://www.w3.org/1999/xlink"', '')
                 getCapabilities_base.seek(0)
                 getCapabilities_base.truncate()
@@ -1192,7 +1192,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                             onlineResource.attrib[
                                 xlink + 'href'] = twms_service_url + "twms.cgi?"
                         lines[idx] = (
-                            ' ' * spaces) + etree.tostring(onlineResource, pretty_print=True)
+                            ' ' * spaces) + etree.tostring(onlineResource, pretty_print=True).decode("utf-8")
                 getCapabilities_base.seek(0)
                 getCapabilities_base.truncate()
                 getCapabilities_base.writelines(lines)
@@ -1228,7 +1228,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                             onlineResource.attrib[
                                 xlink + 'href'] = twms_service_url + "twms.cgi?"
                         lines[idx] = (
-                            ' ' * spaces) + etree.tostring(onlineResource, pretty_print=True)
+                            ' ' * spaces) + etree.tostring(onlineResource, pretty_print=True).decode("utf-8")
                 getTileService_base.seek(0)
                 getTileService_base.truncate()
                 getTileService_base.writelines(lines)
