@@ -1091,6 +1091,7 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['archive_location'])
         os.remove(config['empty_tile'])
 
+        print('result = ' + result)
         # Check result
         self.assertTrue("Subject: [INFO/ONEARTH] triggered by oe_configure_layer" in result)
         self.assertTrue("From: nobody@localhost.test" in result)
@@ -1098,6 +1099,8 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue("category: oe_configure_layer" in result)
         self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
 
+        self.dddassertTrue(False, "throw assert")
+        
     def tearDown(self):
         rmtree(self.testfiles_path)
 

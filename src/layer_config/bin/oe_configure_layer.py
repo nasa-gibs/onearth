@@ -1490,6 +1490,11 @@ for conf in conf_files:
                 log_sig_err("No email recipient provided for notifications.",
                             sigevent_url)
 
+        print('***********#############')
+        print('config email_server = ' + str(email_server))
+        print('config email_recipient = ' + str(email_recipient))
+        print('config email_sender = ' + str(email_sender))
+        
         wmts_getCapabilities = environment.getCapabilities_wmts
         twms_getCapabilities = environment.getCapabilities_twms
         getTileService = environment.getTileService
