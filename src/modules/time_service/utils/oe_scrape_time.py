@@ -122,6 +122,9 @@ def invenGetAllKeys(conn, bucket):
             return False
         print('Using S3 Inventory')
         lastest_inventory = max(objects, key=lambda x: x['LastModified'])
+        if not lastest_inventory['Key'].endswith('csv.gz') :
+            print('S3 Inventory csv file not found!')
+            return False
         conn.download_file(bucket, lastest_inventory['Key'], 'tmpInventory.csv.gz')
     with gzip.open('tmpInventory.csv.gz', mode = 'rt') as f:
         reader = csv.reader(f)
@@ -152,7 +155,8 @@ def updateDateService(redis_uri,
                       tag=None,
                       layer_name=None,
                       reproject=False,
-                      check_exists=False):
+                      check_exists=False,
+                      s3_inventory=False):
     r = redis.Redis(host=redis_uri, port=redis_port)
     created = r.mget('created')[0]
     if created is None:
@@ -176,10 +180,24 @@ def updateDateService(redis_uri,
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
 
-    invenKeys=invenGetAllKeys(s3, bucket)
-    if(invenKeys):
-        objects = reduce(keyMapper, invenKeys, {})
-    else:
+    # delete date keys 
+    count, keys  = r.scan(cursor=0, match='*:dates')
+    if(len(keys)>0):
+        resp = r.unlink(*keys)
+        print(f'{resp} of {len(keys)} scanned date keys unlinked')
+    while count != 0:
+        count, keys = r.scan(cursor=count, match='*:dates')
+        if(len(keys)>0):
+            resp = r.unlink(*keys)
+            print(f'{resp} of {len(keys)} scanned date keys unlinked')
+    
+    if s3_inventory:
+        invenKeys=invenGetAllKeys(s3, bucket)
+        if(invenKeys):
+            objects = reduce(keyMapper, invenKeys, {})
+        else:
+            objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
+    else: 
         objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
     with open('periods.lua', 'r') as f:
@@ -268,6 +286,13 @@ parser.add_argument(
     dest='check_exists',
     help='Check if data already exists; if it does, then don\'t rebuild',
     action='store_true')
+parser.add_argument(
+    '-i',
+    '--s3_inventory',
+    default=False,
+    dest='s3_inventory',
+    help='Check if s3 inventory exist; if it does use keys from inventory',
+    action='store_true')
 
 args = parser.parse_args()
 
@@ -279,4 +304,5 @@ updateDateService(
     tag=args.tag,
     layer_name=args.layer,
     reproject=args.reproject,
-    check_exists=args.check_exists)
+    check_exists=args.check_exists,
+    s3_inventory=args.s3_inventory)
