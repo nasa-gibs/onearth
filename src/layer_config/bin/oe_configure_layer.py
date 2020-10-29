@@ -588,9 +588,9 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                     diff3 = abs((dates[2] - dates[3]))
                     if diff1 == diff2 == diff3:
                         if diff1.seconds % 3600 == 0:
-                            period = "PT" + str(diff1.seconds / 3600) + "H"
+                            period = "PT" + str(int(diff1.seconds / 3600)) + "H"
                         elif diff1.seconds % 60 == 0:
-                            period = "PT" + str(diff1.seconds / 60) + "M"
+                            period = "PT" + str(int(diff1.seconds / 60)) + "M"
                         else:
                             period = "PT" + str(diff1.seconds) + "S"
             message = "No period in time configuration for " + fileNamePrefix + " - detected " + period
