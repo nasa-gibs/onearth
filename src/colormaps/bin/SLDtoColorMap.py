@@ -72,8 +72,8 @@ def hexToRGB(hexValue):
         g = int(hexValue[2:4], 16)
         b = int(hexValue[4:6], 16)
     else:
-		print(("Invalid Hex Value: " + str(hexValue)))
-		r=g=b=-1
+        print(("Invalid Hex Value: " + str(hexValue)))
+        r=g=b=-1
 
     return [r,g,b]
 
@@ -501,8 +501,8 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 gibsCMap.showUnits        = True	
                 gibsCMap.showLegend       = True
                         
-            	gibsColorMaps.append(gibsCMap)
-           	
+                gibsColorMaps.append(gibsCMap)
+               
     return gibsColorMaps
 
 ## END Parse SLD v1.1.0 ##

@@ -287,8 +287,8 @@ def generateHTML(outputHtmlFile) :
         outputHandle.write("<p>Download Color Map file <a href=\"../" + colorMaps.product + "\">here</a><br><br>\n")
 
         for colorMap in colorMaps.colormaps :
-            outputHandle.write("<h2> ColorMap : Title '" + colorMap.title.encode("utf-8") + "'  Units '" + colorMap.units.encode("utf-8") + "'</h2>\n")
-            outputHandle.write("<h3> Entries : MinLabel '" + colorMap.entries.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.entries.maxLabel.encode("utf-8") + "'</h3>\n")
+            outputHandle.write("<h2> ColorMap : Title '" + colorMap.title + "'  Units '" + colorMap.units + "'</h2>\n")
+            outputHandle.write("<h3> Entries : MinLabel '" + colorMap.entries.minLabel + "'  MaxLabel '" + colorMap.entries.maxLabel + "'</h3>\n")
 
             outputHandle.write("<table>\n")
 
@@ -309,10 +309,10 @@ def generateHTML(outputHtmlFile) :
                        "<font color=\"" + ("black" if is_bright(entry.rgb) else "white") + "\">" + \
                        entry.rgb + "</font></td>\n")
                 outputHandle.write("    <td class='transparency'>" + str(entry.transparent) + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + (str(entry.sourceValue.encode('ascii', 'xmlcharrefreplace')) if entry.sourceValue != None else "") + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + (str(entry.value.encode('ascii', 'xmlcharrefreplace')) if entry.value != None else "") + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + (str(entry.ref.encode('ascii', 'xmlcharrefreplace')) if entry.ref != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.sourceValue) if entry.sourceValue != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.value) if entry.value != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + entry.label + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.ref) if entry.ref != None else "") + "</td>\n")
                 outputHandle.write("    <td class='data-value'>" +  str(entry.nodata) + "</td>\n")
                 outputHandle.write("  </tr>\n")
 
@@ -321,7 +321,7 @@ def generateHTML(outputHtmlFile) :
             if colorMap.legend == None:
                 outputHandle.write("<h3>No Legend</h3>\n")
             else:
-                outputHandle.write("<h3> Legend : Type '" + colorMap.legend.type.encode("utf-8") + "'  MinLabel '" + colorMap.legend.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.legend.maxLabel.encode("utf-8") + "'</h3>\n")
+                outputHandle.write("<h3> Legend : Type '" + colorMap.legend.type + "'  MinLabel '" + colorMap.legend.minLabel + "'  MaxLabel '" + colorMap.legend.maxLabel + "'</h3>\n")
 
                 outputHandle.write("<table>\n")
 
@@ -341,8 +341,8 @@ def generateHTML(outputHtmlFile) :
                                           ("black" if is_bright(entry.rgb) else "white") + "\">" + entry.rgb + "</font></td>\n")
                     outputHandle.write("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>\n")
                     outputHandle.write("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>\n")
-                    outputHandle.write("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>\n")
-                    outputHandle.write("    <td class='data-value'>" + (str(entry.id.encode('ascii', 'xmlcharrefreplace')) if entry.id != None else "") + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + entry.label + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + (str(entry.id) if entry.id != None else "") + "</td>\n")
                     outputHandle.write("  </tr>\n")
 
                 outputHandle.write("</table>\n")

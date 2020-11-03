@@ -1091,7 +1091,6 @@ class TestLayerConfig(unittest.TestCase):
         rmtree(config['archive_location'])
         os.remove(config['empty_tile'])
 
-        print('result = ' + result)
         # Check result
         self.assertTrue("Subject: [INFO/ONEARTH] triggered by oe_configure_layer" in result)
         self.assertTrue("From: nobody@localhost.test" in result)

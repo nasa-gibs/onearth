@@ -56,8 +56,8 @@ def hexToRGB(hexValue):
         g = int(hexValue[2:4], 16)
         b = int(hexValue[4:6], 16)
     else:
-		print("Invalid Hex Value")
-		r=g=b=-1
+        print("Invalid Hex Value")
+        r=g=b=-1
 
     return [r,g,b]
 
@@ -110,32 +110,32 @@ def generateSLD_v1_0_0(gibsColorMaps, layerName, rgbaOrder) :
                 
                     print(("              <se:ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-            		        "quantity=\""+ quantity + "\" " + 
-                		    "label=\""+ label + "\" />"))        
-                		    
+                            "quantity=\""+ quantity + "\" " + 
+                            "label=\""+ label + "\" />"))        
+                            
                     quantity = str(m.group(2))
                     label    = str(m.group(2))
                 
                     print(("              <se:ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-            		        "quantity=\""+ quantity + "\" " + 
-            		        "label=\""+ label + "\" />"))  
-            	else:  
+                            "quantity=\""+ quantity + "\" " + 
+                            "label=\""+ label + "\" />"))  
+                else:  
                     quantity = str(m.group(1))
                     label    = str(m.group(1))
                 
                     print(("              <se:ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-            		        "quantity=\""+ quantity + "\" " + 
-            		        "label=\""+ label + "\" />"))            
+                            "quantity=\""+ quantity + "\" " + 
+                            "label=\""+ label + "\" />"))            
             else:
                 quantity = str(m.group(1))
                 label    = str(m.group(1)) + " - " + str(m.group(2))#cmEntry.label
                 
                 print(("              <se:ColorMapEntry " + 
                         "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-            		    "quantity=\""+ quantity + "\" " + 
-            		    "label=\""+ label + "\" />"))
+                        "quantity=\""+ quantity + "\" " + 
+                        "label=\""+ label + "\" />"))
  
     print("            </se:ColorMap>")     
     print("          </se:RasterSymbolizer>")    
