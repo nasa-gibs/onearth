@@ -39,11 +39,8 @@ class ColorMapEntry():
     def __hash__(self):
         return hash(self.sourceValue)
 
-    def __cmp__(self, other):
-        return self.sourceValue.cmp(other.sourceValue)
-
     def __eq__(self, other):
-        return self.sourceValue.eq(other.sourceValue)
+        return self.sourceValue == other.sourceValue
 
 
 class Entries():
@@ -54,11 +51,8 @@ class Entries():
     def __hash__(self):
         return hash(self.minLabel)
 
-    def __cmp__(self, other):
-        return self.minLabel.cmp(other.minLabel)
-
     def __eq__(self, other):
-        return self.minLabel.eq(other.minLabel)
+        return self.minLabel == other.minLabel
 
 class LegendEntry():
     rgb         = ""
@@ -70,11 +64,8 @@ class LegendEntry():
     def __hash__(self):
         return hash(self.label)
 
-    def __cmp__(self, other):
-        return self.label.cmp(other.label)
-
     def __eq__(self, other):
-        return self.label.eq(other.label)
+        return self.label == other.Label
 
 
 class Legend():
@@ -102,12 +93,6 @@ class ColorMap():
     def __hash__(self):
         return hash(self.title)
 
-#    def __cmp__(self, other):
-#        return self.name.cmp(other.name)
-
-#    def __eq__(self, other):
-#        return self.name.eq(other.name)
-
 class ColorMaps():
     colormaps = []
     product   = ""
@@ -115,11 +100,8 @@ class ColorMaps():
     def __hash__(self):
         return hash(self.product)
 
-    def __cmp__(self, other):
-        return self.product.cmp(other.product)
-
     def __eq__(self, other):
-        return self.product.eq(other.product)
+        return self.product == other.product
 
 ## Global Variables ##
 colorMapsList = []

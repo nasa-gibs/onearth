@@ -28,12 +28,9 @@ class GIBS_ColorMapEntry():
     
     def __hash__(self):
         return hash(self.rgb)
-        
-    def __cmp__(self, other):
-        return cmp(self.rgb,other.rgb)
 
     def __eq__(self, other):
-        return cmp(self.rgb,other.rgb) == 0
+        return self.rgb == other.rgb
 
 class GIBS_ColorMap():
     showUnits  = False
@@ -45,7 +42,6 @@ class GIBS_ColorMap():
 
 
 def hexToRGB(hexValue):
-
 
     if re.match("#[0-9A-Fa-f]{6}", hexValue):
         r = int(hexValue[1:3], 16)

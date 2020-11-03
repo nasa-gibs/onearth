@@ -18,7 +18,6 @@ import re
 import sys, getopt
 from math import modf, ceil
 
-
 class SLD_v1_0_0_ColorMapEntry():
     quantity  = None
     opacity   = None
@@ -26,12 +25,9 @@ class SLD_v1_0_0_ColorMapEntry():
     
     def __hash__(self):
         return hash(self.quantity)
-        
-    def __cmp__(self, other):
-        return self.quantity.cmp(other.quantity)
 
     def __eq__(self, other):
-        return self.quantity.eq(other.quantity)
+        return self.quantity == other.quantity
 
 
 class GIBS_ColorMapEntry():
@@ -45,12 +41,10 @@ class GIBS_ColorMapEntry():
     
     def __hash__(self):
         return hash(self.rgb)
-        
-    def __cmp__(self, other):
-        return self.rgb.cmp(other.rgb)
 
     def __eq__(self, other):
-        return self.rgb.eq(other.rgb)
+        return self.rgb == other.rgb
+
 
 class GIBS_ColorMap():
     showUnits  = False
@@ -58,7 +52,6 @@ class GIBS_ColorMap():
     minLabel  = None
     maxLabel  = None
     cmEntries = []
-    
 
 
 def hexToRGB(hexValue):
@@ -681,7 +674,7 @@ def main(argv):
     
     if 'version' in attrDict:
         if attrDict['version'] == "1.0.0":
-            gibsColorMaps = parseSLD_v1_0_0(sldFile, layerName, units, offset, factor)
+            gibsColorMaps = parseSLD_v1_0_0(sldFile, layerName, units, offset, factor, format)
         elif attrDict['version'] == "1.1.0":
             gibsColorMaps = parseSLD_v1_1_0(sldFile, layerName, units, offset, factor, rgbaOrder, format, densify)
         else:
