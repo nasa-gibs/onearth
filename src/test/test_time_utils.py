@@ -182,7 +182,7 @@ class TestTimeUtils(unittest.TestCase):
                         ('MODIS_Aqua_Aerosol', '2017-01-15',
                         '2017-01-01T00:00:00Z/2017-01-15T00:00:00Z/PT1S')]
         
-        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -t best -b test-inventory 127.0.0.1"
+        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -t best -b test-inventory 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326', 'best']
         r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
