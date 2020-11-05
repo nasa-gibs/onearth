@@ -21,7 +21,7 @@ RUN pip3.6 install pyaml==18.11.0
 RUN pip3.6 install lxml==4.3.0
 RUN pip3.6 install pypng==0.0.19
 RUN pip3.6 install boto3==1.9
-RUN pip3.6 install redis==3.2.1
+RUN pip3.6 install redis==3.5.3
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
