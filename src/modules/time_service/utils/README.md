@@ -13,7 +13,7 @@ The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4
 
 ## `oe_scrape_time.py` -- Database regeneration tool
 
-This tool will first search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will grab the most recent CSV log, and parse the csv file to generate time service entries for each layer. If no S3 Inventory data exists, the tool scrapes the bucket containing MRF imagery and generates time service entries for each layer. 
+This tool will first check whether the s3_inventory option has been flagged. If the -i flag is present, the tool will search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will parse the most recent CSV file to generate time service entries for each layer. If no S3 Inventory data exists or the -i flag isn't declared. The tool scrapes the bucket containing MRF imagery and generates time service entries for each layer. 
 
 #### S3 Inventory
 
@@ -37,4 +37,5 @@ The script accepts the following options:
 -   `-p` indicates the port of the Redis time service database. Default is `6379`.
 -   `-s` indicates the uri of the S3 service. Useful when you're using a localstack configuration for testing instead of an actual AWS S3 bucket.
 -   `-t` indicates a tag (srt, best) to be used in tagging the dates.
+-   `-i` indicates whether to use s3 inventory CSV logs for time scrapping. 
 -   `REDIS_URI` (argument)
