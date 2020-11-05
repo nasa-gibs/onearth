@@ -278,18 +278,12 @@ def create_vector_mrf(input_file_path,
                 # Create MVT tile from the features in this tile (Only doing single layers for now)
                 new_layer = {'name': layer_name, 'features': tile_features}
 
-                # Have to change the default rounding if in Python 2.6 due to Decimal rounding issues.
-                if sys.version_info < (2, 7):
-                    round_fn = py_26_round_fn
-                else:
-                    round_fn = None
-
                 # Encode the MVT
                 mvt_tile = mapbox_vector_tile.encode(
                     [new_layer],
                     quantize_bounds=tile_bbox.bounds,
                     y_coord_down=False,
-                    round_fn=round_fn)
+                    round_fn=None)
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
@@ -324,33 +318,6 @@ def create_vector_mrf(input_file_path,
     fout.close()
 
     return True
-
-
-# UTILITY FUNCTIONS
-"""
-mapbox_vector_tile module is not compatible with Python 2.6's decimal handling, so we
-use a modified rounding function if necessary.
-ref: http://stackoverflow.com/questions/8000318/conversion-from-float-to-decimal-in-python-2-6-how-to-do-it-and-why-they-didnt
-"""
-
-
-def py_26_float_to_decimal(f):  # mapbox_vector_tile monkeypatch for python 2.6
-    "Convert a floating point number to a Decimal with no loss of information"
-    n, d = f.as_integer_ratio()
-    numerator, denominator = decimal.Decimal(n), decimal.Decimal(d)
-    ctx = decimal.Context(prec=60)
-    result = ctx.divide(numerator, denominator)
-    while ctx.flags[decimal.Inexact]:
-        ctx.flags[decimal.Inexact] = False
-        ctx.prec *= 2
-        result = ctx.divide(numerator, denominator)
-    return result
-
-
-def py_26_round_fn(val):  # mapbox_vector_tile monkeypatch for python 2.6
-    d = py_26_float_to_decimal(val)
-    rounded = d.quantize(1, rounding=decimal.ROUND_HALF_EVEN)
-    return float(rounded)
 
 
 def get_tms(target_x, target_y, extents, tile_size, o_levels, proj):

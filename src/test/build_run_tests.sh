@@ -37,11 +37,11 @@ echo "export LCDIR=/etc/onearth/config" >> /home/onearth/.bashrc
 sudo chkconfig --level 234 httpd on
 
 # INSTALL TEST DEPENDENCIES
-sudo yum install -y python-pip
+sudo yum install -y python3-devel
 cd /home/onearth/onearth/src/test
-sudo pip install -r requirements.txt
+sudo pip3 install -r requirements.txt
 
 # RUN TESTS
-sudo python /home/onearth/onearth/src/test/test_configure_layer.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
-sudo python /home/onearth/onearth/src/test/test_mod_onearth.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
-sudo python /home/onearth/onearth/src/test/test_mrfgen.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
+sudo python3 /home/onearth/onearth/src/test/test_configure_layer.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
+sudo python3 /home/onearth/onearth/src/test/test_mod_onearth.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3
+sudo python3 /home/onearth/onearth/src/test/test_mrfgen.py >> /home/onearth/test_results/test_results.xml 3>&1 1>&2 2>&3

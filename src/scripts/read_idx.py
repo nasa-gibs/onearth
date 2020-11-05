@@ -43,7 +43,6 @@ versionNumber = '1.4.0'
     
 #-------------------------------------------------------------------------------   
 
-print('Python v' + sys.version)
 print('read_idx.py v' + versionNumber)
 
 usageText = 'read_idx.py --index [index_file] --output [output_file]'

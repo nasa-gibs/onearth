@@ -31,7 +31,6 @@ yum install -y \
   yum-utils \
   apr-devel \
   proj-devel \
-  python2-pip \
   python3-devel
   
 yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" \

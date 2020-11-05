@@ -29,8 +29,8 @@ cp -R /test /build/
 
 (
   cd /build/test
-  pip install -r requirements.txt
-  python test_mod_onearth.py -o /results/test_results.xml
+  pip3 install -r requirements.txt
+  python3 test_mod_onearth.py -o /results/test_results.xml
 )
 
 chown "$DOCKER_UID:$DOCKER_GID" /results/test_results.xml

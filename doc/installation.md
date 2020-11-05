@@ -5,7 +5,7 @@ This are instructions on how to install OnEarth on CentOS/RedHat Linux 7.5 or gr
 ## Preconditions
 
 * Apache 2.4
-* Python 2.7
+* Python 3.6
 
 ## RPM Installation
 
@@ -32,7 +32,7 @@ sudo yum -y install onearth-*
 Install python packages via pip from the [requirements.txt](../docker/el7/pip-requirements.txt) file; required for OnEarth configuration and MRF generation tools
 
 ```
-sudo pip install -r pip-requirements.txt
+sudo pip3 install -r pip-requirements.txt
 ```
 
 For manual installation or to install or another OS, please refer to the specific component:
@@ -132,8 +132,8 @@ OnEarth Mapserver
 /usr/bin/tile4ms
 /usr/lib64/libmapserver.so*
 /usr/include/mapserver/*
-/usr/lib64/python2.6/site-packages/_mapscript*
-/usr/lib64/python2.6/site-packages/mapscript*
+/usr/lib64/python3.6/site-packages/_mapscript*
+/usr/lib64/python3.6/site-packages/mapscript*
 ```
 
 vectorgen
