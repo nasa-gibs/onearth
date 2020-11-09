@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -60,7 +60,7 @@ class TestOELegends(unittest.TestCase):
         self.colormaps = eval(test_config.read())
         self.colormap_files = []
         test_config.close()
-        for key, value in self.colormaps.iteritems():
+        for key, value in self.colormaps.items():
             colormap = self.testdata_path + key + ".xml"
             self.colormap_files.append(colormap)
             if os.path.isfile(colormap) == False:
@@ -69,7 +69,7 @@ class TestOELegends(unittest.TestCase):
     def test_generate_mrf(self):
         new_colormaps = self.colormaps.copy()
         hasher = hashlib.md5()
-        for key, value in self.colormaps.iteritems():
+        for key, value in self.colormaps.items():
             colormap = self.testdata_path + key + ".xml"
             filename = os.path.splitext(colormap)[0]
             png_v = oe_generate_legend + " -c " + colormap + " -f png -r vertical -o " + filename + "_v.png"
@@ -85,25 +85,26 @@ class TestOELegends(unittest.TestCase):
             png_h_hash = value["png_h"]
             svg_v_hash = value["svg_v"]
             svg_h_hash = value["svg_h"]
-            png_v_file = open(filename + "_v.png", "r")
-            png_h_file = open(filename + "_h.png", "r")
+            png_v_file = open(filename + "_v.png", "rb")
+            png_h_file = open(filename + "_h.png", "rb")
             svg_v_file = open(filename + "_v.svg", "r")
             svg_v_file_str = ""
             svg_v_file_str = re.sub('(id="[#A-Za-z0-9]{11,15}")', '', svg_v_file.read())
             svg_v_file_str = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', svg_v_file_str)
-            svg_v_file_str = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', svg_v_file_str)
+            svg_v_file_str = re.sub(r'(clip-path="url\([#A-Za-z0-9]{12}\)")', '', svg_v_file_str)
+
             svg_h_file = open(filename + "_h.svg", "r")
             svg_h_file_str = ""
             svg_h_file_str = re.sub('(id="[#A-Za-z0-9]{11,15}")', '', svg_h_file.read())
             svg_h_file_str = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', svg_h_file_str)
-            svg_h_file_str = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', svg_h_file_str)
+            svg_h_file_str = re.sub(r'(clip-path="url\([#A-Za-z0-9]{12}\)")', '', svg_h_file_str)
             hasher.update(png_v_file.read())
             new_colormaps[key]["png_v"] = hasher.hexdigest()
             hasher.update(png_h_file.read())
             new_colormaps[key]["png_h"] = hasher.hexdigest()
-            hasher.update(svg_v_file_str)
+            hasher.update(svg_v_file_str.encode('utf-8'))
             new_colormaps[key]["svg_v"] = hasher.hexdigest()
-            hasher.update(svg_h_file_str)
+            hasher.update(svg_h_file_str.encode('utf-8'))
             new_colormaps[key]["svg_h"] = hasher.hexdigest()
             png_v_file.close()
             png_h_file.close()
@@ -111,13 +112,13 @@ class TestOELegends(unittest.TestCase):
             svg_h_file.close()
             
             if png_v_hash != new_colormaps[key]["png_v"]:
-                print 'Vertical PNG legend for ' + key + ' does not match expected.'
+                print('Vertical PNG legend for ' + key + ' does not match expected.')
             if png_h_hash != new_colormaps[key]["png_h"]:
-                print 'Horizontal PNG legend for ' + key + ' does not match expected.'
+                print('Horizontal PNG legend for ' + key + ' does not match expected.')
             if new_colormaps[key]["svg_v"] != svg_v_hash:
-                print 'Vertical SVG legend for ' + key + ' does not match expected.'
+                print('Vertical SVG legend for ' + key + ' does not match expected.')
             if new_colormaps[key]["svg_h"] != svg_h_hash:
-                print 'Horizontal SVG legend for ' + key + ' does not match expected.'
+                print('Horizontal SVG legend for ' + key + ' does not match expected.')
 
         new_config = open(self.testdata_path + 'new_colormaps.json', 'w')
         json.dump(new_colormaps, new_config, sort_keys=True, indent=4)
@@ -129,8 +130,8 @@ class TestOELegends(unittest.TestCase):
             os.remove(self.testdata_path + 'new_colormaps.json')
         else:
             f = open(self.testdata_path + 'new_colormaps.json', 'r')
-            print "\nResults:\n"
-            print f.read()
+            print("\nResults:\n")
+            print(f.read())
             f.close()
 
 if __name__ == '__main__':
@@ -151,6 +152,6 @@ if __name__ == '__main__':
     main_test_suite.addTests(test_loader.loadTestsFromTestCase(TestOELegends))
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         test_runner = xmlrunner.XMLTestRunner(output=f)
         test_runner.run(main_test_suite)

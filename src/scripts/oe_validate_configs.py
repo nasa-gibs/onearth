@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -88,7 +88,7 @@ def parse_apache_config(filename, env, sigevent_url, verbose, eval_final_locatio
     try:
         apache_config = open(filename, 'r')
         if verbose:
-            print ('Opening config file: ' + filename + '\n')
+            print(('Opening config file: ' + filename + '\n'))
     except IOError:
         errors += 1
         error_msg = "Cannot read Apache configuration file: " + filename
@@ -133,9 +133,9 @@ def parse_oe_layer_config(filename, env, sigevent_url, verbose):
     try:
         layer_config=open(filename, 'r')
         if verbose:
-            print ('\nUsing OnEarth later config: ' + filename + '\n')
+            print(('\nUsing OnEarth later config: ' + filename + '\n'))
         layer_config.close()
-        print "OnEarth layer configuration validation is not yet supported"
+        print("OnEarth layer configuration validation is not yet supported")
     except IOError:
         errors += 1
         error_msg = "Cannot read OnEarth layer configuration file: " + filename
@@ -161,7 +161,7 @@ def eval_top_directive (directive, env, service_type, origin_file, sigevent_url,
             log_sig_err(error_msg, sigevent_url)
         else:
             if verbose:
-                print "Validating " + directive.open_tag
+                print("Validating " + directive.open_tag)
             directory = add_trailing_slash(directive.open_tag.replace("<Directory ","").replace(">",""))
             if service_type == "wmts":
                 if directory.startswith(str(env.reprojectLayerConfigLocation_wmts)) == False:
@@ -356,7 +356,7 @@ def evaluate_tWMSConfigurationFile (config, env, service_type, sigevent_url, ver
     # Search for all matching TWMS configs
     config_base_path = config.split("${layer}")[0]     
     if verbose:
-        print "Search for TWMS configuration files in " + config_base_path
+        print("Search for TWMS configuration files in " + config_base_path)
     if not os.path.isdir(config_base_path):
         errors += 1
         error_msg = config_base_path + " is not a valid location"
@@ -387,7 +387,7 @@ def evaluate_tWMSConfigurationFile (config, env, service_type, sigevent_url, ver
                 twms_directive_rules["SourcePostfix"] = SourcePostfix
                 
                 if verbose:
-                    print "Validating " + twms_config_file
+                    print("Validating " + twms_config_file)
                 apache_parse_obj = parse_config.ParseApacheConfig(apache_config_path=twms_config_file)
                 twms_config = apache_parse_obj.parse_config()
                 
@@ -411,7 +411,7 @@ def evaluate_ReprojectConfigurationFiles (source_config, reproject_config, env, 
     
     # Validate source reproject config
     if verbose:
-        print "Validating " + source_config
+        print("Validating " + source_config)
     if not os.path.isfile(source_config):
         errors += 1
         error_msg = source_config + " is not a valid location"
@@ -440,7 +440,7 @@ def evaluate_ReprojectConfigurationFiles (source_config, reproject_config, env, 
         
     # Validate source reproject config
     if verbose:
-        print "Validating " + reproject_config
+        print("Validating " + reproject_config)
     if not os.path.isfile(reproject_config):
         errors += 1
         error_msg = reproject_config + " is not a valid location"
@@ -487,7 +487,7 @@ def diff_configs (source_configs, destination_configs, verbose):
             # Search for all configs
             config_base_path = config.split("${layer}")[0]
             if verbose:
-                print "Search for configuration files in " + config_base_path
+                print("Search for configuration files in " + config_base_path)
             if not os.path.isdir(config_base_path):
                 errors += 1
                 error_msg = config_base_path + " is not a valid location"
@@ -516,14 +516,14 @@ def diff_configs (source_configs, destination_configs, verbose):
     for idx, destination_config in enumerate(destination_list):
         source_config = source_list[idx]
         if verbose:
-            print "Comparing " + source_config + " with " + destination_config
+            print("Comparing " + source_config + " with " + destination_config)
         try:
             source_file = open(source_config, 'r')
             if verbose:
-                print ('Reading config file: ' + source_config)
+                print(('Reading config file: ' + source_config))
             destination_file = open(destination_config, 'r')
             if verbose:
-                print ('Reading config file: ' + destination_config)
+                print(('Reading config file: ' + destination_config))
             diff = difflib.ndiff(source_file.readlines(), destination_file.readlines())
             delta = ''.join(x[2:] for x in diff if x.startswith('- '))
             source_file.close()
@@ -539,7 +539,7 @@ def diff_configs (source_configs, destination_configs, verbose):
     return errors, msg
 
 
-print 'oe_validate_configs.py v' + versionNumber
+print('oe_validate_configs.py v' + versionNumber)
 
 usageText = 'oe_validate_configs.py --input [input file] --verbose'
 
@@ -646,18 +646,18 @@ else: # default apache
     errors, error_msg = parse_apache_config(input_filename, env, sigevent_url, options.verbose, eval_final_location = not options.ignore_final_files, eval_staging_location = not options.ignore_staged_files)
     
 if diff_filename is not None:
-    print "\nExecuting diff with: " + diff_filename + "\n"
+    print("\nExecuting diff with: " + diff_filename + "\n")
     try:
         apache_config = open(input_filename, 'r')
         if verbose:
-            print ('Reading config file: ' + input_filename)
+            print(('Reading config file: ' + input_filename))
         diff_config = open(diff_filename, 'r')
         if verbose:
-            print ('Reading config file: ' + diff_filename)
+            print(('Reading config file: ' + diff_filename))
         diff = difflib.ndiff(apache_config.readlines(), diff_config.readlines())
         # print '\n'.join(diff)
         delta = ''.join(x for x in diff if x.startswith('- ') or x.startswith('+ '))
-        print '\n' + delta
+        print('\n' + delta)
         apache_config.close()
         diff_config.close()
     except IOError:
@@ -666,18 +666,18 @@ if diff_filename is not None:
 
 # Print summary of errors
 if errors > 0:
-    print error_msg
+    print(error_msg)
 else:
-    print "Validation successful - no errors were found"
+    print("Validation successful - no errors were found")
 
 if replace:
     if errors == 0:
-        print "\nReplacing " + diff_filename + " with " + input_filename + "\n"
+        print("\nReplacing " + diff_filename + " with " + input_filename + "\n")
         shutil.copyfile(input_filename, diff_filename)
     else:
         log_sig_err("\nUnable to replace " + diff_filename + " with " + input_filename + " due to unsuccessful validation\n", sigevent_url)
 
-print 'oe_validate_configs completed'
+print('oe_validate_configs completed')
 if errors == 0:
     sys.exit(0)
 else:

@@ -15,7 +15,7 @@
 `yum install spatialindex-devel libxml2-devel libxslt-devel`
 
 #### Install Python dependencies with pip
-`pip install -r requirements.txt`
+`pip3 install -r requirements.txt`
 
 ## Making MVT MRFs
 

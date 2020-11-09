@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -51,8 +51,8 @@ import sys
 import time
 import socket
 import subprocess
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 import re
 from oe_utils import sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, check_abs_path
@@ -98,8 +98,8 @@ def read_colormap(colormap_filename, sigevent_url):
     except IOError: # try http URL
         log_info_mssg("Unable to find file, trying as URL: " + colormap_filename)
         try:
-            dom = xml.dom.minidom.parse(urllib.urlopen(colormap_filename))
-        except IOError, e:
+            dom = xml.dom.minidom.parse(urllib.request.urlopen(colormap_filename))
+        except IOError as e:
             log_sig_exit("ERROR", str(e), sigevent_url)
     # ColorMap parameters
     colorMaps = dom.getElementsByTagName('ColorMap')
@@ -160,7 +160,7 @@ def read_color_table(image, sigevent_url):
     
 #-------------------------------------------------------------------------------   
 
-print 'oe_validate_palette.py v' + versionNumber
+print('oe_validate_palette.py v' + versionNumber)
 
 usageText = 'oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --no_index --ignore_colors --verbose'
 
@@ -366,7 +366,7 @@ if len(image_only) > 0:
         log_info_mssg(("\nExtra palette entries     : " + str(len(ex_image_only)) + "\n") + "\n".join(ex_image_only))
     else:
         log_info_mssg(("\nExtra palette entries     : " + str(len(image_only)) + "\n") + "\n".join(image_only))
-print "\n"   
+print("\n")   
 
 summary = "Summary:\nMatched palette entries   : " + str(len(match_colors))
 if verbose or len(image_only) > 0 or len(colormap_only) > 0:
@@ -388,7 +388,7 @@ else:
 
 try:
     sigevent(sig_status, summary, sigevent_url)
-except urllib2.URLError:
+except urllib.error.URLError:
     None
 
 exit_code = 0

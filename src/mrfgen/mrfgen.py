@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -79,10 +79,9 @@ import sys
 import time
 import datetime
 import socket
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
-import string
 import shutil
 import imghdr
 import sqlite3
@@ -656,7 +655,7 @@ def parallel_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, 
         log_info_mssg("Splitting list of length {} into chunks of size {}".format(len(tiles), len(tiles) // no_pools))
 
         def chunks(l, n):
-            for i in xrange(0, len(l), n):
+            for i in range(0, len(l), n):
                 yield l[i:i+n]
 
         random.shuffle(tiles) # shuffle tiles to avoid overlaps as much as possible
@@ -949,7 +948,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
             try:
                 cur.executescript(create_script)
                 con.commit()
-            except sqlite3.Error, e:
+            except sqlite3.Error as e:
                 mssg = "%s:" % e.args[0]
                 if "database schema has changed" in mssg: # in case two processes attempt to create schema at once
                     log_sig_warn(mssg + zdb_out, sigevent_url)
@@ -977,7 +976,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
                 if lid == 0:
                     try:
                         cur.execute("INSERT INTO ZINDEX(z, key_str) VALUES (0,'"+zkey+"')")
-                    except sqlite3.Error, e: # if 0 index has already been taken
+                    except sqlite3.Error as e: # if 0 index has already been taken
                         log_info_mssg("%s: trying new ID" % e.args[0])
                         cur.execute("INSERT INTO ZINDEX(key_str) VALUES ('"+zkey+"')")
                 else:
@@ -1001,7 +1000,7 @@ def insert_zdb(mrf, zlevels, zkey, source_url, scale, offset, units):
                     con = None
                     log_info_mssg("Successfully committed record to " + zdb_out)
         
-    except sqlite3.Error, e:
+    except sqlite3.Error as e:
         if con:
             con.rollback()
             con.close()
@@ -1439,7 +1438,7 @@ logfile_dir = add_trailing_slash(check_abs_path(logfile_dir))
 script_dir = add_trailing_slash(os.path.dirname(os.path.abspath(__file__)))
 
 # Ensure that mrf_compression_type is uppercase.
-mrf_compression_type=string.upper(mrf_compression_type)
+mrf_compression_type=mrf_compression_type.upper()
 
 # Verify logfile_dir first so that the log can be started.
 verify_directory_path_exists(logfile_dir, 'logfile_dir', sigevent_url)
@@ -1721,8 +1720,8 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     try:
                         log_info_mssg(mssg)
                         # sigevent('INFO', mssg, sigevent_url)
-                    except urllib2.URLError:
-                        print 'sigevent service is unavailable'
+                    except urllib.error.URLError:
+                        print('sigevent service is unavailable')
                     # Replace with new tiles
                     alltiles[i] = output_tile
                 else:
@@ -2025,7 +2024,7 @@ if len(mrf_list) > 0:
     try:
         log_info_mssg(mssg)
         # sigevent('INFO', mssg, sigevent_url)
-    except urllib2.URLError:
+    except urllib.error.URLError:
         None
 
     # Exit mrfgen because we are done
@@ -2368,7 +2367,7 @@ if idxf >= vrtf:
             overview=2
             gdaladdo_command_list.append(str(overview))
             exp=2
-            while (overview*long(mrf_blocksize)) < actual_size:
+            while (overview*int(mrf_blocksize)) < actual_size:
                 overview=2**exp
                 exp=exp+1
                 gdaladdo_command_list.append(str(overview))
@@ -2473,7 +2472,7 @@ mssg=str().join(['MRF created:  ', out_filename])
 try:
     log_info_mssg(mssg)
     # sigevent('INFO', mssg, sigevent_url)
-except urllib2.URLError:
+except urllib.error.URLError:
     None
 sys.exit(errors)
 

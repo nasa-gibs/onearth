@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -47,8 +47,8 @@ from optparse import OptionParser
 import re
 import hashlib
 import oe_test_utils as testutils
-from cStringIO import StringIO
-from oe_test_utils import DebuggingServerThread, make_dir_tree, find_string, get_layer_config, run_command, file_text_replace
+from io import StringIO
+from oe_test_utils import DebuggingServerThread, make_dir_tree, find_string, find_string_binary, get_layer_config, run_command, file_text_replace
 
 DEBUG = False
 
@@ -138,9 +138,9 @@ class TestLayerConfig(unittest.TestCase):
         os.remove(wmts_cache_xml)
         self.assertTrue(contains_layer, 'Default layer config test -- WMTS GetCapabilities does not contain layer')
 
-        # Unicode weirdness in the binary configs necessitates running str() on the search strings
-        search_string = str('SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=' + config['identifier'] + '&STYLE=(default)?&TILEMATRIXSET=EPSG3413_500m&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg')
-        contains_layer = find_string(wmts_cache_file, search_string)
+        # Must search in binary mode in binary configs (i.e. text is ascii)
+        search_string = bytes('SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=' + config['identifier'] + '&STYLE=(default)?&TILEMATRIXSET=EPSG3413_500m&TILEMATRIX=[0-9]*&TILEROW=[0-9]*&TILECOL=[0-9]*&FORMAT=image%2Fjpeg', 'ascii')
+        contains_layer = find_string_binary(wmts_cache_file, search_string)
         os.remove(wmts_cache_file)
         os.remove(twms_cache_xml)
         self.assertTrue(contains_layer, 'Default layer config test -- WMTS cache configuration does not contain layer')
@@ -155,8 +155,9 @@ class TestLayerConfig(unittest.TestCase):
         os.remove(twms_ts_file)
         self.assertTrue(contains_layer, 'Default layer config test -- GetTileService does not contain layer')
 
-        search_string = str('request=GetMap&layers=' + config['prefix'] + '&srs=EPSG:3413&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]')
-        contains_layer = find_string(twms_cache_file, search_string)
+        # Must search in binary mode in binary configs (i.e. text is ascii)
+        search_string = bytes('request=GetMap&layers=' + config['prefix'] + r'&srs=EPSG:3413&format=image%2Fjpeg&styles=&width=512&height=512&bbox=[-,\.0-9+Ee]', 'ascii')
+        contains_layer = find_string_binary(twms_cache_file, search_string)
         os.remove(twms_cache_file)
         self.assertTrue(contains_layer, 'Default layer config test -- TWMS cache configuration does not contain layer')
 
@@ -195,31 +196,31 @@ class TestLayerConfig(unittest.TestCase):
         hasher = hashlib.md5()
         stripped_file = ''
         try:
-            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.png'), 'r') as f:
+            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.png'), 'rb') as f:
                 file_str = f.read()
-                stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
-                stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
-                stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
+                stripped_file = re.sub(b'(id="[#A-Za-z0-9]{11}")', '', file_str)
+                stripped_file = re.sub(b'(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
+                stripped_file = re.sub(b'(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
                 hasher.update(stripped_file)
                 h_png_legend_hash = hasher.hexdigest()
         except OSError:
             raise ValueError('Horizontal PNG legend not generated')
         try:
-            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.svg'), 'r') as f:
+            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_H.svg'), 'rb') as f:
                 file_str = f.read()
-                stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
-                stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
-                stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
+                stripped_file = re.sub(b'(id="[#A-Za-z0-9]{11}")', b'', file_str)
+                stripped_file = re.sub(b'(xlink:href="[#A-Za-z0-9]{12}")', b'', stripped_file)
+                stripped_file = re.sub(b'(clip-path="url\([#A-Za-z0-9]{12}\)")', b'', stripped_file)
                 hasher.update(stripped_file)
                 h_svg_legend_hash = hasher.hexdigest()
         except OSError:
             raise ValueError('Horizontal SVG legend not generated')
         try:
-            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_V.svg'), 'r') as f:
+            with open(os.path.join(config['legend_location'], 'MODIS_Aqua_Aerosol-GIBS_colormap' + '_V.svg'), 'rb') as f:
                 file_str = f.read()
-                stripped_file = re.sub('(id="[#A-Za-z0-9]{11}")', '', file_str)
-                stripped_file = re.sub('(xlink:href="[#A-Za-z0-9]{12}")', '', stripped_file)
-                stripped_file = re.sub('(clip-path="url\([#A-Za-z0-9]{12}\)")', '', stripped_file)
+                stripped_file = re.sub(b'(id="[#A-Za-z0-9]{11}")', b'', file_str)
+                stripped_file = re.sub(b'(xlink:href="[#A-Za-z0-9]{12}")', b'', stripped_file)
+                stripped_file = re.sub(b'(clip-path="url\([#A-Za-z0-9]{12}\)")', b'', stripped_file)
                 hasher.update(stripped_file)
                 v_svg_legend_hash = hasher.hexdigest()
         except OSError:
@@ -293,7 +294,7 @@ class TestLayerConfig(unittest.TestCase):
         run_command(cmd)
 
         # Verify hash
-        with open(config['empty_tile'], 'r') as f:
+        with open(config['empty_tile'], 'rb') as f:
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
@@ -309,7 +310,7 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_continuous_period_detection(self):
         if DEBUG:
-            print '\nTESTING CONTINUOUS PERIOD DETECTION...'
+            print('\nTESTING CONTINUOUS PERIOD DETECTION...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_period_detection.xml')
 
@@ -339,18 +340,18 @@ class TestLayerConfig(unittest.TestCase):
 
                 # Check to see if proper period in GetCapabilities
                 wmts_gc_file = os.path.join(config['wmts_gc_path'], 'getCapabilities.xml')
-                twms_gc_file = os.path.join(config['twms_gc_path'], 'getCapabilities.xml')
+                #twms_gc_file = os.path.join(config['twms_gc_path'], 'getCapabilities.xml')
 
                 # Build GC search string
                 search_string = "<Value>" + test_dates[0].date().isoformat() + "/" + test_dates[-1].date().isoformat() + "/P{0}{1}</Value>".format(period_length, period_unit[0].upper())
 
                 # Create debug output message
                 if DEBUG:
-                    print 'Testing with {0} {1} periods'.format(period_length, period_unit)
-                    print 'Creating dates: '
+                    print('Testing with {0} {1} periods'.format(period_length, period_unit))
+                    print('Creating dates: ')
                     for date in test_dates:
-                        print date.isoformat()
-                    print '\n' + 'Searching for string in GetCapabilities: ' + search_string
+                        print(date.isoformat())
+                    print('\n' + 'Searching for string in GetCapabilities: ' + search_string)
 
                 # Check to see if string exists in the GC files
                 wmts_error = "{0} {1} continuous period detection failed -- not found in WMTS GetCapabilities".format(period_length, period_unit)
@@ -369,7 +370,7 @@ class TestLayerConfig(unittest.TestCase):
 
     def test_intermittent_period_detection(self):
         if DEBUG:
-            print '\nTESTING INTERMITTENT PERIOD DETECTION...'
+            print('\nTESTING INTERMITTENT PERIOD DETECTION...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_period_detection.xml')
 
@@ -410,13 +411,13 @@ class TestLayerConfig(unittest.TestCase):
 
                 # Create debug output message
                 if DEBUG:
-                    print '\n' + 'Creating dates: '
+                    print('\n' + 'Creating dates: ')
                     dates = [date for date in interval for interval in test_intervals]
                     for date in dates:
-                        print date.isoformat()
-                    print '\n' + 'Searching for string(s) in GetCapabilities: '
+                        print(date.isoformat())
+                    print('\n' + 'Searching for string(s) in GetCapabilities: ')
                     for string in search_strings:
-                        print search_string
+                        print(search_string)
 
                 # Check to see if string exists in the GC files
                 wmts_error = "{0} {1} intermittent period detection failed -- not found in WMTS GetCapabilities".format(period_length, period_unit)
@@ -439,7 +440,7 @@ class TestLayerConfig(unittest.TestCase):
         Checks that the start and end periods of a z-level file are being correctly detected.
         """
         if DEBUG:
-            print '\nTESTING CONTINUOUS Z-LEVEL PERIOD DETECTION...'
+            print('\nTESTING CONTINUOUS Z-LEVEL PERIOD DETECTION...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_zindex_detect.xml')
         test_periods = (('minutes', 1), ('minutes', 5), ('hours', 1))
@@ -472,10 +473,10 @@ class TestLayerConfig(unittest.TestCase):
 
             # Create debug output message
             if DEBUG:
-                print 'Testing with {0} {1} periods'.format(period_length, period_unit)
-                print 'Creating ZDB with dates: '
+                print('Testing with {0} {1} periods'.format(period_length, period_unit))
+                print('Creating ZDB with dates: ')
                 for date in test_dates:
-                    print date.isoformat()
+                    print(date.isoformat())
 
             # Populate the dates in the ZDB
             for i, date in enumerate(test_dates):
@@ -496,7 +497,7 @@ class TestLayerConfig(unittest.TestCase):
             # Build GC search string
             search_string = "<Value>" + test_dates[0].isoformat() + "Z/" + test_dates[-1].isoformat() + "Z</Value>"
             if DEBUG:
-                print '\n' + 'Searching for string in GetCapabilities: ' + search_string
+                print('\n' + 'Searching for string in GetCapabilities: ' + search_string)
 
             # Check to see if string exists in the GC files
             error = "{0} {1} continuous z-level period detection failed -- not found in WMTS GetCapabilities".format(period_length, period_unit)
@@ -517,7 +518,7 @@ class TestLayerConfig(unittest.TestCase):
         Checks that the start and end periods of a z-level file are being correctly detected.
         """
         if DEBUG:
-            print '\nTESTING INTERMITTENT Z-LEVEL PERIOD DETECTION...'
+            print('\nTESTING INTERMITTENT Z-LEVEL PERIOD DETECTION...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_zindex_detect.xml')
         test_periods = (('minutes', 1), ('minutes', 5), ('hours', 1))
@@ -550,10 +551,10 @@ class TestLayerConfig(unittest.TestCase):
 
             # Create debug output message (flatten array w/ itertools)
             if DEBUG:
-                print 'Testing with {0} {1} periods'.format(period_length, period_unit)
-                print 'Creating ZDB with dates: '
+                print('Testing with {0} {1} periods'.format(period_length, period_unit))
+                print('Creating ZDB with dates: ')
                 for date in itertools.chain.from_iterable(test_intervals):
-                    print date.isoformat()
+                    print(date.isoformat())
 
             # Populate the dates in the ZDB (flatten array w/ itertools)
             for i, date in enumerate(itertools.chain.from_iterable(test_intervals)):
@@ -580,9 +581,9 @@ class TestLayerConfig(unittest.TestCase):
                 search_strings.append(search_string)
 
             if DEBUG:
-                print '\n' + 'Searching for strings in GetCapabilities: '
+                print('\n' + 'Searching for strings in GetCapabilities: ')
                 for string in search_strings:
-                    print string
+                    print(string)
 
             # Check to see if string exists in the GC files
             error = "{0} {1} intermittent z-level period detection failed -- not found in WMTS GetCapabilities".format(period_length, period_unit)
@@ -605,7 +606,7 @@ class TestLayerConfig(unittest.TestCase):
         the z-index.
         """
         if DEBUG:
-            print '\nTESTING LEGACY SUBDAILY CONTINUOUS PERIOD DETECTION...'
+            print('\nTESTING LEGACY SUBDAILY CONTINUOUS PERIOD DETECTION...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_subdaily_detect.xml')
         start_datetime = datetime.datetime(2014, 6, 1, 12)
@@ -629,10 +630,10 @@ class TestLayerConfig(unittest.TestCase):
 
                 # Create debug output message
                 if DEBUG:
-                    print '\nTesting with {0} {1} periods'.format(period_length, period_unit)
-                    print 'Creating legacy subdaily files with dates: '
+                    print('\nTesting with {0} {1} periods'.format(period_length, period_unit))
+                    print('Creating legacy subdaily files with dates: ')
                     for date in test_dates:
-                        print date.isoformat()
+                        print(date.isoformat())
 
                 # Run layer config command
                 cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
@@ -648,7 +649,7 @@ class TestLayerConfig(unittest.TestCase):
                 search_result = find_string(wmts_gc_file, search_string)
 
                 if DEBUG:
-                    print '\n' + 'Searching for string in GetCapabilities: ' + search_string
+                    print('\n' + 'Searching for string in GetCapabilities: ' + search_string)
 
                 # Cleanup
                 rmtree(config['wmts_gc_path'])
@@ -667,7 +668,7 @@ class TestLayerConfig(unittest.TestCase):
         the z-index.
         """
         if DEBUG:
-            print '\nTESTING LEGACY SUBDAILY INTERMITTENT PERIOD DETECTION...'
+            print('\nTESTING LEGACY SUBDAILY INTERMITTENT PERIOD DETECTION...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_subdaily_detect.xml')
         start_datetime = datetime.datetime(2014, 6, 1, 12)
@@ -690,10 +691,10 @@ class TestLayerConfig(unittest.TestCase):
 
                 # Create debug output message (flatten array w/ itertools)
                 if DEBUG:
-                    print '\nTesting with {0} {1} periods'.format(period_length, period_unit)
-                    print 'Creating legacy subdaily files with dates: '
+                    print('\nTesting with {0} {1} periods'.format(period_length, period_unit))
+                    print('Creating legacy subdaily files with dates: ')
                     for date in itertools.chain.from_iterable(test_intervals):
-                        print date.isoformat()
+                        print(date.isoformat())
 
                 # Run layer config command
                 cmd = 'oe_configure_layer -l {0} -z -e -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
@@ -710,9 +711,9 @@ class TestLayerConfig(unittest.TestCase):
                     search_strings.append(search_string)
 
                 if DEBUG:
-                    print '\n' + 'Searching for strings in GetCapabilities: '
+                    print('\n' + 'Searching for strings in GetCapabilities: ')
                     for string in search_strings:
-                        print string
+                        print(string)
 
                 # Check to see if string exists in the GC files
                 error = "{0} {1} continuous subdaily legacy period detection failed -- not found in WMTS GetCapabilities".format(period_length, period_unit)
@@ -733,7 +734,7 @@ class TestLayerConfig(unittest.TestCase):
         in the output Mapfile.
         """
         if DEBUG:
-            print '\nTESTING THAT MAPFILE LAYER CONTENTS ARE INCLUDED IN GENERATED MAPFILE...'
+            print('\nTESTING THAT MAPFILE LAYER CONTENTS ARE INCLUDED IN GENERATED MAPFILE...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_vector_mapfile_layer_contents_inclusion.xml')
         config = get_layer_config(layer_config, self.archive_config)
@@ -756,7 +757,7 @@ class TestLayerConfig(unittest.TestCase):
         Checks that the <VectorType> tag is being read and included in the output Mapfile.
         """
         if DEBUG:
-            print '\nTESTING THAT VECTOR DATA TYPE IS INCLUDED IN GENERATED MAPFILE...'
+            print('\nTESTING THAT VECTOR DATA TYPE IS INCLUDED IN GENERATED MAPFILE...')
 
         layer_config = os.path.join(self.testfiles_path, 'conf/test_vector_mapfile_type_inclusion.xml')
         config = get_layer_config(layer_config, self.archive_config)
@@ -777,7 +778,7 @@ class TestLayerConfig(unittest.TestCase):
     def test_invalid_config(self):
         # Set config files for invalid compression
         if DEBUG:
-            print '\nTESTING INVALID COMPRESSION...'
+            print('\nTESTING INVALID COMPRESSION...')
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_compression.xml')
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -813,7 +814,7 @@ class TestLayerConfig(unittest.TestCase):
 
         # Set config files for invalid file path
         if DEBUG:
-            print '\nTESTING INVALID FILE PATH1...'
+            print('\nTESTING INVALID FILE PATH1...')
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path1.xml')
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -848,7 +849,7 @@ class TestLayerConfig(unittest.TestCase):
 
         # Set config files for invalid file path
         if DEBUG:
-            print '\nTESTING INVALID FILE PATH2...'
+            print('\nTESTING INVALID FILE PATH2...')
         layer_config = os.path.join(self.testfiles_path, 'conf/test_invalid_path2.xml')
         config = get_layer_config(layer_config, self.archive_config)
 
@@ -869,7 +870,7 @@ class TestLayerConfig(unittest.TestCase):
 
         # Set config files for invalid tilematrixset
         if DEBUG:
-            print '\nTESTING INVALID TILEMATRIXSET...'
+            print('\nTESTING INVALID TILEMATRIXSET...')
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
@@ -888,7 +889,7 @@ class TestLayerConfig(unittest.TestCase):
         run_command(cmd)
 
         # Verify hash
-        with open(config['empty_tile'], 'r') as f:
+        with open(config['empty_tile'], 'rb') as f:
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
@@ -905,7 +906,7 @@ class TestLayerConfig(unittest.TestCase):
     def test_mrf_configuration(self):
         # Set config files and reference hash for checking empty tile
         if DEBUG:
-            print '\nTESTING MRF CONFIGURATION...'
+            print('\nTESTING MRF CONFIGURATION...')
         layer_config = os.path.join(self.testfiles_path, 'conf/test_mrf_configuration.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
@@ -924,7 +925,7 @@ class TestLayerConfig(unittest.TestCase):
         run_command(cmd)
 
         # Verify hash
-        with open(config['empty_tile'], 'r') as f:
+        with open(config['empty_tile'], 'rb') as f:
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
@@ -941,7 +942,7 @@ class TestLayerConfig(unittest.TestCase):
     def test_mrf_header(self):
         # Set config files and reference hash for checking empty tile
         if DEBUG:
-            print '\nTESTING MRF HEADER...'
+            print('\nTESTING MRF HEADER...')
         layer_config = os.path.join(self.testfiles_path, 'conf/test_mrf_header.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
         config = get_layer_config(layer_config, self.archive_config)
@@ -960,7 +961,7 @@ class TestLayerConfig(unittest.TestCase):
         run_command(cmd)
 
         # Verify hash
-        with open(config['empty_tile'], 'r') as f:
+        with open(config['empty_tile'], 'rb') as f:
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
@@ -974,7 +975,7 @@ class TestLayerConfig(unittest.TestCase):
         # Check result
         self.assertEqual(ref_hash, tile_hash, "Generated empty tile does not match what's expected.")
 
-    def test_empty_tile_generation(self):
+    def test_empty_tile_generation2(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
         ref_hash = "e6dc90abcc221cb2f473a0a489b604f6"
@@ -994,7 +995,8 @@ class TestLayerConfig(unittest.TestCase):
         run_command(cmd)
 
         # Verify hash
-        with open(config['empty_tile'], 'r') as f:
+        with open(config['empty_tile'], 'rb') as f:
+          #  print('encoding = ' + chardet.detect(f.read())['encoding'])
             tile_hash = testutils.get_file_hash(f)
 
         # Cleanup -- make sure to get rid of staging files
@@ -1052,9 +1054,6 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue("category: oe_configure_layer" in result)
         self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
 
-    def tearDown(self):
-        rmtree(self.testfiles_path)
-
     def test_send_email_environment_config(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
@@ -1099,6 +1098,8 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue("category: oe_configure_layer" in result)
         self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
 
+     #   self.dddassertTrue(False, "throw assert")
+        
     def tearDown(self):
         rmtree(self.testfiles_path)
 
@@ -1115,7 +1116,7 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )

@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2015, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -43,7 +43,7 @@ versionNumber = '1.4.0'
     
 #-------------------------------------------------------------------------------   
 
-print 'read_idx.py v' + versionNumber
+print('read_idx.py v' + versionNumber)
 
 usageText = 'read_idx.py --index [index_file] --output [output_file]'
 
@@ -79,7 +79,7 @@ else:
     data_type = '>q'
    
 out = open(output, 'w')
-idx = open(index, 'r')
+idx = open(index, 'rb')
 
 out.write("idx_offset,data_offset,data_size\n")
 
@@ -90,12 +90,12 @@ while i <  os.path.getsize(index):
     offset = struct.unpack(data_type, byte[0:8])[0]
     size = struct.unpack(data_type, byte[8:16])[0]
     if options.verbose:
-        print str(i) + "," + str(offset) + "," + str(size)
+        print(str(i) + "," + str(offset) + "," + str(size))
     out.write(str(i) + "," + str(offset) + "," + str(size)+"\n")
     i+=16
     
-print str(i) + " bytes read"
-print "Wrote " + output
+print(str(i) + " bytes read")
+print("Wrote " + output)
 idx.close()
 out.close()
     

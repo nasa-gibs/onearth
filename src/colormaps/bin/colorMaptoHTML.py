@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,11 +39,8 @@ class ColorMapEntry():
     def __hash__(self):
         return hash(self.sourceValue)
 
-    def __cmp__(self, other):
-        return self.sourceValue.cmp(other.sourceValue)
-
     def __eq__(self, other):
-        return self.sourceValue.eq(other.sourceValue)
+        return self.sourceValue == other.sourceValue
 
 
 class Entries():
@@ -54,11 +51,8 @@ class Entries():
     def __hash__(self):
         return hash(self.minLabel)
 
-    def __cmp__(self, other):
-        return self.minLabel.cmp(other.minLabel)
-
     def __eq__(self, other):
-        return self.minLabel.eq(other.minLabel)
+        return self.minLabel == other.minLabel
 
 class LegendEntry():
     rgb         = ""
@@ -70,11 +64,8 @@ class LegendEntry():
     def __hash__(self):
         return hash(self.label)
 
-    def __cmp__(self, other):
-        return self.label.cmp(other.label)
-
     def __eq__(self, other):
-        return self.label.eq(other.label)
+        return self.label == other.Label
 
 
 class Legend():
@@ -102,12 +93,6 @@ class ColorMap():
     def __hash__(self):
         return hash(self.title)
 
-#    def __cmp__(self, other):
-#        return self.name.cmp(other.name)
-
-#    def __eq__(self, other):
-#        return self.name.eq(other.name)
-
 class ColorMaps():
     colormaps = []
     product   = ""
@@ -115,11 +100,8 @@ class ColorMaps():
     def __hash__(self):
         return hash(self.product)
 
-    def __cmp__(self, other):
-        return self.product.cmp(other.product)
-
     def __eq__(self, other):
-        return self.product.eq(other.product)
+        return self.product == other.product
 
 ## Global Variables ##
 colorMapsList = []
@@ -143,7 +125,7 @@ def parseColorMaps(sourceXml, fileName) :
 
     for colorMapNode in xmldoc.documentElement.getElementsByTagName("ColorMap") :
 
-        colorMapAttrDict = dict(colorMapNode.attributes.items())
+        colorMapAttrDict = dict(list(colorMapNode.attributes.items()))
         colorMap  = ColorMap()
         colorMap.title   = colorMapAttrDict.get('title', '')
         colorMap.units   = colorMapAttrDict.get('units', '')
@@ -162,7 +144,7 @@ def parseColorMaps(sourceXml, fileName) :
 ## START Parse Entries ##
 def parseEntries(entriesNode):
 
-    entriesAttrDict = dict(entriesNode.attributes.items())
+    entriesAttrDict = dict(list(entriesNode.attributes.items()))
 
     entries = Entries()
     entries.minLabel = entriesAttrDict.get('minLabel', '')
@@ -171,7 +153,7 @@ def parseEntries(entriesNode):
 
     for entryNode in entriesNode.getElementsByTagName("ColorMapEntry") :
 
-       entryAttrDict = dict(entryNode.attributes.items())
+       entryAttrDict = dict(list(entryNode.attributes.items()))
 
        cmEntry = ColorMapEntry()
 
@@ -203,7 +185,7 @@ def parseEntries(entriesNode):
 ## START Parse Legend ##
 def parseLegend(legendNode):
 
-    legendAttrDict = dict(legendNode.attributes.items())
+    legendAttrDict = dict(list(legendNode.attributes.items()))
 
     legend = Legend()
     legend.type     = legendAttrDict.get('type', '')
@@ -213,7 +195,7 @@ def parseLegend(legendNode):
 
     for entryNode in legendNode.getElementsByTagName("LegendEntry") :
 
-       legendAttrDict = dict(entryNode.attributes.items())
+       legendAttrDict = dict(list(entryNode.attributes.items()))
 
        legendEntry = LegendEntry()
 
@@ -287,8 +269,8 @@ def generateHTML(outputHtmlFile) :
         outputHandle.write("<p>Download Color Map file <a href=\"../" + colorMaps.product + "\">here</a><br><br>\n")
 
         for colorMap in colorMaps.colormaps :
-            outputHandle.write("<h2> ColorMap : Title '" + colorMap.title.encode("utf-8") + "'  Units '" + colorMap.units.encode("utf-8") + "'</h2>\n")
-            outputHandle.write("<h3> Entries : MinLabel '" + colorMap.entries.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.entries.maxLabel.encode("utf-8") + "'</h3>\n")
+            outputHandle.write("<h2> ColorMap : Title '" + colorMap.title + "'  Units '" + colorMap.units + "'</h2>\n")
+            outputHandle.write("<h3> Entries : MinLabel '" + colorMap.entries.minLabel + "'  MaxLabel '" + colorMap.entries.maxLabel + "'</h3>\n")
 
             outputHandle.write("<table>\n")
 
@@ -309,10 +291,10 @@ def generateHTML(outputHtmlFile) :
                        "<font color=\"" + ("black" if is_bright(entry.rgb) else "white") + "\">" + \
                        entry.rgb + "</font></td>\n")
                 outputHandle.write("    <td class='transparency'>" + str(entry.transparent) + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + (str(entry.sourceValue.encode('ascii', 'xmlcharrefreplace')) if entry.sourceValue != None else "") + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + (str(entry.value.encode('ascii', 'xmlcharrefreplace')) if entry.value != None else "") + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>\n")
-                outputHandle.write("    <td class='data-value'>" + (str(entry.ref.encode('ascii', 'xmlcharrefreplace')) if entry.ref != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.sourceValue) if entry.sourceValue != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.value) if entry.value != None else "") + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + entry.label + "</td>\n")
+                outputHandle.write("    <td class='data-value'>" + (str(entry.ref) if entry.ref != None else "") + "</td>\n")
                 outputHandle.write("    <td class='data-value'>" +  str(entry.nodata) + "</td>\n")
                 outputHandle.write("  </tr>\n")
 
@@ -321,7 +303,7 @@ def generateHTML(outputHtmlFile) :
             if colorMap.legend == None:
                 outputHandle.write("<h3>No Legend</h3>\n")
             else:
-                outputHandle.write("<h3> Legend : Type '" + colorMap.legend.type.encode("utf-8") + "'  MinLabel '" + colorMap.legend.minLabel.encode("utf-8") + "'  MaxLabel '" + colorMap.legend.maxLabel.encode("utf-8") + "'</h3>\n")
+                outputHandle.write("<h3> Legend : Type '" + colorMap.legend.type + "'  MinLabel '" + colorMap.legend.minLabel + "'  MaxLabel '" + colorMap.legend.maxLabel + "'</h3>\n")
 
                 outputHandle.write("<table>\n")
 
@@ -341,8 +323,8 @@ def generateHTML(outputHtmlFile) :
                                           ("black" if is_bright(entry.rgb) else "white") + "\">" + entry.rgb + "</font></td>\n")
                     outputHandle.write("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>\n")
                     outputHandle.write("    <td class='data-value'>" + ("True" if entry.showTick else "False") + "</td>\n")
-                    outputHandle.write("    <td class='data-value'>" + entry.label.encode('ascii', 'xmlcharrefreplace') + "</td>\n")
-                    outputHandle.write("    <td class='data-value'>" + (str(entry.id.encode('ascii', 'xmlcharrefreplace')) if entry.id != None else "") + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + entry.label + "</td>\n")
+                    outputHandle.write("    <td class='data-value'>" + (str(entry.id) if entry.id != None else "") + "</td>\n")
                     outputHandle.write("  </tr>\n")
 
                 outputHandle.write("</table>\n")

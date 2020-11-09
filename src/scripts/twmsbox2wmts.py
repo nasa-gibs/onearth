@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -71,8 +71,8 @@ def twmsbox2wmts(request_bbox, epsg):
     top_left_maxx = top_left_minx + x_size
     top_left_miny = top_left_maxy - y_size
     
-    print "Top Left BBOX:",str(top_left_minx)+","+str(top_left_miny)+","+str(top_left_maxx)+","+str(top_left_maxy)
-    print "Request BBOX:",str(request_minx)+","+str(request_miny)+","+str(request_maxx)+","+str(request_maxy)
+    print("Top Left BBOX:",str(top_left_minx)+","+str(top_left_miny)+","+str(top_left_maxx)+","+str(top_left_maxy))
+    print("Request BBOX:",str(request_minx)+","+str(request_miny)+","+str(request_maxx)+","+str(request_maxy))
     
     # calculate col and row
     col = round((request_minx-top_left_minx)/x_size)
@@ -80,7 +80,7 @@ def twmsbox2wmts(request_bbox, epsg):
     
     # calculate scale denominator for reference
     scale_denominator = (((x_size*2)/pixelsize)*units)/(tilesize*2)
-    print "Scale Denominator:", str(round(scale_denominator,10))
+    print("Scale Denominator:", str(round(scale_denominator,10)))
     
     return "TILECOL=" + str(abs(int(col))) + "\n" + "TILEROW="+str(abs(int(row)))
 
@@ -107,28 +107,28 @@ if not options.request_bbox:
     parser.error('bbox is required')
 
 if options.epsg == "4326":
-    print "Using EPSG:4326"
+    print("Using EPSG:4326")
     units = Decimal(str(111319.490793274))
     tilesize = Decimal(str(512))
     pixelsize = Decimal(str(0.00028))
     top_left_minx = Decimal(str(-180))
     top_left_maxy = Decimal(str(90))
 elif options.epsg == "3857":
-    print "Using EPSG:3857"
+    print("Using EPSG:3857")
     units = Decimal(str(1))
     tilesize = Decimal(str(256))
     pixelsize = Decimal(str(0.00028))
     top_left_minx = Decimal(str(-20037508.34278925))
     top_left_maxy = Decimal(str(20037508.34278925))
 elif options.epsg == "3031":
-    print "Using EPSG:3031"
+    print("Using EPSG:3031")
     units = Decimal(str(1))
     tilesize = Decimal(str(512))
     pixelsize = Decimal(str(0.00028))
     top_left_minx = Decimal(str(-4194304))
     top_left_maxy = Decimal(str(4194304))
 elif options.epsg == "3413":
-    print "Using EPSG:3413"
+    print("Using EPSG:3413")
     units = Decimal(str(1))
     tilesize = Decimal(str(512))
     pixelsize = Decimal(str(0.00028))
@@ -138,7 +138,7 @@ else:
     parser.error('Projection is not supported')
     
 if options.tilesize:
-    print "Using tilesize: " + str(options.tilesize)
+    print("Using tilesize: " + str(options.tilesize))
     tilesize = Decimal(str(options.tilesize))
 
-print (twmsbox2wmts(options.request_bbox, options.epsg))
+print((twmsbox2wmts(options.request_bbox, options.epsg)))

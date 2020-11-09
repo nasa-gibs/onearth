@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -118,8 +118,8 @@ class TestModOEMS(unittest.TestCase):
 
         # Debug message (if DEBUG is set)
         if DEBUG:
-            print '\nTesting: Request current (no TIME) JPG via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) JPG via WMS')
+            print('URL: ' + req_url)
 
         # Downloads the tile and checks it against the reference hash.
         check_result = check_tile_request(req_url, ref_hash)
@@ -132,8 +132,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '7c995c069a1a0325b9eba00470227613'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
-            print '\nTesting: Request current (no TIME) PNG via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (no TIME) PNG via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Current (no TIME) WMS PNG Request does not match what\'s expected. URL: ' + req_url)
     
@@ -144,8 +144,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '2d4d150a0747964b3d7f5bd8fd6f4573'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
-            print '\nTesting: Request current (time=default) JPEG tile via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) JPEG tile via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Request current (time=default) JPEG tile via WMS does not match what\'s expected. URL: ' + req_url)    
 
@@ -156,8 +156,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '7c995c069a1a0325b9eba00470227613'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
-            print '\nTesting: Request current (time=default) PNG tile via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request current (time=default) PNG tile via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Request current (time=default) PNG tile via WMS does not match what\'s expected. URL: ' + req_url)
 
@@ -168,8 +168,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'cbf79a63d8a539bf7769eded5538fe9d'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22'
         if DEBUG:
-            print '\nTesting: Request tile with date from "year" layer via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date from "year" layer via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -180,8 +180,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '7c995c069a1a0325b9eba00470227613'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_nonyear_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29'
         if DEBUG:
-            print '\nTesting: Request tile with date  from "non-year layer via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date  from "non-year layer via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS date request from "non-year" layer does not match what\'s expected. URL: ' + req_url)
 
@@ -192,8 +192,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'dbb24bb1dcb5346de0a44523040d0b93'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (legacy sub-daily) from "year" layer via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS legacy subdaily request does not match what\'s expected. URL: ' + req_url)
         
@@ -203,8 +203,8 @@ class TestModOEMS(unittest.TestCase):
         """
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities'
         if DEBUG:
-            print '\nTesting WMS GetCapablities 1.1.1'
-            print 'URL: ' + req_url
+            print('\nTesting WMS GetCapablities 1.1.1')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -229,8 +229,8 @@ class TestModOEMS(unittest.TestCase):
         """
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities'
         if DEBUG:
-            print '\nTesting WMS GetCapablities 1.3.0'
-            print 'URL: ' + req_url
+            print('\nTesting WMS GetCapablities 1.3.0')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -256,8 +256,8 @@ class TestModOEMS(unittest.TestCase):
         """
         req_url = 'http://localhost/onearth/test/wfs/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
         if DEBUG:
-            print '\nTesting WFS GetCapablities 2.0.0'
-            print 'URL: ' + req_url
+            print('\nTesting WFS GetCapablities 2.0.0')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid XML
@@ -283,8 +283,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '35a5f708101eb4a452d9cc3da3adb5e4'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=blah&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
-            print '\nTesting: Request erroneous layer via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request erroneous layer via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Request erroneous layer via WMS does not match what\'s expected. URL: ' + req_url)
         
@@ -295,8 +295,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '93fccd7bcd34f4ff179498c09b4876e8'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg,test_legacy_subdaily_jpg&map.layer[test_legacy_subdaily_jpg]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS tile with date and time (sub-daily) and another layer with YYYY-MM-DD time does not match what\'s expected. URL: ' + req_url)
         
@@ -307,8 +307,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '3b38bef10ecb5302a3e937cd8aceac67'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-01-15'
         if DEBUG:
-            print '\nTesting: Request tile with multi-day period and snap to available date via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with multi-day period and snap to available date via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS tile with multi-day period and snap to available date does not match what\'s expected. URL: ' + req_url)
         
@@ -319,8 +319,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'ea527f46b4c8218294428249e27fc060'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-12-15'
         if DEBUG:
-            print '\nTesting: Request  multiple layers with multi-day period and snap to available date via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request  multiple layers with multi-day period and snap to available date via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers with multi-day period and snap to available date does not match what\'s expected. URL: ' + req_url)
         
@@ -331,8 +331,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'bb012764b0dd6ce9c1e8e4e21f523147'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-04-02'
         if DEBUG:
-            print '\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers with multi-day period and snap to date that is out of range does not match what\'s expected. URL: ' + req_url)
         
@@ -343,8 +343,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'b1c9cb360c0d78b41b88fb4ddc8d42dc'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02'
         if DEBUG:
-            print '\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers with multi-day period and snap to date that is out of range for one of the layers does not match what\'s expected. URL: ' + req_url)
         
@@ -355,8 +355,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'c8f9d083f85fca56a7c0539fc5813793'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03'
         if DEBUG:
-            print '\nTesting: Request multiple layers bad date format via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request multiple layers bad date format via WMS')
+            print('URL: ' + req_url)
         check_result = check_wmts_error(req_url, 400, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers bad date format does not match what\'s expected. URL: ' + req_url)
         
@@ -367,8 +367,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '50843cf95d86d9139643f9fcd1d048ec'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&time=2012-02-22'
         if DEBUG:
-            print '\nTesting: Request layer with date and reproject from EPSG:4326 to EPSG:3857'
-            print 'URL: ' + req_url
+            print('\nTesting: Request layer with date and reproject from EPSG:4326 to EPSG:3857')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS request layer with date and reproject from EPSG:4326 to EPSG:3857 does not match what\'s expected. URL: ' + req_url)
         
@@ -379,8 +379,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '12e1e4e98764bb8ca4df0d6ae43d1140'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3a,snap_test_3b&map.layer[snap_test_3a]=OPACITY+50&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG:3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&TIME=2015-01-01'
         if DEBUG:
-            print '\nTesting: Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers and reproject from EPSG:4326 to EPSG:3857 does not match what\'s expected. URL: ' + req_url)
         
@@ -391,8 +391,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'dbb24bb1dcb5346de0a44523040d0b93'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
-            print '\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS tile with date and time (sub-daily) and another layer with YYYY-MM-DD time does not match what\'s expected. URL: ' + req_url)
         
@@ -416,8 +416,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'e014ec400b5807dc04cc8dbb5d9cebee'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Terra_Orbit_Dsc_Dots&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=2016-03-05'
         if DEBUG:
-            print '\nTesting: Request image from vector source file with time via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request image from vector source file with time via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS request from vector layer does not match what\'s expected. URL: ' + req_url)
 
@@ -428,8 +428,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson'
         if DEBUG:
-            print '\nTesting: Request GeoJSON from vector source file via WFS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request GeoJSON from vector source file via WFS')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid JSON
@@ -453,8 +453,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv'
         if DEBUG:
-            print '\nTesting: Request CSV from vector source file via WFS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request CSV from vector source file via WFS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS request CSV from vector source file via WFS does not match what\'s expected. URL: ' + req_url)
         
@@ -465,8 +465,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson&TIME=2016-03-05'
         if DEBUG:
-            print '\nTesting: Request GeoJSON from vector source file with time via WFS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request GeoJSON from vector source file with time via WFS')
+            print('URL: ' + req_url)
         response = get_url(req_url)
 
         # Check if the response is valid JSON
@@ -490,8 +490,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv&TIME=2016-03-05'
         if DEBUG:
-            print '\nTesting: Request CSV from vector source file with time via WFS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request CSV from vector source file with time via WFS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS request CSV from vector source file with time via WFS does not match what\'s expected. URL: ' + req_url)
 
@@ -502,8 +502,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'c8f9d083f85fca56a7c0539fc5813793'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-11-31'
         if DEBUG:
-            print '\nTesting: Request multiple layers bad date via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request multiple layers bad date via WMS')
+            print('URL: ' + req_url)
         check_result = check_wmts_error(req_url, 400, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers bad date does not match what\'s expected. URL: ' + req_url)
         
@@ -514,8 +514,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'c8f9d083f85fca56a7c0539fc5813793'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02T23:30:99Z'
         if DEBUG:
-            print '\nTesting: Request multiple layers bad time via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request multiple layers bad time via WMS')
+            print('URL: ' + req_url)
         check_result = check_wmts_error(req_url, 400, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers bad time does not match what\'s expected. URL: ' + req_url)
         
@@ -526,8 +526,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = 'c8f9d083f85fca56a7c0539fc5813793'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02T23:30:59'
         if DEBUG:
-            print '\nTesting: Request multiple layers bad time format via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request multiple layers bad time format via WMS')
+            print('URL: ' + req_url)
 
         check_result = check_wmts_error(req_url, 400, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers bad time format does not match what\'s expected. URL: ' + req_url)
@@ -539,8 +539,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '28b9e89643766a3b6cfe80029d349f24'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
-            print '\nTesting: Request missing layers via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request missing layers via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Request missing layers via WMS does not match what\'s expected. URL: ' + req_url)
         
@@ -551,8 +551,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '7ab0448e44502c7f5beea7fc2c8bd482'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3b&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
-            print '\nTesting: Request multiple layers in one request with no time via WMS'
-            print 'URL: ' + req_url
+            print('\nTesting: Request multiple layers in one request with no time via WMS')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS multiple layers with no time does not match what\'s expected. URL: ' + req_url)
         
@@ -563,8 +563,8 @@ class TestModOEMS(unittest.TestCase):
         ref_hash = '13b34c39c2fda83972a2df4cc2b5c394'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=getlegendGRAPHIC&layer=Terra_Orbit_Dsc_Dots&FORMAT=image/png'
         if DEBUG:
-            print '\nTesting: Request WMS GetLegendGraphic'
-            print 'URL: ' + req_url
+            print('\nTesting: Request WMS GetLegendGraphic')
+            print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS GetLegendGraphic does not match what\'s expected. URL: ' + req_url)
 
@@ -599,7 +599,7 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output=f)
         )
