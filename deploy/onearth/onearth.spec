@@ -58,8 +58,6 @@ Requires:	chrpath
 Requires:	gcc-c++
 Requires:	agg
 Requires:	agg-devel
-Requires:	python-devel
-Requires:	python-pycxx-devel
 Requires:	freetype-devel
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
@@ -357,9 +355,12 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_datadir}/onearth/test
 
 %post test
-pip install unittest2 unittest-xml-reporting==1.14.0 requests
+pip3 install unittest2 unittest-xml-reporting==1.14.0 requests
 
 %changelog
+* Mon Nov 09 2020 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-3
+- Use pip3 and removed old Python dependencies
+
 * Mon Jul 17 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-3
 - Added test package and cleaned up demo
 
