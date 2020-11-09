@@ -31,6 +31,9 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/
 WORKDIR /home/oe2/onearth/docker/time_service
 
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py /usr/bin/
+
 # Create OnEarth config log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
 
@@ -39,4 +42,4 @@ RUN mkdir -p /etc/cron.hourly && mv /etc/cron.daily/logrotate /etc/cron.hourly/l
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
-CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $FORCE_TIME_SCRAPE
+CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $FORCE_TIME_SCRAPE $S3_CONFIGS

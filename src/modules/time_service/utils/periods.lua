@@ -252,6 +252,27 @@ local function getIntervalLetter(unit)
 	end
 end
 
+local function getIntervalUnit(period)
+  local letter = string.sub(period, -1)
+  if period:sub(1, 2) == 'PT' then
+    if letter == "H" then
+      return "hour"
+    elseif letter == "M" or letter == "MM" then
+      return "minute"
+    else
+      return "second"
+    end  
+  else
+    if letter == "Y" then
+      return "year"
+    elseif letter == "M" then
+      return "month"
+    else
+      return "day"
+    end
+  end
+end
+
 local function isValidPeriod(size, unit)
 	if unit == "day" and size >= 365 then
 		return false
@@ -289,122 +310,177 @@ local function periodExists(size, unit, epochDateList, periods)
 	return false
 end
 
-local function calculatePeriods(dates)
-	local periods = {}
-	table.sort(dates, dateSort)
-
-	local datesInPeriods = {} -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.
-
-	-- Check for year matches
-	for _, date1 in ipairs(dates) do
-		if not itemInList(date1, datesInPeriods) then
-			local tail = date1:sub(5)
-			local baseYear = tonumber(date1:sub(1, 4))
-
-			for _, date2 in ipairs(dates) do
-				local date2Year = tonumber(date2:sub(1, 4))
-				if not itemInList(date2, datesInPeriods) 
-					and date1 ~= date2 
-					and date2:sub(5) == tail 
-					and date2Year > baseYear 
-				then
-					local interval = date2Year - baseYear				
-					local nextDateInInterval = dateAtInterval(date2, interval, dates, "year")
-
-					if nextDateInInterval then
-						-- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
-						local dateList = {date1, date2}
-						while nextDateInInterval do
-							dateList[#dateList+1] = nextDateInInterval
-							nextDateInInterval = dateAtInterval(nextDateInInterval, interval, dates, "year")
-						end
-
-						datesInPeriods = concat(datesInPeriods, dateList)
-						periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
-					end
-				end
-			end
-		end
-	end
+local function calculatePeriods(dates, config)
+  -- Parse time configurations
+  local configs = {}
+  for w in tostring(config):gmatch("([^/]+)") do
+    configs[#configs + 1] = w
+  end
+  local force_start = 'DETECT'
+  local force_end = 'DETECT'
+  local force_period = 'DETECT'
+  if configs[3] ~= nil then
+    force_end = configs[2]
+    force_period = configs[3]
+  else
+    if configs[2] ~= nil then
+      if configs[2]:sub(1, 1) == 'P' then
+        force_period = configs[2]
+      else
+        force_end = configs[2]
+      end
+    else
+      force_end = 'DETECT'
+    end
+  end
+  if configs[1] ~= 'false' then
+    force_start = configs[1]
+  end
+  redis.call('ECHO', 'force_start=' .. tostring(force_start))
+  redis.call('ECHO', 'force_end=' .. tostring(force_end))
+  redis.call('ECHO', 'force_period=' .. tostring(force_period))
   
-  if dates[3] ~= nil then
-    -- Figure out the size and interval of the period based on first 3 values
-    local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
-    local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
-    if (diff1 == diff2) then
-      local size, unit = calcIntervalFromSeconds(diff1)
-      if isValidPeriod(size, unit) then
-        local dateList = {}
-        dateList[1] = dates[1] -- set start time to first time
-        for i, date1 in ipairs(dates) do
-          local dateEpoch1 = dateToEpoch(date1)
-          if dates[i+1] == nil then
-            dateList[#dateList + 1] = date1
-            periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-          else            
-            local dateEpoch2 = dateToEpoch(dates[i+1])
-            local diff = math.abs(dateEpoch2 - dateEpoch1)
-            if diff ~= diff1 then
+  -- Detect periods
+  local periods = {}
+  if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
+	-- Skip DETECT if all forced values are provided
+	  local dateList = {force_start, force_end}
+	  periods[#periods + 1] = {size=string.match(force_period, "%d+"), dates=dateList, unit=getIntervalUnit(force_period)}
+  else
+    -- Calculate periods based on dates list
+  	table.sort(dates, dateSort)
+    -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.  
+	  local datesInPeriods = {}
+	  
+  	-- Check for year matches
+  	for _, date1 in ipairs(dates) do
+  		if not itemInList(date1, datesInPeriods) then
+  			local tail = date1:sub(5)
+  			local baseYear = tonumber(date1:sub(1, 4))
+  
+  			for _, date2 in ipairs(dates) do
+  				local date2Year = tonumber(date2:sub(1, 4))
+  				if not itemInList(date2, datesInPeriods) 
+  					and date1 ~= date2 
+  					and date2:sub(5) == tail 
+  					and date2Year > baseYear 
+  				then
+  					local interval = date2Year - baseYear				
+  					local nextDateInInterval = dateAtInterval(date2, interval, dates, "year")
+  
+  					if nextDateInInterval then
+  						-- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
+  						local dateList = {date1, date2}
+  						while nextDateInInterval do
+  							dateList[#dateList+1] = nextDateInInterval
+  							nextDateInInterval = dateAtInterval(nextDateInInterval, interval, dates, "year")
+  						end
+  
+  						datesInPeriods = concat(datesInPeriods, dateList)
+  						periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
+  					end
+  				end
+  			end
+  		end
+  	end
+    
+    if dates[3] ~= nil then
+      -- Figure out the size and interval of the period based on first 3 values
+      local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
+      local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
+      if (diff1 == diff2) then
+        local size, unit = calcIntervalFromSeconds(diff1)
+        if isValidPeriod(size, unit) then
+          local dateList = {}
+          dateList[1] = dates[1] -- set start time to first time
+          for i, date1 in ipairs(dates) do
+            local dateEpoch1 = dateToEpoch(date1)
+            if dates[i+1] == nil then
               dateList[#dateList + 1] = date1
-              local period = {}
-              period[1] = dateList[1]
-              period[2] = dateList[2]
-              periods[#periods + 1] = {size=size, dates=period, unit=unit}
-              dateList[1] = dates[i+1]
-              dateList[2] = nil
+              periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
+            else            
+              local dateEpoch2 = dateToEpoch(dates[i+1])
+              local diff = math.abs(dateEpoch2 - dateEpoch1)
+              if diff ~= diff1 then
+                dateList[#dateList + 1] = date1
+                local period = {}
+                period[1] = dateList[1]
+                period[2] = dateList[2]
+                periods[#periods + 1] = {size=size, dates=period, unit=unit}
+                dateList[1] = dates[i+1]
+                dateList[2] = nil
+              end
             end
           end
         end
-      end
-    else -- More complicated scenarios
-      -- Check for monthly periods
-      if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) then
-        local size = math.floor(diff1/2419200)
-        local unit = "month"
-        local dateList = {}
-        dateList[1] = dates[1] -- set start time to first time
-        dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
-        periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-        -- TODO: Detect gaps in monthly periods
-      else
-        -- Use seconds for subdaily and days otherwise
-        local unit = "day"
-        if (diff1<86400) then
-          unit = "second"
+      else -- More complicated scenarios 
+        -- TODO: Detect breaks in periods
+        -- Check for monthly periods
+        if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) then
+          local size = math.floor(diff1/2419200)
+          local unit = "month"
           local dateList = {}
           dateList[1] = dates[1] -- set start time to first time
           dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
-          periods[#periods + 1] = {size=1, dates=dateList, unit=unit}
+          periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
         else
-          for _, date in ipairs(dates) do
-            if not itemInList(date, datesInPeriods) then
-              periods[#periods + 1] = {size=1, dates={date}, unit=unit}
+          -- Use seconds for subdaily and days otherwise
+          local unit = "day"
+          if (diff1<86400) then
+            unit = "second"
+            local dateList = {}
+            dateList[1] = dates[1] -- set start time to first time
+            dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
+            periods[#periods + 1] = {size=1, dates=dateList, unit=unit}
+          else
+            for _, date in ipairs(dates) do
+              if not itemInList(date, datesInPeriods) then
+                periods[#periods + 1] = {size=1, dates={date}, unit=unit}
+              end
             end
           end
         end
       end
-    end
-  else
-    -- Leftover times are likely loners
-    -- Determine if subdaily or not (assume daily if single)
-    local unit = "day"
-    if dates[2] ~= nil then
-      local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
-      if (diff1<86400) then
-        unit = "second"
-       end
-    end
-    for _, date in ipairs(dates) do
-      if not itemInList(date, datesInPeriods) then
-        periods[#periods + 1] = {size=1, dates={date}, unit=unit}
+    else
+      -- Leftover times are likely loners
+      -- Determine if subdaily or not (assume daily if single)
+      local unit = "day"
+      if dates[2] ~= nil then
+        local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
+        if (diff1<86400) then
+          unit = "second"
+         end
+      end
+      for _, date in ipairs(dates) do
+        if not itemInList(date, datesInPeriods) then
+          periods[#periods + 1] = {size=1, dates={date}, unit=unit}
+        end
       end
     end
+  end
+  
+  -- Replace with forced values
+  if force_start ~= "DETECT" then
+    if force_period:sub(1, 2) == 'PT' and #force_start < 11 then
+      force_start = force_start .. "T00:00:00"
+    end
+    periods[1]["dates"][1] = force_start
+  end
+  if force_end ~= "DETECT" then
+    if force_period:sub(1, 2) == 'PT' and #force_end < 11 then
+      force_end = force_end .. "T00:00:00"
+    end
+    periods[#periods]["dates"][#periods[#periods]["dates"]] = force_end
   end
 
 	-- Create formatted list
 	local periodStrings = {}
 	for _, period in pairs(periods) do
 		local periodStr
+    if force_period ~= "DETECT" then
+      period["size"] = string.match(force_period, "%d+")
+      period["unit"] = getIntervalUnit(force_period)
+    end
 	  if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
 	    periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
 	    if period["unit"] == "minute" then
@@ -436,13 +512,16 @@ if ARGV[1] ~= nil then
 end
 -- End GITC mod
 
+-- Get time configurations for layer
+local config = redis.call("GET", KEYS[1] .. ":config")
+
 repeat
 	local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor)
 	dates = concat(dates, scan[2])
 	cursor = scan[1]
 until cursor == "0"
 
-local periodStrings = calculatePeriods(dates)
+local periodStrings = calculatePeriods(dates, config)
 if redis.call("EXISTS", KEYS[1] .. ":periods") then
 	redis.call("DEL", KEYS[1] .. ":periods")
 end

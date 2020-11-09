@@ -6,6 +6,7 @@ tilematrixset: "15.625m"
 mime_type: "image/png"
 static: false
 abstract: "ASTER_L1T_Radiance_Terrain_Corrected abstract"
+time_config: "DETECT/PT1S"
 metadata:
   - {}
 source_mrf:

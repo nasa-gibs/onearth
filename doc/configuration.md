@@ -234,6 +234,13 @@ source_mrf:
   year_dir: "true/false" whether this layer contains a year subdirectory"
 ```
 
+### Optional for Time Service
+```
+time_config: Custom time period configuration for layer
+```
+
+See [doc/time_detection.md](time_detection.md) for time period configuration information.
+
 See [src/modules/mod_wmts_wrapper/configure_tool/](../src/modules/mod_wmts_wrapper/configure_tool/README.md) for more details.
 
 ### Sample Layer Configuration

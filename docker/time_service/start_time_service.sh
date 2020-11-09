@@ -3,6 +3,7 @@ S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
 DEBUG_LOGGING=${3:-false}
 FORCE_TIME_SCRAPE=${4:-false}
+S3_CONFIGS=$5
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -24,6 +25,56 @@ fi
 echo 'Starting Apache server'
 /usr/sbin/apachectl
 sleep 2
+
+# Create config directories
+chmod -R 755 /onearth
+mkdir -p /onearth/layers
+mkdir -p /etc/onearth/config/conf/
+mkdir -p /etc/onearth/config/endpoint/
+mkdir -p /etc/onearth/config/layers/
+mkdir -p /etc/onearth/config/layers/epsg3031/best/
+mkdir -p /etc/onearth/config/layers/epsg3413/best/
+mkdir -p /etc/onearth/config/layers/epsg4326/best/
+mkdir -p /etc/onearth/config/layers/epsg3031/std/
+mkdir -p /etc/onearth/config/layers/epsg3413/std/
+mkdir -p /etc/onearth/config/layers/epsg4326/std/
+mkdir -p /etc/onearth/config/layers/epsg3031/nrt/
+mkdir -p /etc/onearth/config/layers/epsg3413/nrt/
+mkdir -p /etc/onearth/config/layers/epsg4326/nrt/
+
+# Copy sample configs
+cp ../sample_configs/conf/* /etc/onearth/config/conf/
+cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+
+# Scrape OnEarth configs from S3
+if [ -z "$S3_CONFIGS" ]
+then
+	echo "S3_CONFIGS not set for OnEarth configs"
+else
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
+fi
+
+# Replace with S3 URL
+sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml # in case there is a preceding slash
+sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case there is a preceding slash
+sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
+sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
+
+# Load custom time period configurations
+for i in /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml; do
+	python3.6 /usr/bin/oe_periods_configure.py "$i"
+done
 
 # Start Redis and load sample data if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then

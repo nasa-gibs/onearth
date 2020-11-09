@@ -6,6 +6,7 @@ tilematrixset: "250m"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_CorrectedReflectance_Bands721 abstract"
+time_config: "DETECT/DETECT/P1D"
 metadata:
   - {}
 source_mrf:

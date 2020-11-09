@@ -182,6 +182,8 @@ native units.
 
 `mime_type` (required) -- MIME type of the tiles in this MRF.
 
+`time_config` (optional) -- Custom time period configuration for layer.  See [doc/time_detection.md](../../../../doc/time_detection.md) for time period configuration information.
+
 Example: `time_service_keys: ["epsg4326", "std"]` will cause date lookups for
 this layer to use the following format:
 `{time_service_uri}/date?key1=epsg4326&key2=std`

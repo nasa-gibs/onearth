@@ -11,6 +11,26 @@ The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4
 
 `redis-cli --eval periods.lua epsg4326:layer:layer_name`
 
+## `oe_periods_configure.py` -- Custom time configuration loader
+
+This tool will load custom time period configurations as specified in a layer configuration file's `time_config` item into Redis for evaluation when the periods.lua script is executed.
+Configurations are loaded into the `prefix_tags:layer:layer_name:config` keyword. This script should be executed before period.lua is run.
+
+#### Python Dependencies
+
+-   `yaml`
+-   `redis-py`
+
+#### Usage
+
+The script accepts the following options:
+
+-   `-h, --help` display help message and exit.
+-   `-e ENDPOINT_CONFIG, --endpoint_config ENDPOINT_CONFIG` an endpoint config YAML file to load layers.
+-   `-p PORT, --port PORT` redis port for database
+-   `-r REDIS_URI, --redis_uri REDIS_URI` URI for the Redis database
+-   `-t TAG, --tag TAG` Classification tag (nrt, best, std, etc.)
+
 ## `oe_scrape_time.py` -- Database regeneration tool
 
 This tool will first check whether the s3_inventory option has been flagged. If the -i flag is present, the tool will search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will parse the most recent CSV file to generate time service entries for each layer. If no S3 Inventory data exists or the -i flag isn't declared. The tool scrapes the bucket containing MRF imagery and generates time service entries for each layer. 
