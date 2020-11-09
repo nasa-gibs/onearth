@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
