@@ -253,7 +253,7 @@ class TestModWmtsWrapper(unittest.TestCase):
         p_status = lua.wait()
         if p_status:
             print("WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail.")
-        if 'onearth' not in output:
+        if 'onearth' not in str(output):
             print("WARNING: OnEarth luarocks package not installed. Tests may fail.")
 
         # Start redis

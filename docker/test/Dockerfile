@@ -6,7 +6,7 @@ FROM nasagibs/onearth-deps:2.3.1
 RUN yum install -y proj-4.8.0 proj-devel-4.8.0
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
 RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5
-RUN pip3.6 install apacheconfig==0.2.8 numpy==1.10.4
+RUN pip3.6 install apacheconfig==0.2.8 numpy==1.10.4 matplotlib==2.2.5
 
 # Install wms dependencies
 RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2
@@ -14,6 +14,7 @@ RUN pip3.6 install requests==2.21.0 lxml==4.3.0
 
 # Install GDAL
 RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-devel-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-apps-2.4.4-1.el7.x86_64.rpm"
+RUN pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 # Install vectorgen dependencies
 RUN yum install -y libxslt-devel-1.1.28 chrpath-0.16 && \
@@ -137,7 +138,7 @@ COPY docker/wms_service/symbols.sym /etc/onearth/config/mapserver/
 COPY docker/wms_service/fonts/* /usr/share/fonts/
 RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
-RUN mkdir /usr/share/proj/ && cp /usr/lib64/python3.6/site-packages/fiona/proj_data/epsg /usr/share/proj/
+RUN mkdir /usr/share/proj/ && cp /usr/local/lib64/python3.6/site-packages/fiona/proj_data/epsg /usr/share/proj/
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf

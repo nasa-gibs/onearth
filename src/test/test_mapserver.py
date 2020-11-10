@@ -366,9 +366,9 @@ class TestMapserver(unittest.TestCase):
  
         # Check if the response is valid JSON
         try:
-            JSONdict = json.loads(response.read())
+            JSONdict = json.loads(response.read().decode('utf-8'))
             JSON_check = True
-        except Error:
+        except:
             JSON_check = False
         self.assertTrue(JSON_check, 'WFS GeoJSON response is not a valid JSON file. URL: ' + req_url)
  
@@ -403,9 +403,9 @@ class TestMapserver(unittest.TestCase):
  
         # Check if the response is valid JSON
         try:
-            JSONdict = json.loads(response.read())
+            JSONdict = json.loads(response.read().decode('utf-8'))
             JSON_check = True
-        except Error:
+        except:
             JSON_check = False
         self.assertTrue(JSON_check, 'WFS with time GeoJSON response is not a valid JSON file. URL: ' + req_url)
  

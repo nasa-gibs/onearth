@@ -43,7 +43,7 @@ from optparse import OptionParser
 import random
 from PIL import Image
 import numpy as np
-import StringIO
+import io
 import struct
 from oe_test_utils import restart_apache, make_dir_tree, get_file_hash, check_tile_request
 import shutil
@@ -107,9 +107,9 @@ def make_randomized_mrf(size_x, size_y, tile_size, image_type, output_prefix,
         last_size_y = last_size_y / 2
 
     # Write out tiles to an MRF
-    mrf_idx = open(os.path.join(output_path, output_prefix + '.idx'), 'w+')
+    mrf_idx = open(os.path.join(output_path, output_prefix + '.idx'), 'wb')
     mrf_ext = '.ppg' if image_type == 'png' else '.pjg'
-    mrf_data = open(os.path.join(output_path, output_prefix + mrf_ext), 'w+')
+    mrf_data = open(os.path.join(output_path, output_prefix + mrf_ext), 'wb')
 
     tile_store = {}
     tile_offset = 0
@@ -120,14 +120,14 @@ def make_randomized_mrf(size_x, size_y, tile_size, image_type, output_prefix,
         tile_store[zidx] = {}
         dims = data[0]
         image = data[1]
-        for y in range(dims[1] / tile_size):
+        for y in range(int(dims[1] / tile_size)):
             tile_store[zidx][y] = {}
-            for x in range(dims[0] / tile_size):
+            for x in range(int(dims[0] / tile_size)):
                 tile_data = image.crop(
                     (x * tile_size, y * tile_size, x * tile_size + tile_size,
                      y * tile_size + tile_size))
 
-                tile_io = StringIO.StringIO()
+                tile_io = io.BytesIO()
                 tile_data.save(
                     tile_io,
                     format=image_type

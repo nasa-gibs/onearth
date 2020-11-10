@@ -323,7 +323,7 @@ class TestDateService(unittest.TestCase):
     @classmethod
     def write_config_for_test_layer(self, layer):
         replacement_strs = [('{' + key + '}', value)
-                            for key, value in layer.iteritems()
+                            for key, value in layer.items()
                             if key not in ['metadata', 'default', 'periods']]
         metadata = '\n' + '\n'.join(['  - ' + m for m in layer['metadata']])
         replacement_strs.append(['{metadata}', metadata])
@@ -352,7 +352,7 @@ class TestDateService(unittest.TestCase):
                 "WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail."
             )
 
-        if 'onearth' not in output:
+        if 'onearth' not in str(output):
             print(
                 "WARNING: OnEarth luarocks package not installed. Tests may fail."
             )
@@ -763,7 +763,7 @@ class TestDateService(unittest.TestCase):
             src_md = next(
                 md for md in layer_metadata if md['xlink:role'] == role)
             all_match = all(
-                key for key, value in src_md.iteritems() if md_elem.get(
+                key for key, value in src_md.items() if md_elem.get(
                     key.replace('xlink:', '{http://www.w3.org/1999/xlink}')))
             self.assertTrue(
                 all_match,
@@ -1056,7 +1056,7 @@ class TestDateService(unittest.TestCase):
             src_md = next(
                 md for md in layer_metadata if md['xlink:role'] == role)
             all_match = all(
-                key for key, value in src_md.iteritems() if md_elem.get(
+                key for key, value in src_md.items() if md_elem.get(
                     key.replace('xlink:', '{http://www.w3.org/1999/xlink}')))
             self.assertTrue(
                 all_match,
@@ -1356,7 +1356,7 @@ class TestDateService(unittest.TestCase):
             src_md = next(
                 md for md in layer_metadata if md['xlink:role'] == role)
             all_match = all(
-                key for key, value in src_md.iteritems() if md_elem.get(
+                key for key, value in src_md.items() if md_elem.get(
                     key.replace('xlink:', '{http://www.w3.org/1999/xlink}')))
             self.assertTrue(
                 all_match,
@@ -1753,7 +1753,7 @@ class TestDateService(unittest.TestCase):
             src_md = next(
                 md for md in layer_metadata if md['xlink:role'] == role)
             all_match = all(
-                key for key, value in src_md.iteritems() if md_elem.get(
+                key for key, value in src_md.items() if md_elem.get(
                     key.replace('xlink:', '{http://www.w3.org/1999/xlink}')))
             self.assertTrue(
                 all_match,
@@ -2151,7 +2151,7 @@ class TestDateService(unittest.TestCase):
             src_md = next(
                 md for md in layer_metadata if md['xlink:role'] == role)
             all_match = all(
-                key for key, value in src_md.iteritems() if md_elem.get(
+                key for key, value in src_md.items() if md_elem.get(
                     key.replace('xlink:', '{http://www.w3.org/1999/xlink}')))
             self.assertTrue(
                 all_match,
@@ -2321,7 +2321,7 @@ class TestDateService(unittest.TestCase):
                     url, e))
 
         # Get and parse the tms XML
-        with open(apache_config['tms_path'], 'r') as f:
+        with open(apache_config['tms_path'], 'rb') as f:
             tilematrixsets = etree.fromstring(f.read())
 
         tms_dom = next(
@@ -2376,7 +2376,7 @@ class TestDateService(unittest.TestCase):
                     url, e))
 
         # Get and parse the tms XML
-        with open(apache_config['tms_path'], 'r') as f:
+        with open(apache_config['tms_path'], 'rb') as f:
             tilematrixsets = etree.fromstring(f.read())
 
         tms_dom = next(
@@ -2698,7 +2698,7 @@ class TestDateService(unittest.TestCase):
 
         # Check <TilePattern> stuff
         # Get and parse the TMS XML
-        with open(apache_config['tms_path'], 'r') as f:
+        with open(apache_config['tms_path'], 'rb') as f:
             tms_dom = etree.fromstring(f.read())
 
         tms_list = next(
@@ -2711,9 +2711,9 @@ class TestDateService(unittest.TestCase):
 
         bbox = {'lowerCorner': [-180, -90], 'upperCorner': [180, 90]}
 
-        expected_patterns = map(
+        expected_patterns = list(map(
             partial(make_tile_pattern, layer, epsg_code, bbox),
-            tms.findall('{*}TileMatrix'))
+            tms.findall('{*}TileMatrix')))
         found_patterns = [p.text for p in tg_elem.findall('{*}TilePattern')]
 
         for p in expected_patterns:
@@ -3000,7 +3000,7 @@ class TestDateService(unittest.TestCase):
 
         # Check <TilePattern> stuff
         # Get and parse the TMS XML
-        with open(apache_config['tms_path'], 'r') as f:
+        with open(apache_config['tms_path'], 'rb') as f:
             tms_dom = etree.fromstring(f.read())
 
         tms_list = next(
@@ -3016,9 +3016,9 @@ class TestDateService(unittest.TestCase):
             'upperCorner': [20037508.34278925, 20037508.34278925]
         }
 
-        expected_patterns = map(
+        expected_patterns = list(map(
             partial(make_tile_pattern, layer, epsg_code, bbox),
-            tms.findall('{*}TileMatrix'))
+            tms.findall('{*}TileMatrix')))
         found_patterns = [p.text for p in tg_elem.findall('{*}TilePattern')]
 
         for p in expected_patterns:
