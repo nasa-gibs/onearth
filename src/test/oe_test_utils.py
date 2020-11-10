@@ -340,6 +340,7 @@ def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
             if show_output is True or 'error' in line.lower() or ignore_warnings and 'warning' in line.lower():
                 print(line)
 
+
 def find_string(file_path, string):
     try:
         with open(file_path, 'r') as f:
@@ -852,9 +853,7 @@ def check_tile_request(url, ref_hash):
     check_apache_running()
     tile = get_url(url)
     tile_hash = get_file_hash(tile)
-    # TORHT
-    print "tile_hash: " + tile_hash
-    #    hash_check = get_file_hash(tile) == ref_hash
+    print("tile_hash: " + tile_hash)
     hash_check = tile_hash == ref_hash
     return hash_check
 
@@ -912,9 +911,7 @@ def test_snap_request(hash_table, req_url):
     """
     tile = get_url(req_url)
     tile_hash = get_file_hash(tile)
-    # TORHT
-    print "tile_hash: " + tile_hash
-    # Get the date that the particular hash is associated with
+    print("tile_hash: " + tile_hash)
     tile_date = hash_table.get(tile_hash, '')
     return tile_date
 

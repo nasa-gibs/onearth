@@ -51,7 +51,6 @@ import sys
 import time
 import socket
 import subprocess
-import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 import re

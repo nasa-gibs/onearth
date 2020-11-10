@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2020, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -108,24 +108,23 @@ class TestDateService(unittest.TestCase):
         # Check if mod_ahtse_lua is installed
         apache_path = '/etc/httpd/modules/'
         if not os.path.exists(os.path.join(apache_path, 'mod_ahtse_lua.so')):
-            print "WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(
-                apache_path)
+            print("WARNING: Can't find mod_ahtse_lua installed in: {0}. Tests may fail.".format(apache_path))
 
         # Check if onearth Lua stuff has been installed
         lua = Popen(['luarocks', 'list'], stdout=PIPE)
         (output, _) = lua.communicate()
         p_status = lua.wait()
         if p_status:
-            print "WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail."
+            print("WARNING: Error running Luarocks. Make sure lua and luarocks are installed and that the OnEarth lua package is also installed. Tests may fail.")
         if 'onearth' not in output:
-            print "WARNING: OnEarth luarocks package not installed. Tests may fail."
+            print("WARNING: OnEarth luarocks package not installed. Tests may fail.")
 
         # Start redis
         if not redis_running():
             Popen(['redis-server'])
         time.sleep(2)
         if not redis_running():
-            print "WARNING: Can't access Redis server. Tests may fail."
+            print("WARNING: Can't access Redis server. Tests may fail.")
 
         # Copy Lua config
         test_lua_config_dest_path = '/build/test/ci_tests/tmp/date_service_test'
@@ -514,5 +513,5 @@ if __name__ == '__main__':
     del sys.argv[1:]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         unittest.main(testRunner=xmlrunner.XMLTestRunner(output=f))

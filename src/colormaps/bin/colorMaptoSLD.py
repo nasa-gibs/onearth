@@ -281,7 +281,7 @@ def main(argv):
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print ("Usage: colorMapToSLD.py -c <colormap> -l <layer> -r <rgb_order> -s <version>")
+            print("Usage: colorMapToSLD.py -c <colormap> -l <layer> -r <rgb_order> -s <version>")
             print("\nOptions:")
             print("  -h, --help             show this help message and exit")
             print("  -c COLORMAP_FILE, --colormap COLORMAP_FILE")

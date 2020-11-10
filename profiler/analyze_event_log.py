@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys, string, os, getopt
 import json
@@ -32,9 +32,9 @@ class uuidDetails():
 #         str(self.idx_read_dur)
 
 def usage():
-   print ("analyze-event-log.py [OPTIONS]")
-   print ("  -e/--events_log    : Path to log file with CloudWatch events")
-   print ("  -v/--verbose      : Verbose Output (Optional)")
+   print("analyze-event-log.py [OPTIONS]")
+   print("  -e/--events_log    : Path to log file with CloudWatch events")
+   print("  -v/--verbose      : Verbose Output (Optional)")
 
 
 def calculateAndPrintStats(metric, values):

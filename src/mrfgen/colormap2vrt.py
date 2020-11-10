@@ -51,7 +51,6 @@ import logging
 import sys
 import time
 import socket
-import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, check_abs_path

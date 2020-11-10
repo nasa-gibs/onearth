@@ -79,7 +79,6 @@ import sys
 import time
 import datetime
 import socket
-import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 import shutil

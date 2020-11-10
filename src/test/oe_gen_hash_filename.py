@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import hashlib
 import datetime
 
@@ -32,4 +32,4 @@ if __name__ == "__main__":
     hprefix = get_hash_prefix(newname)
 #     hashname = hprefix + '-' + newname + options.extension
     hashname = newname + options.extension
-    print hashname
+    print(hashname)
