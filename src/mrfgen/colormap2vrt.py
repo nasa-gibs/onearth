@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -51,8 +51,8 @@ import logging
 import sys
 import time
 import socket
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 from oe_utils import log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, check_abs_path
 
@@ -81,7 +81,7 @@ def hex_to_rgb(value):
     
 #-------------------------------------------------------------------------------   
 
-print 'colormap2vrt v' + versionNumber
+print('colormap2vrt v' + versionNumber)
 
 usageText = 'colormap2vrt.py --colormap [colormap.xml] --output [output.vrt] --merge [merge.vrt] --transparent'
 
@@ -155,7 +155,7 @@ try:
     colormap_file.close()
 except IOError: # try http URL
     log_info_mssg("Accessing URL " + colormap_filename)
-    dom = xml.dom.minidom.parse(urllib.urlopen(colormap_filename))
+    dom = xml.dom.minidom.parse(urllib.request.urlopen(colormap_filename))
 
 # ColorMap parameters
 colorMaps = dom.getElementsByTagName('ColorMap')

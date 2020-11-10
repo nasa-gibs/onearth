@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2018, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -44,10 +44,11 @@ import sys
 import time
 import datetime
 import socket
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 import smtplib
 from email.mime.text import MIMEText
+from mimetypes import guess_type
 import __main__ as main
 
 basename = None
@@ -106,7 +107,7 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     # Validate input addresses
     allowed = re.compile(r"([a-zA-Z0-9\-_\.]+):?([0-9]{1,5})?", re.IGNORECASE)
     if all(allowed.match(x) for x in smtp_server.split(".")) == False:
-        print "ERROR: " + smtp_server + " is an invalid SMTP server name"
+        print("ERROR: " + smtp_server + " is an invalid SMTP server name")
     for email in [sender.strip().replace("localhost","localhost.localhost"), recipient.strip()]:
         valid_email = re.compile(r"^(([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+([;,.](([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5}){1,25})+)*$", re.IGNORECASE)
         if not valid_email.match(email):
@@ -137,7 +138,7 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
         s = smtplib.SMTP(smtp_server)
         s.sendmail(sender, recipient.replace(",",";").split(";"), msg.as_string())
         s.quit()
-    except Exception, e:
+    except Exception as e:
         log_info_mssg("ERROR: Cannot send email using SMTP server " + smtp_server + ", " + str(e))
         
 def sigevent(type, mssg, email_meta):
@@ -180,7 +181,7 @@ def log_info_mssg(mssg):
         mssg -- 'message for operations'
     """
     # Send to log.
-    print mssg
+    print(mssg)
     logging.info(mssg)
 
 def log_info_mssg_with_timestamp(mssg):
@@ -190,7 +191,7 @@ def log_info_mssg_with_timestamp(mssg):
         mssg -- 'message for operations'
     """
     # Send to log.
-    print time.asctime()
+    print(time.asctime())
     logging.info(time.asctime())
     log_info_mssg(mssg)
 
@@ -207,8 +208,8 @@ def log_sig_warn(mssg, sigevent_url):
     # Send to sigevent.
     try:
         sent=sigevent('WARN', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
+    except urllib.error.URLError:
+        print('sigevent service is unavailable')
         
 def log_sig_err(mssg, sigevent_url):
     """
@@ -223,8 +224,8 @@ def log_sig_err(mssg, sigevent_url):
     # Send to sigevent.
     try:
         sent=sigevent('ERROR', mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
+    except urllib.error.URLError:
+        print('sigevent service is unavailable')
 
 def log_sig_exit(type, mssg, sigevent_url):
     """
@@ -240,8 +241,8 @@ def log_sig_exit(type, mssg, sigevent_url):
     # Send to sigevent.
     try:
         sent=sigevent(type, mssg, sigevent_url)
-    except urllib2.URLError:
-        print 'sigevent service is unavailable'
+    except urllib.error.URLError:
+        print('sigevent service is unavailable')
     # Send to log.
     if type == 'INFO':
         log_info_mssg_with_timestamp(mssg)
@@ -402,7 +403,7 @@ def run_command(cmd, sigevent_url):
         cmd -- the command to be executed.
     """
     log_info_mssg(' '.join(cmd))
-    process = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    process = subprocess.Popen(cmd,universal_newlines=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     process.wait()
     for output in process.stdout:
         log_info_mssg(output.strip())
@@ -412,7 +413,7 @@ def run_command(cmd, sigevent_url):
         else:
             log_sig_err(error.strip(), sigevent_url)
             raise Exception(error.strip())
-    
+
 def get_environment(environmentConfig, email_meta):
     """
     Gets environment metadata from an environment configuration file.
@@ -422,7 +423,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         # Open file.
         environment_config=open(environmentConfig, 'r')
-        print ('\nUsing environment config: ' + environmentConfig + '\n')
+        print(('\nUsing environment config: ' + environmentConfig + '\n'))
     except IOError:
         mssg=str().join(['Cannot read environment configuration file:  ', environmentConfig])
         raise Exception(mssg)
@@ -546,7 +547,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         colormapLocations = dom.getElementsByTagName('ColorMapLocation')
         for location in colormapLocations:
-            if 'version' not in location.attributes.keys():
+            if 'version' not in list(location.attributes.keys()):
                 if len(colormapLocations) > 1:
                     log_sig_err('Multiple <ColorMapLocation> elements but not all have a "version" attribute', sigevent_url)
                 else:
@@ -557,7 +558,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         colormapUrls = dom.getElementsByTagName('ColorMapURL')
         for url in colormapUrls:
-            if 'version' not in url.attributes.keys():
+            if 'version' not in list(url.attributes.keys()):
                 if len(colormapUrls) > 1:
                     log_sig_err('Multiple <ColorMapURL> elements but not all have a "version" attribute', sigevent_url)
                 else:
@@ -569,7 +570,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         stylejsonLocations = dom.getElementsByTagName('StyleJSONLocation')
         for location in stylejsonLocations:
-            if 'version' not in location.attributes.keys():
+            if 'version' not in list(location.attributes.keys()):
                 if len(stylejsonLocations) > 1:
                     log_sig_err('Multiple <StyleJSONLocation> elements but not all have a "version" attribute', sigevent_url)
                 else:
@@ -580,7 +581,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         stylejsonUrls = dom.getElementsByTagName('StyleJSONURL')
         for url in stylejsonUrls:
-            if 'version' not in url.attributes.keys():
+            if 'version' not in list(url.attributes.keys()):
                 if len(stylejsonUrls) > 1:
                     log_sig_err('Multiple <StyleJSONURL> elements but not all have a "version" attribute', sigevent_url)
                 else:
@@ -592,7 +593,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         metadatajsonLocations = dom.getElementsByTagName('MetadataJSONLocation')
         for location in metadatajsonLocations:
-            if 'version' not in location.attributes.keys():
+            if 'version' not in list(location.attributes.keys()):
                 if len(metadatajsonLocations) > 1:
                     log_sig_err('Multiple <MetadataJSONLocation> elements but not all have a "version" attribute', sigevent_url)
                 else:
@@ -603,7 +604,7 @@ def get_environment(environmentConfig, email_meta):
     try:
         metadatajsonUrls = dom.getElementsByTagName('MetadataJSONURL')
         for url in metadatajsonUrls:
-            if 'version' not in url.attributes.keys():
+            if 'version' not in list(url.attributes.keys()):
                 if len(metadatajsonUrls) > 1:
                     log_sig_err('Multiple <MetadataJSONURL> elements but not all have a "version" attribute', sigevent_url)
                 else:
@@ -662,7 +663,7 @@ def get_environment(environmentConfig, email_meta):
             elif str(reprojectEndpoint.attributes['service'].value).lower() == "twms":
                 reprojectEndpoint_twms = reprojectEndpoint.firstChild.nodeValue.strip()
         except KeyError:
-            print '<ReprojectEndpoint> not found in environment configuration'
+            print('<ReprojectEndpoint> not found in environment configuration')
             
     reprojectApacheConfigLocationElements = dom.getElementsByTagName('ReprojectApacheConfigLocation')
     reprojectApacheConfigLocation_wmts = None
@@ -674,7 +675,7 @@ def get_environment(environmentConfig, email_meta):
             elif str(reprojectApacheConfigLocation.attributes['service'].value).lower() == "twms":
                 reprojectApacheConfigLocation_twms = reprojectApacheConfigLocation.firstChild.nodeValue.strip()
         except KeyError:
-            print '<ReprojectApacheConfigLocation> not found in environment configuration'
+            print('<ReprojectApacheConfigLocation> not found in environment configuration')
 
     reprojectLayerConfigLocationElements = dom.getElementsByTagName('ReprojectLayerConfigLocation')
     reprojectLayerConfigLocation_wmts = None
@@ -686,7 +687,7 @@ def get_environment(environmentConfig, email_meta):
             elif str(reprojectLayerConfigLocation.attributes['service'].value).lower() == "twms":
                 reprojectLayerConfigLocation_twms = reprojectLayerConfigLocation.firstChild.nodeValue.strip()
         except KeyError:
-            print '<ReprojectLayerConfigLocation> not found in environment configuration'
+            print('<ReprojectLayerConfigLocation> not found in environment configuration')
         
     return Environment(add_trailing_slash(cacheLocation_wmts),
                        add_trailing_slash(cacheLocation_twms),

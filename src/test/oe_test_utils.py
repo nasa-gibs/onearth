@@ -42,8 +42,8 @@ import hashlib
 import shlex
 from dateutil.relativedelta import relativedelta
 import sqlite3
-import urllib2
-import StringIO
+import urllib.request, urllib.error, urllib.parse
+import io
 import gzip
 import mapbox_vector_tile
 from lxml import etree
@@ -106,8 +106,8 @@ class XmlDictConfig(dict):
     def __init__(self, parent_element):
         childrenNames = [child.tag for child in parent_element.getchildren()]
 
-        if parent_element.items():
-            self.update(dict(parent_element.items()))
+        if list(parent_element.items()):
+            self.update(dict(list(parent_element.items())))
         for element in parent_element:
             if element:
                 # treat like dict - we assume that if the first two tags
@@ -122,8 +122,8 @@ class XmlDictConfig(dict):
                     # the value is the list itself
                     aDict = {element[0].tag: XmlListConfig(element)}
                 # if the tag has attributes, add those to the dict
-                if element.items():
-                    aDict.update(dict(element.items()))
+                if list(element.items()):
+                    aDict.update(dict(list(element.items())))
 
                 if childrenNames.count(element.tag) > 1:
                     try:
@@ -141,8 +141,8 @@ class XmlDictConfig(dict):
             # you won't be having any text. This may or may not be a
             # good idea -- time will tell. It works for the way we are
             # currently doing XML configuration files...
-            elif element.items():
-                self.update({element.tag: dict(element.items())})
+            elif list(element.items()):
+                self.update({element.tag: dict(list(element.items()))})
                 #self[element.tag].update({"__Content__":element.text})
             # finally, if there are no child tags and no attributes, extract
             # the text
@@ -304,18 +304,21 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
         ignore_warnings -- if set to True, warnings
             will be ignored (defaults to False)
     """
-    # print '\nRunning command: ' + cmd
-    process = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    print('\nRunning command: ' + cmd)
+    process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if wait:
         process.wait()
     if not ignore_warnings:
         output_err = open(cmd.split(' ')[0] + '.err', 'a')
         for error in process.stderr:
             if not ignore_warnings or "WARNING" not in error:
-                print error
+                print(error)
                 output_err.write(error)
         output_err.close
+    print('run_command stdout: ' + process.stdout.read())
+    print('run_command stderr: ' + process.stderr.read())
+    print('**************************************************************************************')
     return None
 
 
@@ -327,19 +330,28 @@ def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
         ignore_warnings -- if set to True, warnings
             will be ignored (defaults to False)
     """
-    # print '\nRunning command: ' + cmd
-    process = subprocess.Popen(
-        shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    for line in process.communicate():
-        if line:
-            if show_output is True or 'error' in line.lower(
-            ) or ignore_warnings and 'warning' in line.lower():
-                print line
+    process = subprocess.run(shlex.split(cmd), universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
+    print('run_command stdout: ' + process.stdout)
+    print('**************************************************************************************')
+
+    for line in process.stdout:
+        if line:
+            if show_output is True or 'error' in line.lower() or ignore_warnings and 'warning' in line.lower():
+                print(line)
 
 def find_string(file_path, string):
     try:
         with open(file_path, 'r') as f:
+            result = any(line for line in f if string in line)
+    except OSError:
+        result = False
+    return result
+
+
+def find_string_binary(file_path, string):
+    try:
+        with open(file_path, 'rb') as f:
             result = any(line for line in f if string in line)
     except OSError:
         result = False
@@ -559,11 +571,11 @@ def read_zkey(zdb, sort):
                 con.close()
             return key
 
-    except sqlite3.Error, e:
+    except sqlite3.Error as e:
         if con:
             con.rollback()
         mssg = "%s:" % e.args[0]
-        print mssg
+        print(mssg)
         return None
 
 
@@ -572,7 +584,7 @@ def get_file_list(path):
     for name in os.listdir(path):
         filepath = os.path.join(path, name)
         if os.path.isfile(filepath):
-            file.append(filepath)
+            files.append(filepath)
     return files
 
 
@@ -593,13 +605,13 @@ def get_layer_config(filepath, archive_config):
             env_config = config_dom.getElementsByTagName(
                 "EnvironmentConfig")[0].firstChild.nodeValue
     except IOError:
-        print "Cannot read file " + filepath
+        print("Cannot read file " + filepath)
         return config
     try:
         with open(archive_config, "r") as archive:
             archive_dom = xml.dom.minidom.parse(archive)
     except IOError:
-        print "Cannot read file " + archive_config
+        print("Cannot read file " + archive_config)
         return config
 
     # Get archive root path and the archive location
@@ -649,7 +661,7 @@ def get_layer_config(filepath, archive_config):
         with open(env_config, "r") as env:
             env_dom = xml.dom.minidom.parse(env)
     except IOError:
-        print "Cannot read file " + env_config
+        print("Cannot read file " + env_config)
         return config
     # Add everything we need from the environment config
     staging_locations = env_dom.getElementsByTagName('StagingLocation')
@@ -765,9 +777,9 @@ def get_url(url):
         url -- the URL of the file to be downloaded.
     """
     try:
-        response = urllib2.urlopen(url)
-    except urllib2.URLError:
-        raise urllib2.URLError('Cannot access URL: ' + url)
+        response = urllib.request.urlopen(url)
+    except urllib.error.URLError:
+        raise urllib.error.URLError('Cannot access URL: ' + url)
     return response
 
 
@@ -812,6 +824,9 @@ def ordered_d(obj):
     else:
         return obj
 
+def order_dict(dictionary):
+    return {k: order_dict(v) if isinstance(v, dict) else v
+            for k, v in sorted(dictionary.items())}
 
 def check_dicts(d, ref_d):
     """
@@ -820,7 +835,7 @@ def check_dicts(d, ref_d):
         d -- dict to compare
         ref_d -- reference dict being compared against
     """
-    if ordered_d(ref_d) == ordered_d(d):
+    if order_dict(ref_d) == order_dict(d):
         return True
     else:
         return False
@@ -854,12 +869,12 @@ def check_response_code(url, code, code_value=''):
     """
     check_apache_running()
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         r_code = 200
-    except urllib2.HTTPError as e:
+    except urllib.error.HTTPError as e:
         r_code = e.code
         response = e
-    if r_code == code and code_value in response.read():
+    if r_code == code and code_value in response.read().decode('utf-8'):
         return True
     return False
 
@@ -874,9 +889,9 @@ def check_wmts_error(url, code, hash):
     """
     check_apache_running()
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         r_code = 200
-    except urllib2.HTTPError as e:
+    except urllib.error.HTTPError as e:
         r_code = e.code
         response = e.read()
     if r_code == code:
@@ -936,7 +951,7 @@ def file_text_replace(infile, outfile, before, after):
 
 
 def check_valid_mvt(file, warn_if_empty=False):
-    tile_buffer = StringIO.StringIO()
+    tile_buffer = io.BytesIO()
     tile_buffer.write(file.read())
     tile_buffer.seek(0)
     try:
@@ -950,7 +965,7 @@ def check_valid_mvt(file, warn_if_empty=False):
         return False
     if warn_if_empty:
         try:
-            num_features = len(tile[tile.keys()[0]]['features'])
+            num_features = len(tile[list(tile.keys())[0]]['features'])
         except IndexError:
             return False
     return True

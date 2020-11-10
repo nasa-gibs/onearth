@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -45,7 +45,7 @@ import datetime
 import sqlite3
 from osgeo import gdal
 from optparse import OptionParser
-from cStringIO import StringIO
+from io import StringIO
 from oe_test_utils import DebuggingServerThread, make_dir_tree, mrfgen_run_command as run_command
 
 DEBUG = False
@@ -87,47 +87,47 @@ class TestMRFGeneration_paletted(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
         # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(geotransform[1], 0.087890625, "Pixel size does not match")
         self.assertEqual(geotransform[5], -0.087890625, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 3, "Overview count does not match")
 
         if DEBUG:
-            print 'Colors:', band.GetRasterColorTable().GetCount()
+            print('Colors:', band.GetRasterColorTable().GetCount())
         self.assertEqual(band.GetRasterColorTable().GetCount(), 256, "Color count does not match")       
         for x in range(0, 255):
             color = band.GetRasterColorTable().GetColorEntry(x)
             if DEBUG:
-                print color
+                print(color)
             if x == 0:
                 self.assertEqual(str(color), '(220, 220, 255, 0)', "Color does not match")
             if x == 1:
@@ -139,14 +139,14 @@ class TestMRFGeneration_paletted(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
@@ -156,7 +156,7 @@ class TestMRFGeneration_paletted(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_paletted_nnb(unittest.TestCase):
@@ -191,48 +191,48 @@ class TestMRFGeneration_paletted_nnb(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),
                          'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
 
         if DEBUG:
-            print 'Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount
+            print('Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Size does not match")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (', geotransform[0], ',', geotransform[3], ')'
+            print('Origin: (', geotransform[0], ',', geotransform[3], ')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
+            print('Pixel Size: (', geotransform[1], ',', geotransform[5], ')')
         self.assertEqual(geotransform[1], 0.087890625, "Pixel size does not match")
         self.assertEqual(geotransform[5], -0.087890625, "Pixel size does not match")
 
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 3, "Overview count does not match")
 
         if DEBUG:
-            print 'Colors:', band.GetRasterColorTable().GetCount()
+            print('Colors:', band.GetRasterColorTable().GetCount())
         self.assertEqual(band.GetRasterColorTable().GetCount(), 256, "Color count does not match")
         for x in range(0, 255):
             color = band.GetRasterColorTable().GetColorEntry(x)
             if DEBUG:
-                print color
+                print(color)
             if x == 0:
                 self.assertEqual(str(color), '(220, 220, 255, 0)', "Color does not match")
             if x == 1:
@@ -244,14 +244,14 @@ class TestMRFGeneration_paletted_nnb(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0)
 
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
 
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
 
         img = None
@@ -261,7 +261,7 @@ class TestMRFGeneration_paletted_nnb(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_nonpaletted(unittest.TestCase):
@@ -278,7 +278,7 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
 
         # Create non-paletted PNG using gdal_translate
         if DEBUG:
-            print "Generating global image: non-paletted PNG"
+            print("Generating global image: non-paletted PNG")
         shutil.copytree(os.path.join(testdata_path, 'bluemarble_small'), os.path.join(self.tmp_area, 'bluemarble_small'))
         self.input_jpg = os.path.join(self.tmp_area, "bluemarble_small/bluemarble_small.jpg")
         self.output_png = os.path.join(self.tmp_area, "bluemarble_small/bluemarble_small.png")
@@ -313,39 +313,39 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
         # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         #self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
         self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 4096, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(str(geotransform[1]), '0.087890625', "Pixel size does not match")
         self.assertEqual(str(geotransform[5]), '-0.087890625', "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 4, "Overview count does not match")
         
         # Convert and compare MRF
@@ -354,14 +354,14 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
@@ -371,7 +371,7 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
         
 
 class TestMRFGeneration_polar(unittest.TestCase):
@@ -409,39 +409,39 @@ class TestMRFGeneration_polar(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]')
 
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -4194304, "Origin does not match")
         self.assertEqual(geotransform[3], 4194304, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(int(geotransform[1]), 4096, "Pixel size does not match")
         self.assertEqual(int(geotransform[5]), -4096, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
         
         # Convert and compare MRF
@@ -450,14 +450,14 @@ class TestMRFGeneration_polar(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
 
         img = None
@@ -467,7 +467,7 @@ class TestMRFGeneration_polar(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_polar_avg(unittest.TestCase):
@@ -505,39 +505,39 @@ class TestMRFGeneration_polar_avg(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),
                          'PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]')
 
         if DEBUG:
-            print 'Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount
+            print('Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (', geotransform[0], ',', geotransform[3], ')'
+            print('Origin: (', geotransform[0], ',', geotransform[3], ')')
         self.assertEqual(geotransform[0], -4194304, "Origin does not match")
         self.assertEqual(geotransform[3], 4194304, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
+            print('Pixel Size: (', geotransform[1], ',', geotransform[5], ')')
         self.assertEqual(int(geotransform[1]), 4096, "Pixel size does not match")
         self.assertEqual(int(geotransform[5]), -4096, "Pixel size does not match")
 
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
 
         # Convert and compare MRF
@@ -546,14 +546,14 @@ class TestMRFGeneration_polar_avg(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0)
 
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
 
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
 
         img = None
@@ -563,7 +563,7 @@ class TestMRFGeneration_polar_avg(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_mercator(unittest.TestCase):
@@ -600,38 +600,38 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
         # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 1024, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 1024, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
         self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
-        self.assertEqual(str(geotransform[1]), '39135.7584766', "Pixel size does not match")
-        self.assertEqual(str(geotransform[5]), '-39135.7584766', "Pixel size does not match")
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
+        self.assertEqual(str(geotransform[1]), '39135.7584765625', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-39135.7584765625', "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
         
         # Convert and compare MRF
@@ -640,14 +640,14 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
@@ -657,7 +657,7 @@ class TestMRFGeneration_mercator(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_mercator_avg(unittest.TestCase):
@@ -695,39 +695,39 @@ class TestMRFGeneration_mercator_avg(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection().replace('  ', ' ')),
                          'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
 
         if DEBUG:
-            print 'Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount
+            print('Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 1024, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 1024, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (', geotransform[0], ',', geotransform[3], ')'
+            print('Origin: (', geotransform[0], ',', geotransform[3], ')')
         self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
         self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
-        self.assertEqual(str(geotransform[1]), '39135.7584766', "Pixel size does not match")
-        self.assertEqual(str(geotransform[5]), '-39135.7584766', "Pixel size does not match")
+            print('Pixel Size: (', geotransform[1], ',', geotransform[5], ')')
+        self.assertEqual(str(geotransform[1]), '39135.7584765625', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-39135.7584765625', "Pixel size does not match")
 
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
 
         # Convert and compare MRF
@@ -736,14 +736,14 @@ class TestMRFGeneration_mercator_avg(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0)
 
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
 
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
 
         img = None
@@ -753,7 +753,7 @@ class TestMRFGeneration_mercator_avg(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_granule(unittest.TestCase):
@@ -792,20 +792,20 @@ class TestMRFGeneration_granule(unittest.TestCase):
         # create copy of colormap
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
         if DEBUG:
-            print "Generating empty MRF with No Copy option"
+            print("Generating empty MRF with No Copy option")
 
         #pdb.set_trace()
         run_command("mrfgen -c " + test_config4a, show_output=DEBUG)
         if DEBUG:
-            print "Generating global composite using granules with existing NoCopy MRF at z=0"
+            print("Generating global composite using granules with existing NoCopy MRF at z=0")
         run_command("mrfgen -c " + test_config4b, show_output=DEBUG)
         run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf+':MRF:Z0 ' + self.output_img_b, show_output=DEBUG)
         if DEBUG:
-            print "Generating global image with single granules with existing NoCopy MRF at z=1"
+            print("Generating global image with single granules with existing NoCopy MRF at z=1")
         run_command("mrfgen -c " + test_config4c, show_output=DEBUG)
         run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf+':MRF:Z1 ' + self.output_img_c, show_output=DEBUG)
         if DEBUG:
-            print "Generating global image with single granules with existing NoCopy MRF at z=2"
+            print("Generating global image with single granules with existing NoCopy MRF at z=2")
         run_command("mrfgen -c " + test_config4d, show_output=DEBUG)
         run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf + ':MRF:Z2 ' + self.output_img_d, show_output=DEBUG)
            
@@ -821,39 +821,39 @@ class TestMRFGeneration_granule(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         self.assertTrue(os.path.isfile(self.output_zdb), "MRF ZDB generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
         self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
         
         # Convert and compare MRF
@@ -862,8 +862,8 @@ class TestMRFGeneration_granule(unittest.TestCase):
         img = driver.CreateCopy(self.output_img_a, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
@@ -883,39 +883,39 @@ class TestMRFGeneration_granule(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf+":MRF:Z0")
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
         self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
         
         # Compare MRF
         img = gdal.Open(self.output_img_b)
         if DEBUG:
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
-            print "Comparing: " + self.output_img_b + " to " + self.compare_img_b
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)        
+            print("Comparing: " + self.output_img_b + " to " + self.compare_img_b)
         self.assertTrue(filecmp.cmp(self.output_img_b, self.compare_img_b), "Output composite image does not match")
 
         '''
@@ -928,39 +928,39 @@ class TestMRFGeneration_granule(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf+":MRF:Z1")
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
         self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
         
         # Convert and compare MRF
         img = gdal.Open(self.output_img_c)
         if DEBUG:
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
-            print "Comparing: " + self.output_img_c + " to " + self.compare_img_c
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)        
+            print("Comparing: " + self.output_img_c + " to " + self.compare_img_c)
         self.assertTrue(filecmp.cmp(self.output_img_c, self.compare_img_c), "Output granule image does not match")
 
         '''
@@ -971,40 +971,40 @@ class TestMRFGeneration_granule(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf + ":MRF:Z2")
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),
                          'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
 
         if DEBUG:
-            print 'Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount
+            print('Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (', geotransform[0], ',', geotransform[3], ')'
+            print('Origin: (', geotransform[0], ',', geotransform[3], ')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
+            print('Pixel Size: (', geotransform[1], ',', geotransform[5], ')')
         self.assertEqual(float(geotransform[1]), 0.0087890625, "Pixel size does not match")
         self.assertEqual(float(geotransform[5]), -0.0087890625, "Pixel size does not match")
 
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
 
         # Convert and compare MRF
         img = gdal.Open(self.output_img_d)
         if DEBUG:
-            print 'Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount
-            print "Comparing: " + self.output_img_d + " to " + self.compare_img_d
+            print('Size: ', img.RasterXSize, 'x', img.RasterYSize, 'x', img.RasterCount)
+            print("Comparing: " + self.output_img_d + " to " + self.compare_img_d)
         self.assertTrue(filecmp.cmp(self.output_img_d, self.compare_img_d), "Output granule image does not match")
 
 
@@ -1012,25 +1012,25 @@ class TestMRFGeneration_granule(unittest.TestCase):
         
         # Test ZDB
         if DEBUG:
-            print "Checking " + self.output_zdb
+            print("Checking " + self.output_zdb)
         con = sqlite3.connect(self.output_zdb)
         cur = con.cursor()
         # Check for existing key
         cur.execute("SELECT COUNT(*) FROM ZINDEX;")
         lid = int(cur.fetchone()[0])
         if DEBUG:
-            print "Number of records: " + str(lid)
+            print("Number of records: " + str(lid))
         self.assertEqual(lid, 3, "Number of records not matching in ZDB")
         # Check for matching keys
         cur.execute("SELECT key_str FROM ZINDEX where z=0;")
         key_str = cur.fetchone()[0]
         if DEBUG:
-            print key_str
+            print(key_str)
         self.assertEqual(key_str, '20151202', "Time for Z=0 does not match in ZDB")
         cur.execute("SELECT key_str FROM ZINDEX where z=1;")
         key_str = cur.fetchone()[0]
         if DEBUG:
-            print key_str
+            print(key_str)
         self.assertEqual(key_str, '20151202100000', "Time for Z=1 does not match in ZDB")
         if con:
             con.close()
@@ -1040,7 +1040,7 @@ class TestMRFGeneration_granule(unittest.TestCase):
             [os.remove(os.path.join(self.input_dir, file)) for file in os.listdir(self.input_dir) if not file.endswith('.tiff')]
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 class TestMRFGeneration_granule_webmerc(unittest.TestCase):
     
@@ -1071,7 +1071,7 @@ class TestMRFGeneration_granule_webmerc(unittest.TestCase):
         shutil.copy2(os.path.join(testdata_path, "colormaps/MODIS_Aqua_Chlorophyll_A.xml"), os.path.join(self.staging_area, 'working_dir'))
         
         if DEBUG:
-            print "Generating global Web Mercator image with granules "
+            print("Generating global Web Mercator image with granules ")
         #pdb.set_trace()
         run_command("mrfgen -c " + test_config, show_output=DEBUG)
         run_command('gdal_translate -of PNG -outsize 1024 1024 ' + self.output_mrf+':MRF:Z0 ' + self.output_img, show_output=DEBUG)
@@ -1090,66 +1090,66 @@ class TestMRFGeneration_granule_webmerc(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         self.assertTrue(os.path.isfile(self.output_zdb), "MRF ZDB generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 32768, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 32768, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Number of bands do not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
         self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
-        self.assertEqual(float(geotransform[1]), 1222.992452392578116, "Pixel size does not match")
-        self.assertEqual(float(geotransform[5]), -1222.992452392578116, "Pixel size does not match")
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
+        self.assertEqual(float(geotransform[1]), 1222.9924523925781, "Pixel size does not match")
+        self.assertEqual(float(geotransform[5]), -1222.9924523925781, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
         
         # Compare MRF
         img = gdal.Open(self.output_img)
         if DEBUG:
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)        
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output composite image does not match")        
         
         img = None
         
         # Test ZDB
         if DEBUG:
-            print "Checking " + self.output_zdb
+            print("Checking " + self.output_zdb)
         con = sqlite3.connect(self.output_zdb)
         cur = con.cursor()
         # Check for existing key
         cur.execute("SELECT COUNT(*) FROM ZINDEX;")
         lid = int(cur.fetchone()[0])
         if DEBUG:
-            print "Number of records: " + str(lid)
+            print("Number of records: " + str(lid))
         self.assertEqual(lid, 1, "Number of records not matching in ZDB")
         # Check for matching keys
         cur.execute("SELECT key_str FROM ZINDEX where z=0;")
         key_str = cur.fetchone()[0]
         if DEBUG:
-            print key_str
+            print(key_str)
         self.assertEqual(key_str, '20151202', "Time for Z=0 does not match in ZDB")
         if con:
             con.close()
@@ -1159,7 +1159,7 @@ class TestMRFGeneration_granule_webmerc(unittest.TestCase):
             [os.remove(os.path.join(self.input_dir, file)) for file in os.listdir(self.input_dir) if not file.endswith('.tiff')]
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 class TestMRFGeneration_tiled_z(unittest.TestCase):
     '''
@@ -1202,66 +1202,66 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf+":MRF:Z0")
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
         
         # This part of the test previously looked for a triplet of files in dataset.GetFileList(). 
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_pjg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         self.assertTrue(os.path.isfile(self.output_zdb), "MRF ZDB generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 163840, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 163840, "Size does not match")
         self.assertEqual(dataset.RasterCount, 3, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
         self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
-        self.assertEqual(str(geotransform[1]), '244.598490479', "Pixel size does not match")
-        self.assertEqual(str(geotransform[5]), '-244.598490479', "Pixel size does not match")
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
+        self.assertEqual(str(geotransform[1]), '244.59849047851563', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-244.59849047851563', "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 10, "Overview count does not match")
         
         # Compare MRF
         img = gdal.Open(self.output_img)
         if DEBUG:
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount        
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)        
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output composite image does not match")        
         
         img = None
         
         # Test ZDB
         if DEBUG:
-            print "Checking " + self.output_zdb
+            print("Checking " + self.output_zdb)
         con = sqlite3.connect(self.output_zdb)
         cur = con.cursor()
         # Check for existing key
         cur.execute("SELECT COUNT(*) FROM ZINDEX;")
         lid = int(cur.fetchone()[0])
         if DEBUG:
-            print "Number of records: " + str(lid)
+            print("Number of records: " + str(lid))
         self.assertEqual(lid, 1, "Number of records not matching in ZDB")
         # Check for matching keys
         cur.execute("SELECT key_str FROM ZINDEX where z=0;")
         key_str = cur.fetchone()[0]
         if DEBUG:
-            print key_str
+            print(key_str)
         self.assertEqual(key_str, 'test', "Time for Z=0 does not match in ZDB")
         if con:
             con.close()
@@ -1270,7 +1270,7 @@ class TestMRFGeneration_tiled_z(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 
 class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
@@ -1311,44 +1311,44 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection().replace('  ', ' ')),
                          'PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]')
 
         if DEBUG:
-            print 'Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount
+            print('Size: ', dataset.RasterXSize, 'x', dataset.RasterYSize, 'x', dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 32768, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 32768, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Size does not match")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (', geotransform[0], ',', geotransform[3], ')'
+            print('Origin: (', geotransform[0], ',', geotransform[3], ')')
         self.assertEqual(geotransform[0], -20037508.34, "Origin does not match")
         self.assertEqual(geotransform[3], 20037508.34, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (', geotransform[1], ',', geotransform[5], ')'
-        self.assertEqual(str(geotransform[1]), '1222.99245239', "Pixel size does not match")
-        self.assertEqual(str(geotransform[5]), '-1222.99245239', "Pixel size does not match")
+            print('Pixel Size: (', geotransform[1], ',', geotransform[5], ')')
+        self.assertEqual(str(geotransform[1]), '1222.9924523925781', "Pixel size does not match")
+        self.assertEqual(str(geotransform[5]), '-1222.9924523925781', "Pixel size does not match")
 
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
 
         # Convert and compare MRF
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
 
         img = None
@@ -1358,7 +1358,7 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 class TestMRFGeneration_email_notification(unittest.TestCase):
 
@@ -1436,7 +1436,7 @@ class TestMRFGeneration_email_notification(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
         
 class TestMRFGeneration_mixed_projections(unittest.TestCase):
@@ -1464,7 +1464,7 @@ class TestMRFGeneration_mixed_projections(unittest.TestCase):
         self.compare_img = os.path.join(testdata_path, "test_comp8.png")
             
         # generate MRF
-        print "mrfgen -c " + test_config
+        print("mrfgen -c " + test_config)
         run_command("mrfgen -c " + test_config)
            
     def test_generate_mixed_projections(self):
@@ -1475,39 +1475,39 @@ class TestMRFGeneration_mixed_projections(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
 
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 1024, "Size does not match")
         self.assertEqual(dataset.RasterCount, 4, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(float(geotransform[1]), 0.17578125, "Pixel size does not match")
         self.assertEqual(float(geotransform[5]), -0.17578125, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
         
         # Convert and compare MRF
@@ -1516,14 +1516,14 @@ class TestMRFGeneration_mixed_projections(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
@@ -1533,7 +1533,7 @@ class TestMRFGeneration_mixed_projections(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
     
@@ -1560,7 +1560,7 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         self.compare_img = os.path.join(testdata_path, "test_comp9.png")
             
         # generate MRF
-        print "mrfgen -c " + test_config
+        print("mrfgen -c " + test_config)
         run_command("mrfgen -c " + test_config)
            
     def test_generate_antimeridian_crossing(self):
@@ -1571,39 +1571,39 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         dataset = gdal.Open(self.output_mrf)
         driver = dataset.GetDriver()
         if DEBUG:
-            print 'Driver:', str(driver.LongName)
+            print('Driver:', str(driver.LongName))
         self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().         
         if DEBUG:
-            print 'Files: {0}, {1}'.format(self.output_ppg, self.output_idx)
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
         
         if DEBUG:
-            print 'Projection:', str(dataset.GetProjection())
+            print('Projection:', str(dataset.GetProjection()))
         self.assertEqual(str(dataset.GetProjection()),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
 
         
         if DEBUG:
-            print 'Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 2048, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 1024, "Size does not match")
         self.assertEqual(dataset.RasterCount, 1, "Size does not match")
         
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
-            print 'Origin: (',geotransform[0], ',',geotransform[3],')'
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
         self.assertEqual(geotransform[0], -180.0, "Origin does not match")
         self.assertEqual(geotransform[3], 90.0, "Origin does not match")
         if DEBUG:
-            print 'Pixel Size: (',geotransform[1], ',',geotransform[5],')'
+            print('Pixel Size: (',geotransform[1], ',',geotransform[5],')')
         self.assertEqual(float(geotransform[1]), 0.17578125, "Pixel size does not match")
         self.assertEqual(float(geotransform[5]), -0.17578125, "Pixel size does not match")
         
         band = dataset.GetRasterBand(1)
         if DEBUG:
-            print 'Overviews:', band.GetOverviewCount()
+            print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 2, "Overview count does not match")
         
         # Convert and compare MRF
@@ -1612,14 +1612,14 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         img = driver.CreateCopy(self.output_img, mrf, 0 )
         
         if DEBUG:
-            print 'Generated: ' + ' '.join(img.GetFileList())
-            print 'Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount
+            print('Generated: ' + ' '.join(img.GetFileList()))
+            print('Size: ',img.RasterXSize,'x',img.RasterYSize, 'x',img.RasterCount)
         self.assertEqual(img.RasterXSize, dataset.RasterXSize, "Size does not match")
         self.assertEqual(img.RasterYSize, dataset.RasterYSize, "Size does not match")
         self.assertEqual(img.RasterCount, dataset.RasterCount, "Size does not match")
         
         if DEBUG:
-            print "Comparing: " + self.output_img + " to " + self.compare_img
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
         self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
         
         img = None
@@ -1629,7 +1629,7 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         if not SAVE_RESULTS:
             shutil.rmtree(self.staging_area)
         else:
-            print "Leaving test results in : " + self.staging_area
+            print("Leaving test results in : " + self.staging_area)
 
 if __name__ == '__main__':
     # Parse options before running tests
@@ -1648,12 +1648,12 @@ if __name__ == '__main__':
                        'mixed_projections': TestMRFGeneration_mixed_projections,
                        'antimeridian_crossing': TestMRFGeneration_antimeridian_crossing
                        }
-    test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(available_tests.keys())
+    test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(list(available_tests.keys()))
     parser = OptionParser()
     parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mrfgen_results.xml',
                       help='Specify XML output file (default is test_mrfgen_results.xml')
     parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Display verbose debugging messages')
-    parser.add_option('-t', '--test', action='append', type='choice', dest='test', choices=available_tests.keys(), help=test_help_text)
+    parser.add_option('-t', '--test', action='append', type='choice', dest='test', choices=list(available_tests.keys()), help=test_help_text)
     parser.add_option('-s', '--save-results', action='store_true', dest='save_results', help='Save staging area results')
     (options, args) = parser.parse_args()
     DEBUG = options.debug
@@ -1669,9 +1669,9 @@ if __name__ == '__main__':
         [main_test_suite.addTests(test_loader.loadTestsFromTestCase(available_tests[test])) for test in options.test]
     else:
         # Run all tests if none specified
-        [main_test_suite.addTests(test_loader.loadTestsFromTestCase(test_case)) for test_case in available_tests.values()]
+        [main_test_suite.addTests(test_loader.loadTestsFromTestCase(test_case)) for test_case in list(available_tests.values())]
 
     with open(options.outfile, 'wb') as f:
-        print '\nStoring test results in "{0}"'.format(options.outfile)
+        print('\nStoring test results in "{0}"'.format(options.outfile))
         test_runner = xmlrunner.XMLTestRunner(output=f)
         test_runner.run(main_test_suite)

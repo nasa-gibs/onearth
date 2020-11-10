@@ -34,7 +34,7 @@ These tests assume that OnEarth and its associated utilities are installed. **Te
 The tests have additional dependencies from the rest of OnEarth. To install the Python dependencies required by the test scripts, run `sudo pip3 install -r requirements.txt`.
 
 ## Running the Tests
-Each test script will output a JUnit XML results file. By default, these files are named `*_results.xml`. A different output filename can be specified with the `-o` option, i.e. `sudo python test_mod_mrf.py -o output_file.xml`.
+Each test script will output a JUnit XML results file. By default, these files are named `*_results.xml`. A different output filename can be specified with the `-o` option, i.e. `python3 test_mod_mrf.py -o output_file.xml`.
 
 **Note also that the mrfgen tests involve the downloading and processing of imagery, so they may take a while to complete. You may experience 'out of memory' errors if running these tests in a VM without enough memory configured.**
 

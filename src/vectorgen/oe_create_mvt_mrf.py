@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -38,7 +38,7 @@ or by using the create_vector_mrf() function in another script.
 import os
 import sys
 import struct
-import StringIO
+import io
 import gzip
 import xml.dom.minidom
 import math
@@ -120,8 +120,8 @@ def create_vector_mrf(input_file_path,
                             overview_levels, proj)
 
     # Open MRF data and index files and generate the MRF XML
-    fidx = open(os.path.join(output_path, mrf_prefix + '.idx'), 'w+')
-    fout = open(os.path.join(output_path, mrf_prefix + '.pvt'), 'w+')
+    fidx = open(os.path.join(output_path, mrf_prefix + '.idx'), 'wb+')
+    fout = open(os.path.join(output_path, mrf_prefix + '.pvt'), 'wb+')
     notile = struct.pack('!QQ', 0, 0)
     pvt_offset = 0
 
@@ -167,7 +167,7 @@ def create_vector_mrf(input_file_path,
                 feature_count = spatial_dbs[idx].count(spatial_dbs[idx].bounds)
                 num_points_to_delete = int(feature_count - math.floor(feature_count / feature_reduce_rate))
                 if debug:
-                    print("Rate reduced " + str(num_points_to_delete) + " features from zoom level")
+                    print(("Rate reduced " + str(num_points_to_delete) + " features from zoom level"))
                 for feature in random.sample([feature for feature in spatial_dbs[idx].intersection(
                       spatial_dbs[idx].bounds, objects=True)], num_points_to_delete):
                     spatial_dbs[idx].delete(feature.id, feature.bbox)
@@ -215,8 +215,8 @@ def create_vector_mrf(input_file_path,
         # then turn the resulting list into an MVT tile and write the tile.
         z_fltr_features = 0
 
-        for y in xrange(tile_matrix['matrix_height']):
-            for x in xrange(tile_matrix['matrix_width']):
+        for y in range(tile_matrix['matrix_height']):
+            for x in range(tile_matrix['matrix_width']):
                 # Get tile bounds
                 tile_size = tile_matrix['tile_size_in_map_units']
 
@@ -242,8 +242,8 @@ def create_vector_mrf(input_file_path,
                     max_x + tile_max_x_buffer, max_y + tile_max_y_buffer)
 
                 if debug:
-                    print("Processing tile: {0}/{1}/{2}\r".format(z, x, y))
-                    print("Tile Bounds: " + str(tile_bbox.bounds))
+                    print(("Processing tile: {0}/{1}/{2}\r".format(z, x, y)))
+                    print(("Tile Bounds: " + str(tile_bbox.bounds)))
 
                 # Iterate through the feature geometry and grab anything in this tile's bounds
                 tile_features = []
@@ -270,7 +270,7 @@ def create_vector_mrf(input_file_path,
                     after_count = len(tile_features)
 
                     if debug:
-                        print("Filtered features in tile from " + str(before_count) + " to " + str(after_count))
+                        print(("Filtered features in tile from " + str(before_count) + " to " + str(after_count)))
 
                 # Keep a running count of how many features end up in the tiles in this zoom level after overview filtering
                 z_fltr_features += len(tile_features)
@@ -278,18 +278,12 @@ def create_vector_mrf(input_file_path,
                 # Create MVT tile from the features in this tile (Only doing single layers for now)
                 new_layer = {'name': layer_name, 'features': tile_features}
 
-                # Have to change the default rounding if in Python 2.6 due to Decimal rounding issues.
-                if sys.version_info < (2, 7):
-                    round_fn = py_26_round_fn
-                else:
-                    round_fn = None
-
                 # Encode the MVT
                 mvt_tile = mapbox_vector_tile.encode(
                     [new_layer],
                     quantize_bounds=tile_bbox.bounds,
                     y_coord_down=False,
-                    round_fn=round_fn)
+                    round_fn=None)
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:
@@ -298,13 +292,13 @@ def create_vector_mrf(input_file_path,
                         os.mkdir(tiles_dir)
 
                     mvt_filename = os.path.join(tiles_dir, 'test_{0}_{1}_{2}.mvt'.format(z, x, y))
-                    with open(mvt_filename, 'w+') as f:
+                    with open(mvt_filename, 'wb+') as f:
                         f.write(mvt_tile)
 
                 # Write out MVT tile data to MRF. Note that we have to gzip the tile first.
                 if mvt_tile:
-                    out = StringIO.StringIO()
-                    gzip_obj = gzip.GzipFile(fileobj=out, mode='w')
+                    out = io.BytesIO()
+                    gzip_obj = gzip.GzipFile(fileobj=out, mode='wb')
                     gzip_obj.write(mvt_tile)
                     gzip_obj.close()
                     zipped_tile_data = out.getvalue()
@@ -318,39 +312,12 @@ def create_vector_mrf(input_file_path,
                 fidx.write(tile_index)
 
         if debug:
-            print("Z-Level (" + str(z) + ") Tile Filtering - Orig: {0} / Reduced: {1} / Filtered: {2}".
-                  format(z_orig_features, z_rdct_features, z_fltr_features))
+            print(("Z-Level (" + str(z) + ") Tile Filtering - Orig: {0} / Reduced: {1} / Filtered: {2}".
+                  format(z_orig_features, z_rdct_features, z_fltr_features)))
     fidx.close()
     fout.close()
 
     return True
-
-
-# UTILITY FUNCTIONS
-"""
-mapbox_vector_tile module is not compatible with Python 2.6's decimal handling, so we
-use a modified rounding function if necessary.
-ref: http://stackoverflow.com/questions/8000318/conversion-from-float-to-decimal-in-python-2-6-how-to-do-it-and-why-they-didnt
-"""
-
-
-def py_26_float_to_decimal(f):  # mapbox_vector_tile monkeypatch for python 2.6
-    "Convert a floating point number to a Decimal with no loss of information"
-    n, d = f.as_integer_ratio()
-    numerator, denominator = decimal.Decimal(n), decimal.Decimal(d)
-    ctx = decimal.Context(prec=60)
-    result = ctx.divide(numerator, denominator)
-    while ctx.flags[decimal.Inexact]:
-        ctx.flags[decimal.Inexact] = False
-        ctx.prec *= 2
-        result = ctx.divide(numerator, denominator)
-    return result
-
-
-def py_26_round_fn(val):  # mapbox_vector_tile monkeypatch for python 2.6
-    d = py_26_float_to_decimal(val)
-    rounded = d.quantize(1, rounding=decimal.ROUND_HALF_EVEN)
-    return float(rounded)
 
 
 def get_tms(target_x, target_y, extents, tile_size, o_levels, proj):
@@ -486,18 +453,18 @@ def rtree_index_generator(features, filter_list, feature_id, create_feature_id):
 
                 yield (idx, shapely.geometry.shape(feature['geometry']).bounds, feature)
         except ValueError as e:
-            print "WARN - " + str(e)
+            print("WARN - " + str(e))
 
 
 def passes_filters(feature, filter_list, debug=False):
-    return any(map(lambda filter_block: filter_block_func(feature, filter_block, debug), filter_list))
+    return any([filter_block_func(feature, filter_block, debug) for filter_block in filter_list])
 
 
 def filter_block_func(feature, filter_block, debug=False):
     if filter_block['logic'].lower() == "and":
-        return all(map(lambda comp: filter_func(feature, comp, debug), filter_block['filters']))
+        return all([filter_func(feature, comp, debug) for comp in filter_block['filters']])
     else:
-        return any(map(lambda comp: filter_func(feature, comp, debug), filter_block['filters']))
+        return any([filter_func(feature, comp, debug) for comp in filter_block['filters']])
 
 
 def filter_func(feature, comparison, debug=False):
@@ -521,5 +488,5 @@ def filter_func(feature, comparison, debug=False):
                  (comparison['comparison'] in ['le', 'lt'] and filterValIdx == 1)
 
         if debug and not result:
-            print(str(feature['properties'].get(comparison['name'])) + " not " + comparison['comparison'] + " than " + str(comparison['value']))
+            print((str(feature['properties'].get(comparison['name'])) + " not " + comparison['comparison'] + " than " + str(comparison['value'])))
         return result

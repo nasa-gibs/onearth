@@ -29,7 +29,7 @@ cp -R /test /build/
 
 (
   cd /build/test
-  python "$SCRIPT_NAME" -o /results/"$SCRIPT_NAME""_test_results.xml"
+  python3 "$SCRIPT_NAME" -o /results/"$SCRIPT_NAME""_test_results.xml"
 )
 
 chown "$DOCKER_UID:$DOCKER_GID" /results/"$SCRIPT_NAME""_test_results.xml"

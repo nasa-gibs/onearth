@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2017, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -41,7 +41,7 @@
 # 2015
 
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import xml.dom.minidom
 from optparse import OptionParser
 import png
@@ -100,17 +100,17 @@ def parse_colormap(colormap_location, verbose):
     
     try:
         if verbose:
-            print "Reading color map:", colormap_location
+            print("Reading color map:", colormap_location)
         colormap_file = open(colormap_location,'r')
         dom = xml.dom.minidom.parse(colormap_file)
         colormap_file.close()
     except IOError:
-        print "Accessing URL", colormap_location
+        print("Accessing URL", colormap_location)
         try:
-            dom = xml.dom.minidom.parse(urllib.urlopen(colormap_location))
+            dom = xml.dom.minidom.parse(urllib.request.urlopen(colormap_location))
         except:
             msg = "URL " + colormap_location + " is not accessible"
-            print >> sys.stderr, msg
+            print(msg, file=sys.stderr)
             raise Exception(msg)
 
         
@@ -156,15 +156,15 @@ def parse_colormap(colormap_location, verbose):
         
     colormap = ColorMap(None, colormap_entries, style)
     if verbose:
-        print "ColorMap style:", style
-        print colormap
+        print("ColorMap style:", style)
+        print(colormap)
     
     return colormap
     
 
 #-------------------------------------------------------------------------------
 
-print toolName + ' ' + versionNumber + '\n'
+print(toolName + ' ' + versionNumber + '\n')
 
 usageText = toolName + " --colormap [file] --output [file] --height [int] --width [int] --type [palette]"
 
@@ -200,12 +200,12 @@ parser.add_option('-y', '--height',
 if options.colormap:
     colormap_location = options.colormap
 else:
-    print "colormap file must be specified...exiting"
+    print("colormap file must be specified...exiting")
     exit()
 if options.output:
     output_location = options.output
 else:
-    print "output file must be specified...exiting"
+    print("output file must be specified...exiting")
     exit()
     
 color_index = 0
@@ -223,14 +223,14 @@ try:
                 colormap_entry = entry
                 color_index = index
                 break # use first nodata entry found
-except Exception, e:
-    print >> sys.stderr, toolName + ": ERROR: " + str(e) + "\n"
+except Exception as e:
+    print(toolName + ": ERROR: " + str(e) + "\n", file=sys.stderr)
     sys.exit(1)
 
 # generate empty_tile
 try:
     if options.verbose:
-        print "Using index " + str(color_index) + " with entry:\n" + str(colormap_entry)
+        print("Using index " + str(color_index) + " with entry:\n" + str(colormap_entry))
     
     f = open(output_location, 'wb')
         
@@ -283,10 +283,10 @@ try:
     
     f.close()
     
-    print "\nSuccessfully generated empty tile " + output_location + " of size: " + str(options.width) + " by " + str(options.height)
+    print("\nSuccessfully generated empty tile " + output_location + " of size: " + str(options.width) + " by " + str(options.height))
     
-except IOError,e:
-    print >> sys.stderr, toolName + ": " + str(e)
+except IOError as e:
+    print(toolName + ": " + str(e), file=sys.stderr)
     sys.exit(1)
     
 exit()

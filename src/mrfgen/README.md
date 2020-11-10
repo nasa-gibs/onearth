@@ -113,7 +113,7 @@ These parameters are available but not used in the example above nor necessarily
 * source_epsg: The EPSG code of the source projection. EPSG:4326 is assumed if not provided.
 * extents: The extents of the complete source imagery.
 * target_extents: The extents of the MRF after reprojection (only used when target_epsg is provided).
-* mrf_name: The output naming convention of the MRF file (e.g., ``` <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>```). Uses Python's [strftime formatting](https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior).
+* mrf_name: The output naming convention of the MRF file (e.g., ``` <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>```). Uses Python's [strftime formatting](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior).
 * colormap: The GIBS color map to be used if the MRF contains paletted PNGs ([example colormaps](https://gibs.earthdata.nasa.gov/colormaps/)).
 * mrf_z_levels: The maximum number of z levels for the final MRF.
 * mrf_z_key: The string key (e.g., time [YYYYMMDDhhmmss], elevation, band, style) used to map to a z level. See sample [here](../test/mrfgen_files/mrfgen_test_config4c.xml).

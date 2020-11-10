@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2002-2016, California Institute of Technology.
 # All rights reserved.  Based on Government Sponsored Research under contracts NAS7-1407 and/or NAS7-03001.
@@ -39,16 +39,16 @@
 # Global Imagery Browse Services
 
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import xml.dom.minidom
 from optparse import OptionParser
 import matplotlib as mpl
 mpl.use('Agg')
-print(mpl.matplotlib_fname())
+print((mpl.matplotlib_fname()))
 from matplotlib import pyplot
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
-from StringIO import StringIO
+from io import BytesIO
 #import numpy as np
 import math
 import re
@@ -103,7 +103,7 @@ class ColorMap:
         return xml
 
     def __str__(self):
-        return self.__repr__().encode(sys.stdout.encoding)
+        return self.__repr__()
 
 
 class ColorMapEntry:
@@ -164,8 +164,8 @@ class LegendEntry:
         self.green       = int(green)
         self.blue        = int(blue)
         self.transparent = transparent
-        self.tooltip     = None if tooltip==None else tooltip.replace(u'\u2013', '-')
-        self.label       = None if label==None else label.replace(u'\u2013', '-')
+        self.tooltip     = None if tooltip==None else tooltip.replace('\u2013', '-')
+        self.label       = None if label==None else label.replace('\u2013', '-')
         self.showtick    = showtick
         self.showlabel   = showlabel
         self.color       = [float(red)/255.0,float(green)/255.0,float(blue)/255.0]
@@ -186,23 +186,23 @@ def parse_colormaps(colormap_location, verbose):
 
     try:
         if verbose:
-            print "Reading color map:", colormap_location
+            print("Reading color map:", colormap_location)
         colormap_file = open(colormap_location,'r')
         try:
             dom = xml.dom.minidom.parse(colormap_file)
         except:
             msg = "ERROR: Unable to parse XML file"
-            print >> sys.stderr, msg
+            print(msg, file=sys.stderr)
             raise Exception(msg)
             sys.exit(1)            
         colormap_file.close()
     except IOError:
-        print "Accessing URL", colormap_location
+        print("Accessing URL", colormap_location)
         try:
-            dom = xml.dom.minidom.parse(urllib.urlopen(colormap_location))
+            dom = xml.dom.minidom.parse(urllib.request.urlopen(colormap_location))
         except:
             msg = "ERROR: URL " + colormap_location + " is not accessible"
-            print >> sys.stderr, msg
+            print(msg, file=sys.stderr)
             raise Exception(msg)
             sys.exit(1)
     
@@ -212,11 +212,11 @@ def parse_colormaps(colormap_location, verbose):
     if tree.tag == 'ColorMap':
         colormaps.append(tree)
         if verbose:
-            print '-------------------\n' +  ET.tostring(tree, encoding='utf8', method='xml') + '\n-------------------'
+            print('-------------------\n' +  ET.tostring(tree, encoding='utf8', method='xml').decode("utf-8") + '\n-------------------')
     for colormap in tree.findall('ColorMap'):
         colormaps.append(colormap)
         if verbose:
-            print '-------------------\n' + ET.tostring(colormap, encoding='utf8', method='xml') + '\n-------------------'
+            print('-------------------\n' + ET.tostring(colormap, encoding='utf8', method='xml').decode("utf-8") + '\n-------------------')
     
     return colormaps
 
@@ -230,13 +230,13 @@ def parse_colormap(colormap_xml, verbose):
     except KeyError:
         title = None
     if verbose:
-        print "ColorMap title:", title
+        print("ColorMap title:", title)
     try:
         units = colormap_element.attributes['units'].value
     except KeyError:
         units = None
     if verbose:
-        print "ColorMap units:", units
+        print("ColorMap units:", units)
     
     style = "discrete"
     colormap_entries = []
@@ -283,8 +283,8 @@ def parse_colormap(colormap_xml, verbose):
     colormap = ColorMap(units, colormap_entries, style, title, legend)
     
     if verbose:
-        print "ColorMap style:", style
-        print colormap
+        print("ColorMap style:", style)
+        print(colormap)
     
     return colormap
 
@@ -524,7 +524,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
                     cb.ax.set_xticklabels(ticks) 
                 else:
-                    norm = mpl.colors.BoundaryNorm(range(len(colors)+1), cmap.N)
+                    norm = mpl.colors.BoundaryNorm(list(range(len(colors)+1)), cmap.N)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
                     cb.ax.set_xticklabels(ticklabels) 
                     
@@ -632,7 +632,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
                     cb.ax.set_yticklabels(ticks) 
                 else:
-                    norm = mpl.colors.BoundaryNorm(range(len(colors)+1), cmap.N)
+                    norm = mpl.colors.BoundaryNorm(list(range(len(colors)+1)), cmap.N)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
                     cb.ax.set_yticklabels(ticklabels)                         
                     
@@ -696,7 +696,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     fs = 8
                 if len(colormap.title) > 16:
                     title_words = colormap.title.split(" ")
-                    half = (len(title_words)/2)
+                    half = int(len(title_words)/2)
                     if len(title_words) > 2: half += 1
                     title = ""
                     for word in title_words[0:half]:
@@ -742,7 +742,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             t.set_gid('tooltip_%d' % i)
         
         # Save the figure
-        f = StringIO()
+        f = BytesIO()
         plt.savefig(f, transparent=True, format="svg")     
         
         # Create XML tree from the SVG file
@@ -763,7 +763,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             elements = list(el)
             elements.pop(0) # remove definitions
         except KeyError:
-            print "Warning: Unable to add tooltips"
+            print("Warning: Unable to add tooltips")
             elements = []
         for i, t in enumerate(elements):
             el = elements[i]
@@ -798,14 +798,14 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
         # Insert the script at the top of the file and save it.
         tree.insert(0, ET.XML(script))
         ET.ElementTree(tree).write(output)
-        print "SVG tooltips added"
+        print("SVG tooltips added")
     
-    print output + " generated successfully"
+    print(output + " generated successfully")
     
 
 #-------------------------------------------------------------------------------
 
-print toolName + ' ' + versionNumber + '\n'
+print(toolName + ' ' + versionNumber + '\n')
 
 usageText = toolName + " --colormap [file] --output [file]"
 
@@ -838,28 +838,28 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
 if options.colormap:
     colormap_location = options.colormap
 else:
-    print "colormap file must be specified...exiting"
+    print("colormap file must be specified...exiting")
     exit()
 if options.output:
     output_location = options.output
 else:
-    print "output file must be specified...exiting"
+    print("output file must be specified...exiting")
     exit()
     
 # check orientation
 if options.orientation:
     if options.orientation not in ['horizontal','vertical']:
-        print str(options.orientation) + " is not a valid legend orientation. Please choose horizontal or vertical."
+        print(str(options.orientation) + " is not a valid legend orientation. Please choose horizontal or vertical.")
         exit()
         
 # check label color
 if options.label_color:
     label_color = str(options.label_color).lower()
     if label_color not in ["blue","green","red","cyan","magenta","yellow","black","white"]:
-        print "Using custom color " + label_color
+        print("Using custom color " + label_color)
         colormatch = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', label_color)
         if colormatch == False:
-            print "Invalid label color"
+            print("Invalid label color")
             exit()
 else:
     label_color = "black"
@@ -868,8 +868,8 @@ colormaps = []
 # parse colormap file
 try:
     colormap_elements = parse_colormaps(colormap_location, options.verbose)
-except IOError,e:
-    print str(e)
+except IOError as e:
+    print(str(e))
     exit()
     
 # parse colormaps
@@ -883,15 +883,15 @@ for colormap_xml in colormap_elements:
                 has_entries = True
         if has_entries:
             colormaps.append(colormap)
-    except IOError,e:
-        print str(e)
+    except IOError as e:
+        print(str(e))
         exit()
 
 # generate legend
 try:
     generate_legend(colormaps, output_location, options.format, options.orientation, label_color, options.colorbar_only)
-except IOError,e:
-    print str(e)
+except IOError as e:
+    print(str(e))
     exit()
     
 exit()
