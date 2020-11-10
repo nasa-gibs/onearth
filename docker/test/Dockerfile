@@ -6,11 +6,10 @@ FROM nasagibs/onearth-deps:2.3.1
 RUN yum install -y proj-4.8.0 proj-devel-4.8.0
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
 RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5
-RUN pip3.6 install apacheconfig==0.2.8 numpy==1.10.4 matplotlib==2.2.5
+RUN pip3.6 install apacheconfig==0.2.8 numpy==1.16.6 matplotlib==2.2.5 parse_apache_configs==0.0.2
 
 # Install wms dependencies
 RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2
-RUN pip3.6 install requests==2.21.0 lxml==4.3.0
 
 # Install GDAL
 RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-devel-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-apps-2.4.4-1.el7.x86_64.rpm"
@@ -26,7 +25,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip3.6 install Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
+RUN pip3.6 install Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox-vector-tile==1.2.0
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/

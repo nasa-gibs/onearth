@@ -7,7 +7,7 @@ RUN yum -y update && yum clean all
 
 # Install dependencies
 RUN yum groupinstall -y "Development Tools"
-RUN yum install -y epel-release-7-11 lua-devel-5.1.4 jansson-devel-2.10 libpng-devel-1.5.13 pcre-devel-8.32 wget-1.14 libyaml-devel-0.1.4 libcurl-devel-7.29.0 python-devel-2.7.5 libjpeg-turbo-devel-1.2.90 libxml2-2.9.1 libxml2-devel-2.9.1
+RUN yum install -y epel-release-7-11 lua-devel-5.1.4 jansson-devel-2.10 libpng-devel-1.5.13 pcre-devel-8.32 wget-1.14 libyaml-devel-0.1.4 libcurl-devel-7.29.0 libjpeg-turbo-devel-1.2.90 libxml2-2.9.1 libxml2-devel-2.9.1
 RUN yum install -y mod_ssl openssl-devel
 RUN yum install -y luarocks-2.3.0
 RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
@@ -16,12 +16,7 @@ RUN yum install -y python36-3.6.8 python36-devel-3.6.8 python36-pip-9.0.1
 RUN yum install -y cronie
 
 #Install pip 3.6 dependencies
-RUN pip3.6 install requests==2.21.0
-RUN pip3.6 install pyaml==18.11.0
-RUN pip3.6 install lxml==4.3.0
-RUN pip3.6 install pypng==0.0.19
-RUN pip3.6 install boto3==1.9
-RUN pip3.6 install redis==3.5.3
+RUN pip3.6 install requests==2.24.0 pyaml==18.11.0 lxml==4.5.2 pypng==0.0.20 boto3==1.9 redis==3.5.3
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2

@@ -53,7 +53,7 @@ ENV PATH=$PATH:/var/task/bin
 RUN curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
 RUN python get-pip.py
 RUN pip install --prefix=/var/task --ignore-installed apacheconfig==0.2.8
-RUN pip install --prefix=/var/task --ignore-installed numpy==1.10.4
+RUN pip install --prefix=/var/task --ignore-installed numpy==1.16.6
 RUN rm get-pip.py
 
 # Fetch PROJ.4
@@ -74,7 +74,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip install --prefix=/var/task --ignore-installed Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox_vector_tile==1.2.0 lxml==3.8.0
+RUN pip install --prefix=/var/task --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.5.2
 # TODO: Sort out weirdness with some dependencies expecting specific lib locations
 RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
 RUN pip uninstall -y protobuf && pip install protobuf==3.7.0

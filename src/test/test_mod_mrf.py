@@ -89,7 +89,7 @@ def bulk_replace(source_str, replace_list):
 
 
 def make_random_image(size_x, size_y, image_type):
-    img_ary = np.random.randint(256, size=(size_x, size_y, 3))
+    img_ary = np.random.randint(256, size=(int(size_x), int(size_y), 3))
     return Image.fromarray(img_ary.astype('uint8'))
 
 
