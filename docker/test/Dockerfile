@@ -5,8 +5,8 @@ FROM nasagibs/onearth-deps:2.3.1
 # Install mrfgen and OnEarth utils dependencies
 RUN yum install -y proj-4.8.0 proj-devel-4.8.0
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
-RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5 pyparsing-1.5.6 python-tornado-4.2.1 python-pycxx-devel-6.2.4 python-dateutil-1.5 python-pypng-0.0.16 python-lxml-3.2.1 python-nose-1.3.7 python-unittest2-1.1.0 python-matplotlib-1.2.0 python2-pip-8.1.2
-RUN pip install apacheconfig==0.2.8 numpy==1.10.4
+RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5
+RUN pip3.6 install apacheconfig==0.2.8 numpy==1.10.4
 
 # Install wms dependencies
 RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2
@@ -25,7 +25,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip install Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
+RUN pip3.6 install Fiona==1.8.4 Shapely==1.5.16 Rtree==0.8.3 mapbox-vector-tile==0.4.0 lxml==3.8.0
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
@@ -137,7 +137,7 @@ COPY docker/wms_service/symbols.sym /etc/onearth/config/mapserver/
 COPY docker/wms_service/fonts/* /usr/share/fonts/
 RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
-RUN mkdir /usr/share/proj/ && cp /usr/lib64/python2.7/site-packages/fiona/proj_data/epsg /usr/share/proj/
+RUN mkdir /usr/share/proj/ && cp /usr/lib64/python3.6/site-packages/fiona/proj_data/epsg /usr/share/proj/
 
 # Set Apache to Debug mode for performance logging
 RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf
@@ -148,7 +148,7 @@ RUN cp /home/oe2/onearth/ci/00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp /home/oe2/onearth/ci/10-worker.conf /etc/httpd/conf.modules.d/
 
 WORKDIR /home/oe2/onearth/src/test
-RUN pip install -r requirements.txt
+RUN pip3.6 install -r requirements.txt
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh
