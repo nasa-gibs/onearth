@@ -510,8 +510,8 @@ class TestMapserver(unittest.TestCase):
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
-    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mod_oems_results.xml',
-                      help='Specify XML output file (default is test_mod_onearth_results.xml')
+    parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mapserver_results.xml',
+                      help='Specify XML output file (default is test_mapserver_results.xml')
     parser.add_option('-s', '--start_server', action='store_true', dest='start_server', help='Load test configuration into Apache and quit (for debugging)')
     parser.add_option('-d', '--debug', action='store_true', dest='debug', help='Output verbose debugging messages')
     (options, args) = parser.parse_args()
