@@ -141,6 +141,32 @@
         </MetadataURL>
     </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>test_static_jpg</Name>
+        <Title>test_static_jpg</Title>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_static_jpg"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>test_legacy_subdaily_jpg</Name>
+        <Title>test_legacy_subdaily_jpg</Title>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <Dimension name="time" units="ISO8601"/>
+        <Extent name="time" default="2012-02-29T14:00:00Z" nearestValue="0">2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Extent>
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_legacy_subdaily_jpg"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
         <Name>snap_test_3a</Name>
         <Title>snap_test_3a</Title>
         <SRS>EPSG:4326</SRS>
@@ -166,32 +192,6 @@
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=snap_test_3b"/>
-        </MetadataURL>
-    </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
-        <Name>test_static_jpg</Name>
-        <Title>test_static_jpg</Title>
-        <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
-        <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
-        <MetadataURL type="TC211">
-          <Format>text/xml</Format>
-          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_static_jpg"/>
-        </MetadataURL>
-    </Layer>
-    <Layer queryable="0" opaque="0" cascaded="0">
-        <Name>test_legacy_subdaily_jpg</Name>
-        <Title>test_legacy_subdaily_jpg</Title>
-        <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
-        <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
-        <Dimension name="time" units="ISO8601"/>
-        <Extent name="time" default="2012-02-29T14:00:00Z" nearestValue="0">2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Extent>
-        <MetadataURL type="TC211">
-          <Format>text/xml</Format>
-          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_legacy_subdaily_jpg"/>
         </MetadataURL>
     </Layer>
   </Layer>
