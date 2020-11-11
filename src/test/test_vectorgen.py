@@ -146,9 +146,11 @@ class TestVectorgen(unittest.TestCase):
         config = self.parse_vector_config(self.mrf_test_config, test_artifact_path)
         
         # Run vectorgen
+        prevdir = os.getcwd()
         os.chdir(test_artifact_path)
         cmd = 'oe_vectorgen -c ' + self.mrf_test_config
         run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
 
         # Get index of first, second-to-last, and last tile in MRF
         with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
@@ -193,9 +195,11 @@ class TestVectorgen(unittest.TestCase):
             self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
         
         # Run vectorgen
+        prevdir = os.getcwd()
         os.chdir(test_artifact_path)
         cmd = 'oe_vectorgen -c ' + self.shapefile_test_config
         run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
 
         # Check the output
         output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
@@ -222,9 +226,11 @@ class TestVectorgen(unittest.TestCase):
             self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
         
         # Run vectorgen
+        prevdir = os.getcwd()
         os.chdir(test_artifact_path)
         cmd = 'oe_vectorgen -c ' + self.geojson_test_config
         run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
 
         # Check the output
         output_file = os.path.join(config['output_dir'], config['prefix'] + '.json')
