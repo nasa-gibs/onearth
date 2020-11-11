@@ -544,6 +544,10 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
             end
         end
     end
+    local function sortLayers(a,b)
+        return a[1][1] < b[1][1]
+    end
+    table.sort(nodeList, sortLayers)
     return nodeList
 end
 
