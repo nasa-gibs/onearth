@@ -147,8 +147,31 @@ RUN perl -pi -e 's/LogFormat "%h %l %u %t \"%r\" %>s %b/LogFormat "%h %l %u %t \
 RUN cp /home/oe2/onearth/ci/00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp /home/oe2/onearth/ci/10-worker.conf /etc/httpd/conf.modules.d/
 
+# Set the locale
+# TODO: Remove after deps image is updated
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
 WORKDIR /home/oe2/onearth/src/test
 RUN pip3.6 install -r requirements.txt
+
+RUN mkdir /build
+
+# Add non-root user
+RUN groupadd www-data && useradd -g www-data www-data
+RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
+    chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/ && \
+	chown -hR www-data:www-data /var/log/mapserver/ && chown -hR www-data:www-data /home/oe2 && \
+	chown -hR www-data:www-data /etc/onearth && chown -hR www-data:www-data /usr/share/proj && \
+	chown -hR www-data:www-data /build
+
+#setcap to bind to privileged ports as non-root
+RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
+
+# Change user
+USER www-data
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh

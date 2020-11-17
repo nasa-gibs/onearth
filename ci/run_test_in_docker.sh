@@ -21,8 +21,6 @@ set -evx
 
 if [ "$2" = "test_mapserver.py" ]; then
   sh start_ci2.sh
-else
-  mkdir /build
 fi
 
 cp -R /test /build/
