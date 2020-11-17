@@ -48,6 +48,12 @@ RUN patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
 RUN ./configure --prefix=/lib64
 RUN make && make install
 
+# Set the locale
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
 RUN rm -rf /tmp/

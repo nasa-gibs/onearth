@@ -23,6 +23,22 @@ COPY ./docker/cors.conf /etc/httpd/conf.d/
 # Copy demo files
 COPY ./src/demo /var/www/html/demo
 
+# Set the locale
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+# Add non-root user
+RUN groupadd www-data && useradd -g www-data www-data
+RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/
+
+#setcap to bind to privileged ports as non-root
+RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
+
+# Change user
+USER www-data
+
 # Start HTTPD server
 WORKDIR /home/oe2
 CMD sh start_demo.sh $DEBUG_LOGGING
