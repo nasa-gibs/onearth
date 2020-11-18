@@ -151,7 +151,7 @@ WORKDIR /home/oe2/onearth/src/test
 RUN pip3.6 install -r requirements.txt
 
 # Set the locale
-# TODO: Remove after deps image is updated
+# TODO: Remove after deps image is updated 
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
