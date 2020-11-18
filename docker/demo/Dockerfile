@@ -39,8 +39,6 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 # Change user
 USER www-data
 
-ENV LANGUAGE=en_US:en
-
 # Start HTTPD server
 WORKDIR /home/oe2
 CMD sh start_demo.sh $DEBUG_LOGGING
