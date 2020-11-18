@@ -20,4 +20,19 @@ RUN pip3.6 install numpy pyaml
 WORKDIR /home/oe2/onearth/profiler
 
 EXPOSE 80
+
+# Add non-root user
+RUN groupadd www-data && useradd -g www-data www-data
+RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
+    chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/ && \
+	chown -hR www-data:www-data /home/oe2
+
+#setcap to bind to privileged ports as non-root
+RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
+
+# Change user
+USER www-data
+
+ENV LANGUAGE=en_US:en
+
 CMD ["/usr/sbin/httpd","-D", "FOREGROUND"]

@@ -50,5 +50,21 @@ RUN mkdir -p /etc/cron.hourly && cp /etc/cron.daily/logrotate /etc/cron.hourly/l
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
+RUN mkdir -p /etc/onearth
+
+# Add non-root user
+RUN groupadd www-data && useradd -g www-data www-data
+RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
+    chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/ && \
+	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /etc/onearth
+
+#setcap to bind to privileged ports as non-root
+RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
+
+# Change user
+USER www-data
+
+ENV LANGUAGE=en_US:en
+
 WORKDIR /home/oe2/onearth/docker/wms_service
 CMD sh start_wms_service.sh $S3_CONFIGS $ENDPOINT_REFRESH

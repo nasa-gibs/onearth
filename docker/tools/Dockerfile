@@ -17,8 +17,9 @@ WORKDIR /tmp
 RUN \
   touch /var/lib/rpm/* \
   && yum install -y epel-release
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm" && \
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-devel-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm" && \
 	yum clean all
+RUN pip3.6 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 # Copy binaries and libs
 RUN cp /usr/bin/*mrf* /var/task/bin
@@ -45,16 +46,15 @@ RUN mkdir -p /var/task/share/gdal/
 RUN cp -R /usr/share/gdal/* /var/task/share/gdal/
 
 ENV GDAL_DATA=/var/task/gdal
-ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib/python2.7/site-packages
+#ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib/python2.7/site-packages
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64:/var/task/lib
 ENV PATH=$PATH:/var/task/bin
 
 # Install mrfgen and OnEarth utils dependencies
-RUN curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
-RUN python get-pip.py
-RUN pip install --prefix=/var/task --ignore-installed apacheconfig==0.2.8
-RUN pip install --prefix=/var/task --ignore-installed numpy==1.16.6
-RUN rm get-pip.py
+RUN pip3 install --prefix=/var/task --ignore-installed apacheconfig==0.2.8
+RUN pip3 install --ignore-installed apacheconfig==0.2.8
+RUN pip3 install --prefix=/var/task --ignore-installed numpy==1.16.6
+RUN pip3 install --ignore-installed numpy==1.16.6
 
 # Fetch PROJ.4
 RUN curl -L http://download.osgeo.org/proj/proj-4.9.3.tar.gz | tar zxf - -C /tmp
@@ -74,10 +74,14 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip install --prefix=/var/task --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.5.2
+RUN pip3 install --prefix=/var/task --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.5.2
+RUN pip3 install --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.5.2
 # TODO: Sort out weirdness with some dependencies expecting specific lib locations
 RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
-RUN pip uninstall -y protobuf && pip install protobuf==3.7.0
+RUN pip3 uninstall -y protobuf && pip3 install protobuf==3.7.0
+
+RUN pip3 install matplotlib
+RUN pip3 install pypng
 
 RUN mkdir -p /var/task/lib64/python2.7/site-packages
 RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
@@ -96,3 +100,12 @@ RUN \
   strip lib/libproj.so.12.*
 RUN yum remove -y gibs-gdal
 RUN rm -rf /tmp/*
+
+# Add non-root user
+RUN groupadd dockeruser && useradd -g dockeruser dockeruser
+RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log
+
+# Change user
+USER dockeruser
+
+ENV LANGUAGE=en_US:en
