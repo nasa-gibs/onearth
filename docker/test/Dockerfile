@@ -157,7 +157,7 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-RUN mkdir /build
+RUN mkdir /build && mkdir /results
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
@@ -165,7 +165,7 @@ RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -h
     chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/ && \
 	chown -hR www-data:www-data /var/log/mapserver/ && chown -hR www-data:www-data /home/oe2 && \
 	chown -hR www-data:www-data /etc/onearth && chown -hR www-data:www-data /usr/share/proj && \
-	chown -hR www-data:www-data /build
+	chown -hR www-data:www-data /build && chown -hR www-data:www-data /results
 
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
