@@ -77,10 +77,7 @@ import os
 import subprocess
 import sys
 import time
-import datetime
-import socket
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import xml.dom.minidom
 import shutil
 import imghdr
@@ -94,10 +91,9 @@ from decimal import *
 from osgeo import gdal
 from oe_utils import basename, sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, get_modification_time, get_dom_tag_value, remove_file, check_abs_path, add_trailing_slash, verify_directory_path_exists, get_input_files, get_doy_string
 
-import collections
 import multiprocessing
 import datetime
-from contextlib import contextmanager # used to build context pool 
+from contextlib import contextmanager  # used to build context pool
 import functools
 import random
 
@@ -736,12 +732,16 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
         s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(tile)
         print("Source extents: " + ",".join([s_xmin, s_ymax, s_xmax, s_ymin]))
 
+        # Commenting this out because I am not aware of anywhere that we are invoking this method with the exact set
+        # of tiles that we want to insert...
+        '''
         if os.path.splitext(tile)[1] == ".vrt" and not ("_cut." in tile or "_reproject." in tile):
-            #ignore temp VRTs unless it's an antimeridian cut or reprojected source image
+            # ignore temp VRTs unless it's an antimeridian cut or reprojected source image
             log_info_mssg("Skipping insert of " + tile)
             if should_lock:
                 lock.up_read()
             continue
+        '''
 
         # check if image fits within extents
         if target_epsg in ['EPSG:3031','EPSG:3413','EPSG:3857'] and \
@@ -866,14 +866,21 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                 log_sig_err('mrf_insert ' + message, sigevent_url)
             else:
                 log_info_mssg(message.strip())
-        # clean up      
+
+        # Remove temporary merged files (if created)
         if ".merge." in tile:
             remove_file(tile)
+
+        # Remove the temporary (if it exists) vrt tile used to sort out differing resolutions of the tile and MRF
         remove_file(vrt_tile)
-        
+
+        # Commenting this out because I am not aware of any lingering VRT files that must be removed... and this causes
+        # some issues if the input tile list had VRTs in it
+        '''
         temp_vrt_files = glob.glob(working_dir + os.path.basename(tile) + "*vrt*")
         for vrt in temp_vrt_files:
             remove_file(vrt)
+        '''
 
         if should_lock:
             lock.up_read()
@@ -883,9 +890,11 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                 if should_lock:
                     lock.down_write()
                 if os.stat(data_name(mrf)).st_size > max_size:
-                    log_info_mssg_with_timestamp("cleaning data file {} with size {}".format(data_name(mrf), os.stat(data_name(mrf)).st_size))
+                    log_info_mssg_with_timestamp("cleaning data file {} with size {}".
+                                                    format(data_name(mrf), os.stat(data_name(mrf)).st_size))
                     clean_mrf(data_name(mrf))
-                    log_info_mssg_with_timestamp("done cleaning data file {}. now has size {}".format(data_name(mrf), os.stat(data_name(mrf)).st_size))
+                    log_info_mssg_with_timestamp("done cleaning data file {}. now has size {}".
+                                                    format(data_name(mrf), os.stat(data_name(mrf)).st_size))
                 if should_lock:
                     lock.up_write()
 
@@ -1586,10 +1595,11 @@ units = None
 
 # Get list of all tile filenames.
 alltiles = []
-if input_files != None:
+if input_files is not None:
     input_files = input_files.strip()
     alltiles = input_files.split(',')
-if input_dir != None:
+
+if input_dir is not None:
     if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.jpg']))
     else:
@@ -1597,14 +1607,14 @@ if input_dir != None:
     # check for tiffs
     alltiles = alltiles + glob.glob(str().join([input_dir, '*.tif']))
     alltiles = alltiles + glob.glob(str().join([input_dir, '*.tiff']))
+    # check for mrfs
+    alltiles = alltiles + glob.glob(str().join([input_dir, '*.mrf']))
 
+# Sanitize input in case there were extra spaces
 striptiles = []
 for tile in alltiles:
     striptiles.append(tile.strip())
 alltiles = striptiles
-
-if len(alltiles) == 0 and input_dir != None: # No tiles, check for possible tiffs
-    alltiles=glob.glob(str().join([input_dir, '*.tif*']))
 
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     tiff_compress = "JPEG"
@@ -1621,7 +1631,7 @@ for i, tile in enumerate(alltiles):
 goodtiles = []
 if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
     for i, tile in enumerate(alltiles):
-        if ".mrf" in tile or ".vrt" in tile: # ignore MRF and VRT
+        if ".mrf" in tile or ".vrt" in tile:  # ignore MRFs and VRTs
             goodtiles.append(tile)
             continue
 
@@ -1982,11 +1992,11 @@ for tile in list(alltiles):
         mrf_list.append(tile)
         alltiles.remove(tile)
 
-if len(mrf_list) == 0 and input_files == None:
-    mrf_list = glob.glob(str().join([input_dir, '*.mrf']))
-
-# Should only be one MRF, so use that one
-if len(mrf_list) > 0:
+# If more than one MRF, expected behavior is unknown... so exit
+if len(mrf_list) > 1:
+    log_sig_exit('ERROR', "Multiple MRFs found in input list, expected behavior unknown", sigevent_url)
+# Only be one MRF, so use that one
+elif len(mrf_list) == 1:
     mrf = mrf_list[0]
     timeout = time.time() + 30 # 30 second timeout if MRF is still being generated
     while os.path.isfile(mrf) == False:
@@ -2021,19 +2031,19 @@ if len(mrf_list) > 0:
 
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
-    try:
-        log_info_mssg(mssg)
-        # sigevent('INFO', mssg, sigevent_url)
-    except urllib.error.URLError:
-        None
+    log_info_mssg(mssg)
 
     # Exit mrfgen because we are done
     sys.exit(errors)
-    
+
+# Else, no MRF so continue on with the rest of the processing...
+
   
 # Use zdb index if z-levels are defined
 if zlevels != '':
-    mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name, parameter_name, date_of_data, time_of_data)
+    mrf_filename, idx_filename, out_filename, output_aux, output_vrt = get_mrf_names(out_filename, mrf_name,
+                                                                                     parameter_name, date_of_data,
+                                                                                     time_of_data)
     mrf_filename = output_dir + mrf_filename
     idx_filename = output_dir + idx_filename
     out_filename = output_dir + out_filename
@@ -2244,7 +2254,7 @@ if mrf_empty_tile_filename != '' and (z == None or z == 0):
 
 # Create the gdal_translate command.         
 gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
-if compress == "COMPRESS=JPEG":
+if compress in ["COMPRESS=JPEG", "COMPRESS=PNG"]:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('QUALITY='+quality_prec)
 if compress == "COMPRESS=LERC":
@@ -2257,7 +2267,8 @@ if zlevels != '':
 if nocopy:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
-    if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
+    # use UNIFORM_SCALE if empty MRF, single input, or noaddo
+    if noaddo or len(alltiles) <= 1:
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
         
@@ -2284,12 +2295,8 @@ gdal_translate_stderr_file.close()
 if not data_only:
     shutil.copy(vrt_filename, str().join([output_dir, basename, '.vrt']))
 
-# Clean up.
-vrt_files = glob.glob(str().join([working_dir, basename, '*.vrt']))
-for vrt in vrt_files:
-    # remove VRT from alltiles if it was a temp file
-    if vrt in alltiles:
-       alltiles.remove(vrt)
+# Clean up temporary VRT files
+for vrt in [v for v in glob.glob(str().join([working_dir, basename, '*.vrt'])) if (v not in alltiles)]:
     remove_file(vrt)
 
 # Check if MRF was created.
