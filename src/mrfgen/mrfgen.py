@@ -2270,7 +2270,7 @@ if nocopy:
     # use UNIFORM_SCALE if empty MRF, single input, or noaddo
     if noaddo or len(alltiles) <= 1:
         gdal_translate_command_list.append('-co')
-        gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
+        gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
         
 # add ending parameters      
 gdal_translate_command_list.append(vrt_filename)
@@ -2468,7 +2468,6 @@ if data_only:
 working_dir_files = glob.glob(working_dir+"/*")
 for tilename in (alltiles):
     if os.path.normpath(tilename) in working_dir_files:
-        remove_file(tilename)
         if tiff_compress != None:
             remove_file(tilename+'.aux.xml')
         if '_indexed.' in tilename:
