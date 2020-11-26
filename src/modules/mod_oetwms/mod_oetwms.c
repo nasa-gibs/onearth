@@ -33,7 +33,7 @@
 
 /*
  * Tiled WMS cache module for Apache 2.0
- * Version 1.3.7
+ * Version 1.3.8
  *
  * Lucian Plesea
  */
