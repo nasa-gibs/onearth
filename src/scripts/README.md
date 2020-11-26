@@ -112,6 +112,32 @@ Options:
                         (e.g., "-180,81,-171,90").
 ```
 
+## oe_configure_remote_layers.py
+
+Utility script to generate layer XML files from a remote GetCapabilities to form a "combined" GetCapabilities. Typically used by `oe_configure_layer` but can be used as a separate tool.
+
+```
+Usage: oe_configure_remote_layers.py --conf_file [remote_getcapabilities.xml] --no_twms --no_wmts
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -c CONFIG, --conf_file=CONFIG
+                        Full path of layer configuration filename.
+  -n, --no_twms         Do not use configurations for Tiled-WMS
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value
+  -w, --no_wmts         Do not use configurations for WMTS.
+  --debug               Produce verbose debug messages
+```
 
 ## oe_configure_reproject_layer.py
 
