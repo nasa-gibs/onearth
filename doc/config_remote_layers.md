@@ -10,7 +10,7 @@ The `oe_configure_remote_layers.py` script is used to read a special layer confi
 # Configuration
 
 ### Layer Config File
-REmote layers require a differently-structured XML file from the normal OnEarth layer config. 
+Remote layers require a differently-structured XML file from the normal OnEarth layer config. 
 
 **Note that with remote layers, the `oe_configure_layer` tool actually configures all the remote layers from an external endpoint at once, instead of individually. You'll only need one configuration file per external endpoint.**
 
@@ -26,7 +26,7 @@ The remote layers tool scrapes data from the GetCapabilities file of the specifi
 </RemoteGetCapabilities>
 ```
 
-#### Reproject Config Elements:
+#### Remote Config Elements:
 
 `<SrcWMTSGetCapabilitiesURI>` -- Specifies the WMTS GetCapabilities file that `oe_configure_remote_layers.py` will use to build the layer configs, including source URL info.
 
