@@ -4,7 +4,7 @@ OnEarth is able to add layers from a remote GetCapabilities file to its own GetC
 
 
 # How It Works
-The `oe_configure_remote_layers.py` script is used to read a special layer configuration file (described in the next section) which will read a remote GetCapabilities or GetTileService file. For all of the layers found in the remote GetCapabilties file, except for those specified to be excluded in the layer configuration file, a layer XML file will be created in the staging directories as defined in the environment configuration file. When OnEarth goes to configure its layers, it will incorporate those layer XML files like it would any regular layer.
+The `oe_configure_remote_layers.py` script is used to read a special layer configuration file (described in the next section) which will read a remote GetCapabilities or GetTileService file. For all of the layers found in the remote GetCapabilties file that match (or don't match) provided layer inclusion and exclusion filters in the layer configuration file, a layer XML file will be created in the staging directories as defined in the environment configuration file. When OnEarth goes to configure its layers, it will incorporate those layer XML files like it would any regular layer.
 
 
 # Configuration
@@ -22,6 +22,7 @@ The remote layers tool scrapes data from the GetCapabilities file of the specifi
 	<SrcTWMSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetCapabilities</SrcTWMSGetCapabilitiesURI>
 	<SrcTWMSGetTileServiceURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetTileService</SrcTWMSGetTileServiceURI>
 	<EnvironmentConfig>/etc/onearth/config/conf/environment_geographic.xml</EnvironmentConfig>
+    <IncludeLayer>Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual</IncludeLayer>
 	<ExcludeLayer>BlueMarble_NextGeneration</ExcludeLayer>
 </RemoteGetCapabilities>
 ```
@@ -35,5 +36,7 @@ The remote layers tool scrapes data from the GetCapabilities file of the specifi
 `<SrcTWMSGetTileServiceURI>` -- Specifies the TWMS GetCapabilities file that `oe_configure_remote_layers.py` will use to build the layer configs, including source URL info.
 
 `<EnvironmentConfig>` (required) -- The environment configuration file to be used in setting up this endpoint.
+
+`<IncludeLayer>` (optional, can be multiple) -- Include one of these elements for each layer from the source endpoint that you want explicitly included. If at least one of these elements is included, the layer tool will skip all layers found in the source GetCapabilities _not_ specified in an `<IncludeLayer>` element.
 
 `<ExcludeLayer>` (optional, can be multiple) -- Include one of these elements for each layer from the source endpoint that you don't want included. The layer tool will skip any layers in the source GetCapabilities it finds with this name.

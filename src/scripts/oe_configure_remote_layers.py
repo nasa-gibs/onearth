@@ -22,6 +22,7 @@
     <SrcWMTSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcWMTSGetCapabilitiesURI>
     <SrcTWMSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcTWMSGetCapabilitiesURI>
     <EnvironmentConfig>/etc/onearth/config/conf/environment_geographic.xml</EnvironmentConfig>
+    <IncludeLayer>Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual</IncludeLayer>
     <ExcludeLayer>BlueMarble_NextGeneration</ExcludeLayer>
 </RemoteGetCapabilities>
 '''
@@ -108,10 +109,12 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
             mssg = 'No email recipient provided for notifications in get_remote_layers.'
             log_sig_err(mssg, sigevent_url)
 
-    # Get layers to exclude
-    exclude_layers = []
-    for tag in dom.getElementsByTagName('ExcludeLayer'):
-        exclude_layers.append(tag.firstChild.data.strip())
+    # Get layers to include or exclude
+    include_layers = [tag.firstChild.data.strip() for tag in dom.getElementsByTagName('IncludeLayer')]
+    print('Including layers:')
+    print('\n'.join(include_layers))
+
+    exclude_layers = [tag.firstChild.data.strip() for tag in dom.getElementsByTagName('ExcludeLayer')]
     print('Excluding layers:')
     print('\n'.join(exclude_layers))
 
@@ -140,12 +143,17 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 if(debug):
                     print(etree.tostring(layer))
                 identifier = layer.findtext(ows + 'Identifier')
-                if identifier not in exclude_layers:
-                    xml_filename = os.path.join(environment.wmts_dir,
-                                                identifier + '_remote_.xml')
-                    print('Creating XML file: ' + xml_filename)
-                    with open(xml_filename, 'w+') as xml_file:
-                        xml_file.write(etree.tostring(layer).replace(LAYER_NODE, LAYER))
+
+                if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
+                    if debug:
+                        print 'Skipping layer: ' + identifier
+                    continue
+
+                xml_filename = os.path.join(environment.wmts_dir,
+                                            identifier + '_remote_.xml')
+                print('Creating XML file: ' + xml_filename)
+                with open(xml_filename, 'w+') as xml_file:
+                    xml_file.write(etree.tostring(layer).replace(LAYER_NODE, LAYER))
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse WMTS GetCapabilities file (invalid syntax): ' +
                         wmts_getcapabilities, sigevent_url)
@@ -177,12 +185,17 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 if(debug):
                     print(etree.tostring(layer))
                 identifier = layer.findtext('Abstract').replace(' abstract', '')
-                if identifier not in exclude_layers:
-                    xml_filename = os.path.join(environment.twms_dir,
-                                                identifier + '_remote__gc.xml')
-                    print('Creating XML file: ' + xml_filename)
-                    with open(xml_filename, 'w+') as xml_file:
-                        xml_file.write(etree.tostring(layer))
+
+                if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
+                    if debug:
+                        print 'Skipping layer: ' + identifier
+                    continue
+
+                xml_filename = os.path.join(environment.twms_dir,
+                                            identifier + '_remote__gc.xml')
+                print('Creating XML file: ' + xml_filename)
+                with open(xml_filename, 'w+') as xml_file:
+                    xml_file.write(etree.tostring(layer))
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse TWMS GetCapabilities file (invalid syntax): ' +
                         twms_getcapabilities, sigevent_url)
@@ -210,12 +223,17 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 if(debug):
                     print(etree.tostring(tiledgroup))
                 identifier = tiledgroup.findtext('Abstract').replace(' abstract', '')
-                if identifier not in exclude_layers:
-                    xml_filename = os.path.join(environment.twms_dir,
-                                                identifier + '_remote__gts.xml')
-                    print('Creating XML file: ' + xml_filename)
-                    with open(xml_filename, 'w+') as xml_file:
-                        xml_file.write(etree.tostring(tiledgroup).replace(LAYER_NODE, LAYER))
+
+                if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
+                    if debug:
+                        print 'Skipping layer: ' + identifier
+                    continue
+
+                xml_filename = os.path.join(environment.twms_dir,
+                                            identifier + '_remote__gts.xml')
+                print('Creating XML file: ' + xml_filename)
+                with open(xml_filename, 'w+') as xml_file:
+                    xml_file.write(etree.tostring(tiledgroup).replace(LAYER_NODE, LAYER))
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse TWMS GetTileService file (invalid syntax): ' +
                         twms_getcapabilities, sigevent_url)
