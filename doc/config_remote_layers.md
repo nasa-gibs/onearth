@@ -21,6 +21,7 @@ The remote layers tool scrapes data from the GetCapabilities file of the specifi
 	<SrcWMTSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcWMTSGetCapabilitiesURI>
 	<SrcTWMSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetCapabilities</SrcTWMSGetCapabilitiesURI>
 	<SrcTWMSGetTileServiceURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetTileService</SrcTWMSGetTileServiceURI>
+	<SrcLocationRewrite internal="https://gibs.earthdata.nasa.gov" external="https://gitc.earthdata.nasa.gov" />
 	<EnvironmentConfig>/etc/onearth/config/conf/environment_geographic.xml</EnvironmentConfig>
     <IncludeLayer>Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual</IncludeLayer>
 	<ExcludeLayer>BlueMarble_NextGeneration</ExcludeLayer>
@@ -34,6 +35,18 @@ The remote layers tool scrapes data from the GetCapabilities file of the specifi
 `<SrcTWMSGetCapabilitiesURI>` -- Specifies the TWMS GetCapabilities file that `oe_configure_remote_layers.py` will use to build the layer configs, including source URL info.
 
 `<SrcTWMSGetTileServiceURI>` -- Specifies the TWMS GetCapabilities file that `oe_configure_remote_layers.py` will use to build the layer configs, including source URL info.
+
+-----
+
+`<SrcLocationRewrite>` (optional) -- This specifies whether we should replace the external source URI with an internal one.
+
+##### Attributes:
+
+`internal` -- The internal URI that will replace the external URI.
+
+`external`  -- The external URI that will be replaced by the internal URI.
+
+-------
 
 `<EnvironmentConfig>` (required) -- The environment configuration file to be used in setting up this endpoint.
 

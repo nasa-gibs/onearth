@@ -20,7 +20,9 @@
 '''
 <RemoteGetCapabilities>
     <SrcWMTSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcWMTSGetCapabilitiesURI>
-    <SrcTWMSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml</SrcTWMSGetCapabilitiesURI>
+    <SrcTWMSGetCapabilitiesURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetCapabilities</SrcTWMSGetCapabilitiesURI>
+    <SrcTWMSGetTileServiceURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetTileService</SrcTWMSGetTileServiceURI>
+    <SrcLocationRewrite internal="https://gibs.earthdata.nasa.gov" external="https://gitc.earthdata.nasa.gov" />
     <EnvironmentConfig>/etc/onearth/config/conf/environment_geographic.xml</EnvironmentConfig>
     <IncludeLayer>Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual</IncludeLayer>
     <ExcludeLayer>BlueMarble_NextGeneration</ExcludeLayer>
@@ -108,6 +110,19 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         if email_recipient == '':
             mssg = 'No email recipient provided for notifications in get_remote_layers.'
             log_sig_err(mssg, sigevent_url)
+            
+    # Check to see if we want to rewrite locations
+    try:
+        srcLocationRewrite = dom.getElementsByTagName('SrcLocationRewrite')[0]
+        try:
+            internal_location = srcLocationRewrite.getAttribute('internal')
+            external_location = srcLocationRewrite.getAttribute('external')
+            print('SrcLocationRewrite internal={} external={}\n'.format(internal_location, external_location))
+        except Exception, e:
+            log_sig_err(str(e), sigevent_url)
+    except IndexError:
+        srcLocationRewrite = None
+        print('Not using SrcLocationRewrite\n')
 
     # Get layers to include or exclude
     include_layers = [tag.firstChild.data.strip() for tag in dom.getElementsByTagName('IncludeLayer')]
@@ -153,7 +168,10 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                             identifier + '_remote_.xml')
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
-                    xml_file.write(etree.tostring(layer).replace(LAYER_NODE, LAYER))
+                    xml_string = etree.tostring(layer).replace(LAYER_NODE, LAYER)
+                    if(srcLocationRewrite is not None):
+                        xml_string = xml_string.replace(external_location, internal_location)
+                    xml_file.write(xml_string)
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse WMTS GetCapabilities file (invalid syntax): ' +
                         wmts_getcapabilities, sigevent_url)
@@ -195,7 +213,10 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                             identifier + '_remote__gc.xml')
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
-                    xml_file.write(etree.tostring(layer))
+                    xml_string = etree.tostring(layer)
+                    if(srcLocationRewrite is not None):
+                        xml_string = xml_string.replace(external_location, internal_location)
+                    xml_file.write(xml_string)
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse TWMS GetCapabilities file (invalid syntax): ' +
                         twms_getcapabilities, sigevent_url)
@@ -233,7 +254,10 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                             identifier + '_remote__gts.xml')
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
-                    xml_file.write(etree.tostring(tiledgroup).replace(LAYER_NODE, LAYER))
+                    xml_string = etree.tostring(tiledgroup)
+                    if(srcLocationRewrite is not None):
+                        xml_string = xml_string.replace(external_location, internal_location)
+                    xml_file.write(xml_string)
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse TWMS GetTileService file (invalid syntax): ' +
                         twms_getcapabilities, sigevent_url)
