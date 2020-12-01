@@ -487,11 +487,9 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
         identifier = layer.findtext(ows + 'Identifier')
         if debug:
             print 'Configuring layer: ' + identifier
-        if identifier in layer_exclude_list:
+        if (identifier in layer_exclude_list) or (layer_include_list and identifier not in layer_include_list):
             if debug:
                 print 'Skipping layer: ' + identifier
-            continue
-        if layer_include_list and identifier not in layer_include_list:
             continue
         layer_tms_apache_configs = []
         bands = 3
