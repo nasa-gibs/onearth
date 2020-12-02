@@ -80,6 +80,7 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
 from oe_configure_reproject_layer import build_reproject_configs
+from oe_configure_remote_layers import get_remote_layers
 from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, bulk_replace
 
 reload(sys)
@@ -1532,6 +1533,16 @@ for conf in conf_files:
                 environment.mapfileLocationBasename,
                 environment.mapfileConfigLocation,
                 environment.mapfileConfigBasename)
+            continue
+        
+        # Stage layers XML from remote GetCapabilities if config found
+        if dom.getElementsByTagName('RemoteGetCapabilities'):
+            remote_warnings, remote_errors = get_remote_layers(conf,
+                                                               wmts=not no_wmts,
+                                                               twms=not no_twms,
+                                                               sigevent_url=sigevent_url)
+            warnings += remote_warnings
+            errors += remote_errors
             continue
 
         #Vector parameters

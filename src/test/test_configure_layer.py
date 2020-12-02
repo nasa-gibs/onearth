@@ -95,7 +95,7 @@ class TestLayerConfig(unittest.TestCase):
         # Run layer config tool
         cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
         run_command(cmd)
-   
+
         # Get all the test results before running the assertions. We do this because a failure ends the test and makes it impossible to clean up
         wmts_cache_xml = os.path.join(config['archive_basepath'], 'cache_all_wmts.xml')
         wmts_cache_file = os.path.join(config['archive_basepath'], 'cache_all_wmts.config')
@@ -1052,9 +1052,6 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue("category: oe_configure_layer" in result)
         self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
 
-    def tearDown(self):
-        rmtree(self.testfiles_path)
-
     def test_send_email_environment_config(self):
         # Set config files and reference hash for checking empty tile
         layer_config = os.path.join(self.testfiles_path, 'conf/test_empty_tile_generation.xml')
@@ -1098,6 +1095,51 @@ class TestLayerConfig(unittest.TestCase):
         self.assertTrue("To: somebody@localhost.test;somebodyelse@localhost.test" in result)
         self.assertTrue("category: oe_configure_layer" in result)
         self.assertTrue("The OnEarth Layer Configurator completed successully. Cache configurations created. Server XML created. Apache not restarted. Legends not generated. Archive links not generated. Mapfiles not configured. Warnings: 0. Errors: 0." in result)
+
+    def test_layer_config_remote_layers(self):
+        # Set config files and reference hash for checking empty tile
+        layer_config = os.path.join(self.testfiles_path, 'conf/test_remote_layers.xml')
+
+        config = get_layer_config(layer_config, self.archive_config)
+
+        # Make test dirs
+        make_dir_tree(config['wmts_staging_location'])
+        make_dir_tree(config['twms_staging_location'])
+
+        # Run layer config tool
+        cmd = 'oe_configure_layer -l {0} -a {1} -c {2} -p {3} -m {4}'.format(self.testfiles_path, self.archive_config, layer_config, self.projection_config, self.tilematrixset_config)
+        run_command(cmd)
+   
+        # Get all the test results before running the assertions. We do this because a failure ends the test and makes it impossible to clean up
+        wmts_staging_file = os.path.join(config['wmts_staging_location'], config['include_layer'] + '_remote_.xml')
+        wmts_staging = os.path.isfile(wmts_staging_file)
+        twms_staging_file = os.path.join(config['twms_staging_location'], config['include_layer'] + '_remote__gc.xml')
+        twms_staging = os.path.isfile(twms_staging_file)
+        twms_staging_gts_file = os.path.join(config['twms_staging_location'], config['include_layer'] + '_remote__gts.xml')
+        twms_staging_gts = os.path.exists(twms_staging_gts_file)
+        
+        xwmts_staging_file = os.path.join(config['wmts_staging_location'], config['exclude_layer'] + '_remote_.xml')
+        xwmts_staging = os.path.isfile(xwmts_staging_file)
+        xtwms_staging_file = os.path.join(config['twms_staging_location'], config['exclude_layer'] + '_remote__gc.xml')
+        xtwms_staging = os.path.isfile(xtwms_staging_file)
+        xtwms_staging_gts_file = os.path.join(config['twms_staging_location'], config['exclude_layer'] + '_remote__gts.xml')
+        xtwms_staging_gts = os.path.exists(xtwms_staging_gts_file)
+
+        self.assertTrue(wmts_staging, 'Remote layers config test -- included layer file ' + wmts_staging_file + ' does not exist in WMTS staging area')
+        self.assertTrue(twms_staging, 'Remote layers config test -- included layer file ' + twms_staging_file + ' does not exist in TWMS staging area')
+        self.assertTrue(twms_staging_gts, 'Remote layers config test -- included layer file ' + twms_staging_gts_file + ' does not exist in TWMS staging area')
+        self.assertTrue(xwmts_staging==False, 'Remote layers config test -- excluded layer file ' + xwmts_staging_file + ' exists in WMTS staging area')
+        self.assertTrue(xtwms_staging==False, 'Remote layers config test -- excluded layer file ' + xtwms_staging_file + ' exists in TWMS staging area')
+        self.assertTrue(xtwms_staging_gts==False, 'Remote layers config test -- excluded layer file ' + xtwms_staging_gts_file + ' exists in TWMS staging area')
+
+        # String searches in the GC
+        wmts_contains_internal = find_string(wmts_staging_file, config['internal_location'])
+        wmts_contains_external = find_string(wmts_staging_file, config['external_location'])
+        self.assertTrue(wmts_contains_internal, 'Remote layers config test -- WMTS GetCapabilities doesn\'t contain internal location')
+        self.assertTrue(wmts_contains_external==False, 'Remote layers config test -- WMTS GetCapabilities contains external location')
+
+        rmtree(config['wmts_staging_location'])
+        rmtree(config['twms_staging_location'])
 
     def tearDown(self):
         rmtree(self.testfiles_path)
