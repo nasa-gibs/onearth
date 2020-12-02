@@ -168,7 +168,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                             identifier + '_remote_.xml')
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
-                    xml_string = etree.tostring(layer).replace(LAYER_NODE, LAYER)
+                    xml_string = str(etree.tostring(layer)).replace(LAYER_NODE, LAYER)
                     if(srcLocationRewrite is not None):
                         xml_string = xml_string.replace(external_location, internal_location)
                     xml_file.write(xml_string)
@@ -213,7 +213,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                             identifier + '_remote__gc.xml')
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
-                    xml_string = etree.tostring(layer)
+                    xml_string = str(etree.tostring(layer))
                     if(srcLocationRewrite is not None):
                         xml_string = xml_string.replace(external_location, internal_location)
                     xml_file.write(xml_string)
@@ -254,7 +254,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                             identifier + '_remote__gts.xml')
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
-                    xml_string = etree.tostring(tiledgroup)
+                    xml_string = str(etree.tostring(tiledgroup))
                     if(srcLocationRewrite is not None):
                         xml_string = xml_string.replace(external_location, internal_location)
                     xml_file.write(xml_string)
