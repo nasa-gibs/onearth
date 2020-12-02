@@ -41,6 +41,12 @@ A different schema is used to configure reprojected layers. For more information
 
 ---
 
+##### Remote GetCapabilities Fields
+
+A different schema is used to add remote layers to the GetCapabilities. For more information, see the [remote capabilities doc page](config_remote_layers.md).
+
+---
+
 A sample layer configuration file is shown here:
 
 ```xml

@@ -98,6 +98,7 @@ Each test script will output a JUnit XML results file. By default, these files a
 35. Intermittent yearly period detection
 36. Generate empty tile
 37. Support for versioned color maps
+38. Test remote layer configuration options
 
 ## List of mod_onearth tests:
 1. Request current (no time) JPEG tile via WMTS
