@@ -732,8 +732,8 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
         s_xmin, s_ymax, s_xmax, s_ymin = get_image_extents(tile)
         print("Source extents: " + ",".join([s_xmin, s_ymax, s_xmax, s_ymin]))
 
-        # Commenting this out because I am not aware of anywhere that we are invoking this method with the exact set
-        # of tiles that we want to insert...
+        # Commenting this out because I am not aware of anywhere that we are _not_ invoking this method with the exact
+        # set of tiles that we want to insert...
         '''
         if os.path.splitext(tile)[1] == ".vrt" and not ("_cut." in tile or "_reproject." in tile):
             # ignore temp VRTs unless it's an antimeridian cut or reprojected source image
@@ -871,7 +871,7 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
         if ".merge." in tile:
             remove_file(tile)
 
-        # Remove the temporary (if it exists) vrt tile used to sort out differing resolutions of the tile and MRF
+        # Remove the temporary (if created) vrt tile used to sort out differing resolutions of the tile and MRF
         remove_file(vrt_tile)
 
         # Commenting this out because I am not aware of any lingering VRT files that must be removed... and this causes
