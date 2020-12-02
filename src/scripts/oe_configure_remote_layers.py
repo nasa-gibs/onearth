@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python3
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ from optparse import OptionParser
 from oe_utils import get_environment, sigevent, get_dom_tag_value
 
 
-VERSION_NUMBER = '1.3.8'
+VERSION_NUMBER = '1.4.0'
 LAYER_NODE = '<Layer xmlns="http://www.opengis.net/wmts/1.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml">'
 LAYER = '      <Layer>'
 warnings = []
@@ -62,7 +62,7 @@ def log_sig_warn(mssg, sigevent_url):
     try:
         sigevent('WARN', mssg, sigevent_url)
     except Exception:
-        print 'sigevent service is unavailable'
+        print('sigevent service is unavailable')
 
 
 def log_sig_err(mssg, sigevent_url):
@@ -80,7 +80,7 @@ def log_sig_err(mssg, sigevent_url):
     try:
         sigevent('ERROR', mssg, sigevent_url)
     except Exception:
-        print 'sigevent service is unavailable'
+        print('sigevent service is unavailable')
 
 
 def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False):
@@ -95,7 +95,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         try:
             environment = get_environment(environmentConfig,
                                           '' if sigevent_url is None else sigevent_url)
-        except Exception, e:
+        except Exception as e:
             log_sig_err(str(e), sigevent_url)
     except IndexError:
         mssg = 'Required <EnvironmentConfig> element is missing in ' + conf
@@ -118,7 +118,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
             internal_location = srcLocationRewrite.getAttribute('internal')
             external_location = srcLocationRewrite.getAttribute('external')
             print('SrcLocationRewrite internal={} external={}\n'.format(internal_location, external_location))
-        except Exception, e:
+        except Exception as e:
             log_sig_err(str(e), sigevent_url)
     except IndexError:
         srcLocationRewrite = None
@@ -161,7 +161,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
 
                 if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
                     if debug:
-                        print 'Skipping layer: ' + identifier
+                        print('Skipping layer: ' + identifier)
                     continue
 
                 xml_filename = os.path.join(environment.wmts_dir,
@@ -206,7 +206,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
 
                 if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
                     if debug:
-                        print 'Skipping layer: ' + identifier
+                        print('Skipping layer: ' + identifier)
                     continue
 
                 xml_filename = os.path.join(environment.twms_dir,
@@ -247,7 +247,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
 
                 if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
                     if debug:
-                        print 'Skipping layer: ' + identifier
+                        print('Skipping layer: ' + identifier)
                     continue
 
                 xml_filename = os.path.join(environment.twms_dir,
