@@ -469,29 +469,62 @@ def get_layer_config(filepath, archive_config):
         return config 
 
     # Get archive root path and the archive location
-    archive_root = config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value
-    config['archive_basepath'] = next(loc.getElementsByTagName('Location')[0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
-    config['archive_location'] = os.path.join(config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
+    try:
+        archive_root = config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['root'].value
+        config['archive_basepath'] = next(loc.getElementsByTagName('Location')[0].firstChild.nodeValue for loc in archive_dom.getElementsByTagName('Archive') if loc.attributes['id'].value == archive_root)
+        config['archive_location'] = os.path.join(config['archive_basepath'], config_dom.getElementsByTagName('ArchiveLocation')[0].firstChild.nodeValue)
+    except IndexError:
+        pass
 
     # Add everything we need from the layer config
-    config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
-    config['identifier'] = config_dom.getElementsByTagName("Identifier")[0].firstChild.nodeValue
-    config['time'] = config_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
-    config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[0].firstChild.nodeValue
-    config['colormaps'] = config_dom.getElementsByTagName("ColorMap")
+    try:
+        config['prefix'] = config_dom.getElementsByTagName("FileNamePrefix")[0].firstChild.nodeValue
+    except IndexError:
+        pass
+    try:
+        config['identifier'] = config_dom.getElementsByTagName("Identifier")[0].firstChild.nodeValue
+    except IndexError:
+        pass
+    try:
+        config['time'] = config_dom.getElementsByTagName("Time")[0].firstChild.nodeValue
+    except IndexError:
+        pass
+    try:
+        config['tiled_group_name'] = config_dom.getElementsByTagName("TiledGroupName")[0].firstChild.nodeValue
+    except IndexError:
+        pass
+    try:
+        config['colormaps'] = config_dom.getElementsByTagName("ColorMap")
+    except IndexError:
+        pass
     try:
         config['empty_tile'] = config_dom.getElementsByTagName('EmptyTile')[0].firstChild.nodeValue
     except IndexError:
+        pass
+    try:
         config['empty_tile_size'] = config_dom.getElementsByTagName('EmptyTileSize')[0].firstChild.nodeValue
+    except IndexError:
+        pass
     config['year_dir'] = False
     try:
         if config_dom.getElementsByTagName('ArchiveLocation')[0].attributes['year'].value == 'true':
             config['year_dir'] = True
-    except KeyError:
+    except (KeyError, IndexError):
         pass
     try:
         config['vector_type'] = config_dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
         config['vector_layer_contents'] = config_dom.getElementsByTagName('MapfileLayerContents')[0].firstChild.nodeValue
+    except IndexError:
+        pass
+    # Remote layers config
+    try:
+        config['internal_location'] = config_dom.getElementsByTagName('SrcLocationRewrite')[0].getAttribute('internal')
+        config['external_location'] = config_dom.getElementsByTagName('SrcLocationRewrite')[0].getAttribute('external')
+    except IndexError:
+        pass
+    try:
+        config['include_layer'] = config_dom.getElementsByTagName('IncludeLayer')[0].firstChild.nodeValue
+        config['exclude_layer'] = config_dom.getElementsByTagName('ExcludeLayer')[0].firstChild.nodeValue
     except IndexError:
         pass
     
