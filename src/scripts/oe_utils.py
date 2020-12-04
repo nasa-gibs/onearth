@@ -565,9 +565,11 @@ def get_environment(environmentConfig, email_meta):
     except KeyError:
         colormapUrls = None
         
-    # Same deal as colormaps for style JSON files
+    # Same deal as colormaps for vector style JSON files
     try:
+        # Supporting "legacy" tag name for now
         stylejsonLocations = dom.getElementsByTagName('StyleJSONLocation')
+        stylejsonLocations.extend(dom.getElementsByTagName('VectorStyleJSONLocation'))
         for location in stylejsonLocations:
             if 'version' not in location.attributes.keys():
                 if len(stylejsonLocations) > 1:
@@ -578,7 +580,9 @@ def get_environment(environmentConfig, email_meta):
         stylejsonLocations = None
 
     try:
+        # Supporting "legacy" tag name for now
         stylejsonUrls = dom.getElementsByTagName('StyleJSONURL')
+        stylejsonUrls.extend(dom.getElementsByTagName('VectorStyleJSONURL'))
         for url in stylejsonUrls:
             if 'version' not in url.attributes.keys():
                 if len(stylejsonUrls) > 1:
@@ -588,9 +592,11 @@ def get_environment(environmentConfig, email_meta):
     except KeyError:
         stylejsonUrls = None
         
-    # Same deal as colormaps for metadata JSON files
+    # Same deal as colormaps for vector metadata JSON files
     try:
+        # Supporting "legacy" tag name for now
         metadatajsonLocations = dom.getElementsByTagName('MetadataJSONLocation')
+        metadatajsonLocations.extend(dom.getElementsByTagName('VectorMetadataJSONLocation'))
         for location in metadatajsonLocations:
             if 'version' not in location.attributes.keys():
                 if len(metadatajsonLocations) > 1:
@@ -601,7 +607,9 @@ def get_environment(environmentConfig, email_meta):
         metadatajsonLocations = None
 
     try:
+        # Supporting "legacy" tag name for now
         metadatajsonUrls = dom.getElementsByTagName('MetadataJSONURL')
+        metadatajsonUrls.extend(dom.getElementsByTagName('VectorMetadataJSONURL'))
         for url in metadatajsonUrls:
             if 'version' not in url.attributes.keys():
                 if len(metadatajsonUrls) > 1:
