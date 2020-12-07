@@ -24,8 +24,14 @@ limitations under the License.
         <xs:element ref="LegendLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="LegendURL" maxOccurs="1" minOccurs="0"/>
         <xs:group ref="ColorMaps" maxOccurs="unbounded" minOccurs="0" />
-        <xs:group ref="StyleJSON" maxOccurs="unbounded" minOccurs="0" />
-        <xs:group ref="MetadataJSON" maxOccurs="unbounded" minOccurs="0" />
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:group ref="StyleJSON" />
+          <xs:group ref="VectorStyleJSON" />
+        </xs:choice>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:group ref="MetadataJSON" />
+          <xs:group ref="VectorMetadataJSON" />
+        </xs:choice>
         <xs:element ref="MapfileLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileStagingLocation" maxOccurs="1" minOccurs="0"/>
         <xs:element ref="MapfileConfigLocation" maxOccurs="1" minOccurs="0"/>
@@ -122,6 +128,50 @@ limitations under the License.
         </xs:complexType>
       </xs:element>
       <xs:element name="MetadataJSONURL" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:anyURI">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="VectorStyleJSON">
+    <xs:sequence>
+      <xs:element name="VectorStyleJSONLocation" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="VectorStyleJSONURL" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:anyURI">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="VectorMetadataJSON">
+    <xs:sequence>
+      <xs:element name="VectorMetadataJSONLocation" nillable="true">
+        <xs:complexType mixed="true">
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="version" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="VectorMetadataJSONURL" nillable="true">
         <xs:complexType mixed="true">
           <xs:simpleContent>
             <xs:extension base="xs:anyURI">
