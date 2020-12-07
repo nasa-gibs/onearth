@@ -34,8 +34,7 @@ limitations under the License.
         <xs:element ref="Pattern" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="EnvironmentConfig"/>
         <xs:element ref="ArchiveLocation" minOccurs="0"/>
-        <xs:element ref="ColorMap" minOccurs="0" maxOccurs="unbounded"/>
-        <xs:element ref="StyleJSON" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="ColorMap" type="VersionedMetadataItem" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="Time" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="Size" minOccurs="0"/>
         <xs:element ref="DataValues" minOccurs="0"/>
@@ -43,7 +42,14 @@ limitations under the License.
         <xs:element ref="Rsets" minOccurs="0"/>
         <xs:element ref="BoundingBox" minOccurs="0"/>
         <xs:element ref="VectorType" minOccurs="0"/>
-        <xs:element ref="VectorStyleFile" minOccurs="0"/>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="StyleJSON" type="VersionedMetadataItem" />
+          <xs:element name="VectorStyleJSON" type="VersionedMetadataItem" />
+        </xs:choice>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="MetadataJSON" type="VersionedMetadataItem" />
+          <xs:element name="VectorMetadataJSON" type="VersionedMetadataItem" />
+        </xs:choice>
         <xs:element ref="TileMatrixSetLimitsId" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
@@ -101,18 +107,10 @@ limitations under the License.
   <xs:element name="Projection" type="xs:string"> </xs:element>
   <xs:element name="Pattern" type="xs:string"/>
   <xs:element name="EnvironmentConfig" type="xs:string"/>
-  <xs:element name="ColorMap">
-    <xs:complexType mixed="true">
-      <xs:attribute name="version" use="optional" type="xs:string"/>
-      <xs:attribute name="default" use="optional" type="xs:boolean"/>
-    </xs:complexType>
-  </xs:element>
-  <xs:element name="StyleJSON">
-    <xs:complexType mixed="true">
-      <xs:attribute name="version" use="optional" type="xs:string"/>
-      <xs:attribute name="default" use="optional" type="xs:boolean"/>
-    </xs:complexType>
-  </xs:element>
+  <xs:complexType name="VersionedMetadataItem" mixed="true">
+    <xs:attribute name="version" use="optional" type="xs:string"/>
+    <xs:attribute name="default" use="optional" type="xs:boolean"/>
+  </xs:complexType>
   <xs:element name="Time" type="xs:string" nillable="true"/>
   <xs:element name="Size" nillable="true">
     <xs:complexType>
@@ -127,7 +125,7 @@ limitations under the License.
       <xs:attribute name="NoData" type="xs:string" use="optional"/>
     </xs:complexType>
   </xs:element>
-  <xs:element name="PageSize" nillable="true"> 
+  <xs:element name="PageSize" nillable="true">
     <xs:complexType>
       <xs:attribute name="c" type="xs:integer" use="required"/>
       <xs:attribute name="x" type="xs:integer" use="required"/>
@@ -149,6 +147,5 @@ limitations under the License.
     </xs:complexType>
   </xs:element>
   <xs:element name="VectorType" type="xs:string"/>
-  <xs:element name="VectorStyleFile" type="xs:string"/>
   <xs:element name="TileMatrixSetLimitsId" type="xs:string"/>
 </xs:schema>
