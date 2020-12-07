@@ -74,7 +74,7 @@ import distutils.spawn
 import sqlite3
 import glob
 import json
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from time import asctime
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
@@ -884,7 +884,7 @@ def get_file_from_time(timestr, fileNamePrefix, include_year_dir, has_zdb):
 
 def generate_legend(colormap, output, legend_url, format, orientation):
     """
-    Generate a legend graphic from GIBS color map. 
+    Generate a legend graphic from GIBS color map.
     Returns: WMTS <LegendURL> metadata tag, legend width, legend height.
     Arguments:
         colormap -- the color map file name
@@ -1490,7 +1490,7 @@ for conf in conf_files:
             if email_recipient == '':
                 log_sig_err("No email recipient provided for notifications.",
                             sigevent_url)
-        
+
         wmts_getCapabilities = environment.getCapabilities_wmts
         twms_getCapabilities = environment.getCapabilities_twms
         getTileService = environment.getTileService
@@ -1536,7 +1536,7 @@ for conf in conf_files:
                 environment.mapfileConfigLocation,
                 environment.mapfileConfigBasename)
             continue
-        
+
         # Stage layers XML from remote GetCapabilities if config found
         if dom.getElementsByTagName('RemoteGetCapabilities'):
             remote_warnings, remote_errors = get_remote_layers(conf,
@@ -1800,9 +1800,12 @@ for conf in conf_files:
                 colormap.attributes['url'] = url
                 colormap.attributes['location'] = location
 
-        # Similar treatment as ColorMap for StyleJSON
+        # Similar treatment as ColorMap for VectorStyleJSON
+        # Supporting "legacy" tag name for now
+        stylejson_elems = dom.getElementsByTagName('StyleJSON')
+        stylejson_elems.extend(dom.getElementsByTagName('VectorStyleJSON'))
         stylejsons = []
-        for stylejson in dom.getElementsByTagName('StyleJSON'):
+        for stylejson in stylejson_elems:
             if stylejson.firstChild:
                 stylejsons.append(stylejson)
 
@@ -1813,20 +1816,17 @@ for conf in conf_files:
                 default_stylejson = stylejsons[0]
             else:
                 for stylejson in stylejsons:
-                    if 'default' in list(stylejson.attributes.keys(
-                    )) and stylejson.attributes['default'].value == 'true':
+                    if 'default' in list(stylejson.attributes.keys()) and stylejson.attributes['default'].value == 'true':
                         if default_stylejson is not None:
-                            err_msg = 'Multiple <StyleJSON> elements have "default=true" attribute but only one is allowed, using ' + stylejson.toxml(
-                            )
+                            err_msg = 'Multiple <VectorStyleJSON> elements have "default=true" attribute but only one is allowed, using ' + stylejson.toxml()
                             log_sig_err(err_msg, sigevent_url)
                         default_stylejson = stylejson
             if len(stylejsons) > 1 and default_stylejson is None:
                 default_stylejson = stylejsons[-1]
-                err_msg = 'Multiple <StyleJSON> elements but none have "default=true" attribute, using ' + default_stylejson.toxml(
-                )
+                err_msg = 'Multiple <VectorStyleJSON> elements but none have "default=true" attribute, using ' + default_stylejson.toxml()
                 log_sig_err(err_msg, sigevent_url)
 
-        # Match <StyleJSONLocation> and <StyleJSONURL> to style json files with the same version and set them as attributes of the <StyleJSON>
+        # Match <StyleJSONLocation> and <StyleJSONURL> to style json files with the same version and set them as attributes of the <VectorStyleJSON>
         if stylejsons:
             for stylejson in stylejsons:
                 if 'version' not in list(stylejson.attributes.keys()):
@@ -1845,26 +1845,28 @@ for conf in conf_files:
 
                 if not location:
                     location = ''
-                    err_msg = "StyleJSONLocation for version '{0}' not defined for environment {1} - Trying StyleJSON path {2}".format(
+                    err_msg = "StyleJSONLocation for version '{0}' not defined for environment {1} - Trying VectorStyleJSON path {2}".format(
                         version, environmentConfig, stylejson_value)
                     log_sig_warn(err_msg, sigevent_url)
 
                 if not url:
                     url = ''
-                    err_msg = "StyleJSONURL for version '{0}' not defined for environment {1} - Trying StyleJSON path {2}".format(
+                    err_msg = "StyleJSONURL for version '{0}' not defined for environment {1} - Trying VectorStyleJSON path {2}".format(
                         version, environmentConfig, stylejson_value)
                     log_sig_warn(err_msg, sigevent_url)
 
                 stylejson.attributes['url'] = url
                 stylejson.attributes['location'] = location
 
-        # Similar treatment as StyleJSON for MetadataJSON
+        # Similar treatment as VectorStyleJSON for VectorMetadataJSON
+        metadatajson_elems = dom.getElementsByTagName('MetadataJSON')
+        metadatajson_elems.extend(dom.getElementsByTagName('VectorMetadataJSON'))
         metadatajsons = []
-        for metadatajson in dom.getElementsByTagName('MetadataJSON'):
+        for metadatajson in metadatajson_elems:
             if metadatajson.firstChild:
                 metadatajsons.append(metadatajson)
 
-        # Set default MetadataJSON
+        # Set default VectorMetadataJSON
         default_metadatajson = None
         if metadatajsons:
             if len(metadatajsons) == 1:
@@ -1874,17 +1876,17 @@ for conf in conf_files:
                     if 'default' in list(metadatajson.attributes.keys(
                     )) and metadatajson.attributes['default'].value == 'true':
                         if default_metadatajson is not None:
-                            err_msg = 'Multiple <MetadataJSON> elements have "default=true" attribute but only one is allowed, using ' + metadatajson.toxml(
+                            err_msg = 'Multiple <VectorMetadataJSON> elements have "default=true" attribute but only one is allowed, using ' + metadatajson.toxml(
                             )
                             log_sig_err(err_msg, sigevent_url)
                         default_metadatajson = metadatajson
             if len(metadatajsons) > 1 and default_metadatajson is None:
                 default_metadatajson = metadatajsons[-1]
-                err_msg = 'Multiple <MetadataJSON> elements but none have "default=true" attribute, using ' + default_metadatajson.toxml(
+                err_msg = 'Multiple <VectorMetadataJSON> elements but none have "default=true" attribute, using ' + default_metadatajson.toxml(
                 )
                 log_sig_err(err_msg, sigevent_url)
 
-        # Match <MetadataJSONLocation> and <MetadataJSONURL> to metadata json files with the same version and set them as attributes of the <MetadataJSON>
+        # Match <MetadataJSONLocation> and <MetadataJSONURL> to metadata json files with the same version and set them as attributes of the <VectorMetadataJSON>
         if metadatajsons:
             for metadatajson in metadatajsons:
                 if 'version' not in list(metadatajson.attributes.keys()):
@@ -1903,13 +1905,13 @@ for conf in conf_files:
 
                 if not location:
                     location = ''
-                    err_msg = "MetadataJSONLocation for version '{0}' not defined for environment {1} - Trying MetadataJSON path {2}".format(
+                    err_msg = "MetadataJSONLocation for version '{0}' not defined for environment {1} - Trying VectorMetadataJSON path {2}".format(
                         version, environmentConfig, metadatajson_value)
                     log_sig_warn(err_msg, sigevent_url)
 
                 if not url:
                     url = ''
-                    err_msg = "MetadataJSONURL for version '{0}' not defined for environment {1} - Trying MetadataJSON path {2}".format(
+                    err_msg = "MetadataJSONURL for version '{0}' not defined for environment {1} - Trying VectorMetadataJSON path {2}".format(
                         version, environmentConfig, metadatajson_value)
                     log_sig_warn(err_msg, sigevent_url)
 
@@ -2040,11 +2042,11 @@ for conf in conf_files:
     if stylejsons:
         for stylejson in stylejsons:
             json_value = stylejson.firstChild.nodeValue.strip()
-            log_info_mssg('config: StyleJSON: ' + str(json_value))
+            log_info_mssg('config: VectorStyleJSON: ' + str(json_value))
     if metadatajsons:
         for metadatajson in metadatajsons:
             json_value = metadatajson.firstChild.nodeValue.strip()
-            log_info_mssg('config: MetadataJSON: ' + str(json_value))
+            log_info_mssg('config: VectorMetadataJSON: ' + str(json_value))
     log_info_mssg('config: Patterns: ' + str(patterns))
     if len(rest_patterns) > 0:
         log_info_mssg('config: WMTS-REST Patterns: ' + str(rest_patterns))
@@ -2710,8 +2712,8 @@ for conf in conf_files:
             $BoundingBox
             <ows:Identifier>$Identifier</ows:Identifier>
             <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/colormap$MapVersion" xlink:href="$ColorMap" xlink:title="GIBS Color Map: Data - RGB Mapping"/>
-            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style$MapVersion" xlink:href="$StyleJSON" xlink:title="Mapbox GL Layer Styles"/>
-            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/layer$MapVersion" xlink:href="$MetadataJSON" xlink:title="Layer Metadata"/>
+            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style$MapVersion" xlink:href="$VectorStyleJSON" xlink:title="Mapbox GL Layer Styles"/>
+            <ows:Metadata xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/metadata-type/layer$MapVersion" xlink:href="$VectorMetadataJSON" xlink:title="Layer Vector Metadata"/>
             <Style isDefault="true">
                 <ows:Title xml:lang=\"en\">default</ows:Title>
                 <ows:Identifier>default</ows:Identifier>
@@ -2779,7 +2781,7 @@ for conf in conf_files:
                             newline = newline.replace("$ColorMap",
                                                       colormap_url)
                             line += newline[3:]
-            if '$StyleJSON' in line:
+            if '$VectorStyleJSON' in line:
                 if stylejsons == None or default_stylejson == None:
                     line = ''
                 else:
@@ -2792,7 +2794,7 @@ for conf in conf_files:
                     else:
                         default_stylejson_url = default_stylejson.firstChild.nodeValue
                     line = line.replace("$MapVersion", '')
-                    line = line.replace("$StyleJSON", default_stylejson_url)
+                    line = line.replace("$VectorStyleJSON", default_stylejson_url)
                     # Add rest of tags
                     if default_stylejson.attributes['version'].value != '':
                         for stylejson in stylejsons:
@@ -2805,10 +2807,10 @@ for conf in conf_files:
                             newline = line_template.replace(
                                 "$MapVersion",
                                 '/' + stylejson.attributes['version'].value)
-                            newline = newline.replace("$StyleJSON",
+                            newline = newline.replace("$VectorStyleJSON",
                                                       stylejson_url)
                             line += newline[3:]
-            if '$MetadataJSON' in line:
+            if '$VectorMetadataJSON' in line:
                 if metadatajsons == None or default_metadatajson == None:
                     line = ''
                 else:
@@ -2821,7 +2823,7 @@ for conf in conf_files:
                     else:
                         default_metadatajson_url = default_metadatajson.firstChild.nodeValue
                     line = line.replace("$MapVersion", '')
-                    line = line.replace("$MetadataJSON",
+                    line = line.replace("$VectorMetadataJSON",
                                         default_metadatajson_url)
                     # Add rest of tags
                     if default_metadatajson.attributes['version'].value != '':
@@ -2835,7 +2837,7 @@ for conf in conf_files:
                             newline = line_template.replace(
                                 "$MapVersion",
                                 '/' + metadatajson.attributes['version'].value)
-                            newline = newline.replace("$MetadataJSON",
+                            newline = newline.replace("$VectorMetadataJSON",
                                                       metadatajson_url)
                             line += newline[3:]
             if '$Format' in line:
@@ -2938,10 +2940,10 @@ for conf in conf_files:
       <Abstract xml:lang=\"en\">{Abstract}</Abstract>
       <LatLonBoundingBox minx=\"{min}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
       <Style>
-        <Name>default</Name> 
+        <Name>default</Name>
         <Title xml:lang=\"en\">(default) Default style</Title>
       </Style>
-      <ScaleHint min=\"10\" max=\"100\"/> 
+      <ScaleHint min=\"10\" max=\"100\"/>
       <MinScaleDenominator>100</MinScaleDenominator>
       </Layer>
 """
