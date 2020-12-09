@@ -728,9 +728,6 @@ static int post_hook(request_rec *r)
     } 
 
     if (!apr_strnatcasecmp(cfg->role, "style") && cfg->time) {
-
-
-
         // const char *out_uri = remove_date_from_uri(r->pool, tokens);
         // apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);
         // ap_internal_redirect(out_uri, r);
@@ -748,8 +745,17 @@ static int post_hook(request_rec *r)
         return wmts_return_all_errors(r, errors, wmts_errors);
     } 
     if (!apr_strnatcasecmp(cfg->role, "style")) {
-        wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
-        return wmts_return_all_errors(r, errors, wmts_errors);
+    	if (cfg->time) {
+			wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
+			return wmts_return_all_errors(r, errors, wmts_errors);
+    	} else {
+    		apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
+            const char *out_uri = remove_date_from_uri(r->pool, tokens);
+            const char *datetime_str = get_element_from_uri(r, cfg, "date");
+            apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);
+            ap_internal_redirect(out_uri, r);
+            return OK;
+    	}
     } 
     if (!apr_strnatcasecmp(cfg->role, "tilematrixset")) {
         // This would be a tile-level request and as such errors are handled by the pre-hook.
