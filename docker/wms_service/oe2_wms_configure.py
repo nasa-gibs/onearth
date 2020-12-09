@@ -123,7 +123,7 @@ for layer in layers:
     
     bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], projection, scale_denominator, tile_width, matrix_width, matrix_height)
 
-    resource_url = layer.find('{*}ResourceURL')
+    resource_url = layer.findall('{*}ResourceURL')[-1] # get last if multiple found
     bands_count = 4 if resource_url.get('format') == 'image/png' else 3
     template_string = resource_url.get('template')
     # Replace matching host names with local Docker host IP http://172.17.0.1 so that connections stay local
