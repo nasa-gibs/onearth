@@ -1,9 +1,9 @@
 # This Dockerfile must be run from source root
 
-FROM lambci/lambda:build-nodejs6.10
+FROM centos:7
 
 # Copy mrfgen/vectorgen
-RUN mkdir /var/task/bin
+RUN mkdir -p /var/task/bin
 COPY ./src/mrfgen/*.py /var/task/bin/
 COPY ./src/mrfgen/RGBApng2Palpng.c /var/task/bin/
 COPY ./src/vectorgen/*.py /var/task/bin/
@@ -12,14 +12,14 @@ COPY ./src/empty_tile/*.py /var/task/bin/
 COPY ./src/generate_legend/*.py /var/task/bin/
 COPY ./src/colormaps/bin/*.py /var/task/bin/
 
-# Install GDAL
 WORKDIR /tmp
-RUN \
-  touch /var/lib/rpm/* \
-  && yum install -y epel-release
+RUN touch /var/lib/rpm/* && \
+	yum install -y epel-release python3-devel make libpng-devel
+
+# Install GDAL
 RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-devel-2.4.0-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.0/gibs-gdal-apps-2.4.0-1.el7.x86_64.rpm" && \
 	yum clean all
-RUN pip3.6 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+RUN pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 # Copy binaries and libs
 RUN cp /usr/bin/*mrf* /var/task/bin
@@ -101,11 +101,15 @@ RUN \
 RUN yum remove -y gibs-gdal
 RUN rm -rf /tmp/*
 
+# Set the locale
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
 # Add non-root user
 RUN groupadd dockeruser && useradd -g dockeruser dockeruser
 RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log
 
 # Change user
 USER dockeruser
-
-ENV LANGUAGE=en_US:en
