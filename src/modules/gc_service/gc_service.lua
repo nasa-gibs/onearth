@@ -503,12 +503,17 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
 
     -- Build the ResourceURL element
     local timeString = not static and "/{Time}" or ""
-    if baseUriGC[baseUriGC:len()] ~= "/" then
-        baseUriGC = baseUriGC .. '/'
+    if string.sub(baseUriGC, -1) ~= "/" then
+        baseUriGC = baseUriGC .. "/" 
     end
-    local template = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
-    layerElem:addtag("ResourceURL", {format=mimeType, resourceType="tile", template=template})
-
+    local template_static = baseUriGC .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
+    local template_default = baseUriGC .. layerId .. "/" .. "default" .. "/default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
+    local template_time = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
+    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
+    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
+    if not static then
+        layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_time}))
+    end
     return layerElem
 end
 

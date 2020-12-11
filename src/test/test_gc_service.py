@@ -713,8 +713,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 1,
-            'Incorrect number of < ResourceURL > elements found - should only be 1. Url: {}'
+            len(resource_url_elems), 2,
+            'Incorrect number of < ResourceURL > elements found - should only be 2. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -1006,8 +1006,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 1,
-            'Incorrect number of < ResourceURL > elements found - should only be 1. Url: {}'
+            len(resource_url_elems), 2,
+            'Incorrect number of < ResourceURL > elements found - should only be 2. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -1306,8 +1306,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 1,
-            'Incorrect number of < ResourceURL > elements found - should only be 1. Url: {}'
+            len(resource_url_elems), 3,
+            'Incorrect number of < ResourceURL > elements found - should only be 3. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -1334,7 +1334,7 @@ class TestDateService(unittest.TestCase):
         expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
-        found = resource_url_elems[0].get('template')
+        found = resource_url_elems[2].get('template')
         self.assertEqual(
             found, expected,
             'Incorrect "template" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'
@@ -1703,8 +1703,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 1,
-            'Incorrect number of < ResourceURL > elements found - should only be 1. Url: {}'
+            len(resource_url_elems), 3,
+            'Incorrect number of < ResourceURL > elements found - should be 3. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -1731,7 +1731,7 @@ class TestDateService(unittest.TestCase):
         expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
-        found = resource_url_elems[0].get('template')
+        found = resource_url_elems[2].get('template')
         self.assertEqual(
             found, expected,
             'Incorrect "template" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'
@@ -2101,8 +2101,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 1,
-            'Incorrect number of < ResourceURL > elements found - should only be 1. Url: {}'
+            len(resource_url_elems), 3,
+            'Incorrect number of < ResourceURL > elements found - should only be 3. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -2129,7 +2129,7 @@ class TestDateService(unittest.TestCase):
         expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
-        found = resource_url_elems[0].get('template')
+        found = resource_url_elems[2].get('template')
         self.assertEqual(
             found, expected,
             'Incorrect "template" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'
