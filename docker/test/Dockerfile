@@ -12,7 +12,7 @@ RUN pip3.6 install apacheconfig==0.2.8 numpy==1.16.6 matplotlib==2.2.5 parse_apa
 RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2
 
 # Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-devel-2.4.4-1.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4/gibs-gdal-apps-2.4.4-1.el7.x86_64.rpm"
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-devel-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-apps-2.4.4-2.el7.x86_64.rpm"
 RUN pip3.6 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 # Install vectorgen dependencies
