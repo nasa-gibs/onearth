@@ -3005,153 +3005,163 @@ for conf in conf_files:
 
     # Create mapfile if requested and this is not a vector tile product
     if create_mapfile and compression != "MVT" and environment.mapfileStagingLocation is not None:
-        # Write mapfile info for layer
+        # Check to see if we can just reuse existing mapfile from reproject
+        # This is better as it handles time snapping correctly
         mapfile_name = os.path.join(environment.mapfileStagingLocation,
                                     identifier + '.map')
-        with open(mapfile_name, 'w+') as mapfile:
-            # Initialize validation values
-            timeDirPattern = "%" + identifier + "_TIME%_" if not subdaily else "%" + identifier + "_TIME%"
-            timeParamRegex = '"^([0-9]|T){7}$"'
-            yearDirPattern = "%" + identifier + "_YEAR%"
-            yearDirRegex = '"^([0-9]|Y){4}$"'
-            subdailyDirPattern = "%" + identifier + "_SUBDAILY%_"
-            subdailyParamRegex = '"^([0-9]|T){6}$"'
+        wm_layer_mapfile = os.path.join(environment.mapfileStagingLocation[:-5] + '3857',
+                                        identifier + '.map')
+        print('\nChecking for existing reproject mapfile ' + wm_layer_mapfile)
+        if os.path.exists(wm_layer_mapfile) and projection.id != 'EPSG:3857' and mapfile_name != wm_layer_mapfile:
+            # Vector layers will be ignored as they aren't reprojected
+            print('Found ' + wm_layer_mapfile)
+            print('Copying to ' + mapfile_name)
+            shutil.copyfile(wm_layer_mapfile, mapfile_name)
+        else: # Create custom layer mapfile with time metadata elements
+            # Write mapfile info for layer
+            with open(mapfile_name, 'w+') as mapfile:
+                # Initialize validation values
+                timeDirPattern = "%" + identifier + "_TIME%_" if not subdaily else "%" + identifier + "_TIME%"
+                timeParamRegex = '"^([0-9]|T){7}$"'
+                yearDirPattern = "%" + identifier + "_YEAR%"
+                yearDirRegex = '"^([0-9]|Y){4}$"'
+                subdailyDirPattern = "%" + identifier + "_SUBDAILY%_"
+                subdailyParamRegex = '"^([0-9]|T){6}$"'
 
-            minx = projection.lowercorner[0]
-            miny = projection.lowercorner[1]
-            maxx = projection.uppercorner[0]
-            maxy = projection.uppercorner[1]
+                minx = projection.lowercorner[0]
+                miny = projection.lowercorner[1]
+                maxx = projection.uppercorner[0]
+                maxy = projection.uppercorner[1]
 
-
-            # Write mapfile lines
-            mapfile.write("LAYER\n")
-            mapfile.write("\tNAME\t\"" + identifier + "\"\n")
-            if wmsGroupName:
-                mapfile.write("\tGROUP\t\"" + wmsGroupName + "\"\n")
-                # default time/year needs to be handled by mod_oems for layer groups
-                default_time = ""
-                default_year = ""
-                default_subdaily = ""
-                timeDirPattern = (
-                    "%" + wmsGroupName + "_TIME%") + timeDirPattern
-                yearDirPattern = yearDirPattern + "%" + wmsGroupName + "_YEAR%"
-            else:
-                default_time = "TTTTTTT"
-                default_year = "YYYY"
-                default_subdaily = "TTTTTT"
-            if vectorType:
-                layer_type = vectorType.upper()
-            else:
-                layer_type = 'RASTER'
-            mapfile.write("\tTYPE\t" + layer_type + "\n")
-            mapfile.write("\tSTATUS\tON\n")
-            mapfile.write("\tVALIDATION\n")
-            # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
-            if not static:
-                mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" +
-                              default_time + "\"\n")
-                mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" +
-                              timeParamRegex + "\n")
-                if wmsGroupName:  # add group substitutions as well
-                    mapfile.write("\t\t\"default_" + wmsGroupName +
-                                  "_TIME\"\t\t\"" + default_time + "\"\n")
-                    mapfile.write("\t\t\"" + wmsGroupName + "_TIME\"\t\t\t" +
-                                  timeParamRegex + "\n")
-            if not static and year:
-                mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" +
-                              default_year + "\"\n")
-                mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" +
-                              yearDirRegex + "\n")
+                # Write mapfile lines
+                mapfile.write("LAYER\n")
+                mapfile.write("\tNAME\t\"" + identifier + "\"\n")
                 if wmsGroupName:
-                    mapfile.write("\t\t\"default_" + wmsGroupName +
-                                  "_YEAR\"\t\"" + default_year + "\"\n")
-                    mapfile.write("\t\t\"" + wmsGroupName + "_YEAR\"\t\t" +
-                                  yearDirRegex + "\n")
-            if not static and subdaily:
-                mapfile.write("\t\t\"default_" + identifier +
-                              "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
-                mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" +
-                              subdailyParamRegex + "\n")
+                    mapfile.write("\tGROUP\t\"" + wmsGroupName + "\"\n")
+                    # default time/year needs to be handled by mod_oems for layer groups
+                    default_time = ""
+                    default_year = ""
+                    default_subdaily = ""
+                    timeDirPattern = (
+                        "%" + wmsGroupName + "_TIME%") + timeDirPattern
+                    yearDirPattern = yearDirPattern + "%" + wmsGroupName + "_YEAR%"
+                else:
+                    default_time = "TTTTTTT"
+                    default_year = "YYYY"
+                    default_subdaily = "TTTTTT"
+                if vectorType:
+                    layer_type = vectorType.upper()
+                else:
+                    layer_type = 'RASTER'
+                mapfile.write("\tTYPE\t" + layer_type + "\n")
+                mapfile.write("\tSTATUS\tON\n")
+                mapfile.write("\tVALIDATION\n")
+                # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
+                if not static:
+                    mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" +
+                                default_time + "\"\n")
+                    mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" +
+                                timeParamRegex + "\n")
+                    if wmsGroupName:  # add group substitutions as well
+                        mapfile.write("\t\t\"default_" + wmsGroupName +
+                                    "_TIME\"\t\t\"" + default_time + "\"\n")
+                        mapfile.write("\t\t\"" + wmsGroupName + "_TIME\"\t\t\t" +
+                                    timeParamRegex + "\n")
+                if not static and year:
+                    mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" +
+                                default_year + "\"\n")
+                    mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" +
+                                yearDirRegex + "\n")
+                    if wmsGroupName:
+                        mapfile.write("\t\t\"default_" + wmsGroupName +
+                                    "_YEAR\"\t\"" + default_year + "\"\n")
+                        mapfile.write("\t\t\"" + wmsGroupName + "_YEAR\"\t\t" +
+                                    yearDirRegex + "\n")
+                if not static and subdaily:
+                    mapfile.write("\t\t\"default_" + identifier +
+                                "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
+                    mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" +
+                                subdailyParamRegex + "\n")
+                    if wmsGroupName:
+                        mapfile.write("\t\t\"default_" + wmsGroupName +
+                                    "_SUBDAILY\"\t\"" + default_subdaily +
+                                    "\"\n")
+                        mapfile.write("\t\t\"" + wmsGroupName + "_SUBDAILY\"\t\t" +
+                                    subdailyParamRegex + "\n")
+                mapfile.write("\tEND\n")
+                mapfile.write("\tMETADATA\n")
+                mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
+                mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny +
+                            " " + maxx + " " + maxy + "\"\n")
+                if not static and len(detected_times) > 0:
+                    defaultDate = ''
+                    timeExtent  = ''
+                    for detected_time in detected_times:
+                        defaultDate = detected_time.strip().split('/')[1]
+                        timeExtent = timeExtent + detected_time.strip() + ","
+                    mapfile.write("\t\t\"wms_timeextent\"\t\"" + timeExtent.rstrip(',') + "\"\n")
+                    mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate + "\"\n")
                 if wmsGroupName:
-                    mapfile.write("\t\t\"default_" + wmsGroupName +
-                                  "_SUBDAILY\"\t\"" + default_subdaily +
-                                  "\"\n")
-                    mapfile.write("\t\t\"" + wmsGroupName + "_SUBDAILY\"\t\t" +
-                                  subdailyParamRegex + "\n")
-            mapfile.write("\tEND\n")
-            mapfile.write("\tMETADATA\n")
-            mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
-            mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny +
-                          " " + maxx + " " + maxy + "\"\n")
-            if not static and len(detected_times) > 0:
-                defaultDate = ''
-                timeExtent  = ''
-                for detected_time in detected_times:
-                    defaultDate = detected_time.strip().split('/')[1]
-                    timeExtent = timeExtent + detected_time.strip() + ","
-                mapfile.write("\t\t\"wms_timeextent\"\t\"" + timeExtent.rstrip(',') + "\"\n")
-                mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate + "\"\n")
-            if wmsGroupName:
-                mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName + "\"\n")
+                    mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName + "\"\n")
 
-            if wmsLayerGroupName is not None:
-                mapfile.write("\t\t\"wms_layer_group\"\t\t\"" + wmsLayerGroupName + "\"\n")
+                if wmsLayerGroupName is not None:
+                    mapfile.write("\t\t\"wms_layer_group\"\t\t\"" + wmsLayerGroupName + "\"\n")
 
-            if legend and legendUrl_png_h_url:
-                mapfile.write("\t\t\"wms_style\"\t\t\t\t\"default\"\n")
-                mapfile.write("\t\t\"wms_style_default_legendurl_width\"\t\"" + str(legendUrl_png_h_width) + "\"\n")
-                mapfile.write("\t\t\"wms_style_default_legendurl_height\"\t\"" + str(legendUrl_png_h_height) + "\"\n")
-                mapfile.write("\t\t\"wms_style_default_legendurl_format\"\t\"image/png\"\n")
-                mapfile.write("\t\t\"wms_style_default_legendurl_href\"\t\"" + legendUrl_png_h_url + "\"\n")
+                if legend and legendUrl_png_h_url:
+                    mapfile.write("\t\t\"wms_style\"\t\t\t\t\"default\"\n")
+                    mapfile.write("\t\t\"wms_style_default_legendurl_width\"\t\"" + str(legendUrl_png_h_width) + "\"\n")
+                    mapfile.write("\t\t\"wms_style_default_legendurl_height\"\t\"" + str(legendUrl_png_h_height) + "\"\n")
+                    mapfile.write("\t\t\"wms_style_default_legendurl_format\"\t\"image/png\"\n")
+                    mapfile.write("\t\t\"wms_style_default_legendurl_href\"\t\"" + legendUrl_png_h_url + "\"\n")
 
-            if vectorType:
-                mapfile.write(
-                    '\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
-                mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
+                if vectorType:
+                    mapfile.write(
+                        '\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
+                    mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
 
-            mapfile.write("\tEND\n")
-            datacon = "DATA"
-            if vectorType:
-                # check if we have json files; if yes, use that extension, otherwise assume shapefiles
-                jsonsearch = archiveLocation + '/[0-9]*/*.json'
-                if len(glob.glob(jsonsearch)) == 0:
-                    extension = ''
+                mapfile.write("\tEND\n")
+                datacon = "DATA"
+                if vectorType:
+                    # check if we have json files; if yes, use that extension, otherwise assume shapefiles
+                    jsonsearch = archiveLocation + '/[0-9]*/*.json'
+                    if len(glob.glob(jsonsearch)) == 0:
+                        extension = ''
+                    else:
+                        extension = '.json'
+                        mapfile.write("\tCONNECTIONTYPE OGR\n")
+                        datacon = "CONNECTION"
                 else:
-                    extension = '.json'
-                    mapfile.write("\tCONNECTIONTYPE OGR\n")
-                    datacon = "CONNECTION"
-            else:
-                extension = '.mrf'
-            if not static and year:
-                if subdaily:
+                    extension = '.mrf'
+                if not static and year:
+                    if subdaily:
+                        mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
+                                    yearDirPattern + "/" + fileNamePrefix +
+                                    timeDirPattern + subdailyDirPattern +
+                                    extension + "\"\n")
+                    else:
+                        mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
+                                    yearDirPattern + "/" + fileNamePrefix +
+                                    timeDirPattern + extension + "\"\n")
+                elif not static and not year:
                     mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                                  yearDirPattern + "/" + fileNamePrefix +
-                                  timeDirPattern + subdailyDirPattern +
-                                  extension + "\"\n")
+                                fileNamePrefix + timeDirPattern + extension +
+                                "\"\n")
                 else:
                     mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                                  yearDirPattern + "/" + fileNamePrefix +
-                                  timeDirPattern + extension + "\"\n")
-            elif not static and not year:
-                mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                              fileNamePrefix + timeDirPattern + extension +
-                              "\"\n")
-            else:
-                mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                              fileNamePrefix + extension + "\"\n")
-            mapfile.write("\tPROJECTION\n")
-            mapfile.write('\t\t\"init={0}"\n'.format(projection.id.lower()))
-            mapfile.write("\tEND\n")
-            if vectorType and mapfileLayerContents:
-                try:
-                    with open(mapfileLayerContents, 'r') as f:
-                        mapfile.write(f.read())
-                        mapfile.write("\n")
-                except:
-                    log_sig_err(
-                        "Couldn't read mapfile LAYER contents file: " +
-                        mapfileLayerContents, sigevent_url)
-            mapfile.write("END\n")
+                                fileNamePrefix + extension + "\"\n")
+                mapfile.write("\tPROJECTION\n")
+                mapfile.write('\t\t\"init={0}"\n'.format(projection.id.lower()))
+                mapfile.write("\tEND\n")
+                if vectorType and mapfileLayerContents:
+                    try:
+                        with open(mapfileLayerContents, 'r') as f:
+                            mapfile.write(f.read())
+                            mapfile.write("\n")
+                    except:
+                        log_sig_err(
+                            "Couldn't read mapfile LAYER contents file: " +
+                            mapfileLayerContents, sigevent_url)
+                mapfile.write("END\n")
 
 # Use config filename or directory for logging the current config outside of loop
 if not options.layer_config_filename:

@@ -130,6 +130,8 @@ The tool can also create/update mapfiles with the `--create-mapfile` option. The
 
 When creating a new mapfile, the tool will look for `.header` and `.footer` files, and append them to the start and end of the mapfile if found. The location of these files is set by the `<MapfileConfigLocation>` element in the environment config file. The `"basename"` attribute of this element refers to the file prefix before the `.header` and `.footer` extension.
 
+Layers in the mapfile are configured to use the layer's WMTS source via the GDAL TMS driver (provided that the layer exists at that source). If the WMTS source does not exist, the layer will be configured to point to the layer's MRF files on the file system. This leverages the oe_configure_reproject_layer.py tool, so reproject must be configured in order to use WMTS as the source.
+
 Note that the header/footers are only added when a new mapfile is created, not when an existing one is update.
 
 ```
