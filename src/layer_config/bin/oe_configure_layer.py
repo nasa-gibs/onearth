@@ -3109,8 +3109,8 @@ for conf in conf_files:
                 mapfile.write("\t\t\"wms_style_default_legendurl_href\"\t\"" + legendUrl_png_h_url + "\"\n")
 
             if vectorType:
-                mapfile.write(
-                    '\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
+                mapfile.write('\t\t"wms_enable_request"\t\t"GetLegendGraphic"\n')
+                mapfile.write('\t\t"wfs_getfeature_formatlist"\t\t"geojson,csv"\n')
                 mapfile.write('\t\t"gml_include_items"\t\t"all"\n')
 
             mapfile.write("\tEND\n")
