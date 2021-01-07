@@ -257,7 +257,12 @@ This tool is utilized by mrfgen.py.
 
 ## oe_validate_palette.py
 
-oe_validate_palette.py is a tool for validating an image palette with a GIBS colormap. The output includes a summary of colors matched and the colors unique to the colormap and image. Mismatches are displayed if there are any. The system exit code is the number of colors in the image not found in the color table.
+oe_validate_palette.py is a tool for validating an image palette with a GIBS colormap. The output includes a summary of colors matched and the colors unique to the colormap and image. Mismatches are displayed if there are any. The system exit code will be one of the following values:
+* 0 - Successful
+* 1 - Mismatched colors found in the image palette only
+* 2 - Mismatched colors found in the colormap only
+* 3 - Mismatched colors found in both the image palette _and_ colormap
+
 
 ```Shell
 Usage: oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --verbose
