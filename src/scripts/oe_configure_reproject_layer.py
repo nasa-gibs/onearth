@@ -183,17 +183,15 @@ def make_gdal_tms_xml(layer, bands, src_epsg, **kwargs):
         template_string = None
         for resource_url in layer.findall('{*}ResourceURL'):
             template = resource_url.get('template')
-            print([template,str(template_string)])
-            # If the first one, prime the variable
-            if template_string is None:
-                template_string = template
 
-            # Else if we've found the Resource URL with {Time} take it and be done
-            elif "{Time}" in template:
+            # If we've found the Resource URL with {Time} take it and be done
+            if "{Time}" in template:
                 template_string = template
                 break
-
-            # Else if we found the "default/{TileMatrixSet}" Resource URL and choose that over the other
+            # Else if this is the first item in the list, keep it for now
+            elif template_string is None:
+                template_string = template
+            # Else if we found the "default/{TileMatrixSet}" Resource URL; Choose that over the other
             elif "default/{TileMatrixSet}" in template:
                 template_string = template
 
