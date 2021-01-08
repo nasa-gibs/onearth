@@ -137,6 +137,7 @@ Options:
                         configuration file value
   -w, --no_wmts         Do not use configurations for WMTS.
   --debug               Produce verbose debug messages
+  --create_mapfile      Create MapServer configuration.
 ```
 
 ## oe_configure_reproject_layer.py

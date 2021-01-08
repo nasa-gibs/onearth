@@ -449,7 +449,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
         mapfile_config_basename = environment_xml.find(
             '{*}MapfileConfigLocation').get('basename')
-        if not mapfile_config_location:
+        if not mapfile_config_basename:
             mssg = 'mapfile creation chosen but no "basename" attribute found for <MapfileConfigLocation>'
             warnings.append(asctime() + " " + mssg)
             log_sig_warn(mssg, sigevent_url)
@@ -988,7 +988,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             legendUrlElems = []
 
             for styleElem in layer.findall('{*}Style'):
-               legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
+                legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
 
             for legendUrlElem in legendUrlElems:
                 attributes = legendUrlElem.attrib

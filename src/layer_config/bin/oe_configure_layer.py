@@ -74,7 +74,7 @@ import sqlite3
 import glob
 import json
 from datetime import datetime, timedelta
-from time import asctime
+from time import asctime, time as tm
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
@@ -1539,7 +1539,8 @@ for conf in conf_files:
             remote_warnings, remote_errors = get_remote_layers(conf,
                                                                wmts=not no_wmts,
                                                                twms=not no_twms,
-                                                               sigevent_url=sigevent_url)
+                                                               sigevent_url=sigevent_url,
+                                                               create_mapfile=create_mapfile)
             warnings += remote_warnings
             errors += remote_errors
             continue
@@ -3006,19 +3007,26 @@ for conf in conf_files:
     # Create mapfile if requested and this is not a vector tile product
     if create_mapfile and compression != "MVT" and environment.mapfileStagingLocation is not None:
         # Check to see if we can just reuse existing mapfile from reproject
-        # This is better as it handles time snapping correctly
+        # WMTS layer sources are better as they handles time snapping correctly
+        reuse_wm_mapfiles = False # We're turning this off for now but leaving this option here in case someone wants it
+        # oe_configure_remote_layers will instead generate mapfiles since it can include/exclude specific layers rather than grab all
         mapfile_name = os.path.join(environment.mapfileStagingLocation,
                                     identifier + '.map')
         wm_layer_mapfile = os.path.join(environment.mapfileStagingLocation[:-5] + '3857',
                                         identifier + '.map')
         print('\nChecking for existing reproject mapfile ' + wm_layer_mapfile)
-        if os.path.exists(wm_layer_mapfile) and projection.id != 'EPSG:3857' and mapfile_name != wm_layer_mapfile:
+        if os.path.exists(wm_layer_mapfile) and projection.id != 'EPSG:3857' and mapfile_name != wm_layer_mapfile and reuse_wm_mapfiles == True:
             # Vector layers will be ignored as they aren't reprojected
             print('Found ' + wm_layer_mapfile)
             print('Copying to ' + mapfile_name)
             shutil.copyfile(wm_layer_mapfile, mapfile_name)
         else: # Create custom layer mapfile with time metadata elements
             # Write mapfile info for layer
+            if os.path.exists(mapfile_name):
+                # Warn that we're overwriting a recently modified file
+                last_mod = os.path.getmtime(mapfile_name)
+                if tm() - last_mod <= 600:
+                    log_sig_warn("Overwriting layer mapfile " + mapfile_name, sigevent_url)
             with open(mapfile_name, 'w+') as mapfile:
                 # Initialize validation values
                 timeDirPattern = "%" + identifier + "_TIME%_" if not subdaily else "%" + identifier + "_TIME%"
