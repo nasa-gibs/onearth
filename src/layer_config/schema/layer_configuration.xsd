@@ -59,6 +59,14 @@ limitations under the License.
   <xs:element name="FileNamePrefix" type="xs:string"/>
   <xs:element name="Abstract" type="xs:string"/>
   <xs:element name="TiledGroupName" type="xs:string"/>
+  <xs:element name="WMSSourceLoc">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="Local"/>
+        <xs:enumeration value="Remote"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
   <xs:element name="WMSGroupName" type="xs:string"/>
   <xs:element name="WMSLayerGroupName" type="xs:string"/>
   <xs:element name="ArchiveLocation" nillable="true">

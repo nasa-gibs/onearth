@@ -4,6 +4,6 @@
 	<SrcTWMSGetTileServiceURI>https://gibs.earthdata.nasa.gov/twms/epsg4326/best/twms.cgi?request=GetTileService</SrcTWMSGetTileServiceURI>
 	<SrcLocationRewrite internal="https://gibs.earthdata.nasa.gov" external="https://gitc.earthdata.nasa.gov" />
 	<EnvironmentConfig>/etc/onearth/config/conf/environment_geographic.xml</EnvironmentConfig>
-	<IncludeLayer>Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual</IncludeLayer>
+	<IncludeLayer WMSLayerGroupName="Reflectance">Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual</IncludeLayer>
 	<ExcludeLayer>BlueMarble_NextGeneration</ExcludeLayer>
 </RemoteGetCapabilities>

@@ -78,7 +78,9 @@ from time import asctime, time as tm
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from lxml import etree
-from oe_configure_reproject_layer import build_reproject_configs
+import cgi
+from oe_configure_reproject_layer import build_reproject_configs, make_gdal_tms_xml, \
+    WMS_LAYER_GROUP_TEMPLATE, DIMENSION_TEMPLATE, VALIDATION_TEMPLATE, STYLE_TEMPLATE, MAPFILE_TEMPLATE
 from oe_configure_remote_layers import get_remote_layers
 from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, bulk_replace
 
@@ -1547,10 +1549,7 @@ for conf in conf_files:
 
         #Vector parameters
         try:
-            vectorType = dom.getElementsByTagName(
-                'VectorType')[0].firstChild.nodeValue
-            if create_mapfile == False:
-                print 'create_mapfile set to False but vector config file found. Leaving create_mapfile set to False.'
+            vectorType = dom.getElementsByTagName('VectorType')[0].firstChild.nodeValue
             try:
                 mapfileLayerContents = dom.getElementsByTagName(
                     'MapfileLayerContents')[0].firstChild.nodeValue
@@ -1656,6 +1655,10 @@ for conf in conf_files:
             tiledGroupName = get_dom_tag_value(dom, 'TiledGroupName')
         except:
             tiledGroupName = identifier.replace("_", " ") + " tileset"
+        try:
+            wmsSourceLoc = get_dom_tag_value(dom, 'WMSSourceLoc')
+        except:
+            wmsSourceLoc = "Local"
         try:
             wmsGroupName = get_dom_tag_value(dom, 'WMSGroupName')
         except:
@@ -1988,6 +1991,8 @@ for conf in conf_files:
     log_info_mssg('config: TiledGroupName: ' + tiledGroupName)
     log_info_mssg('config: Compression: ' + compression)
     log_info_mssg('config: TileMatrixSet: ' + tilematrixset)
+    if wmsSourceLoc:
+        log_info_mssg('config: WMSSourceLoc: ' + wmsSourceLoc)
     if wmsGroupName:
         log_info_mssg('config: WMSGroupName: ' + wmsGroupName)
     if wmsLayerGroupName:
@@ -3006,20 +3011,79 @@ for conf in conf_files:
 
     # Create mapfile if requested and this is not a vector tile product
     if create_mapfile and compression != "MVT" and environment.mapfileStagingLocation is not None:
-        # Check to see if we can just reuse existing mapfile from reproject
-        # WMTS layer sources are better as they handles time snapping correctly
-        reuse_wm_mapfiles = False # We're turning this off for now but leaving this option here in case someone wants it
-        # oe_configure_remote_layers will instead generate mapfiles since it can include/exclude specific layers rather than grab all
-        mapfile_name = os.path.join(environment.mapfileStagingLocation,
-                                    identifier + '.map')
-        wm_layer_mapfile = os.path.join(environment.mapfileStagingLocation[:-5] + '3857',
-                                        identifier + '.map')
-        print('\nChecking for existing reproject mapfile ' + wm_layer_mapfile)
-        if os.path.exists(wm_layer_mapfile) and projection.id != 'EPSG:3857' and mapfile_name != wm_layer_mapfile and reuse_wm_mapfiles == True:
+
+        # This block of code will check to see if we can just reuse an existing mapfile generated during the reproject
+        # configuration. The reproject WMTS-sourced configuration is better, as it handles time snapping correctly.
+        #
+        # However, for now we are turning this feature off as there are implications regarding performance that need
+        # additional testing.
+        #
+        # Note: oe_configure_remote_layers generates its own mapfiles based on the include/exclude rules and those should
+        # be mutually exclusive with the layers configured here.
+        reuse_wm_mapfiles = False
+        mapfile_name = os.path.join(environment.mapfileStagingLocation, identifier + '.map')
+        wm_layer_mapfile = os.path.join(environment.mapfileStagingLocation[:-5] + '3857', identifier + '.map')
+        if reuse_wm_mapfiles and os.path.exists(wm_layer_mapfile) and projection.id != 'EPSG:3857' and mapfile_name != wm_layer_mapfile:
             # Vector layers will be ignored as they aren't reprojected
-            print('Found ' + wm_layer_mapfile)
+            print('Found, and using, existing reproject mapfile ' + wm_layer_mapfile)
             print('Copying to ' + mapfile_name)
             shutil.copyfile(wm_layer_mapfile, mapfile_name)
+        elif wmsSourceLoc == "Remote":
+            # Use the template to create the new Mapfile snippet
+            wms_layer_group_info = ''
+            dimension_info = ''
+            validation_info = ''
+            style_info = ''
+
+            if wmsLayerGroupName is not None:
+                wms_layer_group_info = bulk_replace(WMS_LAYER_GROUP_TEMPLATE,
+                                                    [('{wms_layer_group}', wmsLayerGroupName)])
+
+            if not static and len(detected_times) > 0:
+                defaultDateTime = ''
+                timeExtent      = ''
+                for detected_time in detected_times:
+                    defaultDateTime = detected_time.strip().split('/')[1]
+                    timeExtent      = timeExtent + detected_time.strip() + ","
+
+                dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', timeExtent.rstrip(',')),
+                                                                   ('{default}', defaultDateTime)])
+                validation_info = VALIDATION_TEMPLATE.replace('{default}', defaultDateTime)
+
+            if legend and legendUrl_png_h_url:
+                style_info = bulk_replace(STYLE_TEMPLATE, [('{width}', str(legendUrl_png_h_width)),
+                                                           ('{height}', str(legendUrl_png_h_height)),
+                                                           ('{href}', legendUrl_png_h_url)])
+
+            src_epsg_code = projection.id.lower().split(":")[1]
+
+            target_bbox   = [projection.lowercorner[1], projection.lowercorner[0],
+                             projection.uppercorner[1], projection.uppercorner[0]]
+            resource_url_template = "$WMTSServiceURL$Identifier/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.$FileType"
+            template_string       = bulk_replace(resource_url_template,
+                                                 [('$WMTSServiceURL', environment.wmtsServiceUrl),
+                                                  ('$Identifier', identifier),
+                                                  ('$FileType', mrf_format.split('/')[1])])
+
+            mapfile_snippet = bulk_replace(
+                MAPFILE_TEMPLATE,
+                [('{layer_name}', identifier),
+                 ('{data_xml}', make_gdal_tms_xml(None, (4 if mrf_format == 'image/png' else 3), src_epsg_code,
+                                                  tms=tilematrixset, template_string=template_string)),
+                 ('{layer_title}', cgi.escape(title)),
+                 ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info),
+                 ('{style_info}', style_info), ('{validation_info}', validation_info),
+                 ('{src_epsg}', src_epsg_code), ('{target_epsg}', src_epsg_code),
+                 ('{target_bbox}', ', '.join(target_bbox))])
+
+            if os.path.exists(mapfile_name):
+                # Warn that we're overwriting a recently modified file
+                last_mod = os.path.getmtime(mapfile_name)
+                if tm() - last_mod <= 600:
+                    log_sig_warn("Overwriting layer mapfile " + mapfile_name, sigevent_url)
+            with open(mapfile_name, 'w+') as mapfile:
+                mapfile.write(mapfile_snippet)
+
         else: # Create custom layer mapfile with time metadata elements
             # Write mapfile info for layer
             if os.path.exists(mapfile_name):
@@ -3328,6 +3392,7 @@ if no_wmts == False:
                     getCapabilities_file, wmts_endpoint.getCapabilities +
                     '/1.0.0/WMTSCapabilities.xml')
 
+# Create the consolidated mapfile based on the snippets created previously
 if create_mapfile is True:
     for key, wms_endpoint in wms_endpoints.iteritems():
         if wms_endpoint.mapfileLocation is not None and wms_endpoint.mapfileStagingLocation is not None and wms_endpoint.mapfileConfigLocation is not None and wms_endpoint.mapfileConfigBasename is not None:
