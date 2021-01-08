@@ -163,22 +163,42 @@ def get_proj_bbox(epsg_code):
     return None
 
 
-def make_gdal_tms_xml(layer, bands, src_epsg):
-    tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
+def make_gdal_tms_xml(layer, bands, src_epsg, **kwargs):
 
     bbox = map(str, get_bbox_for_proj_string(
         'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
 
-    resource_url = layer.find('{*}ResourceURL')
-    template_string = resource_url.get('template')
+    if "tms" in kwargs:
+        tms = kwargs["tms"]
+    else:
+        tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
+
+    if "template_string" in kwargs:
+        template_string = kwargs["template_string"]
+    else:
+        template_string = None
+        for resource_url in layer.findall('{*}ResourceURL'):
+            template = resource_url.get('template')
+            print([template,str(template_string)])
+            # If the first one, prime the variable
+            if template_string is None:
+                template_string = template
+
+            # Else if we've found the Resource URL with {Time} take it and be done
+            elif "{Time}" in template:
+                template_string = template
+                break
+
+            # Else if we found the "default/{TileMatrixSet}" Resource URL and choose that over the other
+            elif "default/{TileMatrixSet}" in template:
+                template_string = template
 
     out_root = etree.Element('GDAL_WMS')
 
     service_element = etree.SubElement(out_root, 'Service')
     service_element.set('name', 'TMS')
     etree.SubElement(service_element, 'ServerUrl').text = bulk_replace(template_string, [
-        ('{TileMatrixSet}', tms), ('{Time}', '%time%'), ('{TileMatrix}',
-                                                         '${z}'), ('{TileRow}', '${y}'), ('{TileCol}', '${x}')])
+        ('{TileMatrixSet}', tms), ('{Time}', '%time%'), ('{TileMatrix}','${z}'), ('{TileRow}', '${y}'), ('{TileCol}', '${x}')])
 
     data_window_element = etree.SubElement(out_root, 'DataWindow')
     etree.SubElement(data_window_element, 'UpperLeftX').text = bbox[0]
