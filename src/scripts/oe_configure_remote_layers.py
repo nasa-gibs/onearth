@@ -39,7 +39,8 @@ from lxml import etree
 from time import asctime
 from optparse import OptionParser
 from oe_utils import get_environment, sigevent, get_dom_tag_value, bulk_replace
-from oe_configure_reproject_layer import get_max_scale_dem, get_epsg_code_for_proj_string, get_bbox_for_proj_string, make_gdal_tms_xml, MAPFILE_TEMPLATE, DIMENSION_TEMPLATE, STYLE_TEMPLATE, VALIDATION_TEMPLATE
+from oe_configure_reproject_layer import get_max_scale_dem, get_epsg_code_for_proj_string, get_bbox_for_proj_string, make_gdal_tms_xml, \
+    MAPFILE_TEMPLATE, WMS_LAYER_GROUP_TEMPLATE, DIMENSION_TEMPLATE, STYLE_TEMPLATE, VALIDATION_TEMPLATE
 
 
 VERSION_NUMBER = '1.3.8'
@@ -127,7 +128,16 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         print('Not using SrcLocationRewrite\n')
 
     # Get layers to include or exclude
-    include_layers = [tag.firstChild.data.strip() for tag in dom.getElementsByTagName('IncludeLayer')]
+    include_layers  = []
+    wms_group_names = {}
+    for tag in dom.getElementsByTagName('IncludeLayer'):
+        identifier = tag.firstChild.data.strip()
+        include_layers.append(identifier)
+        try:
+            wms_group_names[identifier] = str(tag.attributes['WMSLayerGroupName'].value).strip()
+        except:
+            wms_group_names[identifier] = None
+
     print('Including layers:')
     print('\n'.join(include_layers))
 
@@ -265,7 +275,8 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                         twms_getcapabilities, sigevent_url)
     else:
         print('\nSkipping TWMS')
-        
+
+
     if create_mapfile:
         # Check for all required config info
         try:
@@ -341,6 +352,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                     if debug:
                         print 'Skipping layer: ' + identifier
                     continue
+
                 dest_dim_elem = layer.find('{*}Dimension')
                 if dest_dim_elem is not None and dest_dim_elem.findtext(ows + 'Identifier') == 'Time':
                     static = False
@@ -358,9 +370,15 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                     continue
 
                 # Use the template to create the new Mapfile snippet
+                wms_layer_group_info = ''
                 dimension_info = ''
                 validation_info = ''
                 style_info = ''
+
+                if wms_group_names[identifier] is not None:
+                    wms_layer_group_info = bulk_replace(WMS_LAYER_GROUP_TEMPLATE,
+                                                        [('{wms_layer_group}', wms_group_names[identifier])])
+
                 if not static:
                     default_datetime = dest_dim_elem.findtext('{*}Default')
                     period_str = ','.join(
@@ -393,11 +411,11 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 target_bbox = map(
                     str, get_bbox_for_proj_string('EPSG:' + src_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
                 target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
-                
+
                 mapfile_snippet = bulk_replace(
                     MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
-                                       ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info), ('{src_epsg}', src_epsg),
-                                       ('{target_epsg}', src_epsg), ('{target_bbox}', ', '.join(target_bbox))])
+                                       ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info),
+                                       ('{src_epsg}', src_epsg), ('{target_epsg}', src_epsg), ('{target_bbox}', ', '.join(target_bbox))])
 
                 mapfile_name = os.path.join(
                     mapfile_staging_location, identifier + '.map')

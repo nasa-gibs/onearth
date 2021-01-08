@@ -79,6 +79,7 @@ MAPFILE_TEMPLATE = """LAYER
                 "wms_title"             "{layer_title}"
                 "wms_srs"               "EPSG:{target_epsg}"
                 "wms_extent"            "{target_bbox}"
+                {wms_layer_group_info}
                 {dimension_info}
                 {style_info}
         END
@@ -88,6 +89,9 @@ MAPFILE_TEMPLATE = """LAYER
         END
         {validation_info}
 END
+"""
+
+WMS_LAYER_GROUP_TEMPLATE = """"wms_layer_group" "{wms_layer_group}"
 """
 
 DIMENSION_TEMPLATE = """"wms_timeextent" "{periods}"
@@ -992,6 +996,7 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
         if create_mapfile:
             # Use the template to create the new Mapfile snippet
+            wms_layer_group_info = ''
             dimension_info = ''
             validation_info = ''
             style_info = ''
@@ -1032,8 +1037,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
             mapfile_snippet = bulk_replace(
                 MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
-                                   ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info), ('{src_epsg}', src_epsg),
-                                   ('{target_epsg}', target_epsg), ('{target_bbox}', ', '.join(target_bbox))])
+                                   ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info),
+                                   ('{src_epsg}', src_epsg), ('{target_epsg}', target_epsg), ('{target_bbox}', ', '.join(target_bbox))])
 
             mapfile_name = os.path.join(
                 mapfile_staging_location, identifier + '.map')
