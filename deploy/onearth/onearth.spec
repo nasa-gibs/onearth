@@ -16,7 +16,7 @@ Source5:	https://archive.apache.org/dist/httpd/httpd-2.2.15.tar.gz
 %if 0%{?centos}  == 7
 Source5:	https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 %endif
-Source6:	https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
+Source6:	https://github.com/lxml/lxml/archive/lxml-4.6.2.tar.gz
 Source7:	https://pypi.python.org/packages/6a/8a/718fd7d3458f9fab8e67186b00abdd345b639976bc7fb3ae722e1b026a50/pyparsing-2.2.0-py2.py3-none-any.whl
 Source8:	https://pypi.python.org/packages/3a/59/bfb842d06d90d3c1b55e097726061eb51da34dc4b23b6591c202094318cf/parse_apache_configs-0.0.2.tar.gz
 
@@ -339,7 +339,7 @@ python setup.py install
 
 %post config
 cd %{_datadir}/lxml
-tar -czvf lxml-3.8.0.tar.gz lxml-3.8.0
+tar -czvf lxml-4.6.2.tar.gz lxml-4.6.2
 pip install --no-index --find-links %{_datadir}/lxml lxml
 cd %{_datadir}/pyparsing
 pip install --upgrade --no-index --find-links %{_datadir}/pyparsing pyparsing
@@ -404,7 +404,7 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 
 %post vectorgen
 /sbin/ldconfig
-pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
+pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==4.6.2
 
 %files test
 %defattr(-,gibs,gibs,-)

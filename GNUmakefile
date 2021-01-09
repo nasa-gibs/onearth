@@ -44,9 +44,9 @@ MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
 MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
 
-LXML_VERSION=3.8.0
+LXML_VERSION=4.6.2
 LXML_ARTIFACT=lxml-$(LXML_VERSION).tar.gz
-LXML_URL=https://github.com/lxml/lxml/archive/lxml-3.8.0.tar.gz
+LXML_URL=https://github.com/lxml/lxml/archive/lxml-4.6.2.tar.gz
 
 PYPARSING_VERSION=2.2.0
 PYPARSING_ARTIFACT=pyparsing-$(PYPARSING_VERSION)-py2.py3-none-any.whl

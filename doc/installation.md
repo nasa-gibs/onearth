@@ -42,13 +42,13 @@ sudo yum -y install gibs-gdal-*
 Optional Python packages via pip (included in onearth-config RPM); required for OnEarth configuration tools if RPM cannot run pip
 
 ```
-sudo pip install lxml==3.8.0 pyparsing==2.2.0 parse_apache_configs==0.0.2
+sudo pip install lxml==4.6.2 pyparsing==2.2.0 parse_apache_configs==0.0.2
 ```
 
 Optional Python packages via pip (included in onearth-vector RPM); required for OnEarth vectorgen if RPM cannot run pip
 
 ```
-sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==3.8.0
+sudo pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 lxml==4.6.2
 ```
 
 Install OnEarth packages
