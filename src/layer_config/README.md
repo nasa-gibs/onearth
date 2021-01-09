@@ -130,6 +130,8 @@ The tool can also create/update mapfiles with the `--create-mapfile` option. The
 
 When creating a new mapfile, the tool will look for `.header` and `.footer` files, and append them to the start and end of the mapfile if found. The location of these files is set by the `<MapfileConfigLocation>` element in the environment config file. The `"basename"` attribute of this element refers to the file prefix before the `.header` and `.footer` extension.
 
+By default, the layer will be configured to point to the layer's MRF files on the file system. However, layers configured via oe_configure_remote_layers will use the layer's WMTS source via the GDAL TMS driver.
+
 Note that the header/footers are only added when a new mapfile is created, not when an existing one is update.
 
 ```

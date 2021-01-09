@@ -34,10 +34,13 @@ import sys
 import requests
 import xml.dom.minidom
 import logging
+import cgi
 from lxml import etree
 from time import asctime
 from optparse import OptionParser
-from oe_utils import get_environment, sigevent, get_dom_tag_value
+from oe_utils import get_environment, sigevent, get_dom_tag_value, bulk_replace
+from oe_configure_reproject_layer import get_max_scale_dem, get_epsg_code_for_proj_string, get_bbox_for_proj_string, make_gdal_tms_xml, \
+    MAPFILE_TEMPLATE, WMS_LAYER_GROUP_TEMPLATE, DIMENSION_TEMPLATE, STYLE_TEMPLATE, VALIDATION_TEMPLATE
 
 
 VERSION_NUMBER = '1.3.8'
@@ -83,7 +86,7 @@ def log_sig_err(mssg, sigevent_url):
         print 'sigevent service is unavailable'
 
 
-def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False):
+def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False, create_mapfile=False):
     '''
     Add layers from remote GetCapabilities if config found
     '''
@@ -125,7 +128,16 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         print('Not using SrcLocationRewrite\n')
 
     # Get layers to include or exclude
-    include_layers = [tag.firstChild.data.strip() for tag in dom.getElementsByTagName('IncludeLayer')]
+    include_layers  = []
+    wms_group_names = {}
+    for tag in dom.getElementsByTagName('IncludeLayer'):
+        identifier = tag.firstChild.data.strip()
+        include_layers.append(identifier)
+        try:
+            wms_group_names[identifier] = str(tag.attributes['WMSLayerGroupName'].value).strip()
+        except:
+            wms_group_names[identifier] = None
+
     print('Including layers:')
     print('\n'.join(include_layers))
 
@@ -264,6 +276,158 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
     else:
         print('\nSkipping TWMS')
 
+
+    if create_mapfile:
+        # Check for all required config info
+        try:
+            environment_xml = etree.parse(environmentConfig)
+        except IOError:
+            log_sig_err("Can't open environment config file: {0}".format(
+                environmentConfig), sigevent_url)
+        except etree.XMLSyntaxError:
+            log_sig_err("Can't parse environment config file: {0}".format(
+                environmentConfig), sigevent_url)
+        
+        mapfile_location = environment_xml.findtext('{*}MapfileLocation')
+        if not mapfile_location:
+            mssg = 'mapfile creation chosen but no <MapfileLocation> found'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+
+        mapfile_location_basename = environment_xml.find(
+            '{*}MapfileConfigLocation').get('basename')
+        if not mapfile_location_basename:
+            mssg = 'mapfile creation chosen but no "basename" attribute found for <MapfileLocation>'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+
+        mapfile_staging_location = environment_xml.findtext(
+            '{*}MapfileStagingLocation')
+        if not mapfile_staging_location:
+            mssg = 'mapfile creation chosen but no <MapfileStagingLocation> found'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+
+        mapfile_config_location = environment_xml.findtext(
+            '{*}MapfileConfigLocation')
+        if not mapfile_config_location:
+            mssg = 'mapfile creation chosen but no <MapfileConfigLocation> found'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+
+        mapfile_config_basename = environment_xml.find(
+            '{*}MapfileConfigLocation').get('basename')
+        if not mapfile_config_basename:
+            mssg = 'mapfile creation chosen but no "basename" attribute found for <MapfileConfigLocation>'
+            warnings.append(asctime() + " " + mssg)
+            log_sig_warn(mssg, sigevent_url)
+            
+        try:
+            wmts_getcapabilities = get_dom_tag_value(dom, 'SrcWMTSGetCapabilitiesURI')
+        except IndexError:
+            mssg = 'SrcWMTSGetCapabilitiesURI element is missing in ' + conf
+            log_sig_err(mssg, sigevent_url)
+        # Download and parse GetCapabilites XML
+        try:
+            print('\nLoading layers from ' + wmts_getcapabilities)
+            r = requests.get(wmts_getcapabilities)
+            if r.status_code != 200:
+                log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
+                            wmts_getcapabilities, sigevent_url)
+        except Exception:
+            log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
+                        wmts_getcapabilities, sigevent_url)
+        # Get the layers from the source GC file
+        try:
+            gc_xml = etree.fromstring(r.content)
+            tilematrixsets = gc_xml.find('{*}Contents').findall('{*}TileMatrixSet')
+            ows = '{' + gc_xml.nsmap['ows'] + '}'
+            xlink = '{http://www.w3.org/1999/xlink}'
+            gc_layers = gc_xml.find('{*}Contents').findall('{*}Layer')
+            for layer in gc_layers:
+                if(debug):
+                    print(etree.tostring(layer))
+                identifier = layer.findtext(ows + 'Identifier')
+                if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
+                    if debug:
+                        print 'Skipping layer: ' + identifier
+                    continue
+
+                dest_dim_elem = layer.find('{*}Dimension')
+                if dest_dim_elem is not None and dest_dim_elem.findtext(ows + 'Identifier') == 'Time':
+                    static = False
+                src_format = layer.findtext('{*}Format')
+                src_title = layer.findtext(ows + 'Title')
+        
+                # Get TMSs for this layer and build a config for each
+                tms_list = [elem for elem in tilematrixsets if elem.findtext(
+                    ows + 'Identifier') == layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')]
+                layer_tilematrixsets = sorted(tms_list, key=get_max_scale_dem)
+        
+                #HACK
+                if len(layer_tilematrixsets) == 0:
+                    print("No layer_tilematrixsets. Skipping layer: " + identifier)
+                    continue
+
+                # Use the template to create the new Mapfile snippet
+                wms_layer_group_info = ''
+                dimension_info = ''
+                validation_info = ''
+                style_info = ''
+
+                if wms_group_names[identifier] is not None:
+                    wms_layer_group_info = bulk_replace(WMS_LAYER_GROUP_TEMPLATE,
+                                                        [('{wms_layer_group}', wms_group_names[identifier])])
+
+                if not static:
+                    default_datetime = dest_dim_elem.findtext('{*}Default')
+                    period_str = ','.join(
+                        elem.text for elem in dest_dim_elem.findall("{*}Value"))
+                    dimension_info = bulk_replace(DIMENSION_TEMPLATE, [('{periods}', period_str),
+                                                                       ('{default}', default_datetime)])
+                    validation_info = VALIDATION_TEMPLATE.replace(
+                        '{default}', default_datetime)
+                
+                # If the source EPSG:4326 layer has a legend, then add that to the EPSG:3857 layer also
+                legendUrlElems = []
+                
+                for styleElem in layer.findall('{*}Style'):
+                    legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
+                
+                for legendUrlElem in legendUrlElems:
+                    attributes = legendUrlElem.attrib
+                    if attributes[xlink + 'role'].endswith("horizontal"):
+                        style_info = bulk_replace(STYLE_TEMPLATE, [('{width}', attributes["width"]),
+                                                                   ('{height}', attributes["height"]),
+                                                                   ('{href}', attributes[xlink + 'href'].replace(".svg",".png"))])
+                
+                # Mapserver automatically converts to RGBA and works better if we
+                # specify that for png layers
+                mapserver_bands = 4 if 'image/png' in src_format else 3
+                
+                src_crs = layer_tilematrixsets[0].findtext('{*}SupportedCRS')
+                src_epsg = get_epsg_code_for_proj_string(src_crs)
+                
+                target_bbox = map(
+                    str, get_bbox_for_proj_string('EPSG:' + src_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
+                target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
+
+                mapfile_snippet = bulk_replace(
+                    MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
+                                       ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info),
+                                       ('{src_epsg}', src_epsg), ('{target_epsg}', src_epsg), ('{target_bbox}', ', '.join(target_bbox))])
+
+                mapfile_name = os.path.join(
+                    mapfile_staging_location, identifier + '.map')
+                with open(mapfile_name, 'w+') as f:
+                    f.write(mapfile_snippet)
+
+        except etree.XMLSyntaxError:
+            log_sig_err('Can\'t parse WMTS GetCapabilities file (invalid syntax): ' +
+                        wmts_getcapabilities, sigevent_url)
+            
+        
+
     return (warnings, errors)
 
 
@@ -293,6 +457,9 @@ if __name__ == '__main__':
     parser.add_option("--debug",
                       action="store_true", dest="debug",
                       default=False, help="Produce verbose debug messages")
+    parser.add_option("--create_mapfile", dest="create_mapfile",
+                      default=False, action="store_true", 
+                      help="Create MapServer configuration.")
 
     # Read command line args.
     (options, args) = parser.parse_args()
@@ -324,7 +491,8 @@ if __name__ == '__main__':
                                          wmts=wmts,
                                          twms=twms,
                                          sigevent_url=sigevent_url,
-                                         debug=options.debug)
+                                         debug=options.debug,
+                                         create_mapfile=options.create_mapfile)
     mssg = '\nOnEarth Remote Layers Configurator has completed'
     if(len(warnings) > 0):
         mssg = mssg + '\nWarnings:\n' + '\n'.join(warnings)
