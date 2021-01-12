@@ -3055,7 +3055,7 @@ for conf in conf_files:
                                                            ('{height}', str(legendUrl_png_h_height)),
                                                            ('{href}', legendUrl_png_h_url)])
 
-            src_epsg_code = projection.id.lower().split(":")[1]
+            src_epsg_code = str(projection.id.lower().split(":")[1])
 
             target_bbox   = [projection.lowercorner[1], projection.lowercorner[0],
                              projection.uppercorner[1], projection.uppercorner[0]]
@@ -3108,63 +3108,52 @@ for conf in conf_files:
                 # Write mapfile lines
                 mapfile.write("LAYER\n")
                 mapfile.write("\tNAME\t\"" + identifier + "\"\n")
+
+                # If we're grouping layers together... (This is not the hierarchical wms_layer_group)
                 if wmsGroupName:
-                    mapfile.write("\tGROUP\t\"" + wmsGroupName + "\"\n")
-                    # default time/year needs to be handled by mod_oems for layer groups
+                    # The default time/year needs to be empty because the DATA pattern will contain variables
+                    # for both this layer _and_ its group.  If not "", then you get path elements like "YYYY2020"
                     default_time = ""
                     default_year = ""
                     default_subdaily = ""
-                    timeDirPattern = (
-                        "%" + wmsGroupName + "_TIME%") + timeDirPattern
+                    timeDirPattern = ("%" + wmsGroupName + "_TIME%") + timeDirPattern
                     yearDirPattern = yearDirPattern + "%" + wmsGroupName + "_YEAR%"
                 else:
                     default_time = "TTTTTTT"
                     default_year = "YYYY"
                     default_subdaily = "TTTTTT"
+
                 if vectorType:
                     layer_type = vectorType.upper()
                 else:
                     layer_type = 'RASTER'
+
                 mapfile.write("\tTYPE\t" + layer_type + "\n")
                 mapfile.write("\tSTATUS\tON\n")
                 mapfile.write("\tVALIDATION\n")
                 # The validation was previously being put in the layer METADATA -- deprecated in Mapserver 5.4.0
                 if not static:
-                    mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" +
-                                default_time + "\"\n")
-                    mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" +
-                                timeParamRegex + "\n")
-                    if wmsGroupName:  # add group substitutions as well
-                        mapfile.write("\t\t\"default_" + wmsGroupName +
-                                    "_TIME\"\t\t\"" + default_time + "\"\n")
-                        mapfile.write("\t\t\"" + wmsGroupName + "_TIME\"\t\t\t" +
-                                    timeParamRegex + "\n")
+                    mapfile.write("\t\t\"default_" + identifier + "_TIME\"\t\t\"" + default_time + "\"\n")
+                    mapfile.write("\t\t\"" + identifier + "_TIME\"\t\t\t" + timeParamRegex + "\n")
+                    if wmsGroupName:
+                        mapfile.write("\t\t\"default_" + wmsGroupName + "_TIME\"\t\t\"" + default_time + "\"\n")
+                        mapfile.write("\t\t\"" + wmsGroupName + "_TIME\"\t\t\t" + timeParamRegex + "\n")
                 if not static and year:
-                    mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" +
-                                default_year + "\"\n")
-                    mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" +
-                                yearDirRegex + "\n")
+                    mapfile.write("\t\t\"default_" + identifier + "_YEAR\"\t\"" + default_year + "\"\n")
+                    mapfile.write("\t\t\"" + identifier + "_YEAR\"\t\t" + yearDirRegex + "\n")
                     if wmsGroupName:
-                        mapfile.write("\t\t\"default_" + wmsGroupName +
-                                    "_YEAR\"\t\"" + default_year + "\"\n")
-                        mapfile.write("\t\t\"" + wmsGroupName + "_YEAR\"\t\t" +
-                                    yearDirRegex + "\n")
+                        mapfile.write("\t\t\"default_" + wmsGroupName + "_YEAR\"\t\"" + default_year + "\"\n")
+                        mapfile.write("\t\t\"" + wmsGroupName + "_YEAR\"\t\t" + yearDirRegex + "\n")
                 if not static and subdaily:
-                    mapfile.write("\t\t\"default_" + identifier +
-                                "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
-                    mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" +
-                                subdailyParamRegex + "\n")
+                    mapfile.write("\t\t\"default_" + identifier + "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
+                    mapfile.write("\t\t\"" + identifier + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
                     if wmsGroupName:
-                        mapfile.write("\t\t\"default_" + wmsGroupName +
-                                    "_SUBDAILY\"\t\"" + default_subdaily +
-                                    "\"\n")
-                        mapfile.write("\t\t\"" + wmsGroupName + "_SUBDAILY\"\t\t" +
-                                    subdailyParamRegex + "\n")
+                        mapfile.write("\t\t\"default_" + wmsGroupName + "_SUBDAILY\"\t\"" + default_subdaily + "\"\n")
+                        mapfile.write("\t\t\"" + wmsGroupName + "_SUBDAILY\"\t\t" + subdailyParamRegex + "\n")
                 mapfile.write("\tEND\n")
                 mapfile.write("\tMETADATA\n")
                 mapfile.write("\t\t\"wms_title\"\t\t\"" + title + "\"\n")
-                mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny +
-                            " " + maxx + " " + maxy + "\"\n")
+                mapfile.write("\t\t\"wms_extent\"\t\t\"" + minx + " " + miny + " " + maxx + " " + maxy + "\"\n")
                 if not static and len(detected_times) > 0:
                     defaultDate = ''
                     timeExtent  = ''
@@ -3173,11 +3162,13 @@ for conf in conf_files:
                         timeExtent = timeExtent + detected_time.strip() + ","
                     mapfile.write("\t\t\"wms_timeextent\"\t\"" + timeExtent.rstrip(',') + "\"\n")
                     mapfile.write("\t\t\"wms_timedefault\"\t\"" + defaultDate + "\"\n")
-                if wmsGroupName:
-                    mapfile.write("\t\t\"wms_group_title\"\t\t\"" + wmsGroupName + "\"\n")
 
                 if wmsLayerGroupName is not None:
-                    mapfile.write("\t\t\"wms_layer_group\"\t\t\"" + wmsLayerGroupName + "\"\n")
+                    if wmsGroupName is not None:
+                        wmsLayerGroupName += "/" + wmsGroupName
+                    mapfile.write("\t\t\"wms_layer_group\"\t\"" + wmsLayerGroupName + "\"\n")
+                elif wmsGroupName is not None:
+                    mapfile.write("\t\t\"wms_layer_group\"\t\t\"" + wmsGroupName + "\"\n")
 
                 if legend and legendUrl_png_h_url:
                     mapfile.write("\t\t\"wms_style\"\t\t\t\t\"default\"\n")
