@@ -721,7 +721,7 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    } else {
 			args = cfg->disable_oemstime
 				? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
-				: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,layer_times,layer_years,maplayerops);
+				: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s&TIME=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,time,layer_times,layer_years,maplayerops);
 	    }
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
