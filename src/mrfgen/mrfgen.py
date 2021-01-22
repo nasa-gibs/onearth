@@ -757,9 +757,10 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             errors += run_mrf_insert([cut_tile], mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                                      target_extents, target_epsg, nodata, True, working_dir)
             continue
-        # check if image crosses antimeridian
-        elif target_epsg in ['EPSG:4326','EPSG:3857'] and (((float(s_xmin)-float(t_xmax)) > float(s_xmax)) or
-                                                            (float(s_xmax) > float(t_xmax))):
+
+        elif target_epsg in ['EPSG:4326','EPSG:3857'] and ((float(s_xmin) > float(s_xmax)) or
+                                                           (float(s_xmax) > float(t_xmax)) or
+                                                           (float(s_xmin) < float(t_xmin))):
             log_info_mssg(tile + " crosses antimeridian")
             left_half, right_half = split_across_antimeridian(tile, [s_xmin, s_ymax, s_xmax, s_ymin], t_xmax,
                                                               str((Decimal(t_xmax)-Decimal(t_xmin))/Decimal(target_x)),
