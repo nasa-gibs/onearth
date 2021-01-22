@@ -67,8 +67,12 @@ MIME_TO_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.mvt'
 }
 
-TILE_LEVELS = {'16km': '2', '8km': '3', '4km': '4', '2km': '5', '1km': '6', '500m': '7', '250m': '8',
-               '125m': '9', '62.5m': '10', '31.25m': '11', '15.625m': '12'}
+TILE_LEVELS = {
+    '4326': {'16km': '2', '8km': '3', '4km': '4', '2km': '5', '1km': '6', '500m': '7', '250m': '8',
+                  '125m': '9', '62.5m': '10', '31.25m': '11', '15.625m': '12'},
+    '3413': {'1km': '3', '500m': '4', '250m': '5', '125m': '6', '62.5m': '7', '31.25m': '8', '15.625m': '9'},
+    '3031': {'1km': '3', '500m': '4', '250m': '5', '125m': '6', '62.5m': '7', '31.25m': '8', '15.625m': '9'}
+}
 
 
 MAPFILE_TEMPLATE = """LAYER
@@ -126,6 +130,7 @@ def get_epsg_code_for_proj_string(proj_string):
     return proj.GetAuthorityCode(None)
 
 
+# Returns [llx, lly, urx, ury]
 def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=False):
     epsg_code = get_epsg_code_for_proj_string(proj_string)
 
@@ -137,13 +142,14 @@ def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=Fal
     bbox = get_proj_bbox(epsg_code)
     if not get_in_map_units:
         return bbox
+
     src_proj = osr.SpatialReference()
     src_proj.SetFromUserInput('EPSG:4326')
     target_proj = osr.SpatialReference()
     target_proj.ImportFromEPSG(int(epsg_code))
     transform = osr.CoordinateTransformation(src_proj, target_proj)
 
-    point_coords = [(bbox[1], bbox[0]), (bbox[3], bbox[2])]
+    point_coords = [(bbox[0], bbox[3]), (bbox[2], bbox[1])]
     new_bbox = []
     for coords in point_coords:
         point = ogr.Geometry(ogr.wkbPoint)
@@ -154,17 +160,19 @@ def get_bbox_for_proj_string(proj_string, use_oe_tms=False, get_in_map_units=Fal
     return [new_bbox[0], new_bbox[3], new_bbox[1], new_bbox[2]]
 
 
+# Returns [llx, lly, urx, ury]
 def get_proj_bbox(epsg_code):
     if epsg_code == '4326':
-        return [90.0, -180.0, -90.0, 180.0]
+        return [-180.0, -90.0, 180.0, 90.0]
     elif epsg_code == '3857':
-        return [85.06, -180.0, -85.06, 180.0]
+        return [-180, -85.06, 180.0, 85.06]
     elif epsg_code == '3413':
-        return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
+        return [-4194304.0, -4194304.0, 4194304.0, 4194304.0]
     elif epsg_code == '3031':
-        return [4194304.0, -4194304.0, -4194304.0, 4194304.0]
-    print "WARNING: unsupported <TargetEpsgCode> specified ({0}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code)
-    return None
+        return [-4194304.0, -4194304.0, 4194304.0, 4194304.0]
+    else:
+        print "WARNING: unsupported <TargetEpsgCode> specified ({0}). Only 4326, 3857, 3413, and 3031 are supported.".format(epsg_code)
+        return None
 
 
 def make_gdal_tms_xml(layer, bands, src_epsg, **kwargs):
@@ -211,17 +219,14 @@ def make_gdal_tms_xml(layer, bands, src_epsg, **kwargs):
         tile_levels = tms.split('GoogleMapsCompatible_Level')[1]
     else:
         try:
-            tile_levels = TILE_LEVELS[tms]
+            tile_levels = TILE_LEVELS[src_epsg][tms]
         except KeyError:
-            try:
-                tile_levels = TILE_LEVELS[tms.split('_')[1]]
-            except KeyError as e:
-                print("ERROR:" + e.message + " is not a valid TileMatrixSet")
-                exit
+            print("ERROR:" + tms + " is not a valid TileMatrixSet for EPSG:" + src_epsg)
+            exit
+
     etree.SubElement(data_window_element, 'TileLevel').text = tile_levels
-    etree.SubElement(data_window_element,
-                     'TileCountX').text = '2' if src_epsg in ['4326','3413','3031'] else '1'
-    etree.SubElement(data_window_element, 'TileCountY').text = '1'
+    etree.SubElement(data_window_element, 'TileCountX').text = '2' if src_epsg in ['4326','3413','3031'] else '1'
+    etree.SubElement(data_window_element, 'TileCountY').text = '2' if src_epsg in ['3413','3031'] else '1'
     etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
     etree.SubElement(out_root, 'Projection').text = 'EPSG:' + src_epsg
@@ -1031,7 +1036,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
                 target_epsg = src_epsg
             target_bbox = map(
                 str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
-            target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
 
             mapfile_snippet = bulk_replace(
                 MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),

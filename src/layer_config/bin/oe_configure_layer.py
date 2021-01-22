@@ -3057,8 +3057,9 @@ for conf in conf_files:
 
             src_epsg_code = str(projection.id.lower().split(":")[1])
 
-            target_bbox   = [projection.lowercorner[1], projection.lowercorner[0],
-                             projection.uppercorner[1], projection.uppercorner[0]]
+            target_bbox   = [projection.lowercorner[0], projection.lowercorner[1],
+                             projection.uppercorner[0], projection.uppercorner[1]]
+
             resource_url_template = "$WMTSServiceURL$Identifier/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.$FileType"
             template_string       = bulk_replace(resource_url_template,
                                                  [('$WMTSServiceURL', environment.wmtsServiceUrl),
@@ -3074,7 +3075,7 @@ for conf in conf_files:
                  ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info),
                  ('{style_info}', style_info), ('{validation_info}', validation_info),
                  ('{src_epsg}', src_epsg_code), ('{target_epsg}', src_epsg_code),
-                 ('{target_bbox}', ', '.join(target_bbox))])
+                 ('{target_bbox}', ' '.join(target_bbox))])
 
             if os.path.exists(mapfile_name):
                 # Warn that we're overwriting a recently modified file
