@@ -719,9 +719,12 @@ apr_status_t validate_args(request_rec *r, char *mapfile) {
 	    if (ap_strcasecmp_match(request, "GetLegendGraphic") == 0) { // Use LAYER instead of LAYERS if GetLegendGraphic request
 	    	args = apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&LAYER=%s&MAP=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&SLD_VERSION=1.1.0%s","WMS",request,version,format,layers,mapfile,width,height,exceptions,maplayerops);
 	    } else {
+			if (strlen(formatted_time) == 0) {
+				formatted_time = "default";
+			}
 			args = cfg->disable_oemstime
 				? apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s&BBOX=%s%s&TIME=%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,bbox,exceptions,time,maplayerops)
-				: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,layer_times,layer_years,maplayerops);
+				: apr_psprintf(r->pool,"SERVICE=%s&REQUEST=%s&VERSION=%s&FORMAT=%s&TRANSPARENT=%s&LAYERS=%s&MAP=%s&%s=%s&STYLES=&WIDTH=%s&HEIGHT=%s%s&BBOX=%s&TIME=%s%s%s%s","WMS",request,version,format,transparent,layers,mapfile,proj,srs,width,height,exceptions,bbox,formatted_time,layer_times,layer_years,maplayerops);
 	    }
 
 	} else if (ap_strcasecmp_match(service, "WFS") == 0) {
