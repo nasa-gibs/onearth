@@ -1061,8 +1061,6 @@ class TestModOnEarth(unittest.TestCase):
             'http://localhost/onearth/test/wmts/test_weekly_jpg/default/2012-02-290/EPSG4326_16km/0/0/0.jpeg'
         )
         for req_url in invalid_parameter_urls:
-            #if DEBUG:
-                #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             if DEBUG:
                 print('\nTesting WTMS REST Error Invalid Parameters')
                 print(req_url)

@@ -564,10 +564,6 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                 print("Ignoring", filename)
         dates = sorted(list(set(dates)))
 
-        # DEBUG: Print the entire list of dates found for the product
-        #for testdate in dates:
-        #    print datetime.strftime(testdate,"%Y-%m-%dT%H:%M:%SZ")
-
         # Get period, attempt to figure out period (in days) if none
         if time.startswith(detect + '/P'):
             period = time.split('/')[1]
@@ -619,7 +615,6 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                                                        "%Y-%m-%dT%H:%M:%SZ"))
         enddate = startdate  # set end date to start date for lone dates
         for i, d in enumerate(dates):
-            # print d
             if period[-1] == "W":
                 next_day = d + timedelta(weeks=period_value)
             elif period[-1] == "M" and subdaily == False:

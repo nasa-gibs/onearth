@@ -491,9 +491,6 @@ class TestModReproject(unittest.TestCase):
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
 #        req_url = r'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0&TIME=2012-02-29T16:00:00Z'
-#        if DEBUG:
-#            print '\nTIME FORMAT!!! Testing: Request tile with date and time (z-level) from "year" layer via WMTS'
-#            print 'URL: ' + req_url
 #        check_result = check_tile_request(req_url, ref_hash)
 #        self.assertTrue(check_result, 'WMTS Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -503,9 +500,6 @@ class TestModReproject(unittest.TestCase):
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
 #        req_url = r'http://localhost/reproject/test/wmts/test_zindex_jpg/default/2012-02-29T16:00:00Z/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-#        if DEBUG:
-#            print '\nTesting: Request tile with date and time (z-level) from "year" layer via WMTS (REST)'
-#            print 'URL: ' + req_url
 #        check_result = check_tile_request(req_url, ref_hash)
 #        self.assertTrue(check_result, 'WMTS (REST) Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -632,9 +626,6 @@ class TestModReproject(unittest.TestCase):
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
 #        req_url = r'http://localhost/reproject/test/wmts/wmts.cgi?layer=test_zindex_jpg&tilematrixset=GoogleMapsCompatible_Level3&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix=0&TileCol=0&TileRow=0'
-#        if DEBUG:
-#            print '\nERROR!!! Testing: Request tile with no date and time (z-level) from "year" layer via WMTS'
-#            print 'URL: ' + req_url
 #        check_result = check_tile_request(req_url, ref_hash)
 #        self.assertTrue(check_result, 'WMTS Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -644,9 +635,6 @@ class TestModReproject(unittest.TestCase):
         """
 #        ref_hash = '36bb79a33dbbe6173990103a8d6b67cb'
 #        req_url = r'http://localhost/reproject/test/wmts/test_zindex_jpg/default/GoogleMapsCompatible_Level3/0/0/0.jpeg'
-#        if DEBUG:
-#            print '\nERROR!!! Testing: Request tile with no date and time (z-level) from "year" layer via WMTS (REST)'
-#            print 'URL: ' + req_url
 #        check_result = check_tile_request(req_url, ref_hash)
 #        self.assertTrue(check_result, 'WMTS (REST) Z-Level JPG Tile Request does not match what\'s expected. URL: ' + req_url)
 
@@ -1069,8 +1057,6 @@ class TestModReproject(unittest.TestCase):
             r'http://localhost/reproject/test/wmts/test_weekly_jpg/default/2012-02-290/GoogleMapsCompatible_Level3/0/0/0.jpeg'
         )
         for req_url in invalid_parameter_urls:
-            #if DEBUG:
-                #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(req_url, response_code, response_value)
             if DEBUG:
                 print('\nTesting WTMS REST Error Invalid Parameters')
 

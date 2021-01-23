@@ -655,7 +655,6 @@ if diff_filename is not None:
         if verbose:
             print(('Reading config file: ' + diff_filename))
         diff = difflib.ndiff(apache_config.readlines(), diff_config.readlines())
-        # print '\n'.join(diff)
         delta = ''.join(x for x in diff if x.startswith('- ') or x.startswith('+ '))
         print('\n' + delta)
         apache_config.close()

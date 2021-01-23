@@ -2223,7 +2223,6 @@ if target_x == '':
     log_info_mssg('x size and y size from VRT ' + x_size + "," + y_size)
     exp=11 #minimum outsize 20480 for EPSG4326_2km
     while int(10*(2**exp)) < int(x_size):
-        #print str(10*(2**exp)) + " is less than " + str(x_size)
         exp+=1
     target_x=str(10*(2**exp))            
     log_info_mssg('Calculating target_x from VRT to ' + target_x)          

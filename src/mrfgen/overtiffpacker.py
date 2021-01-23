@@ -116,8 +116,6 @@ def pack(infile, outfile, calcscaleoffset=False, forgibs=False, minmax=None, raw
         for j in range(0, tiffds.GetRasterBand(1).YSize, stride):
             if (tiffds.GetRasterBand(1).YSize - j) < stride:
                 stride = tiffds.GetRasterBand(1).YSize % stride
-                # if j % 200 == 0:
-                # print "Processing line %d" % j
             tiffdsa = tiffds.GetRasterBand(1).ReadAsArray(xoff=0, yoff=j, win_xsize=tiffds.GetRasterBand(1).XSize,
                                                           win_ysize=stride).astype(np.float32)
 

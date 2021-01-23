@@ -92,8 +92,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -102,8 +100,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -112,8 +108,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -122,8 +116,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -132,8 +124,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -142,8 +132,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -153,8 +141,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=NOTEXIST&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -163,8 +149,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=bogus_layer&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -173,8 +157,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=shaolin&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -183,8 +165,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fppng&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -193,8 +173,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4328&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -203,8 +181,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=0&amp;height=-5&amp;bbox=-180,-198,108,90'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -213,8 +189,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,10'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)
@@ -231,8 +205,6 @@ class TestModTwmsErrorHandling(unittest.TestCase):
         test_url = base_url + '/mod_twms/twms.cgi?request=GetMap&amp;layers=test_weekly_jpg&amp;srs=EPSG:4326&amp;format=image%2Fjpeg&amp;styles=&amp;&amp;width=512&amp;height=512&amp;bbox=-180,-198,108,90&amp;time=86753-09'
         response_code = 400
         response_value = 'Bad Request'
-        #if DEBUG:
-            #print 'Using URL: {0}, expecting response code of {1} and response value of {2}'.format(test_url, response_code, response_value)
         check_code = check_response_code(test_url, response_code, response_value)
         error = 'The TWMS response code does not match what\'s expected. URL: {0}, Expected Response Code: {1}'.format(test_url, response_code)
         self.assertTrue(check_code, error)

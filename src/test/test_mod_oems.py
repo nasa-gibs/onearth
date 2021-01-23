@@ -403,9 +403,6 @@ class TestModOEMS(unittest.TestCase):
 #         """
 #         ref_hash = '91445bf3909302f0593bf514bce1d523'
 #         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=application/vnd.google-earth.kmz&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG:4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
-#         if DEBUG:
-#             print '\nTesting: Request current (no time) KMZ via WMS'
-#             print 'URL: ' + req_url
 #         check_result = check_tile_request(req_url, ref_hash)
 #         self.assertTrue(check_result, 'WMS KMZ does not match what\'s expected. URL: ' + req_url)
 

@@ -112,15 +112,6 @@ def parse_colormap(colormap_location, verbose):
             msg = "URL " + colormap_location + " is not accessible"
             print(msg, file=sys.stderr)
             raise Exception(msg)
-
-        
-#     colormap_element = dom.getElementsByTagName("ColorMap")[0]
-#     try:
-#         units = colormap_element.attributes['units'].value
-#     except KeyError:
-#         units = None
-#     if verbose:
-#         print "ColorMap units:", units
     
     style = "discrete"
     colormap_entries = []
