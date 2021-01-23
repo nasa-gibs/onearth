@@ -350,7 +350,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 identifier = layer.findtext(ows + 'Identifier')
                 if (len(include_layers) > 0 and identifier not in include_layers) or (identifier in exclude_layers):
                     if debug:
-                        print 'Skipping layer: ' + identifier
+                        print('Skipping layer: ' + identifier)
                     continue
 
                 dest_dim_elem = layer.find('{*}Dimension')
