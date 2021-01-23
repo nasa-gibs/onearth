@@ -524,10 +524,10 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             ows + 'Identifier') == layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')]
         layer_tilematrixsets = sorted(tms_list, key=get_max_scale_dem)
 
-        #HACK
+        # HACK
         if len(layer_tilematrixsets) == 0:
-           print("No layer_tilematrixsets. Skipping layer: " + identifier)
-           continue
+            print("No layer_tilematrixsets. Skipping layer: " + identifier)
+            continue
 
         out_tilematrixsets = []
         for tilematrixset in layer_tilematrixsets:
@@ -540,7 +540,6 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
             src_width = int(round(2 * math.pi * EARTH_RADIUS /
                                   (src_scale_denominator * 0.28E-3)))
             src_height = int(round(src_width / 2))
-            src_levels = len(matrices)
             src_pagesize_width = matrices[0].findtext('{*}TileWidth')
             src_pagesize_height = matrices[0].findtext('{*}TileHeight')
             src_bbox_elem = layer.find(ows + 'WGS84BoundingBox')

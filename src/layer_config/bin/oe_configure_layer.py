@@ -63,9 +63,9 @@
 import os
 import subprocess
 import sys
-import socket
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.parse
+import urllib.error
 import xml.dom.minidom
 import logging
 import shutil
@@ -83,7 +83,7 @@ import cgi
 from oe_configure_reproject_layer import build_reproject_configs, make_gdal_tms_xml, \
     WMS_LAYER_GROUP_TEMPLATE, DIMENSION_TEMPLATE, VALIDATION_TEMPLATE, STYLE_TEMPLATE, MAPFILE_TEMPLATE
 from oe_configure_remote_layers import get_remote_layers
-from oe_utils import Environment, get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, bulk_replace
+from oe_utils import get_environment, sigevent, log_info_mssg, log_info_mssg_with_timestamp, bulk_replace
 import importlib
 
 importlib.reload(sys)
