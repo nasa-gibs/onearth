@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
         # Unique feature id property name
         try:
-            feature_id = float(get_dom_tag_value(dom, "feature_id"))
+            feature_id = get_dom_tag_value(dom, "feature_id")
 
             # Create the unique feature id during processing
             try:
