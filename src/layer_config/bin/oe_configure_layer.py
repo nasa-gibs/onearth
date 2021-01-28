@@ -2942,7 +2942,7 @@ for conf in conf_files:
       <Name>{Identifier}</Name>
       <Title xml:lang=\"en\">{Title}</Title>
       <Abstract xml:lang=\"en\">{Abstract}</Abstract>
-      <LatLonBoundingBox minx=\"{min}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
+      <LatLonBoundingBox minx=\"{minx}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
       <Style>
         <Name>default</Name> 
         <Title xml:lang=\"en\">(default) Default style</Title>
@@ -2972,8 +2972,8 @@ for conf in conf_files:
     <Projection>{Projection}</Projection>
     <Pad>0</Pad>
     <Bands>{Bands}</Bands>
-    <LatLonBoundingBox minx=\"{min}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
-    <Key>{time}</Key>
+    <LatLonBoundingBox minx=\"{minx}\" miny=\"{miny}\" maxx=\"{maxx}\" maxy=\"{maxy}\" />
+    <Key>${time}</Key>
 {Patterns}</TiledGroup>
 """
 
