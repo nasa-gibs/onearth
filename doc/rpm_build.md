@@ -38,6 +38,12 @@ submodules that are required for the build, but are not included within the main
 git submodule update -f --init --recursive
 ```
 
+For "official" builds, the Version and/or Release number should be incremented as appropriate in the `deploy/onearth/onearth.spec` file.
+
+A tarball for the RPMs is usually created for releases via `tar -zcvf onearth-{VERSION}-{RELEASE}.el7.tar.gz`.
+
+The required gibs-gdal RPMs should also be included in the tarball and may be obtained from https://github.com/nasa-gibs/mrf/releases
+
 ## Verbose Build Instructions
 
 Some build and runtime dependencies require access to the Extra Packages for Enterprise Linux (EPEL) repository. Install the latest repository definition using the RPM found at the following location:
