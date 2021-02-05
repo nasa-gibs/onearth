@@ -367,6 +367,7 @@ local function calculatePeriods(dates, config)
     local datesInPeriods = {}
     
     -- Check for year matches
+    local annual = false
     for _, date1 in ipairs(dates) do
       if not itemInList(date1, datesInPeriods) then
         local tail = date1:sub(5)
@@ -392,13 +393,14 @@ local function calculatePeriods(dates, config)
   
               datesInPeriods = concat(datesInPeriods, dateList)
               periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
+              annual = true
             end
           end
         end
       end
     end
     
-    if dates[3] ~= nil then
+    if dates[3] ~= nil and annual == false then
       -- Figure out the size and interval of the period based on first 3 values
       local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
       local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
