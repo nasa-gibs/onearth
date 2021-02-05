@@ -310,6 +310,19 @@ local function periodExists(size, unit, epochDateList, periods)
   return false
 end
 
+--local function dump(o)
+--   if type(o) == 'table' then
+--      local s = '{ '
+--      for k,v in pairs(o) do
+--         if type(k) ~= 'number' then k = '"'..k..'"' end
+--         s = s .. '['..k..'] = ' .. dump(v) .. ','
+--      end
+--      return s .. '} '
+--   else
+--      return tostring(o)
+--   end
+--end
+
 local function calculatePeriods(dates, config)
   -- Parse time configurations
   local configs = {}
@@ -339,6 +352,7 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_start=' .. tostring(force_start))
   redis.call('ECHO', 'force_end=' .. tostring(force_end))
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
+  --redis.call('ECHO', dump(dates))
   
   -- Detect periods
   local periods = {}
@@ -492,7 +506,9 @@ local function calculatePeriods(dates, config)
     end
     periodStrings[#periodStrings + 1] = periodStr
   end
-  table.sort(periodStrings)
+  --Not needed since values are stored in an unordered list in Redis
+  --table.sort(periodStrings)
+  --redis.call('ECHO', dump(periodStrings))
   return periodStrings
 end
 
@@ -516,7 +532,7 @@ end
 local config = redis.call("GET", KEYS[1] .. ":config")
 
 repeat
-  local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor)
+  local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor, "MATCH", "[0-9]*-[0-9]*-[0-9]*")
   dates = concat(dates, scan[2])
   cursor = scan[1]
 until cursor == "0"
