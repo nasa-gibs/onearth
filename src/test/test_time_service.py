@@ -455,7 +455,7 @@ class TestDateService(unittest.TestCase):
 
     def test_multiple_periods(self):
         test_layers = [
-            ('test1_multiple_snap', '2012-01-01', [
+            ('test1_multiple_snap', '2000-12-01', [
                 '2000-07-03/2000-07-03/P1M', '2000-01-01/2000-06-01/P1M',
                 '2000-08-01/2000-12-01/P1M'
             ], '2000-08-01', '2000-08-01T00:00:00Z'),
