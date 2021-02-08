@@ -65,8 +65,6 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 # Change user
 USER www-data
 
-ENV LANGUAGE=en_US:en
-
 WORKDIR /home/oe2/onearth/docker/capabilities
 CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $S3_CONFIGS
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/

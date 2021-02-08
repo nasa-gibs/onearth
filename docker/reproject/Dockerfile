@@ -66,7 +66,5 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 # Change user
 USER www-data
 
-ENV LANGUAGE=en_US:en
-
 WORKDIR /home/oe2/onearth/docker/reproject
 CMD sh start_reproject.sh $DEBUG_LOGGING $S3_CONFIGS
