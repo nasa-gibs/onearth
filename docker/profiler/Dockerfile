@@ -21,6 +21,12 @@ WORKDIR /home/oe2/onearth/profiler
 
 EXPOSE 80
 
+# Set the locale
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
 RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
@@ -32,7 +38,5 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Change user
 USER www-data
-
-ENV LANGUAGE=en_US:en
 
 CMD ["/usr/sbin/httpd","-D", "FOREGROUND"]
