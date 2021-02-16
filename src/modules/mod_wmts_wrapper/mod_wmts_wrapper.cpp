@@ -436,7 +436,7 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         && last_filename_found) {
         *date_string = apr_pstrdup(r->pool, last_date_found);
         *filename = apr_pstrdup(r->pool, last_filename_found);
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Found cached date data!");
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Found cached date data!");
         return APR_SUCCESS;
     }
 
