@@ -35,6 +35,9 @@ import requests
 import xml.dom.minidom
 import logging
 import cgi
+import subprocess
+import hashlib
+import random
 from lxml import etree
 from time import asctime
 from optparse import OptionParser
@@ -92,6 +95,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
     '''
     print('\nReading remote layers config file ' + conf)
     dom = xml.dom.minidom.parse(conf)
+
     # Get environment
     try:
         environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
@@ -154,16 +158,30 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         # Download and parse GetCapabilites XML
         try:
             print('\nLoading layers from ' + wmts_getcapabilities)
+            
             r = requests.get(wmts_getcapabilities)
+            remote_gc = r.contents
             if r.status_code != 200:
                 log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
                             wmts_getcapabilities, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
-                        wmts_getcapabilities, sigevent_url)
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "wmts_gc_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                subprocess.call(['curl', '-o', temp_file, wmts_getcapabilities])
+                with open(temp_file) as f:
+                    remote_gc = f.read()
+                etree.fromstring(remote_gc)
+                os.remove(temp_file)
+                
+            except Exception:
+                log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
+                            wmts_getcapabilities, sigevent_url)
+
+
         # Get the layers from the source GC file
         try:
-            gc_xml = etree.fromstring(r.content)
+            gc_xml = etree.fromstring(remote_gc)
             ows = '{' + gc_xml.nsmap['ows'] + '}'
             gc_layers = gc_xml.find('{*}Contents').findall('{*}Layer')
             for layer in gc_layers:
@@ -201,15 +219,27 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         try:
             print('\nLoading layers from ' + twms_getcapabilities)
             r = requests.get(twms_getcapabilities)
+            remote_gc = r.content
             if r.status_code != 200:
                 log_sig_err('Can\'t download TWMS GetCapabilities from URL: ' +
                             twms_getcapabilities, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download TWMS GetCapabilities from URL: ' +
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "twms_gc_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                subprocess.call(['curl', '-o', temp_file, twms_getcapabilities])
+                with open(temp_file) as f:
+                    remote_gc = f.read()
+                etree.fromstring(remote_gc)
+                os.remove(temp_file)
+
+            except Exception:
+                log_sig_err('Can\'t download TWMS GetCapabilities from URL: ' +
                         twms_getcapabilities, sigevent_url)
+
         # Get the layers from the source GC file
         try:
-            twms_gc_xml = etree.fromstring(r.content)
+            twms_gc_xml = etree.fromstring(remote_gc)
             twms_gc_layers = twms_gc_xml.find('{*}Capability').findall('{*}Layer')[0].findall('{*}Layer')
             for layer in twms_gc_layers:
                 if(debug):
@@ -232,6 +262,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse TWMS GetCapabilities file (invalid syntax): ' +
                         twms_getcapabilities, sigevent_url)
+
         # TWMS GetTileService
         try:
             twms_gettileservice = get_dom_tag_value(dom, 'SrcTWMSGetTileServiceURI') 
@@ -242,15 +273,27 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         try:
             print('\nLoading layers from ' + twms_gettileservice)
             r = requests.get(twms_gettileservice)
+            remote_gts = r.content
             if r.status_code != 200:
                 log_sig_err('Can\'t download TWMS GetTileService from URL: ' +
                             twms_gettileservice, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download TWMS GetTileService from URL: ' +
-                        twms_gettileservice, sigevent_url)
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "twms_gts_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                subprocess.call(['curl', '-o', temp_file, twms_gettileservice])
+                with open(temp_file) as f:
+                    remote_gts = f.read()
+                etree.fromstring(remote_gts)
+                os.remove(temp_file)
+
+            except Exception:
+                log_sig_err('Can\'t download TWMS GetTileService from URL: ' +
+                            twms_gettileservice, sigevent_url)
+
         # Get the layers from the source GTS file
         try:
-            twms_gts_xml = etree.fromstring(r.content)
+            twms_gts_xml = etree.fromstring(remote_gts)
             twms_gts_tiledgroup = twms_gts_xml.find('{*}TiledPatterns').findall('{*}TiledGroup')
             for tiledgroup in twms_gts_tiledgroup:
                 if(debug):
