@@ -120,7 +120,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         try:
             internal_location = srcLocationRewrite.getAttribute('internal')
             external_location = srcLocationRewrite.getAttribute('external')
-            print('SrcLocationRewrite internal={} external={}\n'.format(internal_location, external_location))
+            print('SrcLocationRewrite internal={0} external={1}\n'.format(internal_location, external_location))
         except Exception, e:
             log_sig_err(str(e), sigevent_url)
     except IndexError:
