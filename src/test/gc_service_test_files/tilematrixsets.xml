@@ -162,12 +162,12 @@ limitations under the License.
       </TileMatrix>
     </TileMatrixSet>
     <TileMatrixSet>
-      <ows:Identifier>EPSG3031_BlueMarble</ows:Identifier>
+      <ows:Identifier>31.25m</ows:Identifier>
       <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3031</ows:SupportedCRS>
       <TileMatrix>
         <ows:Identifier>0</ows:Identifier>
-        <ScaleDenominator>86495535.7143</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>29257142.85714286</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>2</MatrixWidth>
@@ -175,8 +175,8 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>1</ows:Identifier>
-        <ScaleDenominator>43247767.8571</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>14628571.42857143</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>4</MatrixWidth>
@@ -184,8 +184,8 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>2</ows:Identifier>
-        <ScaleDenominator>21623883.9286</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>7314285.714285715</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>8</MatrixWidth>
@@ -193,8 +193,8 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>3</ows:Identifier>
-        <ScaleDenominator>10811941.9643</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>3657142.857142857</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>16</MatrixWidth>
@@ -202,12 +202,48 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>4</ows:Identifier>
-        <ScaleDenominator>5405970.98214</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>1828571.428571429</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>32</MatrixWidth>
         <MatrixHeight>32</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>5</ows:Identifier>
+        <ScaleDenominator>914285.7142857143</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>64</MatrixWidth>
+        <MatrixHeight>64</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>6</ows:Identifier>
+        <ScaleDenominator>457142.857142857</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>128</MatrixWidth>
+        <MatrixHeight>128</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>7</ows:Identifier>
+        <ScaleDenominator>228571.428571429</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>256</MatrixWidth>
+        <MatrixHeight>256</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>8</ows:Identifier>
+        <ScaleDenominator>114285.714285714</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>512</MatrixWidth>
+        <MatrixHeight>512</MatrixHeight>
       </TileMatrix>
     </TileMatrixSet>
   </Projection>
@@ -360,12 +396,12 @@ limitations under the License.
       </TileMatrix>
     </TileMatrixSet>
     <TileMatrixSet>
-      <ows:Identifier>EPSG3413_BlueMarble</ows:Identifier>
+      <ows:Identifier>31.25m</ows:Identifier>
       <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3413</ows:SupportedCRS>
       <TileMatrix>
         <ows:Identifier>0</ows:Identifier>
-        <ScaleDenominator>86495535.7143</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>29257142.85714286</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>2</MatrixWidth>
@@ -373,8 +409,8 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>1</ows:Identifier>
-        <ScaleDenominator>43247767.8571</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>14628571.42857143</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>4</MatrixWidth>
@@ -382,8 +418,8 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>2</ows:Identifier>
-        <ScaleDenominator>21623883.9286</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>7314285.714285715</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>8</MatrixWidth>
@@ -391,8 +427,8 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>3</ows:Identifier>
-        <ScaleDenominator>10811941.9643</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>3657142.857142857</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>16</MatrixWidth>
@@ -400,12 +436,48 @@ limitations under the License.
       </TileMatrix>
       <TileMatrix>
         <ows:Identifier>4</ows:Identifier>
-        <ScaleDenominator>5405970.98214</ScaleDenominator>
-        <TopLeftCorner>-12400000 12400000</TopLeftCorner>
+        <ScaleDenominator>1828571.428571429</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
         <TileWidth>512</TileWidth>
         <TileHeight>512</TileHeight>
         <MatrixWidth>32</MatrixWidth>
         <MatrixHeight>32</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>5</ows:Identifier>
+        <ScaleDenominator>914285.7142857143</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>64</MatrixWidth>
+        <MatrixHeight>64</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>6</ows:Identifier>
+        <ScaleDenominator>457142.857142857</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>128</MatrixWidth>
+        <MatrixHeight>128</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>7</ows:Identifier>
+        <ScaleDenominator>228571.428571429</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>256</MatrixWidth>
+        <MatrixHeight>256</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>8</ows:Identifier>
+        <ScaleDenominator>114285.714285714</ScaleDenominator>
+        <TopLeftCorner>-4194304 4194304</TopLeftCorner>
+        <TileWidth>512</TileWidth>
+        <TileHeight>512</TileHeight>
+        <MatrixWidth>512</MatrixWidth>
+        <MatrixHeight>512</MatrixHeight>
       </TileMatrix>
     </TileMatrixSet>
   </Projection>
