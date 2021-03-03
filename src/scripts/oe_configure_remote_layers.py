@@ -35,6 +35,9 @@ import requests
 import xml.dom.minidom
 import logging
 import cgi
+import subprocess
+import hashlib
+import random
 from lxml import etree
 from time import asctime
 from optparse import OptionParser
@@ -92,6 +95,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
     '''
     print('\nReading remote layers config file ' + conf)
     dom = xml.dom.minidom.parse(conf)
+
     # Get environment
     try:
         environmentConfig = get_dom_tag_value(dom, 'EnvironmentConfig')
@@ -113,14 +117,14 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         if email_recipient == '':
             mssg = 'No email recipient provided for notifications in get_remote_layers.'
             log_sig_err(mssg, sigevent_url)
-            
+
     # Check to see if we want to rewrite locations
     try:
         srcLocationRewrite = dom.getElementsByTagName('SrcLocationRewrite')[0]
         try:
             internal_location = srcLocationRewrite.getAttribute('internal')
             external_location = srcLocationRewrite.getAttribute('external')
-            print('SrcLocationRewrite internal={} external={}\n'.format(internal_location, external_location))
+            print('SrcLocationRewrite internal={0} external={1}\n'.format(internal_location, external_location))
         except Exception, e:
             log_sig_err(str(e), sigevent_url)
     except IndexError:
@@ -145,6 +149,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
     print('Excluding layers:')
     print('\n'.join(exclude_layers))
 
+    remote_gc = None
     if(wmts):
         try:
             wmts_getcapabilities = get_dom_tag_value(dom, 'SrcWMTSGetCapabilitiesURI')
@@ -154,16 +159,34 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         # Download and parse GetCapabilites XML
         try:
             print('\nLoading layers from ' + wmts_getcapabilities)
+
             r = requests.get(wmts_getcapabilities)
+            remote_gc = r.contents
             if r.status_code != 200:
                 log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
                             wmts_getcapabilities, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
-                        wmts_getcapabilities, sigevent_url)
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "wmts_gc_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                p = subprocess.Popen(['curl', '-o', temp_file, wmts_getcapabilities], stderr=subprocess.PIPE)
+
+                stderr = p.communicate()
+                if stderr: print(stderr)
+
+                with open(temp_file) as f:
+                    remote_gc = f.read()
+                etree.fromstring(remote_gc)
+                os.remove(temp_file)
+
+            except Exception:
+                log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
+                            wmts_getcapabilities, sigevent_url)
+
+
         # Get the layers from the source GC file
         try:
-            gc_xml = etree.fromstring(r.content)
+            gc_xml = etree.fromstring(remote_gc)
             ows = '{' + gc_xml.nsmap['ows'] + '}'
             gc_layers = gc_xml.find('{*}Contents').findall('{*}Layer')
             for layer in gc_layers:
@@ -190,6 +213,8 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
     else:
         print('\nSkipping WMTS')
 
+    remote_gc  = None
+    remote_gts = None
     if(twms):
         # TWMS GetCapabilities
         try:
@@ -201,15 +226,31 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         try:
             print('\nLoading layers from ' + twms_getcapabilities)
             r = requests.get(twms_getcapabilities)
+            remote_gc = r.content
             if r.status_code != 200:
                 log_sig_err('Can\'t download TWMS GetCapabilities from URL: ' +
                             twms_getcapabilities, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download TWMS GetCapabilities from URL: ' +
-                        twms_getcapabilities, sigevent_url)
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "twms_gc_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                p = subprocess.Popen(['curl', '-o', temp_file, twms_getcapabilities], stderr=subprocess.PIPE)
+
+                stderr = p.communicate()
+                if stderr: print(stderr)
+
+                with open(temp_file) as f:
+                    remote_gc = f.read()
+                etree.fromstring(remote_gc)
+                os.remove(temp_file)
+
+            except Exception:
+                log_sig_err('Can\'t download TWMS GetCapabilities from URL: ' +
+                            twms_getcapabilities, sigevent_url)
+
         # Get the layers from the source GC file
         try:
-            twms_gc_xml = etree.fromstring(r.content)
+            twms_gc_xml = etree.fromstring(remote_gc)
             twms_gc_layers = twms_gc_xml.find('{*}Capability').findall('{*}Layer')[0].findall('{*}Layer')
             for layer in twms_gc_layers:
                 if(debug):
@@ -232,9 +273,10 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse TWMS GetCapabilities file (invalid syntax): ' +
                         twms_getcapabilities, sigevent_url)
+
         # TWMS GetTileService
         try:
-            twms_gettileservice = get_dom_tag_value(dom, 'SrcTWMSGetTileServiceURI') 
+            twms_gettileservice = get_dom_tag_value(dom, 'SrcTWMSGetTileServiceURI')
         except IndexError:
             mssg = 'SrcTWMSGetTileServiceURI element is missing in ' + conf
             log_sig_err(mssg, sigevent_url)
@@ -242,15 +284,31 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         try:
             print('\nLoading layers from ' + twms_gettileservice)
             r = requests.get(twms_gettileservice)
+            remote_gts = r.content
             if r.status_code != 200:
                 log_sig_err('Can\'t download TWMS GetTileService from URL: ' +
                             twms_gettileservice, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download TWMS GetTileService from URL: ' +
-                        twms_gettileservice, sigevent_url)
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "twms_gts_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                p = subprocess.Popen(['curl', '-o', temp_file, twms_gettileservice], stderr=subprocess.PIPE)
+
+                stderr = p.communicate()
+                if stderr: print(stderr)
+
+                with open(temp_file) as f:
+                    remote_gts = f.read()
+                etree.fromstring(remote_gts)
+                os.remove(temp_file)
+
+            except Exception:
+                log_sig_err('Can\'t download TWMS GetTileService from URL: ' +
+                            twms_gettileservice, sigevent_url)
+
         # Get the layers from the source GTS file
         try:
-            twms_gts_xml = etree.fromstring(r.content)
+            twms_gts_xml = etree.fromstring(remote_gts)
             twms_gts_tiledgroup = twms_gts_xml.find('{*}TiledPatterns').findall('{*}TiledGroup')
             for tiledgroup in twms_gts_tiledgroup:
                 if(debug):
@@ -287,7 +345,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except etree.XMLSyntaxError:
             log_sig_err("Can't parse environment config file: {0}".format(
                 environmentConfig), sigevent_url)
-        
+
         mapfile_location = environment_xml.findtext('{*}MapfileLocation')
         if not mapfile_location:
             mssg = 'mapfile creation chosen but no <MapfileLocation> found'
@@ -321,7 +379,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
             mssg = 'mapfile creation chosen but no "basename" attribute found for <MapfileConfigLocation>'
             warnings.append(asctime() + " " + mssg)
             log_sig_warn(mssg, sigevent_url)
-            
+
         try:
             wmts_getcapabilities = get_dom_tag_value(dom, 'SrcWMTSGetCapabilitiesURI')
         except IndexError:
@@ -358,12 +416,12 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                     static = False
                 src_format = layer.findtext('{*}Format')
                 src_title = layer.findtext(ows + 'Title')
-        
+
                 # Get TMSs for this layer and build a config for each
                 tms_list = [elem for elem in tilematrixsets if elem.findtext(
                     ows + 'Identifier') == layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')]
                 layer_tilematrixsets = sorted(tms_list, key=get_max_scale_dem)
-        
+
                 #HACK
                 if len(layer_tilematrixsets) == 0:
                     print("No layer_tilematrixsets. Skipping layer: " + identifier)
@@ -387,27 +445,27 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                                                        ('{default}', default_datetime)])
                     validation_info = VALIDATION_TEMPLATE.replace(
                         '{default}', default_datetime)
-                
+
                 # If the source EPSG:4326 layer has a legend, then add that to the EPSG:3857 layer also
                 legendUrlElems = []
-                
+
                 for styleElem in layer.findall('{*}Style'):
                     legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
-                
+
                 for legendUrlElem in legendUrlElems:
                     attributes = legendUrlElem.attrib
                     if attributes[xlink + 'role'].endswith("horizontal"):
                         style_info = bulk_replace(STYLE_TEMPLATE, [('{width}', attributes["width"]),
                                                                    ('{height}', attributes["height"]),
                                                                    ('{href}', attributes[xlink + 'href'].replace(".svg",".png"))])
-                
+
                 # Mapserver automatically converts to RGBA and works better if we
                 # specify that for png layers
                 mapserver_bands = 4 if 'image/png' in src_format else 3
-                
+
                 src_crs = layer_tilematrixsets[0].findtext('{*}SupportedCRS')
                 src_epsg = get_epsg_code_for_proj_string(src_crs)
-                
+
                 target_bbox = map(
                     str, get_bbox_for_proj_string('EPSG:' + src_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
                 target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
@@ -425,8 +483,8 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse WMTS GetCapabilities file (invalid syntax): ' +
                         wmts_getcapabilities, sigevent_url)
-            
-        
+
+
 
     return (warnings, errors)
 
@@ -458,7 +516,7 @@ if __name__ == '__main__':
                       action="store_true", dest="debug",
                       default=False, help="Produce verbose debug messages")
     parser.add_option("--create_mapfile", dest="create_mapfile",
-                      default=False, action="store_true", 
+                      default=False, action="store_true",
                       help="Create MapServer configuration.")
 
     # Read command line args.
