@@ -3,14 +3,15 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 This script scrapes MRF files in S3 for time periods and then populates Redis for the OnEarth time service.
 """
@@ -21,12 +22,14 @@ from datetime import datetime
 import redis
 import argparse
 from pathlib import Path
-import csv, gzip
+import csv
+import gzip
 import botocore.session
 from botocore.stub import Stubber
+import os
 
 TEST_RESPONSE = {
-    'IsTruncated': False, 
+    'IsTruncated': False,
     'Name': 'test-bucket',
     'MaxKeys': 1000, 'Prefix': '',
     'Contents': [
@@ -78,6 +81,7 @@ TEST_RESPONSE = {
     }
 }
 
+
 def keyMapper(acc, obj):
     keyElems = obj.split("/")
 
@@ -90,7 +94,8 @@ def keyMapper(acc, obj):
     day = len(keyElems) == 4 and keyElems[3] or None
     filename = keyElems[-1]
     if Path(filename).suffix not in ['.ppg', '.pjg', '.ptf', '.pvt', '.lerc']:
-        return acc # ignore non-MRF data files
+        # ignore non-MRF data files
+        return acc
 
     if not acc.get(proj):
         acc[proj] = {}
@@ -108,31 +113,33 @@ def keyMapper(acc, obj):
 
     return acc
 
+
 def invenGetAllKeys(conn, bucket):
     if (bucket == 'test-bucket'):
         return False
     if (bucket != 'test-inventory'):
         keys = []
-        kwargs = {'Bucket': bucket,'Prefix': 'inventory/'+bucket+'/entire/data/'}
+        kwargs = {'Bucket': bucket, 'Prefix': 'inventory/'+bucket+'/entire/data/'}
         respInv = conn.list_objects_v2(**kwargs)
-    
+
         try:
             objects = respInv['Contents']
         except KeyError:
             return False
         print('Using S3 Inventory')
         lastest_inventory = max(objects, key=lambda x: x['LastModified'])
-        if not lastest_inventory['Key'].endswith('csv.gz') :
+        if not lastest_inventory['Key'].endswith('csv.gz'):
             print('S3 Inventory csv file not found!')
             return False
         conn.download_file(bucket, lastest_inventory['Key'], 'tmpInventory.csv.gz')
-    with gzip.open('tmpInventory.csv.gz', mode = 'rt') as f:
+    with gzip.open('tmpInventory.csv.gz', mode='rt') as f:
         reader = csv.reader(f)
-        keys = list(map(lambda x:x[1], reader))
+        keys = list(map(lambda x: x[1], reader))
     return keys
 
-# https://alexwlchan.net/2017/07/listing-s3-keys/
+
 def getAllKeys(conn, bucket):
+    # https://alexwlchan.net/2017/07/listing-s3-keys/   
     keys = []
     kwargs = {'Bucket': bucket}
     print('Using boto list_objects_v2')
@@ -166,7 +173,7 @@ def updateDateService(redis_uri,
     elif check_exists:
         print(f'Data already exists - skipping time scrape for {tag}')
         return
-    
+
     # Use mock S3 if test
     if bucket == 'test-bucket':
         s3 = botocore.session.get_session().create_client('s3')
@@ -180,27 +187,28 @@ def updateDateService(redis_uri,
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
 
-    # delete date keys 
-    count, keys  = r.scan(cursor=0, match='*:dates')
-    if(len(keys)>0):
+    # delete date keys
+    count, keys = r.scan(cursor=0, match='*:dates')
+    if(len(keys) > 0):
         resp = r.unlink(*keys)
         print(f'{resp} of {len(keys)} scanned date keys unlinked')
     while count != 0:
         count, keys = r.scan(cursor=count, match='*:dates')
-        if(len(keys)>0):
+        if(len(keys) > 0):
             resp = r.unlink(*keys)
             print(f'{resp} of {len(keys)} scanned date keys unlinked')
-    
+
     if s3_inventory:
-        invenKeys=invenGetAllKeys(s3, bucket)
+        invenKeys = invenGetAllKeys(s3, bucket)
         if(invenKeys):
             objects = reduce(keyMapper, invenKeys, {})
         else:
             objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
-    else: 
+    else:
         objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
-    with open('periods.lua', 'r') as f:
+    with open(os.path.dirname(os.path.realpath(__file__)) + '/periods.lua',
+              'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
 

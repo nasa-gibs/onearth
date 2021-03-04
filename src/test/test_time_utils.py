@@ -112,7 +112,7 @@ def add_redis_config(layers, db_keys, config):
     if db_keys:
         for key in db_keys:
             db_keystring += key + ':'
-    r.set('{0}layer:{1}:config'.format(db_keystring, layers[0][0]), config)
+    r.sadd('{0}layer:{1}:config'.format(db_keystring, layers[0][0]), config)
 
 
 class TestTimeUtils(unittest.TestCase):
@@ -493,6 +493,44 @@ class TestTimeUtils(unittest.TestCase):
                 layer[2], layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
                 .format(layer[0], layer_res['periods'][0], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+                
+    def test_periods_config_multiple(self):
+        # Test adding layer with multiple dates
+        test_layers = [('Test_Multiple', '2019-01-01',
+                        '2016-01-01/2017-12-31/P1D'),
+                       ('Test_Multiple', '2019-01-02',
+                        '2019-01-01/2019-01-04/P1D'),
+                       ('Test_Multiple', '2019-01-03',
+                        '2019-01-02/2019-01-04/P1D'),
+                       ('Test_Multiple', '2019-01-04',
+                        '2022-01-01/2022-12-01/P1M')]
+        db_keys = ['epsg4326', 'best']
+        # forced period
+        config = '2016-01-01/2017-12-31/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        # detect 2019-01-01 as start
+        config = 'DETECT/2019-01-04/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        # detect 2019-01-04 as end
+        config = '2019-01-02/DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        # forced period
+        config = '2022-01-01/2022-12-01/P1M'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
+        res = r.json()
+        for i, layer in enumerate(test_layers):
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][i],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'][i], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 

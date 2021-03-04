@@ -354,6 +354,14 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
   
+  -- Don't return any periods if DETECT and no dates available
+  if dates[1] == nil then
+    if force_start == 'DETECT' or force_end == 'DETECT' then
+      redis.call('ECHO', 'No dates available for DETECT')
+      return {}
+    end
+  end
+
   -- Detect periods
   local periods = {}
   if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
@@ -519,6 +527,7 @@ end
 -- with new list.
 redis.replicate_commands()
 local dates = {}
+local configs = {}
 local cursor = "0"
 
 -- GITC mod: Add new date and only update if there was a change
@@ -530,27 +539,72 @@ if ARGV[1] ~= nil then
 end
 -- End GITC mod
 
--- Get time configurations for layer
-local config = redis.call("GET", KEYS[1] .. ":config")
-
 repeat
   local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor, "MATCH", "[0-9]*-[0-9]*-[0-9]*")
   dates = concat(dates, scan[2])
   cursor = scan[1]
 until cursor == "0"
 
-local periodStrings = calculatePeriods(dates, config)
-if redis.call("EXISTS", KEYS[1] .. ":periods") then
-  redis.call("DEL", KEYS[1] .. ":periods")
-end
-for i, periodString in ipairs(periodStrings) do
-  redis.call("SADD", KEYS[1] .. ":periods", periodString)
+-- Calculate periods for each time configuration per layer
+repeat
+  local scan = redis.call("SSCAN", KEYS[1] .. ":config", cursor)
+  configs = concat(configs, scan[2])
+  cursor = scan[1]
+until cursor == "0"
+
+if next(configs) == nil then
+  local config = redis.call("GET", KEYS[1] .. ":config")
+  local periodStrings = calculatePeriods(dates, config)
+  if redis.call("EXISTS", KEYS[1] .. ":periods") then
+    redis.call("DEL", KEYS[1] .. ":periods")
+  end
+  for i, periodString in ipairs(periodStrings) do
+    redis.call("SADD", KEYS[1] .. ":periods", periodString)
+  end
+else
+  for i, config in ipairs(configs) do
+    local periodStrings = calculatePeriods(dates, config)
+    if i == 1 then
+      if redis.call("EXISTS", KEYS[1] .. ":periods") then
+        redis.call("DEL", KEYS[1] .. ":periods")
+      end
+    end
+    for i, periodString in ipairs(periodStrings) do
+      redis.call("SADD", KEYS[1] .. ":periods", periodString)
+    end
+  end
 end
 
 table.sort(dates, dateSort)
 
 local defaultDate = dates[#dates]
-if string.sub(dates[#dates], 12) == "00:00:00" then
-  defaultDate = string.sub(dates[#dates], 0, 10)
+if defaultDate ~= nil then
+  if string.sub(dates[#dates], 12) == "00:00:00" then
+    defaultDate = string.sub(dates[#dates], 0, 10)
+  end
+  redis.call("SET", KEYS[1] .. ":default", defaultDate)
+else
+  -- use last config time if there are no dates
+  local lastConfig = nil
+  table.sort(configs)
+  -- loop backwards to find last config without DETECT
+  for i = #configs, 1, -1 do
+    if string.find(configs[i], "DETECT") == nil then
+      lastConfig = configs[i]
+      break
+    end
+  end
+  if lastConfig ~= nil then
+    local configParts = {}
+    for w in tostring(lastConfig):gmatch("([^/]+)") do
+      configParts[#configParts + 1] = w
+    end
+    if configParts[3] ~= nil then
+      defaultDate = configParts[2]
+      if string.sub(configParts[2], 12) == "00:00:00" then
+        defaultDate = string.sub(configParts[2], 0, 10)
+      end
+      redis.call("SET", KEYS[1] .. ":default", defaultDate)
+    end
+  end
 end
-redis.call("SET", KEYS[1] .. ":default", defaultDate)

@@ -52,17 +52,17 @@ if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set for OnEarth configs"
 else
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
 fi
 
 # Replace with S3 URL
@@ -73,7 +73,7 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
 # Load custom time period configurations
 for i in /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml; do
-	python3.6 /usr/bin/oe_periods_configure.py "$i"
+	python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST
 done
 
 # Start Redis and load sample data if running locally
@@ -403,19 +403,18 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 
 else
 	# Load time periods by scraping S3 bucket
-	cd /home/oe2/onearth/src/modules/time_service/utils/
 	if [ "$FORCE_TIME_SCRAPE" = true ]; then
-		python3.6 oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -r -t std -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -r -t std -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 	else
-		python3.6 oe_scrape_time.py -c -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -c -r -t all -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -c -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -c -r -t std -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3.6 oe_scrape_time.py -c -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -c -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -c -r -t all -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -c -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -c -r -t std -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+		python3 /usr/bin/oe_scrape_time.py -c -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 	fi
 fi
 

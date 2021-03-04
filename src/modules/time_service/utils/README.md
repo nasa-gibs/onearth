@@ -14,7 +14,8 @@ The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4
 ## `oe_periods_configure.py` -- Custom time configuration loader
 
 This tool will load custom time period configurations as specified in a layer configuration file's `time_config` item into Redis for evaluation when the periods.lua script is executed.
-Configurations are loaded into the `prefix_tags:layer:layer_name:config` keyword. This script should be executed before period.lua is run.
+Configurations are loaded into the `prefix_tags:layer:layer_name:config` keyword. This script should be executed before periods.lua is run.
+The `-g` or `--generate_periods` option will automatically generate the periods for each layer by running periods.lua.
 
 #### Python Dependencies
 
@@ -26,6 +27,7 @@ Configurations are loaded into the `prefix_tags:layer:layer_name:config` keyword
 The script accepts the following options:
 
 -   `-h, --help` display help message and exit.
+-   `-g, --generate_periods` Generate periods for each layer based on config values
 -   `-e ENDPOINT_CONFIG, --endpoint_config ENDPOINT_CONFIG` an endpoint config YAML file to load layers.
 -   `-p PORT, --port PORT` redis port for database
 -   `-r REDIS_URI, --redis_uri REDIS_URI` URI for the Redis database

@@ -33,6 +33,8 @@ WORKDIR /home/oe2/onearth/docker/time_service
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py /usr/bin/
+RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py /usr/bin/
+RUN cp /home/oe2/onearth/src/modules/time_service/utils/periods.lua /usr/bin/
 
 # Create OnEarth config log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
