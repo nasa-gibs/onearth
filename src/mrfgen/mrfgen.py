@@ -439,10 +439,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     insert_message = gdal_merge.stderr.readlines()
     for message in insert_message:
-        if 'ERROR' in message.upper():
             log_sig_err(message + ' in merging image while processing ' + tile, sigevent_url)
+        if 'ERROR' in str(message).upper():
         else:
-            log_info_mssg(message.strip())
+            log_info_mssg(str(message).strip())
     gdal_merge.wait()
     return new_tile
 
