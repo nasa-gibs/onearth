@@ -289,7 +289,7 @@ def has_color_table(tile):
     for band in tileInfo["bands"]:
         has_color_table |= "colorTable" in band
 
-    log_info_mssg(("No color table found","Color table found in image")[has_color_table])
+    log_info_mssg(("No color table found", "Color table found in image")[has_color_table])
     return has_color_table
 
 def mrf_block_align(extents, xmin, ymin, xmax, ymax, target_x, target_y, mrf_blocksize):
@@ -370,7 +370,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     new_tile = working_dir + os.path.basename(tile)+".merge.tif"
 
     if has_color_table(tile) == True:
-        gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps', str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)), str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)), '-o', new_tile, '-of', 'GTiff', '-pct']
+        gdal_merge_command_list = ['gdal_merge.py', '-ul_lr', ulx, uly, lrx, lry, '-ps',
+                                   str((Decimal(xmax)-Decimal(xmin))/Decimal(target_x)),
+                                   str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)),
+                                   '-o', new_tile, '-of', 'GTiff', '-pct']
         if nodata != "":
             gdal_merge_command_list.append('-n')
             gdal_merge_command_list.append(nodata)
@@ -388,10 +391,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_vrt = subprocess.Popen(gdal_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_vrt.stderr.readlines()
         for message in insert_message:
-            if 'ERROR' in message.upper():
-                log_sig_err(message + ' in merging image (gdalbuildvrt) while processing ' + tile, sigevent_url)
+            if 'ERROR' in str(message).upper():
+                log_sig_err("{0} in merging image (gdalbuildvrt) while processing {1}".format(message, tile), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
         gdal_vrt.wait()
         
         # Warp the input image VRT to have the right resolution
@@ -404,10 +407,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_warp.stderr.readlines()
         for message in insert_message:
-            if 'ERROR' in message.upper():
-                log_sig_err(message + ' in merging image (gdalwarp) while processing ' + tile, sigevent_url)
+            if 'ERROR' in str(message).upper():
+                log_sig_err("{0} in merging image (gdalwarp) while processing {1}".format(message, tile), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
         gdal_warp.wait()
               
         # Now build a combined VRT for both the input VRT and the MRF
@@ -421,10 +424,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_vrt2 = subprocess.Popen(gdal_vrt_command_list2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_vrt2.stderr.readlines()
         for message in insert_message:
-            if 'ERROR' in message.upper():
-                log_sig_err(message + ' in merging image (gdalbuildvrt - 2) while processing ' + tile, sigevent_url)
+            if 'ERROR' in str(message).upper():
+                log_sig_err("{0} in merging image (gdalbuildvrt - 2) while processing {1}".format(message, tile), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
         gdal_vrt2.wait()
 
         # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
@@ -439,8 +442,8 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     insert_message = gdal_merge.stderr.readlines()
     for message in insert_message:
-            log_sig_err(message + ' in merging image while processing ' + tile, sigevent_url)
         if 'ERROR' in str(message).upper():
+            log_sig_err("{0} in merging image while processing {1}".format(message, tile), sigevent_url)
         else:
             log_info_mssg(str(message).strip())
     gdal_merge.wait()
@@ -515,7 +518,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
 
     if tile_right.count('.right_cut.vrt') > 1:
         # Something is wrong here; prevent going into a loop
-        log_sig_err("Image right_cut has already been queued for insert: " + tile_right, sigevent_url)
+        log_sig_err("Image right_cut has already been queued for insert: {0}".format(tile_right), sigevent_url)
         tile_right = None
     elif (Decimal(new_lrx) - Decimal(antimeridian)) < Decimal(xres):
         # Make sure that when we make the right cut that there will be at least one pixel
@@ -860,13 +863,13 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
 
         insert_message = mrf_insert.stderr.readlines()
         for message in insert_message:
-            if 'Access window out of range' in message:
-                log_sig_warn(message, sigevent_url)
-            elif 'ERROR' in message:
+            if 'Access window out of range' in str(message):
+                log_sig_warn(str(message), sigevent_url)
+            elif 'ERROR' in str(message):
                 errors += 1
-                log_sig_err('mrf_insert ' + message, sigevent_url)
+                log_sig_err("mrf_insert ".format(message), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
 
         # Remove temporary merged files (if created)
         if ".merge." in tile:
@@ -1641,14 +1644,14 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             
             if img is None:
                 errors += 1
-                log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
+                log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
                 continue
         except RuntimeError as e:                
             log_sig_exit('ERROR', 'Failed to execute gdal.Open', sigevent_url)
 
         if img.RasterCount == 1:
             errors += 1
-            log_sig_err('Bad JPEG tile detected: ' + tile, sigevent_url)
+            log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
             continue
 
         goodtiles.append(tile)
@@ -1737,7 +1740,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     alltiles[i] = output_tile
                 else:
                     errors += 1
-                    log_sig_err("RGBApng2Palpng failed to create " + output_tile, sigevent_url)
+                    log_sig_err("RGBApng2Palpng failed to create {0}".format(output_tile), sigevent_url)
                 
                 # Make a copy of world file
                 try:
@@ -1746,7 +1749,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     elif os.path.isfile(working_dir+'/'+tile_basename+'.wld'):
                         shutil.copy(working_dir+'/'+tile_basename+'.wld', output_tile_path+'/'+output_tile_basename+'.pgw')
                     else:
-                        log_info_mssg("World file does not exist for tile: " + tile)
+                        log_info_mssg("World file does not exist for tile: {0}".format(tile))
                 except:
                     errors += 1
                     log_sig_err("ERROR: " + mssg, sigevent_url)
@@ -1865,13 +1868,13 @@ if mrf_compression_type == 'EPNG':
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             gdalinfo_out = gdalinfo.stdout.readlines()
             if "Color Table" in ''.join(gdalinfo_out):
-                log_sig_warn(tile + " contains a palette", sigevent_url)
+                log_sig_warn("{0} contains a palette".format(tile), sigevent_url)
                 mrf_compression_type = 'PPNG'
             if "Offset:" in ''.join(gdalinfo_out) and "Scale:" in ''.join(gdalinfo_out):
-                log_info_mssg(tile + " is already an encoded TIFF")
+                log_info_mssg("{0} is already an encoded TIFF".format(tile))
             else: # Encode the TIFF file
                 encoded_tile = working_dir+tile_basename+'_encoded.tif'
-                log_info_mssg(tile + " will be encoded as " + encoded_tile)
+                log_info_mssg("{0} will be encoded as {1}".format(tile, encoded_tile))
                 if mrf_data_scale != '' and mrf_data_offset != '':
                     scale_offset = [float(mrf_data_scale), float(mrf_data_offset)]
                 else:
@@ -1884,8 +1887,8 @@ if mrf_compression_type == 'EPNG':
                 gdalinfo_out = gdalinfo.stdout.readlines()
             log_info_mssg("Reading scale and offset from bands")
             for line in gdalinfo_out:
-                if "Offset:" in line and "Scale:" in line:
-                    offset,scale = line.strip().replace("Offset: ","").replace("Scale:","").split(",")
+                if "Offset:" in str(line) and "Scale:" in str(line):
+                    offset,scale = str(line).strip().replace("Offset: ","").replace("Scale:","").split(",")
                     log_info_mssg("Offset: " + offset + ", Scale: " + scale)
                     scale = int(scale)
                     offset = int(offset)
@@ -2132,10 +2135,10 @@ try:
     # Loop over all lines in file.
     for ndx in range(len(gdalbuildvrt_stderr)):
         # Get line number(s) where skipped files appear in the stderr file.
-        skipped=gdalbuildvrt_stderr[ndx].find('Warning')
+        skipped=str(gdalbuildvrt_stderr[ndx]).find('Warning')
         # If a line (including line 0) was found.
         if skipped >= 0:
-            mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
+            mssg=str().join(['gdalbuildvrt ', str(gdalbuildvrt_stderr[ndx])])
             log_sig_warn(mssg, sigevent_url)
     # Close file.
     gdalbuildvrt_stderr_file.close()
@@ -2234,14 +2237,14 @@ if target_x != x_size:
         target_y=str(int(float(target_x)*(float(y_size)/float(x_size))))
         log_info_mssg('Calculating target_y ' + target_y)
     if resize_resampling == '':
-        log_sig_warn('Target size (' + target_x + 'x' + target_y + ') differs from input size (' + x_size + 'x' + y_size + ')' +
-                     ', but <resize_resampling> flag has not been set.', sigevent_url)
+        log_sig_warn("Target size ({0}x{1}) differs from input size ({2}x{3}), but <resize_resampling> flag has not been set.".
+                     format(target_x, target_y, x_size, y_size), sigevent_url)
 else: #don't bother calculating y
     if target_y == '':
         target_y=y_size
-        log_info_mssg('Setting target_y from VRT to ' + target_y)
+        log_info_mssg("Setting target_y from VRT to {0}".format(target_y))
     elif target_y != y_size:
-        log_sig_warn('Target y size (' + target_y +') differs from raster y size (' + y_size + ')', sigevent_url)
+        log_sig_warn("Target y size ({0}) differs from raster y size ({1})".format(target_y, y_size), sigevent_url)
 
 
 #-----------------------------------------------------------------------
@@ -2335,8 +2338,8 @@ else:
         mrf_file.seek(0)
         lines = mrf_file.readlines()
         for idx in range(0, len(lines)):
-            if '<Raster>' in lines[idx]:
-                lines[idx] = lines[idx].replace('<Raster>','<Raster mp_safe="on">')
+            if '<Raster>' in str(lines[idx]):
+                lines[idx] = str(lines[idx]).replace('<Raster>','<Raster mp_safe="on">')
                 log_info_mssg("Set MRF mp_safe on")
         mrf_file.seek(0)
         mrf_file.truncate()
