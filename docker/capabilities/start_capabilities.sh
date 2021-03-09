@@ -122,6 +122,22 @@ if [ "$DEBUG_LOGGING" = true ]; then
     perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
 fi
 
+# Setup Apache extended server status
+cat >> /etc/httpd/conf/httpd.conf <<EOS
+LoadModule status_module modules/mod_status.so
+
+<Location /server-status>
+   SetHandler server-status
+   Allow from all 
+</Location>
+
+# ExtendedStatus controls whether Apache will generate "full" status
+# information (ExtendedStatus On) or just basic information (ExtendedStatus
+# Off) when the "server-status" handler is called. The default is Off.
+#
+ExtendedStatus On
+EOS
+
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
 sleep 2

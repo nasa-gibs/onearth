@@ -44,6 +44,22 @@ fi
 # Load GIBS sample layers
 sh load_sample_layers.sh $S3_URL $REDIS_HOST $S3_CONFIGS >>/var/log/onearth/config.log 2>&1
 
+# Setup Apache extended server status
+cat >> /etc/httpd/conf/httpd.conf <<EOS
+LoadModule status_module modules/mod_status.so
+
+<Location /server-status>
+   SetHandler server-status
+   Allow from all 
+</Location>
+
+# ExtendedStatus controls whether Apache will generate "full" status
+# information (ExtendedStatus On) or just basic information (ExtendedStatus
+# Off) when the "server-status" handler is called. The default is Off.
+#
+ExtendedStatus On
+EOS
+
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
 sleep 2
