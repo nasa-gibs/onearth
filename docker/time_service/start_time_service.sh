@@ -418,9 +418,15 @@ else
 	fi
 fi
 
-# Tail the apache logs
-crond
+# Run logrotate hourly
+echo "0 * * * * /etc/cron.hourly/logrotate" >> /etc/crontab
+
+# Start cron
+supercronic -debug /etc/crontab > /var/log/cron_jobs.log 2>&1 &
+
+# Tail the logs
 exec tail -qFn 10000 \
+  /var/log/cron_jobs.log \
   /var/log/onearth/config.log \
   /etc/httpd/logs/access.log \
   /etc/httpd/logs/error.log \

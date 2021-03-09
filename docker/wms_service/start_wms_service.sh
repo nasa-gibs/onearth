@@ -71,19 +71,23 @@ sh load_endpoints.sh
 if [ -z "$ENDPOINT_REFRESH" ]
 then
 	echo "ENDPOINT_REFRESH not set...using default of 60 minutes"
-	echo "*/60 * * * * /home/oe2/onearth/docker/wms_service/load_endpoints.sh" >> /etc/crontab
+	echo "*/58 * * * * /home/oe2/onearth/docker/wms_service/load_endpoints.sh" >> /etc/crontab
 else
 	echo "*/$ENDPOINT_REFRESH * * * * /home/oe2/onearth/docker/wms_service/load_endpoints.sh" >> /etc/crontab
 fi
-crontab /etc/crontab
-
 echo 'Starting Apache server'
 /usr/sbin/httpd -k restart
 sleep 2
 
-# Tail the apache logs
-crond
+# Run logrotate hourly
+echo "0 * * * * /etc/cron.hourly/logrotate" >> /etc/crontab
+
+# Start cron
+supercronic -debug /etc/crontab > /var/log/cron_jobs.log 2>&1 &
+
+# Tail the logs
 exec tail -qFn 1000 \
+  /var/log/cron_jobs.log \
   /var/log/onearth/config.log \
   /etc/httpd/logs/access_log \
   /etc/httpd/logs/error_log

@@ -44,20 +44,32 @@ COPY docker/wms_service/fonts/* /usr/share/fonts/
 RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
 
-# Setup cron for logrotate
 COPY docker/wms_service/logrotate.daily.mapserver /etc/logrotate.d/mapserver
 COPY docker/logrotate.daily.onearth /etc/logrotate.d/onearth
-RUN mkdir -p /etc/cron.hourly && cp /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+
+# Setup cron for logrotate
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
+
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
+    SUPERCRONIC=supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=048b95b48b708983effb2e5c935a1ef8483d9e3e
+
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+ && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+ && chmod +x "$SUPERCRONIC" \
+ && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+ && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
 RUN mkdir -p /etc/onearth
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
 RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
-    chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/ && \
-	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /etc/onearth
+    chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log && \
+	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /etc/onearth && \
+	chown -hR www-data:www-data /etc/crontab && chown -hR www-data:www-data /var/lib/logrotate
 
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
