@@ -385,19 +385,38 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except IndexError:
             mssg = 'SrcWMTSGetCapabilitiesURI element is missing in ' + conf
             log_sig_err(mssg, sigevent_url)
+
         # Download and parse GetCapabilites XML
         try:
             print('\nLoading layers from ' + wmts_getcapabilities)
+
             r = requests.get(wmts_getcapabilities)
+            remote_gc = r.contents
             if r.status_code != 200:
                 log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
                             wmts_getcapabilities, sigevent_url)
         except Exception:
-            log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
-                        wmts_getcapabilities, sigevent_url)
+            try:
+                # Drop down to requesting via curl to deal with some issues in Python 2.6 and SSL/TLS validation
+                temp_file = "wmts_gc_{0}.xml".format(hashlib.md5(str(random.random())).hexdigest().strip()[0:4])
+                p = subprocess.Popen(['curl', '-o', temp_file, wmts_getcapabilities], stderr=subprocess.PIPE)
+
+                stderr = p.communicate()
+                if stderr: print(stderr)
+
+                with open(temp_file) as f:
+                    remote_gc = f.read()
+                etree.fromstring(remote_gc)
+                os.remove(temp_file)
+
+            except Exception:
+                log_sig_err('Can\'t download WMTS GetCapabilities from URL: ' +
+                            wmts_getcapabilities, sigevent_url)
+
         # Get the layers from the source GC file
         try:
-            gc_xml = etree.fromstring(r.content)
+            static = True
+            gc_xml = etree.fromstring(remote_gc)
             tilematrixsets = gc_xml.find('{*}Contents').findall('{*}TileMatrixSet')
             ows = '{' + gc_xml.nsmap['ows'] + '}'
             xlink = '{http://www.w3.org/1999/xlink}'
