@@ -388,10 +388,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_vrt = subprocess.Popen(gdal_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_vrt.stderr.readlines()
         for message in insert_message:
-            if 'ERROR' in message.upper():
-                log_sig_err(message + ' in merging image (gdalbuildvrt) while processing ' + tile, sigevent_url)
+            if 'ERROR' in str(message).upper():
+                log_sig_err("{0} in merging image (gdalbuildvrt) while processing {1}".format(message, tile), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
         gdal_vrt.wait()
 
         # Warp the input image VRT to have the right resolution
@@ -404,10 +404,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_warp.stderr.readlines()
         for message in insert_message:
-            if 'ERROR' in message.upper():
-                log_sig_err(message + ' in merging image (gdalwarp) while processing ' + tile, sigevent_url)
+            if 'ERROR' in str(message).upper():
+                log_sig_err("{0} in merging image (gdalwarp) while processing {1}".format(message, tile), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
         gdal_warp.wait()
 
         # Now build a combined VRT for both the input VRT and the MRF
@@ -421,10 +421,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_vrt2 = subprocess.Popen(gdal_vrt_command_list2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         insert_message = gdal_vrt2.stderr.readlines()
         for message in insert_message:
-            if 'ERROR' in message.upper():
-                log_sig_err(message + ' in merging image (gdalbuildvrt - 2) while processing ' + tile, sigevent_url)
+            if 'ERROR' in str(message).upper():
+                log_sig_err("{0} in merging image (gdalbuildvrt - 2) while processing {1}".format(message, tile), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
         gdal_vrt2.wait()
 
         # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
@@ -439,10 +439,10 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     insert_message = gdal_merge.stderr.readlines()
     for message in insert_message:
-        if 'ERROR' in message.upper():
-            log_sig_err(message + ' in merging image while processing ' + tile, sigevent_url)
+        if 'ERROR' in str(message).upper():
+            log_sig_err("{0} in merging image while processing {1}".format(message, tile), sigevent_url)
         else:
-            log_info_mssg(message.strip())
+            log_info_mssg(str(message).strip())
     gdal_merge.wait()
     return new_tile
 
@@ -859,13 +859,13 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
 
         insert_message = mrf_insert.stderr.readlines()
         for message in insert_message:
-            if 'Access window out of range' in message:
-                log_sig_warn(message, sigevent_url)
-            elif 'ERROR' in message:
+            if 'Access window out of range' in str(message):
+                log_sig_warn(str(message), sigevent_url)
+            elif 'ERROR' in str(message):
                 errors += 1
-                log_sig_err('mrf_insert ' + message, sigevent_url)
+                log_sig_err('mrf_insert ' + str(message), sigevent_url)
             else:
-                log_info_mssg(message.strip())
+                log_info_mssg(str(message).strip())
 
         # Remove temporary merged files (if created)
         if ".merge." in tile:
@@ -1883,8 +1883,8 @@ if mrf_compression_type == 'EPNG':
                 gdalinfo_out = gdalinfo.stdout.readlines()
             log_info_mssg("Reading scale and offset from bands")
             for line in gdalinfo_out:
-                if "Offset:" in line and "Scale:" in line:
-                    offset,scale = line.strip().replace("Offset: ","").replace("Scale:","").split(",")
+                if "Offset:" in str(line) and "Scale:" in str(line):
+                    offset,scale = str(line).strip().replace("Offset: ","").replace("Scale:","").split(",")
                     log_info_mssg("Offset: " + offset + ", Scale: " + scale)
                     scale = int(scale)
                     offset = int(offset)
@@ -2131,10 +2131,10 @@ try:
     # Loop over all lines in file.
     for ndx in range(len(gdalbuildvrt_stderr)):
         # Get line number(s) where skipped files appear in the stderr file.
-        skipped=gdalbuildvrt_stderr[ndx].find('Warning')
+        skipped=str(gdalbuildvrt_stderr[ndx]).find('Warning')
         # If a line (including line 0) was found.
         if skipped >= 0:
-            mssg=str().join(['gdalbuildvrt ', gdalbuildvrt_stderr[ndx]])
+            mssg=str().join(['gdalbuildvrt ', str(gdalbuildvrt_stderr[ndx])])
             log_sig_warn(mssg, sigevent_url)
     # Close file.
     gdalbuildvrt_stderr_file.close()
@@ -2335,8 +2335,8 @@ else:
         mrf_file.seek(0)
         lines = mrf_file.readlines()
         for idx in range(0, len(lines)):
-            if '<Raster>' in lines[idx]:
-                lines[idx] = lines[idx].replace('<Raster>','<Raster mp_safe="on">')
+            if '<Raster>' in str(lines[idx]):
+                lines[idx] = str(lines[idx]).replace('<Raster>','<Raster mp_safe="on">')
                 log_info_mssg("Set MRF mp_safe on")
         mrf_file.seek(0)
         mrf_file.truncate()
