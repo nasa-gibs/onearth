@@ -428,7 +428,5 @@ supercronic -debug /etc/crontab > /var/log/cron_jobs.log 2>&1 &
 exec tail -qFn 10000 \
   /var/log/cron_jobs.log \
   /var/log/onearth/config.log \
-  /etc/httpd/logs/access.log \
-  /etc/httpd/logs/error.log \
   /etc/httpd/logs/access_log \
   /etc/httpd/logs/error_log

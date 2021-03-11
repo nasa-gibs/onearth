@@ -18,7 +18,5 @@ sleep 2
 
 # Tail the apache logs
 exec tail -qFn 10000 \
-  /etc/httpd/logs/access.log \
-  /etc/httpd/logs/error.log \
   /etc/httpd/logs/access_log \
   /etc/httpd/logs/error_log
