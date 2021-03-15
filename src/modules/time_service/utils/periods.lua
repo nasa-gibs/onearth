@@ -544,7 +544,10 @@ local cursor = "0"
 
 -- GITC mod: Add new date and only update if there was a change
 if ARGV[1] ~= nil then
-  local result = redis.call("ZADD", KEYS[1] .. ":dates", 0, ARGV[1])
+  local result = 0
+  if ARGV[1]:match("(%d+)-(%d+)-(%d+)") then
+    result = redis.call("ZADD", KEYS[1] .. ":dates", 0, ARGV[1])
+  end
   if result == 0 then
     return
   end
