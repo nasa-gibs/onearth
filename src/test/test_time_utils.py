@@ -87,7 +87,7 @@ def seed_redis_data(layers, db_keys=None):
             db_keystring += key + ':'
  
     for layer in layers:
-        r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]),layer[1])
+        r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), 0, layer[1])
             
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
