@@ -229,9 +229,9 @@ def updateDateService(redis_uri,
 
             tag_str = f'{tag}:' if tag else ''
             for date in sorted_parsed_dates:
-                r.sadd(f'{proj}:{tag_str}layer:{layer}:dates', date.isoformat())
+                r.zadd(f'{proj}:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
                 if reproject and str(proj) == 'epsg4326':
-                    r.sadd(f'epsg3857:{tag_str}layer:{layer}:dates', date.isoformat())
+                    r.zadd(f'epsg3857:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
 
             date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
             if reproject and str(proj) == 'epsg4326':

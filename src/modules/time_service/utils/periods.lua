@@ -111,7 +111,9 @@ local function dateToEpoch(dateStr)
 end
 
 local function calcIntervalFromSeconds(interval)
-  if interval % 86400 == 0 then
+  if interval % 31536000 == 0 then
+    return math.floor(interval / 31536000), "year"
+  elseif interval % 86400 == 0 then
     return math.floor(interval / 86400), "day"
   elseif interval % 3600 == 0 then
     return math.floor(interval / 3600), "hour"
@@ -370,41 +372,51 @@ local function calculatePeriods(dates, config)
     periods[#periods + 1] = {size=string.match(force_period, "%d+"), dates=dateList, unit=getIntervalUnit(force_period)}
   else
     -- Calculate periods based on dates list
-    table.sort(dates, dateSort)
+    -- table.sort(dates, dateSort)
     -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.  
     local datesInPeriods = {}
     
     -- Check for year matches
     local annual = false
-    for _, date1 in ipairs(dates) do
-      if not itemInList(date1, datesInPeriods) then
-        local tail = date1:sub(5)
-        local baseYear = tonumber(date1:sub(1, 4))
-  
-        for _, date2 in ipairs(dates) do
-          local date2Year = tonumber(date2:sub(1, 4))
-          if not itemInList(date2, datesInPeriods) 
-            and date1 ~= date2 
-            and date2:sub(5) == tail 
-            and date2Year > baseYear 
-          then
-            local interval = date2Year - baseYear       
-            local nextDateInInterval = dateAtInterval(date2, interval, dates, "year")
-  
-            if nextDateInInterval then
-              -- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
-              local dateList = {date1, date2}
-              while nextDateInInterval do
-                dateList[#dateList+1] = nextDateInInterval
-                nextDateInInterval = dateAtInterval(nextDateInInterval, interval, dates, "year")
-              end
-  
-              datesInPeriods = concat(datesInPeriods, dateList)
-              periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
-              annual = true
-            end
+    if dates[3] ~= nil then
+      local tail1 = dates[1]:sub(5)
+      local baseYear = tonumber(dates[1]:sub(1, 4))
+      local tail2 = dates[2]:sub(5)
+      local date2Year = tonumber(dates[2]:sub(1, 4))
+      local tail3 = dates[3]:sub(5)
+      local date3Year = tonumber(dates[3]:sub(1, 4))
+
+      local interval = date2Year - baseYear
+      if tail1 == tail2  
+        and tail2 == tail3
+        and interval ~=0 
+        and date2Year + interval == date3Year
+      then     
+        -- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
+        local dateList = {dates[1], dates[2]}
+        datesInPeriods[dates[1]] = true
+        datesInPeriods[dates[2]] = true
+        
+        local prevTail = tail2
+        local prevYear =date2Year
+        for i = 3, #dates do
+          local tailI = dates[i]:sub(5)
+          local dateIYear = tonumber(dates[i]:sub(1, 4))
+
+          if prevYear + interval == dateIYear and tailI == prevTail then
+            dateList[#dateList+1] = dates[i]
+          else
+            periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
+            dateList = {dates[i]}
           end
+
+          datesInPeriods[dates[i]] = true
+          prevTail = tailI
+          prevYear = dateIYear
         end
+
+        periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
+        annual = true
       end
     end
     
@@ -458,7 +470,7 @@ local function calculatePeriods(dates, config)
             periods[#periods + 1] = {size=1, dates=dateList, unit=unit}
           else
             for _, date in ipairs(dates) do
-              if not itemInList(date, datesInPeriods) then
+              if not datesInPeriods[date] then
                 periods[#periods + 1] = {size=1, dates={date}, unit=unit}
               end
             end
@@ -476,7 +488,7 @@ local function calculatePeriods(dates, config)
          end
       end
       for _, date in ipairs(dates) do
-        if not itemInList(date, datesInPeriods) then
+        if not datesInPeriods[date] then
           periods[#periods + 1] = {size=1, dates={date}, unit=unit}
         end
       end
@@ -532,18 +544,17 @@ local cursor = "0"
 
 -- GITC mod: Add new date and only update if there was a change
 if ARGV[1] ~= nil then
-  local result = redis.call("SADD", KEYS[1] .. ":dates", ARGV[1])
+  local result = 0
+  if ARGV[1]:match("(%d+)-(%d+)-(%d+)") then
+    result = redis.call("ZADD", KEYS[1] .. ":dates", 0, ARGV[1])
+  end
   if result == 0 then
     return
   end
 end
 -- End GITC mod
 
-repeat
-  local scan = redis.call("SSCAN", KEYS[1] .. ":dates", cursor, "MATCH", "[0-9]*-[0-9]*-[0-9]*")
-  dates = concat(dates, scan[2])
-  cursor = scan[1]
-until cursor == "0"
+dates = redis.call("ZRANGE", KEYS[1] .. ":dates", 0, -1)
 
 -- Calculate periods for each time configuration per layer
 repeat
@@ -575,7 +586,7 @@ else
   end
 end
 
-table.sort(dates, dateSort)
+-- table.sort(dates, dateSort)
 
 local defaultDate = dates[#dates]
 if defaultDate ~= nil then
