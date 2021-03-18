@@ -188,15 +188,16 @@ def updateDateService(redis_uri,
         bucket = bucket.split('/')[2].split('.')[0]
 
     # delete date keys
-    count, keys = r.scan(cursor=0, match='*:dates')
+    pattern = f'*{tag}*:dates' if tag else 'epsg????:layer:*:dates'
+    count, keys = r.scan(cursor=0, match=pattern)
     if(len(keys) > 0):
         resp = r.unlink(*keys)
-        print(f'{resp} of {len(keys)} scanned date keys unlinked')
+        print(f'{resp} of {len(keys)} keys unlinked {keys}')
     while count != 0:
-        count, keys = r.scan(cursor=count, match='*:dates')
+        count, keys = r.scan(cursor=count, match=pattern)
         if(len(keys) > 0):
             resp = r.unlink(*keys)
-            print(f'{resp} of {len(keys)} scanned date keys unlinked')
+            print(f'{resp} of {len(keys)} keys unlinked {keys}')
 
     if s3_inventory:
         invenKeys = invenGetAllKeys(s3, bucket)
