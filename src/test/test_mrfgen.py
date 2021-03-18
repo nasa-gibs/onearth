@@ -300,10 +300,6 @@ class TestMRFGeneration_nonpaletted(unittest.TestCase):
         #pdb.set_trace()
         cmd = "mrfgen -c " + test_config
         run_command(cmd, show_output=DEBUG)
-        # process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # for out in process.communicate():
-        #     if DEBUG:
-        #         print out
         
     def test_generate_mrf(self):
         # Check MRF generation succeeded
