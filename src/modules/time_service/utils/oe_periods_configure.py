@@ -32,7 +32,7 @@ def strip_trailing_slash(string):
 
 
 def get_layer_config(layer_config_path):
-    print(f"Processing {layer_config_path}")
+    print(f"Reading {layer_config_path}")
     with layer_config_path.open() as f:
         config = yaml.load(f.read())
     return {'path': layer_config_path, 'config': config}
@@ -52,10 +52,14 @@ def get_layer_configs(endpoint_config):
     if layer_source.is_file():
         return [get_layer_config(layer_source)]
     elif layer_source.is_dir():
-        return [
-            get_layer_config(filepath) for filepath in layer_source.iterdir()
-            if filepath.is_file() and filepath.name.endswith('.yaml')
-        ]
+        layer_configs = []
+        for filepath in sorted(layer_source.iterdir()):
+            if filepath.is_file() and filepath.name.endswith('.yaml'):
+                try:
+                    layer_configs.append(get_layer_config(filepath))
+                except Exception as e:
+                    print(f"Can't read layer config: {layer_source} \n{e}")
+        return layer_configs
 
 
 # Main configuration functions
