@@ -32,6 +32,12 @@ RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/docker/wms_service/template.map /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
+# Set Apache configuration for optimized threading
+WORKDIR /home/oe2/onearth/docker
+RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
+    cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
+    cp cors.conf /etc/httpd/conf.d/
+	
 # Copy setups
 COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/
 COPY docker/wms_service/oe2_status.conf /etc/httpd/conf.d/
