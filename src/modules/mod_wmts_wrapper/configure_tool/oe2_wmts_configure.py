@@ -120,6 +120,7 @@ IndexFile {idx_path}"""
 
 LAYER_MOD_TWMS_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
 PageSize {tile_size_x} {tile_size_y} 1 {bands}
+SkippedLevels {skipped_levels}
 BoundingBox {bbox}
 SourcePath {source_path}
 SourcePostfix {source_postfix}
