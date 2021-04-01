@@ -510,7 +510,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 for text in legend.get_texts():
                     text.set_color(label_color)
                     if stroke_color:
-                        tick.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
+                        text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
             
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 if colorbar_only:
