@@ -33,6 +33,11 @@ Generate horizontal PNG legend with discrete values
 oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_Discrete.xml -r horizontal -f png -o sample_discrete.png 
 ```
 
+Generate horizontal PNG legend with discrete values and white text with black stroke
+```
+oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_Discrete.xml -r horizontal -f png -l white -s black -o sample_discrete.png 
+```
+
 Generate vertical SVG (including tooltips) legend with continuous values
 ```
 oe_generate_legend.py -c onearth/src/colormaps/samples/SampleColorMap_v1.2_ContinuousLinear.xml -r vertical -f svg -o sample_continuous.svg
