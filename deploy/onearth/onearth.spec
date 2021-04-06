@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.4.0
-Release:	2%{?dist}
+Release:	4%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -8,7 +8,7 @@ URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source2:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-Source3:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
+Source3:	http://download.osgeo.org/mapserver/mapserver-7.4.3.tar.gz
 Source4:    https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 
 BuildRequires:	cmake
@@ -18,10 +18,10 @@ BuildRequires:	gcc-c++
 BuildRequires:	gibs-gdal-devel
 BuildRequires:	httpd-devel
 BuildRequires:	libpng-devel
-BuildRequires:	python-devel
+BuildRequires:	python3-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  turbojpeg-devel
-Requires:	httpd = 2.4.6
+Requires:	httpd => 2.4.37
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
 Requires:   sqlite
@@ -56,8 +56,6 @@ Summary:    Auxiliary tools for OnEarth
 Requires:	libpng-devel
 Requires:	chrpath
 Requires:	gcc-c++
-Requires:	agg
-Requires:	agg-devel
 Requires:	freetype-devel
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
@@ -86,9 +84,9 @@ Layer configuration tools for OnEarth
 
 %package mapserver
 Summary:	Mapserver for OnEarth
-Requires:   proj-epsg >= 4.8.0
+Requires:   proj >= 6.3.2
 Provides:	mapserver = %{version}-%{release}
-Obsoletes:	mapserver < 7.0.1
+Obsoletes:	mapserver < 7.4.3
 
 %description mapserver
 Mapserver package utilized by OnEarth for WMS and WFS services
@@ -106,7 +104,7 @@ Autoreq: 	0
 %description test
 Test tools for OnEarth
 
-%global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
+%global python_sitearch3 %(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 
 %prep
 %setup -q
@@ -126,7 +124,7 @@ cd build
 cmake \
       -DCMAKE_INSTALL_PREFIX="%{_prefix}" \
       -DWITH_GD=1 \
-      -DWITH_GIF=1 \
+      -DWITH_GIF=0 \
       -DWITH_GDAL=1 \
       -DWITH_OGR=1 \
       -DWITH_GEOS=1 \
@@ -149,6 +147,8 @@ cmake \
       -DWITH_PYTHON=1 \
       -DWITH_ICONV=1 \
       -DWITH_HARFBUZZ=0 \
+      -DWITH_PROTOBUFC=0 \
+      -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1 \
       ..
 make %{?smp_flags}
 
@@ -327,8 +327,7 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %defattr(755,root,root,755)
 %{_libdir}/libmapserver.so*
 %{_includedir}/mapserver/*
-%{python_sitearch}/_mapscript*
-%{python_sitearch}/mapscript*
+%{python3_sitearch}/mapscript*
 %{_bindir}/legend
 %{_bindir}/mapserv
 %{_bindir}/msencrypt
@@ -359,6 +358,9 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 pip3 install unittest2 unittest-xml-reporting==1.14.0 requests
 
 %changelog
+* Mon Apr 05 2021 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-4
+- Support for CentOS 8 builds
+
 * Mon Nov 09 2020 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-3
 - Use pip3 and removed old Python dependencies
 
