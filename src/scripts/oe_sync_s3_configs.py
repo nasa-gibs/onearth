@@ -62,6 +62,7 @@ def syncIdx(bucket,
             dir,
             prefix,
             force,
+            dry_run,
             s3_uri=None):
     session = boto3.session.Session()
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
@@ -87,13 +88,17 @@ def syncIdx(bucket,
         for s3_file in list(set(s3_files) - set(fs_files)):
             print(f'Downloading file: {prefix}/{s3_file}')
             filename = dir + '/' + s3_file
-            s3.download_file(bucket, prefix + '/' + s3_file, filename)
+
+            if not dry_run:
+                s3.download_file(bucket, prefix + '/' + s3_file, filename)
                  
         # Delete files from file system that aren't on S3
         for fs_file in list(set(fs_files) - set(s3_files)):
             if os.path.isfile(fs_file):
                 print(f'Deleting file not found on S3: {fs_file}')
-                os.remove(fs_file)
+
+                if not dry_run:
+                    os.remove(fs_file)
                 
 
 # Routine when run from CLI
@@ -122,6 +127,13 @@ parser.add_argument(
     help='Force update even if file exists',
     action='store_true')
 parser.add_argument(
+    '-n',
+    '--dry-run',
+    default=False,
+    dest='dry_run',
+    help='Perform a trial run with no changes made',
+    action='store_true')
+parser.add_argument(
     '-p',
     '--prefix',
     dest='prefix',
@@ -138,7 +150,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 syncIdx(args.bucket,
-    args.dir,
-    args.prefix,
-    args.force,
-    s3_uri=args.s3_uri)
+        args.dir,
+        args.prefix,
+        args.force,
+        args.dry_run,
+        s3_uri=args.s3_uri)

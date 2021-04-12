@@ -20,11 +20,8 @@ File modifications are not detected. Use --force to overwrite existing files.
 import os
 import boto3
 from functools import reduce
-from datetime import datetime
 from pathlib import Path
 import argparse
-import tarfile
-import shutil
 
 def keyMapper(acc, obj):
     keyElems = obj['Key'].split("/")
@@ -52,7 +49,7 @@ def keyMapper(acc, obj):
         if not acc[proj].get(layer_name):
             acc[proj][layer_name] = {'idx': set([])}
     
-        if filename.endswith('.idx.tgz') or filename.endswith('.idx'):
+        if filename.endswith('.idx'):
             idx = (year + '/' if year is not None else '') + (day + '/' if day is not None else '') + filename
             acc[proj][layer_name]['idx'].add(idx)
 
@@ -79,6 +76,7 @@ def syncIdx(bucket,
             dir,
             prefix,
             force,
+            dry_run,
             s3_uri=None):
     session = boto3.session.Session()
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
@@ -89,14 +87,16 @@ def syncIdx(bucket,
 
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
-        dir_proj = dir + '/' + proj
-        if os.path.isdir(dir_proj) == False:
+
+        dir_proj = os.path.join(dir, proj)
+        if not os.path.isdir(dir_proj) and not dry_run:
             os.makedirs(dir_proj)
             
         for layer, data in layers.items():
             print(f'Configuring layer: {layer}')
-            dir_proj_layer = dir + '/' + proj + '/' + layer
-            if os.path.isdir(dir_proj_layer) == False:
+            dir_proj_layer = os.path.join(dir, proj,  layer)
+
+            if not os.path.isdir(dir_proj_layer) and not dry_run:
                 os.makedirs(dir_proj_layer)
                 
             # Find existing files on file system
@@ -104,40 +104,31 @@ def syncIdx(bucket,
                 fs_files = []
             else:
                 fs_list = list(Path(dir_proj_layer).rglob("*.[iI][dD][xX]"))
-                fs_files = [str(f).replace(dir_proj_layer+'/','') for f in fs_list]
-            s3_files = [v for v in data['idx']]
-            # We need another list for the extracted names
-            s3_files_idx = [v.replace('.tgz','') for v in data['idx']]
+                fs_files = [str(f).replace(dir_proj_layer + '/', '') for f in fs_list]
+
+            s3_objects = [v for v in data['idx']]
             
             # Copy files from S3 that aren't on file system
-            for s3_file in list(set(s3_files_idx) - set(fs_files)):
-                if s3_file + '.tgz' in s3_files:
-                    s3_file = s3_file + '.tgz'
-                filepath = os.path.dirname(dir_proj_layer + '/' + s3_file)
-                if os.path.isdir(filepath) == False:
-                    os.makedirs(filepath)
-                print(f'Downloading file: {proj}/{layer}/{s3_file}')
-                filename = dir_proj_layer + '/' + s3_file
-                s3.download_file(bucket, str(proj + '/' + layer + '/' + s3_file).replace('//','/'), filename)
-                if filename.endswith('.tgz'):
-                    print(f'Extracting file: {filename}')
-                    tar = tarfile.open(filename, "r:gz")
-                    os.mkdir(filepath+'/tmp')
-                    tar.extractall(path=filepath+'/tmp')
-                    tar.close()
-                    try:
-                        os.rename(filepath+'/tmp/'+os.listdir(filepath+'/tmp')[0], filename.replace('.tgz',''))
-                    except Exception as e:
-                        print(f'ERROR extracting file: {filename}')
-                    shutil.rmtree(filepath+'/tmp')
-                    os.remove(filename)
+            for s3_object in list(set(s3_objects) - set(fs_files)):
+                idx_filepath = os.path.join(dir_proj_layer, s3_object)
+                idx_prefix   = "{0}/{1}/{2}".format(proj, layer, s3_object).replace('//', '/')
+
+                idx_filedir = os.path.dirname(idx_filepath)
+                if not os.path.isdir(idx_filedir) and not dry_run:
+                    os.makedirs(idx_filedir)
+
+                print("Downloading {0} to {1}".format(idx_prefix, idx_filepath))
+                if not dry_run:
+                    s3.download_file(bucket, idx_prefix, idx_filepath)
                 
             # Delete files from file system that aren't on S3
-            for fs_file in list(set(fs_files) - set(s3_files_idx)):
-                fs_idx = dir_proj_layer + '/' + fs_file.replace('.tgz','')
+            for fs_file in list(set(fs_files) - set(s3_objects)):
+                fs_idx = os.path.join(dir_proj_layer, fs_file)
+
                 if os.path.isfile(fs_idx):
                     print(f'Deleting file not found on S3: {fs_idx}')
-                    os.remove(fs_idx)
+                    if not dry_run:
+                        os.remove(fs_idx)
                 
 
 # Routine when run from CLI
@@ -166,6 +157,13 @@ parser.add_argument(
     help='Force update even if file exists',
     action='store_true')
 parser.add_argument(
+    '-n',
+    '--dry-run',
+    default=False,
+    dest='dry_run',
+    help='Perform a trial run with no changes made',
+    action='store_true')
+parser.add_argument(
     '-p',
     '--prefix',
     dest='prefix',
@@ -182,7 +180,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 syncIdx(args.bucket,
-    args.dir,
-    args.prefix,
-    args.force,
-    s3_uri=args.s3_uri)
+        args.dir,
+        args.prefix,
+        args.force,
+        args.dry_run,
+        s3_uri=args.s3_uri)

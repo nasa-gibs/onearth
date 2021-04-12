@@ -46,7 +46,7 @@ will be downloaded, while files found on the file system but not on S3 will be d
 File modifications are not detected. Use --force to overwrite existing files.
 
 ```
-Usage: oe_sync_s3_configs.py [-h] [-b BUCKET] [-d DIR] [-f] [-p PREFIX]
+Usage: oe_sync_s3_configs.py [-h] [-b BUCKET] [-d DIR] [-f] [-n] [-p PREFIX]
                              [-s S3_URI]
 
 Downloads OnEarth layer configurations from S3 bucket contents.
@@ -57,6 +57,7 @@ optional arguments:
                         bucket name
   -d DIR, --dir DIR     Directory on file system to sync
   -f, --force           Force update even if file exists
+  -n, --dry-run         Perform a trial run with no changes made
   -p PREFIX, --prefix PREFIX
                         S3 prefix to use
   -s S3_URI, --s3_uri S3_URI
@@ -72,7 +73,7 @@ will be downloaded, while files found on the file system but not on S3 will be d
 File modifications are not detected. Use --force to overwrite existing files.
 
 ```
-Usage: oe_sync_s3_idx.py [-h] [-b BUCKET] [-d DIR] [-f] [-p PREFIX]
+Usage: oe_sync_s3_idx.py [-h] [-b BUCKET] [-d DIR] [-f] [-n] [-p PREFIX]
                          [-s S3_URI]
 
 Rebuilds IDX files on system from S3 bucket contents.
@@ -83,6 +84,7 @@ optional arguments:
                         bucket name
   -d DIR, --dir DIR     Directory on file system to sync
   -f, --force           Force update even if file exists
+  -n, --dry-run         Perform a trial run with no changes made
   -p PREFIX, --prefix PREFIX
                         S3 prefix to use
   -s S3_URI, --s3_uri S3_URI
