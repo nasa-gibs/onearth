@@ -14,6 +14,11 @@ local PROJECTIONS = {
         bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -90}, upperCorner={180, -38.941373}},
         bbox={crs="urn:ogc:def:crs:EPSG::3031", lowerCorner={-4194304, -4194304}, upperCorner={194304, 4194304}}
     },
+    ["EPSG:3031-Extended"] = {
+        wkt='PROJCS["WGS 84 / Antarctic Polar Stereographic",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",-71],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","3031"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-135, 19.735368}, upperCorner={45, 19.735368}},
+        bbox={crs="urn:ogc:def:crs:EPSG::3031", lowerCorner={-12400000, -12400000}, upperCorner={12400000, 12400000}}
+    },
     ["EPSG:3413"] = {
         wkt='PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]',
         bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, 38.807151}, upperCorner={180, 90}},
@@ -21,7 +26,7 @@ local PROJECTIONS = {
     },
     ["EPSG:3857"] = {
         wkt='PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]',
-        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85}, upperCorner={180, 85}},
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85.051129}, upperCorner={180, 85.051129}},
         bbox={crs="urn:ogc:def:crs:EPSG::3857", lowerCorner={-20037508.34278925, -20037508.34278925}, upperCorner={20037508.34278925, 20037508.34278925}}
     },
     ["EPSG:4326"] = {
@@ -414,6 +419,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     -- local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+    local proj = assert(config.projection, "Can't find projection name in YAML!")
     local static = true
     if config.static ~= nil then
         static = config.static
@@ -443,20 +449,23 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     end
     if targetEpsgCode ~= epsgCode then
         tmsName, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
+        proj = targetEpsgCode
     end
 
     local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
     local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
-
-    local bbox_elem_84 = xml.elem("ows:WGS84BoundingBox",
-        {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
-    bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
-    layerElem:add_child(bbox_elem_84)
-
     local bbox_elem = xml.elem("ows:BoundingBox",
         {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
     bbox_elem:set_attrib("crs", "urn:ogc:def:crs:EPSG::" .. split(":", targetEpsgCode)[2])
     layerElem:add_child(bbox_elem)
+    
+    local bbox_84 = PROJECTIONS[proj]["bbox84"]
+    local upperCorner_84 = tostring(bbox_84["lowerCorner"][1]) .. " " .. tostring(bbox_84["lowerCorner"][2])
+    local lowerCorner_84 = tostring(bbox_84["upperCorner"][1]) .. " " .. tostring(bbox_84["upperCorner"][2])
+    local bbox_elem_84 = xml.elem("ows:WGS84BoundingBox",
+        {xml.elem("ows:LowerCorner"):text(lowerCorner_84), xml.elem("ows:UpperCorner"):text(upperCorner_84)})
+    bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
+    layerElem:add_child(bbox_elem_84)
 
     -- Add identifier node
     local id_elem = xml.new("ows:Identifier")
