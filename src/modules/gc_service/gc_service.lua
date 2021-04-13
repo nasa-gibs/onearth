@@ -133,7 +133,7 @@ local function getTmsDefs(tmsXml)
                     local identifier = matrix:get_elements_with_name("ows:Identifier")[1]:get_text()
                     local topLeft = split(" ", matrix:get_elements_with_name("TopLeftCorner")[1]:get_text())
                     matrices[tonumber(identifier) + 1] = {
-                        topLeft={tonumber(topLeft[1]), tonumber(topLeft[2])},
+                        topLeft={topLeft[1], topLeft[2]},
                         scaleDenominator = matrix:get_elements_with_name("ScaleDenominator")[1]:get_text(),
                         matrixWidth = matrix:get_elements_with_name("MatrixWidth")[1]:get_text(),
                         matrixHeight = matrix:get_elements_with_name("MatrixHeight")[1]:get_text(),
@@ -237,11 +237,11 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
         local heightRatio = heightInPx / (matrix["tileHeight"] * matrix["matrixHeight"])
         local resx = math.ceil((bbox["upperCorner"][1] - bbox["lowerCorner"][1]) / (matrix["matrixWidth"] * widthRatio))
         local resy = math.ceil((bbox["upperCorner"][2] - bbox["lowerCorner"][2]) / (matrix["matrixHeight"] * heightRatio))
-        local xmax = matrix["topLeft"][1] + resx
-        local ymax = matrix["topLeft"][2] - resy
+        local xmax = tonumber(matrix["topLeft"][1]) + resx
+        local ymax = tonumber(matrix["topLeft"][2]) - resy
         local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=${time}&width=${width}&height=${height}&bbox=${bbox}"
         local bboxOut = {}
-        for _, param in ipairs({matrix["topLeft"][1], ymax, xmax, matrix["topLeft"][2]}) do
+        for _, param in ipairs({tonumber(matrix["topLeft"][1]), ymax, xmax, tonumber(matrix["topLeft"][2])}) do
             -- Old version of OE rounded zeroes
             if param < 1 and param > -1 then
                 table.insert(bboxOut, 0)
@@ -460,8 +460,8 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
     layerElem:add_child(bbox_elem_84)
 
-    local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
-    local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
+    local upperCorner = "-" .. tmsDef[1]["topLeft"][1] .. " " .. tmsDef[2]["topLeft"][2]
+    local lowerCorner = tmsDef[1]["topLeft"][1] .. " " .. "-" .. tmsDef[2]["topLeft"][2]
     if(upperCorner ~= upperCorner_84 and lowerCorner ~= lowerCorner_84) then 
         local bbox_elem = xml.elem("ows:BoundingBox",
             {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
