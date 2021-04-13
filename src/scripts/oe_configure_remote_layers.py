@@ -410,7 +410,6 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 
                 target_bbox = map(
                     str, get_bbox_for_proj_string('EPSG:' + src_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
-                target_bbox = [target_bbox[1], target_bbox[0], target_bbox[3], target_bbox[2]]
 
                 mapfile_snippet = bulk_replace(
                     MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
