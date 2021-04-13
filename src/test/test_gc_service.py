@@ -856,7 +856,7 @@ class TestDateService(unittest.TestCase):
             len(lower_corner_elems), 1,
             'Incorrect number of <LowerCorner> elements found -- should only be 1. Url: {}'
             .format(url))
-        expected = "-20037508.342789 -20037508.342789"
+        expected = "-180 -85.051129"
         found = lower_corner_elems[0].text
         self.assertEqual(
             found, expected,
@@ -873,7 +873,7 @@ class TestDateService(unittest.TestCase):
             len(upper_corner_elems), 1,
             'Incorrect number of <UpperCorner> elements found -- should only be 1. Url: {}'
             .format(url))
-        expected = '20037508.342789 20037508.342789'
+        expected = '180 85.051129'
         found = upper_corner_elems[0].text
         self.assertEqual(
             found, expected,
@@ -1553,7 +1553,7 @@ class TestDateService(unittest.TestCase):
             len(lower_corner_elems), 1,
             'Incorrect number of <LowerCorner> elements found -- should only be 1. Url: {}'
             .format(url))
-        expected = expected = '-20037508.342789 -20037508.342789'
+        expected = expected = '-180, -85.051129'
         found = lower_corner_elems[0].text
         self.assertEqual(
             found, expected,
@@ -1570,7 +1570,7 @@ class TestDateService(unittest.TestCase):
             len(upper_corner_elems), 1,
             'Incorrect number of <UpperCorner> elements found -- should only be 1. Url: {}'
             .format(url))
-        expected = expected = '20037508.342789 20037508.342789'
+        expected = expected = '180 85.051129'
         found = upper_corner_elems[0].text
         self.assertEqual(
             found, expected,
