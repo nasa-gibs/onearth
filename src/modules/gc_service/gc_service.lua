@@ -459,9 +459,12 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
         {xml.elem("ows:LowerCorner"):text(lowerCorner_84), xml.elem("ows:UpperCorner"):text(upperCorner_84)})
     bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
     layerElem:add_child(bbox_elem_84)
-
-    local upperCorner = "-" .. tmsDef[1]["topLeft"][1] .. " " .. tmsDef[2]["topLeft"][2]
-    local lowerCorner = tmsDef[1]["topLeft"][1] .. " " .. "-" .. tmsDef[2]["topLeft"][2]
+    
+    -- String manipulation to turn pos to neg and vice versa 
+    local negTopLeft11 = tmsDef[1]["topLeft"][1]:sub(1,1) == "-" and tmsDef[1]["topLeft"][1]:sub(2) or "-" .. tmsDef[1]["topLeft"][1] 
+    local negTopLeft22 = tmsDef[2]["topLeft"][2]:sub(1,1) == "-" and tmsDef[2]["topLeft"][2]:sub(2) or "-" .. tmsDef[2]["topLeft"][2] 
+    local upperCorner = negTopLeft11 .. " " .. tmsDef[2]["topLeft"][2]
+    local lowerCorner = tmsDef[1]["topLeft"][1] .. " " .. negTopLeft22
     if(upperCorner ~= upperCorner_84 and lowerCorner ~= lowerCorner_84) then 
         local bbox_elem = xml.elem("ows:BoundingBox",
             {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
