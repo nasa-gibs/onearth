@@ -460,8 +460,8 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     layerElem:add_child(bbox_elem)
     
     local bbox_84 = PROJECTIONS[proj]["bbox84"]
-    local upperCorner_84 = tostring(bbox_84["lowerCorner"][1]) .. " " .. tostring(bbox_84["lowerCorner"][2])
-    local lowerCorner_84 = tostring(bbox_84["upperCorner"][1]) .. " " .. tostring(bbox_84["upperCorner"][2])
+    local lowerCorner_84 = tostring(bbox_84["lowerCorner"][1]) .. " " .. tostring(bbox_84["lowerCorner"][2])
+    local upperCorner_84 = tostring(bbox_84["upperCorner"][1]) .. " " .. tostring(bbox_84["upperCorner"][2])
     local bbox_elem_84 = xml.elem("ows:WGS84BoundingBox",
         {xml.elem("ows:LowerCorner"):text(lowerCorner_84), xml.elem("ows:UpperCorner"):text(upperCorner_84)})
     bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
