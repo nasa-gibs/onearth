@@ -452,13 +452,6 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
         proj = targetEpsgCode
     end
 
-    local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
-    local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
-    local bbox_elem = xml.elem("ows:BoundingBox",
-        {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
-    bbox_elem:set_attrib("crs", "urn:ogc:def:crs:EPSG::" .. split(":", targetEpsgCode)[2])
-    layerElem:add_child(bbox_elem)
-    
     local bbox_84 = PROJECTIONS[proj]["bbox84"]
     local lowerCorner_84 = tostring(bbox_84["lowerCorner"][1]) .. " " .. tostring(bbox_84["lowerCorner"][2])
     local upperCorner_84 = tostring(bbox_84["upperCorner"][1]) .. " " .. tostring(bbox_84["upperCorner"][2])
@@ -466,6 +459,15 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
         {xml.elem("ows:LowerCorner"):text(lowerCorner_84), xml.elem("ows:UpperCorner"):text(upperCorner_84)})
     bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
     layerElem:add_child(bbox_elem_84)
+
+    local upperCorner = tostring(tmsDef[1]["topLeft"][1] * -1) .. " " .. tostring(tmsDef[2]["topLeft"][2])
+    local lowerCorner = tostring(tmsDef[1]["topLeft"][1]) .. " " .. tostring(tmsDef[2]["topLeft"][2] * -1)
+    if(upperCorner ~= upperCorner_84 and lowerCorner ~= lowerCorner_84) then 
+        local bbox_elem = xml.elem("ows:BoundingBox",
+            {xml.elem("ows:LowerCorner"):text(lowerCorner), xml.elem("ows:UpperCorner"):text(upperCorner)})
+        bbox_elem:set_attrib("crs", "urn:ogc:def:crs:EPSG::" .. split(":", targetEpsgCode)[2])
+        layerElem:add_child(bbox_elem)
+    end
 
     -- Add identifier node
     local id_elem = xml.new("ows:Identifier")
