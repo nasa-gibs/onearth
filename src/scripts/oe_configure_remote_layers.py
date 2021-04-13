@@ -416,6 +416,9 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                        ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info),
                                        ('{src_epsg}', src_epsg), ('{target_epsg}', src_epsg), ('{target_bbox}', ', '.join(target_bbox))])
 
+                if srcLocationRewrite is not None:
+                    mapfile_snippet = mapfile_snippet.replace(external_location, internal_location)
+
                 mapfile_name = os.path.join(
                     mapfile_staging_location, identifier + '.map')
                 with open(mapfile_name, 'w+') as f:
