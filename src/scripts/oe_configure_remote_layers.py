@@ -204,7 +204,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                 print('Creating XML file: ' + xml_filename)
                 with open(xml_filename, 'w+') as xml_file:
                     xml_string = etree.tostring(layer).replace(LAYER_NODE, LAYER)
-                    if(srcLocationRewrite is not None):
+                    if srcLocationRewrite is not None:
                         xml_string = xml_string.replace(external_location, internal_location)
                     xml_file.write(xml_string)
         except etree.XMLSyntaxError:
@@ -492,6 +492,9 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                     MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
                                        ('{wms_layer_group_info}', wms_layer_group_info), ('{dimension_info}', dimension_info), ('{style_info}', style_info), ('{validation_info}', validation_info),
                                        ('{src_epsg}', src_epsg), ('{target_epsg}', src_epsg), ('{target_bbox}', ', '.join(target_bbox))])
+
+                if srcLocationRewrite is not None:
+                    mapfile_snippet = mapfile_snippet.replace(external_location, internal_location)
 
                 mapfile_name = os.path.join(
                     mapfile_staging_location, identifier + '.map')
