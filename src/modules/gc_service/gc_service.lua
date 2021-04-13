@@ -460,7 +460,7 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     bbox_elem_84:set_attrib("crs","urn:ogc:def:crs:OGC:2:84")
     layerElem:add_child(bbox_elem_84)
     
-    -- String manipulation to turn pos to neg and vice versa 
+    -- String manipulation to turn pos to neg and vice versa
     local negTopLeft11 = tmsDef[1]["topLeft"][1]:sub(1,1) == "-" and tmsDef[1]["topLeft"][1]:sub(2) or "-" .. tmsDef[1]["topLeft"][1] 
     local negTopLeft22 = tmsDef[2]["topLeft"][2]:sub(1,1) == "-" and tmsDef[2]["topLeft"][2]:sub(2) or "-" .. tmsDef[2]["topLeft"][2] 
     local upperCorner = negTopLeft11 .. " " .. tmsDef[2]["topLeft"][2]
