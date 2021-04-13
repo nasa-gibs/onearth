@@ -57,6 +57,7 @@ mkdir -p /etc/onearth/config/layers/
 mkdir -p /etc/onearth/config/layers/epsg3031/best/
 mkdir -p /etc/onearth/config/layers/epsg3413/best/
 mkdir -p /etc/onearth/config/layers/epsg4326/best/
+mkdir -p /etc/onearth/config/layers/epsg3857/best/
 mkdir -p /etc/onearth/config/layers/epsg3031/std/
 mkdir -p /etc/onearth/config/layers/epsg3413/std/
 mkdir -p /etc/onearth/config/layers/epsg4326/std/
@@ -108,12 +109,15 @@ else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3857/best/' -b $S3_CONFIGS -p config/layers/epsg3857/best
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3857/std/' -b $S3_CONFIGS -p config/layers/epsg3857/std
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3857/nrt/' -b $S3_CONFIGS -p config/layers/epsg3857/nrt
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
 fi
 
@@ -142,6 +146,10 @@ python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_b
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_std.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_nrt.yaml
 python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_all.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_best_static.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_std_static.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_nrt_static.yaml
+python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_all_static.yaml
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start

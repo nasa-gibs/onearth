@@ -104,6 +104,8 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
         WMTSWrapperEnableYearDir {year_dir}
         WMTSWrapperLayerAlias {alias}
 </Directory>
+
+{proxy_exemption_block}
 """
 
 MOD_TWMS_CONFIG_TEMPLATE = """Alias {external_endpoint} {internal_endpoint}
@@ -431,6 +433,22 @@ def make_layer_config(endpoint_config, layer):
         data_file_uri = format_source_uri_for_proxy(
             data_file_uri, endpoint_config['proxy_paths'])
 
+    # static reproject layers require a proxy exemption to prevent traffic from being directly routed to reproject container 
+    proxy_exemption_block = ''
+    if projection == 'EPSG:3857':
+        try:
+            wmts_exemption = f'ProxyPass {external_endpoint}/{layer_id} !'
+            proxy_exemption_block += wmts_exemption
+        except NameError as err:
+            print(f"\nEndpoint config is missing required wmts config element {err}")
+        try:
+            twms_external_endpoint = strip_trailing_slash(
+                endpoint_config['twms_service']['external_endpoint'])
+            twms_exemption = f'\nProxyPass {twms_external_endpoint}/{layer_id} !'
+            proxy_exemption_block += twms_exemption
+        except KeyError as err:
+            print(f"\nEndpoint config is missing required twms config element {err}")
+    
     # Apache <Directory> stuff
     apache_config = bulk_replace(
         LAYER_APACHE_CONFIG_TEMPLATE,
@@ -438,6 +456,7 @@ def make_layer_config(endpoint_config, layer):
          ('{time_enabled}', 'Off' if static else 'On'),
          ('{year_dir}', 'On' if year_dir else 'Off'), ('{alias}', alias),
          ('{tilematrixset}', tilematrixset),
+         ('{proxy_exemption_block}', proxy_exemption_block),
          ('{config_file_path}', config_file_path.as_posix())])
 
     # Insert time stuff if applicable (using a regexp to stick it in the
@@ -480,7 +499,8 @@ def make_layer_config(endpoint_config, layer):
          ('{tile_size_x}', str(tile_size_x)),
          ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
          ('{idx_path}', idx_path),
-         ('{skipped_levels}', '1')])
+         ('{skipped_levels}',
+          '0' if projection == 'EPSG:3857' else '1')])
 
     # Handle optionals like EmptyTile
     empty_tile_config = None
@@ -519,7 +539,8 @@ def make_layer_config(endpoint_config, layer):
              ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
              ('{source_postfix}', source_postfix),
              ('{source_path}', source_path), ('{bbox}', bbox),
-             ('{skipped_levels}', '1')])
+             ('{skipped_levels}',
+              '0' if projection == 'EPSG:3857' else '1')])
 
         try:
             twms_internal_endpoint = strip_trailing_slash(

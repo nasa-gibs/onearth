@@ -1,0 +1,20 @@
+abstract: Reference_Features abstract
+layer_id: Reference_Features
+layer_name: Reference Features tileset
+layer_title: Reference Features (OSM)
+metadata: []
+mime_type: image/png
+projection: EPSG:3857
+source_mrf:
+  skipped_levels: 0
+  bands: 4
+  bbox: -20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+  data_file_uri: '{S3_URL}/epsg3857/Reference_Features/Reference_Features.ppg'
+  idx_path: /onearth/idx/epsg3857/Reference_Features/Reference_Features.idx
+  size_x: 131072
+  size_y: 131072
+  tile_size_x: 256
+  tile_size_y: 256
+  year_dir: false
+static: true
+tilematrixset: GoogleMapsCompatible_Level9

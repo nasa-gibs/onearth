@@ -1,0 +1,19 @@
+abstract: Reference_Labels abstract
+layer_id: Reference_Labels
+layer_name: Reference Labels tileset
+layer_title: Reference Labels (OSM)
+metadata: []
+mime_type: image/png
+projection: EPSG:3857
+source_mrf:
+  bands: 4
+  bbox: -20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925
+  data_file_uri: '{S3_URL}/epsg3857/Reference_Labels/Reference_Labels.ppg'
+  idx_path: /onearth/idx/epsg3857/Reference_Labels/Reference_Labels.idx
+  size_x: 131072
+  size_y: 131072
+  tile_size_x: 256
+  tile_size_y: 256
+  year_dir: false
+static: true
+tilematrixset: GoogleMapsCompatible_Level9
