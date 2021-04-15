@@ -828,25 +828,25 @@ class TestDateService(unittest.TestCase):
             '<Title> element incorrect, expected {}, found {}. Url: {}'.format(
                 layer['layer_title'], title_elems[0].text, url))
 
-        bbox_elems = layer_elem.findall(
+        wgs84_bbox_elems = layer_elem.findall(
             '{http://www.opengis.net/ows/1.1}WGS84BoundingBox')
         self.assertNotEqual(
-            len(bbox_elems), 0,
+            len(wgs84_bbox_elems), 0,
             '<WGS84BoundingBox> not found in generated GC file. Url: {}'.
             format(url))
         self.assertEqual(
-            len(bbox_elems), 1,
+            len(wgs84_bbox_elems), 1,
             'Incorrect number of <WGS84BoundingBox> elements found - should only be 1. Url: {}'
             .format(url))
 
         expected = 'urn:ogc:def:crs:OGC:2:84'
-        found = bbox_elems[0].get("crs")
+        found = wgs84_bbox_elems[0].get("crs")
         self.assertEqual(
             found, expected,
             'Incorrect crs attribute for <WGS84BoundingBox>. Expected {}, found {}. Url: {}'
             .format(expected, found, url))
 
-        lower_corner_elems = bbox_elems[0].findall(
+        lower_corner_elems = wgs84_bbox_elems[0].findall(
             '{http://www.opengis.net/ows/1.1}LowerCorner')
         self.assertNotEqual(
             len(lower_corner_elems), 0,
@@ -856,14 +856,14 @@ class TestDateService(unittest.TestCase):
             len(lower_corner_elems), 1,
             'Incorrect number of <LowerCorner> elements found -- should only be 1. Url: {}'
             .format(url))
-        expected = "-20037508.342789 -20037508.342789"
+        expected = "-180 -85.051129"
         found = lower_corner_elems[0].text
         self.assertEqual(
             found, expected,
             '<LowerCorner> element incorrect, expected {}, found {}. Url: {}'.
             format(expected, found, url))
 
-        upper_corner_elems = bbox_elems[0].findall(
+        upper_corner_elems = wgs84_bbox_elems[0].findall(
             '{http://www.opengis.net/ows/1.1}UpperCorner')
         self.assertNotEqual(
             len(upper_corner_elems), 0,
@@ -873,12 +873,64 @@ class TestDateService(unittest.TestCase):
             len(upper_corner_elems), 1,
             'Incorrect number of <UpperCorner> elements found -- should only be 1. Url: {}'
             .format(url))
-        expected = '20037508.342789 20037508.342789'
+        expected = '180 85.051129'
         found = upper_corner_elems[0].text
         self.assertEqual(
             found, expected,
             '<UpperCorner> element incorrect, expected {}, found {}. Url: {}'.
             format(expected, found, url))
+
+        native_bbox_elems = layer_elem.findall(
+            '{http://www.opengis.net/ows/1.1}BoundingBox')
+        self.assertNotEqual(
+            len(native_bbox_elems), 0,
+            '<BoundingBox> not found in generated GC file. Url: {}'.
+                format(url))
+        self.assertEqual(
+            len(native_bbox_elems), 1,
+            'Incorrect number of <BoundingBox> elements found - should only be 1. Url: {}'
+                .format(url))
+
+        expected = 'urn:ogc:def:crs:EPSG::3857'
+        found = native_bbox_elems[0].get("crs")
+        self.assertEqual(
+            found, expected,
+            'Incorrect crs attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+                .format(expected, found, url))
+
+        lower_corner_elems = native_bbox_elems[0].findall(
+            '{http://www.opengis.net/ows/1.1}LowerCorner')
+        self.assertNotEqual(
+            len(lower_corner_elems), 0,
+            '<LowerCorner> not found in generated GC file. Url: {}'.format(
+                url))
+        self.assertEqual(
+            len(lower_corner_elems), 1,
+            'Incorrect number of <LowerCorner> elements found -- should only be 1. Url: {}'
+                .format(url))
+        expected = "-20037508.34278925 -20037508.34278925"
+        found = lower_corner_elems[0].text
+        self.assertEqual(
+            found, expected,
+            '<LowerCorner> element incorrect, expected {}, found {}. Url: {}'.
+                format(expected, found, url))
+
+        upper_corner_elems = native_bbox_elems[0].findall(
+            '{http://www.opengis.net/ows/1.1}UpperCorner')
+        self.assertNotEqual(
+            len(upper_corner_elems), 0,
+            '<UpperCorner> not found in generated GC file. Url: {}'.format(
+                url))
+        self.assertEqual(
+            len(upper_corner_elems), 1,
+            'Incorrect number of <UpperCorner> elements found -- should only be 1. Url: {}'
+                .format(url))
+        expected = '20037508.34278925 20037508.34278925'
+        found = upper_corner_elems[0].text
+        self.assertEqual(
+            found, expected,
+            '<UpperCorner> element incorrect, expected {}, found {}. Url: {}'.
+                format(expected, found, url))
 
         identifier_elems = layer_elem.findall(
             '{http://www.opengis.net/ows/1.1}Identifier')
@@ -1525,25 +1577,25 @@ class TestDateService(unittest.TestCase):
             '<Title> element incorrect, expected {}, found {}. Url: {}'.format(
                 layer['layer_title'], title_elems[0].text, url))
 
-        bbox_elems = layer_elem.findall(
+        wgs84_bbox_elems = layer_elem.findall(
             '{http://www.opengis.net/ows/1.1}WGS84BoundingBox')
         self.assertNotEqual(
-            len(bbox_elems), 0,
+            len(wgs84_bbox_elems), 0,
             '<WGS84BoundingBox> not found in generated GC file. Url: {}'.
-            format(url))
+                format(url))
         self.assertEqual(
-            len(bbox_elems), 1,
+            len(wgs84_bbox_elems), 1,
             'Incorrect number of <WGS84BoundingBox> elements found - should only be 1. Url: {}'
-            .format(url))
+                .format(url))
 
         expected = 'urn:ogc:def:crs:OGC:2:84'
-        found = bbox_elems[0].get("crs")
+        found = wgs84_bbox_elems[0].get("crs")
         self.assertEqual(
             found, expected,
             'Incorrect crs attribute for <WGS84BoundingBox>. Expected {}, found {}. Url: {}'
-            .format(expected, found, url))
+                .format(expected, found, url))
 
-        lower_corner_elems = bbox_elems[0].findall(
+        lower_corner_elems = wgs84_bbox_elems[0].findall(
             '{http://www.opengis.net/ows/1.1}LowerCorner')
         self.assertNotEqual(
             len(lower_corner_elems), 0,
@@ -1552,15 +1604,15 @@ class TestDateService(unittest.TestCase):
         self.assertEqual(
             len(lower_corner_elems), 1,
             'Incorrect number of <LowerCorner> elements found -- should only be 1. Url: {}'
-            .format(url))
-        expected = expected = '-20037508.342789 -20037508.342789'
+                .format(url))
+        expected = "-180 -85.051129"
         found = lower_corner_elems[0].text
         self.assertEqual(
             found, expected,
             '<LowerCorner> element incorrect, expected {}, found {}. Url: {}'.
-            format(expected, found, url))
+                format(expected, found, url))
 
-        upper_corner_elems = bbox_elems[0].findall(
+        upper_corner_elems = wgs84_bbox_elems[0].findall(
             '{http://www.opengis.net/ows/1.1}UpperCorner')
         self.assertNotEqual(
             len(upper_corner_elems), 0,
@@ -1569,13 +1621,65 @@ class TestDateService(unittest.TestCase):
         self.assertEqual(
             len(upper_corner_elems), 1,
             'Incorrect number of <UpperCorner> elements found -- should only be 1. Url: {}'
-            .format(url))
-        expected = expected = '20037508.342789 20037508.342789'
+                .format(url))
+        expected = '180 85.051129'
         found = upper_corner_elems[0].text
         self.assertEqual(
             found, expected,
             '<UpperCorner> element incorrect, expected {}, found {}. Url: {}'.
-            format(expected, found, url))
+                format(expected, found, url))
+
+        native_bbox_elems = layer_elem.findall(
+            '{http://www.opengis.net/ows/1.1}BoundingBox')
+        self.assertNotEqual(
+            len(native_bbox_elems), 0,
+            '<BoundingBox> not found in generated GC file. Url: {}'.
+                format(url))
+        self.assertEqual(
+            len(native_bbox_elems), 1,
+            'Incorrect number of <BoundingBox> elements found - should only be 1. Url: {}'
+                .format(url))
+
+        expected = 'urn:ogc:def:crs:EPSG::3857'
+        found = native_bbox_elems[0].get("crs")
+        self.assertEqual(
+            found, expected,
+            'Incorrect crs attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+                .format(expected, found, url))
+
+        lower_corner_elems = native_bbox_elems[0].findall(
+            '{http://www.opengis.net/ows/1.1}LowerCorner')
+        self.assertNotEqual(
+            len(lower_corner_elems), 0,
+            '<LowerCorner> not found in generated GC file. Url: {}'.format(
+                url))
+        self.assertEqual(
+            len(lower_corner_elems), 1,
+            'Incorrect number of <LowerCorner> elements found -- should only be 1. Url: {}'
+                .format(url))
+        expected = "-20037508.34278925 -20037508.34278925"
+        found = lower_corner_elems[0].text
+        self.assertEqual(
+            found, expected,
+            '<LowerCorner> element incorrect, expected {}, found {}. Url: {}'.
+                format(expected, found, url))
+
+        upper_corner_elems = native_bbox_elems[0].findall(
+            '{http://www.opengis.net/ows/1.1}UpperCorner')
+        self.assertNotEqual(
+            len(upper_corner_elems), 0,
+            '<UpperCorner> not found in generated GC file. Url: {}'.format(
+                url))
+        self.assertEqual(
+            len(upper_corner_elems), 1,
+            'Incorrect number of <UpperCorner> elements found -- should only be 1. Url: {}'
+                .format(url))
+        expected = '20037508.34278925 20037508.34278925'
+        found = upper_corner_elems[0].text
+        self.assertEqual(
+            found, expected,
+            '<UpperCorner> element incorrect, expected {}, found {}. Url: {}'.
+                format(expected, found, url))
 
         identifier_elems = layer_elem.findall(
             '{http://www.opengis.net/ows/1.1}Identifier')
