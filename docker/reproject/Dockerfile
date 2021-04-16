@@ -61,11 +61,11 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
-RUN mkdir /onearth && mkdir -p /etc/onearth
+RUN mkdir /onearth && mkdir -p /etc/onearth && mkdir /tmp
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
-RUN chmod 755 -R /etc/pki && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
+RUN chmod 755 -R /etc/pki && chmod 1777 -R /tmp && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
     chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log && \
 	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /onearth && \
 	chown -hR www-data:www-data /etc/onearth && \
