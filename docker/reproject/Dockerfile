@@ -61,7 +61,7 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
-RUN mkdir /onearth && mkdir -p /etc/onearth && mkdir /tmp
+RUN mkdir /onearth && mkdir -p /etc/onearth
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data

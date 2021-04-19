@@ -56,4 +56,4 @@ ENV LC_ALL=en_US.UTF-8
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
-RUN rm -rf /tmp/
+RUN rm -rf /tmp/*
