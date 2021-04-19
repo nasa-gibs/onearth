@@ -31,7 +31,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
-RUN chmod 755 -R /etc/pki && chmod 1777 -R /tmp && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/
+RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log/httpd/
 
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd

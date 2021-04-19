@@ -110,7 +110,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # Add non-root user
 RUN groupadd dockeruser && useradd -g dockeruser dockeruser
-RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log && chmod 1777 -R /tmp
+RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log && chmod 1777 /tmp
 
 # Change user
 USER dockeruser
