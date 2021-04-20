@@ -56,4 +56,4 @@ ENV LC_ALL=en_US.UTF-8
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
-RUN rm -rf /tmp/*
+RUN rm -rf /tmp/apr-1.6.5* /tmp/httpd-2.4.6* /tmp/rpmbuild*
