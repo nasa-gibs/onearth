@@ -38,12 +38,12 @@ yum install -y \
   libnsl \
   libxml2-devel
 
-wget "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-2.4.4-2.el8.x86_64.rpm" -P /dist/ 
-wget "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-devel-2.4.4-2.el8.x86_64.rpm" -P /dist/
-wget "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-apps-2.4.4-2.el8.x86_64.rpm" -P /dist/
-yum install -y /dist/gibs-gdal-2.4.4-2.el8.x86_64.rpm \
-  dist/gibs-gdal-devel-2.4.4-2.el8.x86_64.rpm \
-  dist/gibs-gdal-apps-2.4.4-2.el8.x86_64.rpm
+wget "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el8.x86_64.rpm" -P /dist/ 
+wget "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el8.x86_64.rpm" -P /dist/
+wget "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el8.x86_64.rpm" -P /dist/
+yum install -y /dist/gibs-gdal-2.4.4-3.el8.x86_64.rpm \
+  dist/gibs-gdal-devel-2.4.4-3.el8.x86_64.rpm \
+  dist/gibs-gdal-apps-2.4.4-3.el8.x86_64.rpm
 
 mkdir -p /build
 rsync -av \
@@ -64,7 +64,7 @@ rm -f /build/dist/*bz2 /build/dist/*debug*
 cp /build/dist/onearth-*.rpm /dist/
 chown "${DOCKER_UID}:${DOCKER_GID}" /dist/onearth-*.rpm
 cd /dist
-tar -cvzf onearth-1.4.0-4.el8.tar.gz *.rpm
+tar -cvzf onearth-1.4.0-5.el8.tar.gz *.rpm
 
 EOS
 chmod +x dist/build_rpms.sh
