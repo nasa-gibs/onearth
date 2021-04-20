@@ -4,7 +4,7 @@ COPY rpms/onearth-*.el7.*.rpm /rpms/
 COPY run-onearth.sh /usr/local/bin/run-onearth.sh
 
 RUN yum -y install epel-release && yum clean all
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-devel-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-apps-2.4.4-2.el7.x86_64.rpm" && \
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el7.x86_64.rpm" && \
 	yum clean all
 RUN yum -y install proj-devel python3-devel && yum clean all
 
