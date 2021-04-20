@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.4.0
-Release:	4%{?dist}
+Release:	5%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -18,9 +18,13 @@ BuildRequires:	gcc-c++
 BuildRequires:	gibs-gdal-devel
 BuildRequires:	httpd-devel
 BuildRequires:	libpng-devel
-BuildRequires:	python3-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  turbojpeg-devel
+BuildRequires:	python3-devel
+%if 0%{?centos} == 7
+BuildRequires:	python-devel
+BuildRequires:	python-pip
+%endif
 Requires:	httpd => 2.4.37
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
@@ -104,7 +108,12 @@ Autoreq: 	0
 %description test
 Test tools for OnEarth
 
+%if 0%{?centos} == 8
 %global python_sitearch3 %(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
+%endif
+%if 0%{?centos} == 7
+%global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
+%endif
 
 %prep
 %setup -q
@@ -118,6 +127,9 @@ cp %{SOURCE4} upstream
 make onearth PREFIX=%{_prefix}
 cd src/mrfgen/
 gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
+%if 0%{?centos} == 7
+pip install setuptools
+%endif
 cd ../../build/mapserver
 mkdir build
 cd build
@@ -148,7 +160,6 @@ cmake \
       -DWITH_ICONV=1 \
       -DWITH_HARFBUZZ=0 \
       -DWITH_PROTOBUFC=0 \
-      -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1 \
       ..
 make %{?smp_flags}
 
@@ -327,7 +338,7 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %defattr(755,root,root,755)
 %{_libdir}/libmapserver.so*
 %{_includedir}/mapserver/*
-%{python3_sitearch}/mapscript*
+
 %{_bindir}/legend
 %{_bindir}/mapserv
 %{_bindir}/msencrypt
@@ -338,6 +349,13 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_bindir}/shptreevis
 %{_bindir}/sortshp
 %{_bindir}/tile4ms
+%if 0%{?centos} == 8
+%{python3_sitearch}/mapscript*
+%endif
+%if 0%{?centos} == 7
+%{python_sitearch}/_mapscript*
+%{python_sitearch}/mapscript*
+%endif
 
 %files vectorgen
 %defattr(755,root,root,755)
@@ -347,8 +365,18 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_includedir}/spatialindex/*
 %{_bindir}/oe_vectorgen
 
+%post tools
+sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py /usr/bin/twmsbox2wmts.py /usr/bin/wmts2twmsbox.py /usr/bin/read_*.py /usr/bin/colorMap*.py /usr/bin/SLDtoColorMap.py
+
+%post config
+sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py
+
+%post mrfgen
+sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/mrfgen /usr/bin/colormap2vrt.py /usr/bin/overtiffpacker.py /usr/bin/oe_validate_palette.py
+
 %post vectorgen
 /sbin/ldconfig
+sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/oe_vectorgen
 
 %files test
 %defattr(-,gibs,gibs,-)
