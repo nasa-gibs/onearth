@@ -257,6 +257,7 @@ onearth-install:
 	install -m 755 src/layer_config/conf/tilematrixsets.xml \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	ln -s ../share/onearth/vectorgen/oe_vectorgen.py $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen
+	ln -s ../share/onearth/vectorgen/oe_create_mvt_mrf.py $(DESTDIR)/$(PREFIX)/bin/oe_create_mvt_mrf.py
 
 	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
 	$(MAKE) install -C build/spatialindex

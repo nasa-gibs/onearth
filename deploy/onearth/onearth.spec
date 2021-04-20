@@ -8,7 +8,12 @@ URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source2:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+%if 0%{?centos} == 7
+Source3:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
+%endif
+%if 0%{?centos} == 8
 Source3:	http://download.osgeo.org/mapserver/mapserver-7.4.3.tar.gz
+%endif
 Source4:    https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 
 BuildRequires:	cmake
@@ -357,6 +362,7 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_libdir}/pkgconfig/libspatialindex.pc
 %{_includedir}/spatialindex/*
 %{_bindir}/oe_vectorgen
+%{_bindir}/oe_create_mvt_mrf.py
 
 %post tools
 sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py /usr/bin/twmsbox2wmts.py /usr/bin/wmts2twmsbox.py /usr/bin/read_*.py /usr/bin/colorMap*.py /usr/bin/SLDtoColorMap.py
@@ -369,7 +375,7 @@ sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/mr
 
 %post vectorgen
 /sbin/ldconfig
-sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_vectorgen
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_vectorgen /usr/bin/oe_create_mvt_mrf.py
 
 %files test
 %defattr(-,gibs,gibs,-)
