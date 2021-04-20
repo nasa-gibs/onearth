@@ -366,17 +366,17 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_bindir}/oe_vectorgen
 
 %post tools
-sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py /usr/bin/twmsbox2wmts.py /usr/bin/wmts2twmsbox.py /usr/bin/read_*.py /usr/bin/colorMap*.py /usr/bin/SLDtoColorMap.py
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py /usr/bin/twmsbox2wmts.py /usr/bin/wmts2twmsbox.py /usr/bin/read_*.py /usr/bin/colorMap*.py /usr/bin/SLDtoColorMap.py
 
 %post config
-sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py
 
 %post mrfgen
-sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/mrfgen /usr/bin/colormap2vrt.py /usr/bin/overtiffpacker.py /usr/bin/oe_validate_palette.py
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/mrfgen /usr/bin/colormap2vrt.py /usr/bin/overtiffpacker.py /usr/bin/oe_validate_palette.py
 
 %post vectorgen
 /sbin/ldconfig
-sed -i 's@\/usr\/libexec\/platform-python -s@\/usr\/bin\/env python3@g' /usr/bin/oe_vectorgen
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_vectorgen
 
 %files test
 %defattr(-,gibs,gibs,-)
