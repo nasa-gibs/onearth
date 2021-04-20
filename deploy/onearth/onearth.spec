@@ -21,7 +21,12 @@ BuildRequires:	libpng-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  turbojpeg-devel
 BuildRequires:	python3-devel
+%if 0%{?centos} == 7
+Requires:	httpd = 2.4.6
+%endif
+%if 0%{?centos} == 8
 Requires:	httpd => 2.4.37
+%endif
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
 Requires:   sqlite
@@ -84,9 +89,15 @@ Layer configuration tools for OnEarth
 
 %package mapserver
 Summary:	Mapserver for OnEarth
-Requires:   proj >= 6.3.2
 Provides:	mapserver = %{version}-%{release}
+%if 0%{?centos} == 7
+Requires:   proj-epsg >= 4.8.0
+Obsoletes:	mapserver < 7.0.1
+%endif
+%if 0%{?centos} == 8
+Requires:   proj >= 6.3.2
 Obsoletes:	mapserver < 7.4.3
+%endif
 
 %description mapserver
 Mapserver package utilized by OnEarth for WMS and WFS services
