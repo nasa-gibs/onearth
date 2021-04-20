@@ -21,10 +21,6 @@ BuildRequires:	libpng-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  turbojpeg-devel
 BuildRequires:	python3-devel
-%if 0%{?centos} == 7
-BuildRequires:	python-devel
-BuildRequires:	python-pip
-%endif
 Requires:	httpd => 2.4.37
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
@@ -108,13 +104,6 @@ Autoreq: 	0
 %description test
 Test tools for OnEarth
 
-%if 0%{?centos} == 8
-%global python_sitearch3 %(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
-%endif
-%if 0%{?centos} == 7
-%global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
-%endif
-
 %prep
 %setup -q
 mkdir upstream
@@ -128,7 +117,7 @@ make onearth PREFIX=%{_prefix}
 cd src/mrfgen/
 gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 %if 0%{?centos} == 7
-pip install setuptools
+pip3 install setuptools
 %endif
 cd ../../build/mapserver
 mkdir build
@@ -156,7 +145,7 @@ cmake \
       -DWITH_FRIBIDI=0 \
       -DWITH_FCGI=0 \
       -DWITH_THREAD_SAFETY=1 \
-      -DWITH_PYTHON=1 \
+      -DWITH_PYTHON=0 \
       -DWITH_ICONV=1 \
       -DWITH_HARFBUZZ=0 \
       -DWITH_PROTOBUFC=0 \
@@ -349,13 +338,6 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_bindir}/shptreevis
 %{_bindir}/sortshp
 %{_bindir}/tile4ms
-%if 0%{?centos} == 8
-%{python3_sitearch}/mapscript*
-%endif
-%if 0%{?centos} == 7
-%{python_sitearch}/_mapscript*
-%{python_sitearch}/mapscript*
-%endif
 
 %files vectorgen
 %defattr(755,root,root,755)
