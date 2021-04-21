@@ -32,7 +32,12 @@ HTTPD_ARTIFACT=httpd-2.4.6.tar.gz
 LINE=735
 HTTPD_URL=https://archive.apache.org/dist/httpd/$(HTTPD_ARTIFACT)
 
-MAPSERVER_VERSION=7.0.1
+OSVERSION=$(shell rpm -q --queryformat '%{RELEASE}' rpm | grep -o [[:digit:]]*\$)
+ifeq ($(OSVERSION),8)
+   MAPSERVER_VERSION=7.4.3
+else
+   MAPSERVER_VERSION=7.0.1
+endif
 MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
 MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
@@ -257,6 +262,7 @@ onearth-install:
 	install -m 755 src/layer_config/conf/tilematrixsets.xml \
 		-t $(DESTDIR)/$(PREFIX)/share/onearth/vectorgen
 	ln -s ../share/onearth/vectorgen/oe_vectorgen.py $(DESTDIR)/$(PREFIX)/bin/oe_vectorgen
+	ln -s ../share/onearth/vectorgen/oe_create_mvt_mrf.py $(DESTDIR)/$(PREFIX)/bin/oe_create_mvt_mrf.py
 
 	install -m 755 -d $(DESTDIR)/$(LIB_PREFIX)/$(LIB_DIR)
 	$(MAKE) install -C build/spatialindex

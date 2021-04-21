@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.4.0
-Release:	2%{?dist}
+Release:	6%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -8,7 +8,12 @@ URL:		http://earthdata.nasa.gov
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	http://ftp.gnu.org/gnu/cgicc/cgicc-3.2.16.tar.gz
 Source2:	http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+%if 0%{?centos} == 7
 Source3:	http://download.osgeo.org/mapserver/mapserver-7.0.1.tar.gz
+%endif
+%if 0%{?centos} == 8
+Source3:	http://download.osgeo.org/mapserver/mapserver-7.4.3.tar.gz
+%endif
 Source4:    https://archive.apache.org/dist/httpd/httpd-2.4.6.tar.gz
 
 BuildRequires:	cmake
@@ -18,10 +23,15 @@ BuildRequires:	gcc-c++
 BuildRequires:	gibs-gdal-devel
 BuildRequires:	httpd-devel
 BuildRequires:	libpng-devel
-BuildRequires:	python-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  turbojpeg-devel
+BuildRequires:	python3-devel
+%if 0%{?centos} == 7
 Requires:	httpd = 2.4.6
+%endif
+%if 0%{?centos} == 8
+Requires:	httpd => 2.4.37
+%endif
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
 Requires:   sqlite
@@ -56,8 +66,6 @@ Summary:    Auxiliary tools for OnEarth
 Requires:	libpng-devel
 Requires:	chrpath
 Requires:	gcc-c++
-Requires:	agg
-Requires:	agg-devel
 Requires:	freetype-devel
 Requires:	gibs-gdal >= 2.4.4
 Requires:	gibs-gdal-apps >= 2.4.4
@@ -86,9 +94,15 @@ Layer configuration tools for OnEarth
 
 %package mapserver
 Summary:	Mapserver for OnEarth
-Requires:   proj-epsg >= 4.8.0
 Provides:	mapserver = %{version}-%{release}
+%if 0%{?centos} == 7
+Requires:   proj-epsg >= 4.8.0
 Obsoletes:	mapserver < 7.0.1
+%endif
+%if 0%{?centos} == 8
+Requires:   proj >= 6.3.2
+Obsoletes:	mapserver < 7.4.3
+%endif
 
 %description mapserver
 Mapserver package utilized by OnEarth for WMS and WFS services
@@ -106,8 +120,6 @@ Autoreq: 	0
 %description test
 Test tools for OnEarth
 
-%global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
-
 %prep
 %setup -q
 mkdir upstream
@@ -120,13 +132,16 @@ cp %{SOURCE4} upstream
 make onearth PREFIX=%{_prefix}
 cd src/mrfgen/
 gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
+%if 0%{?centos} == 7
+pip3 install setuptools
+%endif
 cd ../../build/mapserver
 mkdir build
 cd build
 cmake \
       -DCMAKE_INSTALL_PREFIX="%{_prefix}" \
       -DWITH_GD=1 \
-      -DWITH_GIF=1 \
+      -DWITH_GIF=0 \
       -DWITH_GDAL=1 \
       -DWITH_OGR=1 \
       -DWITH_GEOS=1 \
@@ -146,9 +161,10 @@ cmake \
       -DWITH_FRIBIDI=0 \
       -DWITH_FCGI=0 \
       -DWITH_THREAD_SAFETY=1 \
-      -DWITH_PYTHON=1 \
+      -DWITH_PYTHON=0 \
       -DWITH_ICONV=1 \
       -DWITH_HARFBUZZ=0 \
+      -DWITH_PROTOBUFC=0 \
       ..
 make %{?smp_flags}
 
@@ -327,8 +343,7 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %defattr(755,root,root,755)
 %{_libdir}/libmapserver.so*
 %{_includedir}/mapserver/*
-%{python_sitearch}/_mapscript*
-%{python_sitearch}/mapscript*
+
 %{_bindir}/legend
 %{_bindir}/mapserv
 %{_bindir}/msencrypt
@@ -347,9 +362,20 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 %{_libdir}/pkgconfig/libspatialindex.pc
 %{_includedir}/spatialindex/*
 %{_bindir}/oe_vectorgen
+%{_bindir}/oe_create_mvt_mrf.py
+
+%post tools
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py /usr/bin/twmsbox2wmts.py /usr/bin/wmts2twmsbox.py /usr/bin/read_*.py /usr/bin/colorMap*.py /usr/bin/SLDtoColorMap.py
+
+%post config
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_*.py
+
+%post mrfgen
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/mrfgen /usr/bin/colormap2vrt.py /usr/bin/overtiffpacker.py /usr/bin/oe_validate_palette.py
 
 %post vectorgen
 /sbin/ldconfig
+sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe_vectorgen /usr/bin/oe_create_mvt_mrf.py
 
 %files test
 %defattr(-,gibs,gibs,-)
@@ -359,6 +385,9 @@ if [ -f /etc/httpd/conf.d/reproject-demo.conf ]; then rm /etc/httpd/conf.d/repro
 pip3 install unittest2 unittest-xml-reporting==1.14.0 requests
 
 %changelog
+* Mon Apr 05 2021 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-4
+- Support for CentOS 8 builds
+
 * Mon Nov 09 2020 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-3
 - Use pip3 and removed old Python dependencies
 
