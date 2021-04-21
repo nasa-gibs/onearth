@@ -11,6 +11,7 @@ access the image server.
 
 ### CI Tests
 
+For more information on CI tests, refer [here](../src/test/README.md).
 
 
 ## Notes

@@ -16,17 +16,18 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 
 ## Running tests in Docker
 
-There is a script called `bin/run_test_in_docker.sh` that will run a test script
+There is a script called [run_test_in_docker.sh](../../ci/run_test_in_docker.sh) that will run a test script
 inside of a Docker container.  It takes two parameters, the name of the onearth
 Docker image to run the test in, and the name of the test script.  After
 running, the results will be written to a file in the `src/test/results`
 directory.
 
 Example:
+```
+./ci/run_test_in_docker.sh nasagibs/onearth-test:latest test_mod_mrf.py
+```
 
-```
-./bin/run_test_in_docker.sh nasagibs/onearth-test:latest test_mod_mrf.py
-```
+Refer [here](../../ci/README.md) for information on building the docker image used for testing.
 
 ## Setup
 These tests assume that OnEarth and its associated utilities are installed. **Test files for mod_* tests must be copied to a directory that Apache has permission to access.**

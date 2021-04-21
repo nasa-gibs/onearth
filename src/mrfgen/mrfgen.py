@@ -1559,7 +1559,7 @@ else:
     
     # Verify that the empty tile matches MRF compression type.
     if mrf_empty_tile_what == 'png':
-        # Check the last 3 characters in case of PNG or PPNG.
+        # Check the last 3 characters in case of PNG or PPNG or JPNG.
         if mrf_compression_type[-3:len(mrf_compression_type)] != 'PNG':
             mssg='Empty tile format does not match MRF compression type.'
             log_sig_exit('ERROR', mssg, sigevent_url)
@@ -1947,25 +1947,27 @@ mrf_filename=str().join([output_dir, basename, '.mrf'])
 idx_filename=str().join([output_dir, basename, '.idx'])
 
 def get_extension(compression_type):
-    if compression_type == 'PNG' or compression_type == 'PPNG' or compression_type == 'EPNG':
+    if compression_type in ['PNG', 'PPNG', 'EPNG', 'JPNG']:
         return "ppg"
-    elif compression_type == 'JPG' or compression_type == 'JPEG':
+    elif compression_type in ['JPG', 'JPEG']:
         return "pjg"
-    elif compression_type == 'TIF' or compression_type == 'TIFF':
+    elif compression_type in ['TIF', 'TIFF']:
         return "ptf"
     elif compression_type == 'LERC':
         return "lrc"
     else:
         return None
 
-# The image component of MRF is .pjg, .ppg, .ptf, or lrc depending on compression type.
-if mrf_compression_type == 'PNG' or mrf_compression_type == 'PPNG' or mrf_compression_type == 'EPNG':
+if mrf_compression_type in ['PNG', 'PPNG', 'EPNG']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ppg'])
-elif mrf_compression_type == 'JPG' or mrf_compression_type == 'JPEG':
+elif mrf_compression_type == 'JPNG':
+    # Output filename.
+    out_filename=str().join([output_dir, basename, '.pjp'])
+elif mrf_compression_type in ['JPG', 'JPEG']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.pjg'])
-elif mrf_compression_type == 'TIF' or mrf_compression_type == 'TIFF':
+elif mrf_compression_type in ['TIF', 'TIFF']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ptf'])
 elif mrf_compression_type == 'LERC':
@@ -2169,6 +2171,9 @@ if mrf_compression_type == 'PNG' or mrf_compression_type == 'EPNG':
 elif mrf_compression_type == 'PPNG':
     # Paletted PNG.
     compress=str('COMPRESS=PPNG')
+elif mrf_compression_type == 'JPNG':
+    # JPNG Blended Format
+    compress=str('COMPRESS=JPNG')
 elif mrf_compression_type == 'JPG':
     compress=str('COMPRESS=JPEG')
 elif mrf_compression_type == 'JPEG':

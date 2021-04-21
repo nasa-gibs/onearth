@@ -92,7 +92,7 @@ Directory paths may be different than the example. Directories that do not exist
 * logfile_dir: The location of the log files.
 * mrf_empty_tile_filename: The file to be used for when there is a request for a tile with that is empty or contains all NoData values. It should be in the same file format as the MRF.
 * mrf_blocksize: The MRF tile size. All tiles are square.
-* mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), PPNG (for 256 color paletted PNGs), EPNG (for encoded PNGs, requires [overtiffpacker.py](overtiffpacker.py)), TIFF, or [LERC](https://github.com/Esri/lerc).
+* mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), PPNG (for 256 color paletted PNGs), EPNG (for encoded PNGs, requires [overtiffpacker.py](overtiffpacker.py)), JPNG (for blended JPEG/PNG MRF), TIFF, or [LERC](https://github.com/Esri/lerc).
 * target_x: The full x output size of the MRF image. target_y is calculated to maintain native aspect ratio if not defined in ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
 * mrf_nocopy: (true/false) Whether the MRF should be generated without GDAL copy. mrf_insert will be used for improved performance if true. Defaults to "true" unless a single global image is used as input.
 * mrf_merge: (true/false) Whether overlapping input images should be merged on a last-in basis when performing inserts. Defaults to "false" for faster performance.
