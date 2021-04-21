@@ -1356,6 +1356,7 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         else:
             print("Leaving test results in : " + self.staging_area)
 
+
 class TestMRFGeneration_email_notification(unittest.TestCase):
 
     def setUp(self):
@@ -1554,11 +1555,11 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         self.output_idx = os.path.join(self.staging_area, "output_dir/vns2019270_.idx")
         self.output_img = os.path.join(self.staging_area, "output_dir/vns2019270_.png")
         self.compare_img = os.path.join(testdata_path, "test_comp9.png")
-            
+
         # generate MRF
         print("mrfgen -c " + test_config)
         run_command("mrfgen -c " + test_config)
-           
+
     def test_generate_antimeridian_crossing(self):
         # Check MRF generation succeeded
         self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
@@ -1627,23 +1628,109 @@ class TestMRFGeneration_antimeridian_crossing(unittest.TestCase):
         else:
             print("Leaving test results in : " + self.staging_area)
 
+
+class TestMRFGeneration_jpng(unittest.TestCase):
+
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
+        self.tmp_area = os.path.join(self.staging_area, 'tmp')
+        test_config = os.path.join(testdata_path, "mrfgen_test_config10.xml")
+
+        # Make empty dirs for mrfgen output
+        mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
+        [make_dir_tree(os.path.join(self.staging_area, path)) for path in mrfgen_dirs]
+
+        # Copy empty output tile
+        shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
+
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_JPNG2021100000000.mrf")
+        self.output_pjp = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_JPNG2021100000000.pjp")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_JPNG2021100000000.idx")
+        self.output_img_png = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_JPNG2021100000000.png")
+        self.output_img_jpg = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_JPNG2021100000000.jpg")
+        self.compare_img_png = os.path.join(testdata_path, "test_comp10.png")
+        self.compare_img_jpg = os.path.join(testdata_path, "test_comp10.jpg")
+
+        # generate MRF
+        cmd = "mrfgen -c " + test_config
+        run_command(cmd, show_output=DEBUG)
+        shutil.copy(self.output_pjp, self.output_pjp.replace(".pjp", ".ppg"))
+        run_command('mrf_read.py --input ' + self.output_mrf + ' --output ' + self.output_img_png + ' --tilematrix 4 --tilecol 5 --tilerow 3', show_output=DEBUG)
+        run_command('mrf_read.py --input ' + self.output_mrf + ' --output ' + self.output_img_jpg + ' --tilematrix 5 --tilecol 5 --tilerow 3', show_output=DEBUG)
+
+    def test_generate_mrf(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        if DEBUG:
+            print('Driver:', str(driver.LongName))
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList().
+        if DEBUG:
+            print('Files: {0}, {1}'.format(self.output_pjp, self.output_idx))
+        self.assertTrue(os.path.isfile(self.output_pjp), "MRF PJP generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
+
+        if DEBUG:
+            print('Projection:', str(dataset.GetProjection()))
+        self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]')
+
+        if DEBUG:
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
+        self.assertEqual(dataset.RasterXSize, 20480, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 10240, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 4, "Size does not match")
+
+        geotransform = dataset.GetGeoTransform()
+        if DEBUG:
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+
+        band = dataset.GetRasterBand(1)
+        if DEBUG:
+            print('Overviews:', band.GetOverviewCount())
+        self.assertEqual(band.GetOverviewCount(), 6, "Overview count does not match")
+
+        if DEBUG:
+            print("Comparing: " + self.output_img_png + " to " + self.compare_img_png)
+        self.assertTrue(filecmp.cmp(self.output_img_png, self.compare_img_png), "PNG output image does not match")
+
+        if DEBUG:
+            print("Comparing: " + self.output_img_jpg + " to " + self.compare_img_jpg)
+        self.assertTrue(filecmp.cmp(self.output_img_jpg, self.compare_img_jpg), "JPEG output image does not match")
+
+    def tearDown(self):
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print("Leaving test results in : " + self.staging_area)
+
+
 if __name__ == '__main__':
     # Parse options before running tests
-    available_tests = {'mrf_generation_paletted': TestMRFGeneration_paletted,
-                       'mrf_generation_paletted_nnb': TestMRFGeneration_paletted_nnb,
-                       'mrf_generation_nonpaletted': TestMRFGeneration_nonpaletted,
-                       'polar_mrf': TestMRFGeneration_polar,
-                       'polar_mrf_avg': TestMRFGeneration_polar_avg,
-                       'mercator_mrf': TestMRFGeneration_mercator,
-                       'mercator_mrf_avg': TestMRFGeneration_mercator_avg,
-                       'geo_granule': TestMRFGeneration_granule,
-                       'mercator_granule': TestMRFGeneration_granule_webmerc,
-                       'tiled_z': TestMRFGeneration_tiled_z,
-                       'mrf_generation_nonpaletted_colormap': TestMRFGeneration_nonpaletted_colormap,
-                       'email_notification': TestMRFGeneration_email_notification,
-                       'mixed_projections': TestMRFGeneration_mixed_projections,
-                       'antimeridian_crossing': TestMRFGeneration_antimeridian_crossing
-                       }
+    available_tests = {
+        'mrf_generation_paletted': TestMRFGeneration_paletted,
+        'mrf_generation_paletted_nnb': TestMRFGeneration_paletted_nnb,
+        'mrf_generation_nonpaletted': TestMRFGeneration_nonpaletted,
+        'polar_mrf': TestMRFGeneration_polar,
+        'polar_mrf_avg': TestMRFGeneration_polar_avg,
+        'mercator_mrf': TestMRFGeneration_mercator,
+        'mercator_mrf_avg': TestMRFGeneration_mercator_avg,
+        'geo_granule': TestMRFGeneration_granule,
+        'mercator_granule': TestMRFGeneration_granule_webmerc,
+        'tiled_z': TestMRFGeneration_tiled_z,
+        'mrf_generation_nonpaletted_colormap': TestMRFGeneration_nonpaletted_colormap,
+        'email_notification': TestMRFGeneration_email_notification,
+        'mixed_projections': TestMRFGeneration_mixed_projections,
+        'antimeridian_crossing': TestMRFGeneration_antimeridian_crossing,
+        'jpng': TestMRFGeneration_jpng
+    }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(list(available_tests.keys()))
     parser = OptionParser()
     parser.add_option('-o', '--output', action='store', type='string', dest='outfile', default='test_mrfgen_results.xml',
