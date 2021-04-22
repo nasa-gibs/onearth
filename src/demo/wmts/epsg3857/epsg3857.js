@@ -97,13 +97,6 @@ window.onload = function() {
         renderer: ["canvas", "dom"]
     });
 
-    var layer = new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            url: "/profiler_reproject/BlueMarble/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg"
-        })
-    })
-
-    // map.addLayer(layer);
     var req = new XMLHttpRequest();
     //Callback to handle getCapabilities and build layers
     req.onreadystatechange = function() {

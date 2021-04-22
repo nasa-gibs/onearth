@@ -94,37 +94,6 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOG13Q4_LQD_NDVI_NRT:default "2018-01-01"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOG13Q4_LQD_NDVI_NRT:periods "2018-01-01/2019-01-01/P1D"
 
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:best:layer:ASTER_L1T_Radiance_Terrain_Corrected
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:best:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:best:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:best:layer:ASTER_L1T_Radiance_Terrain_Corrected
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:best:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:best:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:std:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:default "1970-01-01T00:00:00Z"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3857:all:layer:ASTER_L1T_Radiance_Terrain_Corrected_v3_STD:periods "1970-01-01T00:00:00Z/2100-01-01T00:00:00Z/PT1S"
-
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Day
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Day:default "2012-09-10"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Day:periods "2012-09-10/2018-12-31/P1D"
