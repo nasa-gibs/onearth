@@ -52,7 +52,6 @@ These containers are available at: https://hub.docker.com/u/nasagibs
 * [OnEarth Demo](src/demo/README.md)
 * [Tests](src/test/README.md)
 * [Continuous Integration](ci/README.md)
-* [Profiling](docker/profiler/README.md)
 * [Meta Raster Format](https://github.com/nasa-gibs/mrf/blob/master/README.md)
 * [Vector Handling](doc/vector_handling.md)
 * [Contributing](CONTRIBUTING.md)

@@ -7,15 +7,16 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
+mkdir -p /etc/onearth/config/mapserver/
+mkdir -p /etc/onearth/config/endpoint/
+
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
 
   # Copy sample configs
-  mkdir -p /etc/onearth/config/mapserver/
   cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
-  mkdir -p /etc/onearth/config/endpoint/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"

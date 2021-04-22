@@ -1,4 +1,0 @@
-description: "Single 250m JPEG MRF with default TIME"
-base_url: "http://$ONEARTH_HOST/profiler/VNGCR_LQD_I1-M4-M3_NRT/default"
-period: ""
-tilematrixset: "250m"

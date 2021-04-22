@@ -9,10 +9,6 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-# WMTS endpoints
-mkdir -p /var/www/html/profiler/
-mkdir -p /var/www/html/profiler_reproject/
-
 # Create config directories
 chmod -R 755 /onearth
 mkdir -p /onearth/layers
@@ -32,8 +28,8 @@ then
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
 	for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
@@ -59,7 +55,7 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
 # Make GC Service
 for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
-  lua /home/oe2/o nearth/src/modules/gc_service/make_gc_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
+  lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
 done
 
 # Set Apache logs to debug log level

@@ -46,8 +46,8 @@ then
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
-	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint  >>/var/log/onearth/config.log 2>&1
+	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf  >>/var/log/onearth/config.log 2>&1
 
 	for f in $(grep -l /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)

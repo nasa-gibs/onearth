@@ -22,7 +22,6 @@ cp ../layer_configs/oe2_test_mod_reproject_static*.config /var/www/html/reprojec
 
 # WMTS endpoints
 mkdir -p /var/www/html/oe-status_reproject/
-mkdir -p /var/www/html/profiler_reproject/
 mkdir -p /var/www/html/wmts/epsg3857/all
 mkdir -p /var/www/html/wmts/epsg3857/best
 mkdir -p /var/www/html/wmts/epsg3857/std
@@ -59,7 +58,6 @@ cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.
 # Run reproject config tools
 sleep 10
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/profiler_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 # Set Apache logs to debug log level
 if [ "$DEBUG_LOGGING" = true ]; then

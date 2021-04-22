@@ -8,10 +8,6 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-# WMTS endpoints
-mkdir -p /var/www/html/profiler/
-mkdir -p /var/www/html/profiler_reproject/
-
 # Create config directories
 chmod -R 755 /onearth
 mkdir -p /onearth/layers
@@ -51,10 +47,10 @@ then
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
 
-	for f in /etc/onearth/colormaps/v1.0/*
+	for f in /etc/onearth/colormaps/v1.0/*.xml
 	do
 		echo "Generating HTML for $f"
 		base=$(basename $f)
@@ -62,7 +58,7 @@ else
 		/usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
 	done
 
-	for f in /etc/onearth/colormaps/v1.3/*
+	for f in /etc/onearth/colormaps/v1.3/*.xml
 	do
 		echo "Generating HTML for $f"
 		base=$(basename $f)
@@ -70,9 +66,9 @@ else
 		/usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
 	done
 
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
+	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
 	for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
@@ -102,52 +98,12 @@ sleep 2
 
 # Run layer config tools
 for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
-  python3.6 /usr/bin/oe2_wmts_configure.py $f
+  python3.6 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
 sleep 2
-
-# Performance Test Data
-mkdir -p /onearth/idx/profiler/BlueMarble
-wget -O /onearth/idx/profiler/BlueMarble/BlueMarble.idx $S3_URL/profiler/BlueMarble.idx
-
-mkdir -p /onearth/idx/profiler/MOGCR_LQD_143_STD/2011
-f=$(../../src/test/oe_gen_hash_filename.py -l MOGCR_LQD_143_STD -t 1293840000 -e .idx)
-wget -O /onearth/idx/profiler/MOGCR_LQD_143_STD/2011/$f $S3_URL/profiler/MOGCR_LQD_143_STD/2011/$f
-
-mkdir -p /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/2018
-wget -O /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx $S3_URL/profiler/VNGCR_LQD_I1-M4-M3_NRT/2018/VNGCR_LQD_I1-M4-M3_NRT-2018016000000.idx
-d=1516060800
-until [ $d -gt 1524614400 ]; do
-    f=$(../../src/test/oe_gen_hash_filename.py -l VNGCR_LQD_I1-M4-M3_NRT -t $d -e .idx)
-    ln -s /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/VNGCR_LQD_I1-M4-M3_NRT.idx /onearth/idx/profiler/VNGCR_LQD_I1-M4-M3_NRT/2018/$f
-    let d+=86400
-done
-
-mkdir -p /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/2018
-wget -O /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx $S3_URL/profiler/MOG13Q4_LQD_NDVI_NRT/2018/MOG13Q4_LQD_NDVI_NRT-2018001000000.idx
-d=1514764800
-until [ $d -gt 1523318400 ]; do
-    f=$(../../src/test/oe_gen_hash_filename.py -l MOG13Q4_LQD_NDVI_NRT -t $d -e .idx)
-    ln -s /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/MOG13Q4_LQD_NDVI_NRT.idx /onearth/idx/profiler/MOG13Q4_LQD_NDVI_NRT/2018/$f
-    let d+=86400
-done
-
-# ASTER_L1T_Radiance_Terrain_Corrected subdaily example
-
-mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970
-mkdir -p /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016
-wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz $S3_URL/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz
-tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011844.idx
-wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz $S3_URL/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz
-tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/
-mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/2016/ASTER_L1T_Radiance_Terrain_Corrected-2016336011835.idx
-wget -O /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz $S3_URL/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz
-tar -zxf /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx.tgz -C /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/
-mv /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/out/out.idx /onearth/idx/epsg4326/ASTER_L1T_Radiance_Terrain_Corrected/1970/ASTER_L1T_Radiance_Terrain_Corrected-1970001000000.idx
 
 # Start Redis if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then
