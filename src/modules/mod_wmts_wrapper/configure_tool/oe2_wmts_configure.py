@@ -103,6 +103,7 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
         WMTSWrapperRole tilematrixset
         WMTSWrapperEnableYearDir {year_dir}
         WMTSWrapperLayerAlias {alias}
+        WMTSWrapperMimeType {mime_type}
 </Directory>
 
 {proxy_exemption_block}
@@ -433,7 +434,7 @@ def make_layer_config(endpoint_config, layer):
         data_file_uri = format_source_uri_for_proxy(
             data_file_uri, endpoint_config['proxy_paths'])
 
-    # static reproject layers require a proxy exemption to prevent traffic from being directly routed to reproject container 
+    # static reproject layers require a proxy exemption to prevent traffic from being directly routed to reproject container
     proxy_exemption_block = ''
     if projection == 'EPSG:3857':
         try:
@@ -457,7 +458,8 @@ def make_layer_config(endpoint_config, layer):
          ('{year_dir}', 'On' if year_dir else 'Off'), ('{alias}', alias),
          ('{tilematrixset}', tilematrixset),
          ('{proxy_exemption_block}', proxy_exemption_block),
-         ('{config_file_path}', config_file_path.as_posix())])
+         ('{config_file_path}', config_file_path.as_posix()),
+         ('{mime_type}', mimetype)])
 
     # Insert time stuff if applicable (using a regexp to stick it in the
     # <Directory> block)
