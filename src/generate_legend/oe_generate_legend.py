@@ -892,10 +892,10 @@ else:
 if options.stroke_color:
     stroke_color = str(options.stroke_color).lower()
     if stroke_color not in ["blue","green","red","cyan","magenta","yellow","black","white"]:
-        print "Using custom color " + stroke_color
+        print("Using custom color " + stroke_color)
         colormatch = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', stroke_color)
         if colormatch == False:
-            print "Invalid stroke color"
+            print("Invalid stroke color")
             exit()
 else:
     stroke_color = False
