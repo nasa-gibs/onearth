@@ -9,44 +9,8 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 # WMTS endpoints
-mkdir -p /var/www/html/oe-status/
-mkdir -p /var/www/html/oe-status_reproject/
 mkdir -p /var/www/html/profiler/
 mkdir -p /var/www/html/profiler_reproject/
-mkdir -p /var/www/html/wmts/epsg4326/all
-mkdir -p /var/www/html/wmts/epsg4326/best
-mkdir -p /var/www/html/wmts/epsg4326/std
-mkdir -p /var/www/html/wmts/epsg4326/nrt
-mkdir -p /var/www/html/wmts/epsg3857/all
-mkdir -p /var/www/html/wmts/epsg3857/best
-mkdir -p /var/www/html/wmts/epsg3857/std
-mkdir -p /var/www/html/wmts/epsg3857/nrt
-mkdir -p /var/www/html/wmts/epsg3031/all
-mkdir -p /var/www/html/wmts/epsg3031/best
-mkdir -p /var/www/html/wmts/epsg3031/std
-mkdir -p /var/www/html/wmts/epsg3031/nrt
-mkdir -p /var/www/html/wmts/epsg3413/all
-mkdir -p /var/www/html/wmts/epsg3413/best
-mkdir -p /var/www/html/wmts/epsg3413/std
-mkdir -p /var/www/html/wmts/epsg3413/nrt
-
-# TWMS endpoints
-mkdir -p /var/www/html/twms/epsg4326/all
-mkdir -p /var/www/html/twms/epsg4326/best
-mkdir -p /var/www/html/twms/epsg4326/std
-mkdir -p /var/www/html/twms/epsg4326/nrt
-mkdir -p /var/www/html/twms/epsg3857/all
-mkdir -p /var/www/html/twms/epsg3857/best
-mkdir -p /var/www/html/twms/epsg3857/std
-mkdir -p /var/www/html/twms/epsg3857/nrt
-mkdir -p /var/www/html/twms/epsg3031/all
-mkdir -p /var/www/html/twms/epsg3031/best
-mkdir -p /var/www/html/twms/epsg3031/std
-mkdir -p /var/www/html/twms/epsg3031/nrt
-mkdir -p /var/www/html/twms/epsg3413/all
-mkdir -p /var/www/html/twms/epsg3413/best
-mkdir -p /var/www/html/twms/epsg3413/std
-mkdir -p /var/www/html/twms/epsg3413/nrt
 
 # Create config directories
 chmod -R 755 /onearth
@@ -54,71 +18,76 @@ mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
-mkdir -p /etc/onearth/config/layers/epsg3031/best/
-mkdir -p /etc/onearth/config/layers/epsg3413/best/
-mkdir -p /etc/onearth/config/layers/epsg4326/best/
-mkdir -p /etc/onearth/config/layers/epsg3857/best/
-mkdir -p /etc/onearth/config/layers/epsg3031/std/
-mkdir -p /etc/onearth/config/layers/epsg3413/std/
-mkdir -p /etc/onearth/config/layers/epsg4326/std/
-mkdir -p /etc/onearth/config/layers/epsg3031/nrt/
-mkdir -p /etc/onearth/config/layers/epsg3413/nrt/
-mkdir -p /etc/onearth/config/layers/epsg4326/nrt/
 
 # Set up colormaps
 mkdir -p /etc/onearth/colormaps/
 mkdir -p /etc/onearth/colormaps/v1.0/
-mkdir -p /etc/onearth/colormaps/v1.2/
+mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
+
+ln -s /etc/onearth/colormaps /var/www/html/colormaps
+
+# Data for oe-status
+mkdir -p /onearth/idx/oe-status/BlueMarble16km
+mkdir -p /onearth/layers/oe-status/BlueMarble16km
+cp ../test_imagery/BlueMarble16km*.idx /onearth/idx/oe-status/BlueMarble16km/
+cp ../test_imagery/BlueMarble16km*.pjg /onearth/layers/oe-status/BlueMarble16km/
+
+# Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "S3_CONFIGS not set for colormaps"
+	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
+
+  # Copy empty tiles
+  mkdir -p /etc/onearth/empty_tiles/
+  cp ../empty_tiles/* /etc/onearth/empty_tiles/
+
+  # Copy sample configs
+  cp ../sample_configs/conf/* /etc/onearth/config/conf/
+  cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+
 else
+	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.2' -b $S3_CONFIGS -p colormaps/v1.2
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3
-	
+
+	for f in /etc/onearth/colormaps/v1.0/*
+	do
+		echo "Generating HTML for $f"
+		base=$(basename $f)
+		html=${base/"xml"/"html"}
+		/usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
+	done
+
 	for f in /etc/onearth/colormaps/v1.3/*
 	do
 		echo "Generating HTML for $f"
 		base=$(basename $f)
 		html=${base/"xml"/"html"}
-		/usr/bin/colorMaptoHTML.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
+		/usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
 	done
-fi
 
-ln -s /etc/onearth/colormaps /var/www/html/colormaps
-
-# Copy empty tiles
-mkdir -p /etc/onearth/empty_tiles/
-cp ../empty_tiles/* /etc/onearth/empty_tiles/
-
-# Copy sample configs
-cp ../sample_configs/conf/* /etc/onearth/config/conf/
-cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
-cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
-
-# Scrape OnEarth configs from S3
-if [ -z "$S3_CONFIGS" ]
-then
-	echo "S3_CONFIGS not set for OnEarth configs"
-else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/best/' -b $S3_CONFIGS -p config/layers/epsg3031/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/best/' -b $S3_CONFIGS -p config/layers/epsg3413/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3857/best/' -b $S3_CONFIGS -p config/layers/epsg3857/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/best/' -b $S3_CONFIGS -p config/layers/epsg4326/best
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/std/' -b $S3_CONFIGS -p config/layers/epsg3031/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/std/' -b $S3_CONFIGS -p config/layers/epsg3413/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3857/std/' -b $S3_CONFIGS -p config/layers/epsg3857/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/std/' -b $S3_CONFIGS -p config/layers/epsg4326/std
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3031/nrt/' -b $S3_CONFIGS -p config/layers/epsg3031/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3413/nrt/' -b $S3_CONFIGS -p config/layers/epsg3413/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg3857/nrt/' -b $S3_CONFIGS -p config/layers/epsg3857/nrt
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/epsg4326/nrt/' -b $S3_CONFIGS -p config/layers/epsg4326/nrt
+
+	for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
+	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
+	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
+
+	  mkdir -p $CONFIG_SOURCE
+
+	  # WMTS Endpoint
+	  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+
+	  # TWMS Endpoint
+	  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+
+    python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
+  done
 fi
 
 # Replace with S3 URL
@@ -132,37 +101,15 @@ echo 'Starting Apache server'
 sleep 2
 
 # Run layer config tools
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/oe-status.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/profiler.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_best.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_std.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_nrt.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg4326_all.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_best.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_std.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_nrt.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3031_all.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_best.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_std.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_nrt.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3413_all.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_best_static.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_std_static.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_nrt_static.yaml
-python3.6 /usr/bin/oe2_wmts_configure.py /etc/onearth/config/endpoint/epsg3857_all_static.yaml
+for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
+  python3.6 /usr/bin/oe2_wmts_configure.py $f
+done
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
 sleep 2
 
-# Data for oe-status
-mkdir -p /onearth/idx/oe-status/BlueMarble16km
-mkdir -p /onearth/layers/oe-status/BlueMarble16km
-cp ../test_imagery/BlueMarble16km*.idx /onearth/idx/oe-status/BlueMarble16km/
-cp ../test_imagery/BlueMarble16km*.pjg /onearth/layers/oe-status/BlueMarble16km/
-
 # Performance Test Data
-
 mkdir -p /onearth/idx/profiler/BlueMarble
 wget -O /onearth/idx/profiler/BlueMarble/BlueMarble.idx $S3_URL/profiler/BlueMarble.idx
 

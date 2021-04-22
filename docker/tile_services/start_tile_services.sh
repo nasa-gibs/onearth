@@ -32,7 +32,9 @@ cp ../layer_configs/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mr
 
 # Sync IDX files if true
 if [ "$IDX_SYNC" = true ]; then
-    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx >>/var/log/onearth/config.log 2>&1
+    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p epsg >>/var/log/onearth/config.log 2>&1
+    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p oe-status >>/var/log/onearth/config.log 2>&1
+    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p profiler >>/var/log/onearth/config.log 2>&1
 fi
 
 # Set Apache logs to debug log level

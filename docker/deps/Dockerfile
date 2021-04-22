@@ -15,6 +15,11 @@ RUN yum install -y redis5
 RUN yum install -y python36-3.6.8 python36-devel-3.6.8 python36-pip-9.0.1
 RUN yum install -y cronie
 
+# Install yq
+WORKDIR /opt
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.2.0/yq_linux_amd64.tar.gz -O - |\
+  tar xz && mv yq_linux_amd64 /usr/bin/yq
+
 #Install pip 3.6 dependencies
 RUN pip3.6 install requests==2.24.0 pyaml==18.11.0 lxml==4.5.2 pypng==0.0.20 boto3==1.9 redis==3.5.3
 

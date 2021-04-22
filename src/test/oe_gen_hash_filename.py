@@ -3,7 +3,6 @@ import hashlib
 import datetime
 
 import sys
-import os
 import optparse
 
 def get_hash_prefix(filename):
@@ -15,11 +14,11 @@ def get_hash_prefix(filename):
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option('-l', '--layer', action='store', type='string', dest='layer', default='BlueMarble', help='layer name to incorporate into file name')
-    parser.add_option('-t', '--time_epoch', action='store', type='int', dest='epoch', default=sys.maxint, help='time epoch to convert and incorporate into file name')
+    parser.add_option('-t', '--time_epoch', action='store', type='int', dest='epoch', default=sys.maxsize, help='time epoch to convert and incorporate into file name')
     parser.add_option('-e', '--extension', action='store', type='string', dest='extension', default='', help='filename that will be converted to hash filename')
     (options, args) = parser.parse_args()
 
-    if options.layer == '' or options.epoch == sys.maxint:
+    if options.layer == '' or options.epoch == sys.maxsize:
         sys.exit(-1)
 
     #print options.layer, options.epoch, options.extension
