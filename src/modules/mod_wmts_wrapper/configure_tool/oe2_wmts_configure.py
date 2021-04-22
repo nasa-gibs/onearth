@@ -434,7 +434,7 @@ def make_layer_config(endpoint_config, layer):
         data_file_uri = format_source_uri_for_proxy(
             data_file_uri, endpoint_config['proxy_paths'])
 
-    # static reproject layers require a proxy exemption to prevent traffic from being directly routed to reproject container 
+    # static reproject layers require a proxy exemption to prevent traffic from being directly routed to reproject container
     proxy_exemption_block = ''
     if projection == 'EPSG:3857':
         try:
