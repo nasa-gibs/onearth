@@ -48,6 +48,7 @@ print((mpl.matplotlib_fname()))
 from matplotlib import pyplot
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 from io import BytesIO
 #import numpy as np
 import math
@@ -352,7 +353,7 @@ def parse_legend(legend_xml, colormap_entries):
     return legend
     
 
-def generate_legend(colormaps, output, output_format, orientation, label_color, colorbar_only):
+def generate_legend(colormaps, output, output_format, orientation, label_color, colorbar_only, stroke_color):
     
     # set ticklines out
     rcParams['xtick.direction'] = 'out'
@@ -509,6 +510,8 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     legend.get_frame().set_alpha(0.5)
                 for text in legend.get_texts():
                     text.set_color(label_color)
+                    if stroke_color:
+                        text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
             
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 if colorbar_only:
@@ -538,7 +541,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 if colorbar_only: # hide ticks if we want to show colorbar only
                     for tickline in cb.ax.xaxis.get_ticklines():
                         tickline.set_alpha(0)
-
+                elif stroke_color:
+                    for tickline in cb.ax.xaxis.get_ticklines():
+                        tickline.set_path_effects([path_effects.Stroke(linewidth=2, foreground=stroke_color), path_effects.Normal()])
+                cb.ax.tick_params(axis='x', colors=label_color)
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_xticklabels()) > 0:
                         xticklabels = cb.ax.get_xticklabels()
@@ -568,14 +574,18 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                         cb.ax.set_xticklabels(xticklabels)
                 
                 if colormap.units != None and colorbar_only == False:
-                    fig.text(0.5, bottom-height-(0.20/lc), colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
+                    fig_text = fig.text(0.5, bottom-height-(0.20/lc), colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
+                    if stroke_color:
+                        fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
                     
             if colormap.title != None and colorbar_only == False:
                 if lc ==1:
                     title_loc = 1-t
                 else:
                     title_loc = bottom+height+(0.07/lc)
-                fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold', color=label_color)
+                    fig_text = fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold', color=label_color)
+                    if stroke_color:
+                        fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
                     
         
         else: # default vertical orientation
@@ -617,7 +627,9 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     legend.get_frame().set_alpha(0.5)
                 for text in legend.get_texts():
                     text.set_color(label_color)
-         
+                    if stroke_color:
+                        text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
+
             if has_values == True and (colormap.style != "classification" or colormap.legend == None):
                 if colorbar_only:
                     fig.set_figheight(2.56)
@@ -641,12 +653,17 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 for tick in cb.ax.yaxis.get_ticklabels():
                     tick.set_fontsize(10)
                     tick.set_color(label_color)
+                    if stroke_color:
+                        tick.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
                     if colorbar_only:
                         tick.set_alpha(0)
                 if colorbar_only: # hide ticks if we want to show colorbar only
                     for tickline in cb.ax.yaxis.get_ticklines():
                         tickline.set_alpha(0)
-                    
+                elif stroke_color:
+                    for tickline in cb.ax.yaxis.get_ticklines():
+                        tickline.set_path_effects([path_effects.Stroke(linewidth=2, foreground=stroke_color), path_effects.Normal()])
+                cb.ax.tick_params(axis='y', colors=label_color)
                 if colormap.legend != None and len(bounds)>0:
                     if len(cb.ax.get_yticklabels()) > 0:
                         yticklabels = cb.ax.get_yticklabels()
@@ -679,7 +696,9 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                         cb.ax.set_yticklabels(yticklabels)
                 
                 if colormap.units != None and colorbar_only == False:
-                    fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
+                    fig_text = fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
+                    if stroke_color:
+                        fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
 
                                             
             if colormap.title != None and colorbar_only == False:
@@ -705,8 +724,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     for word in title_words[half:len(title_words)]:
                         title = title + word + " "                    
                     colormap.title = title
-                fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold', color=label_color) 
-            
+                fig_text = fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold', color=label_color) 
+                if stroke_color:
+                    fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
+    
     fig.savefig(output, transparent=True, format=output_format)
         
     # Add tooltips to SVG    
@@ -823,6 +844,9 @@ parser.add_option('-f', '--format',
 parser.add_option('-l', '--label_color',
                   action='store', type='string', dest='label_color', default = 'black',
                   help='Color of labels. Supported colors: black (default), blue, green, red, cyan, magenta, yellow, white or hexstring')
+parser.add_option('-s', '--stroke_color',
+                  action='store', type='string', dest='stroke_color', default=False,
+                  help='Color of labels stroke. Supported colors: black (default), blue, green, red, cyan, magenta, yellow, white or hexstring')
 parser.add_option('-o', '--output',
                   action='store', type='string', dest='output',
                   help='The full path of the output file')
@@ -864,6 +888,18 @@ if options.label_color:
 else:
     label_color = "black"
 
+# check stroke color
+if options.stroke_color:
+    stroke_color = str(options.stroke_color).lower()
+    if stroke_color not in ["blue","green","red","cyan","magenta","yellow","black","white"]:
+        print "Using custom color " + stroke_color
+        colormatch = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', stroke_color)
+        if colormatch == False:
+            print "Invalid stroke color"
+            exit()
+else:
+    stroke_color = False
+
 colormaps = []
 # parse colormap file
 try:
@@ -889,7 +925,7 @@ for colormap_xml in colormap_elements:
 
 # generate legend
 try:
-    generate_legend(colormaps, output_location, options.format, options.orientation, label_color, options.colorbar_only)
+    generate_legend(colormaps, output_location, options.format, options.orientation, label_color, options.colorbar_only, stroke_color)
 except IOError as e:
     print(str(e))
     exit()
