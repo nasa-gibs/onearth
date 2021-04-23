@@ -49,7 +49,6 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case t
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
-
 # copy config stuff
 mkdir -p /var/www/html/time_service
 cp time_service.lua /var/www/html/time_service/time_service.lua

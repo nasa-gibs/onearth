@@ -28,6 +28,7 @@ mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
+mkdir -p /etc/onearth/empty_tiles/
 
 # Set up colormaps
 mkdir -p /etc/onearth/colormaps/
@@ -35,21 +36,18 @@ mkdir -p /etc/onearth/colormaps/v1.0/
 mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
-ln -s /etc/onearth/colormaps /var/www/html/colormaps
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
 
-  # Copy empty tiles
-  mkdir -p /etc/onearth/empty_tiles/
-  cp ../empty_tiles/* /etc/onearth/empty_tiles/
-
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
   cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  cp ../sample_configs/empty_tiles/* /etc/onearth/empty_tiles/
+  cp -R ../sample_configs/colormaps/* /etc/onearth/colormaps/
 
   cd /home/oe2/onearth/docker/tile_services
 
@@ -77,22 +75,6 @@ else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
 
-	for f in /etc/onearth/colormaps/v1.0/*.xml
-	do
-		echo "Generating HTML for $f"
-		base=$(basename $f)
-		html=${base/"xml"/"html"}
-		/usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
-	done
-
-	for f in /etc/onearth/colormaps/v1.3/*.xml
-	do
-		echo "Generating HTML for $f"
-		base=$(basename $f)
-		html=${base/"xml"/"html"}
-		/usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
-	done
-
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
@@ -119,6 +101,23 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case t
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
+# Generate Colormap HTML
+ln -s /etc/onearth/colormaps /var/www/html/colormaps
+for f in /etc/onearth/colormaps/v1.0/*.xml
+do
+  echo "Generating HTML for $f"
+  base=$(basename $f)
+  html=${base/"xml"/"html"}
+  /usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
+done
+
+for f in /etc/onearth/colormaps/v1.3/*.xml
+do
+  echo "Generating HTML for $f"
+  base=$(basename $f)
+  html=${base/"xml"/"html"}
+  /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
+done
 
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/

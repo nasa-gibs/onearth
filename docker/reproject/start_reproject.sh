@@ -55,13 +55,6 @@ fi
 # Copy tilematrixsets config file
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
 
-# Run reproject config tools
-sleep 10 # Possibly just sleep until 8080:oe-status is up
-
-# Copy in oe-status endpoint configuration
-cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
-
 # Set Apache logs to debug log level
 if [ "$DEBUG_LOGGING" = true ]; then
     perl -pi -e 's/LogLevel warn/LogLevel debug/g' /etc/httpd/conf/httpd.conf
@@ -84,12 +77,24 @@ LoadModule status_module modules/mod_status.so
 ExtendedStatus On
 EOS
 
+# Run reproject config tools
+sleep 10 # waiting for 8080:oe-status to be up?
+
+# Start apache so that reproject responds locally for configuration
+echo 'Starting Apache server'
+/usr/sbin/httpd -k restart
+sleep 2
+
 # Load additional endpoints
 echo 'Loading additional endpoints'
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml >>/var/log/onearth/config.log 2>&1
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml >>/var/log/onearth/config.log 2>&1
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml >>/var/log/onearth/config.log 2>&1
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_nrt.yaml >>/var/log/onearth/config.log 2>&1
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_nrt.yaml >>ç2>&1
+
+# Now configure oe-status after reproject is configured
+cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 echo 'Restarting Apache server'
 /usr/sbin/httpd -k restart
