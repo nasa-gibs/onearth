@@ -53,6 +53,9 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case t
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
+# Copy in oe-status endpoint configuration
+cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
+
 # Make GC Service
 for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
   lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua $f >>/var/log/onearth/config.log 2>&1

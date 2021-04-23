@@ -25,6 +25,9 @@ else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 fi
 
+# Copy in oe-status endpoint configuration
+cp ../oe-status/endpoint/oe-status_reproject /etc/onearth/config/endpoint/
+
 # Copy tilematrixsets config file
 mkdir -p /etc/onearth/config/conf/
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/

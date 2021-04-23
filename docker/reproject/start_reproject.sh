@@ -9,17 +9,6 @@ fi
 
 cd /home/oe2/onearth/docker/reproject
 
-# Load test layers
-mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
-cp oe2_test_mod_reproject_date.conf /etc/httpd/conf.d
-cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
-cp ../layer_configs/oe2_test_mod_reproject_date*.config /var/www/html/reproject_endpoint/date_test/default/tms/
-
-mkdir -p /var/www/html/reproject_endpoint/static_test/default/tms
-cp oe2_test_mod_reproject_static.conf /etc/httpd/conf.d
-cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/static_test/default/tms/oe2_test_mod_reproject_static_layer_source.config
-cp ../layer_configs/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
-
 # WMTS endpoints
 mkdir -p /var/www/html/oe-status_reproject/
 mkdir -p /var/www/html/wmts/epsg3857/all
@@ -39,14 +28,25 @@ chmod -R 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
 
-# Copy sample configs
-cp ../sample_configs/conf/* /etc/onearth/config/conf/
-cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
-
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set"
+  # Copy sample configs
+  cp ../sample_configs/conf/* /etc/onearth/config/conf/
+  cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+
+	# Load test layers
+  mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
+  cp oe2_test_mod_reproject_date.conf /etc/httpd/conf.d
+  cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
+  cp ../layer_configs/oe2_test_mod_reproject_date*.config /var/www/html/reproject_endpoint/date_test/default/tms/
+
+  mkdir -p /var/www/html/reproject_endpoint/static_test/default/tms
+  cp oe2_test_mod_reproject_static.conf /etc/httpd/conf.d
+  cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/static_test/default/tms/oe2_test_mod_reproject_static_layer_source.config
+  cp ../layer_configs/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
+
 else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
@@ -56,7 +56,10 @@ fi
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
 
 # Run reproject config tools
-sleep 10
+sleep 10 # Possibly just sleep until 8080:oe-status is up
+
+# Copy in oe-status endpoint configuration
+cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 # Set Apache logs to debug log level
@@ -80,10 +83,6 @@ LoadModule status_module modules/mod_status.so
 #
 ExtendedStatus On
 EOS
-
-echo 'Starting Apache server'
-/usr/sbin/httpd -k restart
-sleep 2
 
 # Load additional endpoints
 echo 'Loading additional endpoints'

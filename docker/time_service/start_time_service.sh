@@ -10,22 +10,6 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
-# copy config stuff
-cp onearth_time_service.conf /etc/httpd/conf.d
-mkdir -p /var/www/html/time_service
-cp time_service.lua /var/www/html/time_service/time_service.lua
-sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' /var/www/html/time_service/time_service.lua
-
-# Set Apache logs to debug log level
-if [ "$DEBUG_LOGGING" = true ]; then
-    perl -pi -e 's/LogLevel warn/LogLevel debug/g' /etc/httpd/conf/httpd.conf
-    perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
-fi
-
-echo 'Starting Apache server'
-/usr/sbin/apachectl
-sleep 2
-
 # Create config directories
 chmod -R 755 /onearth
 mkdir -p /onearth/layers
@@ -64,6 +48,12 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml # in case
 sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case there is a preceding slash
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
+
+
+# copy config stuff
+mkdir -p /var/www/html/time_service
+cp time_service.lua /var/www/html/time_service/time_service.lua
+sed -i 's@{REDIS_HOST}@'$REDIS_HOST'@g' /var/www/html/time_service/time_service.lua
 
 # Start Redis and load sample data if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then
@@ -385,6 +375,18 @@ else
 		python3 /usr/bin/oe_scrape_time.py -c -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 	fi
 fi
+
+# Confiture and startup apache
+cp onearth_time_service.conf /etc/httpd/conf.d
+
+if [ "$DEBUG_LOGGING" = true ]; then
+    perl -pi -e 's/LogLevel warn/LogLevel debug/g' /etc/httpd/conf/httpd.conf
+    perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
+fi
+
+echo 'Starting Apache server'
+/usr/sbin/apachectl
+sleep 2
 
 # Run logrotate hourly
 echo "0 * * * * /etc/cron.hourly/logrotate" >> /etc/crontab

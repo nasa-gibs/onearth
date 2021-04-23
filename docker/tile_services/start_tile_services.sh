@@ -35,14 +35,7 @@ mkdir -p /etc/onearth/colormaps/v1.0/
 mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
-
 ln -s /etc/onearth/colormaps /var/www/html/colormaps
-
-# Data for oe-status
-mkdir -p /onearth/idx/oe-status/BlueMarble16km
-mkdir -p /onearth/layers/oe-status/BlueMarble16km
-cp ../test_imagery/BlueMarble16km*.idx /onearth/idx/oe-status/BlueMarble16km/
-cp ../test_imagery/BlueMarble16km*.pjg /onearth/layers/oe-status/BlueMarble16km/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
@@ -126,18 +119,22 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case t
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
-echo 'Starting Apache server'
-/usr/sbin/httpd -k start
-sleep 2
+
+# Copy in oe-status endpoint configuration
+cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
+
+# Data for oe-status
+mkdir /etc/onearth/config/layers/oe-status/
+mkdir -p /onearth/idx/oe-status/BlueMarble16km
+mkdir -p /onearth/layers/oe-status/BlueMarble16km
+cp ../oe-status/layer/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
+cp ../oe-status/data/*.idx /onearth/idx/oe-status/BlueMarble16km/
+cp ../oe-status/data/*.pjg /onearth/layers/oe-status/BlueMarble16km/
 
 # Run layer config tools
 for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
   python3.6 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
-
-echo 'Starting Apache server'
-/usr/sbin/httpd -k start
-sleep 2
 
 # Start Redis if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then
