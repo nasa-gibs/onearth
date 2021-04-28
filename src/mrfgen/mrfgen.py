@@ -61,7 +61,6 @@
 #  <extents>-180,-90,180,90</extents>
 #  <colormap></colormap>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
-#  <mrf_nocopy>true</mrf_nocopy>
 #  <mrf_noaddo>false</mrf_noaddo>
 #  <mrf_merge>false</mrf_merge>
 #  <mrf_parallel>false</mrf_parallel>
@@ -1348,14 +1347,6 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''    
-    # nocopy, defaults to True if not global
-    try:
-        if get_dom_tag_value(dom, 'mrf_nocopy') == "false":
-            nocopy = False
-        else:
-            nocopy = True
-    except:
-        nocopy = None
     # noaddo, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_noaddo') == "false":
@@ -1514,7 +1505,6 @@ log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resam
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
-log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
@@ -1908,10 +1898,6 @@ if mrf_compression_type == 'EPNG':
 # sort
 alltiles.sort()
 
-# Just always set nocopy to True. It's simpler that way
-nocopy=True
-log_info_mssg("Setting MRF nocopy to " + str(nocopy))
-
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
 try:
@@ -2272,13 +2258,13 @@ if compress == "COMPRESS=LERC":
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
-if nocopy:
+
+gdal_translate_command_list.append('-co')
+gdal_translate_command_list.append('NOCOPY=true')
+# use UNIFORM_SCALE if empty MRF, single input, or noaddo
+if noaddo or len(alltiles) <= 1:
     gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('NOCOPY=true')
-    # use UNIFORM_SCALE if empty MRF, single input, or noaddo
-    if noaddo or len(alltiles) <= 1:
-        gdal_translate_command_list.append('-co')
-        gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
+    gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
         
 # add ending parameters      
 gdal_translate_command_list.append(vrt_filename)
@@ -2431,13 +2417,7 @@ else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
     log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
     log_info_mssg('idxf should be >= vrtf')
-    if nocopy:
-        mssg = mrf_filename + ' already exists'
-    else:
-        mssg=str().join(['Unsuccessful:  gdal_translate   ',
-                         'Check the gdal mrf driver plugin.  ',
-                         'Check stderr file: ',
-                         gdal_translate_stderr_filename])
+    mssg = mrf_filename + ' already exists'
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 if mrf_clean:

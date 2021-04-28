@@ -30,7 +30,6 @@ limitations under the License.
  <extents>-180,-90,180,90</extents>
  <colormap></colormap>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
- <mrf_nocopy>true</mrf_nocopy>
- <mrf_clean>true</mrf_clean> 
+ <mrf_clean>true</mrf_clean>
  <mrf_merge>false</mrf_merge>
 </mrfgen_configuration>
