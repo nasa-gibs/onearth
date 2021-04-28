@@ -1617,9 +1617,19 @@ else: # Default to png
 
 # Sanity check to make sure all of the input files exist
 for i, tile in enumerate(alltiles):
-    if not os.path.exists(tile):
+
+    if tile.startswith("/vsi"):
+        try:
+            img = gdal.Open(tile)
+            img = None
+        except:
+            log_info_mssg("Missing input file: " + tile)
+            log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
+    elif not os.path.exists(tile):
         log_info_mssg("Missing input file: " + tile)
         log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
 
 # Filter out bad JPEGs
 goodtiles = []
@@ -1631,22 +1641,25 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 
         try:
             img = gdal.Open(tile)
-            
+
             if img is None:
                 errors += 1
                 log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
                 continue
-        except RuntimeError as e:                
+        except RuntimeError as e:
             log_sig_exit('ERROR', 'Failed to execute gdal.Open', sigevent_url)
 
         if img.RasterCount == 1:
             errors += 1
             log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
+            img = None
             continue
 
+        img = None
+
         goodtiles.append(tile)
-        
-    alltiles = goodtiles       
+
+    alltiles = goodtiles
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
 if mrf_compression_type == 'PPNG' and colormap != '':
@@ -1666,9 +1679,27 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             for band in tileInfo["bands"]:
                 has_palette |= (band["colorInterpretation"] == "Palette")
 
-
             # Read gdal_info output
             if not has_palette:
+
+                # Download tile locally for RGBApng2Palpng script
+                if tile.startswith("/vsi"):
+                    log_info_mssg("Downloading remote file " + tile)
+
+                    # Create the gdal_translate command.
+                    gdal_translate_command_list=['gdal_translate', '-q', '-co', 'WORLDFILE=YES',
+                                                 tile, working_dir+os.path.basename(tile)]
+
+                    # Log the gdal_translate command.
+                    log_the_command(gdal_translate_command_list)
+
+                    # Execute gdal_translate.
+                    subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+
+                    # Replace with new tiles
+                    tile = working_dir+os.path.basename(tile)
+
                 if '.tif' in tile.lower():
                     # Convert TIFF files to PNG
                     log_info_mssg("Converting TIFF file " + tile + " to " + tiff_compress)
@@ -1686,7 +1717,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     # Replace with new tiles
                     tile = working_dir+tile_basename+'.'+str(tiff_compress).lower()
                     temp_tile = tile
-                
+
                 log_info_mssg("Converting RGBA PNG to indexed paletted PNG")
                 
                 output_tile = working_dir + tile_basename+'_indexed.png'
@@ -1991,7 +2022,13 @@ if len(mrf_list) > 1:
 elif len(mrf_list) == 1:
     mrf = mrf_list[0]
     timeout = time.time() + 30 # 30 second timeout if MRF is still being generated
-    while os.path.isfile(mrf) == False:
+
+    # Bail if a remote MRF is included in the input list.  Just can't handle this yet.
+    if mrf.startswith("/vsi"):
+        mssg='Cannot support a remote (i.e. /vsi...) MRF input'
+        log_sig_exit('ERROR', mssg, sigevent_url)
+
+    while not os.path.isfile(mrf):
         mssg=str().join([mrf, ' does not exist'])
         if time.time() > timeout:
             log_sig_exit('ERROR', mssg, sigevent_url)
