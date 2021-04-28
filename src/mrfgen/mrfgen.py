@@ -2248,7 +2248,7 @@ if mrf_empty_tile_filename != '' and (z == None or z == 0):
 
 # Create the gdal_translate command.         
 gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
-if compress in ["COMPRESS=JPEG", "COMPRESS=PNG"]:
+if compress in ["COMPRESS=JPEG", "COMPRESS=PNG", "COMPRESS=JPNG"]:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('QUALITY='+quality_prec)
 if compress == "COMPRESS=LERC":
