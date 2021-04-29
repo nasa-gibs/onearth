@@ -79,7 +79,9 @@ else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
-	for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
+  # TODO Could remove `epsg` if oe-status endpoint was not in S3
+  # TODO Could make service-specific if needed
+	for f in $(grep -l gc_service /etc/onearth/config/endpoint/epsg*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
 	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 

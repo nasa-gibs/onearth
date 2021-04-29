@@ -19,29 +19,30 @@ mkdir -p /etc/onearth/config/layers/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
+  echo "S3_CONFIGS not set for OnEarth configs, using sample data"
 
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
   cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 else
-	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+  echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
-	for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
-	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
-	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
+  # TODO Could remove `epsg` if oe-status endpoint was not in S3
+  for f in $(grep -l gc_service /etc/onearth/config/endpoint/epsg*.yaml); do
+    CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
+    CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 
-	  mkdir -p $CONFIG_SOURCE
+    mkdir -p $CONFIG_SOURCE
 
-	  # WMTS Endpoint
-	  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+    # WMTS Endpoint
+    mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
 
-	  # TWMS Endpoint
-	  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+    # TWMS Endpoint
+    mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
 
     python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
   done
@@ -53,7 +54,8 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case t
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
-# Copy in oe-status endpoint configuration
+# Copy in oe-status endpoint configuration.
+# TODO Could make service-specific if needed
 cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
 
 # Make GC Service

@@ -32,7 +32,7 @@ def keyMapper(acc, obj):
         if len(keyElems) > 2:
             layer_name = keyElems[1]
         else:
-            layer_name = ''
+            layer_name = None
         if len(keyElems) > 3:
             year = keyElems[2]
             if len(keyElems) > 4:
@@ -43,15 +43,16 @@ def keyMapper(acc, obj):
             year = None
             day = None
 
-        if not acc.get(proj):
-            acc[proj] = {}
-            
-        if not acc[proj].get(layer_name):
-            acc[proj][layer_name] = {'idx': set([])}
-    
-        if filename.endswith('.idx'):
-            idx = (year + '/' if year is not None else '') + (day + '/' if day is not None else '') + filename
-            acc[proj][layer_name]['idx'].add(idx)
+        if layer_name is not None:
+            if not acc.get(proj):
+                acc[proj] = {}
+
+            if not acc[proj].get(layer_name):
+                acc[proj][layer_name] = {'idx': set([])}
+
+            if filename.endswith('.idx'):
+                idx = (year + '/' if year is not None else '') + (day + '/' if day is not None else '') + filename
+                acc[proj][layer_name]['idx'].add(idx)
 
     return acc
 
@@ -63,7 +64,7 @@ def getAllKeys(conn, bucket, prefix):
 
     while True:
         resp = conn.list_objects_v2(**kwargs)
-        keys = keys + resp['Contents']
+        keys = keys + (resp['Contents'] if 'Contents' in resp else [])
 
         try:
             kwargs['ContinuationToken'] = resp['NextContinuationToken']
