@@ -61,7 +61,6 @@
 #  <extents>-180,-90,180,90</extents>
 #  <colormap></colormap>
 #  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
-#  <mrf_nocopy>true</mrf_nocopy>
 #  <mrf_noaddo>false</mrf_noaddo>
 #  <mrf_merge>false</mrf_merge>
 #  <mrf_parallel>false</mrf_parallel>
@@ -1348,14 +1347,6 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''    
-    # nocopy, defaults to True if not global
-    try:
-        if get_dom_tag_value(dom, 'mrf_nocopy') == "false":
-            nocopy = False
-        else:
-            nocopy = True
-    except:
-        nocopy = None
     # noaddo, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_noaddo') == "false":
@@ -1514,7 +1505,6 @@ log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resam
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
-log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
@@ -1627,9 +1617,19 @@ else: # Default to png
 
 # Sanity check to make sure all of the input files exist
 for i, tile in enumerate(alltiles):
-    if not os.path.exists(tile):
+
+    if tile.startswith("/vsi"):
+        try:
+            img = gdal.Open(tile)
+            img = None
+        except:
+            log_info_mssg("Missing input file: " + tile)
+            log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
+    elif not os.path.exists(tile):
         log_info_mssg("Missing input file: " + tile)
         log_sig_exit('ERROR', 'Invalid input files', sigevent_url)
+
 
 # Filter out bad JPEGs
 goodtiles = []
@@ -1641,22 +1641,25 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
 
         try:
             img = gdal.Open(tile)
-            
+
             if img is None:
                 errors += 1
                 log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
                 continue
-        except RuntimeError as e:                
+        except RuntimeError as e:
             log_sig_exit('ERROR', 'Failed to execute gdal.Open', sigevent_url)
 
         if img.RasterCount == 1:
             errors += 1
             log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
+            img = None
             continue
 
+        img = None
+
         goodtiles.append(tile)
-        
-    alltiles = goodtiles       
+
+    alltiles = goodtiles
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
 if mrf_compression_type == 'PPNG' and colormap != '':
@@ -1676,9 +1679,27 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             for band in tileInfo["bands"]:
                 has_palette |= (band["colorInterpretation"] == "Palette")
 
-
             # Read gdal_info output
             if not has_palette:
+
+                # Download tile locally for RGBApng2Palpng script
+                if tile.startswith("/vsi"):
+                    log_info_mssg("Downloading remote file " + tile)
+
+                    # Create the gdal_translate command.
+                    gdal_translate_command_list=['gdal_translate', '-q', '-co', 'WORLDFILE=YES',
+                                                 tile, working_dir+os.path.basename(tile)]
+
+                    # Log the gdal_translate command.
+                    log_the_command(gdal_translate_command_list)
+
+                    # Execute gdal_translate.
+                    subprocess.call(gdal_translate_command_list, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+
+                    # Replace with new tiles
+                    tile = working_dir+os.path.basename(tile)
+
                 if '.tif' in tile.lower():
                     # Convert TIFF files to PNG
                     log_info_mssg("Converting TIFF file " + tile + " to " + tiff_compress)
@@ -1696,7 +1717,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     # Replace with new tiles
                     tile = working_dir+tile_basename+'.'+str(tiff_compress).lower()
                     temp_tile = tile
-                
+
                 log_info_mssg("Converting RGBA PNG to indexed paletted PNG")
                 
                 output_tile = working_dir + tile_basename+'_indexed.png'
@@ -1908,10 +1929,6 @@ if mrf_compression_type == 'EPNG':
 # sort
 alltiles.sort()
 
-# Just always set nocopy to True. It's simpler that way
-nocopy=True
-log_info_mssg("Setting MRF nocopy to " + str(nocopy))
-
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
 try:
@@ -2005,7 +2022,13 @@ if len(mrf_list) > 1:
 elif len(mrf_list) == 1:
     mrf = mrf_list[0]
     timeout = time.time() + 30 # 30 second timeout if MRF is still being generated
-    while os.path.isfile(mrf) == False:
+
+    # Bail if a remote MRF is included in the input list.  Just can't handle this yet.
+    if mrf.startswith("/vsi"):
+        mssg='Cannot support a remote (i.e. /vsi...) MRF input'
+        log_sig_exit('ERROR', mssg, sigevent_url)
+
+    while not os.path.isfile(mrf):
         mssg=str().join([mrf, ' does not exist'])
         if time.time() > timeout:
             log_sig_exit('ERROR', mssg, sigevent_url)
@@ -2262,7 +2285,7 @@ if mrf_empty_tile_filename != '' and (z == None or z == 0):
 
 # Create the gdal_translate command.         
 gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', compress, '-co', blocksize,'-outsize', target_x, target_y]    
-if compress in ["COMPRESS=JPEG", "COMPRESS=PNG"]:
+if compress in ["COMPRESS=JPEG", "COMPRESS=PNG", "COMPRESS=JPNG"]:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('QUALITY='+quality_prec)
 if compress == "COMPRESS=LERC":
@@ -2272,13 +2295,13 @@ if compress == "COMPRESS=LERC":
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
-if nocopy:
+
+gdal_translate_command_list.append('-co')
+gdal_translate_command_list.append('NOCOPY=true')
+# use UNIFORM_SCALE if empty MRF, single input, or noaddo
+if noaddo or len(alltiles) <= 1:
     gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('NOCOPY=true')
-    # use UNIFORM_SCALE if empty MRF, single input, or noaddo
-    if noaddo or len(alltiles) <= 1:
-        gdal_translate_command_list.append('-co')
-        gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
+    gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
         
 # add ending parameters      
 gdal_translate_command_list.append(vrt_filename)
@@ -2431,13 +2454,7 @@ else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
     log_info_mssg(str().join(['vrtf = ',str(vrtf)]))
     log_info_mssg('idxf should be >= vrtf')
-    if nocopy:
-        mssg = mrf_filename + ' already exists'
-    else:
-        mssg=str().join(['Unsuccessful:  gdal_translate   ',
-                         'Check the gdal mrf driver plugin.  ',
-                         'Check stderr file: ',
-                         gdal_translate_stderr_filename])
+    mssg = mrf_filename + ' already exists'
     log_sig_exit('ERROR', mssg, sigevent_url)
     
 if mrf_clean:
