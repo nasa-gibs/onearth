@@ -108,7 +108,7 @@ def keyMapper(acc, obj):
         datetime.strptime(date, '%Y%j%H%M%S')
         acc[proj][layer_name]['dates'].add(date)
     except ValueError:
-        print('Incorrect data format for ' + filename + ', should be YYYYDDDhhmmss')
+        print('Incorrect date format for ' + filename + ', should be YYYYDDDhhmmss')
         return acc
 
     return acc

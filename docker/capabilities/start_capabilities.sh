@@ -10,7 +10,7 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 # Create config directories
-chmod -R 755 /onearth
+chmod 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/

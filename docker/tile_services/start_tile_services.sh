@@ -23,7 +23,7 @@ if [ "$DEBUG_LOGGING" = true ]; then
 fi
 
 # Create config directories
-chmod -R 755 /onearth
+chmod 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/

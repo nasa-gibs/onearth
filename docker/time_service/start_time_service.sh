@@ -11,7 +11,7 @@ if [ ! -f /.dockerenv ]; then
 fi
 
 # Create config directories
-chmod -R 755 /onearth
+chmod 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/
@@ -33,7 +33,7 @@ else
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint  >>/var/log/onearth/config.log 2>&1
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf  >>/var/log/onearth/config.log 2>&1
 
-	for f in $(grep -l /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml); do
+	for f in $(grep -l gc_service /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
 	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 
@@ -375,7 +375,7 @@ else
 	fi
 fi
 
-# Confiture and startup apache
+# Configure and startup apache
 cp onearth_time_service.conf /etc/httpd/conf.d
 
 if [ "$DEBUG_LOGGING" = true ]; then

@@ -26,7 +26,7 @@ else
 fi
 
 # Copy in oe-status endpoint configuration
-cp ../oe-status/endpoint/oe-status_reproject /etc/onearth/config/endpoint/
+cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 
 # Copy tilematrixsets config file
 mkdir -p /etc/onearth/config/conf/
