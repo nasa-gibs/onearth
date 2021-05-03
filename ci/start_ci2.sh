@@ -19,7 +19,7 @@ sed -i 's@{REDIS_HOST}@'127.0.0.1'@g' /build/test/ci_tests/time_service/time_ser
 mkdir -p /etc/onearth/config/conf/
 cp ../src/modules/gc_service/conf/* /etc/onearth/config/conf/
 mkdir -p /etc/onearth/empty_tiles/
-cp ../docker/empty_tiles/* /etc/onearth/empty_tiles/
+cp ../docker/sample_configs/empty_tiles/* /etc/onearth/empty_tiles/
 mkdir -p /etc/onearth/config/mapserver/
 cp ../src/test/mapserver_test_data/test.header /etc/onearth/config/mapserver/
 mkdir -p /build/test/ci_tests/wms/test

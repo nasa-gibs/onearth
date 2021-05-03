@@ -54,8 +54,6 @@ sed -i 's@/{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml # in case t
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
-# Copy in oe-status endpoint configuration.
-# TODO Could make service-specific if needed
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
 

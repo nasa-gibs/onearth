@@ -5,6 +5,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 
 * `test_gc_service.py` -- tests the OnEarth GetCapabilities Service
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
+* `test_mapserver.py` -- tests wms requests via mapserver  
 * `test_mod_mrf.py` -- tests the mod_mrf module
 * `test_mod_reproject.py` -- tests the mod_reproject module
 * `test_mod_twms.py` -- tests the mod_twms module

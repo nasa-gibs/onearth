@@ -45,7 +45,8 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
 done
 
 # Make endpoint configurations
-sleep 20
+echo "Sleeping for 60 seconds, giving the capabilities service time to start"
+sleep 60
 sh load_endpoints.sh
 
 

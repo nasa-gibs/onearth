@@ -26,13 +26,13 @@ then
 	# Load test layers
   mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
   cp oe2_test_mod_reproject_date.conf /etc/httpd/conf.d
-  cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
-  cp ../layer_configs/oe2_test_mod_reproject_date*.config /var/www/html/reproject_endpoint/date_test/default/tms/
+  cp ../test_configs/layers/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
+  cp ../test_configs/layers/oe2_test_mod_reproject_date*.config /var/www/html/reproject_endpoint/date_test/default/tms/
 
   mkdir -p /var/www/html/reproject_endpoint/static_test/default/tms
   cp oe2_test_mod_reproject_static.conf /etc/httpd/conf.d
-  cp ../layer_configs/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/static_test/default/tms/oe2_test_mod_reproject_static_layer_source.config
-  cp ../layer_configs/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
+  cp ../test_configs/layers/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/static_test/default/tms/oe2_test_mod_reproject_static_layer_source.config
+  cp ../test_configs/layers/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
 
 else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
@@ -65,7 +65,10 @@ ExtendedStatus On
 EOS
 
 # Run reproject config tools
-sleep 10 # waiting for 8080:oe-status to be up
+# TODO be more purposed in how long we're waiting for the source WMTS services to be up
+# TODO maybe look for http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml to respond
+echo "Sleeping for 60 seconds, giving the capabilities and tiles services time to start"
+sleep 60
 
 # Start apache so that reproject responds locally for configuration
 echo 'Starting Apache server'
