@@ -81,7 +81,7 @@ else
 
   # TODO Could remove `epsg` if oe-status endpoint was not in S3
   # TODO Could make service-specific if needed
-	for f in $(grep -l gc_service /etc/onearth/config/endpoint/epsg*.yaml); do
+	for f in $(grep -l layer_config_source /etc/onearth/config/endpoint/epsg*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
 	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 
@@ -125,15 +125,15 @@ done
 cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
 
 # Data for oe-status
-mkdir /etc/onearth/config/layers/oe-status/
+mkdir -p /etc/onearth/config/layers/oe-status/
 mkdir -p /onearth/idx/oe-status/BlueMarble16km
 mkdir -p /onearth/layers/oe-status/BlueMarble16km
-cp ../oe-status/layer/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
+cp ../oe-status/layers/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
 cp ../oe-status/data/*.idx /onearth/idx/oe-status/BlueMarble16km/
 cp ../oe-status/data/*.pjg /onearth/layers/oe-status/BlueMarble16km/
 
 # Run layer config tools
-for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
+for f in $(grep -l wmts_service /etc/onearth/config/endpoint/*.yaml); do
   python3.6 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
 

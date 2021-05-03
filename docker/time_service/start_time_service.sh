@@ -33,7 +33,8 @@ else
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint  >>/var/log/onearth/config.log 2>&1
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf  >>/var/log/onearth/config.log 2>&1
 
-	for f in $(grep -l gc_service /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml); do
+  # TODO Maybe remove `epsg` if oe-status really isn't in S3 configs
+	for f in $(grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
 	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 
@@ -355,9 +356,9 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 
 else
 	# Load custom time period configurations
-	for i in /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml; do
-		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST
-	done
+	for f in $(grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml); do
+		python3 /usr/bin/oe_periods_configure.py -e "$f" -r $REDIS_HOST
+  done
 
 	# Load time periods by scraping S3 bucket
 	if [ "$FORCE_TIME_SCRAPE" = true ]; then
