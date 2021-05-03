@@ -56,10 +56,15 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
 # Copy in oe-status endpoint configuration.
 # TODO Could make service-specific if needed
+# Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
 
+# Data for oe-status
+mkdir -p /etc/onearth/config/layers/oe-status/
+cp ../oe-status/layers/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
+
 # Make GC Service
-for f in $(grep -l gc_service /etc/onearth/config/endpoint/*.yaml); do
+for f in $(grep -l 'gc_service:' /etc/onearth/config/endpoint/*.yaml); do
   lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
 done
 
