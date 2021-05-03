@@ -4,3 +4,4 @@ mapbox_vector_tile
 fiona
 requests
 rtree
+lxml==4.6.3
