@@ -9,22 +9,9 @@ fi
 
 cd /home/oe2/onearth/docker/reproject
 
-# WMTS endpoints
-mkdir -p /var/www/html/oe-status_reproject/
-mkdir -p /var/www/html/wmts/epsg3857/all
-mkdir -p /var/www/html/wmts/epsg3857/best
-mkdir -p /var/www/html/wmts/epsg3857/std
-mkdir -p /var/www/html/wmts/epsg3857/nrt
-
-# TWMS endpoints
-mkdir -p /var/www/html/twms/epsg3857/all
-mkdir -p /var/www/html/twms/epsg3857/best
-mkdir -p /var/www/html/twms/epsg3857/std
-mkdir -p /var/www/html/twms/epsg3857/nrt
-
 # Create config directories
 mkdir -p /onearth
-chmod -R 755 /onearth
+chmod 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
 
@@ -78,7 +65,7 @@ ExtendedStatus On
 EOS
 
 # Run reproject config tools
-sleep 10 # waiting for 8080:oe-status to be up?
+sleep 10 # waiting for 8080:oe-status to be up
 
 # Start apache so that reproject responds locally for configuration
 echo 'Starting Apache server'
@@ -87,13 +74,21 @@ sleep 2
 
 # Load additional endpoints
 echo 'Loading additional endpoints'
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_best.yaml >>/var/log/onearth/config.log 2>&1
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_std.yaml >>/var/log/onearth/config.log 2>&1
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_all.yaml >>/var/log/onearth/config.log 2>&1
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/epsg3857_nrt.yaml >>/var/log/onearth/config.log 2>&1
+
+# Run layer config tools
+for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
+	  # WMTS Endpoint
+	  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+
+	  # TWMS Endpoint
+	  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+
+	  python3.6 /usr/bin/oe2_reproject_configure.py $f >>/var/log/onearth/config.log 2>&1
+done
 
 # Now configure oe-status after reproject is configured
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 echo 'Restarting Apache server'
