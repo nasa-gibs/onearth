@@ -33,8 +33,7 @@ else
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint  >>/var/log/onearth/config.log 2>&1
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf  >>/var/log/onearth/config.log 2>&1
 
-  # TODO Maybe remove `epsg` if oe-status really isn't in S3 configs
-	for f in $(grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml); do
+	for f in $(grep -L 'EPSG:3857' /etc/onearth/config/endpoint/*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
 	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 

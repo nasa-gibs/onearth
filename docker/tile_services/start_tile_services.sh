@@ -79,9 +79,7 @@ else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
-  # TODO Could remove `epsg` if oe-status endpoint was not in S3
-  # TODO Could make service-specific if needed
-	for f in $(grep -l layer_config_source /etc/onearth/config/endpoint/epsg*.yaml); do
+	for f in $(grep -l layer_config_source /etc/onearth/config/endpoint/*.yaml); do
 	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
 	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 
@@ -144,15 +142,17 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	sleep 2
 	# Turn off the following line for production systems
 	/usr/bin/redis-cli -n 0 CONFIG SET protected-mode no
+
+	# Add time metadata to Redis for sample data
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
 fi
 
-# Add time metadata to Redis
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
+# Add BlueMarble time metadata to Redis for status
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:BlueMarble16km
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:BlueMarble16km:default "2004-08-01"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:BlueMarble16km:periods "2004-08-01/2004-08-01/P1M"
