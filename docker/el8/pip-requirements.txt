@@ -10,7 +10,7 @@ parse_apache_configs == 0.0.2   # https://pypi.org/project/parse_apache_configs/
 pyparsing == 2.4.7  # https://pypi.org/project/pyparsing/
 pypng == 0.0.20     # https://pypi.org/project/pypng/
 python-dateutil == 2.8.1        # https://pypi.org/project/python-dateutil/
-requests == 2.24.0  # https://pypi.org/project/requests/
+requests == 2.25.1  # https://pypi.org/project/requests/
 unittest2 == 1.1.0  # https://pypi.org/project/unittest2/
 unittest-xml-reporting == 2.5.2 # https://pypi.org/project/unittest-xml-reporting/
 urllib3 == 1.26.4 # https://pypi.org/project/urllib3/
