@@ -31,6 +31,10 @@ def strip_trailing_slash(string):
     return re.sub(r'/$', '', string)
 
 
+def format_time_key(time_string):
+    return int(''.join(filter(str.isdigit, time_string)))
+
+
 def get_layer_config(layer_config_path):
     print(f"Reading {layer_config_path}")
     with layer_config_path.open() as f:
@@ -126,6 +130,26 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
         else:
             print('No time configuration found for ' +
                   str(layer_config['path'].absolute()))
+
+        if 'best_config' in layer_config['config'].keys():
+            best_config = key + ':best'
+            best_config_wm = best_config.replace('epsg4326', 'epsg3857')
+            print('Processing best_config', best_config)
+
+            # clear out existing time configs for layer
+            r.delete(best_config)
+            if 'epsg4326' in key:
+                # delete key for reproject as well
+                r.delete(best_config_wm)
+
+            # process each best_config item
+            for key, value in layer_config['config']['best_config'].items():
+                print('Adding ' + f'{key}: {value}' + ' to ' + best_config)
+                r.zadd(best_config, {value: format_time_key(key)})
+                # duplicate config for epsg3857 for reproject
+                if 'epsg4326' in key:
+                    print('Adding ' + f'{key}: {value}' + ' to ' + best_config_wm)
+                    r.zadd(best_config_wm, {value: format_time_key(key)})
 
 
 # Main routine to be run in CLI mode

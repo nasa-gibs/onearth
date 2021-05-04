@@ -237,6 +237,7 @@ source_mrf:
 ### Optional for Time Service
 ```
 time_config: Custom time period configuration for layer
+best_config: Custom best available configuration for layer as a key value list of Time (YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ) : Filename Prefix
 ```
 
 See [doc/time_detection.md](time_detection.md) for time period configuration information.
@@ -253,6 +254,15 @@ tilematrixset: "1km"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_Brightness_Temp_Band31_Day abstract"
+time_config:
+  - "2000-01-01/2009-12-31/P1D"
+  - "2011-01-01/2017-06-04/P1D"
+  - "2017-06-20/DETECT/P1D"
+best_config:
+  "2012-06-03": "MODIS_Aqua_Brightness_Temp_Band31_Day_v5_STD"
+  "2012-07-03": "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
+  "2012-08-03": "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_NRT"
+  "2012-09-03": "MODIS_Aqua_Brightness_Temp_Band31_Day_v5_NRT"
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "{base_uri_meta}/colormaps/v1.3/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "{base_uri_meta}/colormaps/v1.0/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
