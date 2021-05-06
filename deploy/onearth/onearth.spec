@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.3.8
-Release:	7%{?dist}
+Release:	8%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -412,7 +412,7 @@ pip install Fiona==1.7.0 Shapely==1.5.16 Rtree==0.8.0 mapbox-vector-tile==0.4.0 
 %{_datadir}/onearth/test
 
 %post test
-pip install unittest2 unittest-xml-reporting==1.14.0 requests
+pip install unittest2 unittest-xml-reporting==1.14.0 requests cycler==0.10.0
 
 %changelog
 * Mon Jul 17 2017 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.3.1-3
