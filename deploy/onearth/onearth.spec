@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.4.0
-Release:	7%{?dist}
+Release:	8%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -382,7 +382,7 @@ sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe
 %{_datadir}/onearth/test
 
 %post test
-pip3 install unittest2 unittest-xml-reporting==1.14.0 requests
+pip3 install unittest2 unittest-xml-reporting==1.14.0 requests cycler==0.10.0
 
 %changelog
 * Mon Apr 05 2021 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-4

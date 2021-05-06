@@ -5,3 +5,4 @@ fiona
 requests
 rtree
 lxml==4.6.3
+cycler==0.10.0
