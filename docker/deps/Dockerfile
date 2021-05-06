@@ -21,7 +21,7 @@ RUN wget https://github.com/mikefarah/yq/releases/download/v4.2.0/yq_linux_amd64
   tar xz && mv yq_linux_amd64 /usr/bin/yq
 
 #Install pip 3.6 dependencies
-RUN pip3.6 install requests==2.24.0 pyaml==18.11.0 lxml==4.5.2 pypng==0.0.20 boto3==1.9 redis==3.5.3
+RUN pip3.6 install requests==2.24.0 pyaml==18.11.0 lxml==4.6.3 pypng==0.0.20 boto3==1.9 redis==3.5.3 urllib3==1.26.4
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2

@@ -75,8 +75,8 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip3 install --prefix=/var/task --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.5.2
-RUN pip3 install --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.5.2
+RUN pip3 install --prefix=/var/task --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.6.3
+RUN pip3 install --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox_vector_tile==1.2.0 lxml==4.6.3
 # TODO: Sort out weirdness with some dependencies expecting specific lib locations
 RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
 RUN pip3 uninstall -y protobuf && pip3 install protobuf==3.7.0

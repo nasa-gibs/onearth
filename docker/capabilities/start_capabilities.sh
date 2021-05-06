@@ -82,7 +82,7 @@ LoadModule status_module modules/mod_status.so
 
 <Location /server-status>
    SetHandler server-status
-   Allow from all 
+   Allow from all
 </Location>
 
 # ExtendedStatus controls whether Apache will generate "full" status
