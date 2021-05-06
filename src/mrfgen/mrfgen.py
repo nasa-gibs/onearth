@@ -1278,17 +1278,20 @@ else:
     # Input files.
     try:
         input_files = get_input_files(dom)
+        empty_vrt = None
         if input_files == '':
             raise ValueError('No input files provided')
     except:
-        if input_dir == None:
+        if input_dir is None:
             if mrf_empty_tile_filename != '':
-                input_files = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename,
-                                         target_epsg, target_xmin, target_ymin, target_xmax, target_ymax)
+                input_files = None
+                empty_vrt = create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename, mrf_empty_tile_filename,
+                                       target_epsg, target_xmin, target_ymin, target_xmax, target_ymax)
             else:
                 log_sig_exit('ERROR', "<input_files> or <input_dir> or <mrf_empty_tile_filename> is required", sigevent_url)
         else:
             input_files = None
+            empty_vrt = None
     # overview levels
     try:
         overview_levels = get_dom_tag_value(dom, 'overview_levels').split(' ')
@@ -1478,10 +1481,12 @@ if os.path.dirname(configuration_filename) != os.path.dirname(working_dir):
 log_info_mssg(str().join(['config parameter_name:          ', parameter_name]))
 log_info_mssg(str().join(['config date_of_data:            ', date_of_data]))
 log_info_mssg(str().join(['config time_of_data:            ', time_of_data]))
-if input_files != None:
+if input_files is not None:
     log_info_mssg(str().join(['config input_files:             ', input_files]))
-if input_dir != None:
+if input_dir is not None:
     log_info_mssg(str().join(['config input_dir:               ', input_dir]))
+if empty_vrt is not None:
+    log_info_mssg(str().join(['config empty_vrt:               ', empty_vrt]))
 log_info_mssg(str().join(['config output_dir:              ', output_dir]))
 log_info_mssg(str().join(['config working_dir:             ', working_dir]))
 log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
@@ -1939,8 +1944,18 @@ except IOError:
     log_sig_exit('ERROR', mssg, sigevent_url)
 else:
     # Write to file with line termination.
-    for ndx in range(len(alltiles)):
-        alltilesfile.write(str().join([alltiles[ndx], '\n']))
+    if len(alltiles) > 0:
+        for ndx in range(len(alltiles)):
+            alltilesfile.write(str().join([alltiles[ndx], '\n']))
+    elif empty_vrt is not None:
+        # Create a VRT for an empty input
+        alltilesfile.write("{0}\n".format(create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename,
+                                                     mrf_empty_tile_filename, target_epsg, target_xmin, target_ymin,
+                                                     target_xmax, target_ymax)))
+    else:
+        mssg='No input tiles or empty VRT to process'
+        log_sig_exit('ERROR', mssg, sigevent_url)
+
     # Close file.
     alltilesfile.close()
 # Send to log.
@@ -2277,7 +2292,7 @@ else: #don't bother calculating y
 
 #-----------------------------------------------------------------------
 # Seed the MRF data file (.ppg or .pjg) with a copy of the empty tile.
-if mrf_empty_tile_filename != '' and (z == None or z == 0):
+if mrf_empty_tile_filename != '' and (z is None or z == 0):
     log_info_mssg('Seed the MRF data file with a copy of the empty tile.' )
     log_info_mssg(str().join(['Copy ', mrf_empty_tile_filename,' to ', out_filename]))
     shutil.copy(mrf_empty_tile_filename, out_filename)
