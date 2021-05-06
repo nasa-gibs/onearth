@@ -55,7 +55,10 @@ sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*/*.yaml
 sed -i 's@{S3_URL}@'$S3_URL'@g' /etc/onearth/config/layers/*/*.yaml
 
 # Copy in oe-status endpoint configuration
-cp ../oe-status/endpoint/* /etc/onearth/config/endpoint/
+cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/
+cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status.yaml)
+mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 
 # Data for oe-status
 mkdir -p /etc/onearth/config/layers/oe-status/

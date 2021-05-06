@@ -27,6 +27,7 @@ fi
 
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 cp ../oe-status/mapserver/oe-status_reproject.header /etc/onearth/config/mapserver/
 
 # Copy tilematrixsets config file
