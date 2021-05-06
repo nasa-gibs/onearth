@@ -583,11 +583,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     title_loc = 1-t
                 else:
                     title_loc = bottom+height+(0.07/lc)
-                    fig_text = fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold', color=label_color)
-                    if stroke_color:
-                        fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
-                    
-        
+                fig_text = fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold', color=label_color)
+                if stroke_color:
+                    fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
+
         else: # default vertical orientation
             left = ((1.00/lc) * legend_count) - (0.73/lc)
             width = 0.15/lc
