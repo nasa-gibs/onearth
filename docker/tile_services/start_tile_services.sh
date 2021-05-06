@@ -37,7 +37,7 @@ mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
 
-# Scrape OnEarth configs from S3
+# Copy OnEarth configs from S3 or from local samples
 if [ -z "$S3_CONFIGS" ]
 then
 	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
@@ -85,15 +85,18 @@ else
 
 	  mkdir -p $CONFIG_SOURCE
 
-	  # WMTS Endpoint
-	  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
-
-	  # TWMS Endpoint
-	  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
-
     python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
   done
 fi
+
+# Create internal endpoint directories for WMTS and TWMS endpoints
+for f in $(grep -l internal_endpoint /etc/onearth/config/endpoint/*.yaml); do
+  # WMTS Endpoint
+  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+
+  # TWMS Endpoint
+  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+done
 
 # Replace with S3 URL
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_URL}@'$S3_URL'@g' {} \; # in case there is a preceding slash
