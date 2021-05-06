@@ -1949,9 +1949,7 @@ else:
             alltilesfile.write(str().join([alltiles[ndx], '\n']))
     elif empty_vrt is not None:
         # Create a VRT for an empty input
-        alltilesfile.write("{0}\n".format(create_vrt(add_trailing_slash(check_abs_path(working_dir))+basename,
-                                                     mrf_empty_tile_filename, target_epsg, target_xmin, target_ymin,
-                                                     target_xmax, target_ymax)))
+        alltilesfile.write("{0}\n".format(empty_vrt))
     else:
         mssg='No input tiles or empty VRT to process'
         log_sig_exit('ERROR', mssg, sigevent_url)
