@@ -27,7 +27,7 @@ echo 'Starting Apache server'
 sleep 2
 
 # Create config directories
-chmod -R 755 /onearth
+chmod -755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/
@@ -395,7 +395,7 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:default "2012-09-10"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods "2012-09-10/2018-12-31/P1D"
-	
+
 	# Load custom time period configurations and generate periods
 	for i in /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml; do
 		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST -g

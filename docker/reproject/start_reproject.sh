@@ -36,7 +36,7 @@ mkdir -p /var/www/html/twms/epsg3857/nrt
 
 # Create config directories
 mkdir -p /onearth
-chmod -R 755 /onearth
+chmod 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
 
@@ -73,7 +73,7 @@ LoadModule status_module modules/mod_status.so
 
 <Location /server-status>
    SetHandler server-status
-   Allow from all 
+   Allow from all
 </Location>
 
 # ExtendedStatus controls whether Apache will generate "full" status

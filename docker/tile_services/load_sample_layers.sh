@@ -49,7 +49,7 @@ mkdir -p /var/www/html/twms/epsg3413/std
 mkdir -p /var/www/html/twms/epsg3413/nrt
 
 # Create config directories
-chmod -R 755 /onearth
+chmod 755 /onearth
 mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/
@@ -78,7 +78,7 @@ else
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.2' -b $S3_CONFIGS -p colormaps/v1.2
 	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3
-	
+
 	for f in /etc/onearth/colormaps/v1.3/*
 	do
 		echo "Generating HTML for $f"
