@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.3.1
+FROM nasagibs/onearth-deps:2.3.2
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=3

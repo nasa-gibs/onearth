@@ -1,27 +1,48 @@
 # This Dockerfile must be run from source root
 
+# This version of the Dockerfile packs commands together to minimize layers and
+# to minimize image size.
+
 FROM centos:7
 
-# Upgrade all existing packages
-RUN yum -y update && yum clean all
-
 # Install dependencies
-RUN yum groupinstall -y "Development Tools"
-RUN yum install -y epel-release-7-11 lua-devel-5.1.4 jansson-devel-2.10 libpng-devel-1.5.13 pcre-devel-8.32 wget-1.14 libyaml-devel-0.1.4 libcurl-devel-7.29.0 libjpeg-turbo-devel-1.2.90 libxml2-2.9.1 libxml2-devel-2.9.1
-RUN yum install -y mod_ssl openssl-devel
-RUN yum install -y luarocks-2.3.0
-RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
-RUN yum install -y redis5
-RUN yum install -y python36-3.6.8 python36-devel-3.6.8 python36-pip-9.0.1
-RUN yum install -y cronie
-
+RUN yum -y update && \
+    yum clean all && \
+    yum groupinstall -y "Development Tools" && \
+    yum install -y epel-release-7-11 https://repo.ius.io/ius-release-el7.rpm && \
+    yum install -y \
+        lua-devel-5.1.4 \
+        jansson-devel-2.10 \
+        libpng-devel-1.5.13 \
+        pcre-devel-8.32 \
+        wget-1.14 \
+        libyaml-devel-0.1.4 \
+        libcurl-devel-7.29.0 \
+        libjpeg-turbo-devel-1.2.90 \
+        libxml2-2.9.1 \
+        libxml2-devel-2.9.1 \
+        mod_ssl \
+        openssl-devel \
+        luarocks-2.3.0 \
+        redis5 \
+        python36-3.6.8 \
+        python36-devel-3.6.8 \
+        python36-pip-9.0.1 \
+        cronie && \
+    pip3.6 install \
+        requests==2.24.0 \
+        pyaml==18.11.0 \
+        lxml==4.6.3 \
+        pypng==0.0.20 \
+        boto3==1.9 \
+        redis==3.5.3 \
+        urllib3==1.26.4 && \
+    yum clean all
+    
 # Install yq
 WORKDIR /opt
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.2.0/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq
-
-#Install pip 3.6 dependencies
-RUN pip3.6 install requests==2.24.0 pyaml==18.11.0 lxml==4.6.3 pypng==0.0.20 boto3==1.9 redis==3.5.3 urllib3==1.26.4
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -30,28 +51,31 @@ COPY ./ /home/oe2/onearth/
 
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
-RUN yum install -y yum-utils-1.1.31 rpm-build-4.11.3
-RUN yumdownloader --source httpd-2.4.6
-RUN HOME="/tmp" rpm -ivh httpd-*.src.rpm
-RUN yum-builddep -y httpd-2.4.6
+RUN yum install -y yum-utils-1.1.31 rpm-build-4.11.3 && \
+    yum clean all && \
+    yumdownloader --source httpd-2.4.6 && \
+    HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
+    yum-builddep -y httpd-2.4.6
 WORKDIR /tmp/rpmbuild/SPECS
-RUN HOME="/tmp" rpmbuild -bp httpd.spec
-RUN ls /home/oe2/onearth
-RUN cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES
-RUN patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch
-RUN HOME="/tmp" rpmbuild -ba httpd.spec
-RUN yum -y remove httpd httpd-devel httpd-tools
-RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm
-RUN rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
+RUN HOME="/tmp" rpmbuild -bp httpd.spec && \
+    ls /home/oe2/onearth && \
+    cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
+    patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch && \
+    HOME="/tmp" rpmbuild -ba httpd.spec && \
+    yum -y remove httpd httpd-devel httpd-tools && \
+    yum clean all && \
+    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm && \
+    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
 
 # Install APR patch
 WORKDIR /tmp
-RUN wget http://archive.apache.org/dist/apr/apr-1.6.5.tar.gz
-RUN tar xf apr-1.6.5.tar.gz
-WORKDIR /tmp/apr-1.6.5
-RUN patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch
-RUN ./configure --prefix=/lib64
-RUN make && make install
+RUN wget http://archive.apache.org/dist/apr/apr-1.6.5.tar.gz && \
+    tar xf apr-1.6.5.tar.gz && \
+    cd /tmp/apr-1.6.5 && \
+    patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch && \
+    ./configure --prefix=/lib64 && \
+    make && make install && \
+    cd / && rm -rf /tmp/apr-1.6.5* /tmp/httpd-2.4.6* /tmp/rpmbuild*
 
 # Set the locale
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
@@ -61,4 +85,3 @@ ENV LC_ALL=en_US.UTF-8
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
-RUN rm -rf /tmp/apr-1.6.5* /tmp/httpd-2.4.6* /tmp/rpmbuild*
