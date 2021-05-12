@@ -245,10 +245,10 @@ class TestTimeUtils(unittest.TestCase):
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
         configs = r.zrange('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:best_config', 0, -1, withscores=True)
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT', 4.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD', 4.0))
         self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_NRT', 3.0))
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD', 2.0))
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD', 1.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD', 2.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT', 1.0))
 
     def test_best_layer(self):
         # Test loading of best layer

@@ -9,10 +9,10 @@ abstract: "MODIS_Aqua_CorrectedReflectance_Bands721 abstract"
 time_config:
   - "DETECT/DETECT/P1D"
 best_config:
-  1: "MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD"
-  2: "MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD"
+  1: "MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT"
+  2: "MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD"
   3: "MODIS_Aqua_CorrectedReflectance_Bands721_v6_NRT"
-  4: "MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT"
+  4: "MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD"
 metadata:
   - {}
 source_mrf:
