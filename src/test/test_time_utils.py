@@ -85,10 +85,10 @@ def seed_redis_data(layers, db_keys=None):
     if db_keys:
         for key in db_keys:
             db_keystring += key + ':'
- 
+
     for layer in layers:
         r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})
-            
+
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
@@ -104,8 +104,8 @@ def remove_redis_layer(layer, db_keys=None):
     r.delete('{0}layer:{1}:default'.format(db_keystring, layer[0]))
     r.delete('{0}layer:{1}:periods'.format(db_keystring, layer[0]))
     r.delete('{0}layer:{1}:config'.format(db_keystring, layer[0]))
-    
-    
+
+
 def add_redis_config(layers, db_keys, config):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     db_keystring = ''
@@ -160,14 +160,14 @@ class TestTimeUtils(unittest.TestCase):
         self.date_service_url = 'http://localhost/date_service/date?'
 
         restart_apache()
-        
+
         shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.lua", os.getcwd() + '/periods.lua')
 
     def test_time_scrape_s3_keys(self):
         # Test scraping S3 keys
         test_layers = [('Test_Layer', '2017-01-04',
                         '2017-01-01/2017-01-04/P1D')]
-        
+
         cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -t best -b test-bucket 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326', 'best']
@@ -191,7 +191,7 @@ class TestTimeUtils(unittest.TestCase):
                         '2017-01-01/2017-01-15/P1D'),
                        ('MODIS_Aqua_Aerosol', '2017-01-15',
                        '2017-01-01T00:00:00Z/2017-01-15T00:00:00Z/PT1S')]
-        
+
         cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -t best -b test-inventory 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326', 'best']
@@ -212,13 +212,67 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[2], layer_res['periods'][0]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
+    def test_time_config(self):
+        # Test loading of time configs
+        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/best/'
+        layer_dir = '/etc/onearth/config/layers/epsg4326/best/'
+        if os.path.exists(layer_dir) is False:
+            os.makedirs(layer_dir)
+        file_names = os.listdir(source_dir)
+        for file_name in file_names:
+            shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
+
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        run_command(cmd, True)
+
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        configs = r.smembers('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:config')
+        self.assertEqual(configs.pop(), b'DETECT/DETECT/P1D')
+
+    def test_best_config(self):
+        # Test loading of best configs
+        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/best/'
+        layer_dir = '/etc/onearth/config/layers/epsg4326/best/'
+        if os.path.exists(layer_dir) is False:
+            os.makedirs(layer_dir)
+        file_names = os.listdir(source_dir)
+        for file_name in file_names:
+            shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
+
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        run_command(cmd, True)
+
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        configs = r.zrange('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:best_config', 0, -1, withscores=True)
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD', 4.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_NRT', 3.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD', 2.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT', 1.0))
+
+    def test_best_layer(self):
+        # Test loading of best layer
+        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/std/'
+        layer_dir = '/etc/onearth/config/layers/epsg4326/std/'
+        if os.path.exists(layer_dir) is False:
+            os.makedirs(layer_dir)
+        file_names = os.listdir(source_dir)
+        for file_name in file_names:
+            shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
+
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_std.yaml"
+        run_command(cmd, True)
+
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        best_layer = r.get('epsg4326:std:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:best_layer')
+        self.assertEqual(best_layer, b'MODIS_Aqua_CorrectedReflectance_Bands721')
+
     def test_periods_single_date(self):
         # Test adding layer with single date
         test_layers = [('Test_Single', '2019-01-15',
                         '2019-01-15/2019-01-15/P1D')]
 
-        db_keys = ['epsg4326', 'best']        
+        db_keys = ['epsg4326', 'best']
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
         res = r.json()
@@ -237,13 +291,13 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[2], layer_res['periods'][0]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_subdaily(self):
         # Test subdaily period
         test_layers = [('Test_Subdaily', '2020-01-01T00:00:00Z',
                         '2020-01-01T00:00:00Z/2020-01-01T00:00:01Z/PT1S')]
 
-        db_keys = ['epsg4326', 'best']        
+        db_keys = ['epsg4326', 'best']
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
         res = r.json()
@@ -256,10 +310,10 @@ class TestTimeUtils(unittest.TestCase):
                 layer[1], layer_res['default'],
                 'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
                 .format(layer[0], layer[1], layer_res['default']))
-            
+
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_multiday(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_Multiday', '2019-01-01',
@@ -271,7 +325,7 @@ class TestTimeUtils(unittest.TestCase):
                        ('Test_Multiday', '2019-01-19',
                         '2019-01-01/2019-01-19/P6D')]
 
-        db_keys = ['epsg4326', 'best']        
+        db_keys = ['epsg4326', 'best']
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
         res = r.json()
@@ -286,7 +340,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[2], layer_res['periods'][0]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_monthly(self):
         # Test adding layer with multiple months
         test_layers = [('Test_Monthly', '2019-01-01',
@@ -313,7 +367,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[2], layer_res['periods'][0]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_DETECT(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_DETECT', '2019-01-01',
@@ -339,7 +393,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_DETECTDETECT(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_DETECTDETECT', '2019-01-01',
@@ -365,7 +419,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_DETECTDETECTP5D(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_DETECTDETECTP5D', '2019-01-01',
@@ -391,7 +445,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_DETECTP10D(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_DETECTP10D', '2019-01-01',
@@ -417,7 +471,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_force_all(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_ForceAll', '2019-01-01',
@@ -443,7 +497,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_force_start(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_ForceStart', '2019-01-01',
@@ -469,7 +523,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_force_end(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_ForceEnd', '2019-01-01',
@@ -495,7 +549,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-                
+
     def test_periods_config_multiple(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_Multiple', '2019-01-01',

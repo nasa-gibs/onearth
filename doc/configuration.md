@@ -237,13 +237,15 @@ source_mrf:
 ### Optional for Time Service
 ```
 time_config: Custom time period configuration for layer
+best_config: Custom best available configuration for layer as a key value list of Z-score (higher number means higher priority) : Filename Prefix
+best_layer: For a "non-best" layer (e.g., STD, NRT), this is the associated "best available" layer
 ```
 
 See [doc/time_detection.md](time_detection.md) for time period configuration information.
 
 See [src/modules/mod_wmts_wrapper/configure_tool/](../src/modules/mod_wmts_wrapper/configure_tool/README.md) for more details.
 
-### Sample Layer Configuration
+### Sample Layer Configurations
 ```
 layer_id: "MODIS_Aqua_Brightness_Temp_Band31_Day"
 layer_title: "Brightness Temperature (Band31, Day, v6, Standard, MODIS, Aqua)"
@@ -253,6 +255,15 @@ tilematrixset: "1km"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_Brightness_Temp_Band31_Day abstract"
+time_config:
+  - "2000-01-01/2009-12-31/P1D"
+  - "2011-01-01/2017-06-04/P1D"
+  - "2017-06-20/DETECT/P1D"
+best_config:
+  1: "MODIS_Aqua_Brightness_Temp_Band31_Day_v5_NRT"
+  2: "MODIS_Aqua_Brightness_Temp_Band31_Day_v5_STD"
+  3: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_NRT"
+  4: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "{base_uri_meta}/colormaps/v1.3/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "{base_uri_meta}/colormaps/v1.0/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
@@ -265,6 +276,35 @@ source_mrf:
   tile_size_y: 512
   idx_path: "/onearth/idx/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day/"
   data_file_uri: "{S3_URL}/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day/"
+  year_dir: true
+  bbox: -180,-90,180,90
+  empty_tile: "/etc/onearth/empty_tiles/Blank_RGBA_512.png"
+```
+```
+layer_id: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
+layer_title: "Brightness Temperature (Band31, Day, v6, Standard, MODIS, Aqua)"
+layer_name: "MODIS_Aqua_Brightness_Temp_Band31_Day tileset"
+projection: "EPSG:4326"
+tilematrixset: "1km"
+mime_type: "image/png"
+static: false
+abstract: "MODIS_Aqua_Brightness_Temp_Band31_Day abstract"
+time_config:
+  - "DETECT/DETECT/P1D"
+best_layer: "MODIS_Aqua_Brightness_Temp_Band31_Day"
+metadata:
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "{base_uri_meta}/colormaps/v1.3/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "{base_uri_meta}/colormaps/v1.0/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.2", "xlink:href": "{base_uri_meta}/colormaps/v1.2/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3", "xlink:href": "{base_uri_meta}/colormaps/v1.3/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+source_mrf:
+  size_x: 40960
+  size_y: 20480
+  bands: 1
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/onearth/idx/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/"
+  data_file_uri: "{S3_URL}/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD/"
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGBA_512.png"
