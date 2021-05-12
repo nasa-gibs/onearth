@@ -252,8 +252,8 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_best_layer(self):
         # Test loading of best layer
-        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/best/'
-        layer_dir = '/etc/onearth/config/layers/epsg4326/best/'
+        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/std/'
+        layer_dir = '/etc/onearth/config/layers/epsg4326/std/'
         if os.path.exists(layer_dir) is False:
             os.makedirs(layer_dir)
         file_names = os.listdir(source_dir)
@@ -265,7 +265,7 @@ class TestTimeUtils(unittest.TestCase):
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
         best_layer = r.get('epsg4326:std:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:best_layer')
-        self.assertEqual(best_layer, 'MODIS_Aqua_CorrectedReflectance_Bands721')
+        self.assertEqual(best_layer, b'MODIS_Aqua_CorrectedReflectance_Bands721')
 
     def test_periods_single_date(self):
         # Test adding layer with single date
