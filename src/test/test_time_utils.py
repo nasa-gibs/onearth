@@ -244,11 +244,28 @@ class TestTimeUtils(unittest.TestCase):
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        configs = r.zrange('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:best', 0, -1, withscores=True)
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT', 20120903.0))
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_NRT', 20120803.0))
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD', 20120703.0))
-        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD', 20120603.0))
+        configs = r.zrange('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:best_config', 0, -1, withscores=True)
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_NRT', 4.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_NRT', 3.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD', 2.0))
+        self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD', 1.0))
+
+    def test_best_layer(self):
+        # Test loading of best layer
+        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/best/'
+        layer_dir = '/etc/onearth/config/layers/epsg4326/best/'
+        if os.path.exists(layer_dir) is False:
+            os.makedirs(layer_dir)
+        file_names = os.listdir(source_dir)
+        for file_name in file_names:
+            shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
+
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_std.yaml"
+        run_command(cmd, True)
+
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        best_layer = r.get('epsg4326:std:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:best_layer')
+        self.assertEqual(best_layer, 'MODIS_Aqua_CorrectedReflectance_Bands721')
 
     def test_periods_single_date(self):
         # Test adding layer with single date

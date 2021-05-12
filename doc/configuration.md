@@ -237,7 +237,8 @@ source_mrf:
 ### Optional for Time Service
 ```
 time_config: Custom time period configuration for layer
-best_config: Custom best available configuration for layer as a key value list of Time (YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ) : Filename Prefix
+best_config: Custom best available configuration for layer as a key value list of Z-score (higher number means higher priority) : Filename Prefix
+best_layer: For a "non-best" layer (e.g., STD, NRT), this is the associated "best available" layer
 ```
 
 See [doc/time_detection.md](time_detection.md) for time period configuration information.

@@ -92,9 +92,10 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
                 tag = str(layer_config['config']['projection']). \
                     lower().replace(':', '') + tag
 
+        tag_str = f'{tag}:' if tag else ''
+        key = tag_str + 'layer:' + str(layer_config['config']['layer_id'])
+
         if 'time_config' in layer_config['config'].keys():
-            tag_str = f'{tag}:' if tag else ''
-            key = tag_str + 'layer:' + str(layer_config['config']['layer_id'])
             key_config = key + ':config'
             key_config_wm = key_config.replace('epsg4326', 'epsg3857')
             # check whether we have a single string or list of values
@@ -131,25 +132,47 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
             print('No time configuration found for ' +
                   str(layer_config['path'].absolute()))
 
+        # best configs
         if 'best_config' in layer_config['config'].keys():
-            best_config = key + ':best'
+            best_config = key + ':best_config'
             best_config_wm = best_config.replace('epsg4326', 'epsg3857')
             print('Processing best_config', best_config)
 
-            # clear out existing time configs for layer
+            # clear out existing best configs for layer
             r.delete(best_config)
             if 'epsg4326' in key:
                 # delete key for reproject as well
                 r.delete(best_config_wm)
 
             # process each best_config item
-            for key, value in layer_config['config']['best_config'].items():
+            for zscore, value in layer_config['config']['best_config'].items():
                 print('Adding ' + f'{key}: {value}' + ' to ' + best_config)
-                r.zadd(best_config, {value: format_time_key(key)})
+                r.zadd(best_config, {value: int(zscore)})
                 # duplicate config for epsg3857 for reproject
                 if 'epsg4326' in key:
                     print('Adding ' + f'{key}: {value}' + ' to ' + best_config_wm)
-                    r.zadd(best_config_wm, {value: format_time_key(key)})
+                    r.zadd(best_config_wm, {value: int(zscore)})
+
+        # best layer
+        if 'best_layer' in layer_config['config'].keys():
+            best_layer = key + ':best_layer'
+            best_layer_wm = best_layer.replace('epsg4326', 'epsg3857')
+            print('Processing best_layer', best_layer)
+
+            # clear out existing best_layer for layer
+            r.delete(best_layer)
+            if 'epsg4326' in key:
+                # delete key for reproject as well
+                r.delete(best_layer_wm)
+
+            # process each best_layer value
+            best_layer_value = layer_config['config']['best_layer']
+            print('Adding ' + f'{best_layer_value}' + ' to ' + best_layer)
+            r.set(best_layer, best_layer_value)
+            # duplicate best_layer for epsg3857 for reproject
+            if 'epsg4326' in key:
+                print('Adding ' + f'{best_layer_value}' + ' to ' + best_layer_wm)
+                r.set(best_layer_wm, best_layer_value)
 
 
 # Main routine to be run in CLI mode
