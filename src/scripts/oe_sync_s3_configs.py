@@ -49,7 +49,7 @@ def getAllKeys(conn, bucket, prefix):
 
     while True:
         resp = conn.list_objects_v2(**kwargs)
-        keys = keys + resp['Contents']
+        keys = keys + (resp['Contents'] if 'Contents' in resp else [])
 
         try:
             kwargs['ContinuationToken'] = resp['NextContinuationToken']
