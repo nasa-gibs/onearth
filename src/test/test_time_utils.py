@@ -214,7 +214,7 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_time_config(self):
-        # Test loading of time configs
+        # Test loading of time configs by endpoint
         source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/best/'
         layer_dir = '/etc/onearth/config/layers/epsg4326/best/'
         if os.path.exists(layer_dir) is False:
@@ -224,6 +224,23 @@ class TestTimeUtils(unittest.TestCase):
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
         cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        run_command(cmd, True)
+
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        configs = r.smembers('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:config')
+        self.assertEqual(configs.pop(), b'DETECT/DETECT/P1D')
+
+    def test_time_config_layer(self):
+        # Test loading of time configs by individual layers
+        source_dir = '/home/oe2/onearth/docker/sample_configs/layers/epsg4326/best/'
+        layer_dir = '/etc/onearth/config/layers/epsg4326/best/'
+        if os.path.exists(layer_dir) is False:
+            os.makedirs(layer_dir)
+        file_names = os.listdir(source_dir)
+        for file_name in file_names:
+            shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
+
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml -l '*Bands721'"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)

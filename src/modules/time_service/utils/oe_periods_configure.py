@@ -22,6 +22,7 @@ import argparse
 import yaml
 import redis
 import os
+import glob
 from pathlib import Path
 
 
@@ -42,7 +43,7 @@ def get_layer_config(layer_config_path):
     return {'path': layer_config_path, 'config': config}
 
 
-def get_layer_configs(endpoint_config):
+def get_layer_configs(endpoint_config, layer_filter='*'):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -57,12 +58,14 @@ def get_layer_configs(endpoint_config):
         return [get_layer_config(layer_source)]
     elif layer_source.is_dir():
         layer_configs = []
-        for filepath in sorted(layer_source.iterdir()):
+        config_files = glob.glob(f"{layer_source}/{layer_filter}.yaml", recursive=True)
+        for config_file in sorted(config_files):
+            filepath = Path(config_file)
             if filepath.is_file() and filepath.name.endswith('.yaml'):
                 try:
                     layer_configs.append(get_layer_config(filepath))
                 except Exception as e:
-                    print(f"Can't read layer config: {layer_source} \n{e}")
+                    print(f"Can't read layer config: {config_file} \n{e}")
         return layer_configs
 
 
@@ -188,6 +191,12 @@ if __name__ == '__main__':
                         metavar='ENDPOINT_CONFIG',
                         type=str,
                         help='an endpoint config YAML file')
+    parser.add_argument('-l', '--layer_filter',
+                        dest='layer_filter',
+                        default='*',
+                        metavar='LAYER_FILTER',
+                        type=str,
+                        help='Unix style pattern to filter layer names')
     parser.add_argument('-p', '--port',
                         dest='port',
                         action='store',
@@ -205,7 +214,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(f'Adding time configurations for endpoint {args.endpoint_config}')
     endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
-    layer_configs = get_layer_configs(endpoint_config)
+    layer_configs = get_layer_configs(endpoint_config, args.layer_filter)
     load_time_configs(layer_configs,
                       args.redis_uri,
                       args.port,
