@@ -22,6 +22,7 @@ import argparse
 import yaml
 import redis
 import os
+import glob
 from pathlib import Path
 
 
@@ -31,6 +32,10 @@ def strip_trailing_slash(string):
     return re.sub(r'/$', '', string)
 
 
+def format_time_key(time_string):
+    return int(''.join(filter(str.isdigit, time_string)))
+
+
 def get_layer_config(layer_config_path):
     print(f"Reading {layer_config_path}")
     with layer_config_path.open() as f:
@@ -38,7 +43,7 @@ def get_layer_config(layer_config_path):
     return {'path': layer_config_path, 'config': config}
 
 
-def get_layer_configs(endpoint_config):
+def get_layer_configs(endpoint_config, layer_filter='*'):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -53,12 +58,14 @@ def get_layer_configs(endpoint_config):
         return [get_layer_config(layer_source)]
     elif layer_source.is_dir():
         layer_configs = []
-        for filepath in sorted(layer_source.iterdir()):
+        config_files = glob.glob(f"{layer_source}/{layer_filter}.yaml", recursive=True)
+        for config_file in sorted(config_files):
+            filepath = Path(config_file)
             if filepath.is_file() and filepath.name.endswith('.yaml'):
                 try:
                     layer_configs.append(get_layer_config(filepath))
                 except Exception as e:
-                    print(f"Can't read layer config: {layer_source} \n{e}")
+                    print(f"Can't read layer config: {config_file} \n{e}")
         return layer_configs
 
 
@@ -88,9 +95,10 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
                 tag = str(layer_config['config']['projection']). \
                     lower().replace(':', '') + tag
 
+        tag_str = f'{tag}:' if tag else ''
+        key = tag_str + 'layer:' + str(layer_config['config']['layer_id'])
+
         if 'time_config' in layer_config['config'].keys():
-            tag_str = f'{tag}:' if tag else ''
-            key = tag_str + 'layer:' + str(layer_config['config']['layer_id'])
             key_config = key + ':config'
             key_config_wm = key_config.replace('epsg4326', 'epsg3857')
             # check whether we have a single string or list of values
@@ -127,6 +135,48 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
             print('No time configuration found for ' +
                   str(layer_config['path'].absolute()))
 
+        # best configs
+        if 'best_config' in layer_config['config'].keys():
+            best_config = key + ':best_config'
+            best_config_wm = best_config.replace('epsg4326', 'epsg3857')
+            print('Processing best_config', best_config)
+
+            # clear out existing best configs for layer
+            r.delete(best_config)
+            if 'epsg4326' in key:
+                # delete key for reproject as well
+                r.delete(best_config_wm)
+
+            # process each best_config item
+            for zscore, value in layer_config['config']['best_config'].items():
+                print('Adding ' + f'{key}: {value}' + ' to ' + best_config)
+                r.zadd(best_config, {value: int(zscore)})
+                # duplicate config for epsg3857 for reproject
+                if 'epsg4326' in key:
+                    print('Adding ' + f'{key}: {value}' + ' to ' + best_config_wm)
+                    r.zadd(best_config_wm, {value: int(zscore)})
+
+        # best layer
+        if 'best_layer' in layer_config['config'].keys():
+            best_layer = key + ':best_layer'
+            best_layer_wm = best_layer.replace('epsg4326', 'epsg3857')
+            print('Processing best_layer', best_layer)
+
+            # clear out existing best_layer for layer
+            r.delete(best_layer)
+            if 'epsg4326' in key:
+                # delete key for reproject as well
+                r.delete(best_layer_wm)
+
+            # process each best_layer value
+            best_layer_value = layer_config['config']['best_layer']
+            print('Adding ' + f'{best_layer_value}' + ' to ' + best_layer)
+            r.set(best_layer, best_layer_value)
+            # duplicate best_layer for epsg3857 for reproject
+            if 'epsg4326' in key:
+                print('Adding ' + f'{best_layer_value}' + ' to ' + best_layer_wm)
+                r.set(best_layer_wm, best_layer_value)
+
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
@@ -141,6 +191,12 @@ if __name__ == '__main__':
                         metavar='ENDPOINT_CONFIG',
                         type=str,
                         help='an endpoint config YAML file')
+    parser.add_argument('-l', '--layer_filter',
+                        dest='layer_filter',
+                        default='*',
+                        metavar='LAYER_FILTER',
+                        type=str,
+                        help='Unix style pattern to filter layer names')
     parser.add_argument('-p', '--port',
                         dest='port',
                         action='store',
@@ -158,7 +214,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(f'Adding time configurations for endpoint {args.endpoint_config}')
     endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
-    layer_configs = get_layer_configs(endpoint_config)
+    layer_configs = get_layer_configs(endpoint_config, args.layer_filter)
     load_time_configs(layer_configs,
                       args.redis_uri,
                       args.port,
