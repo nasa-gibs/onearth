@@ -42,15 +42,6 @@ else
   done
 fi
 
-# Create internal endpoint directories for WMTS and TWMS endpoints
-for f in $(grep -l internal_endpoint /etc/onearth/config/endpoint/*.yaml); do
-  # WMTS Endpoint
-  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
-
-  # TWMS Endpoint
-  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
-done
-
 # Replace with S3 URL
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_URL}@'$S3_URL'@g' {} \; # in case there is a preceding slash
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_URL}@'$S3_URL'@g' {} \;
@@ -58,15 +49,19 @@ find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_U
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
-mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status.yaml)
-mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 
 # Data for oe-status
 mkdir -p /etc/onearth/config/layers/oe-status/
 cp ../oe-status/layers/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
 
-# Make GC Service
+# Create internal endpoint directories for WMTS and TWMS endpoints and build the GC services
 for f in $(grep -l 'gc_service:' /etc/onearth/config/endpoint/*.yaml); do
+  # WMTS Endpoint
+  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+
+  # TWMS Endpoint
+  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+
   lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
 done
 

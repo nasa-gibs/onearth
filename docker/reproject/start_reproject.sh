@@ -18,12 +18,12 @@ mkdir -p /etc/onearth/config/conf/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "S3_CONFIGS not set"
+  echo "S3_CONFIGS not set"
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 
-	# Load test layers
+  # Load test layers
   mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
   cp oe2_test_mod_reproject_date.conf /etc/httpd/conf.d
   cp ../test_configs/layers/oe2_test_mod_reproject_layer_source*.config /var/www/html/reproject_endpoint/date_test/default/tms/oe2_test_mod_reproject_date_layer_source.config
@@ -35,8 +35,8 @@ then
   cp ../test_configs/layers/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
 
 else
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 fi
 
 # Copy tilematrixsets config file
@@ -80,13 +80,13 @@ echo 'Loading additional endpoints'
 
 # Run layer config tools
 for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
-	  # WMTS Endpoint
-	  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+  # WMTS Endpoint
+  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
 
-	  # TWMS Endpoint
-	  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+  # TWMS Endpoint
+  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
 
-	  python3.6 /usr/bin/oe2_reproject_configure.py $f >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe2_reproject_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
 
 # Now configure oe-status after reproject is configured
