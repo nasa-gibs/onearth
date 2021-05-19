@@ -22,8 +22,8 @@ if redis.call("EXISTS", KEYS[1] .. ":best_layer") == 1 and ARGV[1] ~= nil then
   local layers = redis.call("ZREVRANGE", best_key .. ":best_config", 0, -1)
   local found = false
   for i, layer in ipairs(layers) do
-    if redis.call("ZRANK", layerPrefix .. layer, ARGV[1]) ~= nil then
-      redis.call("HMSET", best_key .. "_BEST:best", ARGV[1], layer) 
+    if redis.call("ZSCORE", layerPrefix .. layer .. ":dates", ARGV[1]) then
+      redis.call("HMSET", best_key .. "_BEST:best", ARGV[1], layer)
       found = true
       break
     end
