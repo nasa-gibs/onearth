@@ -141,6 +141,7 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD:default "2012-09-10"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg3413:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD:periods "2012-09-10/2018-12-31/P1D"
+	/usr/bin/redis-cli -h $REDIS_HOST -n 0 HMSET epsg4326:all:layer:MODIS_Aqua_Brightness_Temp_Band31_Day:best "2012-09-10T00:00:00Z" "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
 
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Night:default "2012-09-10"
