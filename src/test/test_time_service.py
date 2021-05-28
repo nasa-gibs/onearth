@@ -92,6 +92,17 @@ def seed_redis_data(layers, db_keys=None):
                    period)
 
 
+def seed_redis_best_data(layers, filename, db_keys=None):
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    db_keystring = ''
+    if db_keys:
+        for key in db_keys:
+            db_keystring += key + ':'
+
+    for layer in layers:
+        r.hmset('{0}layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
+
+
 def remove_redis_layer(layer, db_keys=None):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     db_keystring = ''
@@ -422,6 +433,39 @@ class TestDateService(unittest.TestCase):
                     returned_date, test_layer[4],
                     'Error with date snapping: for with key {0}, date {1} was requested and date {2} was returned. Should be {3}'
                     .format(key, test_layer[3], returned_date, test_layer[4]))
+
+
+    def test_best_layer(self):
+        test_layers = [('test1_year_snap', '2012-01-01',
+                        '2012-01-01/2016-01-01/P1Y', '2013-06-06',
+                        '2013-01-01T00:00:00Z'),
+                       ('test2_year_snap', '2000-01-01',
+                        '2000-01-01/2010-01-01/P5Y', '2006-05-05',
+                        '2005-01-01T00:00:00Z')]
+
+        db_keys = ['test_db_key_1', 'test_db_key_2']
+
+        best_filename = 'filename_v6_STD'
+        
+        for key in db_keys:
+            seed_redis_data(test_layers, db_keys=[key])
+            seed_redis_best_data(test_layers, best_filename, db_keys=[key])
+            # Test data
+            for test_layer in test_layers:
+                r = requests.get(self.date_service_url +
+                                 'layer={0}&datetime={1}&key1={2}'.format(
+                                     test_layer[0], test_layer[3], key))
+                res = r.json()
+                print(f'res = {res}')
+                returned_date = res['date']
+                if not DEBUG:
+                    remove_redis_layer(test_layer, db_keys=[key])
+                self.assertEqual(
+                    returned_date, test_layer[4],
+                    'Error with date snapping: for with key {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                    .format(key, test_layer[3], returned_date, test_layer[4]))
+                self.assertRegex(res['filename'], best_filename)
+
 
     def test_multiple_db_keys(self):
         test_layers = [('test1_year_snap', '2012-01-01',
