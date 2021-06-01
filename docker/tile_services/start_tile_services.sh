@@ -72,32 +72,22 @@ then
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
 
-	python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
-	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
-	for f in $(grep -l layer_config_source /etc/onearth/config/endpoint/*.yaml); do
-	  CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
-	  CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
+  for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
+    CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
+    CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
 
-	  mkdir -p $CONFIG_SOURCE
+    mkdir -p $CONFIG_SOURCE
 
     python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
   done
 fi
-
-# Create internal endpoint directories for WMTS and TWMS endpoints
-for f in $(grep -l internal_endpoint /etc/onearth/config/endpoint/*.yaml); do
-  # WMTS Endpoint
-  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
-
-  # TWMS Endpoint
-  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
-done
-
 # Replace with S3 URL
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_URL}@'$S3_URL'@g' {} \; # in case there is a preceding slash
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_URL}@'$S3_URL'@g' {} \;
@@ -123,9 +113,6 @@ done
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
-mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status.yaml)
-mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
-
 # Data for oe-status
 mkdir -p /etc/onearth/config/layers/oe-status/
 mkdir -p /onearth/idx/oe-status/BlueMarble16km
@@ -134,8 +121,14 @@ cp ../oe-status/layers/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
 cp ../oe-status/data/*.idx /onearth/idx/oe-status/BlueMarble16km/
 cp ../oe-status/data/*.pjg /onearth/layers/oe-status/BlueMarble16km/
 
-# Run layer config tools
-for f in $(grep -l wmts_service /etc/onearth/config/endpoint/*.yaml); do
+# Create internal endpoint directories for WMTS and TWMS endpoints and configure WMTS
+for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
+  # WMTS Endpoint
+  mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
+
+  # TWMS Endpoint
+  mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
+
   python3.6 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
 

@@ -124,7 +124,7 @@ local function redis_handler (options)
     closeFunc = function()
         client:quit()
     end
-    return function (layer_name, uuid, lookup_keys)
+    return function (layer_name, uuid, lookup_keys, snap_date_string)
         local returnValue
         local start_db_request = socket.gettime() * 1000 * 1000
         local prefix_string = ""
@@ -134,15 +134,24 @@ local function redis_handler (options)
             end
         end
         if layer_name then
-            local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-            local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
-            if default and periods then
-                returnValue = {[layer_name] = {
-                    default = default,
-                    periods = periods
-                }}
+            if snap_date_string then
+                local best_layer_name = client:hget(prefix_string .. "layer:" .. layer_name .. ":best", snap_date_string)
+                if best_layer_name then
+                    returnValue = best_layer_name
+                else
+                    returnValue = layer_name
+                end
             else
-                returnValue = {err_msg = "Invalid Layer"}
+                local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
+                local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                if default and periods then
+                    returnValue = {[layer_name] = {
+                        default = default,
+                        periods = periods
+                    }}
+                else
+                    returnValue = {err_msg = "Invalid Layer"}
+                end
             end
         else
             -- If no layer name specified, dump all data
@@ -197,11 +206,11 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         -- A blank query returns the entire list of layers and periods
         if not query_string or not layer_name then
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
-            return send_response(200, JSON:encode(layer_handler(nil, uuid, lookup_keys)))
+            return send_response(200, JSON:encode(layer_handler(nil, uuid, lookup_keys, nil)))
         end
 
         local request_date_string = get_query_param("datetime", query_string)
-        local layer_datetime_info = layer_handler(layer_name, uuid, lookup_keys)
+        local layer_datetime_info = layer_handler(layer_name, uuid, lookup_keys, nil)
         if layer_datetime_info.err_msg then
             return send_response(200, JSON:encode(layer_datetime_info))
         end
@@ -282,9 +291,12 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         -- Return snap date and error if none is found
         if snap_date then
             local snap_date_string = snap_date:fmt(datetime_format)
+
+            -- Use "best" layer name if exists, otherwise just use layer_name
+            local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, snap_date_string)
             local out_msg = {
                 date = snap_date_string,
-                filename = filename_handler(layer_name, snap_date)}
+                filename = filename_handler(best_layer_name, snap_date)}
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         else
