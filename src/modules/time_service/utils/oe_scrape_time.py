@@ -245,7 +245,6 @@ def updateDateService(redis_uri,
             if reproject and str(proj) == 'epsg4326':
                 date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])
 
-
 # Routine when run from CLI
 
 parser = argparse.ArgumentParser(
