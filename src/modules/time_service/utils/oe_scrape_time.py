@@ -250,9 +250,9 @@ def updateDateService(redis_uri,
             print("Best Layer: ", bestLayer)
             if bestLayer is not None:
                 bestLayer=bestLayer.decode("utf-8")
-                date_script(keys=[f'{proj}:{tag_str}layer:{bestLayer}'])
+                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
                 if reproject and str(proj) == 'epsg4326':
-                    date_script(keys=[f'epsg3857:{tag_str}layer:{bestLayer}'])
+                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
 
 # Routine when run from CLI
 
