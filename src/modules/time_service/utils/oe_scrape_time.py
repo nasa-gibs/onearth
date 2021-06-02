@@ -248,7 +248,7 @@ def updateDateService(redis_uri,
             # check for best layer
             bestLayer=r.get(f'{proj}:{tag_str}layer:{layer}:best_layer')
             print("Best Layer: ", bestLayer)
-            if bestLayer:
+            if bestLayer is not None:
                 bestLayer=bestLayer.decode("utf-8")
                 date_script(keys=[f'{proj}:{tag_str}layer:{bestLayer}'])
                 if reproject and str(proj) == 'epsg4326':
