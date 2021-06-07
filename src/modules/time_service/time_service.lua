@@ -136,11 +136,11 @@ local function redis_handler (options)
         if layer_name then
             if snap_date_string then
                 local best_prefix_string = prefix_string .. "layer:"
-                local _, _, proj, typ  = string.find(best_prefix_string, "(epsg%d%d%d%d):(%a+):layer") -- replace type with best
+                local _, _, proj, typ  = string.find(best_prefix_string, "(%w+):(%a+):layer") -- replace type with best
                 if (typ) then 
-                    best_prefix_string = prefix_string:gsub(typ, "best", 1)
+                    best_prefix_string = best_prefix_string:gsub(typ, "best", 1)
                 else 
-                    best_prefix_string = prefix_string:gsub(":layer", ":best:layer", 1)
+                    best_prefix_string = best_prefix_string:gsub(":layer", ":best:layer", 1)
                 end
                 local best_layer_name = client:hget(best_prefix_string .. layer_name .. ":best", snap_date_string)
                 if best_layer_name then

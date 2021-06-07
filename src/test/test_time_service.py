@@ -100,7 +100,7 @@ def seed_redis_best_data(layers, filename, db_keys=None):
             db_keystring += key + ':'
 
     for layer in layers:
-        r.hmset('{0}layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
+        r.hmset('{0}best:layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
 
 
 def remove_redis_layer(layer, db_keys=None):
