@@ -35,6 +35,7 @@ WORKDIR /home/oe2/onearth/docker/time_service
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/periods.lua /usr/bin/
+RUN cp /home/oe2/onearth/src/modules/time_service/utils/best.lua /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
 # Create OnEarth config log

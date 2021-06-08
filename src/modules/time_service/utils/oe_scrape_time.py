@@ -213,6 +213,11 @@ def updateDateService(redis_uri,
         lua_script = f.read()
     date_script = r.register_script(lua_script)
 
+    with open(os.path.dirname(os.path.realpath(__file__)) + '/best.lua',
+              'r') as f:
+        lua_script2 = f.read()
+    best_script = r.register_script(lua_script2)
+
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
         for layer, data in layers.items():
@@ -231,13 +236,23 @@ def updateDateService(redis_uri,
             tag_str = f'{tag}:' if tag else ''
             for date in sorted_parsed_dates:
                 r.zadd(f'{proj}:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
+                best_script(keys=[f'{proj}:{tag_str}layer:{layer}'], args=[date.isoformat()])
                 if reproject and str(proj) == 'epsg4326':
                     r.zadd(f'epsg3857:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
+                    best_script(keys=[f'epsg3857:{tag_str}layer:{layer}'], args=[date.isoformat()])
 
             date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
             if reproject and str(proj) == 'epsg4326':
                 date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])
-
+            
+            # check for best layer
+            bestLayer=r.get(f'{proj}:{tag_str}layer:{layer}:best_layer')
+            print("Best Layer: ", bestLayer)
+            if bestLayer is not None:
+                bestLayer=bestLayer.decode("utf-8")
+                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
+                if reproject and str(proj) == 'epsg4326':
+                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
 
 # Routine when run from CLI
 
