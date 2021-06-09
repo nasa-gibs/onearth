@@ -64,6 +64,19 @@ LoadModule status_module modules/mod_status.so
 ExtendedStatus On
 EOS
 
+# Setup Apache with no-cache
+cat >> /etc/httpd/conf/httpd.conf <<EOS
+
+#
+# Turn off caching
+#
+Header Set Pragma "no-cache"
+Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
+Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
+Header Unset ETag
+FileETag None
+EOS
+
 # Run reproject config tools
 # TODO be more purposed in how long we're waiting for the source WMTS services to be up
 # TODO maybe look for http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml to respond
