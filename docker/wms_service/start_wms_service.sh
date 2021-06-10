@@ -76,6 +76,19 @@ LoadModule status_module modules/mod_status.so
 ExtendedStatus On
 EOS
 
+# Setup Apache with no-cache
+cat >> /etc/httpd/conf/httpd.conf <<EOS
+
+#
+# Turn off caching
+#
+Header Set Pragma "no-cache"
+Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
+Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
+Header Unset ETag
+FileETag None
+EOS
+
 echo 'Starting Apache server'
 /usr/sbin/httpd -k restart
 sleep 2

@@ -104,6 +104,7 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
         WMTSWrapperEnableYearDir {year_dir}
         WMTSWrapperLayerAlias {alias}
         WMTSWrapperMimeType {mime_type}
+        {cache_expiration_block}
 </Directory>
 
 {proxy_exemption_block}
@@ -373,6 +374,10 @@ def make_layer_config(endpoint_config, layer):
         static = layer_config['static']
         projection = layer_config['projection']
         tilematrixset = layer_config['tilematrixset']
+        try:
+            cache_expiration = layer_config['cache_expiration']
+        except:
+            cache_expiration = None
         size_x = layer_config['source_mrf']['size_x']
         size_y = layer_config['source_mrf']['size_y']
         tile_size_x = layer_config['source_mrf']['tile_size_x']
@@ -449,7 +454,16 @@ def make_layer_config(endpoint_config, layer):
             proxy_exemption_block += twms_exemption
         except KeyError as err:
             print(f"\nEndpoint config is missing required twms config element {err}")
-    
+
+    if cache_expiration:
+        cache_expiration_block = f'Header Set Cache-Control "public, max-age={cache_expiration}"'
+    else:
+        cache_expiration_block = f'Header Set Pragma "no-cache"\n'
+        cache_expiration_block += f'        Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"\n'
+        cache_expiration_block += f'        Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
+        cache_expiration_block += f'        Header Unset ETag\n'
+        cache_expiration_block += f'        FileETag None'
+
     # Apache <Directory> stuff
     apache_config = bulk_replace(
         LAYER_APACHE_CONFIG_TEMPLATE,
@@ -457,6 +471,7 @@ def make_layer_config(endpoint_config, layer):
          ('{time_enabled}', 'Off' if static else 'On'),
          ('{year_dir}', 'On' if year_dir else 'Off'), ('{alias}', alias),
          ('{tilematrixset}', tilematrixset),
+         ('{cache_expiration_block}', cache_expiration_block),
          ('{proxy_exemption_block}', proxy_exemption_block),
          ('{config_file_path}', config_file_path.as_posix()),
          ('{mime_type}', mimetype)])

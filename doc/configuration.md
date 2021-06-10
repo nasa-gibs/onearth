@@ -255,6 +255,7 @@ tilematrixset: "1km"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_Brightness_Temp_Band31_Day abstract"
+cache_expiration: 1500
 time_config:
   - "2000-01-01/2009-12-31/P1D"
   - "2011-01-01/2017-06-04/P1D"
