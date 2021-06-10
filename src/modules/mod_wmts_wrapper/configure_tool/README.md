@@ -123,6 +123,7 @@ format:
 layer_id: "AMSR2_Snow_Water_Equivalent"
 static: true
 tilematrixset: "EPSG4326_2km"
+cache_expiration: 1500
 source_mrf:
   size_x: 8192
   size_y: 4096
@@ -146,6 +147,9 @@ dimension. Defaults to 'false'.
 
 `tilematrixset` (required) -- The name of the Tile Matrix Set to be used with
 this layer.
+
+`cache_expiration` (optional) -- The amount of time, in seconds, it takes for
+a cached copy of a resource to expire.  If missing, then defaults to no caching.
 
 `source_mrf` (required) -- Subsection with information about the source MRF for
 this layer.
