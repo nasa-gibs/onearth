@@ -273,10 +273,9 @@ def get_reprojected_tilematrixset(target_proj, source_tms_defs,
     target_tms = None
     for tms in target_tms_defs:
         diff = get_max_scale_denominator(tms) - base_scale_denom
-        if diff > 0:
-            if diff < minDiff:
-                minDiff = diff
-                target_tms = tms
+        if diff > 0 and diff < minDiff:
+            minDiff = diff
+            target_tms = tms
     return target_tms
 
 
