@@ -53,6 +53,7 @@ from io import BytesIO
 #import numpy as np
 import math
 import re
+import os
 
 # for SVG tooltips
 try:
@@ -62,7 +63,7 @@ except ImportError:
     ET.register_namespace("","http://www.w3.org/2000/svg")
 
 toolName = "oe_generate_legend.py"
-versionNumber = "2.3.2"
+versionNumber = os.environ.get('ONEARTH_VERSION')
 
 class ColorMaps:
     """Collection of ColorMaps"""

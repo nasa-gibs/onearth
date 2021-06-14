@@ -56,7 +56,7 @@ try:
 except:
     sys.exit('ERROR: cannot find GDAL/OGR modules')
 
-versionNumber = '2.3.2'
+versionNumber = os.environ.get('ONEARTH_VERSION')
 basename = None
 
 def geojson2shp(in_filename, out_filename, source_epsg, target_epsg, sigevent_url):

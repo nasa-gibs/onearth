@@ -96,7 +96,7 @@ from contextlib import contextmanager  # used to build context pool
 import functools
 import random
 
-versionNumber = '2.3.2'
+versionNumber = os.environ.get('ONEARTH_VERSION')
 oe_utils.basename = None
 
 #-------------------------------------------------------------------------------

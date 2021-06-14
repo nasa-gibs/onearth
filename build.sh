@@ -1,37 +1,57 @@
 #!/bin/sh
-OE_VERSION=${1:-latest}
+
+# Set OnEarth version and release
+source ./version.sh
 
 # Build the onearth-tile-services image
-cp ./docker/tile_services/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-tile-services:$OE_VERSION .
-rm Dockerfile
+docker build \
+    --no-cache \
+    --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
+    -f ./docker/tile_services/Dockerfile \
+    -t nasagibs/onearth-tile-services:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .
 
 # Build the onearth-time-service image
-cp ./docker/time_service/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-time-service:$OE_VERSION .
-rm Dockerfile
+docker build \
+    --no-cache \
+    --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
+    -f ./docker/time_service/Dockerfile \
+    -t nasagibs/onearth-time-service:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .
 
 # Build the onearth-capabilities image
-cp ./docker/capabilities/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-capabilities:$OE_VERSION .
-rm Dockerfile
+docker build \
+    --no-cache \
+    --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
+    -f ./docker/capabilities/Dockerfile \
+    -t nasagibs/onearth-capabilities:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .
 
 # Build the onearth-reproject image
-cp ./docker/reproject/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-reproject:$OE_VERSION .
-rm Dockerfile
+docker build --no-cache \
+    --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
+    -f ./docker/reproject/Dockerfile \
+    -t nasagibs/onearth-reproject:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .
 
 # Build the onearth-demo image
-cp ./docker/demo/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-demo:$OE_VERSION .
-rm Dockerfile
+docker build \
+    --no-cache \
+    -f ./docker/demo/Dockerfile \
+    -t nasagibs/onearth-demo:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .
 
 # Build the onearth-wms image
-cp ./docker/wms_service/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-wms:$OE_VERSION .
-rm Dockerfile
+docker build \
+    --no-cache \
+    --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
+    -f ./docker/wms_service/Dockerfile \
+    -t nasagibs/onearth-wms:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .
 
 # Build the onearth-tools image
-cp ./docker/tools/Dockerfile .
-docker build --no-cache -t nasagibs/onearth-tools:$OE_VERSION .
-rm Dockerfile
+docker build \
+    --no-cache \
+    -f ./docker/tools/Dockerfile \
+    -t nasagibs/onearth-tools:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    .

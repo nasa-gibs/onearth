@@ -38,6 +38,7 @@
 # NASA Jet Propulsion Laboratory
 
 import string
+import os
 from optparse import OptionParser
 from decimal import Decimal
 
@@ -85,7 +86,7 @@ def twmsbox2wmts(request_bbox, epsg):
     return "TILECOL=" + str(abs(int(col))) + "\n" + "TILEROW="+str(abs(int(row)))
 
 
-versionNumber = '2.3.2'
+versionNumber = os.environ.get('ONEARTH_VERSION')
 usageText = 'twmsbox2wmts.py --bbox [bbox]'
 
 # Define command line options and args.

@@ -114,3 +114,6 @@ RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser
 
 # Change user
 USER dockeruser
+
+# Set correct OnEarth version
+RUN source /home/oe2/onearth/version.sh

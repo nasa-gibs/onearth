@@ -38,16 +38,16 @@
 #
 # Global Imagery Browse Services
 # NASA Jet Propulsion Laboratory
-# 2015
 
 import sys
 import urllib.request, urllib.parse, urllib.error
 import xml.dom.minidom
 from optparse import OptionParser
 import png
+import os
 
 toolName = "oe_generate_empty_tile.py"
-versionNumber = "2.3.2"
+versionNumber = os.environ.get('ONEARTH_VERSION')
 
 class ColorMap:
     """ColorMap metadata"""
