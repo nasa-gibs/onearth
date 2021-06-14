@@ -5,6 +5,8 @@ if [ ! -f /.dockerenv ]; then
   exit 1
 fi
 
+source ../version.sh
+
 cp httpd.conf /etc/httpd/conf/
 mkdir -p /build/test/ci_tests
 

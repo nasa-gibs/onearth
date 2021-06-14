@@ -10,7 +10,7 @@ pyparsing == 2.4.7  # https://pypi.org/project/pyparsing/
 pypng == 0.0.20     # https://pypi.org/project/pypng/
 python-dateutil == 2.8.1        # https://pypi.org/project/python-dateutil/
 redis == 3.5.3		# https://pypi.org/project/redis/
-requests == 2.24.0  # https://pypi.org/project/requests/
+requests == 2.7.0  # https://pypi.org/project/requests/
 Rtree == 0.9.4      # https://pypi.org/project/Rtree/
 Shapely == 1.7.0    # https://pypi.org/project/Shapely/
 unittest2 == 1.1.0  # https://pypi.org/project/unittest2/

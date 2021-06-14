@@ -10,6 +10,8 @@ if [ -z "$DOCKER_IMAGE" ] || [ -z "$SCRIPT_NAME" ]; then
   exit 1
 fi
 
+source ./version.sh
+
 DOCKER_UID=$(id -u)
 DOCKER_GID=$(id -g)
 
@@ -39,6 +41,7 @@ chmod +x src/test/tmp/docker-script.sh
 mkdir -p src/test/results
 docker run \
   --rm \
+  -e ONEARTH_VERSION=$ONEARTH_VERSION \
   --volume "$(pwd)/src/test:/test:ro" \
   --volume "$(pwd)/src/test/results:/results" \
   "$DOCKER_IMAGE" \

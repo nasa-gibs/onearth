@@ -17,9 +17,12 @@ rm -rf Dockerfile
 
 cp ./docker/test/Dockerfile .
 
+source ./version.sh
+
 docker build \
   --tag "$TAG" \
   --no-cache \
+  --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
   ./
 
 rm Dockerfile

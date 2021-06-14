@@ -30,7 +30,7 @@ RUN yum -y update && \
         python36-pip-9.0.1 \
         cronie && \
     pip3.6 install \
-        requests==2.24.0 \
+        requests==2.7.0 \
         pyaml==18.11.0 \
         lxml==4.6.3 \
         pypng==0.0.20 \
