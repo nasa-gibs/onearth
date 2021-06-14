@@ -4,6 +4,7 @@ set -e
 
 SCRIPT_NAME=$(basename "$0")
 TAG="$1"
+ONEARTH_VERSION=${2:-latest}
 
 if [ -z "$TAG" ]; then
   echo "Usage: ${SCRIPT_NAME} TAG" >&2
@@ -16,8 +17,6 @@ rm -rf Dockerfile
 #DOCKER_GID=$(id -g)
 
 cp ./docker/test/Dockerfile .
-
-source ./version.sh
 
 docker build \
   --tag "$TAG" \
