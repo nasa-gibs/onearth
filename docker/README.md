@@ -8,12 +8,16 @@ test layers. It requires the Time Service, which is a separate Docker image,
 in order to support time dynamic layers. A WMS Service is also available as a
 separate Docker image.
 
-To build the Docker images and deploy the OnEarth stack, run:
-`build.sh` and then `run.sh` from the source root.
+To build the Docker images and deploy the OnEarth stack,
+Update the `ONEARTH_VERSION` and `ONEARTH_RELEASE` variables in `version.sh`
+and source the file: `source version.sh`.
+Then run: `build.sh` and `run.sh` from the source root.
+
+Note that you may need to manually update the version numbers within the Dockerfiles.
 
 Alternatively, you can run each Docker image individually by building the
-image: `docker build -t onearth .`, and then starting a container using 
-that image. Make sure to expose the appropriate ports (e.g., port 80) on the 
+image: `docker build -t onearth .`, and then starting a container using
+that image. Make sure to expose the appropriate ports (e.g., port 80) on the
 container to access the image server.
 
 By default, the containers use a Docker network `oe2` to communicate with each other.
