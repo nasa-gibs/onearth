@@ -1,0 +1,20 @@
+layer_id: "MODIS_Combined_Thermal_Anomalies_All"
+layer_title: "Thermal Anomalies and Fires (All, Best Available, MODIS, Aqua+Terra)"
+layer_name: "MODIS_Combined_Thermal_Anomalies_All tileset"
+projection: "EPSG:4326"
+tilematrixset: "1km"
+mime_type: "application/vnd.mapbox-vector-tile"
+static: false
+abstract: "MODIS_Combined_Thermal_Anomalies_All abstract"
+metadata:
+  - {}
+source_mrf:
+  size_x: 40960
+  size_y: 20480
+  bands:
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/onearth/idx/epsg4326/MODIS_Combined_Thermal_Anomalies_All"
+  data_file_uri: "{S3_URL}/epsg4326/MODIS_Combined_Thermal_Anomalies_All"
+  bbox: -180,-90,180,90
+  empty_tile:
