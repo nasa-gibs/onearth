@@ -1,7 +1,8 @@
 # This Dockerfile must be run from source root
 
-ARG ONEARTH_VERSION
-FROM nasagibs/onearth-deps:$ONEARTH_VERSION
+# ARG ONEARTH_VERSION
+# FROM nasagibs/onearth-deps:$ONEARTH_VERSION
+FROM nasagibs/onearth-deps:2.3.2
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
