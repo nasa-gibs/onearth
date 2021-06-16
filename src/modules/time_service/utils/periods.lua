@@ -46,7 +46,7 @@ local function dayOfYearToDate(doy, year)
     local daysInMonth = getDaysInMonth(month, year)
     if dayCounter + daysInMonth > doy then
       counting = false
-    else 
+    else
       dayCounter = dayCounter + daysInMonth
       month = month + 1
     end
@@ -73,7 +73,7 @@ local function calcDayDelta(date1, date2)
     local day = tonumber(dateStr:sub(9, 10))
     dates[i] = {year=year, month=month, day=day}
   end
-  
+
   local doy1 = calcDayOfYear(date1)
   local doy2 = calcDayOfYear(date2)
 
@@ -140,17 +140,17 @@ local function calcSecondsInYear(year)
   return days * 24 * 60 * 60
 end
 
-local function epochToDate(epoch) 
+local function epochToDate(epoch)
   local year = 1970
   local secCounter = epoch
 
   -- Get the year
   local loop = true
   repeat
-    local secondsInYear = calcSecondsInYear(year) 
+    local secondsInYear = calcSecondsInYear(year)
     if secCounter >= secondsInYear then
       secCounter = secCounter - secondsInYear
-      year = year + 1     
+      year = year + 1
     else
       loop = false
     end
@@ -207,7 +207,7 @@ local function dateAtFixedInterval(baseEpoch, intervalInSec, dateList)
   return false
 end
 
-local function itemInList(item, list) 
+local function itemInList(item, list)
   for i, v in ipairs(list) do
     if v == item then
       return true
@@ -217,7 +217,7 @@ local function itemInList(item, list)
 end
 
 
-local function listContainsList(long, short) 
+local function listContainsList(long, short)
   for i, v in ipairs(short) do
     if not itemInList(v, long) then
       return false
@@ -263,7 +263,7 @@ local function getIntervalUnit(period)
       return "minute"
     else
       return "second"
-    end  
+    end
   else
     if letter == "Y" then
       return "year"
@@ -355,7 +355,7 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_end=' .. tostring(force_end))
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
-  
+
   -- Don't return any periods if DETECT and no dates available
   if dates[1] == nil then
     if force_start == 'DETECT' or force_end == 'DETECT' then
@@ -373,9 +373,9 @@ local function calculatePeriods(dates, config)
   else
     -- Calculate periods based on dates list
     -- table.sort(dates, dateSort)
-    -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.  
+    -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.
     local datesInPeriods = {}
-    
+
     -- Check for year matches
     local annual = false
     if dates[3] ~= nil then
@@ -387,16 +387,16 @@ local function calculatePeriods(dates, config)
       local date3Year = tonumber(dates[3]:sub(1, 4))
 
       local interval = date2Year - baseYear
-      if tail1 == tail2  
+      if tail1 == tail2
         and tail2 == tail3
-        and interval ~=0 
+        and interval ~=0
         and date2Year + interval == date3Year
-      then     
+      then
         -- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
         local dateList = {dates[1], dates[2]}
         datesInPeriods[dates[1]] = true
         datesInPeriods[dates[2]] = true
-        
+
         local prevTail = tail2
         local prevYear =date2Year
         for i = 3, #dates do
@@ -419,7 +419,7 @@ local function calculatePeriods(dates, config)
         annual = true
       end
     end
-    
+
     if dates[3] ~= nil and annual == false then
       -- Figure out the size and interval of the period based on first 3 values
       local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
@@ -434,7 +434,7 @@ local function calculatePeriods(dates, config)
             if dates[i+1] == nil then
               dateList[#dateList + 1] = date1
               periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-            else            
+            else
               local dateEpoch2 = dateToEpoch(dates[i+1])
               local diff = math.abs(dateEpoch2 - dateEpoch1)
               if diff ~= diff1 then
@@ -449,7 +449,7 @@ local function calculatePeriods(dates, config)
             end
           end
         end
-      else -- More complicated scenarios 
+      else -- More complicated scenarios
         -- TODO: Detect breaks in periods
         -- Check for monthly periods
         if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) then
@@ -494,7 +494,7 @@ local function calculatePeriods(dates, config)
       end
     end
   end
-  
+
   -- Replace with forced values
   if force_start ~= "DETECT" then
     if force_period:sub(1, 2) == 'PT' and #force_start < 11 then
@@ -543,10 +543,13 @@ local configs = {}
 local cursor = "0"
 
 -- GITC mod: Add new date and only update if there was a change
-if ARGV[1] ~= nil then
+if ARGV[1] ~= nil and ARGV[1] ~= "false" then
   local result = 0
   if ARGV[1]:match("(%d+)-(%d+)-(%d+)") then
     result = redis.call("ZADD", KEYS[1] .. ":dates", 0, ARGV[1])
+    if KEYS[2] == "true" then
+      result = redis.call("ZADD", KEYS[1] .. ":expiration", 0, ARGV[1])
+    end
   end
   if result == 0 then
     return
@@ -554,7 +557,9 @@ if ARGV[1] ~= nil then
 end
 -- End GITC mod
 
-dates = redis.call("ZRANGE", KEYS[1] .. ":dates", 0, -1)
+local dates = redis.call("ZRANGE", KEYS[1] .. ":dates", 0, -1)
+local expiration = redis.call("ZRANGE", KEYS[1] .. ":expiration", 0, -1)
+
 
 -- Calculate periods for each time configuration per layer
 repeat
