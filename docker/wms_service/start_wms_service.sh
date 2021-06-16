@@ -85,7 +85,7 @@ cat >> /etc/httpd/conf/httpd.conf <<EOS
 Header Always Set Pragma "no-cache"
 Header Always Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
 Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
-Header Unset ETag
+Header Always Unset ETag
 FileETag None
 EOS
 

@@ -461,7 +461,7 @@ def make_layer_config(endpoint_config, layer):
         cache_expiration_block = 'Header Always Set Pragma "no-cache"\n'
         cache_expiration_block += '        Header Always Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"\n'
         cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
-        cache_expiration_block += '        Header Unset ETag\n'
+        cache_expiration_block += '        Header Always Unset ETag\n'
         cache_expiration_block += '        FileETag None'
 
     # Apache <Directory> stuff
