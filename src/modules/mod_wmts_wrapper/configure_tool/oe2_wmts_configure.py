@@ -456,13 +456,13 @@ def make_layer_config(endpoint_config, layer):
             print(f"\nEndpoint config is missing required twms config element {err}")
 
     if cache_expiration:
-        cache_expiration_block = f'Header Set Cache-Control "public, max-age={cache_expiration}"'
+        cache_expiration_block = f'Header Always Set Cache-Control "public, max-age={cache_expiration}"'
     else:
-        cache_expiration_block = f'Header Set Pragma "no-cache"\n'
-        cache_expiration_block += f'        Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"\n'
-        cache_expiration_block += f'        Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
-        cache_expiration_block += f'        Header Unset ETag\n'
-        cache_expiration_block += f'        FileETag None'
+        cache_expiration_block = 'Header Always Set Pragma "no-cache"\n'
+        cache_expiration_block += '        Header Always Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"\n'
+        cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
+        cache_expiration_block += '        Header Always Unset ETag\n'
+        cache_expiration_block += '        FileETag None'
 
     # Apache <Directory> stuff
     apache_config = bulk_replace(
