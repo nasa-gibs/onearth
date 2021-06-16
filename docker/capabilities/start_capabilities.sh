@@ -93,10 +93,10 @@ cat >> /etc/httpd/conf/httpd.conf <<EOS
 #
 # Turn off caching
 #
-Header Always Set Pragma "no-cache"
-Header Always Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
-Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
-Header Always Unset ETag
+Header Set Pragma "no-cache"
+Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
+Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
+Header Unset ETag
 FileETag None
 EOS
 
