@@ -7,7 +7,7 @@ if redis.call("EXISTS", KEYS[1] .. ":best_layer") == 1 and ARGV[1] ~= nil then
   local index = KEYS[1]:match("^.*():")
   local layerPrefix = KEYS[1]:sub(1,index) -- remove provided layers name
   local best_key = layerPrefix .. best_layer -- concat best_layer to layer prefix
-  local _, _, proj, typ  = string.find(best_key, "(epsg%d%d%d%d):(%a+):layer") -- replace type with best
+  local _, _, proj, typ  = string.find(best_key, "(%w+):(%a+):layer:") -- replace type with best
   if (typ) then 
     best_key = best_key:gsub(typ,"best", 1)
   else 
@@ -27,7 +27,6 @@ if redis.call("EXISTS", KEYS[1] .. ":best_layer") == 1 and ARGV[1] ~= nil then
   if not found then -- if the date is not found within layers of best_config key or the key was deleted
     redis.call("HDEL", best_key .. ":best", ARGV[1] .. "Z") -- :best dates have a Z
     redis.call("ZREM", best_key .. ":dates", ARGV[1])
-    redis.call("ECHO","*** ERROR: Best not configured! LAYER: " .. best_key .. " DATE: " .. ARGV[1])
-    error("Error: Best not configured " .. best_key)
+    redis.call("ECHO","*** Warn: Deleted or not configured, removing Best LAYER: " .. best_key .. " DATE: " .. ARGV[1])
   end
 end
