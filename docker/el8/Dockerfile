@@ -30,5 +30,13 @@ ENV LC_ALL=en_US.UTF-8
 
 RUN sed -i 's/Order allow,deny/Require all granted/g' /etc/httpd/conf.d/onearth-demo.conf
 
+# These httpd conf files currently cause startup issues (needs to be resolved for production)
+RUN mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl && \
+	mv /etc/httpd/conf.modules.d/00-proxy.conf /etc/httpd/conf.modules.d/00-proxy && \
+	mv /etc/httpd/conf.modules.d/10-h2.conf /etc/httpd/conf.modules.d/10-h2 && \
+	mv /etc/httpd/conf.modules.d/10-proxy_h2.conf /etc/httpd/conf.modules.d/10-proxy_h2
+
+WORKDIR /usr/share/onearth/
+
 # Start HTTPD server
 CMD sh /usr/local/bin/run-onearth.sh

@@ -1,6 +1,6 @@
 Name:		onearth
 Version:	1.4.0
-Release:	8%{?dist}
+Release:	9%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -30,6 +30,7 @@ BuildRequires:	python3-devel
 Requires:	httpd = 2.4.6
 %endif
 %if 0%{?centos} == 8
+BuildRequires:	libarchive => 3.3.3
 Requires:	httpd => 2.4.37
 %endif
 Requires:	gibs-gdal >= 2.4.4
