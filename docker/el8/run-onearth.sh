@@ -12,7 +12,5 @@ echo 'Starting Apache server'
 
 # Tail the apache logs
 exec tail -qF \
-  /etc/httpd/logs/access.log \
-  /etc/httpd/logs/error.log \
   /etc/httpd/logs/access_log \
   /etc/httpd/logs/error_log
