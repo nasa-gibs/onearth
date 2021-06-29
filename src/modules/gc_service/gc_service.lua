@@ -197,7 +197,12 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local abstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
     local projInfo = assert(PROJECTIONS[targetEpsgCode or epsgCode], "Can't find projection " .. epsgCode)
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
-    local bands = mimeType == "image/png" and "4" or "3"
+    local bands
+    if mimeType == "application/vnd.mapbox-vector-tile" then
+        bands = "1"
+    else
+        bands = mimeType == "image/png" and "4" or "3"
+    end
     local static = true
     if config.static ~= nil then
         static = config.static

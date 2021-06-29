@@ -382,7 +382,7 @@ def make_layer_config(endpoint_config, layer):
         size_y = layer_config['source_mrf']['size_y']
         tile_size_x = layer_config['source_mrf']['tile_size_x']
         tile_size_y = layer_config['source_mrf']['tile_size_y']
-        bands = layer_config['source_mrf']['bands']
+        bands = layer_config['source_mrf']['bands'] if layer_config['source_mrf']['bands'] is not None else 1
         idx_path = layer_config['source_mrf']['idx_path']
         mimetype = layer_config['mime_type']
     except KeyError as err:
