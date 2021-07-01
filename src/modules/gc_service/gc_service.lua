@@ -149,6 +149,14 @@ local function getTmsDefs(tmsXml)
     return tmsDefs
 end
 
+local function getTmsLimitsDefs(tmsLimitsXml)
+    local tmsLimitsDefs = {}
+    for _, tmLimits in ipairs(tmsLimitsXml:get_elements_with_name("TileMatrixSetLimits")) do
+        tmsLimitsDefs[tmLimits:get_attribs().id] = tmLimits
+    end
+    return tmsLimitsDefs
+end
+
 local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
     -- Start by getting the maximum ScaleDenominator for the source TMS
     local function sortTms(a,b)
@@ -361,7 +369,7 @@ end
 
 
 -- GetCapabilities functions
-local function makeTWMSGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode)
+local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
@@ -407,7 +415,7 @@ local function makeTWMSGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsg
     return layerElem
 end
 
-local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC, baseUriMeta)
+local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC, baseUriMeta)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
     local config = lyaml.load(configFile:read("*all"))
@@ -510,9 +518,22 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
         layerElem:add_child(dimensionNode)
     end
 
+    -- Build <TileMatrixSetLink>
+    local tmsSetLinkNode = xml.elem("TileMatrixSetLink", xml.new("TileMatrixSet"):text(tmsName))
+    if config.TileMatrixSetLimitsId and tmsLimitsDefs then
+        -- Find Matrix set limits for id
+        local id = config.TileMatrixSetLimitsId
 
-    -- Build <TileMatrixSetLink> and <Format>
-    layerElem:add_child(xml.elem("TileMatrixSetLink", xml.new("TileMatrixSet"):text(tmsName)))
+        -- Build <TileMatrixSetLimits>
+        local tmsLimitsNode = xml.elem("TileMatrixSetLimits")
+        -- tmsLimitsNode:set_attrib("id", id)
+        for _, tmLimits in ipairs(tmsLimitsDefs[id]:get_elements_with_name("TileMatrixLimits")) do
+            tmsLimitsNode:add_child(tmLimits)
+        end
+        tmsSetLinkNode:add_child(tmsLimitsNode)
+    end
+    layerElem:add_child(tmsSetLinkNode)
+    -- Build <Format>  
     layerElem:add_child(xml.new("Format"):text(mimeType))
 
     -- Build the ResourceURL element
@@ -531,10 +552,13 @@ local function makeGCLayer(filename, tmsDefs, dateList, epsgCode, targetEpsgCode
     return layerElem
 end
 
-local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode, twms)
+local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, twms)
     local tmsDefs = getTmsDefs(tmsXml)
     local dateList = getDateList(endpointConfig)
-
+    local tmsLimitsDefs
+    if tmsLimitsXml then 
+        tmsLimitsDefs = getTmsLimitsDefs(tmsLimitsXml)
+    end
     local layerConfigSource = endpointConfig["layer_config_source"]
 
     local buildFunc = twms and makeTWMSGCLayer or makeGCLayer
@@ -551,7 +575,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
     end
 
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
     end
     if fileAttrs["mode"] == "directory" then
         -- Only going down a single directory level
@@ -559,7 +583,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCo
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
                 nodeList[#nodeList + 1] = buildFunc(layerConfigSource .. "/" .. file,
-                 tmsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+                 tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
             end
         end
     end
@@ -577,6 +601,15 @@ local function makeGC(endpointConfig)
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
     local tmsXml = xml.parse(tmsFile:read("*all"))
     tmsFile:close()
+    
+    local tms_limits_defs_file = endpointConfig["tms_limits_defs_file"]
+    local tmsLimitsXml
+    if tms_limits_defs_file and tms_limits_defs_file ~= "nil" then
+        local tmsLimitsFile = assert(io.open(endpointConfig["tms_limits_defs_file"], "r")
+            , "Can't open tile matrixsetslimits definition file at: " .. endpointConfig["tms_limits_defs_file"])
+        tmsLimitsXml = xml.parse(tmsLimitsFile:read("*all"))
+        tmsLimitsFile:close()
+    end
 
     local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
     if string.match(epsgCode:lower(), "^%d") then
@@ -600,7 +633,7 @@ local function makeGC(endpointConfig)
 
     -- Build contents section
     local contentsElem = xml.elem("Contents")
-    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode)
+    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
 
     if not layers then
         return sendResponse(400, "No layers found!")
@@ -682,7 +715,7 @@ local function makeTWMSGC(endpointConfig)
     local capabilityElem = capabilityElems[1]
 
     local baseLayerElem = capabilityElem:get_elements_with_name("Layer")[1]
-    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, epsgCode, targetEpsgCode, true)
+    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, true)
     
     if not layers then
         return sendResponse(400, "No layers found!")

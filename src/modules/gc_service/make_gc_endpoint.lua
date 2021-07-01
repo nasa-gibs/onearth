@@ -23,6 +23,7 @@ local onearth_gc_gts = require "onearth_gc_gts"
 local config = {
     layer_config_source="${config_loc}",
     tms_defs_file="${tms_loc}",
+    tms_limits_defs_file="${tms_limits_loc}",
     time_service_uri="${time_service_uri}",
     epsg_code="${epsg_code}",
     gc_header_file=${gc_header_file},
@@ -84,6 +85,10 @@ local function create_config(endpointConfigFilename)
     local layerConfigSource = assert(endpointConfig["layer_config_source"], "No 'layer_config_source' specified in endpoint config.")
     local dateServiceUri = endpointConfig["time_service_uri"]
 
+    local tmsLimitsDefsFilename = endpointConfig["tms_limits_defs_file"]
+    if not tmsLimitsDefsFilename then
+        print("No tms_limits_defs_file specified.")
+    end
     local dateServiceKeyString = "{}"
     if endpointConfig["time_service_keys"] then
         dateServiceKeyString = "{" .. join(map(addQuotes, endpointConfig["time_service_keys"]), ",") .. "}"
@@ -129,6 +134,7 @@ local function create_config(endpointConfigFilename)
     -- Make and write Lua config
     local luaConfig = luaConfigTemplate:gsub("${config_loc}", layerConfigSource)
         :gsub("${tms_loc}", tmsDefsFilename)
+        :gsub("${tms_limits_loc}", tmsLimitsDefsFilename or "nil")
         :gsub("${time_service_uri}", dateServiceUri)
         :gsub("${epsg_code}", epsgCode)
         :gsub("${gc_header_file}", addQuotes(endpointConfig["gc_service"]["gc_header_file"]) or "nil")
