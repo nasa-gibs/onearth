@@ -523,17 +523,19 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     if config.TileMatrixSetLimitsId and tmsLimitsDefs then
         -- Find Matrix set limits for id
         local id = config.TileMatrixSetLimitsId
-
         -- Build <TileMatrixSetLimits>
         local tmsLimitsNode = xml.elem("TileMatrixSetLimits")
+        id = tmsLimitsDefs[id] and id or tmsLimitsDefs[string.gsub(id, '_', '-')] and string.gsub(id, '_', '-') or nil
         -- tmsLimitsNode:set_attrib("id", id)
-        for _, tmLimits in ipairs(tmsLimitsDefs[id]:get_elements_with_name("TileMatrixLimits")) do
-            tmsLimitsNode:add_child(tmLimits)
+        if id then
+            for _, tmLimits in ipairs(tmsLimitsDefs[id]:get_elements_with_name("TileMatrixLimits")) do
+                tmsLimitsNode:add_child(tmLimits)
+            end
+            tmsSetLinkNode:add_child(tmsLimitsNode)
         end
-        tmsSetLinkNode:add_child(tmsLimitsNode)
     end
     layerElem:add_child(tmsSetLinkNode)
-    -- Build <Format>  
+    -- Build <Format>
     layerElem:add_child(xml.new("Format"):text(mimeType))
 
     -- Build the ResourceURL element

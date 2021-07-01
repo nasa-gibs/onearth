@@ -21,7 +21,7 @@ source_mrf:
   year_dir: true
 static: false
 tilematrixset: 1km
-TileMatrixSetLimitsId: "goes-east-1km"
+TileMatrixSetLimitsId: "goes_east_1km"
 time_config:
 - DETECT/PT10M
 wms_layer_group: /Geostationary
