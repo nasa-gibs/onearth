@@ -87,7 +87,7 @@ local function create_config(endpointConfigFilename)
 
     local tmsLimitsDefsFilename = endpointConfig["tms_limits_defs_file"]
     if not tmsLimitsDefsFilename then
-        print("No tms_limits_defs_file specified.")
+        print("No 'tms_limits_defs_file' specified in endpoint config.")
     end
     local dateServiceKeyString = "{}"
     if endpointConfig["time_service_keys"] then

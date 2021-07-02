@@ -151,7 +151,7 @@ end
 
 local function getTmsLimitsDefs(tmsLimitsXml)
     local tmsLimitsDefs = {}
-    for _, tmLimits in ipairs(tmsLimitsXml:get_elements_with_name("TileMatrixSetLimits")) do
+    for _, tmLimits in ipairs(tmsLimitsXml:get_elements_with_name("tilematrixset_limits_id")) do
         tmsLimitsDefs[tmLimits:get_attribs().id] = tmLimits
     end
     return tmsLimitsDefs
@@ -525,7 +525,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
         local id = config.TileMatrixSetLimitsId
         -- Build <TileMatrixSetLimits>
         local tmsLimitsNode = xml.elem("TileMatrixSetLimits")
-        id = tmsLimitsDefs[id] and id or tmsLimitsDefs[string.gsub(id, '_', '-')] and string.gsub(id, '_', '-') or nil
+        id = tmsLimitsDefs[id] and id or nil
         -- tmsLimitsNode:set_attrib("id", id)
         if id then
             for _, tmLimits in ipairs(tmsLimitsDefs[id]:get_elements_with_name("TileMatrixLimits")) do
