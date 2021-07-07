@@ -63,6 +63,7 @@ The endpoint configuration should be a YAML file in the following format:
 ```
 time_service_uri: "http://localhost/time_service/time"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+tms_limits_defs_file: "/etc/onearth/config/conf/tilematrixsetlimits.xml"
 layer_config_source: "/etc/onearth/layers/layer_config.yaml"
 apache_config_location: "/etc/httpd/conf.d"
 base_uri_gc: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/"
@@ -89,6 +90,9 @@ the OnEarth 2 date service here.
 
 `tms_defs_file` (required) -- The path to a Tile Matrix Set definition XML file.
 One is included with this package (`tilematrixsets.xml`).
+
+`tms_limits_defs_file` (optional): The path to a Tile Matrix Set Limits definition XML file.
+One is included with this package (`tilematrixsetslimits.xml`).
 
 `layer_config_source` (required) -- This can be a path either to a single layer
 configuration YAML file, or a directory containing multiple layer config files.
@@ -171,6 +175,10 @@ dimension. Defaults to 'false'.
 this layer. _Note that this tilematrixset name must correspond to a
 tilematrixset that's defined in the endpoint configuration `tms_defs_file`_
 
+`tilematrixset_limits_id` (optional) -- The id of the Tile Matrix Set Limits to be used with
+this layer. _Note that this tilematrixsetlimitsid must correspond to a
+tilematrixsetlimitsid that's defined in the endpoint configuration `tms_limits_defs_file`_
+
 `metadata` (required) -- Metadata values to be provided for this layer. Each key
 in the table will be used as an attribute name, and the value for that key will
 be used as the attribute value. I.e. `{'attr': 'value'}` will appear in the XML
@@ -196,6 +204,7 @@ local onearth_gc_gts = require "onearth_gc_gts"
 local config = {
     layer_config_source="config_location",
     tms_defs_file="tms_defs_location",
+    tms_limits_defs_file="tms_limits_defs_location",
     gc_header_loc="gc_header_location",
     time_service_uri="time_service_uri",
     epsg_code="epsg_code",
