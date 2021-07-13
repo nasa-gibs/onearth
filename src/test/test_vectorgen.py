@@ -97,12 +97,11 @@ class TestVectorgen(unittest.TestCase):
             input_dir = ""
             for infile in config_dom.getElementsByTagName('file'):
                 input_files_primary.append(infile.firstChild.nodeValue)
+            if not input_files_primary:
+                input_dir = config_dom.getElementsByTagName('input_dir')[0].firstChild.nodeValue
         except IndexError:
-            try:
-                input_dir = config_dom.getElementsByTagName('input_dir').firstChild.nodeValue
-            except IndexError:
-                print('Problem reading {0} -- can\'t find "input_files" tag or "input_dir" tag. Aborting test.'.format(self.mrf_test_config))
-                sys.exit()
+            print('Problem reading {0} -- can\'t find "input_files" tag or "input_dir" tag. Aborting test.'.format(self.mrf_test_config))
+            sys.exit()
         try:
             prefix = config_dom.getElementsByTagName('output_name')[0].firstChild.nodeValue
         except IndexError:
@@ -142,14 +141,14 @@ class TestVectorgen(unittest.TestCase):
         shutil.copy(vector_config, artifact_path)
 
         # if we're using 'input_files'
-        if input_files_primary != []:
+        if input_files_primary:
             # copy data to artifact path
             input_files_all = []
             for infile in input_files_primary:
                 input_file_prefix = os.path.splitext(infile)[0]
                 input_files_all.extend(glob.glob(os.path.join(self.test_data_path, input_file_prefix + '*')))
-                for file in input_files_all:
-                    shutil.copy(file, artifact_path)
+            for file in input_files_all:
+                shutil.copy(file, artifact_path)
             
             # Return values needed by the test routine (using 'input_files')
             config = {
@@ -160,11 +159,15 @@ class TestVectorgen(unittest.TestCase):
                 'source_epsg': source_epsg,
                 'target_epsg': target_epsg
             }
-
         # if we're using 'input_dir'
         else:
             # copy data to artifact path
-            shutil.copy(input_dir, artifact_path)
+            input_dir_path = os.path.join(self.test_data_path, input_dir)
+            input_dir_artifact_path = os.path.join(artifact_path, input_dir)
+            os.makedirs(input_dir_artifact_path)
+            input_files_primary = os.listdir(input_dir_path)
+            for infile in input_files_primary:
+                shutil.copy(os.path.join(input_dir_path, infile), input_dir_artifact_path)
 
             # Return values needed by the test routine (using 'input_dir')
             config = {
@@ -174,7 +177,7 @@ class TestVectorgen(unittest.TestCase):
                 'source_epsg': source_epsg,
                 'target_epsg': target_epsg
             }
-        
+
         return config
 
     # Tests that tiles from the MRF are valid gzipped MVT tiles. Alerts if the overview tiles contain no features.
@@ -220,6 +223,7 @@ class TestVectorgen(unittest.TestCase):
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
+    # Tests the creation of a shapefile from a single input GeoJSON. Alerts if shapefile has different number of features from the GeoJSON.
     def test_shapefile_generation(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles')
@@ -251,112 +255,8 @@ class TestVectorgen(unittest.TestCase):
         except fiona.errors.FionaValueError:
             self.fail("Bad output geojson file {0}.".format(output_file))
     
-    def test_shapefile_generation_multiple_geojson(self):
-        # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_geojson')
-        config = self.parse_vector_config(self.shapefile_mult_geojson_test_config, test_artifact_path)
-        
-        print("------- INPUT FILES LIST:", config['input_files'])
 
-        # Open input shapefile and get stats
-        try:
-            with fiona.open(config['input_files'][0]) as geojson1, fiona.open(config['input_files'][1]) as geojson2:
-                print("GeoJSON 1 number of Features:", len(list(geojson1)))
-                print("GeoJSON 2 number of Features:", len(list(geojson2)))
-                origin_num_features = len(list(geojson1)) + len(list(geojson2))
-        except fiona.errors.FionaValueError:
-            self.fail("Can't open input geojson {0} or {1}. Make sure they're valid.".format(config['input_files'][0], config['input_files'][0]))
-        
-        # Run vectorgen
-        prevdir = os.getcwd()
-        os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.shapefile_mult_geojson_test_config
-        run_command(cmd, ignore_warnings=True)
-        os.chdir(prevdir)
-
-        # Check the output
-        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
-        try:
-            with fiona.open(output_file) as shapefile:
-                self.assertEqual(origin_num_features, len(list(shapefile)),
-                                 "Feature count between the sum of input GeoJSONs {0} and {1} differs from that of output shapefile {2}. There is a problem with the conversion process."
-                                 .format(config['input_files'][0], config['input_files'][1], output_file))
-        except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
-        except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
-
-
-    def test_shapefile_generation_multiple_geojson_input_dir(self):
-        # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_geojson_input_dir')
-        config = self.parse_vector_config(self.shapefile_mult_geojson_input_dir_test_config, test_artifact_path)
-        
-        print("------- INPUT DIR:", config['input_dir'])
-
-        # Open input shapefile and get stats
-        try:
-            with fiona.open(config['input_files'][0]) as geojson1, fiona.open(config['input_files'][1]) as geojson2:
-                print("GeoJSON 1 number of Features:", len(list(geojson1)))
-                print("GeoJSON 2 number of Features:", len(list(geojson2)))
-                origin_num_features = len(list(geojson1)) + len(list(geojson2))
-        except fiona.errors.FionaValueError:
-            self.fail("Can't open input geojson {0} or {1}. Make sure they're valid.".format(config['input_files'][0], config['input_files'][0]))
-        
-        # Run vectorgen
-        prevdir = os.getcwd()
-        os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.shapefile_mult_geojson_input_dir_test_config
-        run_command(cmd, ignore_warnings=True)
-        os.chdir(prevdir)
-
-        # Check the output
-        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
-        try:
-            with fiona.open(output_file) as shapefile:
-                self.assertEqual(origin_num_features, len(list(shapefile)),
-                                 "Feature count between the sum of input GeoJSONs {0} and {1} differs from that of output shapefile {2}. There is a problem with the conversion process."
-                                 .format(config['input_files'][0], config['input_files'][1], output_file))
-        except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
-        except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
-
-
-    def test_shapefile_generation_multiple_shp(self):
-        # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_shp')
-        config = self.parse_vector_config(self.shapefile_mult_shp_test_config, test_artifact_path)
-
-        # Open input shapefile and get stats
-        try:
-            with fiona.open(test_artifact_path + '/' + config['input_files_primary'][0]) as shapefile1, fiona.open(test_artifact_path + '/' + config['input_files_primary'][1]) as shapefile2, fiona.open(test_artifact_path + '/' + config['input_files_primary'][2]) as shapefile3:
-                print("INPUT SHP 1 number of features:", len(list(shapefile1)))
-                print("INPUT SHP 2 number of features:", len(list(shapefile2)))
-                print("INPUT SHP 3 number of features:", len(list(shapefile3)))
-                origin_num_features = len(list(shapefile1)) + len(list(shapefile2)) + len(list(shapefile3))
-        except fiona.errors.FionaValueError:
-            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
-        
-        # Run vectorgen
-        prevdir = os.getcwd()
-        os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.shapefile_mult_shp_test_config
-        run_command(cmd, ignore_warnings=True)
-        os.chdir(prevdir)
-
-        # Check the output
-        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
-        try:
-            with fiona.open(output_file) as shapefile:
-                self.assertEqual(origin_num_features, len(list(shapefile)),
-                                 "Feature count between input shapefiles {0}, {1}, {2} and output shapefile {3} differs. There is a problem with the conversion process."
-                                 .format(config['input_files_primary'][0], config['input_files_primary'][1], config['input_files_primary'][2], output_file))
-        except IOError:
-            self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
-        except fiona.errors.FionaValueError:
-            self.fail("Bad output shapefile {0}.".format(output_file))
-            
+    # Tests the creation of a GeoJSON file from a single GeoJSON input. Alerts if number of features differs between input and output GeoJSON.
     def test_geojson_generation(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'geojson')
@@ -388,8 +288,8 @@ class TestVectorgen(unittest.TestCase):
         except fiona.errors.FionaValueError:
             self.fail("Bad output geojson file {0}.".format(output_file))
 
-        # Tests that tiles from the MRF are valid gzipped MVT tiles for multiple .shp inputs.
-        # Alerts if the overview tiles contain no features.
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for multiple .shp inputs.
+    # Alerts if the overview tiles contain no features.
     def test_MVT_MRF_generation_multiple_shp(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_multiple_shp')
@@ -432,50 +332,8 @@ class TestVectorgen(unittest.TestCase):
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
-        # Tests that tiles from the MRF are valid gzipped MVT tiles for when the source EPSG differs from the target EPSG.
-        # Alerts if the overview tiles contain no features.
-    def test_MVT_MRF_generation_diff_proj(self):
-        # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_diff_proj')
-        config = self.parse_vector_config(self.mrf_diff_proj_test_config, test_artifact_path)
-        
-        # Run vectorgen
-        prevdir = os.getcwd()
-        os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.mrf_diff_proj_test_config
-        run_command(cmd, ignore_warnings=True)
-        os.chdir(prevdir)
-
-        # Get index of first, second-to-last, and last tile in MRF
-        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
-            first_byte = idx.read(16)
-            idx.seek(-32, 2)
-            penultimate_byte = idx.read(16)
-            last_byte = idx.read(16)
-        top_tile_feature_count = 0
-        for byte in (first_byte, penultimate_byte, last_byte):
-            tile_buffer = io.BytesIO()
-            offset = struct.unpack('>q', byte[0:8])[0]
-            size = struct.unpack('>q', byte[8:16])[0]
-            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
-                pvt.seek(offset)
-                tile_buffer.write(pvt.read(size))
-            tile_buffer.seek(0)
-            # Check to see if extracted files are valid zip files and valid MVT tiles
-            try:
-                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
-                tile_data = unzipped_tile.read()
-            except IOError:
-                self.fail("Invalid tile found in MRF -- can't be unzipped.")
-            try:
-                tile = mapbox_vector_tile.decode(tile_data)
-            except:
-                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
-            # Check the top 2 tiles to see if they have any features (they should)
-            if byte != first_byte:
-                top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
-        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
-
+    # Tests that shapefiles are generated correctly from GeoJSON input when the source EPSG differs from the target EPSG.
+    # Alerts if the output shapefile has a different number of features from the input GeoJSON.
     def test_shapefile_generation_diff_proj(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_diff_proj')
@@ -507,8 +365,8 @@ class TestVectorgen(unittest.TestCase):
         except fiona.errors.FionaValueError:
             self.fail("Bad output geojson file {0}.".format(output_file))
 
-        # Tests that tiles from the MRF are valid gzipped MVT tiles for when the overview levels are explicitly stated.
-        # Alerts if the overview tiles contain no features.
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when the overview levels are explicitly specified.
+    # Alerts if the overview tiles contain no features.
     def test_MVT_MRF_generation_overview_levels(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_overview_levels')
@@ -551,8 +409,8 @@ class TestVectorgen(unittest.TestCase):
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
-        # Tests that tiles from the MRF are valid gzipped MVT tiles for when the overview levels are explicitly stated.
-        # Alerts if the overview tiles contain no features.
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when the feature reduce rate is explicitly specified.
+    # Alerts if the overview tiles contain no features or if they do not contain fewer features than the input shapefile.
     def test_MVT_MRF_generation_feat_reduce_rate(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_feat_reduce_rate')
@@ -560,7 +418,7 @@ class TestVectorgen(unittest.TestCase):
         
         # Open input shapefile and get stats
         try:
-            with fiona.open(test_artifact_path + '/' + config['input_files_primary'][0]) as shapefile:
+            with fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][0])) as shapefile:
                 origin_num_features = len(list(shapefile))
         except fiona.errors.FionaValueError:
             self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
@@ -605,8 +463,8 @@ class TestVectorgen(unittest.TestCase):
                 self.assertTrue(tile_num_features < origin_num_features, "Tile does not contain fewer features than the input shapefile, feature reduce rate likely didn't work")
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
-        # Tests that tiles from the MRF are valid gzipped MVT tiles for when the overview levels are explicitly stated.
-        # Alerts if the overview tiles contain no features.
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when the cluster reduce rate is explicitly specified.
+    # Alerts if the overview tiles contain no features or if they do not contain fewer features than the input shapefile.
     def test_MVT_MRF_generation_clust_reduce_rate(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_clust_reduce_rate')
@@ -614,7 +472,7 @@ class TestVectorgen(unittest.TestCase):
         
         # Open input shapefile and get stats
         try:
-            with fiona.open(test_artifact_path + '/' + config['input_files_primary'][0]) as shapefile:
+            with fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][0])) as shapefile:
                 origin_num_features = len(list(shapefile))
         except fiona.errors.FionaValueError:
             self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
@@ -656,7 +514,7 @@ class TestVectorgen(unittest.TestCase):
                 tile_num_features = len(tile[list(tile.keys())[0]]['features'])
                 top_tile_feature_count += tile_num_features
                 # Check that the tiles have fewer features than the input shapefile had
-                self.assertTrue(tile_num_features < origin_num_features, "Tile does not contain fewer features than the input shapefile, feature reduce rate likely didn't work")
+                self.assertTrue(tile_num_features < origin_num_features, "Tile does not contain fewer features than the input shapefile, cluster reduce rate likely didn't work")
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
     
     # Tests that tiles from the MRF are valid gzipped MVT tiles. Alerts if the overview tiles contain no features.
@@ -702,6 +560,163 @@ class TestVectorgen(unittest.TestCase):
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
+    """
+    # Tests creation of a shapefile from multiple GeoJSON inputs.
+    # Alerts if output shapefile's number of features differs from the sum of the number of features in the input GeoJSONs.
+    def test_shapefile_generation_multiple_geojson(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_geojson')
+        config = self.parse_vector_config(self.shapefile_mult_geojson_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson1, fiona.open(config['input_files'][1]) as geojson2:
+                origin_num_features = len(list(geojson1)) + len(list(geojson2))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0} or {1}. Make sure they're valid.".format(config['input_files'][0], config['input_files'][0]))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.shapefile_mult_geojson_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between the sum of input GeoJSONs {0} and {1} differs from that of output shapefile {2}. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], config['input_files'][1], output_file))
+        except IOError:
+            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output geojson file {0}.".format(output_file))
+    """
+
+    """
+    # Tests creation of a shapefile from multiple GeoJSON inputs.
+    # Alerts if output shapefile's number of features differs from the sum of the number of features in the input GeoJSONs.
+    # This test uses the `input_dir` tag to specify input files rather than `input_files`
+    def test_shapefile_generation_multiple_geojson_input_dir(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_geojson_input_dir')
+        config = self.parse_vector_config(self.shapefile_mult_geojson_input_dir_test_config, test_artifact_path)
+        
+        input_dir_artifact_path = os.path.join(test_artifact_path, config['input_dir'])
+
+        test_geojsons = os.listdir(input_dir_artifact_path)
+        testfile1 = os.path.join(input_dir_artifact_path, test_geojsons[0])
+        testfile2 = os.path.join(input_dir_artifact_path, test_geojsons[1])
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(testfile1) as geojson1, fiona.open(testfile2) as geojson2:
+                origin_num_features = len(list(geojson1)) + len(list(geojson2))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0} or {1}. Make sure they're valid.".format(testfile1, testfile2))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.shapefile_mult_geojson_input_dir_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between the sum of input GeoJSONs {0} and {1} differs from that of output shapefile {2}. There is a problem with the conversion process."
+                                 .format(testfile1, testfile2, output_file))
+        except IOError:
+            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output geojson file {0}.".format(output_file))
+    """
+
+    """
+    # Tests creation of a shapefile from multiple shapefile inputs.
+    # Alerts if output shapefile's number of features differs from the sum of the number of features in the input shapefiles.
+    def test_shapefile_generation_multiple_shp(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_shp')
+        config = self.parse_vector_config(self.shapefile_mult_shp_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][0])) as shapefile1, fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][1])) as shapefile2, fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][2])) as shapefile3:
+                origin_num_features = len(list(shapefile1)) + len(list(shapefile2)) + len(list(shapefile3))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.shapefile_mult_shp_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between input shapefiles {0}, {1}, {2} and output shapefile {3} differs. There is a problem with the conversion process."
+                                 .format(config['input_files_primary'][0], config['input_files_primary'][1], config['input_files_primary'][2], output_file))
+        except IOError:
+            self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output shapefile {0}.".format(output_file))
+    """
+
+    """
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when the source EPSG differs from the target EPSG.
+    # Alerts if the overview tiles contain no features.
+    def test_MVT_MRF_generation_diff_proj(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_diff_proj')
+        config = self.parse_vector_config(self.mrf_diff_proj_test_config, test_artifact_path)
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.mrf_diff_proj_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Get index of first, second-to-last, and last tile in MRF
+        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
+            first_byte = idx.read(16)
+            idx.seek(-32, 2)
+            penultimate_byte = idx.read(16)
+            last_byte = idx.read(16)
+        top_tile_feature_count = 0
+        for byte in (first_byte, penultimate_byte, last_byte):
+            tile_buffer = io.BytesIO()
+            offset = struct.unpack('>q', byte[0:8])[0]
+            size = struct.unpack('>q', byte[8:16])[0]
+            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
+                pvt.seek(offset)
+                tile_buffer.write(pvt.read(size))
+            tile_buffer.seek(0)
+            # Check to see if extracted files are valid zip files and valid MVT tiles
+            try:
+                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
+                tile_data = unzipped_tile.read()
+            except IOError:
+                self.fail("Invalid tile found in MRF -- can't be unzipped.")
+            try:
+                tile = mapbox_vector_tile.decode(tile_data)
+            except:
+                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
+            # Check the top 2 tiles to see if they have any features (they should)
+            if byte != first_byte:
+                top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
+        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
+    """
 
     @classmethod
     def tearDownClass(self):

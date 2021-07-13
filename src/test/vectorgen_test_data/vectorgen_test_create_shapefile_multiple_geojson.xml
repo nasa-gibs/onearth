@@ -14,7 +14,7 @@ limitations under the License.
 -->
 <vectorgen_configuration>
  <date_of_data>20160425</date_of_data>
- <parameter_name>MODIS_C5_fires_2016116</parameter_name>
+ <parameter_name>MODIS_C5_fires_2016116_icesat2</parameter_name>
  <input_files>
   <file>MODIS_C5_fires_2016116.geojson</file>
   <file>icesat2.geojson</file>
