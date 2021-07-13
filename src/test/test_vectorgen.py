@@ -223,70 +223,48 @@ class TestVectorgen(unittest.TestCase):
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
-    # Tests the creation of a shapefile from a single input GeoJSON. Alerts if shapefile has different number of features from the GeoJSON.
-    def test_shapefile_generation(self):
+    # Tests that tiles from the MRF are valid gzipped MVT tiles. Alerts if the overview tiles contain no features.
+    def test_MVT_MRF_generation_from_geojson(self):
         # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles')
-        config = self.parse_vector_config(self.shapefile_test_config, test_artifact_path)
-
-        # Open input shapefile and get stats
-        try:
-            with fiona.open(config['input_files'][0]) as geojson:
-                origin_num_features = len(list(geojson))
-        except fiona.errors.FionaValueError:
-            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
+        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_from_geojson')
+        config = self.parse_vector_config(self.mrf_from_geojson_test_config, test_artifact_path)
         
         # Run vectorgen
         prevdir = os.getcwd()
         os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.shapefile_test_config
+        cmd = 'oe_vectorgen -c ' + self.mrf_from_geojson_test_config
         run_command(cmd, ignore_warnings=True)
         os.chdir(prevdir)
 
-        # Check the output
-        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
-        try:
-            with fiona.open(output_file) as shapefile:
-                self.assertEqual(origin_num_features, len(list(shapefile)),
-                                 "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
-                                 .format(config['input_files'][0], output_file))
-        except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
-        except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
-    
-
-    # Tests the creation of a GeoJSON file from a single GeoJSON input. Alerts if number of features differs between input and output GeoJSON.
-    def test_geojson_generation(self):
-        # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'geojson')
-        config = self.parse_vector_config(self.geojson_test_config, test_artifact_path)
-
-        # Open input shapefile and get stats
-        try:
-            with fiona.open(config['input_files'][0]) as geojson:
-                origin_num_features = len(list(geojson))
-        except fiona.errors.FionaValueError:
-            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
-        
-        # Run vectorgen
-        prevdir = os.getcwd()
-        os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.geojson_test_config
-        run_command(cmd, ignore_warnings=True)
-        os.chdir(prevdir)
-
-        # Check the output
-        output_file = os.path.join(config['output_dir'], config['prefix'] + '.json')
-        try:
-            with fiona.open(output_file) as geojson:
-                self.assertEqual(origin_num_features, len(list(geojson)),
-                                 "Feature count between input GeoJSON {0} and output GeoJSON {1} differs. There is a problem with the conversion process."
-                                 .format(config['input_files'][0], output_file))
-        except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
-        except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
+        # Get index of first, second-to-last, and last tile in MRF
+        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
+            first_byte = idx.read(16)
+            idx.seek(-32, 2)
+            penultimate_byte = idx.read(16)
+            last_byte = idx.read(16)
+        top_tile_feature_count = 0
+        for byte in (first_byte, penultimate_byte, last_byte):
+            tile_buffer = io.BytesIO()
+            offset = struct.unpack('>q', byte[0:8])[0]
+            size = struct.unpack('>q', byte[8:16])[0]
+            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
+                pvt.seek(offset)
+                tile_buffer.write(pvt.read(size))
+            tile_buffer.seek(0)
+            # Check to see if extracted files are valid zip files and valid MVT tiles
+            try:
+                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
+                tile_data = unzipped_tile.read()
+            except IOError:
+                self.fail("Invalid tile found in MRF -- can't be unzipped.")
+            try:
+                tile = mapbox_vector_tile.decode(tile_data)
+            except:
+                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
+            # Check the top 2 tiles to see if they have any features (they should)
+            if byte != first_byte:
+                top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
+        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
     # Tests that tiles from the MRF are valid gzipped MVT tiles for multiple .shp inputs.
     # Alerts if the overview tiles contain no features.
@@ -331,39 +309,6 @@ class TestVectorgen(unittest.TestCase):
             if byte != first_byte:
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
-
-    # Tests that shapefiles are generated correctly from GeoJSON input when the source EPSG differs from the target EPSG.
-    # Alerts if the output shapefile has a different number of features from the input GeoJSON.
-    def test_shapefile_generation_diff_proj(self):
-        # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_diff_proj')
-        config = self.parse_vector_config(self.shapefile_diff_proj_test_config, test_artifact_path)
-
-        # Open input shapefile and get stats
-        try:
-            with fiona.open(config['input_files'][0]) as geojson:
-                origin_num_features = len(list(geojson))
-        except fiona.errors.FionaValueError:
-            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
-        
-        # Run vectorgen
-        prevdir = os.getcwd()
-        os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.shapefile_diff_proj_test_config
-        run_command(cmd, ignore_warnings=True)
-        os.chdir(prevdir)
-
-        # Check the output
-        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
-        try:
-            with fiona.open(output_file) as shapefile:
-                self.assertEqual(origin_num_features, len(list(shapefile)),
-                                 "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
-                                 .format(config['input_files'][0], output_file))
-        except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
-        except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
 
     # Tests that tiles from the MRF are valid gzipped MVT tiles for when the overview levels are explicitly specified.
     # Alerts if the overview tiles contain no features.
@@ -516,49 +461,103 @@ class TestVectorgen(unittest.TestCase):
                 # Check that the tiles have fewer features than the input shapefile had
                 self.assertTrue(tile_num_features < origin_num_features, "Tile does not contain fewer features than the input shapefile, cluster reduce rate likely didn't work")
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
-    
-    # Tests that tiles from the MRF are valid gzipped MVT tiles. Alerts if the overview tiles contain no features.
-    def test_MVT_MRF_generation_from_geojson(self):
+
+    # Tests the creation of a shapefile from a single input GeoJSON. Alerts if shapefile has different number of features from the GeoJSON.
+    def test_shapefile_generation(self):
         # Process config file
-        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_from_geojson')
-        config = self.parse_vector_config(self.mrf_from_geojson_test_config, test_artifact_path)
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles')
+        config = self.parse_vector_config(self.shapefile_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson:
+                origin_num_features = len(list(geojson))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
         
         # Run vectorgen
         prevdir = os.getcwd()
         os.chdir(test_artifact_path)
-        cmd = 'oe_vectorgen -c ' + self.mrf_from_geojson_test_config
+        cmd = 'oe_vectorgen -c ' + self.shapefile_test_config
         run_command(cmd, ignore_warnings=True)
         os.chdir(prevdir)
 
-        # Get index of first, second-to-last, and last tile in MRF
-        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
-            first_byte = idx.read(16)
-            idx.seek(-32, 2)
-            penultimate_byte = idx.read(16)
-            last_byte = idx.read(16)
-        top_tile_feature_count = 0
-        for byte in (first_byte, penultimate_byte, last_byte):
-            tile_buffer = io.BytesIO()
-            offset = struct.unpack('>q', byte[0:8])[0]
-            size = struct.unpack('>q', byte[8:16])[0]
-            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
-                pvt.seek(offset)
-                tile_buffer.write(pvt.read(size))
-            tile_buffer.seek(0)
-            # Check to see if extracted files are valid zip files and valid MVT tiles
-            try:
-                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
-                tile_data = unzipped_tile.read()
-            except IOError:
-                self.fail("Invalid tile found in MRF -- can't be unzipped.")
-            try:
-                tile = mapbox_vector_tile.decode(tile_data)
-            except:
-                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
-            # Check the top 2 tiles to see if they have any features (they should)
-            if byte != first_byte:
-                top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
-        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], output_file))
+        except IOError:
+            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output geojson file {0}.".format(output_file))
+
+    # Tests that shapefiles are generated correctly from GeoJSON input when the source EPSG differs from the target EPSG.
+    # Alerts if the output shapefile has a different number of features from the input GeoJSON.
+    def test_shapefile_generation_diff_proj(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_diff_proj')
+        config = self.parse_vector_config(self.shapefile_diff_proj_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson:
+                origin_num_features = len(list(geojson))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.shapefile_diff_proj_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], output_file))
+        except IOError:
+            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output geojson file {0}.".format(output_file))
+    
+    # Tests the creation of a GeoJSON file from a single GeoJSON input. Alerts if number of features differs between input and output GeoJSON.
+    def test_geojson_generation(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'geojson')
+        config = self.parse_vector_config(self.geojson_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson:
+                origin_num_features = len(list(geojson))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.geojson_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.json')
+        try:
+            with fiona.open(output_file) as geojson:
+                self.assertEqual(origin_num_features, len(list(geojson)),
+                                 "Feature count between input GeoJSON {0} and output GeoJSON {1} differs. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], output_file))
+        except IOError:
+            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output geojson file {0}.".format(output_file))
 
     """
     # Tests creation of a shapefile from multiple GeoJSON inputs.

@@ -236,8 +236,23 @@ Each test script will output a JUnit XML results file. By default, these files a
 	* Use zdb lookup
 
 ## vectorgen Tests:
-1. MVT MRF generation
-2. Shapefile generation
+1. MVT MRF generation from single shapefile
+2. MVT MRF generation from single GeoJSON
+3. MVT MRF generation from multiple shapefiles
+4. MVT MRF generation with specified overview levels
+5. MVT MRF generation with specified feature reduce rate
+6. MVT MRF generation with specified cluster reduce rate
+7. Shapefile generation from single GeoJSON 
+8. Shapefile generation with differing `<target_epsg>` and `<source_epsg>`
+9. GeoJSON generation from single GeoJSON
+10. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
+11. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
+12. Shapefile generation from multiple shapefiles (not in use: commented out)
+13. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>`
+
+
+
+
 
 ## Legend Tests:
 
