@@ -93,11 +93,11 @@ class TestVectorgen(unittest.TestCase):
         with open(vector_config, 'r') as f:
             config_dom = xml.dom.minidom.parse(f)
         try:
-            input_files_primary = []
+            input_files = []
             input_dir = ""
             for infile in config_dom.getElementsByTagName('file'):
-                input_files_primary.append(infile.firstChild.nodeValue)
-            if not input_files_primary:
+                input_files.append(infile.firstChild.nodeValue)
+            if not input_files:
                 input_dir = config_dom.getElementsByTagName('input_dir')[0].firstChild.nodeValue
         except IndexError:
             print('Problem reading {0} -- can\'t find "input_files" tag or "input_dir" tag. Aborting test.'.format(self.mrf_test_config))
@@ -141,20 +141,20 @@ class TestVectorgen(unittest.TestCase):
         shutil.copy(vector_config, artifact_path)
 
         # if we're using 'input_files'
-        if input_files_primary:
+        if input_files:
             # copy data to artifact path
             input_files_all = []
-            for infile in input_files_primary:
-                input_file_prefix = os.path.splitext(infile)[0]
+            for i in range(len(input_files)):
+                input_file_prefix = os.path.splitext(input_files[i])[0]
                 input_files_all.extend(glob.glob(os.path.join(self.test_data_path, input_file_prefix + '*')))
+                input_files[i] = os.path.join(self.test_data_path, input_files[i])
             for file in input_files_all:
                 shutil.copy(file, artifact_path)
             
             # Return values needed by the test routine (using 'input_files')
             config = {
                 'prefix': prefix,
-                'input_files': input_files_all,
-                'input_files_primary': input_files_primary, # used for testing with multiple shp as input
+                'input_files': input_files,
                 'output_dir': output_dir,
                 'source_epsg': source_epsg,
                 'target_epsg': target_epsg
@@ -165,8 +165,8 @@ class TestVectorgen(unittest.TestCase):
             input_dir_path = os.path.join(self.test_data_path, input_dir)
             input_dir_artifact_path = os.path.join(artifact_path, input_dir)
             os.makedirs(input_dir_artifact_path)
-            input_files_primary = os.listdir(input_dir_path)
-            for infile in input_files_primary:
+            input_files = os.listdir(input_dir_path)
+            for infile in input_files:
                 shutil.copy(os.path.join(input_dir_path, infile), input_dir_artifact_path)
 
             # Return values needed by the test routine (using 'input_dir')
@@ -418,10 +418,10 @@ class TestVectorgen(unittest.TestCase):
         
         # Open input shapefile and get stats
         try:
-            with fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][0])) as shapefile:
+            with fiona.open(config['input_files'][0]) as shapefile:
                 origin_num_features = len(list(shapefile))
         except fiona.errors.FionaValueError:
-            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
+            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files'][0]))
 
         # Run vectorgen
         prevdir = os.getcwd()
@@ -472,10 +472,10 @@ class TestVectorgen(unittest.TestCase):
         
         # Open input shapefile and get stats
         try:
-            with fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][0])) as shapefile:
+            with fiona.open(config['input_files'][0]) as shapefile:
                 origin_num_features = len(list(shapefile))
         except fiona.errors.FionaValueError:
-            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
+            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files'][0]))
 
         # Run vectorgen
         prevdir = os.getcwd()
@@ -573,7 +573,7 @@ class TestVectorgen(unittest.TestCase):
             with fiona.open(config['input_files'][0]) as geojson1, fiona.open(config['input_files'][1]) as geojson2:
                 origin_num_features = len(list(geojson1)) + len(list(geojson2))
         except fiona.errors.FionaValueError:
-            self.fail("Can't open input geojson {0} or {1}. Make sure they're valid.".format(config['input_files'][0], config['input_files'][0]))
+            self.fail("Can't open input geojson {0} or {1}. Make sure they're valid.".format(config['input_files'][0], config['input_files'][1]))
         
         # Run vectorgen
         prevdir = os.getcwd()
@@ -647,10 +647,11 @@ class TestVectorgen(unittest.TestCase):
 
         # Open input shapefile and get stats
         try:
-            with fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][0])) as shapefile1, fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][1])) as shapefile2, fiona.open(os.path.join(test_artifact_path, config['input_files_primary'][2])) as shapefile3:
+            with fiona.open(config['input_files'][0]) as shapefile1, fiona.open(config['input_files'][1]) as shapefile2, fiona.open(config['input_files'][2]) as shapefile3:
                 origin_num_features = len(list(shapefile1)) + len(list(shapefile2)) + len(list(shapefile3))
         except fiona.errors.FionaValueError:
-            self.fail("Can't open input shapefile {0}. Make sure it's valid.".format(config['input_files_primary'][0]))
+            self.fail("Can't open input shapefile {0}, {1}, or {2}. Make sure it's valid."
+                      .format(config['input_files'][0], config['input_files'][1], config['input_files'][2]))
         
         # Run vectorgen
         prevdir = os.getcwd()
@@ -665,7 +666,7 @@ class TestVectorgen(unittest.TestCase):
             with fiona.open(output_file) as shapefile:
                 self.assertEqual(origin_num_features, len(list(shapefile)),
                                  "Feature count between input shapefiles {0}, {1}, {2} and output shapefile {3} differs. There is a problem with the conversion process."
-                                 .format(config['input_files_primary'][0], config['input_files_primary'][1], config['input_files_primary'][2], output_file))
+                                 .format(config['input_files'][0], config['input_files'][1], config['input_files'][2], output_file))
         except IOError:
             self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
         except fiona.errors.FionaValueError:
