@@ -344,7 +344,7 @@ def get_archive(archive_root, archive_configuration):
     archiveElements = dom.getElementsByTagName('Archive')
     for archiveElement in archiveElements:
         if str(archiveElement.attributes['id'].
-               value).lower() == archive_root.lower():
+                     value).lower() == archive_root.lower():
             location = archiveElement.getElementsByTagName(
                 'Location')[0].firstChild.data.strip()
             print("Archive location: " + location + " \n")
@@ -416,7 +416,7 @@ def get_projection(projectionId, projectionConfig, lcdir,
             try:
                 wgsbbox = projectionElement.getElementsByTagName(
                     'WGS84BoundingBox')[0].toxml().replace(
-                        "WGS84BoundingBox", "ows:WGS84BoundingBox")
+                    "WGS84BoundingBox", "ows:WGS84BoundingBox")
             except:
                 wgsbbox = ""
             try:
@@ -427,22 +427,22 @@ def get_projection(projectionId, projectionConfig, lcdir,
                 boundbox = ""
             bbox = str(wgsbbox + boundbox).replace(
                 "LowerCorner", "ows:LowerCorner").replace(
-                    "UpperCorner", "ows:UpperCorner")
+                "UpperCorner", "ows:UpperCorner")
             # get corners...a bit messy
             lowercorner = xml.dom.minidom.parseString(
                 "<bbox>" + str(boundbox + wgsbbox).replace("ows:", "") +
                 "</bbox>").getElementsByTagName(
-                    'LowerCorner')[0].firstChild.nodeValue.split(" ")
+                'LowerCorner')[0].firstChild.nodeValue.split(" ")
             uppercorner = xml.dom.minidom.parseString(
                 "<bbox>" + str(boundbox + wgsbbox).replace("ows:", "") +
                 "</bbox>").getElementsByTagName(
-                    'UpperCorner')[0].firstChild.nodeValue.split(" ")
+                'UpperCorner')[0].firstChild.nodeValue.split(" ")
             tilematrixsets = {}
             try:
                 # Open file.
                 tilematrixsetconfig = open(tilematrixset_configuration, 'r')
                 print(('Using TileMatrixSet config: ' +
-                      tilematrixset_configuration + '\n'))
+                       tilematrixset_configuration + '\n'))
             except IOError:
                 mssg = str().join([
                     'Cannot read TileMatrixSet configuration file:  ',
@@ -480,19 +480,19 @@ def get_projection(projectionId, projectionConfig, lcdir,
                             ) + " - levels: " + str(
                                 tilematrixset.getElementsByTagName(
                                     "TileMatrix").
-                                length) + ", overview scale: " + str(scale))
+                                    length) + ", overview scale: " + str(scale))
                             tilematrixsets[tilematrixset.getElementsByTagName(
                                 'ows:Identifier')[0].firstChild.nodeValue.
-                                           strip()] = TileMatrixSetMeta(
-                                               tilematrixset.
-                                               getElementsByTagName(
-                                                   "TileMatrix").length, scale)
+                                strip()] = TileMatrixSetMeta(
+                                tilematrixset.
+                                    getElementsByTagName(
+                                    "TileMatrix").length, scale)
 
                 except KeyError as e:
                     log_sig_exit(
                         'ERROR', 'Projection ' + projectionId + " " + str(e) +
-                        ' missing in TileMatrixSet configuration ' +
-                        tilematrixset_configuration, sigevent_url)
+                                 ' missing in TileMatrixSet configuration ' +
+                                 tilematrixset_configuration, sigevent_url)
 
             projection = Projection(projectionId, wkt, bbox, tilematrixsets,
                                     tms_xml, lowercorner, uppercorner)
@@ -529,7 +529,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         return times
 
     if (time == detect or time == ''
-            or time.startswith(detect + '/P')) and has_zdb == False:
+        or time.startswith(detect + '/P')) and has_zdb == False:
         #detect everything including breaks in date
         dates = []
         if year == True:
@@ -542,7 +542,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
         for f in glob.glob(filesearch):
             filename = os.path.basename(f)
             if str(filename).startswith(fileNamePrefix) and len(filename) == (
-                    len(fileNamePrefix) + len("YYYYJJJ") + 5):
+                  len(fileNamePrefix) + len("YYYYJJJ") + 5):
                 try:
                     filetime = filename[-12:-5]
                     filedate = datetime.strptime(filetime, "%Y%j")
@@ -550,8 +550,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                 except ValueError:
                     print("Skipping", filename)
             elif str(filename).startswith(fileNamePrefix) and len(
-                    filename) == (
-                        len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                  filename) == (
+                  len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
                 try:
                     filetime = filename[-18:-5]
                     filedate = datetime.strptime(filetime, "%Y%j%H%M%S")
@@ -569,7 +569,7 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
             period = time.split('/')[1]
         else:
             if len(
-                    dates
+                  dates
             ) > 3:  #check if the difference between first three dates are the same
                 if subdaily == False:
                     diff1 = abs((dates[0] - dates[1]).days)
@@ -722,8 +722,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                                '/*[idx,shp,json]'):
                 filename = os.path.basename(f)
                 if str(filename).startswith(fileNamePrefix) and len(
-                        filename) == (
-                            len(fileNamePrefix) + len("YYYYJJJ") + 5):
+                      filename) == (
+                      len(fileNamePrefix) + len("YYYYJJJ") + 5):
                     try:
                         filetime = filename[-12:-5]
                         filedate = datetime.strptime(filetime, "%Y%j")
@@ -731,8 +731,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                     except ValueError:
                         print("Skipping", filename)
                 elif str(filename).startswith(fileNamePrefix) and len(
-                        filename) == (
-                            len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                      filename) == (
+                      len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
                     try:
                         filetime = filename[-18:-5]
                         filedate = datetime.strptime(filetime, "%Y%j%H%M%S")
@@ -769,8 +769,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                                '/*[idx,shp,json]'):
                 filename = os.path.basename(f)
                 if str(filename).startswith(fileNamePrefix) and len(
-                        filename) == (
-                            len(fileNamePrefix) + len("YYYYJJJ") + 5):
+                      filename) == (
+                      len(fileNamePrefix) + len("YYYYJJJ") + 5):
                     try:
                         filetime = filename[-12:-5]
                         filedate = datetime.strptime(filetime, "%Y%j")
@@ -778,8 +778,8 @@ def detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb):
                     except ValueError:
                         print("Skipping", filename)
                 elif str(filename).startswith(fileNamePrefix) and len(
-                        filename) == (
-                            len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
+                      filename) == (
+                      len(fileNamePrefix) + len("YYYYJJJHHMMSS") + 5):
                     try:
                         filetime = filename[-18:-5]
                         filedate = datetime.strptime(filetime, "%Y%j%H%M%S")
@@ -975,7 +975,7 @@ def generate_legend(colormap, output, legend_url, format, orientation):
                     legend_url, int(width), int(height))
             else:
                 legend_url_metadata = '<LegendURL format="image/png" xlink:type="simple" xlink:role="http://earthdata.nasa.gov/gibs/legend-type/vertical" xlink:href="%s" xlink:title="GIBS Color Map Legend: Vertical" width="%d" height="%d"/>' % (
-                legend_url, int(width), int(height))
+                    legend_url, int(width), int(height))
 
     except IOError:
         mssg = str().join(['Cannot read legend file:  ', output])
@@ -1036,9 +1036,9 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
     """
     last_time = detected_times[-1].split("/")[1]
     if os.path.isfile(
-            archiveLocation +
-            get_file_from_time(last_time, fileNamePrefix, year, has_zdb) +
-            ".idx"
+          archiveLocation +
+          get_file_from_time(last_time, fileNamePrefix, year, has_zdb) +
+          ".idx"
     ) == False:  # Detect the last time if file for specified time cannot be found
         log_sig_warn(
             "Files for specified last time of " + last_time +
@@ -1415,12 +1415,12 @@ if configuration_time:
 
 # set location of tools
 if os.path.isfile(os.path.abspath(lcdir) + '/bin/oe_create_cache_config'):
-    depth = os.path.abspath(lcdir) + '/bin'
+    depth = os.path.abspath(lcdir) + '/bin/'
 elif distutils.spawn.find_executable('oe_create_cache_config') != None:
-    depth = distutils.spawn.find_executable('oe_create_cache_config').split(
-        '/oe_create_cache_config')[0]
+    depth = os.path.dirname(distutils.spawn.find_executable('oe_create_cache_config'))
+    depth = depth + "/" if (len(depth) > 0 and depth[-1] != "/") else depth
 else:
-    depth = '/usr/bin'  # default
+    depth = '/usr/bin/'  # default
 
 # Read XML configuration files.
 
@@ -1587,7 +1587,7 @@ for conf in conf_files:
                 compression = "PNG"
                 is_encoded = True
             if compression not in [
-                    "JPEG", "PNG", "EPNG", "TIF", "LERC", "MVT"
+                "JPEG", "PNG", "EPNG", "TIF", "LERC", "MVT"
             ]:
                 log_sig_err(
                     '<Compression> must be either JPEG, PNG, TIF, LERC, or MVT in '
@@ -1679,28 +1679,28 @@ for conf in conf_files:
         try:
             static = dom.getElementsByTagName(
                 'ArchiveLocation')[0].attributes['static'].value.lower() in [
-                    'true'
-                ]
+                         'true'
+                     ]
         except:
             static = True
         try:
             year = dom.getElementsByTagName(
                 'ArchiveLocation')[0].attributes['year'].value.lower() in [
-                    'true'
-                ]
+                       'true'
+                   ]
         except:
             year = False
         try:
             subdaily = dom.getElementsByTagName(
                 'ArchiveLocation')[0].attributes['subdaily'].value.lower() in [
-                    'true'
-                ]
+                           'true'
+                       ]
         except:
             subdaily = False
         try:
             archive_root = get_archive(
                 dom.getElementsByTagName('ArchiveLocation')[0].
-                attributes['root'].value, archive_configuration)
+                    attributes['root'].value, archive_configuration)
         except:
             archive_root = ""
         archiveLocation = archive_root + archiveLocation
@@ -1941,7 +1941,7 @@ for conf in conf_files:
         for pattern in patternTags:
             try:
                 if pattern.attributes[
-                        'type'].value == "WMTS-REST":  # append WMTS REST patterns
+                    'type'].value == "WMTS-REST":  # append WMTS REST patterns
                     rest_patterns.append(pattern.firstChild.data.strip())
                 else:  # assume TWMS key-value pair
                     patterns.append(pattern.firstChild.data.strip())
@@ -2267,12 +2267,12 @@ for conf in conf_files:
                         if scale_attribute:
                             if int(scale_attribute
                                    ) != projection.tilematrixsets[
-                                       tilematrixset].scale:
+                                tilematrixset].scale:
                                 log_sig_err(
                                     "Overview scales do not match - " +
                                     tilematrixset + ": " + str(
                                         str(projection.tilematrixsets[
-                                            tilematrixset].scale)) + ", " +
+                                                tilematrixset].scale)) + ", " +
                                     "Provided: " + scale_attribute,
                                     sigevent_url)
                                 continue
@@ -2402,7 +2402,7 @@ for conf in conf_files:
         if static == False:
             for time in times:
                 detected_times += detect_time(time, archiveLocation,
-                                             fileNamePrefix, year, has_zdb)
+                                              fileNamePrefix, year, has_zdb)
 
             timeElements = []
             for detected_time in detected_times:
@@ -2461,14 +2461,14 @@ for conf in conf_files:
         except KeyError:
             log_sig_exit(
                 'ERROR', 'TileMatrixSet ' + tilematrixset +
-                ' not found for projection: ' + projection.id, sigevent_url)
+                         ' not found for projection: ' + projection.id, sigevent_url)
         for line in lines:
             if '<Pattern>' in line:
                 if pattern_replaced == False:
                     patternline = line.split('Pattern')
                     line = patternline[
-                        0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[
-                            -1]
+                               0] + "Pattern>" + wmts_pattern + "</Pattern" + patternline[
+                               -1]
                     pattern_replaced = True
                 else:
                     line = ''
@@ -2512,17 +2512,17 @@ for conf in conf_files:
                         # These URLs _are_ used in the WMTS capabilities
                         legendUrl_svg_v_meta, legendUrl_svg_v_width, legendUrl_svg_v_height = generate_legend(
                             colormap_path, legend_output + '_V.svg',
-                            environment.legendUrl + legend_identifier + '_V.svg',
+                                           environment.legendUrl + legend_identifier + '_V.svg',
                             'svg', 'vertical')
                         legendUrl_svg_h_meta, legendUrl_svg_h_width, legendUrl_svg_h_height = generate_legend(
                             colormap_path, legend_output + '_H.svg',
-                            environment.legendUrl + legend_identifier + '_H.svg',
+                                           environment.legendUrl + legend_identifier + '_H.svg',
                             'svg', 'horizontal')
 
                         # This URL _is not_ used in the WMTS capabilities
                         legendUrl_png_h_meta, legendUrl_png_h_width, legendUrl_png_h_height = generate_legend(
                             colormap_path, legend_output + '_H.png',
-                            environment.legendUrl + legend_identifier + '_H.png',
+                                           environment.legendUrl + legend_identifier + '_H.png',
                             'png', 'horizontal')
                         # saving this for later since WMS doesn't use the <LegendURL> metadata tag
                         legendUrl_png_h_url = environment.legendUrl + legend_identifier + '_H.png'
@@ -2558,9 +2558,9 @@ for conf in conf_files:
         else:
             print(fileNamePrefix + " is not a time varying layer")
 
-# Modify service files
+    # Modify service files
 
-#getCapabilities TWMS
+    #getCapabilities TWMS
     if no_twms == False:
         try:
             # Copy and open base GetCapabilities.
@@ -2620,11 +2620,11 @@ for conf in conf_files:
                 if 'BoundingBox' in lines[idx]:
                     lines[idx] = lines[idx].replace(
                         "BoundingBox", "LatLonBoundingBox").replace(
-                            "{minx}", projection.lowercorner[0]).replace(
-                                "{miny}", projection.lowercorner[1]).replace(
-                                    "{maxx}",
-                                    projection.uppercorner[0]).replace(
-                                        "{maxy}", projection.uppercorner[1])
+                        "{minx}", projection.lowercorner[0]).replace(
+                        "{miny}", projection.lowercorner[1]).replace(
+                        "{maxx}",
+                        projection.uppercorner[0]).replace(
+                        "{maxy}", projection.uppercorner[1])
                 if 'OnlineResource' in lines[idx]:
                     spaces = lines[idx].index('<')
                     onlineResource = xml.dom.minidom.parseString(
@@ -2677,8 +2677,8 @@ for conf in conf_files:
                         getUrl.attributes['xlink:href'] = wmtsServiceUrl
                     lines[idx] = (' ' * spaces) + getUrl.toprettyxml(
                         indent=" ").replace('Get', 'ows:Get').replace(
-                            ' xmlns:xlink="http://www.w3.org/1999/xlink"',
-                            '').replace('/>', '>')
+                        ' xmlns:xlink="http://www.w3.org/1999/xlink"',
+                        '').replace('/>', '>')
                 if 'ServiceMetadataURL' in lines[idx]:
                     spaces = lines[idx].index('<')
                     serviceMetadataUrlLine = lines[idx].replace(
@@ -2687,12 +2687,12 @@ for conf in conf_files:
                     )
                     serviceMetadataUrl = xml.dom.minidom.parseString(
                         serviceMetadataUrlLine).getElementsByTagName(
-                            'ServiceMetadataURL')[0]
+                        'ServiceMetadataURL')[0]
                     serviceMetadataUrl.attributes[
                         'xlink:href'] = wmtsServiceUrl + '1.0.0/WMTSCapabilities.xml'
                     lines[idx] = (
-                        ' ' * spaces
-                    ) + serviceMetadataUrl.toprettyxml(indent=" ").replace(
+                                       ' ' * spaces
+                                 ) + serviceMetadataUrl.toprettyxml(indent=" ").replace(
                         ' xmlns:xlink="http://www.w3.org/1999/xlink"', '')
             getCapabilities_base.seek(0)
             getCapabilities_base.truncate()
@@ -2765,7 +2765,7 @@ for conf in conf_files:
                     if default_colormap.attributes['url'].value != '':
                         default_colormap_url = add_trailing_slash(
                             default_colormap.attributes['url'].
-                            value) + default_colormap.firstChild.nodeValue
+                                value) + default_colormap.firstChild.nodeValue
                     else:
                         default_colormap_url = default_colormap.firstChild.nodeValue
                     line = line.replace("$MapVersion", '')
@@ -2776,7 +2776,7 @@ for conf in conf_files:
                             if colormap.attributes['url'].value != '':
                                 colormap_url = add_trailing_slash(
                                     colormap.attributes['url'].
-                                    value) + colormap.firstChild.nodeValue
+                                        value) + colormap.firstChild.nodeValue
                             else:
                                 colormap_url = colormap.firstChild.nodeValue
                             newline = line_template.replace(
@@ -2794,7 +2794,7 @@ for conf in conf_files:
                     if default_stylejson.attributes['url'].value != '':
                         default_stylejson_url = add_trailing_slash(
                             default_stylejson.attributes['url'].
-                            value) + default_stylejson.firstChild.nodeValue
+                                value) + default_stylejson.firstChild.nodeValue
                     else:
                         default_stylejson_url = default_stylejson.firstChild.nodeValue
                     line = line.replace("$MapVersion", '')
@@ -2805,7 +2805,7 @@ for conf in conf_files:
                             if stylejson.attributes['url'].value != '':
                                 stylejson_url = add_trailing_slash(
                                     stylejson.attributes['url'].
-                                    value) + stylejson.firstChild.nodeValue
+                                        value) + stylejson.firstChild.nodeValue
                             else:
                                 stylejson_url = stylejson.firstChild.nodeValue
                             newline = line_template.replace(
@@ -2823,7 +2823,7 @@ for conf in conf_files:
                     if default_metadatajson.attributes['url'].value != '':
                         default_metadatajson_url = add_trailing_slash(
                             default_metadatajson.attributes['url'].
-                            value) + default_metadatajson.firstChild.nodeValue
+                                value) + default_metadatajson.firstChild.nodeValue
                     else:
                         default_metadatajson_url = default_metadatajson.firstChild.nodeValue
                     line = line.replace("$MapVersion", '')
@@ -2835,7 +2835,7 @@ for conf in conf_files:
                             if metadatajson.attributes['url'].value != '':
                                 metadatajson_url = add_trailing_slash(
                                     metadatajson.attributes['url'].
-                                    value) + metadatajson.firstChild.nodeValue
+                                        value) + metadatajson.firstChild.nodeValue
                             else:
                                 metadatajson_url = metadatajson.firstChild.nodeValue
                             newline = line_template.replace(
@@ -2864,9 +2864,9 @@ for conf in conf_files:
 
             if static == True or len(detected_times) == 0:
                 if any(x in line for x in [
-                        'Dimension', '<ows:Identifier>Time</ows:Identifier>',
-                        '<ows:UOM>ISO8601</ows:UOM>', '$DefaultDate',
-                        '<Current>false</Current>', '$DateRange'
+                    'Dimension', '<ows:Identifier>Time</ows:Identifier>',
+                    '<ows:UOM>ISO8601</ows:UOM>', '$DefaultDate',
+                    '<Current>false</Current>', '$DateRange'
                 ]):
                     line = ''
                 if '/{Time}' in line:
@@ -2978,8 +2978,7 @@ for conf in conf_files:
 """
 
         patterns = ""
-        cmd = depth + '/oe_create_cache_config -p ' + twms_mrf_filename
-        run_command("cp " + twms_mrf_filename + " /", sigevent_url)
+        cmd = depth + 'oe_create_cache_config -p ' + twms_mrf_filename
         try:
             print('\nRunning command: ' + cmd)
             process = subprocess.Popen(cmd, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -3201,20 +3200,20 @@ for conf in conf_files:
                 if not static and year:
                     if subdaily:
                         mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                                    yearDirPattern + "/" + fileNamePrefix +
-                                    timeDirPattern + subdailyDirPattern +
-                                    extension + "\"\n")
+                                      yearDirPattern + "/" + fileNamePrefix +
+                                      timeDirPattern + subdailyDirPattern +
+                                      extension + "\"\n")
                     else:
                         mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                                    yearDirPattern + "/" + fileNamePrefix +
-                                    timeDirPattern + extension + "\"\n")
+                                      yearDirPattern + "/" + fileNamePrefix +
+                                      timeDirPattern + extension + "\"\n")
                 elif not static and not year:
                     mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                                fileNamePrefix + timeDirPattern + extension +
-                                "\"\n")
+                                  fileNamePrefix + timeDirPattern + extension +
+                                  "\"\n")
                 else:
                     mapfile.write("\t"+datacon+"\t\"" + archiveLocation + "/" +
-                                fileNamePrefix + extension + "\"\n")
+                                  fileNamePrefix + extension + "\"\n")
                 mapfile.write("\tPROJECTION\n")
                 mapfile.write('\t\t\"init={0}"\n'.format(projection.id.lower()))
                 mapfile.write("\tEND\n")
@@ -3241,9 +3240,9 @@ if no_twms == False:
         #twms
         if twms_endpoint.cacheConfigBasename:
             print("\nRunning commands for endpoint: " + twms_endpoint.path)
-            cmd = depth + '/oe_create_cache_config -cxd ' + twms_endpoint.path + " " + twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.xml'
+            cmd = depth + 'oe_create_cache_config -cxd ' + twms_endpoint.path + " " + twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.xml'
             run_command(cmd, sigevent_url)
-            cmd = depth + '/oe_create_cache_config -cbd ' + twms_endpoint.path + " " + twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.config'
+            cmd = depth + 'oe_create_cache_config -cbd ' + twms_endpoint.path + " " + twms_endpoint.path + '/' + twms_endpoint.cacheConfigBasename + '.config'
             run_command(cmd, sigevent_url)
         if no_cache == False:
             if twms_endpoint.cacheConfigLocation:
@@ -3263,7 +3262,7 @@ if no_twms == False:
             # Add layer metadata to getCapabilities
             layer_xml = ""
             for xml_file in sorted(
-                    os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
+                  os.listdir(twms_endpoint.path), key=lambda s: s.lower()):
                 if xml_file.endswith("_gc.xml") and xml_file != "getCapabilities.xml":
                     layer_xml = layer_xml + open(twms_endpoint.path + '/' + str(xml_file), 'r').read()
             getCapabilities_file = twms_endpoint.path + '/getCapabilities.xml'
@@ -3314,12 +3313,12 @@ if no_wmts == False:
         #wmts
         if wmts_endpoint.cacheConfigBasename:
             print("\nRunning commands for endpoint: " + wmts_endpoint.path)
-            cmd = depth + '/oe_create_cache_config -cbd ' + wmts_endpoint.path + " " + wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.config'
+            cmd = depth + 'oe_create_cache_config -cbd ' + wmts_endpoint.path + " " + wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.config'
             try:
                 run_command(cmd, sigevent_url)
             except:
                 log_sig_err("Error in generating binary cache config using command: " + cmd, sigevent_url)
-            cmd = depth + '/oe_create_cache_config -cxd ' + wmts_endpoint.path + " " + wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.xml'
+            cmd = depth + 'oe_create_cache_config -cxd ' + wmts_endpoint.path + " " + wmts_endpoint.path + '/' + wmts_endpoint.cacheConfigBasename + '.xml'
             try:
                 run_command(cmd, sigevent_url)
             except:
@@ -3344,10 +3343,10 @@ if no_wmts == False:
             # Add layer metadata to getCapabilities
             layer_xml = ""
             for xml_file in sorted(
-                    os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
+                  os.listdir(wmts_endpoint.path), key=lambda s: s.lower()):
                 if xml_file.endswith(
-                        ".xml") and xml_file != "getCapabilities.xml" and (
-                            xml_file.startswith("cache") == False):
+                      ".xml") and xml_file != "getCapabilities.xml" and (
+                      xml_file.startswith("cache") == False):
                     layer_xml = layer_xml + open(
                         wmts_endpoint.path + '/' + str(xml_file), 'r').read()
             getCapabilities_file = wmts_endpoint.path + '/getCapabilities.xml'
@@ -3359,11 +3358,11 @@ if no_wmts == False:
                         gc_lines[idx] = gc_lines[idx] + layer_xml
                         print('\nAdding layers to WMTS GetCapabilities')
                     if "</Contents>" in gc_lines[
-                            idx] and " </TileMatrixSet>" not in gc_lines[idx -
-                                                                         1]:
+                        idx] and " </TileMatrixSet>" not in gc_lines[idx -
+                                                                     1]:
                         gc_lines[
                             idx] = wmts_endpoint.projection.tilematrixset_xml[
-                                2:] + '\n' + gc_lines[idx]
+                                   2:] + '\n' + gc_lines[idx]
                         print("\nAdding TileMatrixSet to WMTS GetCapabilities")
                     getCapabilities_base.seek(0)
                     getCapabilities_base.truncate()
@@ -3384,7 +3383,7 @@ if no_wmts == False:
                 print('\nCopying: ' + getCapabilities_file + ' -> ' + wmts_endpoint.getCapabilities + '/1.0.0/WMTSCapabilities.xml')
                 shutil.copyfile(
                     getCapabilities_file, wmts_endpoint.getCapabilities +
-                    '/1.0.0/WMTSCapabilities.xml')
+                                          '/1.0.0/WMTSCapabilities.xml')
 
 if create_mapfile is True:
     for key, wms_endpoint in wms_endpoints.items():
@@ -3414,7 +3413,7 @@ if create_mapfile is True:
                     for sfile in sorted(
                         os.listdir(wms_endpoint.mapfileStagingLocation),
                         key=str.lower) if sfile.endswith('.map') and
-                    not sfile.startswith(wms_endpoint.mapfileLocationBasename)
+                                          not sfile.startswith(wms_endpoint.mapfileLocationBasename)
                 ]
                 for layer in layers:
                     with open(layer, 'r') as f:
@@ -3487,16 +3486,16 @@ print("")
 message = message + " " + (
     "Cache configurations created.",
     "Cache configurations staged.")[no_cache] + " " + (
-        "Server XML created", "Server XML staged")[no_xml] + "." + " " + (
-            "Apache not restarted",
-            "Apache restarted")[restart] + "." + " " + (
-                "Legends not generated",
-                "Legends generated")[legend] + "." + " " + (
-                    "Archive links not generated",
-                    "Archive links generated")[links] + ". " + (
-                        "Mapfiles not configured", "Mapfiles configured"
-                    )[create_mapfile] + "." + " Warnings: " + str(
-                        len(warnings)) + ". Errors: " + str(len(errors)) + "."
+              "Server XML created", "Server XML staged")[no_xml] + "." + " " + (
+              "Apache not restarted",
+              "Apache restarted")[restart] + "." + " " + (
+              "Legends not generated",
+              "Legends generated")[legend] + "." + " " + (
+              "Archive links not generated",
+              "Archive links generated")[links] + ". " + (
+              "Mapfiles not configured", "Mapfiles configured"
+          )[create_mapfile] + "." + " Warnings: " + str(
+    len(warnings)) + ". Errors: " + str(len(errors)) + "."
 
 try:
     log_info_mssg(asctime() + " " + message)
