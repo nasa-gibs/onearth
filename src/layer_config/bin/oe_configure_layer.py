@@ -1436,10 +1436,10 @@ if not options.layer_config_filename:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE).stdout
     for line in conf:
-        conf_files.append(line.strip().decode('utf-8'))
+        conf_files.append(str(line.strip().decode('utf-8')))
 else:
     # use only the solo MRF when specified
-    conf_files.append(configuration_filename)
+    conf_files.append(str(configuration_filename))
 
 print('Configuration file(s):')
 print(conf_files)
