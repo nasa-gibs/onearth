@@ -73,6 +73,24 @@ def getAllKeys(conn, bucket, prefix):
     return keys
 
 
+def listAllFiles(dir_proj_layer, prefix):
+    prefixElems = prefix.split("/") if prefix is not None else []
+
+    # If there are 1 or 2 prefix elements, then we're not filtering the object year or "file" name, so take them all
+    if len(prefixElems) <= 2:
+        fs_list = list(Path(dir_proj_layer).rglob("*.[iI][dD][xX]"))
+
+    # Else if there are 3 prefix elements, then we're filtering on the object year
+    elif len(prefixElems) == 3:
+        fs_list = list(Path(os.path.join(dir_proj_layer, prefixElems[2])).rglob("*.[iI][dD][xX]"))
+
+    # Else if there are 4 prefix elements, then we're filtering on the object year _and_ "file" name
+    elif len(prefixElems) == 4:
+        fs_list = list(Path(os.path.join(dir_proj_layer, prefixElems[2])).rglob(prefixElems[3] + "*.[iI][dD][xX]"))
+
+    return [str(f).replace(dir_proj_layer + '/', '') for f in fs_list]
+
+
 def syncIdx(bucket,
             dir,
             prefix,
@@ -95,22 +113,25 @@ def syncIdx(bucket,
             
         for layer, data in layers.items():
             print(f'Configuring layer: {layer}')
-            dir_proj_layer = os.path.join(dir, proj,  layer)
+            dir_proj_layer = os.path.join(dir, proj, layer)
 
             if not os.path.isdir(dir_proj_layer) and not dry_run:
                 os.makedirs(dir_proj_layer)
-                
-            # Find existing files on file system
-            if force: # we don't care about existing files when forcing overwrite
-                fs_files = []
-            else:
-                fs_list = list(Path(dir_proj_layer).rglob("*.[iI][dD][xX]"))
-                fs_files = [str(f).replace(dir_proj_layer + '/', '') for f in fs_list]
 
+            # Find existing files on file system
+            fs_files   = listAllFiles(dir_proj_layer, prefix)
+
+            # Build list of S3 index files
             s3_objects = [v for v in data['idx']]
-            
+
+            # Determine what needs to be sync'd. Note we don't care about existing files when forcing overwrite
+            if force:
+                idx_to_sync = s3_objects
+            else:
+                idx_to_sync = list(set(s3_objects) - set(fs_files))
+
             # Copy files from S3 that aren't on file system
-            for s3_object in list(set(s3_objects) - set(fs_files)):
+            for s3_object in idx_to_sync:
                 idx_filepath = os.path.join(dir_proj_layer, s3_object)
                 idx_prefix   = "{0}/{1}/{2}".format(proj, layer, s3_object).replace('//', '/')
 
@@ -121,7 +142,7 @@ def syncIdx(bucket,
                 print("Downloading {0} to {1}".format(idx_prefix, idx_filepath))
                 if not dry_run:
                     s3.download_file(bucket, idx_prefix, idx_filepath)
-                
+
             # Delete files from file system that aren't on S3
             for fs_file in list(set(fs_files) - set(s3_objects)):
                 fs_idx = os.path.join(dir_proj_layer, fs_file)
@@ -130,7 +151,7 @@ def syncIdx(bucket,
                     print(f'Deleting file not found on S3: {fs_idx}')
                     if not dry_run:
                         os.remove(fs_idx)
-                
+
 
 # Routine when run from CLI
 
