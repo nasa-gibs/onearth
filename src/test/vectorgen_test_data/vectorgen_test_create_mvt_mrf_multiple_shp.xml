@@ -24,6 +24,7 @@ limitations under the License.
  <working_dir>working_dir/</working_dir>
  <output_name>test_pvt</output_name>
  <output_format>MVT-MRF</output_format>
+ <tile_size>1024</tile_size>
  <target_epsg>4326</target_epsg>
  <source_epsg>4326</source_epsg>
  <target_x>2560</target_x>

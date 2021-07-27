@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <vectorgen_configuration>
- <date_of_data>20160425</date_of_data>
- <parameter_name>MODIS_C5_fires_2016116</parameter_name>
- <input_dir>test_geojson</input_dir>
+ <date_of_data>20200101</date_of_data>
+ <parameter_name>HLS_MGRS_Grid_LL</parameter_name>
+ <input_dir>overview_filter</input_dir>
  <output_dir>output_dir/</output_dir>
  <working_dir>working_dir/</working_dir>
  <output_name>test_shapefile</output_name>

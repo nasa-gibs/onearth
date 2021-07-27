@@ -37,6 +37,7 @@
 
 import os
 import sys
+import subprocess
 import unittest2 as unittest
 import struct
 import glob
@@ -73,19 +74,22 @@ class TestVectorgen(unittest.TestCase):
 
         # Set config files for individual tests
         self.mrf_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf.xml')
+        self.mrf_from_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_from_geojson.xml')
+        self.mrf_multiple_shp_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_multiple_shp.xml')
+        self.mrf_multiple_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_multiple_geojson.xml')
+        self.mrf_overview_levels_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_overview_levels.xml')
+        self.mrf_feat_reduce_rate_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_feat_reduce_rate.xml')
+        self.mrf_clust_reduce_rate_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_clust_reduce_rate.xml')
+        self.mrf_feature_filters_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_feature_filters.xml')
+        self.mrf_overview_filters_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_overview_filters.xml')
         self.shapefile_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile.xml')
-        self.reproject_test_config = os.path.join(self.test_data_path, 'vectorgen_test_reproject.xml')
+        self.shapefile_diff_proj_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_diff_proj.xml')
         self.geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_geojson.xml')
         self.shapefile_mult_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_multiple_geojson.xml')
         self.shapefile_mult_geojson_input_dir_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_multiple_geojson_input_dir.xml')
         self.shapefile_mult_shp_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_multiple_shp.xml')
-        self.mrf_multiple_shp_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_multiple_shp.xml')
         self.mrf_diff_proj_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_diff_proj.xml')
-        self.shapefile_diff_proj_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_diff_proj.xml')
-        self.mrf_overview_levels_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_overview_levels.xml')
-        self.mrf_feat_reduce_rate_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_feat_reduce_rate.xml')
-        self.mrf_clust_reduce_rate_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_clust_reduce_rate.xml')
-        self.mrf_from_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_from_geojson.xml')
+        self.reproject_test_config = os.path.join(self.test_data_path, 'vectorgen_test_reproject.xml')
 
     # Utility function that parses a vectorgen config XML and creates necessary dirs/copies necessary files
     def parse_vector_config(self, vector_config, artifact_path):
@@ -125,6 +129,14 @@ class TestVectorgen(unittest.TestCase):
             target_epsg = config_dom.getElementsByTagName('target_epsg')[0].firstChild.nodeValue
         except IndexError:
             target_epsg = None
+        try:
+            feature_filters = config_dom.getElementsByTagName('feature_filters')[0].firstChild.nodeValue
+        except IndexError:
+            feature_filters = None
+        try:
+            overview_filters = config_dom.getElementsByTagName('overview_filters')[0].firstChild.nodeValue
+        except IndexError:
+            overview_filters = None
 
 
         # Create artifact paths
@@ -157,7 +169,9 @@ class TestVectorgen(unittest.TestCase):
                 'input_files': input_files,
                 'output_dir': output_dir,
                 'source_epsg': source_epsg,
-                'target_epsg': target_epsg
+                'target_epsg': target_epsg,
+                'feature_filters': feature_filters,
+                'overview_filters': overview_filters
             }
         # if we're using 'input_dir'
         else:
@@ -175,7 +189,9 @@ class TestVectorgen(unittest.TestCase):
                 'input_dir': input_dir,
                 'output_dir': output_dir,
                 'source_epsg': source_epsg,
-                'target_epsg': target_epsg
+                'target_epsg': target_epsg,
+                'feature_filters': feature_filters,
+                'overview_filters': overview_filters
             }
 
         return config
@@ -267,12 +283,19 @@ class TestVectorgen(unittest.TestCase):
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
     # Tests that tiles from the MRF are valid gzipped MVT tiles for multiple .shp inputs.
-    # Alerts if the overview tiles contain no features.
+    # Alerts if the overview tiles contain no features or don't have features from all inputs.
     def test_MVT_MRF_generation_multiple_shp(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_multiple_shp')
         config = self.parse_vector_config(self.mrf_multiple_shp_test_config, test_artifact_path)
         
+        # Open input GeoJSON and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as shapefile1, fiona.open(config['input_files'][1]) as shapefile2, fiona.open(config['input_files'][2]) as shapefile3:
+                origin_num_features = len(list(shapefile1)) + len(list(shapefile2)) + len(list(shapefile3))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input shapefile {0} or {1} or {2}. Make sure they're valid.".format(config['input_files'][0], config['input_files'][1], config['input_files'][2]))
+
         # Run vectorgen
         prevdir = os.getcwd()
         os.chdir(test_artifact_path)
@@ -309,6 +332,63 @@ class TestVectorgen(unittest.TestCase):
             if byte != first_byte:
                 top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
+        self.assertTrue(top_tile_feature_count == origin_num_features, "MVT is missing features from some of the input shapefiles")
+
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when multiple geojson input files are used.
+    # Alerts if the overview tiles contain no features or if the mvt_mrf doesn't contain features from both input geojson.
+    def test_MVT_MRF_generation_multiple_geojson(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_multiple_geojson')
+        config = self.parse_vector_config(self.mrf_multiple_geojson_test_config, test_artifact_path)
+                
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.mrf_multiple_geojson_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Get index of first, second-to-last, and last tile in MRF
+        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
+            first_byte = idx.read(16)
+            idx.seek(-32, 2)
+            penultimate_byte = idx.read(16)
+            last_byte = idx.read(16)
+        top_tile_feature_count = 0
+        s2_feature_count = 0
+        mgrs_feature_count = 0
+        for byte in (first_byte, penultimate_byte, last_byte):
+            tile_buffer = io.BytesIO()
+            offset = struct.unpack('>q', byte[0:8])[0]
+            size = struct.unpack('>q', byte[8:16])[0]
+            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
+                pvt.seek(offset)
+                tile_buffer.write(pvt.read(size))
+            tile_buffer.seek(0)
+            # Check to see if extracted files are valid zip files and valid MVT tiles
+            try:
+                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
+                tile_data = unzipped_tile.read()
+            except IOError:
+                self.fail("Invalid tile found in MRF -- can't be unzipped.")
+            try:
+                tile = mapbox_vector_tile.decode(tile_data)
+            except:
+                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
+            # Check the top 2 tiles to see if they have any features (they should)
+            if byte != first_byte:
+                tile_num_features = len(tile[list(tile.keys())[0]]['features'])
+                top_tile_feature_count += tile_num_features
+            # Make sure the feature filter worked correctly
+            for layer in tile:
+                for feature in tile[layer]['features']:
+                    if feature['properties']['type'] == 'S2':
+                        s2_feature_count += 1
+                    elif feature['properties']['type'] == 'MGRS':
+                        mgrs_feature_count += 1
+        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
+        self.assertTrue(s2_feature_count, "MRF is missing features from the S2 geojson")
+        self.assertTrue(mgrs_feature_count, "MRF is missing features from the MGRS geojson")
 
     # Tests that tiles from the MRF are valid gzipped MVT tiles for when the overview levels are explicitly specified.
     # Alerts if the overview tiles contain no features.
@@ -462,7 +542,92 @@ class TestVectorgen(unittest.TestCase):
                 self.assertTrue(tile_num_features < origin_num_features, "Tile does not contain fewer features than the input shapefile, cluster reduce rate likely didn't work")
         self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
 
-    # Tests the creation of a shapefile from a single input GeoJSON. Alerts if shapefile has different number of features from the GeoJSON.
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when feature filters are used.
+    # Alerts if the overview tiles contain no features or if the feature filters did not work correctly.
+    def test_MVT_MRF_generation_feature_filters(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_feature_filters')
+        config = self.parse_vector_config(self.mrf_feature_filters_test_config, test_artifact_path)
+
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.mrf_feature_filters_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Get index of first, second-to-last, and last tile in MRF
+        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
+            first_byte = idx.read(16)
+            idx.seek(-32, 2)
+            penultimate_byte = idx.read(16)
+            last_byte = idx.read(16)
+        top_tile_feature_count = 0
+        for byte in (first_byte, penultimate_byte, last_byte):
+            tile_buffer = io.BytesIO()
+            offset = struct.unpack('>q', byte[0:8])[0]
+            size = struct.unpack('>q', byte[8:16])[0]
+            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
+                pvt.seek(offset)
+                tile_buffer.write(pvt.read(size))
+            tile_buffer.seek(0)
+            # Check to see if extracted files are valid zip files and valid MVT tiles
+            try:
+                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
+                tile_data = unzipped_tile.read()
+            except IOError:
+                self.fail("Invalid tile found in MRF -- can't be unzipped.")
+            try:
+                tile = mapbox_vector_tile.decode(tile_data)
+            except:
+                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
+            # Check the top 2 tiles to see if they have any features (they should)
+            if byte != first_byte:
+                tile_num_features = len(tile[list(tile.keys())[0]]['features'])
+                top_tile_feature_count += tile_num_features
+            # Make sure the feature filter worked correctly
+            for layer in tile:
+                for feature in tile[layer]['features']:
+                    self.assertTrue(feature['properties']['SATELLITE'] == 'A', "Feature filter failed to filter features.")
+        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
+
+    # Tests that tiles from the MRF are valid gzipped MVT tiles for when overview filters are used.
+    # Alerts if the overview tiles contain no features or if the overview filters did not work correctly.
+    def test_MVT_MRF_generation_overview_filters(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_overview_filters')
+        config = self.parse_vector_config(self.mrf_overview_filters_test_config, test_artifact_path)
+                
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.mrf_overview_filters_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Run mrf_read.py on each zoom level (tileset)
+        for zoom_level in range(1,6):
+            outtile_name = os.path.join(config['output_dir'], 'tilezoom{0}.gz'.format(str(zoom_level)))
+            cmd = "python3 mrf_read.py --input " + os.path.join(config['output_dir'], config['prefix'] + ".mrf") + " --output " + outtile_name + " --tilematrix {0}".format(zoom_level) + " --tilecol 0 --tilerow 0"
+            run_command(cmd)
+            
+            try:
+                with gzip.open(outtile_name, 'rb') as f:
+                    unzipped_tile_data = f.read()
+            except IOError:
+                self.fail("Invalid tile found in MRF -- can't be unzipped.")
+            
+            tiledata = mapbox_vector_tile.decode(unzipped_tile_data)
+
+            for key in tiledata:
+                for feature in tiledata[key]["features"]:
+                    if zoom_level > 5:
+                        self.assertTrue(feature['properties']['type'] == "S2", "Overview filter failed to filter features. Zoom {0} contains a feature of type {1}, which isn't 'S2'.".format(zoom_level, feature['type']))
+                    else:
+                        self.assertTrue(feature['properties']['type'] == "MGRS", "Overview filter failed to filter features. Zoom {0} contains a feature of type {1}, which isn't 'MGRS'.".format(zoom_level, feature['type']))
+            
+    # Tests the creation of a shapefile from a single input GeoJSON.
+    # Alerts if shapefile has different number of features from the GeoJSON.
     def test_shapefile_generation(self):
         # Process config file
         test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles')
@@ -567,7 +732,7 @@ class TestVectorgen(unittest.TestCase):
         test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_geojson')
         config = self.parse_vector_config(self.shapefile_mult_geojson_test_config, test_artifact_path)
 
-        # Open input shapefile and get stats
+        # Open input GeoJSON and get stats
         try:
             with fiona.open(config['input_files'][0]) as geojson1, fiona.open(config['input_files'][1]) as geojson2:
                 origin_num_features = len(list(geojson1)) + len(list(geojson2))
@@ -609,7 +774,7 @@ class TestVectorgen(unittest.TestCase):
         testfile1 = os.path.join(input_dir_artifact_path, test_geojsons[0])
         testfile2 = os.path.join(input_dir_artifact_path, test_geojsons[1])
 
-        # Open input shapefile and get stats
+        # Open input GeoJSON and get stats
         try:
             with fiona.open(testfile1) as geojson1, fiona.open(testfile2) as geojson2:
                 origin_num_features = len(list(geojson1)) + len(list(geojson2))
@@ -644,7 +809,7 @@ class TestVectorgen(unittest.TestCase):
         test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_multiple_shp')
         config = self.parse_vector_config(self.shapefile_mult_shp_test_config, test_artifact_path)
 
-        # Open input shapefile and get stats
+        # Open input shapefiles and get stats
         try:
             with fiona.open(config['input_files'][0]) as shapefile1, fiona.open(config['input_files'][1]) as shapefile2, fiona.open(config['input_files'][2]) as shapefile3:
                 origin_num_features = len(list(shapefile1)) + len(list(shapefile2)) + len(list(shapefile3))

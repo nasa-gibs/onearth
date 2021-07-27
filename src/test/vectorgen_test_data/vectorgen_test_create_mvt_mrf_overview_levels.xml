@@ -26,7 +26,7 @@ limitations under the License.
  <source_epsg>4326</source_epsg>
  <target_x>2560</target_x>
  <target_y>1280</target_y>
- <overview_levels>2,3,4</overview_levels>
+ <overview_levels>2 4 8</overview_levels>
  <feature_id create="false">ident</feature_id>
  <feature_reduce_rate>0</feature_reduce_rate>
  <cluster_reduce_rate>0</cluster_reduce_rate>

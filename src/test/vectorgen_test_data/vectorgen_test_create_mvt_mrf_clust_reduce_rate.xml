@@ -16,7 +16,7 @@ limitations under the License.
  <date_of_data>20160429</date_of_data>
  <parameter_name>terra_points_descending</parameter_name>
  <input_files>
-  <file>terra_2016-03-06_epsg4326_points_descending.shp</file>
+  <file>MODIS_C6_1_USA_contiguous_and_Hawaii_24h.shp</file>
  </input_files> 
  <output_dir>output_dir/</output_dir>
  <working_dir>working_dir/</working_dir>
