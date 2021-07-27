@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<vectorgen_configuration>
+ <date_of_data>20160429</date_of_data>
+ <parameter_name>terra_points_descending_modis_fires</parameter_name>
+ <input_files>
+  <file>terra_2016-03-06_epsg4326_points_descending.shp</file>
+  <file>MODIS_C6_1_USA_contiguous_and_Hawaii_24h.shp</file>
+  <file>MODIS_C6_1_Central_America_24h.shp</file>
+ </input_files> 
+ <output_dir>output_dir/</output_dir>
+ <working_dir>working_dir/</working_dir>
+ <output_name>test_pvt</output_name>
+ <output_format>MVT-MRF</output_format>
+ <tile_size>1024</tile_size>
+ <target_epsg>4326</target_epsg>
+ <source_epsg>4326</source_epsg>
+ <target_x>2560</target_x>
+ <target_y>1280</target_y>
+ <feature_id create="false">ident</feature_id>
+ <feature_reduce_rate>0</feature_reduce_rate>
+ <cluster_reduce_rate>0</cluster_reduce_rate>
+</vectorgen_configuration>
