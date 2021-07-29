@@ -36,7 +36,7 @@ RUN yum -y update && \
         pypng==0.0.20 \
         boto3==1.9 \
         redis==3.5.3 \
-        urllib3==1.26.4 && \
+        urllib3==1.26.6 && \
     yum clean all
     
 # Install yq
