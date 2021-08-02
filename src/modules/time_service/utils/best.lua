@@ -8,10 +8,8 @@ if redis.call("EXISTS", KEYS[1] .. ":best_layer") == 1 and ARGV[1] ~= nil then
   local layerPrefix = KEYS[1]:sub(1,index) -- remove provided layers name
   local best_key = layerPrefix .. best_layer -- concat best_layer to layer prefix
   local _, _, proj, typ  = string.find(best_key, "(%w+):(%a+):layer:") -- replace type with best
-  if (typ) then 
-    best_key = best_key:gsub(typ,"best", 1)
-  else 
-    best_key = best_key:gsub(":layer", ":best:layer", 1) -- when no type provided
+  if (typ ~= nil) then 
+    best_key = best_key:gsub(typ,"best", 1)-- when no type provided
   end
 
   local layers = redis.call("ZREVRANGE", best_key .. ":best_config", 0, -1) -- get layers in reverse, higher score have priority 
