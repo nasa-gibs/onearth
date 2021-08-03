@@ -1,6 +1,6 @@
 unittest2
 unittest-xml-reporting==1.14.0
 mapbox_vector_tile
-fiona
+fiona==1.8.20
 requests
 cycler==0.10.0
