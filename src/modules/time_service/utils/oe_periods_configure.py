@@ -77,18 +77,7 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
               'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
-    config_path = str(layer_configs[0]['path'].absolute())
-    if tag is None:
-        # attempt to detect tags based on filepath if none provided
-        if 'all/' in config_path:
-            tag = ':all'
-        elif 'best/' in config_path:
-            tag = ':best'
-        elif 'nrt/' in config_path:
-            tag = ':nrt'
-        elif 'std/' in config_path:
-            tag = ':std'
-        print(f'Using {config_path} to determine tag = {tag}')
+    
     if 'projection' in layer_configs[0]['config'].keys():
             proj = str(layer_configs[0]['config']['projection']). \
                 lower().replace(':', '')

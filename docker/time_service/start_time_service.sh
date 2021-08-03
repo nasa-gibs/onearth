@@ -348,7 +348,6 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 
 	# Load custom time period configurations and generate periods
 	for i in /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml; do
-		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST -g
 		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST -g -t ':best'
 		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST -g -t ''
 	done
@@ -356,7 +355,6 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 else
 	# Load custom time period configurations
 	for f in $(grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml); do
-		python3 /usr/bin/oe_periods_configure.py -e "$f" -r $REDIS_HOST
 		python3 /usr/bin/oe_periods_configure.py -e "$f" -r $REDIS_HOST -t ':best'
 		python3 /usr/bin/oe_periods_configure.py -e "$f" -r $REDIS_HOST -t ''
   done
