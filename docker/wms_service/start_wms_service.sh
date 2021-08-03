@@ -9,6 +9,7 @@ fi
 
 mkdir -p /etc/onearth/config/mapserver/
 mkdir -p /etc/onearth/config/endpoint/
+mkdir -p /etc/onearth/config/layers/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
@@ -18,6 +19,7 @@ then
   # Copy sample configs
   cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
