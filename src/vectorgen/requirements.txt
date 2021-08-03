@@ -1,3 +1,4 @@
+cligj==0.7.0
 fiona==1.7.0
 shapely==1.5.16
 rtree==0.8.0
