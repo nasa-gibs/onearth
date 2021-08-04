@@ -63,12 +63,13 @@ def strip_trailing_slash(string):
         string = string[:-1]
     return string
 
-def get_layer_config(layer_config_path):
+def get_vector_layer_config(layer_config_path):
     with layer_config_path.open() as f:
         config = yaml.safe_load(f.read())
-    return {'path': str(layer_config_path), 'config': config}
+    if config['mime_type'] == 'application/vnd.mapbox-vector-tile':
+        return {'path': str(layer_config_path), 'config': config}
 
-def get_layer_configs(endpoint_config):
+def get_vector_layer_configs(endpoint_config):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -80,12 +81,15 @@ def get_layer_configs(endpoint_config):
         print(f"Can't find specified layer config location: {layer_source}")
         sys.exit()
     if layer_source.is_file():
-        return [get_layer_config(layer_source)]
+        config = get_vector_layer_config(layer_source)
+        if config:
+            return [config]
     elif layer_source.is_dir():
-        return [
-            get_layer_config(filepath) for filepath in layer_source.iterdir()
+        configs = [
+            get_vector_layer_config(filepath) for filepath in layer_source.iterdir()
             if filepath.is_file() and filepath.name.endswith('.yaml')
         ]
+        return list(filter(None, configs))
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Make WMS endpoint.')
@@ -99,7 +103,7 @@ internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['inte
 projection = endpoint_config['epsg_code']
 
 # Get layer configs
-layer_configs = get_layer_configs(endpoint_config)
+layer_configs = get_vector_layer_configs(endpoint_config)
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
@@ -181,12 +185,16 @@ for layer in layers:
             if attributes['{http://www.w3.org/1999/xlink}role'].endswith("horizontal"):
                 style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes['{http://www.w3.org/1999/xlink}href']).replace(".svg",".png")
 
+    with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
+        template_string = f.read()
+
     # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
     layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
-    if layer_config and layer_config['config']['mime_type'] == "application/vnd.mapbox-vector-tile":
+    if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
         # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
         template_string = template_string.replace('${layer_name}', layer_name).replace('${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
-            '${data_xml}', '/vsis3/{0}'.format(Path(S3_URL, layer_name))).replace('${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
+            '${data_xml}', '/vsis3/{0}'.format(Path(layer_config['config']['source_mrf']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))).replace(
+            '${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
     else:
         out_root = etree.Element('GDAL_WMS')
 
@@ -214,8 +222,6 @@ for layer in layers:
         etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
         etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
 
-        with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
-            template_string = f.read()
         template_string = template_string.replace('${layer_name}', layer_name).replace('${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
             '${data_xml}', etree.tostring(out_root).decode()).replace('${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
 
