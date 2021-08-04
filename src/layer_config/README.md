@@ -20,7 +20,8 @@ Options:
                         Full path of archive configuration file.  Default:
                         $LCDIR/conf/archive.xml
   -c LAYER_CONFIG_FILENAME, --conf_file=LAYER_CONFIG_FILENAME
-                        Full path of layer configuration filename.
+                        Full path of a layer configuration filename.
+                        May be repeated.
   -d LAYER_DIRECTORY, --layer_dir=LAYER_DIRECTORY
                         Full path of directory containing configuration files
                         for layers.  Default: $LCDIR/layers/
@@ -55,8 +56,8 @@ Options:
   --email_logging_level=EMAIL_LOGGING_LEVEL
                         Logging level for email notifications: ERROR, WARN, or
                         INFO.  Default: ERROR
-  -t TIME, --time=TIME  ISO 8601 time(s) for single configuration file
-                        (conf_file must be specified).
+  -t TIME, --time=TIME  ISO 8601 time(s) for specified configuration files
+                        (--conf_file must be specified).
   -w, --no_wmts         Do not use configurations for WMTS.
   -x, --no_xml          Do not generate getCapabilities and getTileService
                         XML.
