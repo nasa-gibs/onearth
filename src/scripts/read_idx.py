@@ -39,7 +39,7 @@ import os
 import sys
 import struct
 
-versionNumber = '1.3.8'
+versionNumber = '1.3.9'
     
 #-------------------------------------------------------------------------------   
 

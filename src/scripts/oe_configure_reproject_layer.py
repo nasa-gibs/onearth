@@ -119,7 +119,7 @@ VALIDATION_TEMPLATE = """
 """
 
 
-versionNumber = '1.3.8'
+versionNumber = '1.3.9'
 
 def get_epsg_code_for_proj_string(proj_string):
     # For some reason OSR can't parse this version of the 3857 CRS.

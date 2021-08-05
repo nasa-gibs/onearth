@@ -33,7 +33,7 @@
 
 /*
  * mod_oemstime.cpp: OnEarth module for leveraging time snapping from Mapserver requests
- * Version 1.3.8
+ * Version 1.3.9
  */
 
 #include "mod_oemstime.h"
