@@ -2,8 +2,7 @@ wheel==0.36.2
 unittest2==1.1.0
 unittest-xml-reporting==1.14.0
 mapbox_vector_tile==0.4.0
-cligj==0.7.0
-fiona==1.7.0
+fiona==1.8.19
 requests==2.25.1
 lxml==4.6.3
 cycler==0.10.0
