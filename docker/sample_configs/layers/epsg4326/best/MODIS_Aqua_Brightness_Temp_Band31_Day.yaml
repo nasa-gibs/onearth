@@ -25,8 +25,8 @@ source_mrf:
   bands: 4
   tile_size_x: 512
   tile_size_y: 512
-  idx_path: "/onearth/idx/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day/"
-  data_file_uri: "{S3_URL}/epsg4326/MODIS_Aqua_Brightness_Temp_Band31_Day/"
+  idx_path: "/onearth/idx/epsg4326"
+  data_file_uri: "{S3_URL}/epsg4326"
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGBA_512.png"

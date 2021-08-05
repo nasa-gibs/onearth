@@ -17,6 +17,6 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   bands:
-  idx_path: "/onearth/idx/epsg4326/MODIS_Combined_Thermal_Anomalies_All"
-  data_file_uri: "{S3_URL}/epsg4326/MODIS_Combined_Thermal_Anomalies_All"
+  idx_path: "/onearth/idx/epsg4326"
+  data_file_uri: "{S3_URL}/epsg4326"
   bbox: -180,-90,180,90

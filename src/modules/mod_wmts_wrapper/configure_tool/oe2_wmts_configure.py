@@ -499,16 +499,19 @@ def make_layer_config(endpoint_config, layer):
 
     # Add in substitution strings for mod_wmts_wrapper for non-static layers
     if not static:
+        # check for slashes
+        if not data_path_str.endswith('/'):
+            data_path_str += '/'
+        if not idx_path.endswith('/'):
+            idx_path += '/'
+        # check for year_dir
         if year_dir:
-            if not data_path_str.endswith('/'):
-                data_path_str += '/'
-            data_path_str += '${YYYY}'
-            if not data_path_str.endswith('/'):
-                idx_path += '/'
-            idx_path += '${YYYY}'
-        data_path_str += '/${filename}'
+            data_path_str += '${prefix}/${YYYY}/'
+            idx_path += '${prefix}/${YYYY}/'
+        # add filename
+        data_path_str += '${filename}'
         data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
-        idx_path += '/${filename}.idx'
+        idx_path += '${filename}.idx'
 
     main_wmts_config = bulk_replace(
         LAYER_MOD_MRF_CONFIG_TEMPLATE,

@@ -21,8 +21,8 @@ source_mrf:
   bands: 3
   tile_size_x: 512
   tile_size_y: 512
-  idx_path: "/onearth/idx/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721/"
-  data_file_uri: "{S3_URL}/epsg4326/MODIS_Aqua_CorrectedReflectance_Bands721/"
+  idx_path: "/onearth/idx/epsg4326"
+  data_file_uri: "{S3_URL}/epsg4326"
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"

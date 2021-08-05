@@ -16,7 +16,7 @@ The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4
 This tool will load custom time period configurations as specified in a layer configuration file's `time_config` item into Redis for evaluation when the periods.lua script is executed. The tool will also load custom best available configurations as specified in a layer configuration file's `best_config` item into Redis.
 Configurations are loaded into the `prefix_tags:layer:layer_name:config` keyword. This script should be executed before periods.lua is run.
 The `-g` or `--generate_periods` option will automatically generate the periods for each layer by running periods.lua.
-Best available configurations are loaded into the `prefix_tags:layer:layer_name:best` keyword.
+Best available configurations are loaded into the `prefix_tags:layer:layer_name:best` keyword. The `-t` or `--tag` option with an empty string will generated “endpoint-agnostic” keys. 
 
 ### Python Dependencies
 

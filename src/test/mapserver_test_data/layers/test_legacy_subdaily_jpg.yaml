@@ -14,8 +14,8 @@ source_mrf:
   bands: 3
   tile_size_x: 512
   tile_size_y: 512
-  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_legacy_subdaily_jpg/"
-  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_legacy_subdaily_jpg/"
+  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
+  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
   year_dir: true
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"
