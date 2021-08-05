@@ -14,8 +14,8 @@ source_mrf:
   bands: 3
   tile_size_x: 512
   tile_size_y: 512
-  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/snap_test_3b"
-  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/snap_test_3b"
+  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/snap_test_3b/"
+  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/snap_test_3b/"
   year_dir: false
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"

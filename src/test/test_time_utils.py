@@ -223,7 +223,7 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':best' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -240,7 +240,7 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml -l '*Bands721'"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':best' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml -l '*Bands721'"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -257,7 +257,7 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':best' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -277,7 +277,7 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_std.yaml"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':std' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_std.yaml"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)

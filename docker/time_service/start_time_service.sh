@@ -362,16 +362,11 @@ else
 	# Load time periods by scraping S3 bucket
 	if [ "$FORCE_TIME_SCRAPE" = true ]; then
 		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -r -t all -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 		python3 /usr/bin/oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -r -t std -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 	else
 		python3 /usr/bin/oe_scrape_time.py -c -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -c -r -t all -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 		python3 /usr/bin/oe_scrape_time.py -c -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -c -r -t std -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -c -r -t nrt -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
+
 	fi
 fi
 
