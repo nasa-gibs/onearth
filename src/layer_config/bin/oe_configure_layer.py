@@ -88,9 +88,7 @@ import importlib
 
 importlib.reload(sys)
 
-versionNumber = '1.4.0'
-current_conf = None
-
+versionNumber = '1.4.1'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
@@ -866,8 +864,7 @@ def get_file_from_time(timestr, fileNamePrefix, include_year_dir, has_zdb):
         if has_zdb:
             filename = fileNamePrefix + datetime.strftime(t, "%Y%j") + "_"
         else:
-            filename = fileNamePrefix + datetime.strftime(t,
-                                                          "%Y%j%H%M%S") + "_"
+            filename = fileNamePrefix + datetime.strftime(t, "%Y%j%H%M%S") + "_"
         last_year = datetime.strftime(t, "%Y")
     else:
         t = datetime.strptime(timestr, "%Y-%m-%d")
@@ -1023,7 +1020,7 @@ def generate_empty_tile(colormap, output, width, height):
 
 
 def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
-                   dataFileLocation, has_zdb):
+                   dataFileLocation, has_zdb, vectorType):
     """
     Generate a archive links for a layer based on the last provided time period
     Arguments:
@@ -1033,13 +1030,15 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
         year -- whether or not the layer uses a year-based directory structure
         dataFileLocation -- file location for the default data file
         has_zdb -- whether or not the layer contains a zdb file
+        vectorType -- whether or not (None) the layer is a vector product
     """
     last_time = detected_times[-1].split("/")[1]
-    if os.path.isfile(
-            archiveLocation +
-            get_file_from_time(last_time, fileNamePrefix, year, has_zdb) +
-            ".idx"
-    ) == False:  # Detect the last time if file for specified time cannot be found
+
+    last_time_filename = get_file_from_time(last_time, fileNamePrefix, year, has_zdb) + \
+                         (".idx" if vectorType is None else ".shp")
+
+    # Detect the last time if file for specified time cannot be found
+    if not os.path.isfile(os.path.join(archiveLocation, last_time_filename)):
         log_sig_warn(
             "Files for specified last time of " + last_time +
             " cannot be found for " + fileNamePrefix +
@@ -1077,48 +1076,51 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
         os.makedirs(link_dir)
         print("Created directory " + link_dir)
 
-    if os.path.isfile(mrf):
-        if os.path.lexists(mrf_link):
-            os.remove(mrf_link)
-            print("Removed existing file " + mrf_link)
-        os.symlink(mrf, mrf_link)
-        print("Created soft link " + mrf_link + " -> " + mrf)
-    if os.path.isfile(idx):
-        if os.path.lexists(idx_link):
-            os.remove(idx_link)
-            print("Removed existing file " + idx_link)
-        os.symlink(idx, idx_link)
-        print("Created soft link " + idx_link + " -> " + idx)
-    else:
-        if data_ext != ".shp" or data_ext != ".json":
+    if vectorType is None:
+        if os.path.isfile(mrf):
+            if os.path.lexists(mrf_link):
+                os.remove(mrf_link)
+                print "Removed existing file " + mrf_link
+            os.symlink(mrf, mrf_link)
+            print "Created soft link " + mrf_link + " -> " + mrf
+        if os.path.isfile(idx):
+            if os.path.lexists(idx_link):
+                os.remove(idx_link)
+                print "Removed existing file " + idx_link
+            os.symlink(idx, idx_link)
+            print "Created soft link " + idx_link + " -> " + idx
+        else:
             log_sig_warn("Default MRF index file " + idx + " does not exist",
                          sigevent_url)
-    if os.path.isfile(data):
-        if os.path.lexists(data_link):
-            os.remove(data_link)
-            print("Removed existing file " + data_link)
-        os.symlink(data, data_link)
-        print("Created soft link " + data_link + " -> " + data)
-    else:
-        log_sig_warn("Default MRF data file " + data + " does not exist",
-                     sigevent_url)
-    if os.path.isfile(zdb):
-        if os.path.lexists(zdb_link):
-            os.remove(zdb_link)
-            print("Removed existing file " + zdb_link)
-        os.symlink(zdb, zdb_link)
-        print("Created soft link " + zdb_link + " -> " + zdb)
+
+        if os.path.isfile(data):
+            if os.path.lexists(data_link):
+                os.remove(data_link)
+                print "Removed existing file " + data_link
+            os.symlink(data, data_link)
+            print "Created soft link " + data_link + " -> " + data
+        else:
+            log_sig_warn("Default MRF data file " + data + " does not exist",
+                         sigevent_url)
+        if os.path.isfile(zdb):
+            if os.path.lexists(zdb_link):
+                os.remove(zdb_link)
+                print "Removed existing file " + zdb_link
+            os.symlink(zdb, zdb_link)
+            print "Created soft link " + zdb_link + " -> " + zdb
 
     # special handling for shapefiles
-    if data_ext == ".shp":
-        files = glob.glob(archiveLocation + filename + "*")
-        for sfile in files:
-            ext = os.path.splitext(os.path.basename(sfile))[1]
-            if os.path.lexists(link_pre + ext):
-                os.remove(link_pre + ext)
-                print("Removed existing file " + link_pre + ext)
-            os.symlink(sfile, link_pre + ext)
-            print("Created soft link " + link_pre + ext + " -> " + sfile)
+    else:
+        for ext in [".shp",".shx",".dbf"]:
+            shp = archiveLocation + filename + ext
+            shp_link = link_pre + ext
+
+            if os.path.isfile(shp):
+                if os.path.lexists(shp_link):
+                    os.remove(shp_link)
+                    print "Removed existing file " + shp_link
+                os.symlink(shp, shp_link)
+                print "Created soft link " + shp_link + " -> " + shp
 
     return mrf_link, idx_link, data_link, zdb_link
 
@@ -1149,10 +1151,10 @@ parser.add_option(
 parser.add_option(
     '-c',
     '--conf_file',
-    action='store',
+    action='append',
     type='string',
-    dest='layer_config_filename',
-    help='Full path of layer configuration filename.')
+    dest='layer_config_filenames',
+    help='Full path of a layer configuration filename. May be repeated.')
 parser.add_option(
     '-d',
     '--layer_dir',
@@ -1321,8 +1323,6 @@ parser.add_option(
 
 # Read command line args.
 (options, args) = parser.parse_args()
-# Configuration filename.
-configuration_filename = options.layer_config_filename
 # Command line set LCDIR.
 lcdir = options.lcdir
 # Configuration directory.
@@ -1407,11 +1407,11 @@ if no_twms and no_wmts and not create_mapfile:
     exit()
 
 if configuration_time:
-    if configuration_filename == None:
-        print("A configuration file must be specified with --time")
+    if options.layer_config_filenames is None or len(options.layer_config_filenames) == 0:
+        print "Layer configuration files (--conf_file) must be specified along with --time"
         exit()
     else:
-        print("Using time='" + configuration_time + "' for " + configuration_filename)
+        print "Using time='" + configuration_time
 
 # set location of tools
 if os.path.isfile(os.path.abspath(lcdir) + '/bin/oe_create_cache_config'):
@@ -1429,7 +1429,7 @@ wmts_endpoints = {}
 twms_endpoints = {}
 wms_endpoints = {}
 
-if not options.layer_config_filename:
+if options.layer_config_filenames is None or len(options.layer_config_filenames) == 0:
     conf = subprocess.Popen(
         'ls ' + configuration_directory + '/*.xml',
         shell=True,
@@ -1438,8 +1438,8 @@ if not options.layer_config_filename:
     for line in conf:
         conf_files.append(line.strip().decode('utf-8'))
 else:
-    # use only the solo MRF when specified
-    conf_files.append(configuration_filename)
+    # use the layer configuration files specified via CLI argument
+    conf_files.extend(options.layer_config_filenames)
 
 print('Configuration file(s):')
 print(conf_files)
@@ -1448,7 +1448,6 @@ if conf_files == []:
     log_sig_exit('ERROR', mssg, sigevent_url)
 
 for conf in conf_files:
-    current_conf = conf
     try:
         # Open file.
         config_file = open(conf, 'r')
@@ -2401,8 +2400,7 @@ for conf in conf_files:
         detected_times = []
         if static == False:
             for time in times:
-                detected_times += detect_time(time, archiveLocation,
-                                             fileNamePrefix, year, has_zdb)
+                detected_times += detect_time(time, archiveLocation, fileNamePrefix, year, has_zdb)
 
             timeElements = []
             for detected_time in detected_times:
@@ -2554,7 +2552,7 @@ for conf in conf_files:
         if len(detected_times) > 0:
             print("Generating archive links for " + fileNamePrefix)
             generate_links(detected_times, archiveLocation, fileNamePrefix,
-                           year, dataFileLocation, has_zdb)
+                           year, dataFileLocation, has_zdb, vectorType)
         else:
             print(fileNamePrefix + " is not a time varying layer")
 
@@ -3228,12 +3226,6 @@ for conf in conf_files:
                             "Couldn't read mapfile LAYER contents file: " +
                             mapfileLayerContents, sigevent_url)
                 mapfile.write("END\n")
-
-# Use config filename or directory for logging the current config outside of loop
-if not options.layer_config_filename:
-    current_conf = configuration_directory
-else:
-    current_conf = configuration_filename
 
 # run scripts
 if no_twms == False:

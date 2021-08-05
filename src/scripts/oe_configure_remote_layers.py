@@ -43,7 +43,7 @@ from oe_configure_reproject_layer import get_max_scale_dem, get_epsg_code_for_pr
     MAPFILE_TEMPLATE, WMS_LAYER_GROUP_TEMPLATE, DIMENSION_TEMPLATE, STYLE_TEMPLATE, VALIDATION_TEMPLATE
 
 
-VERSION_NUMBER = '1.4.0'
+VERSION_NUMBER = '1.4.1'
 LAYER_NODE = '<Layer xmlns="http://www.opengis.net/wmts/1.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml">'
 LAYER = '      <Layer>'
 warnings = []
