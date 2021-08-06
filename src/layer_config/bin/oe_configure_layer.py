@@ -1080,15 +1080,15 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
         if os.path.isfile(mrf):
             if os.path.lexists(mrf_link):
                 os.remove(mrf_link)
-                print "Removed existing file " + mrf_link
+                print("Removed existing file " + mrf_link)
             os.symlink(mrf, mrf_link)
-            print "Created soft link " + mrf_link + " -> " + mrf
+            print("Created soft link " + mrf_link + " -> " + mrf)
         if os.path.isfile(idx):
             if os.path.lexists(idx_link):
                 os.remove(idx_link)
-                print "Removed existing file " + idx_link
+                print("Removed existing file " + idx_link)
             os.symlink(idx, idx_link)
-            print "Created soft link " + idx_link + " -> " + idx
+            print("Created soft link " + idx_link + " -> " + idx)
         else:
             log_sig_warn("Default MRF index file " + idx + " does not exist",
                          sigevent_url)
@@ -1096,18 +1096,18 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
         if os.path.isfile(data):
             if os.path.lexists(data_link):
                 os.remove(data_link)
-                print "Removed existing file " + data_link
+                print("Removed existing file " + data_link)
             os.symlink(data, data_link)
-            print "Created soft link " + data_link + " -> " + data
+            print("Created soft link " + data_link + " -> " + data)
         else:
             log_sig_warn("Default MRF data file " + data + " does not exist",
                          sigevent_url)
         if os.path.isfile(zdb):
             if os.path.lexists(zdb_link):
                 os.remove(zdb_link)
-                print "Removed existing file " + zdb_link
+                print("Removed existing file " + zdb_link)
             os.symlink(zdb, zdb_link)
-            print "Created soft link " + zdb_link + " -> " + zdb
+            print("Created soft link " + zdb_link + " -> " + zdb)
 
     # special handling for shapefiles
     else:
@@ -1118,9 +1118,9 @@ def generate_links(detected_times, archiveLocation, fileNamePrefix, year,
             if os.path.isfile(shp):
                 if os.path.lexists(shp_link):
                     os.remove(shp_link)
-                    print "Removed existing file " + shp_link
+                    print("Removed existing file " + shp_link)
                 os.symlink(shp, shp_link)
-                print "Created soft link " + shp_link + " -> " + shp
+                print("Created soft link " + shp_link + " -> " + shp)
 
     return mrf_link, idx_link, data_link, zdb_link
 
@@ -1408,10 +1408,10 @@ if no_twms and no_wmts and not create_mapfile:
 
 if configuration_time:
     if options.layer_config_filenames is None or len(options.layer_config_filenames) == 0:
-        print "Layer configuration files (--conf_file) must be specified along with --time"
+        print("Layer configuration files (--conf_file) must be specified along with --time")
         exit()
     else:
-        print "Using time='" + configuration_time
+        print("Using time='" + configuration_time)
 
 # set location of tools
 if os.path.isfile(os.path.abspath(lcdir) + '/bin/oe_create_cache_config'):
