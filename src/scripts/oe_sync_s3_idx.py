@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,7 +13,7 @@
 # limitations under the License.
 """
 This script synchronizes IDX files inside S3 tar balls with those on a file system.
-Files on S3 will always act as the 'master' (i.e., files found on S3 that are not on the file system 
+Files on S3 will always act as the 'master' (i.e., files found on S3 that are not on the file system
 will be downloaded, while files found on the file system but not on S3 will be deleted).
 File modifications are not detected. Use --force to overwrite existing files.
 """
@@ -22,6 +22,7 @@ import boto3
 from functools import reduce
 from pathlib import Path
 import argparse
+
 
 def keyMapper(acc, obj):
     keyElems = obj['Key'].split("/")
@@ -110,7 +111,7 @@ def syncIdx(bucket,
         dir_proj = os.path.join(dir, proj)
         if not os.path.isdir(dir_proj) and not dry_run:
             os.makedirs(dir_proj)
-            
+
         for layer, data in layers.items():
             print(f'Configuring layer: {layer}')
             dir_proj_layer = os.path.join(dir, proj, layer)
@@ -119,7 +120,7 @@ def syncIdx(bucket,
                 os.makedirs(dir_proj_layer)
 
             # Find existing files on file system
-            fs_files   = listAllFiles(dir_proj_layer, prefix)
+            fs_files = listAllFiles(dir_proj_layer, prefix)
 
             # Build list of S3 index files
             s3_objects = [v for v in data['idx']]
@@ -133,7 +134,7 @@ def syncIdx(bucket,
             # Copy files from S3 that aren't on file system
             for s3_object in idx_to_sync:
                 idx_filepath = os.path.join(dir_proj_layer, s3_object)
-                idx_prefix   = "{0}/{1}/{2}".format(proj, layer, s3_object).replace('//', '/')
+                idx_prefix = "{0}/{1}/{2}".format(proj, layer, s3_object).replace('//', '/')
 
                 idx_filedir = os.path.dirname(idx_filepath)
                 if not os.path.isdir(idx_filedir) and not dry_run:
