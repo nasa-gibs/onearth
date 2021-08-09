@@ -1,8 +1,11 @@
-unittest2
-unittest-xml-reporting==1.14.0
-mapbox_vector_tile
-fiona
-requests
-rtree
-lxml==4.6.3
-cycler==0.10.0
+cycler == 0.10.0	# https://pypi.org/project/Cycler/
+Fiona == 1.8.19     # https://pypi.org/project/Fiona/
+lxml == 4.6.3       # https://pypi.org/project/lxml/
+mapbox-vector-tile == 1.2.1     # https://pypi.org/project/mapbox-vector-tile/
+requests == 2.7.0  # https://pypi.org/project/requests/
+Rtree == 0.9.4      # https://pypi.org/project/Rtree/
+Shapely == 1.7.0    # https://pypi.org/project/Shapely/
+unittest2 == 1.1.0  # https://pypi.org/project/unittest2/
+unittest-xml-reporting == 1.14.0 # https://pypi.org/project/unittest-xml-reporting/
+urllib3 == 1.26.4 	# https://pypi.org/project/urllib3/
+wheel == 0.36.2		# https://pypi.org/project/wheel/

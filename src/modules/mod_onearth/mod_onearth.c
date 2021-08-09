@@ -33,7 +33,7 @@
 
 /* 
  * OnEarth module for Apache 2.0
- * Version 1.4.0
+ * Version 1.4.1
  *
  * Only takes server configuration, no point in doing directories,
  * as these have to be read in for every request, negating the cache

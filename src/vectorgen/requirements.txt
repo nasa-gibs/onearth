@@ -1,5 +1,6 @@
-Fiona==1.7.0
+Fiona==1.8.19
 Shapely==1.5.16
-Rtree==0.8.0
-mapbox-vector-tile==0.4.0
+Rtree==0.9.4
+mapbox-vector-tile==1.2.1
 lxml==4.6.3
+urllib3==1.26.4
