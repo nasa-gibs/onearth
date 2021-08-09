@@ -1,10 +1,11 @@
 LAYER
         NAME    "${layer_name}"
-        TYPE    RASTER
+        TYPE    "${layer_type}"
         STATUS  ON
         METADATA
-                "wms_title"             "${layer_name}"
+                "wms_title"             "${layer_title}"
                 "wms_extent"            "-180 -90 180 90"
+                "wms_layer_group"       "${wms_layer_group}"
                 ${dimension_info}
                 ${style_info}
         END

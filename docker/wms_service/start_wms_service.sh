@@ -25,6 +25,7 @@ else
 
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/' -b $S3_CONFIGS -p config/layers >>/var/log/onearth/config.log 2>&1
 fi
 
 # Copy in oe-status endpoint configuration

@@ -63,13 +63,12 @@ def strip_trailing_slash(string):
         string = string[:-1]
     return string
 
-def get_vector_layer_config(layer_config_path):
+def get_layer_config(layer_config_path):
     with layer_config_path.open() as f:
         config = yaml.safe_load(f.read())
-    if config['mime_type'] == 'application/vnd.mapbox-vector-tile':
-        return {'path': str(layer_config_path), 'config': config}
+    return {'path': str(layer_config_path), 'config': config}
 
-def get_vector_layer_configs(endpoint_config):
+def get_layer_configs(endpoint_config):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -81,15 +80,12 @@ def get_vector_layer_configs(endpoint_config):
         print(f"Can't find specified layer config location: {layer_source}")
         sys.exit()
     if layer_source.is_file():
-        config = get_vector_layer_config(layer_source)
-        if config:
-            return [config]
+        return [get_layer_config(layer_source)]
     elif layer_source.is_dir():
-        configs = [
-            get_vector_layer_config(filepath) for filepath in layer_source.iterdir()
+        return [
+            get_layer_config(filepath) for filepath in layer_source.iterdir()
             if filepath.is_file() and filepath.name.endswith('.yaml')
         ]
-        return list(filter(None, configs))
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Make WMS endpoint.')
@@ -103,7 +99,7 @@ internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['inte
 projection = endpoint_config['epsg_code']
 
 # Get layer configs
-layer_configs = get_vector_layer_configs(endpoint_config)
+layer_configs = get_layer_configs(endpoint_config)
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
@@ -185,16 +181,33 @@ for layer in layers:
             if attributes['{http://www.w3.org/1999/xlink}role'].endswith("horizontal"):
                 style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes['{http://www.w3.org/1999/xlink}href']).replace(".svg",".png")
 
-    with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
-        template_string = f.read()
-
     # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
     layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
+    wms_layer_group = ""
+    if layer_config:
+        try:
+            wms_layer_group = layer_config['config']['wms_layer_group']
+        except KeyError:
+            print("Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
+    else:
+        print("Layer config for layer {0} not found".format(layer_name))
+
+    # handle vector layers
     if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
-        # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
-        template_string = template_string.replace('${layer_name}', layer_name).replace('${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
-            '${data_xml}', '/vsis3/{0}'.format(Path(layer_config['config']['source_mrf']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))).replace(
-            '${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
+        with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
+            template_string = f.read()
+        try:
+            for shp_config in layer_config['config']['shapefile_configs']:
+                # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
+                new_layer_string = template_string.replace('${layer_name}', shp_config['layer_id']).replace('${layer_title}', shp_config['layer_title']).replace(
+                    '${layer_type}', shp_config['source_shapefile']['feature_type']).replace('${wms_layer_group}', wms_layer_group).replace(
+                    '${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
+                    '${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))).replace(
+                    '${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
+                layer_strings.append(new_layer_string)
+        except KeyError:
+            print("Layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
+    # handle raster layers
     else:
         out_root = etree.Element('GDAL_WMS')
 
@@ -221,11 +234,15 @@ for layer in layers:
         etree.SubElement(out_root, 'Cache')
         etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
         etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
+        
+        with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
+            template_string = f.read()
 
-        template_string = template_string.replace('${layer_name}', layer_name).replace('${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
+        template_string = template_string.replace('${layer_name}', layer_name).replace('${layer_type}', "RASTER").replace('${layer_title}', layer_name).replace(
+            '${wms_layer_group}', wms_layer_group).replace('${dimension_info}',dimension_info).replace('${style_info}', style_info).replace(
             '${data_xml}', etree.tostring(out_root).decode()).replace('${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
-
-    layer_strings.append(template_string)
+    
+        layer_strings.append(template_string)
 
 with open(header, 'r', encoding='utf-8') as f:
     header_string = f.read()
