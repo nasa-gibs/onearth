@@ -43,6 +43,20 @@ Each test script will output a JUnit XML results file. By default, these files a
 
 --------
 ## Time Service Tests
+1. Tests that a request to timeservice without parameters will return all records
+2. Test time snap for P1Y layer (year)
+3. Test time snap for P7D layer (week)
+4. Test time snap for P1M layer (month)
+5. Test time snap for PT2H layer (hour)
+6. Test time snap for PT6M layer (minute)
+7. Test time snap for PT6M layer (second)
+8. Test invalid layer error
+9. Test invalid date error 
+10. Test out of range error for periods
+11. Test snap with single key parameter (key1)
+12. Test best layer to check filename, prefix, date
+13. Test snap with multiple key parameter (key1, key2, key3, etc)
+14. Test snapping to one of multiple periods
 
 1.  **Regular Daily date (P1D)**
 
@@ -180,7 +194,9 @@ Each test script will output a JUnit XML results file. By default, these files a
 
         vii. 2003-01-04 -> Blank Tile
         
+
 ## Time Utilities Tests
+***There are currently two sets of tests endpoint agonostic and endpoint specific, endpoint specific are marked with _dep(deprecated) at the end. ***
 1. Time scrape S3 keys
 2. Time scrape S3 inventory
 3. Test period generation with single date
