@@ -11,6 +11,13 @@ metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer", "xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Layer Vector Metadata"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer/1.0", "xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Layer Vector Metadata"}
+shapefile_configs:
+- layer_id: "MODIS_Terra_Thermal_Anomalies_Night_Points"
+  layer_style: "/etc/onearth/mapfile-styles/MODIS_Terra_Thermal_Anomalies_Night_Points.txt"
+  layer_title: "Thermal Anomalies and Fires (Night, Best Available, MODIS, Aqua+Terra)"
+  source_shapefile:
+    data_file_uri: "{S3_URL}/epsg4326/MODIS_Terra_Thermal_Anomalies_Night_Points/%2021%/MODIS_Terra_Thermal_Anomalies_Night_Points-%2021001000000%"
+    feature_type: "POINT"
 source_mrf:
   size_x: 40960
   size_y: 20480
@@ -20,3 +27,4 @@ source_mrf:
   idx_path: "/onearth/idx/epsg4326/MODIS_Terra_Thermal_Anomalies_Night"
   data_file_uri: "{S3_URL}/epsg4326/MODIS_Terra_Thermal_Anomalies_Night"
   bbox: -180,-90,180,90
+wms_layer_group: "/Fires and Thermal Anomalies"
