@@ -179,6 +179,8 @@ for layer in layers:
         dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
         validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
 
+    wms_extent = "-180 -90 180 90" if "4326" in projection else "-4194304 -4194304 4194304 4194304"
+
     # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
     layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
     wms_layer_group = ""
@@ -198,13 +200,15 @@ for layer in layers:
             template_string = f.read()
         try:
             for shp_config in layer_config['config']['shapefile_configs']:
+                with open(shp_config['layer_style'], 'r', encoding='utf-8') as f:
+                    class_style = f.read()
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_title}', shp_config['layer_title']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', dimension_info),
                                                                   ('${style_info}', style_info),
-                                                                  ('${class_style}', '"class_style"           "{0}"'.format(shp_config['layer_style'])),
+                                                                  ('${class_style}', class_style),
                                                                   # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
                                                                   ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))),
                                                                   ('${epsg_code}', projection.lower()),

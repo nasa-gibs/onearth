@@ -10,6 +10,7 @@ fi
 mkdir -p /etc/onearth/config/mapserver/
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
+mkdir -p /etc/onearth/config/mapfile_styles/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
@@ -20,12 +21,14 @@ then
   cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
   cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  cp -R ../sample_configs/mapfile_styles/* /etc/onearth/config/mapfile_styles/
 else
 	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/layers/' -b $S3_CONFIGS -p config/layers >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapfile_styles/' -b $S3_CONFIGS -p config/mapfile_styles >>/var/log/onearth/config.log 2>&1
 fi
 
 # Copy in oe-status endpoint configuration

@@ -1,0 +1,11 @@
+     FILTER ((('[satellite]' = 'T') OR ('[satellite]' = 'Terra')) AND ("[daynight]" = "N"))
+
+    CLASS
+         NAME   "Thermal Anomaly"
+        STYLE                                   # start STYLE object
+          Symbol 'circle'
+             COLOR  236 98 16
+          OUTLINECOLOR  236 98 16
+          SIZE 3
+         END                                   # end STYLE object
+    END

@@ -4,15 +4,15 @@ LAYER
         STATUS  ON
         METADATA
                 "wms_title"             "${layer_title}"
-                "wms_extent"            "-180 -90 180 90"
+                "wms_extent"            "${wms_extent)"
                 ${wms_layer_group}
                 ${dimension_info}
                 ${style_info}
-                ${class_style}
         END
         DATA    '${data_xml}'
         PROJECTION
                 "init=${epsg_code}"
         END
         ${validation_info}
+        ${class_style}
 END
