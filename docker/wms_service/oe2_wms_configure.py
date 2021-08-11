@@ -63,6 +63,12 @@ def strip_trailing_slash(string):
         string = string[:-1]
     return string
 
+def bulk_replace(source_str, replace_list):
+    out_str = source_str
+    for item in replace_list:
+        out_str = out_str.replace(item[0], str(item[1]))
+    return out_str
+
 def get_layer_config(layer_config_path):
     with layer_config_path.open() as f:
         config = yaml.safe_load(f.read())
@@ -72,12 +78,12 @@ def get_layer_configs(endpoint_config):
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
-        print("\nMust specify 'layer_config_source'!")
+        print("\nERROR: Must specify 'layer_config_source'!")
         sys.exit()
 
     # Find all source configs - traversing down a single directory level
     if not layer_source.exists():
-        print(f"Can't find specified layer config location: {layer_source}")
+        print(f"ERROR: Can't find specified layer config location: {layer_source}")
         sys.exit()
     if layer_source.is_file():
         return [get_layer_config(layer_source)]
@@ -172,41 +178,41 @@ for layer in layers:
         period_str = ','.join(elem.text for elem in dimension.findall("{*}Value"))
         dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
         validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
-        
-        legendUrlElems = []
-        for styleElem in layer.findall('{*}Style'):
-           legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
-        for legendUrlElem in legendUrlElems:
-            attributes = legendUrlElem.attrib
-            if attributes['{http://www.w3.org/1999/xlink}role'].endswith("horizontal"):
-                style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes['{http://www.w3.org/1999/xlink}href']).replace(".svg",".png")
 
     # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
     layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
     wms_layer_group = ""
     if layer_config:
         try:
-            wms_layer_group = layer_config['config']['wms_layer_group']
+            wms_layer_group = '"wms_layer_group"       "{0}"'.format(layer_config['config']['wms_layer_group'])
         except KeyError:
             print("Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
     else:
-        print("Layer config for layer {0} not found".format(layer_name))
+        print("ERROR: Layer config for layer {0} not found".format(layer_name))
+        continue
 
     # handle vector layers
     if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
+        style_info = '"wms_enable_request"    "GetLegendGraphic"'
         with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
             template_string = f.read()
         try:
             for shp_config in layer_config['config']['shapefile_configs']:
-                # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
-                new_layer_string = template_string.replace('${layer_name}', shp_config['layer_id']).replace('${layer_title}', shp_config['layer_title']).replace(
-                    '${layer_type}', shp_config['source_shapefile']['feature_type']).replace('${wms_layer_group}', wms_layer_group).replace(
-                    '${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
-                    '${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))).replace(
-                    '${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
+                new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
+                                                                  ('${layer_title}', shp_config['layer_title']),
+                                                                  ('${layer_type}', shp_config['source_shapefile']['feature_type']),
+                                                                  ('${wms_layer_group}', wms_layer_group),
+                                                                  ('${dimension_info}', dimension_info),
+                                                                  ('${style_info}', style_info),
+                                                                  ('${class_style}', '"class_style"           "{0}"'.format(shp_config['layer_style'])),
+                                                                  # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
+                                                                  ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))),
+                                                                  ('${epsg_code}', projection.lower()),
+                                                                  ('${validation_info}', validation_info)])
                 layer_strings.append(new_layer_string)
         except KeyError:
-            print("Layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
+            # TODO: format for properly logging an error
+            print("ERROR: vector layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
     # handle raster layers
     else:
         out_root = etree.Element('GDAL_WMS')
@@ -234,13 +240,28 @@ for layer in layers:
         etree.SubElement(out_root, 'Cache')
         etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
         etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
+
+        legendUrlElems = []
+        for styleElem in layer.findall('{*}Style'):
+           legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
+        for legendUrlElem in legendUrlElems:
+            attributes = legendUrlElem.attrib
+            if attributes['{http://www.w3.org/1999/xlink}role'].endswith("horizontal"):
+                style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes['{http://www.w3.org/1999/xlink}href']).replace(".svg",".png")
         
         with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
             template_string = f.read()
 
-        template_string = template_string.replace('${layer_name}', layer_name).replace('${layer_type}', "RASTER").replace('${layer_title}', layer_name).replace(
-            '${wms_layer_group}', wms_layer_group).replace('${dimension_info}',dimension_info).replace('${style_info}', style_info).replace(
-            '${data_xml}', etree.tostring(out_root).decode()).replace('${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
+        template_string = bulk_replace(template_string, [('${layer_name}', layer_name),
+                                                         ('${layer_type}', "RASTER"),
+                                                         ('${layer_title}', layer_name),
+                                                         ('${wms_layer_group}', wms_layer_group),
+                                                         ('${dimension_info}',dimension_info),
+                                                         ('${style_info}', style_info),
+                                                         ('${class_style}', ""),
+                                                         ('${data_xml}', etree.tostring(out_root).decode()),
+                                                         ('${epsg_code}', projection.lower()),
+                                                         ('${validation_info}', validation_info)])
     
         layer_strings.append(template_string)
 

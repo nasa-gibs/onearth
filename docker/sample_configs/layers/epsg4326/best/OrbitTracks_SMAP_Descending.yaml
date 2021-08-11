@@ -24,13 +24,13 @@ projection: EPSG:4326
 shapefile_configs:
 - layer_id: OrbitTracks_SMAP_Descending_Points
   layer_style: /etc/onearth/mapfile-styles/OrbitTracks_SMAP_Descending_Points.txt
-  layer_title: b'Orbit Tracks (Descending, Points, SMAP)'
+  layer_title: Orbit Tracks (Descending, Points, SMAP)
   source_shapefile:
     data_file_uri: '{S3_URL}/epsg4326/OrbitTracks_SMAP_Descending_Points/%YYYY%/OrbitTracks_SMAP_Descending_Points-%YYYYJJJHHMISS%'
     feature_type: POINT
 - layer_id: OrbitTracks_SMAP_Descending_Lines
   layer_style: /etc/onearth/mapfile-styles/OrbitTracks_SMAP_Descending_Lines.txt
-  layer_title: b'Orbit Tracks (Descending, Lines, SMAP)'
+  layer_title: Orbit Tracks (Descending, Lines, SMAP)
   source_shapefile:
     data_file_uri: '{S3_URL}/epsg4326/OrbitTracks_SMAP_Descending_Lines/%YYYY%/OrbitTracks_SMAP_Descending_Lines-%YYYYJJJHHMISS%'
     feature_type: LINE

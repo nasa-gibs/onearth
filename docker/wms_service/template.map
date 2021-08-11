@@ -5,9 +5,10 @@ LAYER
         METADATA
                 "wms_title"             "${layer_title}"
                 "wms_extent"            "-180 -90 180 90"
-                "wms_layer_group"       "${wms_layer_group}"
+                ${wms_layer_group}
                 ${dimension_info}
                 ${style_info}
+                ${class_style}
         END
         DATA    '${data_xml}'
         PROJECTION
