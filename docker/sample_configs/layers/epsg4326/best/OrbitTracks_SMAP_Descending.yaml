@@ -29,7 +29,7 @@ shapefile_configs:
     data_file_uri: '{S3_URL}/epsg4326/OrbitTracks_SMAP_Descending_Points/%2021%/OrbitTracks_SMAP_Descending_Points-%2021001000000%'
     feature_type: POINT
 - layer_id: OrbitTracks_SMAP_Descending_Lines
-  layer_style: /etc/onearth/mapfile-styles/OrbitTracks_SMAP_Descending_Lines.txt
+  layer_style: /etc/onearth/config/mapfile_styles/OrbitTracks_SMAP_Descending_Lines.txt
   layer_title: Orbit Tracks (Descending, Lines, SMAP)
   source_shapefile:
     data_file_uri: '{S3_URL}/epsg4326/OrbitTracks_SMAP_Descending_Lines/%2021%/OrbitTracks_SMAP_Descending_Lines-%2021001000000%'

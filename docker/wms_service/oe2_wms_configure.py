@@ -237,8 +237,8 @@ for layer in layers:
                                                                   # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
                                                                   ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))),
                                                                   ('${epsg_code}', layer_proj),
-                                                                  ('${validation_info}', validation_info)],
-                                                                  ('${class_style}', class_style))
+                                                                  ('${validation_info}', validation_info),
+                                                                  ('${class_style}', class_style)])
                 layer_strings.append(new_layer_string)
         except KeyError:
             # TODO: format for properly logging an error
@@ -292,8 +292,8 @@ for layer in layers:
                                                          ('${style_info}', style_info),
                                                          ('${data_xml}', etree.tostring(out_root).decode()),
                                                          ('${class_style}', ""),
-                                                         ('${validation_info}', validation_info)],
-                                                         ('${epsg_code}', layer_proj))
+                                                         ('${validation_info}', validation_info),
+                                                         ('${epsg_code}', layer_proj)])
     
         layer_strings.append(template_string)
 
