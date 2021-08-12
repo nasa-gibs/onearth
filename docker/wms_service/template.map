@@ -4,8 +4,8 @@ LAYER
         STATUS  ON
         METADATA
                 "wms_title"             "${layer_title}"
-                "wms_extent"            "${wms_extent)"
-                "wms_srs"               "${wms_srs)"
+                "wms_extent"            "${wms_extent}"
+                "wms_srs"               "${wms_srs}"
                 ${wms_layer_group}
                 ${dimension_info}
                 ${style_info}
