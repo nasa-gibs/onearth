@@ -102,7 +102,7 @@ print('Using endpoint config ' + args.endpoint_config)
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
-projection = endpoint_config['epsg_code']
+epsg_code = endpoint_config['epsg_code']
 
 # Get layer configs
 layer_configs = get_layer_configs(endpoint_config)
@@ -157,7 +157,7 @@ for layer in layers:
     lower_right_x = bbox.findtext('{*}UpperCorner').split(' ')[0]
     lower_right_y = bbox.findtext('{*}LowerCorner').split(' ')[1]
     
-    bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], projection, scale_denominator, tile_width, matrix_width, matrix_height)
+    bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], epsg_code, scale_denominator, tile_width, matrix_width, matrix_height)
 
     resource_url = layer.findall('{*}ResourceURL')[-1] # get last if multiple found
     bands_count = 4 if resource_url.get('format') == 'image/png' else 3
@@ -179,7 +179,31 @@ for layer in layers:
         dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
         validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
 
-    wms_extent = "-180 -90 180 90" if "4326" in projection else "-4194304 -4194304 4194304 4194304"
+    if epsg_code == "EPSG:4326":
+        wms_extent = "-180 -90 180 90"
+        # Explicitly show that EPSG:4326 and EPSG:3857 requests are supported through an EPSG:4326 endpoint
+        wms_srs    = "EPSG:4326 EPSG:3857"
+        layer_proj = epsg_code.lower()
+    elif epsg_code in ["EPSG:3031", "EPSG:3413"]:
+        # Hard coded to GIBS TileMatrixSet values. These are not the projection's native extents. If that's a problem,
+        # then the values could be read from the remote Capabilities
+        wms_extent = "-4194304 -4194304 4194304 4194304"
+        wms_srs    = "\"{0}\"".format(epsg_code)
+        layer_proj = epsg_code.lower()
+    elif epsg_code in ["EPSG:3857"]:
+        # You would think this should be the EPSG:3857 extents, but that doesn't work. Instead, these are in the units
+        # of the layer's projection... which is EPSG:4326
+        wms_extent = "-180, -85.0511, 180, 85.0511"
+        wms_srs    = "\"{0}\"".format(epsg_code)
+        # Hard coded to be epsg:4326 because we are building Web Mercator off of an EPSG:4326 WMTS endpoint with
+        # EPSG:4326 shapefiles. If that's a problem, then we could add a new property to the endpoint config to specify
+        # the source WMTS' projection and also a new property to the source_shapefile indicating its projection.
+        layer_proj = "epsg:4326"
+    else:
+        wms_extent = "{0}, {1}, {2}, {3}".format(upper_left_x, lower_right_y, lower_right_x, upper_left_y)
+        wms_srs    = "\"{0}\"".format(epsg_code)
+        layer_proj = epsg_code.lower()
+        break
 
     # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
     layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
@@ -203,16 +227,18 @@ for layer in layers:
                 with open(shp_config['layer_style'], 'r', encoding='utf-8') as f:
                     class_style = f.read()
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
-                                                                  ('${layer_title}', shp_config['layer_title']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
+                                                                  ('${layer_title}', shp_config['layer_title']),
+                                                                  ('${wms_extent}', wms_extent),
+                                                                  ('${wms_srs}', wms_srs),
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', dimension_info),
                                                                   ('${style_info}', style_info),
-                                                                  ('${class_style}', class_style),
                                                                   # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
                                                                   ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))),
-                                                                  ('${epsg_code}', projection.lower()),
-                                                                  ('${validation_info}', validation_info)])
+                                                                  ('${epsg_code}', layer_proj),
+                                                                  ('${validation_info}', validation_info)],
+                                                                  ('${class_style}', class_style))
                 layer_strings.append(new_layer_string)
         except KeyError:
             # TODO: format for properly logging an error
@@ -236,7 +262,7 @@ for layer in layers:
         etree.SubElement(data_window_element, 'TileCountY').text = str(matrix_height)
         etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
-        etree.SubElement(out_root, 'Projection').text = projection
+        etree.SubElement(out_root, 'Projection').text = epsg_code
         etree.SubElement(out_root, 'BlockSizeX').text = str(tile_width)
         etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
         etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
@@ -257,15 +283,17 @@ for layer in layers:
             template_string = f.read()
 
         template_string = bulk_replace(template_string, [('${layer_name}', layer_name),
-                                                         ('${layer_type}', "RASTER"),
                                                          ('${layer_title}', layer_name),
+                                                         ('${layer_type}', "RASTER"),
+                                                         ('${wms_extent}', wms_extent),
+                                                         ('${wms_srs}', wms_srs),
                                                          ('${wms_layer_group}', wms_layer_group),
                                                          ('${dimension_info}',dimension_info),
                                                          ('${style_info}', style_info),
-                                                         ('${class_style}', ""),
                                                          ('${data_xml}', etree.tostring(out_root).decode()),
-                                                         ('${epsg_code}', projection.lower()),
-                                                         ('${validation_info}', validation_info)])
+                                                         ('${class_style}', ""),
+                                                         ('${validation_info}', validation_info)],
+                                                         ('${epsg_code}', layer_proj))
     
         layer_strings.append(template_string)
 
