@@ -6,6 +6,7 @@ tilematrixset: "16km"
 mime_type: "image/jpeg"
 static: true
 abstract: "test_static_jpg abstract"
+wms_layer_group: "/test_static_jpg"
 metadata:
   - {}
 source_mrf:

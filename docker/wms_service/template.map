@@ -1,6 +1,6 @@
 LAYER
         NAME    "${layer_name}"
-        TYPE    "${layer_type}"
+        TYPE    ${layer_type}
         STATUS  ON
         METADATA
                 "wms_title"             "${layer_title}"

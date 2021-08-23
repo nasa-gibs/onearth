@@ -284,7 +284,7 @@ for layer in layers:
 
         template_string = bulk_replace(template_string, [('${layer_name}', layer_name),
                                                          ('${layer_title}', layer_name),
-                                                         ('${layer_type}', "RASTER"),
+                                                         ('${layer_type}', 'RASTER'),
                                                          ('${wms_extent}', wms_extent),
                                                          ('${wms_srs}', wms_srs),
                                                          ('${wms_layer_group}', wms_layer_group),

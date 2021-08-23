@@ -130,6 +130,7 @@
         <Name>snap_test_3a</Name>
         <Title>snap_test_3a</Title>
         <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
         <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
         <BoundingBox SRS="EPSG:4326"
                     minx="-180" miny="-90" maxx="180" maxy="90" />
@@ -144,6 +145,7 @@
         <Name>snap_test_3b</Name>
         <Title>snap_test_3b</Title>
         <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
         <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
         <BoundingBox SRS="EPSG:4326"
                     minx="-180" miny="-90" maxx="180" maxy="90" />
@@ -158,6 +160,7 @@
         <Name>test_legacy_subdaily_jpg</Name>
         <Title>test_legacy_subdaily_jpg</Title>
         <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
         <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
         <BoundingBox SRS="EPSG:4326"
                     minx="-180" miny="-90" maxx="180" maxy="90" />
@@ -172,6 +175,7 @@
         <Name>test_static_jpg</Name>
         <Title>test_static_jpg</Title>
         <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
         <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
         <BoundingBox SRS="EPSG:4326"
                     minx="-180" miny="-90" maxx="180" maxy="90" />
@@ -184,6 +188,7 @@
         <Name>test_weekly_jpg</Name>
         <Title>test_weekly_jpg</Title>
         <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
         <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
         <BoundingBox SRS="EPSG:4326"
                     minx="-180" miny="-90" maxx="180" maxy="90" />
