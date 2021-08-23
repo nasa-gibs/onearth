@@ -32,7 +32,7 @@ The tests have additional dependencies from the rest of OnEarth. To install the 
 ## Running the Tests
 Each test script will output a JUnit XML results file. By default, these files are named `test_layer_config_results.xml` and `test_mod_onearth_results.xml`. A different output filename can be specified with the `-o` option, i.e. `sudo python3 test_mod_onearth.py -o output_file.xml`.
 
-**Note that the included `mod_onearth_test_data/twms_endpoint/kmlgen.cgi` has been compiled for use in CentOS 6. It may need to be recompiled for other systems. For more information, see [OnEarth Endpoint Configuration](doc/config_endpoint.md).**
+**Note that the included `mod_onearth_test_data/twms_endpoint/kmlgen.cgi` has been compiled for use in CentOS 8. It may need to be recompiled for other systems. For more information, see [OnEarth Endpoint Configuration](doc/config_endpoint.md).**
 
 **Note also that the mrfgen tests involve the downloading and processing of imagery, so they may take a while to complete. You may experience 'out of memory' errors if running these tests in a VM without enough memory configured.**
 

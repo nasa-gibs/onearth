@@ -7,7 +7,7 @@ RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf config-manager --set-enabled powertools
 RUN dnf install -y python3
 RUN yum -y install epel-release && yum clean all
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el8.x86_64.rpm" && \
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-4/gibs-gdal-2.4.4-4.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-4/gibs-gdal-devel-2.4.4-4.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-4/gibs-gdal-apps-2.4.4-4.el8.x86_64.rpm" && \
 	yum clean all
 RUN yum -y install proj-devel httpd glibc-locale-source glibc-langpack-en && yum clean all
 
