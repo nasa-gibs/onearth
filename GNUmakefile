@@ -33,7 +33,6 @@ LINE=735
 HTTPD_URL=https://archive.apache.org/dist/httpd/$(HTTPD_ARTIFACT)
 
 MAPSERVER_VERSION=7.4.3
-endif
 MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
 MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)

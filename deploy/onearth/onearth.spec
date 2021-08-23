@@ -381,7 +381,7 @@ sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe
 pip3 install unittest2 unittest-xml-reporting==1.14.0 requests cycler==0.10.0
 
 %changelog
-* Sub Aug 22 2021 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.1-1
+* Sun Aug 22 2021 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.1-1
 - Use mapserver-7.4.3 for CentOS 7 and 8
 
 * Mon Apr 05 2021 Joe T. Roberts <joe.t.roberts@jpl.nasa.gov> - 1.4.0-4
