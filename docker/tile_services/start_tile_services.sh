@@ -28,6 +28,8 @@ mkdir -p /onearth/layers
 mkdir -p /etc/onearth/config/conf/
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
+
+# Set up empty tiles
 mkdir -p /etc/onearth/empty_tiles/
 
 # Set up colormaps
@@ -36,6 +38,21 @@ mkdir -p /etc/onearth/colormaps/v1.0/
 mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
+
+# Set up legends
+mkdir -p /etc/onearth/legends/
+
+# Set up layer-metadata
+mkdir -p /etc/onearth/layer-metadata/
+mkdir -p /etc/onearth/layer-metadata/v1.0/
+
+# Set up vector-metadata
+mkdir -p /etc/onearth/vector-metadata/
+mkdir -p /etc/onearth/vector-metadata/v1.0/
+
+# Set up vector-styles
+mkdir -p /etc/onearth/vector-styles/
+mkdir -p /etc/onearth/vector-styles/v1.0/
 
 # Copy OnEarth configs from S3 or from local samples
 if [ -z "$S3_CONFIGS" ]
@@ -48,6 +65,10 @@ then
   cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
   cp ../sample_configs/empty_tiles/* /etc/onearth/empty_tiles/
   cp -R ../sample_configs/colormaps/* /etc/onearth/colormaps/
+  cp -R ../sample_configs/legends/* /etc/onearth/legends/
+  cp -R ../sample_configs/layer-metadata/* /etc/onearth/layer-metadata/
+  cp -R ../sample_configs/vector-metadata/* /etc/onearth/vector-metadata/
+  cp -R ../sample_configs/vector-styles/* /etc/onearth/vector-styles/
 
   cd /home/oe2/onearth/docker/tile_services
 
@@ -70,12 +91,31 @@ then
   cp ../test_configs/layers/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
 
 else
-	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+  echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
 
+  # empty tiles
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
+
+  # colormaps
   python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
   python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
 
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
+  # legends
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/legends/' -b $S3_CONFIGS -p legends >>/var/log/onearth/config.log 2>&1
+  
+  # layer-metadata
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/layer-metadata/index.html' -b $S3_CONFIGS -p layer-metadata/index.html >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/layer-metadata/v1.0' -b $S3_CONFIGS -p layer-metadata/v1.0 >>/var/log/onearth/config.log 2>&1
+  
+  # vector-metadata
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-metadata/index.html' -b $S3_CONFIGS -p vector-metadata/index.html >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-metadata/v1.0' -b $S3_CONFIGS -p vector-metadata/v1.0 >>/var/log/onearth/config.log 2>&1
+  
+  # vector-styles
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-styles/index.html' -b $S3_CONFIGS -p vector-styles/index.html >>/var/log/onearth/config.log 2>&1
+  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-styles/v1.0' -b $S3_CONFIGS -p vector-styles/v1.0 >>/var/log/onearth/config.log 2>&1
+
+  # main configs
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
@@ -93,7 +133,7 @@ find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_URL}@'$S3_URL'@g' {} \;
 
 # Generate Colormap HTML
-ln -s /etc/onearth/colormaps /var/www/html/colormaps
+ln -s /etc/onearth/colormaps /var/www/html/
 for f in /etc/onearth/colormaps/v1.0/*.xml
 do
   echo "Generating HTML for $f"
@@ -109,6 +149,18 @@ do
   html=${base/"xml"/"html"}
   /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
 done
+
+# Link legends
+ln -s /etc/onearth/legends /var/www/html/
+
+# Link layer-metadata
+ln -s /etc/onearth/layer-metadata /var/www/html/
+
+# Link vector-metadata
+ln -s /etc/onearth/vector-metadata /var/www/html/
+
+# Link vector-styles
+ln -s /etc/onearth/vector-styles /var/www/html/
 
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/

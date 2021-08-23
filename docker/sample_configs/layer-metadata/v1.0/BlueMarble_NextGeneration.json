@@ -1,0 +1,10 @@
+{
+  "title": "Blue Marble (August 2004)",
+  "subtitle": "MODIS / NASA Earth Observatory",
+  "ongoing": false,
+  "measurement": "Blue Marble",
+  "retentionPeriod": -1,
+  "daynight": [
+    "day"
+  ]
+}

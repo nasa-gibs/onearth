@@ -100,7 +100,7 @@ def seed_redis_best_data(layers, filename, db_keys=None):
             db_keystring += key + ':'
 
     for layer in layers:
-        r.hmset('{0}best:layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
+        r.hmset('{0}layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -458,8 +458,12 @@ class TestDateService(unittest.TestCase):
                 res = r.json()
                 print(f'res = {res}')
                 returned_date = res['date']
+                returned_prefix = res['prefix']
                 if not DEBUG:
                     remove_redis_layer(test_layer, db_keys=[key])
+                self.assertEqual(
+                    returned_prefix, best_filename,
+                    f'Error with date snapping: for with key {key}, date {test_layer[3]} was requested and date {returned_prefix} was returned. Should be {best_filename}')
                 self.assertEqual(
                     returned_date, test_layer[4],
                     'Error with date snapping: for with key {0}, date {1} was requested and date {2} was returned. Should be {3}'

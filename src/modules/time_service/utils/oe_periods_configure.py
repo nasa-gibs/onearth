@@ -77,26 +77,16 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
               'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
+    
+    if 'projection' in layer_configs[0]['config'].keys():
+            proj = str(layer_configs[0]['config']['projection']). \
+                lower().replace(':', '')
+    tag_str = f'{proj}{tag}' if tag is not None else proj
+
     for layer_config in layer_configs:
         config_path = str(layer_config['path'].absolute())
         print(f'Adding time period configuration from {config_path}')
-        if tag is None:
-            # attempt to detect tags based on filepath if none provided
-            if 'all/' in config_path:
-                tag = ':all'
-            elif 'best/' in config_path:
-                tag = ':best'
-            elif 'nrt/' in config_path:
-                tag = ':nrt'
-            elif 'std/' in config_path:
-                tag = ':std'
-            if tag is not None and \
-               'projection' in layer_config['config'].keys():
-                tag = str(layer_config['config']['projection']). \
-                    lower().replace(':', '') + tag
-
-        tag_str = f'{tag}:' if tag else ''
-        key = tag_str + 'layer:' + str(layer_config['config']['layer_id'])
+        key = tag_str + ':layer:' + str(layer_config['config']['layer_id'])
 
         if 'time_config' in layer_config['config'].keys():
             key_config = key + ':config'

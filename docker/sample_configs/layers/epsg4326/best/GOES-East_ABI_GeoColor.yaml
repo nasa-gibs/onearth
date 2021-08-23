@@ -11,9 +11,9 @@ projection: EPSG:4326
 source_mrf:
   bands: 4
   bbox: -180,-90,180,90
-  data_file_uri: '{S3_URL}/epsg4326/GOES-East_ABI_GeoColor'
+  data_file_uri: '{S3_URL}/epsg4326'
   empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
-  idx_path: /onearth/idx/epsg4326/GOES-East_ABI_GeoColor
+  idx_path: /onearth/idx/epsg4326
   size_x: 40960
   size_y: 20480
   tile_size_x: 512

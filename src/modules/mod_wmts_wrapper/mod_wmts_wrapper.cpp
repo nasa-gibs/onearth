@@ -424,16 +424,18 @@ static int handleKvP(request_rec *r)
     return DECLINED;
 }
 
-static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **filename, char **date_string) {
+static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **prefix, char **filename, char **date_string) {
     // First, check to see if we've already looked up a request for this layer and date
     const char *last_layer = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_layer_name");
     const char *last_date_req = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_date_requested");
+    const char *last_prefix_found = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_prefix_found");
     const char *last_date_found = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_date_found");
     const char *last_filename_found = apr_table_get(r->connection->notes, "mod_wmts_wrapper_last_filename_found");
     if ((last_layer && apr_strnatcasecmp(layer_name, last_layer) == 0)
         && (last_date_req && apr_strnatcasecmp(last_date_req, datetime_str) == 0)
         && last_date_found
         && last_filename_found) {
+        *prefix = apr_pstrdup(r->pool, last_prefix_found);
         *date_string = apr_pstrdup(r->pool, last_date_found);
         *filename = apr_pstrdup(r->pool, last_filename_found);
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Found cached date data!");
@@ -499,9 +501,10 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         return HTTP_NOT_FOUND;
     }
 
-    json_unpack(root, "{s:s, s:s}", "date", date_string, "filename", filename);
+    json_unpack(root, "{s:s, s:s, s:s}", "prefix", prefix, "date", date_string, "filename", filename);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_layer_name", layer_name);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_requested", datetime_str);
+    apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_prefix_found", *prefix);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_found", *date_string);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_filename_found", *filename);
 
@@ -661,10 +664,10 @@ static int pre_hook(request_rec *r)
                     if (cfg->layer_alias) {
                     	layer_name = apr_psprintf(r->pool, "%s", cfg->layer_alias);
                     }
+                    char *prefix = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
-
-                    status = get_filename_and_date_from_date_service(r, cfg, layer_name, datetime_str, &filename, &date_string);
+                    status = get_filename_and_date_from_date_service(r, cfg, layer_name, datetime_str, &prefix, &filename, &date_string);
                     if (status != APR_SUCCESS) return status;
 
                     mrf_conf *out_cfg = (mrf_conf *)apr_palloc(r->pool, sizeof(mrf_conf));
@@ -672,16 +675,19 @@ static int pre_hook(request_rec *r)
 
                     const char *year = apr_pstrndup(r->pool, date_string, 4);
                     if (mrf_config->datafname) {
-                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->datafname, filename);
+                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->datafname, prefix);
+                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->datafname, filename);
                         if (cfg->year_dir)
                             out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->datafname, year);
                     }
                     if (mrf_config->redirect) {
-                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->redirect, filename);
+                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->redirect, prefix);
+                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->redirect, filename);
                         if (cfg->year_dir)
                             out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->redirect, year);
                     }
-                    out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", mrf_config->idxfname, filename);
+                    out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->idxfname, prefix);
+                    out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->idxfname, filename);
                     // Add the year dir to the IDX filename if that option is configured
                     if (cfg->year_dir)
                         out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);

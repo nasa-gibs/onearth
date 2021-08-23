@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,30 +13,28 @@
 # limitations under the License.
 """
 This script synchronizes OnEarth config files on S3 with those on a file system.
-Files on S3 will always act as the 'master' (i.e., files found on S3 that are not on the file system 
+Files on S3 will always act as the 'master' (i.e., files found on S3 that are not on the file system
 will be downloaded, while files found on the file system but not on S3 will be deleted).
 File modifications are not detected. Use --force to overwrite existing files.
 """
+import argparse
 import os
 import boto3
+from botocore.exceptions import ClientError
 from functools import reduce
-from datetime import datetime
 from pathlib import Path
-import argparse
-import tarfile
-import shutil
+
 
 def keyMapper(acc, obj):
     keyElems = obj['Key'].split("/")
     filename = keyElems[-1]
-    
+
     if not acc.get('config'):
         acc = {'config': set([])}
 
-    # works with yaml/xml configs or images (e.g., empty tiles)
-    if (filename.endswith('.yaml') or filename.endswith('.xml') or
-            filename.endswith('.jpeg') or filename.endswith('.jpg') or filename.endswith('.png') or 
-            filename.endswith('.header') or filename.endswith('.txt') or filename.endswith('.sym')):
+    # works with yaml/xml/json/html configs or images (e.g., empty tiles)
+    ext = ['.yaml', '.xml', '.html', '.jpeg', '.jpg', '.png', '.svg', '.header', '.txt', '.sym', '.json']
+    if filename.endswith(tuple(ext)):
         acc['config'].add(filename)
 
     return acc
@@ -58,12 +56,12 @@ def getAllKeys(conn, bucket, prefix):
     return keys
 
 
-def syncIdx(bucket,
-            dir,
-            prefix,
-            force,
-            dry_run,
-            s3_uri=None):
+def syncConfigs(bucket,
+                dir,
+                prefix,
+                force,
+                dry_run,
+                s3_uri=None):
     session = boto3.session.Session()
     s3 = session.client(service_name='s3', endpoint_url=s3_uri)
 
@@ -75,23 +73,30 @@ def syncIdx(bucket,
 
     for data, config in objects.items():
         print(f'Loading configs from: {prefix}')
-        
+
         # Find existing files on file system
-        if force: # we don't care about existing files when forcing overwrite
+        if force:  # we don't care about existing files when forcing overwrite
             fs_files = []
         else:
             fs_list = list(Path(dir).rglob("*.[yY][aA][mM][lL]"))
             fs_files = [str(f).split('/')[-1] for f in fs_list]
         s3_files = [v for v in config]
-        
+
         # Copy files from S3 that aren't on file system
         for s3_file in list(set(s3_files) - set(fs_files)):
-            print(f'Downloading file: {prefix}/{s3_file}')
-            filename = dir + '/' + s3_file
+            if dir.endswith('index.html') and s3_file == ('index.html'):  # avoid issues with index.html files
+                s3_file = ''
+            else:
+                s3_file = '/' + s3_file
+            filename = dir + s3_file
+            print(f'Downloading file: {prefix}{s3_file}')
 
             if not dry_run:
-                s3.download_file(bucket, prefix + '/' + s3_file, filename)
-                 
+                try:
+                    s3.download_file(bucket, prefix + s3_file, filename)
+                except ClientError as e:  # we want to continue if a file download fails
+                    print(e)
+
         # Delete files from file system that aren't on S3
         for fs_file in list(set(fs_files) - set(s3_files)):
             if os.path.isfile(fs_file):
@@ -99,7 +104,7 @@ def syncIdx(bucket,
 
                 if not dry_run:
                     os.remove(fs_file)
-                
+
 
 # Routine when run from CLI
 
@@ -149,9 +154,9 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-syncIdx(args.bucket,
-        args.dir,
-        args.prefix,
-        args.force,
-        args.dry_run,
-        s3_uri=args.s3_uri)
+syncConfigs(args.bucket,
+            args.dir,
+            args.prefix,
+            args.force,
+            args.dry_run,
+            s3_uri=args.s3_uri)

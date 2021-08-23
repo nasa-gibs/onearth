@@ -43,144 +43,24 @@ Each test script will output a JUnit XML results file. By default, these files a
 
 --------
 ## Time Service Tests
+1. Tests that a request to timeservice without parameters will return all records
+2. Test time snap for P1Y layer (year)
+3. Test time snap for P7D layer (week)
+4. Test time snap for P1M layer (month)
+5. Test time snap for PT2H layer (hour)
+6. Test time snap for PT6M layer (minute)
+7. Test time snap for PT6M layer (second)
+8. Test invalid layer error
+9. Test invalid date error 
+10. Test out of range error for periods
+11. Test snap with single key parameter (key1)
+12. Test best layer to check filename, prefix, date
+13. Test snap with multiple key parameter (key1, key2, key3, etc)
+14. Test snapping to one of multiple periods
 
-1.  **Regular Daily date (P1D)**
 
-    a.  **2015-01-01/2016-12-31/P1D**
-
-        i.  2015-01-01 -> 2015-01-01
-
-        ii. 2015-01-02 -> 2015-01-02
-
-        iii. 2016-02-29 -> 2016-02-29
-
-        iv. 2017-01-01 -> Blank Tile
-
-    b.  **2015-01-01/2015-01-10/P1D, 2015-01-12/2015-01-31/P1D**
-
-        i.  2015-01-01 -> 2015-01-01
-
-        ii. 2015-01-11 -> Blank Tile
-
-        iii. 2015-01-12 -> 2015-01-12
-
-        iv. 2015-02-01 -> Blank Tile
-
-2.  **Regular Multi-day date snapping (e.g. consistent 8-day, monthly, yearly cadence)**
-
-    a.  **2015-01-01/2016-01-01/P1M**
-
-        i.  2015-01-01 -> 2015-01-01
-
-        ii. 2015-01-20 -> 2015-01-01
-
-        iii. 2015-12-31 -> 2015-12-01
-
-        iv. 2016-01-01 -> 2016-01-01
-
-        v.  2016-01-20 -> 2016-01-01
-
-        vi. 2016-02-01 -> Blank Tile
-
-        vii. 2014-12-31 -> Blank Tile
-
-    b.  **2015-01-01/2016-01-01/P3M**
-
-        i.  2015-01-01 -> 2015-01-01
-
-        ii. 2015-01-20 -> 2015-01-01
-
-        iii. 2015-12-31 -> 2015-10-01
-
-        iv. 2016-01-01 -> 2016-01-01
-
-        v.  2016-01-20 -> 2016-01-01
-
-        vi. 2016-04-01 -> Blank Tile
-
-        vii. 2014-12-31 -> Blank Tile
-
-    c.  **1990-01-01/2016-01-01/P1Y**
-
-        i.  1990-01-01 -> 2000-01-01
-
-        ii. 1990-05-20 -> 2000-01-01
-
-        iii. 2000-01-01 -> 2000-01-01
-
-        iv. 2000-05-20 -> 2000-01-01
-
-        v.  2005-12-31 -> 2005-01-01
-
-        vi. 2008-10-01 -> 2008-01-01
-
-        vii. 2016-11-20 -> 2016-01-01
-
-        viii. 2017-01-01 -> Blank Tile
-
-        ix. 1989-12-31 -> Blank Tile
-
-    d.  **2010-01-01/2012-03-11/P8D**
-
-        i.  2010-01-01 -> 2010-01-01
-
-        ii. 2010-01-04 -> 2010-01-01
-
-        iii. 2010-01-10 -> 2010-01-09
-
-        iv. 2012-03-11 -> 2012-03-11
-
-        v.  2012-03-14 -> 2012-03-11
-
-        vi. 2012-03-19 -> Blank Tile
-
-        vii. 2009-12-31 -> Blank Tile
-
-3.  **Irregular Multi-day date snapping (e.g. irregular periods intermixed with consistent periods)**
-
-    a.  **2000-01-01/2000-06-01/P1M,2000-07-03/2000-07-03/P1M,2000-08-01/2000-12-01/P1M**
-
-        i.  2000-01-01 -> 2000-01-01
-
-        ii. 2000-01-20 -> 2000-01-01
-
-        iii. 2000-06-10 -> 2000-06-01
-
-        iv. 2000-07-01 -> Blank Tile
-
-        v.  2000-07-02 -> Blank Tile
-
-        vi. 2000-07-03 -> 2000-07-03
-
-        vii. 2000-07-20 -> 2000-07-03
-
-        viii. 2000-08-01 -> 2000-08-01
-
-        ix. 2000-08-10 -> 2000-08-01
-
-        x.  2000-12-31 -> 2000-12-01
-
-        xi. 1999-12-31 -> Blank Tile
-
-        xii. 2001-01-01 -> Blank Tile
-
-    b.  **2001-01-01/2001-12-27/P8D, 2002-01-01/2002-12-27/P8D**
-
-        i.  2001-01-01 -> 2001-01-01
-
-        ii. 2001-01-05 -> 2001-01-1
-
-        iii. 2001-05-14 -> 2001-05-09
-
-        iv. 2002-01-01 -> 2002-01-01
-
-        v.  2000-12-31 -> Blank Tile
-
-        vi. 2003-01-01 -> 2002-12-27
-
-        vii. 2003-01-04 -> Blank Tile
-        
 ## Time Utilities Tests
+***There are currently two sets of tests endpoint agonostic and endpoint specific, endpoint specific are marked with _dep(deprecated) at the end. ***
 1. Time scrape S3 keys
 2. Time scrape S3 inventory
 3. Test period generation with single date

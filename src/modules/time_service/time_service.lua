@@ -137,10 +137,8 @@ local function redis_handler (options)
             if snap_date_string then
                 local best_prefix_string = prefix_string .. "layer:"
                 local _, _, proj, typ  = string.find(best_prefix_string, "(%w+):(%a+):layer") -- replace type with best
-                if (typ) then 
+                if (typ ~= nil) then 
                     best_prefix_string = best_prefix_string:gsub(typ, "best", 1)
-                else 
-                    best_prefix_string = best_prefix_string:gsub(":layer", ":best:layer", 1)
                 end
                 local best_layer_name = client:hget(best_prefix_string .. layer_name .. ":best", snap_date_string)
                 if best_layer_name then
@@ -232,6 +230,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         if string.lower(request_date_string) == "default" then
             local default_date = date_util(layer_datetime_info[layer_name].default)
             local out_msg = {
+                prefix = layer_name,
                 date = default_date:fmt(datetime_format),
                 filename = filename_handler(layer_name, default_date)}
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
@@ -302,6 +301,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             -- Use "best" layer name if exists, otherwise just use layer_name
             local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, snap_date_string)
             local out_msg = {
+                prefix = best_layer_name,
                 date = snap_date_string,
                 filename = filename_handler(best_layer_name, snap_date)}
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
