@@ -80,8 +80,26 @@ EOS
 # Run reproject config tools
 # TODO be more purposed in how long we're waiting for the source WMTS services to be up
 # TODO maybe look for http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml to respond
-echo "Sleeping for 60 seconds, giving the capabilities and tiles services time to start"
-sleep 60
+#echo "Sleeping for 60 seconds, giving the capabilities and tiles services time to start"
+#sleep 60
+if [ -z "$S3_CONFIGS" ]; then #local
+  get_Cap="http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml"
+  wmts="http://172.17.0.1:8080/status/"
+else #gitc
+  get_Cap="http://172.17.0.1:80/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
+  wmts="http://172.17.0.1:80/wmts/epsg4326/best/BlueMarble_NextGeneration/default/500m/0/0/0.jpeg"
+fi
+time_out=60
+while [[ "$(curl -s -m 2 -o /dev/null -w ''%{http_code}'' "${wmts}")" != "200" || 
+         "$(curl -s -m 2 -o /dev/null -w ''%{http_code}'' "${get_Cap}")" != "200" ]]; do 
+  if [[ $time_out -lt 0 ]]; then
+	echo "Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
+  else 
+  	echo "waiting for gc or wmts endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	sleep 5; #curl in 5 second intervals
+  	time_out=$(($time_out-5));
+  fi
+done
 
 # Start apache so that reproject responds locally for configuration
 echo 'Starting Apache server'

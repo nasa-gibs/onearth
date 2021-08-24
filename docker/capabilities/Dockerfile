@@ -81,3 +81,5 @@ USER www-data
 WORKDIR /home/oe2/onearth/docker/capabilities
 CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $S3_CONFIGS
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/
+
+HEALTHCHECK CMD curl --fail http://localhost/wmts/oe-status/wmts.cgi?SERVICE=WMTS&request=GetCapabilities || exit 1

@@ -33,10 +33,12 @@ OnEarth Docker containers accept the following environment variables. Use the `-
     (e.g., gitc.0001.use1.cache.amazonaws.com)
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* HealthCheck: http://localhost/wmts/oe-status/wmts.cgi?SERVICE=WMTS&request=GetCapabilities
 
 ### onearth-reproject
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* HealthCheck: http://localhost/oe-status_reproject/BlueMarble16km/default/2004-08-01/GoogleMapsCompatible_Level3/0/0/0.jpeg
 
 ### onearth-tile-services
 * S3_URL: HTTP URL to the public S3 bucket containing MRFs
@@ -46,6 +48,7 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 * IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk with those found in the S3 URL
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* HealthCheck: http://localhost/status/
 
 ### onearth-time-service
 * S3_URL: HTTP URL to the public S3 bucket containing MRFs
@@ -53,10 +56,12 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 * REDIS_HOST: Redis endpoint URL
     (e.g., gitc.0001.use1.cache.amazonaws.com)
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
+* HealthCheck: http://localhost/oe2-time-service-proxy-onearth-time-service/
 
 ### onearth-wms
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
 * ENDPOINT_REFRESH: Interval for refreshing the WMS endpoints in minutes
+* HealthCheck: http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34
 
 See [OnEarth Configuration](../doc/configuration.md) for more information.
 

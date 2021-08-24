@@ -42,3 +42,5 @@ USER www-data
 # Start HTTPD server
 WORKDIR /home/oe2
 CMD sh start_demo.sh $DEBUG_LOGGING
+
+HEALTHCHECK CMD curl --fail http://localhost/demo/ || exit 1 

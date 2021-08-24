@@ -99,3 +99,5 @@ USER www-data
 
 WORKDIR /home/oe2/onearth/docker/tile_services
 CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $IDX_SYNC $DEBUG_LOGGING $S3_CONFIGS
+
+HEALTHCHECK CMD curl --fail http://localhost/status/ || exit 1 

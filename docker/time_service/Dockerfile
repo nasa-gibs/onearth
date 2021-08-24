@@ -74,3 +74,5 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 USER www-data
 
 CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $FORCE_TIME_SCRAPE $S3_CONFIGS
+
+HEALTHCHECK CMD curl --fail http://localhost/oe2-time-service-proxy-onearth-time-service || exit 1 

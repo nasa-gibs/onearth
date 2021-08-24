@@ -86,3 +86,5 @@ USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
 CMD sh start_wms_service.sh $S3_CONFIGS $ENDPOINT_REFRESH
+
+HEALTHCHECK CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
