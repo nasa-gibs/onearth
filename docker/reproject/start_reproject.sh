@@ -95,7 +95,7 @@ while [[ "$(curl -s -m 2 -o /dev/null -w ''%{http_code}'' "${wmts}")" != "200" |
   if [[ $time_out -lt 0 ]]; then
 	echo "Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
   else 
-  	echo "waiting for gc or wmts endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	echo "waiting for ${get_Cap} or ${wmts} endpoints...">>/var/log/onearth/config.log 2>&1; 
   	sleep 5; #curl in 5 second intervals
   	time_out=$(($time_out-5));
   fi
