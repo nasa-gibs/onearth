@@ -81,10 +81,11 @@ EOS
 # TODO be more purposed in how long we're waiting for the source WMTS services to be up
 # TODO maybe look for http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml to respond
 #echo "Sleeping for 60 seconds, giving the capabilities and tiles services time to start"
-#sleep 60
+#sleep 60 
+# check $S3_CONFIGS to determine if local of gitc, then will curl gc and wmts endpoints
 if [ -z "$S3_CONFIGS" ]; then #local
   get_Cap="http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml"
-  wmts="http://172.17.0.1:8080/status/"
+  wmts="http://172.17.0.1:8080/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg"
 else #gitc
   get_Cap="http://172.17.0.1:80/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
   wmts="http://172.17.0.1:80/wmts/epsg4326/best/BlueMarble_NextGeneration/default/500m/0/0/0.jpeg"
