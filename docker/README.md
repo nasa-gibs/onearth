@@ -48,7 +48,7 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 * IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk with those found in the S3 URL
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
-* HealthCheck: http://localhost/status/
+* HealthCheck: http://localhost/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg
 
 ### onearth-time-service
 * S3_URL: HTTP URL to the public S3 bucket containing MRFs
