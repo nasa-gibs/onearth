@@ -100,4 +100,6 @@ USER www-data
 WORKDIR /home/oe2/onearth/docker/tile_services
 CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $IDX_SYNC $DEBUG_LOGGING $S3_CONFIGS
 
-HEALTHCHECK CMD curl --fail http://localhost/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg || exit 1 
+#interval:30s, timeout:30s, start-period:30s, retries:3
+HEALTHCHECK --start-period=30s \
+  CMD curl --fail http://localhost/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg || exit 1 

@@ -81,4 +81,6 @@ USER www-data
 WORKDIR /home/oe2/onearth/docker/reproject
 CMD sh start_reproject.sh $DEBUG_LOGGING $S3_CONFIGS
 
-HEALTHCHECK CMD curl --fail http://localhost/oe-status_reproject/BlueMarble16km/default/2004-08-01/GoogleMapsCompatible_Level3/0/0/0.jpeg || exit 1 
+#interval:30s, timeout:30s, start-period:300s, retries:3
+HEALTHCHECK --start-period=300s \
+  CMD curl --fail http://localhost/oe-status_reproject/BlueMarble16km/default/2004-08-01/GoogleMapsCompatible_Level3/0/0/0.jpeg || exit 1 
