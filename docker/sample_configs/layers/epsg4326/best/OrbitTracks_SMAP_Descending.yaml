@@ -26,18 +26,18 @@ shapefile_configs:
   layer_style: /etc/onearth/config/mapfile_styles/OrbitTracks_SMAP_Descending_Points.txt
   layer_title: Orbit Tracks (Descending, Points, SMAP)
   source_shapefile:
-    data_file_uri: '{S3_URL}/epsg4326/OrbitTracks_SMAP_Descending_Points/%2021%/OrbitTracks_SMAP_Descending_Points-%2021001000000%'
+    data_file_uri: '{SHAPEFILE_BUCKET}/epsg4326/OrbitTracks_SMAP_Descending_Points/%2021%/OrbitTracks_SMAP_Descending_Points-%2021001000000%'
     feature_type: POINT
 - layer_id: OrbitTracks_SMAP_Descending_Lines
   layer_style: /etc/onearth/config/mapfile_styles/OrbitTracks_SMAP_Descending_Lines.txt
   layer_title: Orbit Tracks (Descending, Lines, SMAP)
   source_shapefile:
-    data_file_uri: '{S3_URL}/epsg4326/OrbitTracks_SMAP_Descending_Lines/%2021%/OrbitTracks_SMAP_Descending_Lines-%2021001000000%'
+    data_file_uri: '{SHAPEFILE_BUCKET}/epsg4326/OrbitTracks_SMAP_Descending_Lines/%2021%/OrbitTracks_SMAP_Descending_Lines-%2021001000000%'
     feature_type: LINE
 source_mrf:
   bands: null
   bbox: -180,-90,180,90
-  data_file_uri: '{S3_URL}/epsg4326'
+  data_file_uri: '{SHAPEFILE_BUCKET}/epsg4326'
   idx_path: /onearth/idx/epsg4326
   size_x: 20480
   size_y: 10240
