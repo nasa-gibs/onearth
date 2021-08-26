@@ -36,8 +36,6 @@ VALIDATION_TEMPLATE = """
         END
 """
 
-# TODO assign the environment variable with the S3 bucket URL here when GITC-2573 is completed
-S3_URL = "REPLACE WITH ENVIRONMENT VARIABLE" 
 
 def get_map_bounds(bbox, epsg, scale_denominator, tilesize, matrix_width, matrix_height):
     upper_left_x, lower_right_y, lower_right_x, upper_left_y = bbox
@@ -96,9 +94,12 @@ def get_layer_configs(endpoint_config):
 # Parse arguments
 parser = argparse.ArgumentParser(description='Make WMS endpoint.')
 parser.add_argument('endpoint_config', type=str, help='an endpoint config YAML file')
+parser.add_argument('shapefile_bucket', type=str, default='', help='S3 bucket used for shapefiles')
 args = parser.parse_args()
 endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
+shapefile_bucket = args.shapefile_bucket
 print('Using endpoint config ' + args.endpoint_config)
+print('Using shapefile bucket ' + args.shapefile_bucket)
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
@@ -234,8 +235,7 @@ for layer in layers:
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', dimension_info),
                                                                   ('${style_info}', style_info),
-                                                                  # TODO need to verify that this works and the `/vsis3/...` part is formatted correctly when GITC-2573 is completed
-                                                                  ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{S3_URL}',S3_URL), layer_name))),
+                                                                  ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket), layer_name))),
                                                                   ('${epsg_code}', layer_proj),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style)])
