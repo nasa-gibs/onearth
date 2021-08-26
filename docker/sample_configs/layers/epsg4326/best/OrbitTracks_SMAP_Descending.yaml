@@ -37,7 +37,7 @@ shapefile_configs:
 source_mrf:
   bands: null
   bbox: -180,-90,180,90
-  data_file_uri: '{SHAPEFILE_BUCKET}/epsg4326'
+  data_file_uri: '{S3_URL}/epsg4326'
   idx_path: /onearth/idx/epsg4326
   size_x: 20480
   size_y: 10240
