@@ -213,10 +213,9 @@ for layer in layers:
         try:
             wms_layer_group = '"wms_layer_group"       "{0}"'.format(layer_config['config']['wms_layer_group'])
         except KeyError:
-            print("Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
+            print("WARN: Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
     else:
-        print("ERROR: Layer config for layer {0} not found".format(layer_name))
-        continue
+        print("WARN: Layer config for layer {0} not found".format(layer_name))
 
     # handle vector layers
     if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
