@@ -94,12 +94,15 @@ def get_layer_configs(endpoint_config):
 # Parse arguments
 parser = argparse.ArgumentParser(description='Make WMS endpoint.')
 parser.add_argument('endpoint_config', type=str, help='an endpoint config YAML file')
-parser.add_argument('shapefile_bucket', type=str, default='', help='S3 bucket used for shapefiles')
+parser.add_argument('--shapefile_bucket', dest='shapefile_bucket', type=str, default='', help='S3 bucket used for shapefiles')
 args = parser.parse_args()
 endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
-shapefile_bucket = args.shapefile_bucket
 print('Using endpoint config ' + args.endpoint_config)
-print('Using shapefile bucket ' + args.shapefile_bucket)
+if args.shapefile_bucket != '':
+    print('Using shapefile bucket ' + args.shapefile_bucket)
+    shapefile_bucket = '/vsis3/' + args.shapefile_bucket
+else:
+    shapefile_bucket = ''
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
@@ -234,7 +237,7 @@ for layer in layers:
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', dimension_info),
                                                                   ('${style_info}', style_info),
-                                                                  ('${data_xml}', '/vsis3/{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket), layer_name))),
+                                                                  ('${data_xml}', '{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket), layer_name))),
                                                                   ('${epsg_code}', layer_proj),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style)])
