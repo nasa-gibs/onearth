@@ -1,8 +1,8 @@
 #!/bin/sh
 DEBUG_LOGGING=${1:-false}
 S3_CONFIGS=$2
-TILES_HEALTHCHECK=$3
-GC_HEALTHCHECK=$4
+TILES_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+GC_HEALTHCHECK=${4:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -79,29 +79,14 @@ Header Unset ETag
 FileETag None
 EOS
 
-#default
-port="8080"
-get_cap_endpoint="/oe-status/1.0.0/WMTSCapabilities.xml"
-wmts_endpoint="/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg"
-# if $TILES_HEALTHCHECK or GC_HEALTHCHECK exist update endpoints and port
-if [ ! -z "$TILES_HEALTHCHECK" ]; then
-  wmts_endpoint="$TILES_HEALTHCHECK"
-  port="80"
-fi
-if [ ! -z "$GC_HEALTHCHECK" ]; then
-  get_cap_endpoint="$GC_HEALTHCHECK"
-  port="80"
-fi
-get_cap="http://172.17.0.1:${port}${get_cap_endpoint}"
-wmts="http://172.17.0.1:${port}${wmts_endpoint}"
 time_out=60
-echo "checking ${get_cap} and ${wmts} endpoints...">>/var/log/onearth/config.log 2>&1; 
-while [[ "$(curl -s -m 2 -o /dev/null -w ''%{http_code}'' "${wmts}")" != "200" || 
-         "$(curl -s -m 2 -o /dev/null -w ''%{http_code}'' "${get_cap}")" != "200" ]]; do 
+echo "checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
+         "$(curl -s -m 5 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
-	echo "Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
+	echo "ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1; break;
   else 
-  	echo "waiting for ${get_cap} or ${wmts} endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	echo "waiting for $GC_HEALTHCHECK or $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
   	sleep 5; #curl in 5 second intervals
   	time_out=$(($time_out-5));
   fi
