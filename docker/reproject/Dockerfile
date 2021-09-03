@@ -79,7 +79,7 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/reproject
-CMD sh start_reproject.sh $DEBUG_LOGGING $S3_CONFIGS $TILES_HEALTHCHECK $GC_HEALTHCHECK
+CMD sh start_reproject.sh $DEBUG_LOGGING $TILES_HEALTHCHECK $GC_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:300s, retries:3
 HEALTHCHECK --start-period=60s \

@@ -1,8 +1,8 @@
 #!/bin/sh
 DEBUG_LOGGING=${1:-false}
-S3_CONFIGS=$2
-TILES_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
-GC_HEALTHCHECK=${4:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
+TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+GC_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
+S3_CONFIGS=$4
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2

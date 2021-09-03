@@ -1,8 +1,7 @@
 #!/bin/sh
-S3_CONFIGS=$1
-ENDPOINT_REFRESH=$2 # Interval for refreshing the WMS endpoints in minutes
-TILES_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
-
+ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
+TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+S3_CONFIGS=$3
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1

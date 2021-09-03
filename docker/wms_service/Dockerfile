@@ -85,7 +85,7 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh $S3_CONFIGS $ENDPOINT_REFRESH $TILES_HEALTHCHECK
+CMD sh start_wms_service.sh $ENDPOINT_REFRESH $TILES_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
