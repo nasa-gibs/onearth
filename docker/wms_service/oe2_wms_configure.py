@@ -69,7 +69,7 @@ def bulk_replace(source_str, replace_list):
 
 def get_layer_config(layer_config_path):
     with layer_config_path.open() as f:
-        config = yaml.safe_load(f.read())
+        config = yaml.load(f.read())
     return {'path': str(layer_config_path), 'config': config}
 
 def get_layer_configs(endpoint_config):
