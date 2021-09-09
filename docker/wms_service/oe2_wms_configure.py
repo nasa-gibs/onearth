@@ -227,8 +227,12 @@ for layer in layers:
             template_string = f.read()
         try:
             for shp_config in layer_config['config']['shapefile_configs']:
-                with open(shp_config['layer_style'], 'r', encoding='utf-8') as f:
-                    class_style = f.read()
+                try:
+                    with open(shp_config['layer_style'], 'r', encoding='utf-8') as f:
+                        class_style = f.read()
+                except FileNotFoundError:
+                    class_style = ''
+                    print('ERROR: layer_style file not found', shp_config['layer_style'])
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
                                                                   ('${layer_title}', shp_config['layer_title']),
