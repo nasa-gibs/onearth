@@ -33,8 +33,13 @@ VALIDATION_TEMPLATE = """
         VALIDATION
             "time"                  "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2})|(default)$"
             "default_time"          "{default}"
+            "default_YYYY"            "2021"
+            "YYYY"                    "^[0-9]{4}$"
+            "default_YYYYJJJHHMISS"   "2021184000000"
+            "YYYYJJJHHMISS"           "^[0-9]{13}$"
         END
 """
+# TODO: YYYY and YYYYJJJHHMISS for testing only - will be replaced when we implement time snapping
 
 
 def get_map_bounds(bbox, epsg, scale_denominator, tilesize, matrix_width, matrix_height):
@@ -223,6 +228,7 @@ for layer in layers:
     # handle vector layers
     if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
         style_info = '"wms_enable_request"    "GetLegendGraphic"'
+        validation_info = VALIDATION_TEMPLATE
         with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
             template_string = f.read()
         try:
@@ -241,7 +247,7 @@ for layer in layers:
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', dimension_info),
                                                                   ('${style_info}', style_info),
-                                                                  ('${data_xml}', '{0}'.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket), layer_name))),
+                                                                  ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}.shp\''.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket)))),
                                                                   ('${epsg_code}', layer_proj),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style)])
@@ -294,10 +300,10 @@ for layer in layers:
                                                          ('${wms_extent}', wms_extent),
                                                          ('${wms_srs}', wms_srs),
                                                          ('${wms_layer_group}', wms_layer_group),
-                                                         ('${dimension_info}',dimension_info),
+                                                         ('${dimension_info}', dimension_info),
                                                          ('${style_info}', style_info),
-                                                         ('${data_xml}', etree.tostring(out_root).decode()),
-                                                         ('${class_style}', ""),
+                                                         ('${data_xml}', 'DATA    \'{0}\''.format(etree.tostring(out_root).decode())),
+                                                         ('${class_style}', ''),
                                                          ('${validation_info}', validation_info),
                                                          ('${epsg_code}', layer_proj)])
     

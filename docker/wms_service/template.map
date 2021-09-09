@@ -10,7 +10,7 @@ LAYER
                 ${dimension_info}
                 ${style_info}
         END
-        DATA    '${data_xml}'
+        '${data_xml}'
         PROJECTION
                 "init=${epsg_code}"
         END
