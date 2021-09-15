@@ -28,7 +28,8 @@ RUN yum -y update && \
         python36-3.6.8 \
         python36-devel-3.6.8 \
         python36-pip-9.0.1 \
-        cronie && \
+        cronie \
+        parallel && \
     pip3.6 install \
         requests==2.7.0 \
         pyaml==18.11.0 \
@@ -38,7 +39,10 @@ RUN yum -y update && \
         redis==3.5.3 \
         urllib3==1.26.6 && \
     yum clean all
-    
+
+# Silence the parallel citation
+RUN parallel --citation <<< $'will cite\n'
+
 # Install yq
 WORKDIR /opt
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.2.0/yq_linux_amd64.tar.gz -O - |\

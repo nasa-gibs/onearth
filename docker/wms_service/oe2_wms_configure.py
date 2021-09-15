@@ -33,8 +33,14 @@ VALIDATION_TEMPLATE = """
         VALIDATION
             "time"                  "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2})|(default)$"
             "default_time"          "{default}"
+            "default_YYYY"            "2021"
+            "YYYY"                    "^[0-9]{4}$"
+            "default_YYYYJJJHHMISS"   "2021184000000"
+            "YYYYJJJHHMISS"           "^[0-9]{13}$"
         END
 """
+# TODO: YYYY and YYYYJJJHHMISS for testing only - will be replaced when we implement time snapping
+
 
 def get_map_bounds(bbox, epsg, scale_denominator, tilesize, matrix_width, matrix_height):
     upper_left_x, lower_right_y, lower_right_x, upper_left_y = bbox
@@ -60,16 +66,55 @@ def strip_trailing_slash(string):
         string = string[:-1]
     return string
 
+def bulk_replace(source_str, replace_list):
+    out_str = source_str
+    for item in replace_list:
+        out_str = out_str.replace(item[0], str(item[1]))
+    return out_str
+
+def get_layer_config(layer_config_path):
+    with layer_config_path.open() as f:
+        config = yaml.load(f.read())
+    return {'path': str(layer_config_path), 'config': config}
+
+def get_layer_configs(endpoint_config):
+    try:
+        layer_source = Path(endpoint_config['layer_config_source'])
+    except KeyError:
+        print("\nERROR: Must specify 'layer_config_source'!")
+        sys.exit()
+
+    # Find all source configs - traversing down a single directory level
+    if not layer_source.exists():
+        print(f"ERROR: Can't find specified layer config location: {layer_source}")
+        sys.exit()
+    if layer_source.is_file():
+        return [get_layer_config(layer_source)]
+    elif layer_source.is_dir():
+        return [
+            get_layer_config(filepath) for filepath in layer_source.iterdir()
+            if filepath.is_file() and filepath.name.endswith('.yaml')
+        ]
+
 # Parse arguments
 parser = argparse.ArgumentParser(description='Make WMS endpoint.')
 parser.add_argument('endpoint_config', type=str, help='an endpoint config YAML file')
+parser.add_argument('--shapefile_bucket', dest='shapefile_bucket', type=str, default='', help='S3 bucket used for shapefiles')
 args = parser.parse_args()
 endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
 print('Using endpoint config ' + args.endpoint_config)
+if args.shapefile_bucket != '':
+    print('Using shapefile bucket ' + args.shapefile_bucket)
+    shapefile_bucket = '/vsis3/' + args.shapefile_bucket
+else:
+    shapefile_bucket = ''
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
-projection = endpoint_config['epsg_code']
+epsg_code = endpoint_config['epsg_code']
+
+# Get layer configs
+layer_configs = get_layer_configs(endpoint_config)
 
 # Get source GetCapabilities
 gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
@@ -121,7 +166,7 @@ for layer in layers:
     lower_right_x = bbox.findtext('{*}UpperCorner').split(' ')[0]
     lower_right_y = bbox.findtext('{*}LowerCorner').split(' ')[1]
     
-    bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], projection, scale_denominator, tile_width, matrix_width, matrix_height)
+    bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], epsg_code, scale_denominator, tile_width, matrix_width, matrix_height)
 
     resource_url = layer.findall('{*}ResourceURL')[-1] # get last if multiple found
     bands_count = 4 if resource_url.get('format') == 'image/png' else 3
@@ -142,7 +187,102 @@ for layer in layers:
         period_str = ','.join(elem.text for elem in dimension.findall("{*}Value"))
         dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
         validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
-        
+
+    if epsg_code == "EPSG:4326":
+        wms_extent = "-180 -90 180 90"
+        # Explicitly show that EPSG:4326 and EPSG:3857 requests are supported through an EPSG:4326 endpoint
+        wms_srs    = "EPSG:4326 EPSG:3857"
+        layer_proj = epsg_code.lower()
+    elif epsg_code in ["EPSG:3031", "EPSG:3413"]:
+        # Hard coded to GIBS TileMatrixSet values. These are not the projection's native extents. If that's a problem,
+        # then the values could be read from the remote Capabilities
+        wms_extent = "-4194304 -4194304 4194304 4194304"
+        wms_srs    = "\"{0}\"".format(epsg_code)
+        layer_proj = epsg_code.lower()
+    elif epsg_code in ["EPSG:3857"]:
+        # You would think this should be the EPSG:3857 extents, but that doesn't work. Instead, these are in the units
+        # of the layer's projection... which is EPSG:4326
+        wms_extent = "-180, -85.0511, 180, 85.0511"
+        wms_srs    = "\"{0}\"".format(epsg_code)
+        # Hard coded to be epsg:4326 because we are building Web Mercator off of an EPSG:4326 WMTS endpoint with
+        # EPSG:4326 shapefiles. If that's a problem, then we could add a new property to the endpoint config to specify
+        # the source WMTS' projection and also a new property to the source_shapefile indicating its projection.
+        layer_proj = "epsg:4326"
+    else:
+        wms_extent = "{0}, {1}, {2}, {3}".format(upper_left_x, lower_right_y, lower_right_x, upper_left_y)
+        wms_srs    = "\"{0}\"".format(epsg_code)
+        layer_proj = epsg_code.lower()
+        break
+
+    # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
+    layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
+    wms_layer_group = ""
+    if layer_config:
+        try:
+            wms_layer_group = '"wms_layer_group"       "{0}"'.format(layer_config['config']['wms_layer_group'])
+        except KeyError:
+            print("WARN: Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
+    else:
+        print("WARN: Layer config for layer {0} not found".format(layer_name))
+
+    # handle vector layers
+    if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
+        style_info = '"wms_enable_request"    "GetLegendGraphic"'
+        validation_info = VALIDATION_TEMPLATE
+        with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
+            template_string = f.read()
+        try:
+            for shp_config in layer_config['config']['shapefile_configs']:
+                try:
+                    with open(shp_config['layer_style'], 'r', encoding='utf-8') as f:
+                        class_style = f.read()
+                except FileNotFoundError:
+                    class_style = ''
+                    print('ERROR: layer_style file not found', shp_config['layer_style'])
+                new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
+                                                                  ('${layer_type}', shp_config['source_shapefile']['feature_type']),
+                                                                  ('${layer_title}', shp_config['layer_title']),
+                                                                  ('${wms_extent}', wms_extent),
+                                                                  ('${wms_srs}', wms_srs),
+                                                                  ('${wms_layer_group}', wms_layer_group),
+                                                                  ('${dimension_info}', dimension_info),
+                                                                  ('${style_info}', style_info),
+                                                                  ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}.shp\''.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket)))),
+                                                                  ('${epsg_code}', layer_proj),
+                                                                  ('${validation_info}', validation_info),
+                                                                  ('${class_style}', class_style)])
+                layer_strings.append(new_layer_string)
+        except KeyError:
+            # TODO: format for properly logging an error
+            print("ERROR: vector layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
+    # handle raster layers
+    else:
+        out_root = etree.Element('GDAL_WMS')
+
+        service_element = etree.SubElement(out_root, 'Service')
+        service_element.set('name', 'TMS')
+        etree.SubElement(service_element, 'ServerUrl').text = template_string.replace(
+            '{TileMatrixSet}', tms).replace('{Time}', '%time%').replace('{TileMatrix}', '${z}').replace('{TileRow}', '${y}').replace('{TileCol}', '${x}')
+
+        data_window_element = etree.SubElement(out_root, 'DataWindow')
+        etree.SubElement(data_window_element, 'UpperLeftX').text = str(bounds[0])
+        etree.SubElement(data_window_element, 'UpperLeftY').text = str(bounds[3])
+        etree.SubElement(data_window_element, 'LowerRightX').text = str(bounds[2])
+        etree.SubElement(data_window_element, 'LowerRightY').text = str(bounds[1])
+        etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
+        etree.SubElement(data_window_element, 'TileCountX').text = str(matrix_width)
+        etree.SubElement(data_window_element, 'TileCountY').text = str(matrix_height)
+        etree.SubElement(data_window_element, 'YOrigin').text = 'top'
+
+        etree.SubElement(out_root, 'Projection').text = epsg_code
+        etree.SubElement(out_root, 'BlockSizeX').text = str(tile_width)
+        etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
+        etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
+
+        etree.SubElement(out_root, 'Cache')
+        etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
+        etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
+
         legendUrlElems = []
         for styleElem in layer.findall('{*}Style'):
            legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
@@ -150,39 +290,24 @@ for layer in layers:
             attributes = legendUrlElem.attrib
             if attributes['{http://www.w3.org/1999/xlink}role'].endswith("horizontal"):
                 style_info = STYLE_TEMPLATE.replace('{width}', attributes["width"]).replace('{height}', attributes["height"]).replace('{href}', attributes['{http://www.w3.org/1999/xlink}href']).replace(".svg",".png")
+        
+        with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
+            template_string = f.read()
 
-    out_root = etree.Element('GDAL_WMS')
-
-    service_element = etree.SubElement(out_root, 'Service')
-    service_element.set('name', 'TMS')
-    etree.SubElement(service_element, 'ServerUrl').text = template_string.replace(
-        '{TileMatrixSet}', tms).replace('{Time}', '%time%').replace('{TileMatrix}', '${z}').replace('{TileRow}', '${y}').replace('{TileCol}', '${x}')
-
-    data_window_element = etree.SubElement(out_root, 'DataWindow')
-    etree.SubElement(data_window_element, 'UpperLeftX').text = str(bounds[0])
-    etree.SubElement(data_window_element, 'UpperLeftY').text = str(bounds[3])
-    etree.SubElement(data_window_element, 'LowerRightX').text = str(bounds[2])
-    etree.SubElement(data_window_element, 'LowerRightY').text = str(bounds[1])
-    etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
-    etree.SubElement(data_window_element, 'TileCountX').text = str(matrix_width)
-    etree.SubElement(data_window_element, 'TileCountY').text = str(matrix_height)
-    etree.SubElement(data_window_element, 'YOrigin').text = 'top'
-
-    etree.SubElement(out_root, 'Projection').text = projection
-    etree.SubElement(out_root, 'BlockSizeX').text = str(tile_width)
-    etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
-    etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
-
-    etree.SubElement(out_root, 'Cache')
-    etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
-    etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
-
-    with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
-        template_string = f.read()
-    template_string = template_string.replace('${layer_name}', layer_name).replace('${dimension_info}', dimension_info).replace('${style_info}', style_info).replace(
-        '${data_xml}', etree.tostring(out_root).decode()).replace('${epsg_code}', projection.lower()).replace('${validation_info}', validation_info)
-
-    layer_strings.append(template_string)
+        template_string = bulk_replace(template_string, [('${layer_name}', layer_name),
+                                                         ('${layer_title}', layer_name),
+                                                         ('${layer_type}', 'RASTER'),
+                                                         ('${wms_extent}', wms_extent),
+                                                         ('${wms_srs}', wms_srs),
+                                                         ('${wms_layer_group}', wms_layer_group),
+                                                         ('${dimension_info}', dimension_info),
+                                                         ('${style_info}', style_info),
+                                                         ('${data_xml}', 'DATA    \'{0}\''.format(etree.tostring(out_root).decode())),
+                                                         ('${class_style}', ''),
+                                                         ('${validation_info}', validation_info),
+                                                         ('${epsg_code}', layer_proj)])
+    
+        layer_strings.append(template_string)
 
 with open(header, 'r', encoding='utf-8') as f:
     header_string = f.read()

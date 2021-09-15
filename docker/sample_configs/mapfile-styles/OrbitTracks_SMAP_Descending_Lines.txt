@@ -1,0 +1,7 @@
+        Class
+            Name   "Ground Track"
+            Style
+                Width	1.5
+                Color	64 244 208
+            End
+        End

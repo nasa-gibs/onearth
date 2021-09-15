@@ -12,6 +12,8 @@ fi
 
 mkdir -p /etc/onearth/config/mapserver/
 mkdir -p /etc/onearth/config/endpoint/
+mkdir -p /etc/onearth/config/layers/
+mkdir -p /etc/onearth/mapfile-styles/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
@@ -21,11 +23,23 @@ then
   # Copy sample configs
   cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  cp -R ../sample_configs/mapfile-styles/* /etc/onearth/mapfile-styles/
 else
 	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/mapfile-styles/' -b $S3_CONFIGS -p mapfile-styles >>/var/log/onearth/config.log 2>&1
+  # layer configs are endpoint specific
+  for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
+    CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
+    CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
+
+    mkdir -p $CONFIG_SOURCE
+
+    python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
+  done
 fi
 
 echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log

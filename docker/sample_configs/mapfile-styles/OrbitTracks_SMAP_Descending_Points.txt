@@ -1,0 +1,32 @@
+        LabelItem       "LABEL"
+        ClassItem       "DATETIME"
+        Class
+            Name            ":05 Intervals"
+            Expression       /^.*[ T][0-2][0-9]:[0-5][0,5].00.*$/
+            Style
+                Symbol      "circle"
+                Size        10
+                Color       64 244 208
+            End
+
+            Label
+                Color           255 255 255
+                OutlineColor    128 128 128
+                Font            "verdana-bold"
+                Type            truetype
+                Size            7.5
+                Position        Auto
+                Partials        False
+                Buffer          10
+            End
+        End
+
+        Class
+            Name            ":01 Intervals"
+            Expression      /^.*[ T][0-2][0-9]:[0-5][1,2,3,4,6,7,8,9].00.*$/
+            Style
+                Symbol      "circle"
+                Size        7.5
+                Color       64 244 208
+            End
+        End

@@ -3,6 +3,7 @@ tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 apache_config_location: "/etc/httpd/conf.d/"
 base_uri_meta: "https://gibs.earthdata.nasa.gov"
 epsg_code: "EPSG:4326"
+layer_config_source: "/home/oe2/onearth/src/test/mapserver_test_data/layers/"
 mapserver:
   internal_endpoint: "/build/test/ci_tests/wms/test"
   mapfile_header:  "/etc/onearth/config/mapserver/test.header"
