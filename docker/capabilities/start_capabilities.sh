@@ -4,6 +4,8 @@ REDIS_HOST=${2:-127.0.0.1}
 DEBUG_LOGGING=${3:-false}
 S3_CONFIGS=$4
 
+echo "[$(date)] Starting capabilities service" >> /var/log/onearth/config.log
+
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
@@ -19,7 +21,7 @@ mkdir -p /etc/onearth/config/layers/
 # Copy OnEarth configs from S3 or from local samples
 if [ -z "$S3_CONFIGS" ]
 then
-  echo "S3_CONFIGS not set for OnEarth configs, using sample data"
+  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
 
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
@@ -27,7 +29,7 @@ then
 
   cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 else
-  echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+  echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
@@ -45,6 +47,8 @@ fi
 # Replace with S3 URL
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_URL}@'$S3_URL'@g' {} \; # in case there is a preceding slash
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_URL}@'$S3_URL'@g' {} \;
+
+echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/
@@ -64,6 +68,8 @@ for f in $(grep -l 'gc_service:' /etc/onearth/config/endpoint/*.yaml); do
 
   lua /home/oe2/onearth/src/modules/gc_service/make_gc_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
 done
+
+echo "[$(date)] GC endpoint configuration completed" >> /var/log/onearth/config.log
 
 # Set Apache logs to debug log level
 if [ "$DEBUG_LOGGING" = true ]; then
@@ -100,7 +106,7 @@ Header Unset ETag
 FileETag None
 EOS
 
-echo 'Starting Apache server'
+echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k start
 sleep 2
 

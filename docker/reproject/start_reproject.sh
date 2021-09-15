@@ -4,6 +4,8 @@ TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-0
 GC_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$4
 
+echo "[$(date)] Starting reproject service" >> /var/log/onearth/config.log
+
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
@@ -20,7 +22,8 @@ mkdir -p /etc/onearth/config/conf/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-  echo "S3_CONFIGS not set"
+  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
+
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
@@ -37,9 +40,13 @@ then
   cp ../test_configs/layers/oe2_test_mod_reproject_static*.config /var/www/html/reproject_endpoint/static_test/default/tms/
 
 else
+  echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
+
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
   python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 fi
+
+echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
 # Copy tilematrixsets config file
 cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/tilematrixsets.xml /etc/onearth/config/conf/
@@ -80,25 +87,27 @@ FileETag None
 EOS
 
 time_out=60
-echo "checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+echo "[$(date)] Begin checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
 while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
          "$(curl -s -m 5 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
-	echo "ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1; break;
+	echo "[$(date)] ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1; break;
   else 
-  	echo "waiting for $GC_HEALTHCHECK or $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	echo "[$(date)] Waiting for $GC_HEALTHCHECK or $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
   	sleep 5; #curl in 5 second intervals
   	time_out=$(($time_out-5));
   fi
 done
 
+echo "[$(date)] Completed healthcheck wait" >> /var/log/onearth/config.log
+
 # Start apache so that reproject responds locally for configuration
-echo 'Starting Apache server'
+echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart
 sleep 2
 
 # Load additional endpoints
-echo 'Loading additional endpoints'
+echo "[$(date)] Loading additional endpoints" >> /var/log/onearth/config.log
 
 # Run layer config tools
 for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
@@ -111,12 +120,14 @@ for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
   python3.6 /usr/bin/oe2_reproject_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
 
+echo "[$(date)] Completed reproject configuration" >> /var/log/onearth/config.log
+
 # Now configure oe-status after reproject is configured
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
-echo 'Restarting Apache server'
+echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart
 sleep 2
 

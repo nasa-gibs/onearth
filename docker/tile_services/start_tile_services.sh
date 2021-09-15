@@ -5,6 +5,8 @@ IDX_SYNC=${3:-false}
 DEBUG_LOGGING=${4:-false}
 S3_CONFIGS=$5
 
+echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
+
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
@@ -12,8 +14,10 @@ fi
 
 # Sync IDX files if true
 if [ "$IDX_SYNC" = true ]; then
+    echo "[$(date)] Starting IDX file sync" >> /var/log/onearth/config.log
     python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p epsg >>/var/log/onearth/config.log 2>&1
     python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p oe-status >>/var/log/onearth/config.log 2>&1
+    echo "[$(date)] Completed IDX file sync" >> /var/log/onearth/config.log
 fi
 
 # Set Apache logs to debug log level
@@ -57,7 +61,7 @@ mkdir -p /etc/onearth/vector-styles/v1.0/
 # Copy OnEarth configs from S3 or from local samples
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
+  echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
 
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
@@ -91,7 +95,7 @@ then
   cp ../test_configs/layers/oe2_test_mod_mrf_date_layer_year_dir.config /var/www/html/mrf_endpoint/date_test_year_dir/default/tms/
 
 else
-  echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
   # empty tiles
   python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
@@ -132,6 +136,8 @@ fi
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_URL}@'$S3_URL'@g' {} \; # in case there is a preceding slash
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_URL}@'$S3_URL'@g' {} \;
 
+echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
+
 # Generate Colormap HTML
 ln -s /etc/onearth/colormaps /var/www/html/
 for f in /etc/onearth/colormaps/v1.0/*.xml
@@ -149,6 +155,8 @@ do
   html=${base/"xml"/"html"}
   /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
 done
+
+echo "[$(date)] Colormap HTML generation completed" >> /var/log/onearth/config.log
 
 # Link legends
 ln -s /etc/onearth/legends /var/www/html/
@@ -183,6 +191,8 @@ for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
 
   python3.6 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
+
+echo "[$(date)] WMTS/TWMS configuration completed" >> /var/log/onearth/config.log
 
 # Start Redis if running locally
 if [ "$REDIS_HOST" = "127.0.0.1" ]; then
@@ -222,7 +232,7 @@ LoadModule status_module modules/mod_status.so
 ExtendedStatus On
 EOS
 
-echo 'Restarting Apache server'
+echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart
 sleep 2
 

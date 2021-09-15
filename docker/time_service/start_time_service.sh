@@ -5,6 +5,8 @@ DEBUG_LOGGING=${3:-false}
 FORCE_TIME_SCRAPE=${4:-false}
 S3_CONFIGS=$5
 
+echo "[$(date)] Starting time service" >> /var/log/onearth/config.log
+
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
@@ -20,7 +22,7 @@ mkdir -p /etc/onearth/config/layers/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
+	echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
 
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
@@ -28,7 +30,7 @@ then
   cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 
 else
-	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint  >>/var/log/onearth/config.log 2>&1
 	python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf  >>/var/log/onearth/config.log 2>&1
@@ -46,6 +48,8 @@ fi
 # Replace with S3 URL
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@/{S3_URL}@'$S3_URL'@g' {} \; # in case there is a preceding slash
 find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_URL}@'$S3_URL'@g' {} \;
+
+echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
 # copy config stuff
 mkdir -p /var/www/html/time_service
@@ -370,6 +374,8 @@ else
 	fi
 fi
 
+echo "[$(date)] Time service configuration completed" >> /var/log/onearth/config.log
+
 # Configure and startup apache
 cp onearth_time_service.conf /etc/httpd/conf.d
 
@@ -378,7 +384,7 @@ if [ "$DEBUG_LOGGING" = true ]; then
     perl -pi -e 's/LogFormat "%h %l %u %t \\"%r\\" %>s %b/LogFormat "%h %l %u %t \\"%r\\" %>s %b %D/g' /etc/httpd/conf/httpd.conf
 fi
 
-echo 'Starting Apache server'
+echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/apachectl
 sleep 2
 

@@ -2,6 +2,9 @@
 ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
 TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
 S3_CONFIGS=$3
+
+echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
+
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
@@ -13,17 +16,19 @@ mkdir -p /etc/onearth/config/endpoint/
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then
-	echo "S3_CONFIGS not set for OnEarth configs, using sample data"
+	echo "[$(date)] S3_CONFIGS not set for OnEarth configs, using sample data" >> /var/log/onearth/config.log
 
   # Copy sample configs
   cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
 else
-	echo "S3_CONFIGS set for OnEarth configs, downloading from S3"
+	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
 fi
+
+echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
@@ -46,20 +51,21 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
 done
 
 time_out=60
-echo "checking $TILES_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1; 
+echo "[$(date)] Begin checking $TILES_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1;
 while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
-	echo "ERROR: Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
+	echo "[$(date)] ERROR: Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
   else 
-  	echo "waiting for $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	echo "[$(date)] Waiting for $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
   	sleep 5; #curl in 5 second intervals
   	time_out=$(($time_out-5));
   fi
 done
 
+echo "[$(date)] Completed healthcheck wait" >> /var/log/onearth/config.log
+
 # Make endpoint configurations
 sh load_endpoints.sh
-
 
 # Set up cron job for refreshing endpoints
 if [ -z "$ENDPOINT_REFRESH" ]
@@ -99,7 +105,7 @@ Header Unset ETag
 FileETag None
 EOS
 
-echo 'Starting Apache server'
+echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart
 sleep 2
 
