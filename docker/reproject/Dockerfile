@@ -75,8 +75,15 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
+
 # Change user
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/reproject
-CMD sh start_reproject.sh $DEBUG_LOGGING $S3_CONFIGS
+CMD sh start_reproject.sh $DEBUG_LOGGING $TILES_HEALTHCHECK $GC_HEALTHCHECK $S3_CONFIGS
+
+#interval:30s, timeout:30s, start-period:300s, retries:3
+HEALTHCHECK --start-period=60s \
+  CMD curl --fail http://localhost/oe-status_reproject/BlueMarble16km/default/2004-08-01/GoogleMapsCompatible_Level3/0/0/0.jpeg || exit 1 

@@ -70,7 +70,14 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
+
 # Change user
 USER www-data
 
 CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $FORCE_TIME_SCRAPE $S3_CONFIGS
+
+#interval:30s, timeout:30s, start-period:30s, retries:3
+HEALTHCHECK --start-period=30s \
+  CMD curl --fail http://localhost/oe2-time-service-proxy-onearth-time-service || exit 1 

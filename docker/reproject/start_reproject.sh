@@ -1,6 +1,8 @@
 #!/bin/sh
 DEBUG_LOGGING=${1:-false}
-S3_CONFIGS=$2
+TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+GC_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
+S3_CONFIGS=$4
 
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
@@ -77,11 +79,18 @@ Header Unset ETag
 FileETag None
 EOS
 
-# Run reproject config tools
-# TODO be more purposed in how long we're waiting for the source WMTS services to be up
-# TODO maybe look for http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml to respond
-echo "Sleeping for 60 seconds, giving the capabilities and tiles services time to start"
-sleep 60
+time_out=60
+echo "checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
+         "$(curl -s -m 5 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
+  if [[ $time_out -lt 0 ]]; then
+	echo "ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1; break;
+  else 
+  	echo "waiting for $GC_HEALTHCHECK or $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	sleep 5; #curl in 5 second intervals
+  	time_out=$(($time_out-5));
+  fi
+done
 
 # Start apache so that reproject responds locally for configuration
 echo 'Starting Apache server'

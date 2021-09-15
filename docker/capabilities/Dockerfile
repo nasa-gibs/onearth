@@ -75,9 +75,16 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
+
 # Change user
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/capabilities
 CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $S3_CONFIGS
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/
+
+#interval:30s, timeout:30s, start-period:30s, retries:3
+HEALTHCHECK --start-period=30s \
+  CMD curl --fail http://localhost/wmts/oe-status/wmts.cgi?SERVICE=WMTS&request=GetCapabilities || exit 1

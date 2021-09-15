@@ -1,7 +1,7 @@
 #!/bin/sh
-S3_CONFIGS=$1
-ENDPOINT_REFRESH=$2 # Interval for refreshing the WMS endpoints in minutes
-
+ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
+TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+S3_CONFIGS=$3
 if [ ! -f /.dockerenv ]; then
   echo "This script is only intended to be run from within Docker" >&2
   exit 1
@@ -59,9 +59,19 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
   cp /var/www/cgi-bin/mapserv.fcgi ${INTERNAL_ENDPOINT}/wms.cgi
 done
 
+time_out=60
+echo "checking $TILES_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1; 
+while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" ]]; do 
+  if [[ $time_out -lt 0 ]]; then
+	echo "ERROR: Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
+  else 
+  	echo "waiting for $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1; 
+  	sleep 5; #curl in 5 second intervals
+  	time_out=$(($time_out-5));
+  fi
+done
+
 # Make endpoint configurations
-echo "Sleeping for 60 seconds, giving the capabilities service time to start"
-sleep 60
 sh load_endpoints.sh
 
 

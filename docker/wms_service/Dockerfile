@@ -81,8 +81,15 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
+
 # Change user
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh $S3_CONFIGS $ENDPOINT_REFRESH
+CMD sh start_wms_service.sh $ENDPOINT_REFRESH $TILES_HEALTHCHECK $S3_CONFIGS
+
+#interval:30s, timeout:30s, start-period:60s, retries:3
+HEALTHCHECK --start-period=60s \
+  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
