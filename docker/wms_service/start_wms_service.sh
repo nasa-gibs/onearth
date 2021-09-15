@@ -45,7 +45,7 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
   cp /var/www/cgi-bin/mapserv.fcgi ${INTERNAL_ENDPOINT}/wms.cgi
 done
 
-time_out=60
+time_out=600
 echo "checking $TILES_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1; 
 while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
