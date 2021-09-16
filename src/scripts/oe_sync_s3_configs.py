@@ -19,7 +19,8 @@ File modifications are not detected. Use --force to overwrite existing files.
 """
 import argparse
 import os
-import boto3
+import boto3, botocore
+import threading
 from botocore.exceptions import ClientError
 from functools import reduce
 from pathlib import Path
@@ -62,14 +63,49 @@ def syncConfigs(bucket,
                 force,
                 dry_run,
                 s3_uri=None):
+
     session = boto3.session.Session()
-    s3 = session.client(service_name='s3', endpoint_url=s3_uri)
+
+    aws_config = botocore.config.Config(
+        connect_timeout=10,
+        read_timeout=30,
+        max_pool_connections=10,
+        retries=dict(max_attempts=2))
+
+    s3 = session.client(service_name='s3', endpoint_url=s3_uri, config=aws_config)
 
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
     if prefix.endswith('/'):
         prefix = prefix[:-1]
     objects = reduce(keyMapper, getAllKeys(s3, bucket, prefix), {})
+
+    sync_threads    = []
+    sync_semaphore  = threading.BoundedSemaphore(10)
+
+    def copyObject(cfg_prefix, cfg_filepath):
+        try:
+            sync_semaphore.acquire()
+            print("Downloading {0} to {1}".format(cfg_prefix, cfg_filepath))
+            if not dry_run:
+                s3.download_file(bucket, cfg_prefix, cfg_filepath)
+        except botocore.exceptions.ClientError as e:
+            print(e)
+        finally:
+            sync_semaphore.release()
+
+
+    def deleteObject(cfg_filepath):
+        try:
+            sync_semaphore.acquire()
+
+            if os.path.isfile(cfg_filepath):
+                print("Deleting file not found on S3: {0}".format(cfg_filepath))
+                if not dry_run:
+                    os.remove(cfg_filepath)
+        finally:
+            sync_semaphore.release()
+
 
     for data, config in objects.items():
         print(f'Loading configs from: {prefix}')
@@ -88,22 +124,36 @@ def syncConfigs(bucket,
                 s3_file = ''
             else:
                 s3_file = '/' + s3_file
-            filename = dir + s3_file
-            print(f'Downloading file: {prefix}{s3_file}')
 
-            if not dry_run:
-                try:
-                    s3.download_file(bucket, prefix + s3_file, filename)
-                except ClientError as e:  # we want to continue if a file download fails
-                    print(e)
+            cfg_prefix = prefix + s3_file
+            cfg_filepath = dir + s3_file
+
+            t = threading.Thread(target=copyObject, args=(cfg_prefix, cfg_filepath))
+            t.start()
+            sync_threads.append(t)
+
 
         # Delete files from file system that aren't on S3
         for fs_file in list(set(fs_files) - set(s3_files)):
-            if os.path.isfile(fs_file):
-                print(f'Deleting file not found on S3: {fs_file}')
+            cfg_filepath = dir + fs_file
 
-                if not dry_run:
-                    os.remove(fs_file)
+            t = threading.Thread(target=deleteObject, args=(cfg_filepath,))
+            t.start()
+            sync_threads.append(t)
+
+
+    # Wait for all threads to complete
+    while len(sync_threads) > 0:
+        completed = []
+
+        for t in sync_threads:
+            if not t.is_alive():
+                completed.append(t)
+            else:
+                t.join(10)
+
+        for t in completed:
+            sync_threads.remove(t)
 
 
 # Routine when run from CLI

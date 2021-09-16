@@ -359,14 +359,10 @@ else
   grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST -t ':best' >>/var/log/onearth/config.log 2>&1
   grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 
-	# Load time periods by scraping S3 bucket
+	# Load time periods by scraping S3 bucket, if requested
 	if [ "$FORCE_TIME_SCRAPE" = true ]; then
 		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 		python3 /usr/bin/oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-	else
-		python3 /usr/bin/oe_scrape_time.py -c -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -c -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-
 	fi
 fi
 
