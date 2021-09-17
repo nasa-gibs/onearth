@@ -86,12 +86,23 @@ Header Unset ETag
 FileETag None
 EOS
 
+# Now configure oe-status and start apache for reproject health checks
+cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
+python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
+
+echo 'Starting Apache server'
+/usr/sbin/httpd -k restart
+sleep 2
+
+# Wait for GC and Tile services to be ready
 time_out=600
 echo "[$(date)] Begin checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
 while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
          "$(curl -s -m 5 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
-	echo "[$(date)] ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1; break;
+    echo "[$(date)] ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1; 
+    /usr/sbin/httpd stop; exit 1;
   else 
   	echo "[$(date)] Waiting for $GC_HEALTHCHECK or $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
   	sleep 5; #curl in 5 second intervals
@@ -121,11 +132,6 @@ for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
 done
 
 echo "[$(date)] Completed reproject configuration" >> /var/log/onearth/config.log
-
-# Now configure oe-status after reproject is configured
-cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
-mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart

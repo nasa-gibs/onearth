@@ -1,6 +1,6 @@
 #!/bin/sh
 ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
-TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+GC_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$3
 
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
@@ -51,12 +51,12 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
 done
 
 time_out=600
-echo "[$(date)] Begin checking $TILES_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1;
-while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" ]]; do 
+echo "[$(date)] Begin checking $GC_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1;
+while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
-	echo "[$(date)] ERROR: Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; break;
+	echo "[$(date)] ERROR: Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1; exit 1;
   else 
-  	echo "[$(date)] Waiting for $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
+  	echo "[$(date)] Waiting for $GC_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
   	sleep 5; #curl in 5 second intervals
   	time_out=$(($time_out-5));
   fi
