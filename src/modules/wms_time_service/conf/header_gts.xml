@@ -1,0 +1,24 @@
+<WMS_Tile_Service version="0.1.0">
+  <Service>
+    <Name>OnEarth:WMS:Tile</Name>
+    <Title>WMS Tile Service</Title>
+    <Abstract>Tiled WMS service, tiled in a global grid</Abstract>
+    <KeywordList>
+      <Keyword>WMS</Keyword>
+      <Keyword>Tile</Keyword>
+      <Keyword>OnEarth</Keyword>
+      <Keyword>Global</Keyword>
+      <Keyword>Earth</Keyword>
+    </KeywordList>
+    <OnlineResource xlink:href="http://localhost/oe-status/" xlink:type="simple" xmlns:xlink="http://www.w3.orf/1999/xlink"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson></ContactPerson>
+        <ContactOrganization></ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactElectronicMailAddress></ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>none</AccessConstraints>
+  </Service>
+</WMS_Tile_Service>

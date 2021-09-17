@@ -1,0 +1,13 @@
+layer_id: "AMSR2_Snow_Water_Equivalent_test"
+layer_title: "AMSR2 Snow Water Equivalent tileset"
+layer_name: "Snow Water Equivalent (AMSR2, GCOM-W1)"
+projection: "EPSG:4326"
+tilematrixset: "16km"
+mime_type: "image/jpeg"
+static: true
+metadata: 
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.0/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.2", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.2/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3", "xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
+abstract: "AMSR2 Snow Water Equivalent abstract"

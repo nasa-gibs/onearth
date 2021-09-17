@@ -1,0 +1,17 @@
+time_service_uri: "http://localhost/time_service/time"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+layer_config_source: "/etc/onearth/layers/layer_config.yaml"
+apache_config_location: "/etc/httpd/conf.d"
+base_uri_gc: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/"
+base_uri_gts: "https://gibs.earthdata.nasa.gov/twms/epsg4326/best/"
+epsg_code: "EPSG:4326"
+endpoint: "/gc_service"
+gc_service:
+  internal_endpoint: "/var/www/html/"
+  external_endpoint: "/gc"
+  config_prefix: "onearth_gc_service"
+  gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
+reproject:
+  target_epsg_code: "EPSG:3857"

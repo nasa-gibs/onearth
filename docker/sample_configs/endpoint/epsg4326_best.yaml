@@ -25,6 +25,8 @@ twms_service:
   external_endpoint: "/twms/epsg4326/best"
 mapserver:
   internal_endpoint: "/var/www/html/wms/epsg4326/best"
+  external_endpoint: "/wms/epsg4326/best"
+  config_prefix: "epsg4326_best_wms_time_service"
   mapfile_header:  "/etc/onearth/config/mapserver/epsg4326.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg4326_best.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"

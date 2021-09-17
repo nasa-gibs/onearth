@@ -113,6 +113,14 @@ Header Unset ETag
 FileETag None
 EOS
 
+# Create internal endpoint directories for WMTS and TWMS endpoints and build the wms_time services
+for f in $(grep -l 'mapserver:' /etc/onearth/config/endpoint/*.yaml); do
+  # Mapserver Endpoint
+  mkdir -p $(yq eval ".mapserver.internal_endpoint" $f)
+
+  lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
+done
+
 echo 'Starting Apache server'
 /usr/sbin/httpd -k restart
 sleep 2

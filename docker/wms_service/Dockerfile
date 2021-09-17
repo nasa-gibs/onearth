@@ -7,6 +7,25 @@ RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-de
 
 COPY ./ /home/oe2/onearth/
 
+# Install Apache modules
+WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
+RUN make && make install
+
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/jiyinyiyong/json-lua.git
+WORKDIR /tmp/json-lua/
+RUN sed -i 's/git:/https:/' json-lua-0.1-3.rockspec
+RUN luarocks make json-lua-0.1-3.rockspec
+
+# Install wms_time_service Service configs
+RUN mkdir -p /etc/onearth/config/endpoint
+RUN cp -R /home/oe2/onearth/src/modules/wms_time_service/conf /etc/onearth/config/
+WORKDIR /home/oe2/onearth/src/modules/wms_time_service
+RUN luarocks make onearth_wms_time-0.1-1.rockspec
+RUN echo installed wms_time
+
 # FastCGI module
 WORKDIR /tmp
 RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
@@ -68,8 +87,6 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && chmod +x "$SUPERCRONIC" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
-
-RUN mkdir -p /etc/onearth
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
