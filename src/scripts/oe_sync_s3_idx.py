@@ -23,6 +23,8 @@ from functools import reduce
 from pathlib import Path
 import argparse
 import threading
+import re
+import hashlib
 
 
 def keyMapper(acc, obj):
@@ -93,10 +95,65 @@ def listAllFiles(dir_proj_layer, prefix):
     return [str(f).replace(dir_proj_layer + '/', '') for f in fs_list]
 
 
+# calculate_multipart_etag  Copyright (C) 2015
+#      Tony Lastowka <tlastowka at gmail dot com>
+#      https://github.com/tlastowka
+#
+#
+# calculate_multipart_etag is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# calculate_multipart_etag is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with calculate_multipart_etag.  If not, see <http://www.gnu.org/licenses/>.
+def calculate_multipart_etag(source_path, chunk_size, expected=None):
+    """
+    calculates a multipart upload etag for amazon s3
+    Arguments:
+    source_path -- The file to calculate the etage for
+    chunk_size -- The chunk size to calculate for.
+    Keyword Arguments:
+    expected -- If passed a string, the string will be compared to the resulting etag and raise an exception if they don't match
+    """
+
+    import hashlib
+    md5s = []
+
+    with open(source_path,'rb') as fp:
+        while True:
+            data = fp.read(chunk_size)
+
+            if not data:
+                break
+            md5s.append(hashlib.md5(data))
+
+    if len(md5s) > 1:
+        digests = b"".join(m.digest() for m in md5s)
+        new_md5 = hashlib.md5(digests)
+        new_etag = '%s-%s' % (new_md5.hexdigest(),len(md5s))
+    elif len(md5s) == 1: # file smaller than chunk size
+        new_etag = '%s' % md5s[0].hexdigest()
+    else: # empty file
+        new_etag = ''
+
+    if expected:
+        if not expected==new_etag:
+            raise ValueError('new etag %s does not match expected %s' % (new_etag,expected))
+
+    return new_etag
+
+
 def syncIdx(bucket,
             dir,
             prefix,
             force,
+            checksum,
             dry_run,
             s3_uri=None):
 
@@ -116,6 +173,30 @@ def syncIdx(bucket,
 
     sync_threads    = []
     sync_semaphore  = threading.BoundedSemaphore(10)
+
+
+    def match_checksums(idx_prefix, idx_filepath):
+        response = s3.head_object(Bucket=bucket, Key=idx_prefix)
+        s3_cksum = response["ETag"].replace("\"","")
+
+        m = re.match("[a-f0-9]*-([0-9]*)", s3_cksum)
+        if m:
+            bytesPerPart   = float(os.stat(idx_filepath).st_size) / float(m.group(1))
+            bytesChunkSize = bytesPerPart + 1048576.0 - (bytesPerPart % 1048576.0)
+            mbChunkSize    = int(bytesChunkSize / float(1024 *  1024))
+
+            '''
+            print("Calculating multi-part checksum with " + m.group(1) + \
+                  " parts and " + str(mbChunkSize) + "MB chunk size for file of size " + \
+                  str(os.stat(idx_filepath).st_size) + " bytes")
+            '''
+
+            file_cksum = calculate_multipart_etag(idx_filepath, mbChunkSize * 1024 * 1024)
+        else:
+            with open(idx_filepath, 'rb') as idxFile:
+                file_cksum = hashlib.md5(idxFile.read()).hexdigest().strip()
+
+        return file_cksum == s3_cksum
 
     def copyObject(idx_prefix, idx_filepath):
         try:
@@ -167,6 +248,8 @@ def syncIdx(bucket,
             else:
                 idx_to_sync = list(set(s3_objects) - set(fs_files))
 
+            idx_to_delete = list(set(fs_files) - set(s3_objects))
+
             # Copy files from S3 that aren't on file system
             for s3_object in idx_to_sync:
                 idx_filepath = os.path.join(dir_proj_layer, s3_object)
@@ -181,12 +264,24 @@ def syncIdx(bucket,
                 sync_threads.append(t)
 
             # Delete files from file system that aren't on S3
-            for fs_file in list(set(fs_files) - set(s3_objects)):
-                fs_idx = os.path.join(dir_proj_layer, fs_file)
+            for fs_file in idx_to_delete:
+                idx_filepath = os.path.join(dir_proj_layer, fs_file)
 
-                t = threading.Thread(target=deleteObject, args=(fs_idx,))
+                t = threading.Thread(target=deleteObject, args=(idx_filepath,))
                 t.start()
                 sync_threads.append(t)
+
+            # Evaluate checksum of non-deleted index files already on disk against S3 object, if not forcing and
+            # user has requested checksum comparison
+            if not force and checksum:
+                for fs_file in list(set(fs_files) - set(idx_to_delete)):
+                    idx_filepath = os.path.join(dir_proj_layer, fs_file)
+                    idx_prefix = "{0}/{1}/{2}".format(proj, layer, fs_file).replace('//', '/')
+
+                    if not match_checksums(idx_prefix, idx_filepath):
+                        t = threading.Thread(target=copyObject, args=(idx_prefix, idx_filepath))
+                        t.start()
+                        sync_threads.append(t)
 
     # Wait for all threads to complete
     while len(sync_threads) > 0:
@@ -228,6 +323,13 @@ parser.add_argument(
     help='Force update even if file exists',
     action='store_true')
 parser.add_argument(
+    '-c',
+    '--checksum',
+    default=False,
+    dest='checksum',
+    help='Evaluate checksum of local file against s3 object and update even mismatched',
+    action='store_true')
+parser.add_argument(
     '-n',
     '--dry-run',
     default=False,
@@ -254,5 +356,6 @@ syncIdx(args.bucket,
         args.dir,
         args.prefix,
         args.force,
+        args.checksum,
         args.dry_run,
         s3_uri=args.s3_uri)
