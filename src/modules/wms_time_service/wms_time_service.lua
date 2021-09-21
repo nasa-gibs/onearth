@@ -317,7 +317,7 @@ end
 local function makeGTS(endpointConfig)
 
 
-	print("TEST MESSAGE makeGTS")
+    print("TEST MESSAGE makeGTS")
 
     -- Parse header
     if not endpointConfig["gts_header_file"] then
@@ -609,7 +609,7 @@ end
 local function makeGC(endpointConfig)
 
 
-	print("TEST MESSAGE makeGC")
+    print("TEST MESSAGE makeGC")
 
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
@@ -686,7 +686,7 @@ end
 
 local function makeTWMSGC(endpointConfig)
 
-	print("TEST MESSAGE makeTWMSGC")
+    print("TEST MESSAGE makeTWMSGC")
 
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
@@ -758,13 +758,39 @@ local function generateFromEndpointConfig()
     return makeGC(endpointConfig)
 end
 
+local function getTimeServiceOutput(endpointConfig, layer, time)
+    local dateServiceUri = endpointConfig["time_service_uri"]
+    local dateServiceKeys = endpointConfig["time_service_keys"]
+    if dateServiceKeys then
+        local formattedKeys = {}
+        for idx, value in ipairs(dateServiceKeys) do
+            formattedKeys[#formattedKeys + 1] = "key" .. tostring(idx) .. "=" .. value
+        end
+        local keyString = table.concat(formattedKeys, "&")
+        if string.sub(dateServiceUri, -1) ~= "?" then
+            dateServiceUri = dateServiceUri .. "?"
+        end
+        dateServiceUri = dateServiceUri .. keyString
+    end
+    dateServiceUri = dateServiceUri .. "&layer=" .. layer .. "&datetime=" .. time
+    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
+    local body = assert(stream:get_body_as_string())
+    if headers:get ":status" ~= "200" then
+        print("Error contacting date service: " .. body)
+        return nil
+    end
+
+    local dateList = JSON:decode(body)
+    return dateList or {}
+end
+
 function onearth_gc_service.handler(endpointConfig)
     return function(query_string, _, _)
         local req = get_query_param("request", query_string)
         if not req then
             return sendResponse(200, 'No REQUEST parameter specified')
         end
-		print("TEST MESSAGE GC HANDLER")
+        print("TEST MESSAGE GC HANDLER")
 
         req = req:lower()
         local response
@@ -775,7 +801,30 @@ function onearth_gc_service.handler(endpointConfig)
         elseif req == "gettileservice" then
             response = makeGTS(endpointConfig)
         else
-            response = "HI HI HI THERE Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService"
+            response = "BLAH2 BLAH BLAH "
+            local layers_string = get_query_param("layers", query_string)
+
+            local layers = split(",", layers_string)
+
+            for _, layer in pairs(layers) do
+                temp_layer = "MODIS_Aqua_Brightness_Temp_Band31_Day"
+                temp_date = "2011-09-01"
+                local time_service_output = getTimeServiceOutput(endpointConfig, temp_layer, temp_date)
+
+                local json_as_string = JSON:encode(time_service_output)
+
+                response = response .. "  json_as_string: " .. json_as_string
+
+                --local wms_time_service_out = JSON:decode(time_service_output)
+
+                local shapefile = time_service_output["filename"] or "NOT FOUND"
+                local prefix = time_service_output["prefix"] or "NOT FOUND AGAIN"
+
+                response = response .. "  Shape: " .. shapefile
+                response = response .. "  prefix: " .. prefix
+            end
+            
+            response = response .. "HI HI HI THERE Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService"
         end
         return sendResponse(200, response)
     end
@@ -785,7 +834,7 @@ if pcall(debug.getlocal, 4, 1) then
     return onearth_gc_service
 else
 
-	print("TEST MESSAGE pcall")
+    print("TEST MESSAGE pcall")
 
     print(generateFromEndpointConfig())
 end
