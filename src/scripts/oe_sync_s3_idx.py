@@ -95,58 +95,25 @@ def listAllFiles(dir_proj_layer, prefix):
     return [str(f).replace(dir_proj_layer + '/', '') for f in fs_list]
 
 
-# calculate_multipart_etag  Copyright (C) 2015
-#      Tony Lastowka <tlastowka at gmail dot com>
-#      https://github.com/tlastowka
-#
-#
-# calculate_multipart_etag is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# calculate_multipart_etag is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with calculate_multipart_etag.  If not, see <http://www.gnu.org/licenses/>.
-def calculate_multipart_etag(source_path, chunk_size, expected=None):
-    """
-    calculates a multipart upload etag for amazon s3
-    Arguments:
-    source_path -- The file to calculate the etage for
-    chunk_size -- The chunk size to calculate for.
-    Keyword Arguments:
-    expected -- If passed a string, the string will be compared to the resulting etag and raise an exception if they don't match
-    """
-
-    import hashlib
+def calculate_s3_etag(file_path, chunk_size=8 * 1024 * 1024):
     md5s = []
 
-    with open(source_path,'rb') as fp:
+    with open(file_path, 'rb') as fp:
         while True:
             data = fp.read(chunk_size)
-
             if not data:
                 break
             md5s.append(hashlib.md5(data))
 
-    if len(md5s) > 1:
-        digests = b"".join(m.digest() for m in md5s)
-        new_md5 = hashlib.md5(digests)
-        new_etag = '%s-%s' % (new_md5.hexdigest(),len(md5s))
-    elif len(md5s) == 1: # file smaller than chunk size
-        new_etag = '%s' % md5s[0].hexdigest()
-    else: # empty file
-        new_etag = ''
+    if len(md5s) < 1:
+        return '"{}"'.format(hashlib.md5().hexdigest())
 
-    if expected:
-        if not expected==new_etag:
-            raise ValueError('new etag %s does not match expected %s' % (new_etag,expected))
+    if len(md5s) == 1:
+        return '"{}"'.format(md5s[0].hexdigest())
 
-    return new_etag
+    digests = b''.join(m.digest() for m in md5s)
+    digests_md5 = hashlib.md5(digests)
+    return '"{}-{}"'.format(digests_md5.hexdigest(), len(md5s))
 
 
 def syncIdx(bucket,
@@ -191,7 +158,7 @@ def syncIdx(bucket,
                   str(os.stat(idx_filepath).st_size) + " bytes")
             '''
 
-            file_cksum = calculate_multipart_etag(idx_filepath, mbChunkSize * 1024 * 1024)
+            file_cksum = calculate_s3_etag(idx_filepath, mbChunkSize * 1024 * 1024)
         else:
             with open(idx_filepath, 'rb') as idxFile:
                 file_cksum = hashlib.md5(idxFile.read()).hexdigest().strip()
