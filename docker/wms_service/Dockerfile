@@ -105,7 +105,7 @@ RUN yum remove -y kernel-headers kernel-debug-devel
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh $ENDPOINT_REFRESH $TILES_HEALTHCHECK $S3_CONFIGS
+CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
