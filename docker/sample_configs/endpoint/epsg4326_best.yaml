@@ -24,6 +24,7 @@ twms_service:
   internal_endpoint: "/var/www/html/twms/epsg4326/best"
   external_endpoint: "/twms/epsg4326/best"
 mapserver:
+  endpoint: "/var/www/html/mapserver/epsg4326/best"
   internal_endpoint: "/var/www/html/wms/epsg4326/best"
   external_endpoint: "/wms/epsg4326/best"
   config_prefix: "epsg4326_best_wms_time_service"

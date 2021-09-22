@@ -61,7 +61,11 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
   # WMS Endpoint
   mkdir -p $INTERNAL_ENDPOINT
 
-  cp /var/www/cgi-bin/mapserv.fcgi ${INTERNAL_ENDPOINT}/wms.cgi
+  MAPSERVER_ENDPOINT=$(yq eval ".mapserver.endpoint" $f)
+  # WMS Endpoint
+  mkdir -p $MAPSERVER_ENDPOINT
+
+  cp /var/www/cgi-bin/mapserv.fcgi ${MAPSERVER_ENDPOINT}/wms.cgi
 done
 
 time_out=600
