@@ -22,17 +22,7 @@ local luaConfigTemplate = [[
 local onearth_wms_time = require "onearth_wms_time"
 local config = {
     layer_config_source="${config_loc}",
-    tms_defs_file="${tms_loc}",
-    tms_limits_defs_file="${tms_limits_loc}",
     time_service_uri="${time_service_uri}",
-    epsg_code="${epsg_code}",
-    gc_header_file=${gc_header_file},
-    gts_header_file=${gts_header_file},
-    twms_gc_header_file=${twms_gc_header_file},
-    base_uri_gc=${base_uri_gc},
-    base_uri_gts=${base_uri_gts},
-    base_uri_meta=${base_uri_meta},
-    target_epsg_code=${target_epsg_code},
     time_service_keys=${time_service_keys}
 }
 handler = onearth_wms_time.handler(config)
@@ -81,20 +71,13 @@ local function create_config(endpointConfigFilename)
     local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
     endpointConfigFile:close()
 
-    local tmsDefsFilename = assert(endpointConfig["tms_defs_file"], "No 'tms_defs_file' specified in endpoint config.")
     local layerConfigSource = assert(endpointConfig["layer_config_source"], "No 'layer_config_source' specified in endpoint config.")
     local dateServiceUri = endpointConfig["time_service_uri"]
 
-    local tmsLimitsDefsFilename = endpointConfig["tms_limits_defs_file"]
-    if not tmsLimitsDefsFilename then
-        print("No 'tms_limits_defs_file' specified in endpoint config.")
-    end
     local dateServiceKeyString = "{}"
     if endpointConfig["time_service_keys"] then
         dateServiceKeyString = "{" .. join(map(addQuotes, endpointConfig["time_service_keys"]), ",") .. "}"
     end
-
-    local epsgCode = assert(endpointConfig["epsg_code"], "No 'epsg_code' specified in endpoint config.")
 
     local configPrefix = endpointConfig["mapserver"]["config_prefix"]
     if not configPrefix then
@@ -133,17 +116,7 @@ local function create_config(endpointConfigFilename)
 
     -- Make and write Lua config
     local luaConfig = luaConfigTemplate:gsub("${config_loc}", layerConfigSource)
-        :gsub("${tms_loc}", tmsDefsFilename)
-        :gsub("${tms_limits_loc}", tmsLimitsDefsFilename or "nil")
         :gsub("${time_service_uri}", dateServiceUri)
-        :gsub("${epsg_code}", epsgCode)
-        :gsub("${gc_header_file}", addQuotes(endpointConfig["gc_service"]["gc_header_file"]) or "nil")
-        :gsub("${gts_header_file}", addQuotes(endpointConfig["gc_service"]["gts_header_file"]) or "nil")
-        :gsub("${twms_gc_header_file}", addQuotes(endpointConfig["gc_service"]["twms_gc_header_file"]) or "nil")
-        :gsub("${base_uri_gc}", addQuotes(endpointConfig["base_uri_gc"]) or "nil")
-        :gsub("${base_uri_gts}", addQuotes(endpointConfig["base_uri_gts"]) or "nil")
-        :gsub("${base_uri_meta}", endpointConfig["base_uri_meta"] and addQuotes(endpointConfig["base_uri_meta"]) or "nil")
-        :gsub("${target_epsg_code}", endpointConfig["reproject"] and (endpointConfig["reproject"]["target_epsg_code"] and addQuotes(endpointConfig["reproject"]["target_epsg_code"]) or "nil") or "nil")
         :gsub("${time_service_keys}", dateServiceKeyString)
     lfs.mkdir(internalEndpoint)
     local luaConfigFile = assert(io.open(luaConfigLocation, "w+", "Can't open Lua config file " 

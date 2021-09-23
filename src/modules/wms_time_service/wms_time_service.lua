@@ -1,4 +1,4 @@
-local onearth_gc_service = {}
+local onearth_wms_time_service = {}
 
 local lfs = require "lfs"
 local lyaml = require "lyaml"
@@ -16,7 +16,7 @@ local function split(sep, str)
     return results
 end
 
-local function get_query_param (param, query_string)
+local function get_query_param(param, query_string)
     if not query_string then
         return nil
     end
@@ -32,9 +32,9 @@ local function get_query_param (param, query_string)
 end
 
 local function sendResponse(code, msg_string)
-    return msg_string,
+    return "<html><body>" .. msg_string .. "</body></html>",
     {
-        ["Content-Type"] = "text/xml"
+        ["Content-Type"] = "text/html"
     },
     code
 end
@@ -72,62 +72,48 @@ local function getTimeServiceOutput(endpointConfig, layer, time)
     return dateList or {}
 end
 
-function onearth_gc_service.handler(endpointConfig)
+-- Pass-through all requests to mapserver, except "getmap" requests should append
+-- each layer's <layer_name>_PREFIX and <layer_name>_SHAPEFILE variables to URL
+function onearth_wms_time_service.handler(endpointConfig)
     return function(query_string, headers_in, notes)
         local req = get_query_param("request", query_string)
         if not req then
             return sendResponse(200, 'No REQUEST parameter specified')
         end
 
-        req = req:lower()
         local redirect_url = notes["URI"]:gsub("wms", "mapserver", 1) .. "?" .. query_string
-        local response
+        req = req:lower()
         if req == "getmap" then
-            response = "BLAH1 "
             local layers_string = get_query_param("layers", query_string)
-
-            local layers = split(",", layers_string)
-
+            local time_string = get_query_param("time", query_string)
             local layers_url = ""
-            for _, layer in pairs(layers) do
-                temp_layer = "MODIS_Aqua_Brightness_Temp_Band31_Day"
-                temp_date = "2011-09-01"
-                local time_service_output = getTimeServiceOutput(endpointConfig, temp_layer, temp_date)
 
-                local json_as_string = JSON:encode(time_service_output)
+            if layers_string and time_string then
+                local layers = split(",", layers_string)
 
-                response = response .. "  json_as_string: " .. json_as_string
+                for _, layer in pairs(layers) do
+                    local time_service_output = getTimeServiceOutput(endpointConfig, layer, time_string)
 
-                --local wms_time_service_out = JSON:decode(time_service_output)
+                    if time_service_output["date"] then
+                        local date = time_service_output["date"]
+                        local shapefile = time_service_output["filename"]
+                        local prefix = time_service_output["prefix"]
 
-                if time_service_output["date"] then
-                    local date = time_service_output["date"]
-                    local shapefile = time_service_output["filename"]
-                    local prefix = time_service_output["prefix"]
-                    layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. prefix .. "%2F" .. string.sub(date, 0, 4) .. "%2F"
-
-                    layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. shapefile
+                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. prefix .. "%2F" .. string.sub(date, 0, 4) .. "%2F"
+                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. shapefile
+                    end
                 end
             end
 
---            response = response .. "   " .. layers_url .. "   HI HI HI THERE Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService"
             redirect_url = redirect_url .. layers_url
 	    end
 
         return sendResponseRedirect(redirect_url)
-
-           -- response = makeGC(endpointConfig)
-    --    elseif req == "twmsgetcapabilities" then
-    --        response = makeTWMSGC(endpointConfig)
-    --    elseif req == "gettileservice" then
-    --        response = makeGTS(endpointConfig)
---        end
---        return sendResponse(200, response)
     end
 end
 
 if pcall(debug.getlocal, 4, 1) then
-    return onearth_gc_service
+    return onearth_wms_time_service
 else
     print("pcall - Call main method here")
 end

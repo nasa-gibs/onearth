@@ -19,12 +19,10 @@ WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-3.rockspec
 RUN luarocks make json-lua-0.1-3.rockspec
 
-# Install wms_time_service Service configs
+# Install wms_time_service module
 RUN mkdir -p /etc/onearth/config/endpoint
-RUN cp -R /home/oe2/onearth/src/modules/wms_time_service/conf /etc/onearth/config/
 WORKDIR /home/oe2/onearth/src/modules/wms_time_service
 RUN luarocks make onearth_wms_time-0.1-1.rockspec
-RUN echo installed wms_time
 
 # FastCGI module
 WORKDIR /tmp

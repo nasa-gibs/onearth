@@ -23,7 +23,10 @@ twms_service:
   internal_endpoint: "/var/www/html/twms/epsg3857/all"
   external_endpoint: "/twms/epsg3857/all"
 mapserver:
+  endpoint: "/var/www/html/mapserver/epsg3857/all"
+  external_endpoint: "/wms/epsg3857/all"
   internal_endpoint: "/var/www/html/wms/epsg3857/all"
+  config_prefix: "epsg3857_all_wms_time_service"
   mapfile_header:  "/etc/onearth/config/mapserver/epsg3857.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg3857_all.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/all/1.0.0/WMTSCapabilities.xml"
