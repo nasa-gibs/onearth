@@ -254,7 +254,7 @@ for layer in layers:
                 layer_strings.append(new_layer_string)
         except KeyError:
             # TODO: format for properly logging an error
-            print("ERROR: vector layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
+            print("WARN: Vector layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
     # handle raster layers
     else:
         out_root = etree.Element('GDAL_WMS')
