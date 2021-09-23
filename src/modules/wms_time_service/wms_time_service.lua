@@ -94,13 +94,14 @@ function onearth_wms_time_service.handler(endpointConfig)
                 for _, layer in pairs(layers) do
                     local time_service_output = getTimeServiceOutput(endpointConfig, layer, time_string)
 
-                    if time_service_output["date"] then
-                        local date = time_service_output["date"]
-                        local shapefile = time_service_output["filename"]
-                        local prefix = time_service_output["prefix"]
+                    if time_service_output["date"] and time_service_output["prefix"] then
+                        local year = string.sub(time_service_output["date"], 0, 4)
 
-                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. prefix .. "%2F" .. string.sub(date, 0, 4) .. "%2F"
-                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. shapefile
+                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F"
+                    end
+					
+                    if time_service_output["filename"] then
+                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
                     end
                 end
             end

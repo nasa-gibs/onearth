@@ -11,7 +11,10 @@ The syntax for the configuration tool is: `oe2_wms_configure.py {endpoint_config
 ### Endpoint Configuration
 The following entries are found in the `mapserver` section of the endpoint configuration file and are used by the configuration tool.
 
+* **endpoint**: The internal directory within the container for mapserver
 * **internal_endpoint**: The internal directory within the container for Apache HTTPD
+* **external_endpoint**: The relative URI under which the mapserver should be accessible.
+* **config_prefix**: The filename prefix to be used for the Apache config that's generated for WMS layers.
 * **mapfile_header**: The common mapfile "header" used for all layers in the endpoint
 * **mapfile_location**: The output location of the mapfile within the container
 * **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers
@@ -24,7 +27,10 @@ The following entries are found in the `mapserver` section of the endpoint confi
 Example:
 ```
 mapserver:
+  endpoint: "/var/www/html/mapserver/epsg4326/best"
+  external_endpoint: "/wms/epsg4326/best"
   internal_endpoint: "/var/www/html/wms/epsg4326/best"
+  config_prefix: "epsg4326_best_wms_time_service"
   mapfile_header:  "/etc/onearth/config/mapserver/epsg4326.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg4326_best.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/WMTSCapabilities.xml"
