@@ -52,7 +52,7 @@ done
 
 time_out=600
 echo "[$(date)] Begin checking $GC_HEALTHCHECK endpoint...">>/var/log/onearth/config.log 2>&1;
-while [[ "$(curl -s -m 3 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
+while [[ "$(curl -s -m 15 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -lt 0 ]]; then
 	echo "[$(date)] ERROR: Timed out waiting for endpoint">>/var/log/onearth/config.log 2>&1;
   cat /var/log/onearth/config.log; exit 1;
