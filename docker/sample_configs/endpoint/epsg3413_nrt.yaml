@@ -23,7 +23,7 @@ twms_service:
   internal_endpoint: "/var/www/html/twms/epsg3413/nrt"
   external_endpoint: "/twms/epsg3413/nrt"
 mapserver:
-  endpoint: "/var/www/html/mapserver/epsg3413/nrt"
+  redirect_endpoint: "/var/www/html/mapserver/epsg3413/nrt"
   external_endpoint: "/wms/epsg3413/nrt"
   internal_endpoint: "/var/www/html/wms/epsg3413/nrt"
   config_prefix: "epsg3413_nrt_wms_time_service"

@@ -63,11 +63,11 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
   # WMS Endpoint
   mkdir -p $INTERNAL_ENDPOINT
 
-  MAPSERVER_ENDPOINT=$(yq eval ".mapserver.endpoint" $f)
-  # WMS Endpoint
-  mkdir -p $MAPSERVER_ENDPOINT
+  REDIRECT_ENDPOINT=$(yq eval ".mapserver.redirect_endpoint" $f)
+  # Redirect Endpoint
+  mkdir -p $REDIRECT_ENDPOINT
 
-  cp /var/www/cgi-bin/mapserv.fcgi ${MAPSERVER_ENDPOINT}/wms.cgi
+  cp /var/www/cgi-bin/mapserv.fcgi ${REDIRECT_ENDPOINT}/wms.cgi
 done
 
 time_out=600
@@ -126,13 +126,8 @@ Header Unset ETag
 FileETag None
 EOS
 
-# Create internal endpoint directories for WMTS and TWMS endpoints and build the wms_time services
-for f in $(grep -l 'mapserver:' /etc/onearth/config/endpoint/*.yaml); do
-  # Mapserver Endpoint
-  mkdir -p $(yq eval ".mapserver.internal_endpoint" $f)
-
-  lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua $f >>/var/log/onearth/config.log 2>&1
-done
+# Build wms_time service endpoints in parallel
+grep -l 'mapserver:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart

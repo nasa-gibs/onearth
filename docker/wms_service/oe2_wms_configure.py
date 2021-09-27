@@ -12,7 +12,7 @@ from decimal import Decimal
 
 MAPFILE_TEMPLATE = 'template.map'
 APACHE_CONFIG = '/etc/httpd/conf.d/oe2_wms.conf'
-APACHE_CONFIG_TEMPLATE = """<Directory {mapserver_endpoint}>
+APACHE_CONFIG_TEMPLATE = """<Directory {redirect_endpoint}>
         SetHandler fcgid-script
         Options ExecCGI
         SetEnv MS_MAPFILE {mapfile_location}
@@ -110,8 +110,7 @@ else:
     shapefile_bucket = ''
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
-internal_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['internal_endpoint']))
-mapserver_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['endpoint']))
+redirect_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['redirect_endpoint']))
 epsg_code = endpoint_config['epsg_code']
 
 # Get layer configs
@@ -324,7 +323,7 @@ print('Generated ' + str(outfilename))
 
 with open(APACHE_CONFIG, 'r+', encoding='utf-8') as apache_config:
     config_string = apache_config.read()
-    directory_string = APACHE_CONFIG_TEMPLATE.replace('{mapserver_endpoint}', str(mapserver_endpoint)).replace('{mapfile_location}', str(outfilename))
+    directory_string = APACHE_CONFIG_TEMPLATE.replace('{redirect_endpoint}', str(redirect_endpoint)).replace('{mapfile_location}', str(outfilename))
     if not directory_string in config_string:
         apache_config.write(directory_string)
         apache_config.write('\n')

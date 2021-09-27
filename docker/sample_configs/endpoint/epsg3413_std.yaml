@@ -23,7 +23,7 @@ twms_service:
   internal_endpoint: "/var/www/html/twms/epsg3413/std"
   external_endpoint: "/twms/epsg3413/std"
 mapserver:
-  endpoint: "/var/www/html/mapserver/epsg3413/std"
+  redirect_endpoint: "/var/www/html/mapserver/epsg3413/std"
   external_endpoint: "/wms/epsg3413/std"
   internal_endpoint: "/var/www/html/wms/epsg3413/std"
   config_prefix: "epsg3413_std_wms_time_service"

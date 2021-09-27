@@ -23,7 +23,7 @@ twms_service:
   internal_endpoint: "/var/www/html/twms/epsg3857/best"
   external_endpoint: "/twms/epsg3857/best"
 mapserver:
-  endpoint: "/var/www/html/mapserver/epsg3857/best"
+  redirect_endpoint: "/var/www/html/mapserver/epsg3857/best"
   external_endpoint: "/wms/epsg3857/best"
   internal_endpoint: "/var/www/html/wms/epsg3857/best"
   config_prefix: "epsg3857_best_wms_time_service"
