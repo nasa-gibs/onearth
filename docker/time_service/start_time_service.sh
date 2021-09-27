@@ -350,27 +350,19 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:default "2012-09-10"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:std:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods "2012-09-10/2018-12-31/P1D"
 
-	# Load custom time period configurations and generate periods
-	for i in /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml; do
-		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST -g -t ':best'
-		python3 /usr/bin/oe_periods_configure.py -e "$i" -r $REDIS_HOST -g
-	done
+	# Load custom time period configurations in parallel
+  ls /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST -g -t ':best' >>/var/log/onearth/config.log 2>&1
+  ls /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST -g >>/var/log/onearth/config.log 2>&1
 
 else
-	# Load custom time period configurations
-	for f in $(grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml); do
-		python3 /usr/bin/oe_periods_configure.py -e "$f" -r $REDIS_HOST -t ':best'
-		python3 /usr/bin/oe_periods_configure.py -e "$f" -r $REDIS_HOST
-  done
+  # Load custom time period configurations in parallel
+  grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST -t ':best' >>/var/log/onearth/config.log 2>&1
+  grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 
-	# Load time periods by scraping S3 bucket
+	# Load time periods by scraping S3 bucket, if requested
 	if [ "$FORCE_TIME_SCRAPE" = true ]; then
 		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
 		python3 /usr/bin/oe_scrape_time.py -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-	else
-		python3 /usr/bin/oe_scrape_time.py -c -r -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-		python3 /usr/bin/oe_scrape_time.py -c -r -t best -b $S3_URL $REDIS_HOST >>/var/log/onearth/config.log 2>&1
-
 	fi
 fi
 

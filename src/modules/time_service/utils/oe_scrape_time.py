@@ -27,6 +27,7 @@ import gzip
 import botocore.session
 from botocore.stub import Stubber
 import os
+import threading
 
 TEST_RESPONSE = {
     'IsTruncated': False,
@@ -218,6 +219,41 @@ def updateDateService(redis_uri,
         lua_script2 = f.read()
     best_script = r.register_script(lua_script2)
 
+
+    scrape_threads    = []
+    scrape_semaphore  = threading.BoundedSemaphore(10)
+
+    def updateRedis(proj, layer, tag, sorted_parsed_dates):
+        try:
+            scrape_semaphore.acquire()
+
+            print(f'Configuring layer: {layer}')
+            tag_str = f'{tag}:' if tag else ''
+
+            for date in sorted_parsed_dates:
+                r.zadd(f'{proj}:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
+                best_script(keys=[f'{proj}:{tag_str}layer:{layer}'], args=[date.isoformat()])
+                if reproject and str(proj) == 'epsg4326':
+                    r.zadd(f'epsg3857:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
+                    best_script(keys=[f'epsg3857:{tag_str}layer:{layer}'], args=[date.isoformat()])
+
+            date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
+            if reproject and str(proj) == 'epsg4326':
+                date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])
+
+            # check for best layer
+            bestLayer=r.get(f'{proj}:{tag_str}layer:{layer}:best_layer')
+            print("Best Layer: ", bestLayer)
+            if bestLayer is not None:
+                bestLayer=bestLayer.decode("utf-8")
+                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
+                if reproject and str(proj) == 'epsg4326':
+                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
+
+        finally:
+            scrape_semaphore.release()
+
+
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
         for layer, data in layers.items():
@@ -229,30 +265,26 @@ def updateDateService(redis_uri,
                     sorted(list(data['dates']))))
 
             # Set default to latest date
+            # NOT USED??
             default = sorted_parsed_dates[-1].isoformat()
 
-            print(f'Configuring layer: {layer}')
+            t = threading.Thread(target=updateRedis, args=(proj, layer, tag, sorted_parsed_dates))
+            t.start()
+            scrape_threads.append(t)
 
-            tag_str = f'{tag}:' if tag else ''
-            for date in sorted_parsed_dates:
-                r.zadd(f'{proj}:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
-                best_script(keys=[f'{proj}:{tag_str}layer:{layer}'], args=[date.isoformat()])
-                if reproject and str(proj) == 'epsg4326':
-                    r.zadd(f'epsg3857:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
-                    best_script(keys=[f'epsg3857:{tag_str}layer:{layer}'], args=[date.isoformat()])
+    # Wait for all threads to complete
+    while len(scrape_threads) > 0:
+        completed = []
 
-            date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
-            if reproject and str(proj) == 'epsg4326':
-                date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])
-            
-            # check for best layer
-            bestLayer=r.get(f'{proj}:{tag_str}layer:{layer}:best_layer')
-            print("Best Layer: ", bestLayer)
-            if bestLayer is not None:
-                bestLayer=bestLayer.decode("utf-8")
-                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
-                if reproject and str(proj) == 'epsg4326':
-                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
+        for t in scrape_threads:
+            if not t.is_alive():
+                completed.append(t)
+            else:
+                t.join(10)
+
+        for t in completed:
+            scrape_threads.remove(t)
+
 
 # Routine when run from CLI
 

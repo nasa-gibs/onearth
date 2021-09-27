@@ -111,7 +111,7 @@ local function getDateList(endpointConfig)
         end
         dateServiceUri = dateServiceUri .. keyString
     end
-    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
+    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(300))
     local body = assert(stream:get_body_as_string())
     if headers:get ":status" ~= "200" then
         print("Error contacting date service: " .. body)
