@@ -503,9 +503,22 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
 
     -- Build the Style element
     local styleNode = xml.new("Style", {isDefault="true"})
-    styleNode:add_child(xml.new("ows:Title",{["xml:lang"]="en"}):text("default"))
-    styleNode:add_child(xml.new("ows:Identifier"):text("default"))
-    layerElem:add_child(styleNode)
+    if config.style then
+        styleNode:add_child(xml.new("ows:Title",{["xml:lang"]="en"}):text(config.style.title))
+        styleNode:add_child(xml.new("ows:Identifier"):text(config.style.identifier))
+        for _, urls in pairs(config.style.urls) do
+            local legendNode = xml.new("LegendURL")
+            for key, value in pairs(urls) do
+                legendNode:set_attrib(key, string.gsub(value, "{base_uri_meta}", baseUriMeta or ""))
+            end
+            styleNode:add_child(legendNode)
+        end
+        layerElem:add_child(styleNode)
+    else
+        styleNode:add_child(xml.new("ows:Title",{["xml:lang"]="en"}):text("default"))
+        styleNode:add_child(xml.new("ows:Identifier"):text("default"))
+        layerElem:add_child(styleNode)
+    end
 
 
     -- Build the <Dimension> element for time (if necessary)
