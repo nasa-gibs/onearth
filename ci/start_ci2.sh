@@ -28,8 +28,12 @@ mkdir -p /build/test/ci_tests/wms/test
 cp /var/www/cgi-bin/mapserv.fcgi /build/test/ci_tests/wms/test/wms.cgi
 cp ../docker/wms_service/template.map .
 
+mkdir -p /build/test/ci_tests/mapserver/test
+cp /var/www/cgi-bin/mapserv.fcgi /build/test/ci_tests/mapserver/test/wms.cgi
+
 python3.6 /usr/bin/oe2_wmts_configure.py ../src/test/mapserver_test_data/test_endpoint.yaml
 lua ../src/modules/gc_service/make_gc_endpoint.lua ../src/test/mapserver_test_data/test_endpoint.yaml
+lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua ../src/test/mapserver_test_data/test.yaml
 
 echo 'Starting Apache server'
 /usr/sbin/httpd -k start
