@@ -100,8 +100,8 @@ local function create_config(endpointConfigFilename)
 
     local externalEndpoint = endpointConfig["mapserver"]["external_endpoint"]
     if not externalEndpoint then
-        print("No gc_service/internal_endpoint specified. Using /gc")
-        externalEndpoint = "/gc"
+        print("No mapserver/external_endpoint specified. Using /wms")
+        externalEndpoint = "/wms"
     end
     externalEndpoint = stripTrailingSlash(externalEndpoint)
 
@@ -124,7 +124,7 @@ local function create_config(endpointConfigFilename)
     luaConfigFile:write(luaConfig)
     luaConfigFile:close()
 
-    print("GetCapabilities" .. " service config has been saved to " .. luaConfigLocation)
+    print("WMS Time service config has been saved to " .. luaConfigLocation)
 
     local apacheConfigFile = assert(io.open(apacheConfigLocation, "w+"), "Can't open Apache config file "
         .. apacheConfigLocation .. " for writing.")
@@ -137,7 +137,7 @@ local function create_config(endpointConfigFilename)
     print("Configuration complete!")
 end
 
-local parser = argparse("make_gc_endpoint.lua", "")
+local parser = argparse("make_wms_time_endpoint.lua", "")
 parser:argument("endpoint_config", "Endpoint config YAML.")
 local args = parser:parse()
 
