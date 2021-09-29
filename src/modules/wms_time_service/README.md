@@ -65,7 +65,7 @@ time_service_uri: "http://localhost/time_service/time"
 layer_config_source: "/etc/onearth/layers/layer_config.yaml"
 apache_config_location: "/etc/httpd/conf.d"
 mapserver:
-  endpoint: "/var/www/html/mapserver/epsg3857/std"
+  redirect_endpoint: "/var/www/html/mapserver/epsg3857/std"
   external_endpoint: "/wms/epsg3857/std"
   internal_endpoint: "/var/www/html/wms/epsg3857/std"
   config_prefix: "epsg3857_std_wms_time_service"
@@ -93,13 +93,13 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 
 **mapserver config options**
 
-`endpoint` -- location on disk for the mapserver files. Must be accessible by Apache.
+`redirect_endpoint` -- location on disk for the mapserver files. Must be accessible by Apache.
 
 `internal_endpoint` -- location on disk for the endpoint config for Apache.
 
 `external_endpoint` -- relative URI under which the wms time service should be accessible.
 
-`config_prefix` -- Filename prefix to be used for the Apache config that's generated.
+`config_prefix` -- Filename prefix to be used for the WMS Time service Apache config that's generated.
 
 ### Apache Configuration
 
