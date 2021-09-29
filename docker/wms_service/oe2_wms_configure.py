@@ -188,6 +188,7 @@ for layer in layers:
         dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
         validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
 
+    wms_srs    = "{0}".format(epsg_code)
     if epsg_code == "EPSG:4326":
         wms_extent = "-180 -90 180 90"
         # Explicitly show that EPSG:4326 and EPSG:3857 requests are supported through an EPSG:4326 endpoint
@@ -197,20 +198,17 @@ for layer in layers:
         # Hard coded to GIBS TileMatrixSet values. These are not the projection's native extents. If that's a problem,
         # then the values could be read from the remote Capabilities
         wms_extent = "-4194304 -4194304 4194304 4194304"
-        wms_srs    = "\"{0}\"".format(epsg_code)
         layer_proj = epsg_code.lower()
     elif epsg_code in ["EPSG:3857"]:
         # You would think this should be the EPSG:3857 extents, but that doesn't work. Instead, these are in the units
         # of the layer's projection... which is EPSG:4326
         wms_extent = "-180, -85.0511, 180, 85.0511"
-        wms_srs    = "\"{0}\"".format(epsg_code)
         # Hard coded to be epsg:4326 because we are building Web Mercator off of an EPSG:4326 WMTS endpoint with
         # EPSG:4326 shapefiles. If that's a problem, then we could add a new property to the endpoint config to specify
         # the source WMTS' projection and also a new property to the source_shapefile indicating its projection.
         layer_proj = "epsg:4326"
     else:
         wms_extent = "{0}, {1}, {2}, {3}".format(upper_left_x, lower_right_y, lower_right_x, upper_left_y)
-        wms_srs    = "\"{0}\"".format(epsg_code)
         layer_proj = epsg_code.lower()
         break
 
