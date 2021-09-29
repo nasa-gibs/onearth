@@ -47,10 +47,10 @@ The syntax for running the configuration tool is:
 
 This tool requires a few different configuration files to work:
 
-- endpoint config -- contains information about how the GC/GTS endpoint should
+- endpoint config -- contains information about how the WMS Time endpoint should
   be set up in Apache
 - layer config(s) -- contains information about each of the layers to be
-  included in the GC/GTS files.
+  included in the WMS Time files.
 
 Note that Apache must be restarted for new configurations to take effect. This
 command may need to be run as `sudo` depending on the permission settings for
@@ -69,9 +69,7 @@ mapserver:
   external_endpoint: "/wms/epsg3857/std"
   internal_endpoint: "/var/www/html/wms/epsg3857/std"
   config_prefix: "epsg3857_std_wms_time_service"
-  mapfile_header:  "/etc/onearth/config/mapserver/epsg3857.header"
-  mapfile_location: "/etc/onearth/config/mapserver/epsg3857_std.map"
-  source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/std/1.0.0/WMTSCapabilities.xml"
+  ...
 ```
 
 ##### Configuration Options:
