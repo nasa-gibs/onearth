@@ -1,0 +1,56 @@
+abstract: SSMI_DMSP_F8_Rain_Rate_Over_Oceans_Descending abstract
+best_config:
+  1: SSMI_DMSP_F8_Rain_Rate_Over_Oceans_Descending_v7_STD
+layer_id: SSMI_DMSP_F8_Rain_Rate_Over_Oceans_Descending
+layer_name: SSMI DMSP F8 Rain Rate Over Oceans Descending tileset
+layer_title: Rain Rate (Descending, Local PM, DMSP-F8 / SSMI)
+metadata:
+- xlink:href: '{base_uri_meta}/colormaps/v1.0/SSMI_Rain_Rate_Over_Oceans_Descending.xml'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0
+  xlink:title: 'GIBS Color Map: Data - RGB Mapping'
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/colormaps/v1.3/SSMI_Rain_Rate_Over_Oceans_Descending.xml'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3
+  xlink:title: 'GIBS Color Map: Data - RGB Mapping'
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/colormaps/v1.3/SSMI_Rain_Rate_Over_Oceans_Descending.xml'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/colormap/
+  xlink:title: 'GIBS Color Map: Data - RGB Mapping'
+  xlink:type: simple
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 1
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
+  idx_path: /onearth/idx/epsg4326
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+style:
+  default: true
+  identifier: default
+  title: default
+  urls:
+  - format: image/svg+xml
+    height: 85.5
+    width: 378.0
+    xlink:href: '{base_uri_meta}/legends/SSMI_Rain_Rate_Over_Oceans_Descending_H.svg'
+    xlink:role: http://earthdata.nasa.gov/gibs/legend-type/horizontal
+    xlink:title: 'GIBS Color Map Legend: Horizontal'
+    xlink:type: simple
+  - format: image/svg+xml
+    height: 288.0
+    width: 135.0
+    xlink:href: '{base_uri_meta}/legends/SSMI_Rain_Rate_Over_Oceans_Descending_V.svg'
+    xlink:role: http://earthdata.nasa.gov/gibs/legend-type/vertical
+    xlink:title: 'GIBS Color Map Legend: Vertical'
+    xlink:type: simple
+tilematrixset: 2km
+time_config:
+- DETECT/P1D
+wms_layer_group: /Precipitation Rate
