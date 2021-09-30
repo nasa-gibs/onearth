@@ -33,13 +33,9 @@ VALIDATION_TEMPLATE = """
         VALIDATION
             "time"                  "^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z|[0-9]{4}-[0-9]{2}-[0-9]{2})|(default)$"
             "default_time"          "{default}"
-            "default_YYYY"            "2021"
-            "YYYY"                    "^[0-9]{4}$"
-            "default_YYYYJJJHHMISS"   "2021184000000"
-            "YYYYJJJHHMISS"           "^[0-9]{13}$"
+            {shapefile_validation}
         END
 """
-# TODO: YYYY and YYYYJJJHHMISS for testing only - will be replaced when we implement time snapping
 
 
 def get_map_bounds(bbox, epsg, scale_denominator, tilesize, matrix_width, matrix_height):
@@ -131,12 +127,13 @@ except:
     while attempt < retries:
         time.sleep(duration)
         attempt = attempt + 1
+        print("Failed attempt " + str(attempt) + " to connect to " + gc_url)
         try:
             r = requests.get(gc_url)
             if r.status_code == 200:
                 break
-        except:
-            print("Failed attempt " + str(attempt) + " to connect to " + gc_url)
+        except Exception as e:
+            print("ERROR:", e)
     if attempt == retries:
         print("Can't get GetCapabilities file from url " + gc_url)
         sys.exit()
@@ -177,7 +174,7 @@ for layer in layers:
         template_string = template_string.replace(replace_with_local, 'http://172.17.0.1:8080')
 
     dimension_info = ''
-    validation_info = ''
+    validation_info = VALIDATION_TEMPLATE
     style_info = ''
     
     dimension = layer.find('{*}Dimension')
@@ -226,7 +223,6 @@ for layer in layers:
     # handle vector layers
     if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
         style_info = '"wms_enable_request"    "GetLegendGraphic"'
-        validation_info = VALIDATION_TEMPLATE
         with open(MAPFILE_TEMPLATE, 'r', encoding='utf-8') as f:
             template_string = f.read()
         try:
@@ -237,6 +233,18 @@ for layer in layers:
                 except FileNotFoundError:
                     class_style = ''
                     print('ERROR: layer_style file not found', shp_config['layer_style'])
+
+                prefix = '/%{0}_PREFIX%'.format(shp_config['layer_id'])
+                shapefile = '%{0}_SHAPEFILE%.shp'.format(shp_config['layer_id'])
+                data_file_uri = Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket) + prefix + shapefile)
+
+                shapefile_validation = '''"{0}_PREFIX"   "^."
+            "default_{0}_PREFIX"          ""
+            "{0}_SHAPEFILE"   "^."
+            "default_{0}_SHAPEFILE"          ""
+            '''.format(shp_config['layer_id'])
+                validation_info = validation_info.replace('{shapefile_validation}', shapefile_validation)
+
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
                                                                   ('${layer_title}', shp_config['layer_title']),
@@ -245,16 +253,18 @@ for layer in layers:
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', dimension_info),
                                                                   ('${style_info}', style_info),
-                                                                  ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}.shp\''.format(Path(shp_config['source_shapefile']['data_file_uri'].replace('{SHAPEFILE_BUCKET}', shapefile_bucket)))),
+                                                                  ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
                                                                   ('${epsg_code}', layer_proj),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style)])
                 layer_strings.append(new_layer_string)
+
         except KeyError:
             # TODO: format for properly logging an error
             print("WARN: Vector layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
     # handle raster layers
     else:
+        validation_info = validation_info.replace('{shapefile_validation}', '')
         out_root = etree.Element('GDAL_WMS')
 
         service_element = etree.SubElement(out_root, 'Service')
