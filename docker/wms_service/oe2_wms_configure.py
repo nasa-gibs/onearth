@@ -251,7 +251,7 @@ for layer in layers:
                                                                   ('${wms_extent}', wms_extent),
                                                                   ('${wms_srs}', wms_srs),
                                                                   ('${wms_layer_group}', wms_layer_group),
-                                                                  ('${dimension_info}', dimension_info),
+                                                                  ('${dimension_info}', ''),
                                                                   ('${style_info}', style_info),
                                                                   ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
                                                                   ('${epsg_code}', layer_proj),

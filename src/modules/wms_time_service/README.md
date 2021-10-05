@@ -33,7 +33,7 @@ e.g. 1:
 e.g. 2:
    Accessing: http://localhost/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=768&BBOX=-90%2C-180%2C90%2C180&time=2019-02-10
    Redirects to:  
-   http://localhost/mapserver/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=768&BBOX=-90%2C-180%2C90%2C180&time=2019-02-10MODIS_Terra_CorrectedReflectance_TrueColor_PREFIX=MODIS_Terra_CorrectedReflectance_TrueColor_Day%2F2011%2FMODIS_Terra_CorrectedReflectance_TrueColor_SHAPEFILE=MODIS_Terra_CorrectedReflectance_TrueColor_Day-2011244000000
+   http://localhost/mapserver/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=768&BBOX=-90%2C-180%2C90%2C180&time=2019-02-10MODIS_Terra_CorrectedReflectance_TrueColor_PREFIX=MODIS_Terra_CorrectedReflectance_TrueColor_Day%2F2011%2F&MODIS_Terra_CorrectedReflectance_TrueColor_SHAPEFILE=MODIS_Terra_CorrectedReflectance_TrueColor_Day-2011244000000
 
 ### The Configuration Tool
 

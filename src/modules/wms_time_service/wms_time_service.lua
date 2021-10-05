@@ -88,7 +88,11 @@ function onearth_wms_time_service.handler(endpointConfig)
             local time_string = get_query_param("time", query_string)
             local layers_url = ""
 
-            if layers_string and time_string then
+			if not time_string then
+				time_string = "default"
+			end
+
+            if layers_string then
                 local layers = split(",", layers_string)
 
                 for _, layer in pairs(layers) do

@@ -26,7 +26,7 @@ RUN luarocks make onearth_wms_time-0.1-1.rockspec
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
@@ -49,6 +49,10 @@ RUN rm -rf /tmp/*
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/docker/wms_service/template.map /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
+
+# Copy oe-status shapefiles
+RUN mkdir -p /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021
+RUN cp /home/oe2/onearth/docker/oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
@@ -90,7 +94,8 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
 RUN groupadd www-data && useradd -g www-data www-data
 RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
     chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log && \
-	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /etc/onearth && \
+	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /onearth && \
+	chown -hR www-data:www-data /etc/onearth && \
 	chown -hR www-data:www-data /etc/crontab && chown -hR www-data:www-data /var/lib/logrotate
 
 #setcap to bind to privileged ports as non-root
@@ -107,4 +112,4 @@ CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
-  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
+  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km,MODIS_Terra_Thermal_Anomalies_All&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
