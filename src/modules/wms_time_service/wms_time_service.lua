@@ -85,15 +85,15 @@ function onearth_wms_time_service.handler(endpointConfig)
         req = req:lower()
         if req == "getmap" then
             local layers_string = get_query_param("layers", query_string)
-            local time_string = get_query_param("time", query_string)
             local layers_url = ""
-
-			if not time_string then
-				time_string = "default"
-			end
 
             if layers_string then
                 local layers = split(",", layers_string)
+                local time_string = get_query_param("time", query_string)
+
+                if not time_string then
+                    time_string = "default"
+                end
 
                 for _, layer in pairs(layers) do
                     local time_service_output = getTimeServiceOutput(endpointConfig, layer, time_string)
@@ -103,7 +103,7 @@ function onearth_wms_time_service.handler(endpointConfig)
 
                         layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F"
                     end
-					
+                    
                     if time_service_output["filename"] then
                         layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
                     end
@@ -111,7 +111,7 @@ function onearth_wms_time_service.handler(endpointConfig)
             end
 
             redirect_url = redirect_url .. layers_url
-	    end
+        end
 
         return sendResponseRedirect(redirect_url)
     end
