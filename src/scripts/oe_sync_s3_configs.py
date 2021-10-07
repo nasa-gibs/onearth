@@ -85,7 +85,6 @@ def syncConfigs(bucket,
 
     def copyObject(cfg_prefix, cfg_filepath):
         try:
-            sync_semaphore.acquire()
             print("Downloading {0} to {1}".format(cfg_prefix, cfg_filepath))
             if not dry_run:
                 s3.download_file(bucket, cfg_prefix, cfg_filepath)
@@ -97,8 +96,6 @@ def syncConfigs(bucket,
 
     def deleteObject(cfg_filepath):
         try:
-            sync_semaphore.acquire()
-
             if os.path.isfile(cfg_filepath):
                 print("Deleting file not found on S3: {0}".format(cfg_filepath))
                 if not dry_run:
@@ -128,6 +125,7 @@ def syncConfigs(bucket,
             cfg_prefix = prefix + s3_file
             cfg_filepath = dir + s3_file
 
+            sync_semaphore.acquire()
             t = threading.Thread(target=copyObject, args=(cfg_prefix, cfg_filepath))
             t.start()
             sync_threads.append(t)
@@ -137,6 +135,7 @@ def syncConfigs(bucket,
         for fs_file in list(set(fs_files) - set(s3_files)):
             cfg_filepath = dir + fs_file
 
+            sync_semaphore.acquire()
             t = threading.Thread(target=deleteObject, args=(cfg_filepath,))
             t.start()
             sync_threads.append(t)

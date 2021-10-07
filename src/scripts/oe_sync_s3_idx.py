@@ -167,7 +167,6 @@ def syncIdx(bucket,
 
     def copyObject(idx_prefix, idx_filepath):
         try:
-            sync_semaphore.acquire()
             print("Downloading {0} to {1}".format(idx_prefix, idx_filepath))
             if not dry_run:
                 s3.download_file(bucket, idx_prefix, idx_filepath)
@@ -179,8 +178,6 @@ def syncIdx(bucket,
 
     def deleteObject(idx_filepath):
         try:
-            sync_semaphore.acquire()
-
             if os.path.isfile(idx_filepath):
                 print("Deleting file not found on S3: {0}".format(idx_filepath))
                 if not dry_run:
@@ -226,6 +223,7 @@ def syncIdx(bucket,
                 if not os.path.isdir(idx_filedir) and not dry_run:
                     os.makedirs(idx_filedir)
 
+                sync_semaphore.acquire()
                 t = threading.Thread(target=copyObject, args=(idx_prefix, idx_filepath))
                 t.start()
                 sync_threads.append(t)
@@ -234,6 +232,7 @@ def syncIdx(bucket,
             for fs_file in idx_to_delete:
                 idx_filepath = os.path.join(dir_proj_layer, fs_file)
 
+                sync_semaphore.acquire()
                 t = threading.Thread(target=deleteObject, args=(idx_filepath,))
                 t.start()
                 sync_threads.append(t)
@@ -246,6 +245,7 @@ def syncIdx(bucket,
                     idx_prefix = "{0}/{1}/{2}".format(proj, layer, fs_file).replace('//', '/')
 
                     if not match_checksums(idx_prefix, idx_filepath):
+                        sync_semaphore.acquire()
                         t = threading.Thread(target=copyObject, args=(idx_prefix, idx_filepath))
                         t.start()
                         sync_threads.append(t)
