@@ -117,7 +117,7 @@ local function create_config(endpointConfigFilename)
 
     local externalEndpoint = endpointConfig["gc_service"]["external_endpoint"]
     if not externalEndpoint then
-        print("No gc_service/internal_endpoint specified. Using /gc")
+        print("No gc_service/external_endpoint specified. Using /gc")
         externalEndpoint = "/gc"
     end
     externalEndpoint = stripTrailingSlash(externalEndpoint)

@@ -177,7 +177,7 @@ cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/oe-status/
 mkdir -p /onearth/idx/oe-status/BlueMarble16km
 mkdir -p /onearth/layers/oe-status/BlueMarble16km
-cp ../oe-status/layers/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
+cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 cp ../oe-status/data/*.idx /onearth/idx/oe-status/BlueMarble16km/
 cp ../oe-status/data/*.pjg /onearth/layers/oe-status/BlueMarble16km/
 

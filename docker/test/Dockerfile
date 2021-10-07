@@ -77,9 +77,14 @@ RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth_time_service-0.1-1.rockspec
 
+# Install wms_time_service module
+RUN mkdir -p /etc/onearth/config/endpoint
+WORKDIR /home/oe2/onearth/src/modules/wms_time_service
+RUN luarocks make onearth_wms_time-0.1-1.rockspec
+
 # FastCGI module
 WORKDIR /tmp
-RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs

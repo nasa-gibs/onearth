@@ -84,7 +84,10 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOG13Q4_LQD_NDVI_NRT
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOG13Q4_LQD_NDVI_NRT:default "2018-01-01"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOG13Q4_LQD_NDVI_NRT:periods "2018-01-01/2019-01-01/P1D"
-
+	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Terra_Thermal_Anomalies_All
+	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Terra_Thermal_Anomalies_All:default "2021-07-03"
+	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Terra_Thermal_Anomalies_All:periods "2021-07-03/2021-07-03/P1D"
+	
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Day
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Day:default "2012-09-10"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD epsg4326:best:layer:MODIS_Aqua_Brightness_Temp_Band31_Day:periods "2012-09-10/2018-12-31/P1D"

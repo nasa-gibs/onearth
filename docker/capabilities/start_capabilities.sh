@@ -56,7 +56,7 @@ cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 
 # Data for oe-status
 mkdir -p /etc/onearth/config/layers/oe-status/
-cp ../oe-status/layers/BlueMarble16km.yaml /etc/onearth/config/layers/oe-status/
+cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 
 # Create internal endpoint directories for WMTS and TWMS endpoints and build the GC services
 for f in $(grep -l 'gc_service:' /etc/onearth/config/endpoint/*.yaml); do

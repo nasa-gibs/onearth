@@ -7,9 +7,26 @@ RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-de
 
 COPY ./ /home/oe2/onearth/
 
+# Install Apache modules
+WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
+RUN make && make install
+
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/jiyinyiyong/json-lua.git
+WORKDIR /tmp/json-lua/
+RUN sed -i 's/git:/https:/' json-lua-0.1-3.rockspec
+RUN luarocks make json-lua-0.1-3.rockspec
+
+# Install wms_time_service module
+RUN mkdir -p /etc/onearth/config/endpoint
+WORKDIR /home/oe2/onearth/src/modules/wms_time_service
+RUN luarocks make onearth_wms_time-0.1-1.rockspec
+
 # FastCGI module
 WORKDIR /tmp
-RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
@@ -32,6 +49,10 @@ RUN rm -rf /tmp/*
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/docker/wms_service/template.map /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
+
+# Copy oe-status shapefiles
+RUN mkdir -p /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021
+RUN cp /home/oe2/onearth/docker/oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
@@ -69,13 +90,12 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
-RUN mkdir -p /etc/onearth
-
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
 RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc/httpd/ && chown -hR www-data:www-data /run/httpd/ && \
     chown -hR www-data:www-data /var/www/ && chown -hR www-data:www-data /var/log && \
-	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /etc/onearth && \
+	chown -hR www-data:www-data /home/oe2 && chown -hR www-data:www-data /onearth && \
+	chown -hR www-data:www-data /etc/onearth && \
 	chown -hR www-data:www-data /etc/crontab && chown -hR www-data:www-data /var/lib/logrotate
 
 #setcap to bind to privileged ports as non-root
@@ -92,4 +112,4 @@ CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
-  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
+  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km,MODIS_Terra_Thermal_Anomalies_All&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 

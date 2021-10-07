@@ -50,6 +50,7 @@ mkdir -p $(yq eval ".layer_config_source" /etc/onearth/config/endpoint/oe-status
 cp ../oe-status/layers/* $(yq eval ".layer_config_source" /etc/onearth/config/endpoint/oe-status_reproject.yaml)/
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 cp ../oe-status/mapserver/oe-status_reproject.header /etc/onearth/config/mapserver/
+lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 # Copy tilematrixsets config file
 mkdir -p /etc/onearth/config/conf/
@@ -63,7 +64,11 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
   # WMS Endpoint
   mkdir -p $INTERNAL_ENDPOINT
 
-  cp /var/www/cgi-bin/mapserv.fcgi ${INTERNAL_ENDPOINT}/wms.cgi
+  REDIRECT_ENDPOINT=$(yq eval ".mapserver.redirect_endpoint" $f)
+  # Redirect Endpoint
+  mkdir -p $REDIRECT_ENDPOINT
+
+  cp /var/www/cgi-bin/mapserv.fcgi ${REDIRECT_ENDPOINT}/wms.cgi
 done
 
 time_out=600
@@ -121,6 +126,9 @@ Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
 Header Unset ETag
 FileETag None
 EOS
+
+# Build wms_time service endpoints in parallel
+grep -l 'mapserver:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart

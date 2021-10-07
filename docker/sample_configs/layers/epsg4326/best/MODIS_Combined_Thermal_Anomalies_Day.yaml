@@ -16,7 +16,7 @@ shapefile_configs:
   layer_style: "/etc/onearth/config/mapfile_styles/MODIS_Combined_Thermal_Anomalies_Day.txt"
   layer_title: "Thermal Anomalies and Fires (Day, Best Available, MODIS, Aqua+Terra)"
   source_shapefile:
-    data_file_uri: "{SHAPEFILE_BUCKET}/epsg4326/MODIS_Combined_Thermal_Anomalies_Day_Points/%2021%/MODIS_Combined_Thermal_Anomalies_Day_Points-%2021001000000%"
+    data_file_uri: "{SHAPEFILE_BUCKET}/epsg4326"
     feature_type: "POINT"
 source_mrf:
   size_x: 40960
