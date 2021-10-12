@@ -368,6 +368,8 @@ sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/oe
 
 %post mrfgen
 sed -i 's@\/usr\/libexec\/platform-python@\/usr\/bin\/env python3@g' /usr/bin/mrfgen /usr/bin/colormap2vrt.py /usr/bin/overtiffpacker.py /usr/bin/oe_validate_palette.py
+pip3 uninstall -y gdal
+pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 %post vectorgen
 /sbin/ldconfig
