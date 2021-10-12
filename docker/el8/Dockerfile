@@ -5,9 +5,9 @@ COPY run-onearth.sh /usr/local/bin/run-onearth.sh
 
 RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf config-manager --set-enabled powertools
-RUN dnf install -y python3
+RUN dnf install -y python3 make gcc
 RUN yum -y install epel-release && yum clean all
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el8.x86_64.rpm" && \
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-4/gibs-gdal-2.4.4-4.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-4/gibs-gdal-devel-2.4.4-4.el8.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-4/gibs-gdal-apps-2.4.4-4.el8.x86_64.rpm" && \
 	yum clean all
 RUN yum -y install proj-devel httpd glibc-locale-source glibc-langpack-en && yum clean all
 
@@ -35,6 +35,12 @@ RUN mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl && \
 	mv /etc/httpd/conf.modules.d/00-proxy.conf /etc/httpd/conf.modules.d/00-proxy && \
 	mv /etc/httpd/conf.modules.d/10-h2.conf /etc/httpd/conf.modules.d/10-h2 && \
 	mv /etc/httpd/conf.modules.d/10-proxy_h2.conf /etc/httpd/conf.modules.d/10-proxy_h2
+
+# Build cgicc for kmlgen
+WORKDIR /usr/share/cgicc/
+RUN sh configure
+RUN make && make install
+RUN ldconfig
 
 WORKDIR /usr/share/onearth/
 

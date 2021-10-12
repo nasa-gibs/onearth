@@ -32,12 +32,7 @@ HTTPD_ARTIFACT=httpd-2.4.6.tar.gz
 LINE=735
 HTTPD_URL=https://archive.apache.org/dist/httpd/$(HTTPD_ARTIFACT)
 
-OSVERSION=$(shell rpm -q --queryformat '%{RELEASE}' rpm | grep -o [[:digit:]]*\$)
-ifeq ($(OSVERSION),8)
-   MAPSERVER_VERSION=7.4.3
-else
-   MAPSERVER_VERSION=7.0.1
-endif
+MAPSERVER_VERSION=7.4.3
 MAPSERVER_ARTIFACT=mapserver-$(MAPSERVER_VERSION).tar.gz
 MAPSERVER_HOME=http://download.osgeo.org/mapserver
 MAPSERVER_URL=$(MAPSERVER_HOME)/$(MAPSERVER_ARTIFACT)
