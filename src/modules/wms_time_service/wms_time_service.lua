@@ -89,8 +89,8 @@ end
 function validate_time(time)
     local n = string.len(time)
     if n == 10 or n == 20 then
-        -- Example1: 2021-09-23
-        -- Example2: 2021-09-23T20:05:08Z
+        -- Example 1: 2021-09-23
+        -- Example 2: 2021-09-23T20:05:08Z
         local y = tonumber(string.sub(time, 0, 4))
         if string.sub(time, 5, 5) ~= '-' then
             return false
