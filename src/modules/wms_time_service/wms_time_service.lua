@@ -100,7 +100,7 @@ function validate_time(time)
             return false
         end
         local d = tonumber(string.sub(time, 9, 10))
-        if y == nil or y < 0 or m == nil or m < 0 or d == nil or d < 0 then
+        if y == nil or y < 1900 or m == nil or m < 0 or m > 12 or d == nil or d < 0 or d > 31 then
             return false
         end
         if n == 10 then
@@ -123,7 +123,7 @@ function validate_time(time)
         if string.sub(time, 20, 20) ~= 'Z' then
             return false
         end
-        if h == nil or h < 0 or m == nil or m < 0 or s == nil or s < 0 then
+        if h == nil or h < 0 or h > 23 or m == nil or m < 0 or m > 59 or s == nil or s < 0 or s > 59 then
             return false
         end
         return true
