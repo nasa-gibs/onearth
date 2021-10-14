@@ -15,6 +15,10 @@ mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/layers/
 mkdir -p /etc/onearth/mapfile-styles/
 
+# Data for oe-status
+mkdir -p /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021
+cp ../oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021/
+
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
 then

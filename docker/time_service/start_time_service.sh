@@ -65,28 +65,13 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	# Turn off the following line for production systems
 	/usr/bin/redis-cli -n 0 CONFIG SET protected-mode no
 
-	# Load extra sample data
+	# Load test data
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:BlueMarble16km
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:BlueMarble16km:default "2004-08-01"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:BlueMarble16km:periods "2004-08-01/2004-08-01/P1M"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOGCR_LQD_143_STD
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOGCR_LQD_143_STD:default "2011-01-01"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOGCR_LQD_143_STD:periods "2011-01-01/2011-01-02/P1D"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:VNGCR_LQD_I1-M4-M3_NRT
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:VNGCR_LQD_I1-M4-M3_NRT:default "2018-01-16"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:VNGCR_LQD_I1-M4-M3_NRT:periods "2018-01-16/2019-01-16/P1D"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MOG13Q4_LQD_NDVI_NRT
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MOG13Q4_LQD_NDVI_NRT:default "2018-01-01"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MOG13Q4_LQD_NDVI_NRT:periods "2018-01-01/2019-01-01/P1D"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Terra_Thermal_Anomalies_All
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Terra_Thermal_Anomalies_All:default "2021-07-03"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Terra_Thermal_Anomalies_All:periods "2021-07-03/2021-07-03/P1D"
 
 	# Load custom time period configurations in parallel
   ls /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST -g >> /var/log/onearth/config.log 2>&1
@@ -100,6 +85,14 @@ else
 		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
 	fi
 fi
+
+# Load oe-status data
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:BlueMarble16km
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:BlueMarble16km:default "2004-08-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:BlueMarble16km:periods "2004-08-01/2004-08-01/P1M"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Terra_Thermal_Anomalies_All
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Terra_Thermal_Anomalies_All:default "2021-07-03"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Terra_Thermal_Anomalies_All:periods "2021-07-03/2021-07-03/P1D"
 
 echo "[$(date)] Time service configuration completed" >> /var/log/onearth/config.log
 

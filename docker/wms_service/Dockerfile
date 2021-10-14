@@ -50,10 +50,6 @@ RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/docker/wms_service/template.map /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 
-# Copy oe-status shapefiles
-RUN mkdir -p /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021
-RUN cp /home/oe2/onearth/docker/oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021/
-
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
@@ -89,6 +85,8 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && chmod +x "$SUPERCRONIC" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+RUN mkdir /onearth
 
 # Add non-root user
 RUN groupadd www-data && useradd -g www-data www-data
