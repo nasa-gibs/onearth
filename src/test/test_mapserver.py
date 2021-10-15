@@ -448,7 +448,23 @@ class TestMapserver(unittest.TestCase):
         if DEBUG:
             print('\nTesting: Request multiple layers bad time via WMS')
             print('URL: ' + req_url)
-        check_result = check_tile_request(req_url, ref_hash)
+        response = get_url(req_url)
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response.read())
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+
+        self.assertTrue(xml_check, 'TIME format check failure response is not valid XML. URL: ' + req_url)
+
+        check_result = False
+        for key, value in XMLdict.items():
+            if str(value) == '{\'exceptionCode\': \'InvalidParameterValue\', \'locator\': \'TIME\'}':
+                check_result = True
+
         self.assertTrue(check_result, 'WMS multiple layers bad time does not match what\'s expected. URL: ' + req_url)
     
     # Waiting for "GITC-1327 Validate WMS time format" to be implemented. 
