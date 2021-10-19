@@ -64,7 +64,8 @@ def strip_trailing_slash(string):
         string = string[:-1]
     return string
 
-def strip_bytes_format(string):
+def strip_decode_bytes_format(string):
+    string = string.encode('latin-1').decode('unicode_escape').encode('latin-1').decode('utf-8')
     match = STR_BYTES_REMOVAL.match(string)
     if match:
         return match.group(match.lastindex)
@@ -256,7 +257,7 @@ for layer in layers:
 
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
-                                                                  ('${layer_title}', strip_bytes_format(shp_config['layer_title'])),
+                                                                  ('${layer_title}', strip_decode_bytes_format(shp_config['layer_title'])),
                                                                   ('${wms_extent}', wms_extent),
                                                                   ('${wms_srs}', wms_srs),
                                                                   ('${wms_layer_group}', wms_layer_group),
