@@ -65,12 +65,12 @@ def strip_trailing_slash(string):
     return string
 
 def strip_decode_bytes_format(string):
+    # interpret any bytes in the string
     string = string.encode('latin-1').decode('unicode_escape').encode('latin-1').decode('utf-8')
     match = STR_BYTES_REMOVAL.match(string)
     if match:
         return match.group(match.lastindex)
-    else:
-        return string
+    return string
 
 def bulk_replace(source_str, replace_list):
     out_str = source_str

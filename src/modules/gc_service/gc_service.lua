@@ -191,6 +191,16 @@ local function getReprojectedTms(sourceTms, targetEpsgCode, tmsDefs)
     return targetTmsName, targetTms
 end
 
+local function stripDecodeBytesFormat(inputString)
+    -- Interpret any bytes in the string
+    inputString = inputString:gsub("\\x(%x%x)",function (x) return string.char(tonumber(x,16)) end)
+    b_removed = inputString:match("^b'(.*)'$")
+    if b_removed then
+        return b_removed
+    end
+    return inputString
+end
+
 -- GetTileService functions
 
 local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgCode)
@@ -220,8 +230,8 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
 
     local tiledGroupNode = xml.elem("TiledGroup", {
         xml.new("Name"):text(layerName),
-        xml.new("Title", {["xml:lang"]="en"}):text(layerTitle),
-        xml.new("Abstract", {["xml:lang"]="en"}):text(abstract),
+        xml.new("Title", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)),
+        xml.new("Abstract", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(abstract)),
         xml.new("Projection"):text(projInfo["wkt"]),
         xml.new("Pad"):text("0"),
         xml.new("Bands"):text(bands),
@@ -388,8 +398,8 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
 
     local layerElem = xml.new("Layer", {queryable="0"})
     layerElem:add_child(xml.new("Name"):text(layerId))
-    layerElem:add_child(xml.new("Title",  {["xml:lang"]="en"}):text(layerTitle))
-    layerElem:add_child(xml.new("Abstract",  {["xml:lang"]="en"}):text(layerAbstract))
+    layerElem:add_child(xml.new("Title",  {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)))
+    layerElem:add_child(xml.new("Abstract",  {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerAbstract)))
 
     -- Get the information we need from the TMS definitions and add bbox node
     -- local tmsDef = tmsDefs[epsgCode][tmsName]
@@ -453,7 +463,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
 
     local layerElem = xml.elem("Layer")
 
-    layerElem:add_child(xml.new("ows:Title", {["xml:lang"]="en"}):text(layerTitle))
+    layerElem:add_child(xml.new("ows:Title", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)))
 
     -- Get the information we need from the TMS definitions and add bbox node
     local tmsDef = tmsDefs[epsgCode][tmsName]
