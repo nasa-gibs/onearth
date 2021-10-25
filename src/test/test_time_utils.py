@@ -185,28 +185,6 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
-    def test_time_scrape_s3_keys_dep(self):
-        # Test scraping S3 keys
-        test_layers = [('Test_Layer', '2017-01-04',
-                        '2017-01-01/2017-01-04/P1D')]
-
-        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -b test-bucket 127.0.0.1"
-        run_command(cmd, True)
-        db_keys = ['epsg4326']
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
-        res = r.json()
-        for layer in test_layers:
-            layer_res = res.get(layer[0])
-            self.assertIsNotNone(
-                layer_res,
-                'Layer {0} not found in list of all layers'.format(layer[0]))
-            self.assertEqual(
-                layer[1], layer_res['default'],
-                'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
-                .format(layer[0], layer[1], layer_res['default']))
-            if not DEBUG:
-                remove_redis_layer(layer, db_keys)
-        
     def test_time_scrape_s3_inventory(self):
         # Test scraping S3 inventory file
         test_layers = [('MODIS_Aqua_CorrectedReflectance_TrueColor', '2017-01-15',
@@ -626,7 +604,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][i], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-    
+
     @classmethod
     def tearDownClass(self):
         if not DEBUG:
