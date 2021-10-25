@@ -190,10 +190,10 @@ class TestTimeUtils(unittest.TestCase):
         test_layers = [('Test_Layer', '2017-01-04',
                         '2017-01-01/2017-01-04/P1D')]
 
-        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -t best -b test-bucket 127.0.0.1"
+        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -b test-bucket 127.0.0.1"
         run_command(cmd, True)
-        db_keys = ['epsg4326', 'best']
-        r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
+        db_keys = ['epsg4326']
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -242,10 +242,10 @@ class TestTimeUtils(unittest.TestCase):
                        ('MODIS_Aqua_Aerosol', '2017-01-15',
                        '2017-01-01T00:00:00Z/2017-01-15T00:00:00Z/PT1S')]
 
-        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -t best -b test-inventory 127.0.0.1"
+        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -b test-inventory 127.0.0.1"
         run_command(cmd, True)
-        db_keys = ['epsg4326', 'best']
-        r = requests.get(self.date_service_url + 'key1=epsg4326&key2=best')
+        db_keys = ['epsg4326']
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
@@ -290,11 +290,11 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':best' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        configs = r.smembers('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:config')
+        configs = r.smembers('epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:config')
         self.assertEqual(configs.pop(), b'DETECT/DETECT/P1D')
 
     def test_time_config_layer(self):
@@ -324,11 +324,11 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':best' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml -l '*Bands721'"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml -l '*Bands721'"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        configs = r.smembers('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:config')
+        configs = r.smembers('epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:config')
         self.assertEqual(configs.pop(), b'DETECT/DETECT/P1D')
 
     def test_best_config(self):
@@ -361,11 +361,11 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':best' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_best.yaml"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        configs = r.zrange('epsg4326:best:layer:MODIS_Aqua_CorrectedReflectance_Bands721:best_config', 0, -1, withscores=True)
+        configs = r.zrange('epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:best_config', 0, -1, withscores=True)
         self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD', 4.0))
         self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v6_NRT', 3.0))
         self.assertEqual(configs.pop(), (b'MODIS_Aqua_CorrectedReflectance_Bands721_v5_STD', 2.0))
@@ -398,11 +398,11 @@ class TestTimeUtils(unittest.TestCase):
         for file_name in file_names:
             shutil.move(os.path.join(source_dir, file_name), os.path.join(layer_dir, file_name))
 
-        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -t ':std' -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_std.yaml"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py -e /home/oe2/onearth/docker/sample_configs/endpoint/epsg4326_std.yaml"
         run_command(cmd, True)
 
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        best_layer = r.get('epsg4326:std:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:best_layer')
+        best_layer = r.get('epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721_v6_STD:best_layer')
         self.assertEqual(best_layer, b'MODIS_Aqua_CorrectedReflectance_Bands721')
 
     def test_periods_single_date(self):
