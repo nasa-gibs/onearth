@@ -229,10 +229,11 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         -- If it's a default request, return the default date and associated period
         if string.lower(request_date_string) == "default" then
             local default_date = date_util(layer_datetime_info[layer_name].default)
+            local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, default_date:fmt(datetime_format))
             local out_msg = {
-                prefix = layer_name,
+                prefix = best_layer_name,
                 date = default_date:fmt(datetime_format),
-                filename = filename_handler(layer_name, default_date)}
+                filename = filename_handler(best_layer_name, default_date)}
             print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
             return send_response(200, JSON:encode(out_msg))
         end
