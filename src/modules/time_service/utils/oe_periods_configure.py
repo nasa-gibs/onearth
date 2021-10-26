@@ -71,7 +71,7 @@ def get_layer_configs(endpoint_config, layer_filter='*'):
 
 # Main configuration functions
 
-def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_periods=False):
+def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=False):
     r = redis.Redis(host=redis_uri, port=redis_port)
     with open(os.path.dirname(os.path.realpath(__file__)) + '/periods.lua',
               'r') as f:
@@ -81,12 +81,11 @@ def load_time_configs(layer_configs, redis_uri, redis_port, tag=None, generate_p
     if 'projection' in layer_configs[0]['config'].keys():
             proj = str(layer_configs[0]['config']['projection']). \
                 lower().replace(':', '')
-    tag_str = f'{proj}{tag}' if tag is not None else proj
 
     for layer_config in layer_configs:
         config_path = str(layer_config['path'].absolute())
         print(f'Adding time period configuration from {config_path}')
-        key = tag_str + ':layer:' + str(layer_config['config']['layer_id'])
+        key = proj + ':layer:' + str(layer_config['config']['layer_id'])
 
         if 'time_config' in layer_config['config'].keys():
             key_config = key + ':config'
@@ -197,10 +196,6 @@ if __name__ == '__main__':
                         metavar='REDIS_URI',
                         type=str,
                         help='URI for the Redis database')
-    parser.add_argument('-t', '--tag',
-                        dest='tag',
-                        action='store',
-                        help='Classification tag (nrt, best, std, etc.)')
     args = parser.parse_args()
     print(f'Adding time configurations for endpoint {args.endpoint_config}')
     endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
@@ -208,5 +203,4 @@ if __name__ == '__main__':
     load_time_configs(layer_configs,
                       args.redis_uri,
                       args.port,
-                      args.tag,
                       args.generate_periods)

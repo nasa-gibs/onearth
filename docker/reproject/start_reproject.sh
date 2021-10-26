@@ -115,16 +115,17 @@ echo "[$(date)] Completed healthcheck wait" >> /var/log/onearth/config.log
 # Load additional endpoints
 echo "[$(date)] Loading additional endpoints" >> /var/log/onearth/config.log
 
-# Run layer config tools
+# Create reproject configuration directories
 for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
   # WMTS Endpoint
   mkdir -p $(yq eval ".wmts_service.internal_endpoint" $f)
 
   # TWMS Endpoint
   mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
-
-  python3.6 /usr/bin/oe2_reproject_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
+
+# Run endpoint configuration in parallel
+grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 python3.6 /usr/bin/oe2_reproject_configure.py {} >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Completed reproject configuration" >> /var/log/onearth/config.log
 

@@ -6,6 +6,7 @@ tilematrixset: "16km"
 mime_type: "image/jpeg"
 static: false
 abstract: "snap_test_3b abstract"
+wms_layer_group: "/snap_test_3b"
 metadata:
   - {}
 source_mrf:

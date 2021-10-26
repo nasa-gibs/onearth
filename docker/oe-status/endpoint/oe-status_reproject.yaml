@@ -22,7 +22,10 @@ twms_service:
   internal_endpoint: "/var/www/html/oe-status_reproject"
   external_endpoint: "/oe-status_reproject"
 mapserver:
+  redirect_endpoint: "/var/www/html/mapserver/oe-status_reproject"
+  external_endpoint: "/wms/oe-status_reproject"
   internal_endpoint: "/var/www/html/wms/oe-status_reproject"
+  config_prefix: "oe-status_wms_time_service"
   mapfile_header:  "/etc/onearth/config/mapserver/oe-status_reproject.header"
   mapfile_location: "/etc/onearth/config/mapserver/oe-status_reproject.map"
   source_wmts_gc_uri: "http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml"

@@ -6,6 +6,7 @@ tilematrixset: "16km"
 mime_type: "image/jpeg"
 static: false
 abstract: "test_legacy_subdaily_jpg abstract"
+wms_layer_group: "/test_legacy_subdaily_jpg"
 metadata:
   - {}
 source_mrf:

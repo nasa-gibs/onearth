@@ -27,6 +27,7 @@ import gzip
 import botocore.session
 from botocore.stub import Stubber
 import os
+import threading
 
 TEST_RESPONSE = {
     'IsTruncated': False,
@@ -159,7 +160,6 @@ def updateDateService(redis_uri,
                       redis_port,
                       bucket,
                       s3_uri=None,
-                      tag=None,
                       layer_name=None,
                       reproject=False,
                       check_exists=False,
@@ -171,7 +171,7 @@ def updateDateService(redis_uri,
         r.set('created', created_time)
         print('New database created ' + str(created_time))
     elif check_exists:
-        print(f'Data already exists - skipping time scrape for {tag}')
+        print(f'Data already exists - skipping time scrape')
         return
 
     # Use mock S3 if test
@@ -188,7 +188,7 @@ def updateDateService(redis_uri,
         bucket = bucket.split('/')[2].split('.')[0]
 
     # delete date keys
-    pattern = f'*{tag}*:dates' if tag else 'epsg????:layer:*:dates'
+    pattern = 'epsg????:layer:*:dates'
     count, keys = r.scan(cursor=0, match=pattern)
     if(len(keys) > 0):
         resp = r.unlink(*keys)
@@ -218,6 +218,37 @@ def updateDateService(redis_uri,
         lua_script2 = f.read()
     best_script = r.register_script(lua_script2)
 
+    scrape_threads    = []
+    scrape_semaphore  = threading.BoundedSemaphore(10)
+
+    def updateRedis(proj, layer, sorted_parsed_dates):
+        try:
+            print(f'Configuring layer: {layer}')
+
+            for date in sorted_parsed_dates:
+                r.zadd(f'{proj}:layer:{layer}:dates', {date.isoformat(): 0})
+                best_script(keys=[f'{proj}:layer:{layer}'], args=[date.isoformat()])
+                if reproject and str(proj) == 'epsg4326':
+                    r.zadd(f'epsg3857:layer:{layer}:dates', {date.isoformat(): 0})
+                    best_script(keys=[f'epsg3857:layer:{layer}'], args=[date.isoformat()])
+
+            date_script(keys=[f'{proj}:layer:{layer}'])
+            if reproject and str(proj) == 'epsg4326':
+                date_script(keys=[f'epsg3857:layer:{layer}'])
+
+            # check for best layer
+            bestLayer=r.get(f'{proj}:layer:{layer}:best_layer')
+            print("Best Layer: ", bestLayer)
+            if bestLayer is not None:
+                bestLayer=bestLayer.decode("utf-8")
+                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
+                if reproject and str(proj) == 'epsg4326':
+                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
+
+        finally:
+            scrape_semaphore.release()
+
+
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
         for layer, data in layers.items():
@@ -228,31 +259,24 @@ def updateDateService(redis_uri,
                 map(lambda date: datetime.strptime(date, '%Y%j%H%M%S'),
                     sorted(list(data['dates']))))
 
-            # Set default to latest date
-            default = sorted_parsed_dates[-1].isoformat()
+            scrape_semaphore.acquire()
+            t = threading.Thread(target=updateRedis, args=(proj, layer, sorted_parsed_dates))
+            t.start()
+            scrape_threads.append(t)
 
-            print(f'Configuring layer: {layer}')
+    # Wait for all threads to complete
+    while len(scrape_threads) > 0:
+        completed = []
 
-            tag_str = f'{tag}:' if tag else ''
-            for date in sorted_parsed_dates:
-                r.zadd(f'{proj}:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
-                best_script(keys=[f'{proj}:{tag_str}layer:{layer}'], args=[date.isoformat()])
-                if reproject and str(proj) == 'epsg4326':
-                    r.zadd(f'epsg3857:{tag_str}layer:{layer}:dates', {date.isoformat(): 0})
-                    best_script(keys=[f'epsg3857:{tag_str}layer:{layer}'], args=[date.isoformat()])
+        for t in scrape_threads:
+            if not t.is_alive():
+                completed.append(t)
+            else:
+                t.join(10)
 
-            date_script(keys=[f'{proj}:{tag_str}layer:{layer}'])
-            if reproject and str(proj) == 'epsg4326':
-                date_script(keys=[f'epsg3857:{tag_str}layer:{layer}'])
-            
-            # check for best layer
-            bestLayer=r.get(f'{proj}:{tag_str}layer:{layer}:best_layer')
-            print("Best Layer: ", bestLayer)
-            if bestLayer is not None:
-                bestLayer=bestLayer.decode("utf-8")
-                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
-                if reproject and str(proj) == 'epsg4326':
-                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
+        for t in completed:
+            scrape_threads.remove(t)
+
 
 # Routine when run from CLI
 
@@ -284,12 +308,6 @@ parser.add_argument(
     dest='s3_uri',
     action='store',
     help='S3 URI -- for use with localstack testing')
-parser.add_argument(
-    '-t',
-    '--tag',
-    dest='tag',
-    action='store',
-    help='Classification tag (nrt, best, std, etc.)')
 parser.add_argument(
     '-l',
     '--layer',
@@ -325,7 +343,6 @@ updateDateService(
     args.port,
     args.bucket,
     s3_uri=args.s3_uri,
-    tag=args.tag,
     layer_name=args.layer,
     reproject=args.reproject,
     check_exists=args.check_exists,

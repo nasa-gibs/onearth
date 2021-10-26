@@ -110,6 +110,7 @@ Files found in these locations will be copied from `{s3-configs}` to `/etc/onear
 The Endpoint Configuration is used by multiple OnEarth tools. See documentation for each specific tool for more information:
 
 * [GetCapabilities Service](../src/modules/gc_service/README.md)
+* [WMS Time Service](../src/modules/wms_time_service/README.md)
 * [Time Service](../src/modules/time_service/README.md)
 * [WMS Service](../docker/wms_service/README.md)
 * [WMTS/TWMS Services](../src/modules/mod_wmts_wrapper/configure_tool/README.md)
@@ -142,7 +143,9 @@ Service; keys will be positioned in the order configured
   * **internal_endpoint**: Location on disk where all the configuration files for the WMTS layers should be stored
   * **external_endpoint**: Relative URL that the endpoint should appear; the configuration tool will automatically build `Alias` configurations
 * **mapserver**: Configurations specific only to WMS Service (i.e., MapServer)
+  * **redirect_endpoint**: The internal directory within the container for Apache HTTPD for mapserver
   * **internal_endpoint**: The internal directory within the container for Apache HTTPD
+  * **config_prefix**: Filename prefix to be used for the WMS Time service Apache config that's generated.
   * **mapfile_header**: The common mapfile "header" used for all layers in the endpoint
   * **mapfile_location**: The output location of the mapfile.
   * **source_wmts_gc_uri**: The source WMTS GetCapabilities that is used to as the basis for WMS layers
@@ -179,7 +182,10 @@ twms_service:
   internal_endpoint: "/var/www/html/twms/epsg3857/best"
   external_endpoint: "/twms/epsg3857/best"
 mapserver:
+  redirect_endpoint: "/var/www/html/mapserver/epsg3857/best"
+  external_endpoint: "/wms/epsg3857/best"
   internal_endpoint: "/var/www/html/wms/epsg3857/best"
+  config_prefix: "epsg3857_best_wms_time_service"
   mapfile_header:  "/etc/onearth/config/mapserver/epsg3857.header"
   mapfile_location: "/etc/onearth/config/mapserver/epsg3857_best.map"
   source_wmts_gc_uri: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml"

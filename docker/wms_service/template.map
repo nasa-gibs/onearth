@@ -1,16 +1,19 @@
 LAYER
         NAME    "${layer_name}"
-        TYPE    RASTER
+        TYPE    ${layer_type}
         STATUS  ON
         METADATA
-                "wms_title"             "${layer_name}"
-                "wms_extent"            "-180 -90 180 90"
+                "wms_title"             "${layer_title}"
+                "wms_extent"            "${wms_extent}"
+                "wms_srs"               "${wms_srs}"
+                ${wms_layer_group}
                 ${dimension_info}
                 ${style_info}
         END
-        DATA    '${data_xml}'
+        ${data_xml}
         PROJECTION
                 "init=${epsg_code}"
         END
         ${validation_info}
+        ${class_style}
 END

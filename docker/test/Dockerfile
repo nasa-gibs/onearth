@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.4.1
+FROM nasagibs/onearth-deps:2.5.0
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=3
@@ -76,6 +76,11 @@ WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
 WORKDIR /home/oe2/onearth/src/modules/time_service
 RUN luarocks make onearth_time_service-0.1-1.rockspec
+
+# Install wms_time_service module
+RUN mkdir -p /etc/onearth/config/endpoint
+WORKDIR /home/oe2/onearth/src/modules/wms_time_service
+RUN luarocks make onearth_wms_time-0.1-1.rockspec
 
 # FastCGI module
 WORKDIR /tmp
@@ -155,7 +160,7 @@ RUN cp /home/oe2/onearth/ci/10-worker.conf /etc/httpd/conf.modules.d/
 WORKDIR /home/oe2/onearth/src/test
 RUN pip3.6 install -r requirements.txt
 
-ENV ONEARTH_VERSION=2.4.1
+ENV ONEARTH_VERSION=2.5.0
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh

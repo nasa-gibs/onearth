@@ -18,10 +18,13 @@ will be downloaded, while files found on the file system but not on S3 will be d
 File modifications are not detected. Use --force to overwrite existing files.
 """
 import os
-import boto3
+import boto3, botocore
 from functools import reduce
 from pathlib import Path
 import argparse
+import threading
+import re
+import hashlib
 
 
 def keyMapper(acc, obj):
@@ -92,18 +95,96 @@ def listAllFiles(dir_proj_layer, prefix):
     return [str(f).replace(dir_proj_layer + '/', '') for f in fs_list]
 
 
+def calculate_s3_etag(file_path, chunk_size=8 * 1024 * 1024):
+    md5s = []
+
+    with open(file_path, 'rb') as fp:
+        while True:
+            data = fp.read(chunk_size)
+            if not data:
+                break
+            md5s.append(hashlib.md5(data))
+
+    if len(md5s) < 1:
+        return '"{}"'.format(hashlib.md5().hexdigest())
+
+    if len(md5s) == 1:
+        return '"{}"'.format(md5s[0].hexdigest())
+
+    digests = b''.join(m.digest() for m in md5s)
+    digests_md5 = hashlib.md5(digests)
+    return '"{}-{}"'.format(digests_md5.hexdigest(), len(md5s))
+
+
 def syncIdx(bucket,
             dir,
             prefix,
             force,
+            checksum,
             dry_run,
             s3_uri=None):
+
     session = boto3.session.Session()
-    s3 = session.client(service_name='s3', endpoint_url=s3_uri)
+
+    aws_config = botocore.config.Config(
+        connect_timeout=10,
+        read_timeout=30,
+        max_pool_connections=10,
+        retries=dict(max_attempts=2))
+
+    s3 = session.client(service_name='s3', endpoint_url=s3_uri, config=aws_config)
 
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
     objects = reduce(keyMapper, getAllKeys(s3, bucket, prefix), {})
+
+    sync_threads    = []
+    sync_semaphore  = threading.BoundedSemaphore(10)
+
+
+    def match_checksums(idx_prefix, idx_filepath):
+        response = s3.head_object(Bucket=bucket, Key=idx_prefix)
+        s3_cksum = response["ETag"].replace("\"","")
+
+        m = re.match("[a-f0-9]*-([0-9]*)", s3_cksum)
+        if m:
+            bytesPerPart   = float(os.stat(idx_filepath).st_size) / float(m.group(1))
+            bytesChunkSize = bytesPerPart + 1048576.0 - (bytesPerPart % 1048576.0)
+            mbChunkSize    = int(bytesChunkSize / float(1024 *  1024))
+
+            '''
+            print("Calculating multi-part checksum with " + m.group(1) + \
+                  " parts and " + str(mbChunkSize) + "MB chunk size for file of size " + \
+                  str(os.stat(idx_filepath).st_size) + " bytes")
+            '''
+
+            file_cksum = calculate_s3_etag(idx_filepath, mbChunkSize * 1024 * 1024)
+        else:
+            with open(idx_filepath, 'rb') as idxFile:
+                file_cksum = hashlib.md5(idxFile.read()).hexdigest().strip()
+
+        return file_cksum == s3_cksum
+
+    def copyObject(idx_prefix, idx_filepath):
+        try:
+            print("Downloading {0} to {1}".format(idx_prefix, idx_filepath))
+            if not dry_run:
+                s3.download_file(bucket, idx_prefix, idx_filepath)
+        except botocore.exceptions.ClientError as e:
+            print(e)
+        finally:
+            sync_semaphore.release()
+
+
+    def deleteObject(idx_filepath):
+        try:
+            if os.path.isfile(idx_filepath):
+                print("Deleting file not found on S3: {0}".format(idx_filepath))
+                if not dry_run:
+                    os.remove(idx_filepath)
+        finally:
+            sync_semaphore.release()
+
 
     for proj, layers in objects.items():
         print(f'Configuring projection: {proj}')
@@ -131,6 +212,8 @@ def syncIdx(bucket,
             else:
                 idx_to_sync = list(set(s3_objects) - set(fs_files))
 
+            idx_to_delete = list(set(fs_files) - set(s3_objects))
+
             # Copy files from S3 that aren't on file system
             for s3_object in idx_to_sync:
                 idx_filepath = os.path.join(dir_proj_layer, s3_object)
@@ -140,18 +223,45 @@ def syncIdx(bucket,
                 if not os.path.isdir(idx_filedir) and not dry_run:
                     os.makedirs(idx_filedir)
 
-                print("Downloading {0} to {1}".format(idx_prefix, idx_filepath))
-                if not dry_run:
-                    s3.download_file(bucket, idx_prefix, idx_filepath)
+                sync_semaphore.acquire()
+                t = threading.Thread(target=copyObject, args=(idx_prefix, idx_filepath))
+                t.start()
+                sync_threads.append(t)
 
             # Delete files from file system that aren't on S3
-            for fs_file in list(set(fs_files) - set(s3_objects)):
-                fs_idx = os.path.join(dir_proj_layer, fs_file)
+            for fs_file in idx_to_delete:
+                idx_filepath = os.path.join(dir_proj_layer, fs_file)
 
-                if os.path.isfile(fs_idx):
-                    print(f'Deleting file not found on S3: {fs_idx}')
-                    if not dry_run:
-                        os.remove(fs_idx)
+                sync_semaphore.acquire()
+                t = threading.Thread(target=deleteObject, args=(idx_filepath,))
+                t.start()
+                sync_threads.append(t)
+
+            # Evaluate checksum of non-deleted index files already on disk against S3 object, if not forcing and
+            # user has requested checksum comparison
+            if not force and checksum:
+                for fs_file in list(set(fs_files) - set(idx_to_delete)):
+                    idx_filepath = os.path.join(dir_proj_layer, fs_file)
+                    idx_prefix = "{0}/{1}/{2}".format(proj, layer, fs_file).replace('//', '/')
+
+                    if not match_checksums(idx_prefix, idx_filepath):
+                        sync_semaphore.acquire()
+                        t = threading.Thread(target=copyObject, args=(idx_prefix, idx_filepath))
+                        t.start()
+                        sync_threads.append(t)
+
+    # Wait for all threads to complete
+    while len(sync_threads) > 0:
+        completed = []
+
+        for t in sync_threads:
+            if not t.is_alive():
+                completed.append(t)
+            else:
+                t.join(10)
+
+        for t in completed:
+            sync_threads.remove(t)
 
 
 # Routine when run from CLI
@@ -180,6 +290,13 @@ parser.add_argument(
     help='Force update even if file exists',
     action='store_true')
 parser.add_argument(
+    '-c',
+    '--checksum',
+    default=False,
+    dest='checksum',
+    help='Evaluate checksum of local file against s3 object and update even mismatched',
+    action='store_true')
+parser.add_argument(
     '-n',
     '--dry-run',
     default=False,
@@ -206,5 +323,6 @@ syncIdx(args.bucket,
         args.dir,
         args.prefix,
         args.force,
+        args.checksum,
         args.dry_run,
         s3_uri=args.s3_uri)

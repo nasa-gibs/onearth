@@ -12,6 +12,12 @@ fi
 
 mkdir -p /etc/onearth/config/mapserver/
 mkdir -p /etc/onearth/config/endpoint/
+mkdir -p /etc/onearth/config/layers/
+mkdir -p /etc/onearth/mapfile-styles/
+
+# Data for oe-status
+mkdir -p /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021
+cp ../oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
@@ -21,19 +27,34 @@ then
   # Copy sample configs
   cp ../sample_configs/mapserver/* /etc/onearth/config/mapserver/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
+  cp -R ../sample_configs/mapfile-styles/* /etc/onearth/mapfile-styles/
 else
 	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/mapserver/' -b $S3_CONFIGS -p config/mapserver >>/var/log/onearth/config.log 2>&1
 	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+	python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/mapfile-styles/' -b $S3_CONFIGS -p mapfile-styles >>/var/log/onearth/config.log 2>&1
+  # layer configs are endpoint specific
+  for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
+    CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
+    CONFIG_PREFIX=$(echo $CONFIG_SOURCE | sed 's@/etc/onearth/@@')
+
+    mkdir -p $CONFIG_SOURCE
+
+    python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
+  done
 fi
 
 echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
 # Copy in oe-status endpoint configuration
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
+mkdir -p $(yq eval ".layer_config_source" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
+cp ../oe-status/layers/* $(yq eval ".layer_config_source" /etc/onearth/config/endpoint/oe-status_reproject.yaml)/
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 cp ../oe-status/mapserver/oe-status_reproject.header /etc/onearth/config/mapserver/
+lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 # Copy tilematrixsets config file
 mkdir -p /etc/onearth/config/conf/
@@ -47,7 +68,11 @@ for f in $(grep -l mapserver /etc/onearth/config/endpoint/*.yaml); do
   # WMS Endpoint
   mkdir -p $INTERNAL_ENDPOINT
 
-  cp /var/www/cgi-bin/mapserv.fcgi ${INTERNAL_ENDPOINT}/wms.cgi
+  REDIRECT_ENDPOINT=$(yq eval ".mapserver.redirect_endpoint" $f)
+  # Redirect Endpoint
+  mkdir -p $REDIRECT_ENDPOINT
+
+  cp /var/www/cgi-bin/mapserv.fcgi ${REDIRECT_ENDPOINT}/wms.cgi
 done
 
 time_out=600
@@ -105,6 +130,9 @@ Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
 Header Unset ETag
 FileETag None
 EOS
+
+# Build wms_time service endpoints in parallel
+grep -l 'mapserver:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart

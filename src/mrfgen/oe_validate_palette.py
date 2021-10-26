@@ -143,8 +143,8 @@ def read_color_table(image, sigevent_url):
     has_color_table = False
     gdalinfo_command_list=['gdalinfo', image]
     gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    for line in gdalinfo.stdout.readlines():
-        if has_color_table == True and (" " + str(idx) + ":") in line:
+    for line in [l.decode("utf-8") for l in gdalinfo.stdout.readlines()]:
+        if has_color_table and (" " + str(idx) + ":") in line:
             rgb = line.replace(str(idx) + ":", "").strip().split(",")
             if len(rgb) < 4:
                 rgb[3] = "255" # default if alpha not define
