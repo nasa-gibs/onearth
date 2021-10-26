@@ -6,6 +6,7 @@ import sys
 import yaml
 import shutil
 import time
+import re
 from lxml import etree
 from pathlib import Path
 from decimal import Decimal
@@ -36,6 +37,7 @@ VALIDATION_TEMPLATE = """
             {shapefile_validation}
         END
 """
+STR_BYTES_REMOVAL = re.compile(r"^b'(.*)'$")
 
 
 def get_map_bounds(bbox, epsg, scale_denominator, tilesize, matrix_width, matrix_height):
@@ -60,6 +62,14 @@ def get_tile_level(tms, tilematrixsets):
 def strip_trailing_slash(string):
     if string.endswith('/'):
         string = string[:-1]
+    return string
+
+def strip_decode_bytes_format(string):
+    # interpret any bytes in the string
+    string = string.encode('latin-1').decode('unicode_escape').encode('latin-1').decode('utf-8')
+    match = STR_BYTES_REMOVAL.match(string)
+    if match:
+        return match.group(match.lastindex)
     return string
 
 def bulk_replace(source_str, replace_list):
@@ -247,7 +257,7 @@ for layer in layers:
 
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
-                                                                  ('${layer_title}', shp_config['layer_title']),
+                                                                  ('${layer_title}', strip_decode_bytes_format(shp_config['layer_title'])),
                                                                   ('${wms_extent}', wms_extent),
                                                                   ('${wms_srs}', wms_srs),
                                                                   ('${wms_layer_group}', wms_layer_group),
