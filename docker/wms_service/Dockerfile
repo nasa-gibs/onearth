@@ -9,7 +9,7 @@ COPY ./ /home/oe2/onearth/
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
