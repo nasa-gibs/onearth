@@ -276,11 +276,11 @@ int return_code=0;
 					
 					// GIBS colormap RGB values
 					if (rgb != NULL && entry != NULL) {
-	        			char rgb_string[11];
+	        			char rgb_string[15];
 						int rgb_length = strlen(rgb);
 						int rgb_pos = pos - rgb_length;
-						memcpy(rgb_string, &buffer[rgb_pos+5], 11);
-						rgb_string[11] = '\0';
+						memcpy(rgb_string, &buffer[rgb_pos+5], 15);
+						rgb_string[15] = '\0';
 						// break rgb string into int values
 						int rgb_array[3];
 						int i = 0;
