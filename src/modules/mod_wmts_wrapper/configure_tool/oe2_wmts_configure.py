@@ -583,6 +583,7 @@ def get_layer_config(layer_config_path):
 
 
 def get_layer_configs(endpoint_config):
+    layer_configs = []
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -594,12 +595,20 @@ def get_layer_configs(endpoint_config):
         print(f"Can't find specified layer config location: {layer_source}")
         sys.exit()
     if layer_source.is_file():
-        return [get_layer_config(layer_source)]
+        try:
+            layer_config = get_layer_config(layer_source)
+            layer_configs.append(layer_config)
+        except yaml.constructor.ConstructorError as err:
+            print(f'ERROR: Invalid YAML in layer configuration {err}')
     elif layer_source.is_dir():
-        return [
-            get_layer_config(filepath) for filepath in layer_source.iterdir()
-            if filepath.is_file() and filepath.name.endswith('.yaml')
-        ]
+        for filepath in layer_source.iterdir():
+            if filepath.is_file() and filepath.name.endswith('.yaml'):
+                try:
+                    layer_config = get_layer_config(filepath)
+                    layer_configs.append(layer_config)
+                except yaml.constructor.ConstructorError as err:
+                    print(f'ERROR: Invalid YAML in layer configuration {err}')
+    return layer_configs
 
 
 def write_layer_configs(layer_configs):
