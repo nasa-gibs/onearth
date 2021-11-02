@@ -13,4 +13,4 @@ python-dateutil == 2.8.1        # https://pypi.org/project/python-dateutil/
 requests == 2.25.1  # https://pypi.org/project/requests/
 unittest2 == 1.1.0  # https://pypi.org/project/unittest2/
 unittest-xml-reporting == 2.5.2 # https://pypi.org/project/unittest-xml-reporting/
-urllib3 == 1.26.4 # https://pypi.org/project/urllib3/
+urllib3 == 1.26.5 # https://pypi.org/project/urllib3/
