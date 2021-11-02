@@ -17,8 +17,9 @@ RUN touch /var/lib/rpm/* && \
 	yum install -y epel-release python3-devel make libpng-devel
 
 # Install GDAL
+RUN yum install -y turbojpeg-1.2.90 turbojpeg-devel-1.2.90
 RUN yum groupinstall -y "Development Tools"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-devel-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-apps-2.4.4-2.el7.x86_64.rpm" && \
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el7.x86_64.rpm" && \
 	yum clean all
 RUN pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
@@ -81,8 +82,8 @@ RUN pip3 install --ignore-installed Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 ma
 RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
 RUN pip3 uninstall -y protobuf && pip3 install protobuf==3.7.0
 
-RUN pip3 install matplotlib
-RUN pip3 install pypng
+RUN pip3 install matplotlib==2.2.5
+RUN pip3 install pypng==0.0.20
 
 RUN mkdir -p /var/task/lib64/python2.7/site-packages
 RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
