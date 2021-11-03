@@ -395,6 +395,17 @@ def make_layer_config(endpoint_config, layer):
     alias = layer_config.get('alias', layer_id)
     empty_tile = layer_config['source_mrf'].get('empty_tile', None)
 
+    # Check if empty_tile file exists, and if not use a default empty tile instead
+    if empty_tile and not os.path.exists(empty_tile):
+        default_empty_tile = "/etc/onearth/empty_tiles/Blank_RGB_" + str(tile_size_x)
+        if mimetype == "image/jpeg":
+            default_empty_tile += ".jpg"
+        else:
+            default_empty_tile += ".png"
+
+        print(f'empty_tile \'{empty_tile}\' not found!  Will use default empty tile \'{default_empty_tile}\' instead.')
+        empty_tile = default_empty_tile
+
     data_file_path = layer_config['source_mrf'].get('data_file_path', None)
     data_file_uri = layer_config['source_mrf'].get('data_file_uri', None)
     if not data_file_path and not data_file_uri:
