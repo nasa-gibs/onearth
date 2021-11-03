@@ -397,7 +397,7 @@ def make_layer_config(endpoint_config, layer):
 
     # Check if empty_tile file exists, and if not use a default empty tile instead
     if empty_tile and not os.path.exists(empty_tile):
-        default_empty_tile = "/etc/onearth/empty_tiles/Blank_RGB" 
+        default_empty_tile = "/etc/onearth/empty_tiles/Blank_RGB"
         if mimetype == "image/jpeg":
             default_empty_tile += "_" + str(tile_size_x) + ".jpg"
         else:
