@@ -403,7 +403,7 @@ def make_layer_config(endpoint_config, layer):
         else:
             default_empty_tile += "A_" + str(tile_size_x) + ".png"
 
-        print(f'ERROR: empty_tile \'{empty_tile}\' not found!  Using default empty tile \'{default_empty_tile}\' instead.')
+        print(f"ERROR: empty_tile '{empty_tile}' not found!  Using default empty tile '{default_empty_tile}' instead.")
         empty_tile = default_empty_tile
 
     data_file_path = layer_config['source_mrf'].get('data_file_path', None)
