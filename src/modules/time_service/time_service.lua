@@ -190,6 +190,12 @@ local function strftime_formatter (options)
     end
 end
 
+local function legacy_formatter (options)
+    return function (layer_name, date)
+        return layer_name .. date:fmt("%Y%j") .. '_'
+    end
+end
+
 
 
 -- Main date snapping handler -- this returns a function that's intended to be called by mod_ahtse_lua
@@ -199,6 +205,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
     local filename_handler = not filename_options and basic_date_formatter(filename_options)
         or filename_options.filename_format == "hash" and hash_formatter(filename_options)
         or filename_options.filename_format == "strftime" and strftime_formatter(filename_options)
+        or filename_options.filename_format == "legacy" and legacy_formatter(filename_options)
         or filename_options.filename_format == "basic" and basic_date_formatter(filename_options)
         or basic_date_formatter(filename_options)
 
