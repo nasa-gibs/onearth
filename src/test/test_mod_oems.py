@@ -376,7 +376,7 @@ class TestModOEMS(unittest.TestCase):
         """
         19. Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
-        ref_hash = '12e1e4e98764bb8ca4df0d6ae43d1140'
+        ref_hash = '57d4a9edc031878d288abb764f415d0c'
         req_url = 'http://localhost/onearth/test/wms/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3a,snap_test_3b&map.layer[snap_test_3a]=OPACITY+50&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG:3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&TIME=2015-01-01'
         if DEBUG:
             print('\nTesting: Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS')

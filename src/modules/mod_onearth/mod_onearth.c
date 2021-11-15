@@ -2142,8 +2142,9 @@ static int mrf_handler(request_rec *r)
 	}
 
     // if (r->connection->local_addr->port==80) {
-    	if (ap_strcasecmp_match(r->args, "request=GetCapabilities") == 0) {
+    	if (ap_strcasecmp_match(r->args, "request=GetCapabilities&=WMTS") == 0) {
         	ap_log_error(APLOG_MARK,APLOG_NOTICE,0,r->server,"Requesting getCapabilities");
+        	return DECLINED;
     	} else {
 			int err_status = specify_error(r);
 			if (!err_status) return DECLINED;
@@ -2278,8 +2279,7 @@ static int mrf_handler(request_rec *r)
     }
 
     if (level<(WMSlevel *) 2) {
-	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,
-	  "Can't find TILEMATRIX %s",r->args);
+    	ap_log_error(APLOG_MARK,APLOG_WARNING,0,r->server,"Can't find TILEMATRIX %s",r->args);
 		wmts_add_error(r,400,"InvalidParameterValue","TILEMATRIX", "Invalid TILEMATRIX");
     }
 
