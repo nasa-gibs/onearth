@@ -98,6 +98,7 @@ import random
 
 versionNumber = os.environ.get('ONEARTH_VERSION')
 oe_utils.basename = None
+errors = 0
 
 #-------------------------------------------------------------------------------
 # Begin defining subroutines.
@@ -171,6 +172,10 @@ def diff_resolution(tiles):
     for tile in tiles:
         gdalinfo_command_list=['gdalinfo', '-json', tile]
         gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        returncode = gdalinfo.wait()
+        if returncode != 0:
+            log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
+            return(False, next_x)
         tileInfo = json.loads(gdalinfo.stdout.read())
 
         tile_res_x = float(tileInfo["geoTransform"][1])
@@ -206,6 +211,10 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
 
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    returncode = gdalinfo.wait()
+    if returncode != 0:
+        log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
+        return False
     tileInfo = json.loads(gdalinfo.stdout.read())
 
     in_xmin = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
@@ -234,6 +243,10 @@ def get_image_epsg(tile):
 
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    returncode = gdalinfo.wait()
+    if returncode != 0:
+        log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
+        return None
     tileInfo = json.loads(gdalinfo.stdout.read())
 
     wkt = tileInfo["coordinateSystem"]["wkt"]
@@ -260,6 +273,9 @@ def get_image_extents(tile):
     log_the_command(gdalinfo_command_list)
 
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    returncode = gdalinfo.wait()
+    if returncode != 0:
+        log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
     tileInfo = json.loads(gdalinfo.stdout.read())
 
     ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
@@ -283,6 +299,10 @@ def has_color_table(tile):
 
     gdalinfo_command_list=['gdalinfo', '-json', tile]
     gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    returncode = gdalinfo.wait()
+    if returncode != 0:
+        log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
+        return False
     tileInfo = json.loads(gdalinfo.stdout.read())
 
     for band in tileInfo["bands"]:
@@ -387,14 +407,17 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         vrt_tile = working_dir + os.path.basename(tile) + ".vrt"
         gdal_vrt_command_list = ['gdalbuildvrt', '-a_srs', target_epsg, vrt_tile, tile]
         log_the_command(gdal_vrt_command_list)
-        gdal_vrt = subprocess.Popen(gdal_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        insert_message = gdal_vrt.stderr.readlines()
+        gdal_vrt = subprocess.Popen(gdal_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        insert_message = gdal_vrt.stdout.readlines()
         for message in insert_message:
             if 'ERROR' in str(message).upper():
                 log_sig_err("{0} in merging image (gdalbuildvrt) while processing {1}".format(message, tile), sigevent_url)
             else:
                 log_info_mssg(str(message).strip())
-        gdal_vrt.wait()
+        returncode = gdal_vrt.wait()
+        if returncode != 0:
+            log_sig_err('gdalbuildvrt return code {0}'.format(returncode), sigevent_url)
+            return None
         
         # Warp the input image VRT to have the right resolution
         warp_vrt_tile = working_dir + os.path.basename(tile) + ".warp.vrt"
@@ -403,14 +426,17 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
                                   str((Decimal(ymin)-Decimal(ymax))/Decimal(target_y)),
                                   vrt_tile, warp_vrt_tile]
         log_the_command(gdal_warp_command_list)
-        gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        insert_message = gdal_warp.stderr.readlines()
+        gdal_warp = subprocess.Popen(gdal_warp_command_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        insert_message = gdal_warp.stdout.readlines()
         for message in insert_message:
             if 'ERROR' in str(message).upper():
                 log_sig_err("{0} in merging image (gdalwarp) while processing {1}".format(message, tile), sigevent_url)
             else:
                 log_info_mssg(str(message).strip())
-        gdal_warp.wait()
+        returncode = gdal_warp.wait()
+        if returncode != 0:
+            log_sig_err('gdalwarp return code {0}'.format(returncode), sigevent_url)
+            return None
               
         # Now build a combined VRT for both the input VRT and the MRF
         combined_vrt_tile = working_dir + os.path.basename(tile) + ".combined.vrt"
@@ -420,14 +446,17 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         gdal_vrt_command_list2.extend([combined_vrt_tile, mrf, warp_vrt_tile])
 
         log_the_command(gdal_vrt_command_list2)
-        gdal_vrt2 = subprocess.Popen(gdal_vrt_command_list2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        insert_message = gdal_vrt2.stderr.readlines()
+        gdal_vrt2 = subprocess.Popen(gdal_vrt_command_list2, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        insert_message = gdal_vrt2.stdout.readlines()
         for message in insert_message:
             if 'ERROR' in str(message).upper():
                 log_sig_err("{0} in merging image (gdalbuildvrt - 2) while processing {1}".format(message, tile), sigevent_url)
             else:
                 log_info_mssg(str(message).strip())
-        gdal_vrt2.wait()
+        returncode = gdal_vrt2.wait()
+        if returncode != 0:
+            log_sig_err('gdalbuildvrt return code {0}'.format(returncode), sigevent_url)
+            return None
 
         # Create a merged VRT containing only the portion of the combined VRT we will insert back into the MRF
         new_tile = working_dir + os.path.basename(tile)+".merge.vrt"
@@ -438,14 +467,20 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
         
     # Execute the merge
     log_the_command(gdal_merge_command_list)
-    gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    insert_message = gdal_merge.stderr.readlines()
+    gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    insert_message = gdal_merge.stdout.readlines()
+    err = False
     for message in insert_message:
         if 'ERROR' in str(message).upper():
             log_sig_err("{0} in merging image while processing {1}".format(message, tile), sigevent_url)
+            err = True
         else:
             log_info_mssg(str(message).strip())
-    gdal_merge.wait()
+    returncode = gdal_merge.wait()
+    if returncode != 0: 
+        log_sig_err('gdal_translate return code {0}'.format(returncode), sigevent_url)
+    if returncode != 0 or err:
+        return None
     return new_tile
 
 def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, working_dir):
@@ -485,8 +520,20 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
     # Create VRT of input tile
     gdalbuildvrt_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
     log_the_command(gdalbuildvrt_command_list)
-    gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdalbuildvrt.wait()
+    gdalbuildvrt = subprocess.Popen(gdalbuildvrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    insert_message = gdalbuildvrt.stdout.readlines()
+    err = False
+    for message in insert_message:
+        if 'ERROR' in str(message).upper():
+            log_sig_err("{0} in building VRT (gdalwarp) while processing {1}".format(message, tile), sigevent_url)
+            err = True
+        else:
+            log_info_mssg(str(message).strip())
+    returncode = gdalbuildvrt.wait()
+    if returncode != 0: 
+        log_sig_err('gdalwarp return code {0}'.format(returncode), sigevent_url)
+    if returncode != 0 or err:
+        return (None, None)
     tile = temp_tile
     tile_left = tile + ".left_cut.vrt"
     tile_right = tile + ".right_cut.vrt"
@@ -496,7 +543,9 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         gdal_edit_command_list = ['gdal_edit.py', tile, '-a_ullr', new_lrx, uly, ulx, lry]
         log_the_command(gdal_edit_command_list)
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        gdal_edit.wait()
+        returncode = gdal_edit.wait()
+        if returncode != 0: 
+            log_sig_err('gdal_edit.py return code {0}'.format(returncode), sigevent_url)
 
     # Cut the input at the antimeridian into left and right halves
 
@@ -509,11 +558,13 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
 
         log_the_command(left_cut_command_list)
         left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        left_cut.wait()
+        returncode = left_cut.wait()
         left_cut_stderr = left_cut.stderr.read()
 
         if len(left_cut_stderr) > 0:
             log_sig_err(left_cut_stderr, sigevent_url)
+        if returncode != 0:
+            log_sig_err('left_cut (gdalwarp) return code {0}'.format(returncode), sigevent_url)
 
     if tile_right.count('.right_cut.vrt') > 1:
         # Something is wrong here; prevent going into a loop
@@ -528,16 +579,20 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
                                   tile, tile_right]
         log_the_command(right_cut_command_list)
         right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        right_cut.wait()
+        returncode = right_cut.wait()
         right_cut_stderr = right_cut.stderr.read()
         if len(right_cut_stderr) > 0:
             log_sig_err(right_cut_stderr, sigevent_url)
+        if returncode != 0:
+            log_sig_err('right_cut (gdalwarp) return code {0}'.format(returncode), sigevent_url)
 
         # flip the origin longitude of the right half
         gdal_edit_command_list = ['gdal_edit.py', tile_right, '-a_ullr', str(Decimal(antimeridian) * -1), uly, lrx, lry]
         log_the_command(gdal_edit_command_list)
         gdal_edit = subprocess.Popen(gdal_edit_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        gdal_edit.wait()
+        returncode = gdal_edit.wait()
+        if returncode != 0:
+            log_sig_err('gdal_edit.py return code {0}'.format(returncode), sigevent_url)
         print("Cut and edited tile_right extents: " + ",".join(get_image_extents(tile_right)))
 
     return (tile_left, tile_right)
@@ -797,7 +852,11 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
 
             tile = gdalmerge(mrf, tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                              t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
-                             
+            
+            if tile is None:
+                errors += 1
+                return errors
+
             if should_lock:
                 lock.up_write()
                 lock.down_read()
@@ -828,7 +887,9 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
             tile_vrt_command_list.append(vrt_tile)
             log_the_command(tile_vrt_command_list)
             tile_vrt = subprocess.Popen(tile_vrt_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            tile_vrt.wait()
+            returncode = tile_vrt.wait()
+            if returncode != 0:
+                log_sig_err('build tile VRT (gdalwarp) return code {0}'.format(returncode), sigevent_url)
 
             if merge: # merge tile with existing imagery
                 if should_lock:
@@ -839,6 +900,9 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                 log_info_mssg("Image extents " + str(extents))
                 tile = gdalmerge(mrf, vrt_tile, [s_xmin, s_ymax, s_xmax, s_ymin], target_x, target_y, mrf_blocksize,
                                  t_xmin, t_ymin, t_xmax, t_ymax, nodata, resize_resampling, working_dir, target_epsg)
+                if tile is None:
+                    errors += 1
+                    return errors
                 mrf_insert_command_list.append(tile)
 
                 if should_lock:
@@ -866,9 +930,12 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
                 log_sig_warn(str(message), sigevent_url)
             elif 'ERROR' in str(message):
                 errors += 1
-                log_sig_err("mrf_insert ".format(message), sigevent_url)
+                log_sig_err("mrf_insert {0}".format(message), sigevent_url)
             else:
                 log_info_mssg(str(message).strip())
+        returncode = mrf_insert.wait()
+        if returncode != 0:
+            log_sig_err('mrf_insert return code {0}'.format(returncode), sigevent_url)
 
         # Remove temporary merged files (if created)
         if ".merge." in tile:
@@ -1097,6 +1164,13 @@ def create_vrt(basename, empty_tile, epsg, xmin, ymin, xmax, ymax):
     return empty_vrt_filename
 
 
+# call oe_utils' log_sig_err and keep track of errors
+def log_sig_err(mssg, sigevent_url):
+    global errors
+    oe_utils.log_sig_err(mssg, sigevent_url)
+    errors += 1
+
+
 #-------------------------------------------------------------------------------
 # Finished defining subroutines.  Begin main program.
 #-------------------------------------------------------------------------------
@@ -1148,7 +1222,6 @@ else:
 # may get passed over because they were created while this script is running.
 current_cycle_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f")
 
-errors = 0
 
 # Read XML configuration file.
 try:
@@ -1678,6 +1751,9 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             
             gdalinfo_command_list = ['gdalinfo', '-json', tile]
             gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            returncode = gdalinfo.wait()
+            if returncode != 0:
+                log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
             tileInfo = json.loads(gdalinfo.stdout.read())
 
             has_palette = False
@@ -1892,6 +1968,9 @@ if mrf_compression_type == 'EPNG':
             gdalinfo_command_list = ['gdalinfo', tile]    
             log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            returncode = gdalinfo.wait()
+            if returncode != 0:
+                log_sig_err("gdalinfo return code {0}".format(returncode), sigevent_url)
             gdalinfo_out = gdalinfo.stdout.readlines()
             if "Color Table" in ''.join(gdalinfo_out):
                 log_sig_warn("{0} contains a palette".format(tile), sigevent_url)
@@ -1910,6 +1989,9 @@ if mrf_compression_type == 'EPNG':
                 gdalinfo_command_list = ['gdalinfo', tile]    
                 log_the_command(gdalinfo_command_list)
                 gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                returncode = gdalinfo.wait()
+                if returncode != 0:
+                    log_sig_err("gdalinfo return code {0}".format(returncode), sigevent_url)
                 gdalinfo_out = gdalinfo.stdout.readlines()
             log_info_mssg("Reading scale and offset from bands")
             for line in gdalinfo_out:
@@ -1926,10 +2008,13 @@ if mrf_compression_type == 'EPNG':
             gdal_translate_command_list = ['gdal_translate', '-of', 'PNG', tile, output_tile]    
             log_the_command(gdal_translate_command_list)
             gdal_translate = subprocess.Popen(gdal_translate_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            returncode = gdal_translate.wait()
             gdal_translate_stderr = gdal_translate.stderr.read()
             if len(gdal_translate_stderr) > 0:
                 log_sig_err(gdal_translate_stderr, sigevent_url)
-            alltiles[i] = output_tile  
+            if returncode != 0:
+                log_sig_err("gdal_translate return code {0}".format(returncode), sigevent_url)
+            alltiles[i] = output_tile
 
 # sort
 alltiles.sort()
@@ -2437,7 +2522,9 @@ if idxf >= vrtf:
         # Execute gdaladdo.
         gdaladdo_process = subprocess.Popen(gdaladdo_command_list, stdout=subprocess.PIPE, stderr=gdaladdo_stderr_file)
         out, err = gdaladdo_process.communicate()
-        log_info_mssg(out)            
+        log_info_mssg(out)
+        if gdaladdo_process.returncode != 0:
+            log_sig_err("gdaladdo return code {0}".format(gdaladdo_process.returncode), sigevent_url)
         #-------------------------------------------------------------------
 
         # Close stderr file.
@@ -2518,4 +2605,8 @@ try:
     # sigevent('INFO', mssg, sigevent_url)
 except urllib.error.URLError:
     None
-sys.exit(errors)
+if errors > 0:
+    print("{0} errors encountered".format(errors))
+    sys.exit(1)
+else:
+    sys.exit(0)
