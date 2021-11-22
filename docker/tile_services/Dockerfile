@@ -56,6 +56,7 @@ RUN cp /home/oe2/onearth/src/colormaps/bin/colorMaptoHTML_v1.3.py /usr/bin/
 # Copy Apache configs
 COPY ./docker/tile_services/oe2_proxy.conf /etc/httpd/conf.d/
 COPY ./docker/tile_services/oe2_status.conf /etc/httpd/conf.d/
+COPY ./docker/tile_services/oe2_ancillary.conf /etc/httpd/conf.d/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
