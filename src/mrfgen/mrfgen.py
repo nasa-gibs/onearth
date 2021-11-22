@@ -171,6 +171,7 @@ def diff_resolution(tiles):
     res = None
     for tile in tiles:
         gdalinfo_command_list=['gdalinfo', '-json', tile]
+        log_the_command(gdalinfo_command_list)
         gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         returncode = gdalinfo.wait()
         if returncode != 0:
@@ -210,6 +211,7 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     lower_right = False
 
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
+    log_the_command(gdalinfo_command_list)
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     returncode = gdalinfo.wait()
     if returncode != 0:
@@ -242,6 +244,7 @@ def get_image_epsg(tile):
     log_info_mssg("Getting image epsg")
 
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
+    log_the_command(gdalinfo_command_list)
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     returncode = gdalinfo.wait()
     if returncode != 0:
@@ -276,14 +279,14 @@ def get_image_extents(tile):
     returncode = gdalinfo.wait()
     if returncode != 0:
         log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
-    tileInfo = json.loads(gdalinfo.stdout.read())
-
-    ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
-    uly = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
-    lrx = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
-    lry = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
-
     try:
+        tileInfo = json.loads(gdalinfo.stdout.read())
+
+        ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
+        uly = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
+        lrx = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
+        lry = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
+
         return [ulx, uly, lrx, lry]
     except:
         log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)
@@ -298,6 +301,7 @@ def has_color_table(tile):
     has_color_table = False
 
     gdalinfo_command_list=['gdalinfo', '-json', tile]
+    log_the_command(gdalinfo_command_list)
     gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     returncode = gdalinfo.wait()
     if returncode != 0:
@@ -469,17 +473,14 @@ def gdalmerge(mrf, tile, extents, target_x, target_y, mrf_blocksize, xmin, ymin,
     log_the_command(gdal_merge_command_list)
     gdal_merge = subprocess.Popen(gdal_merge_command_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     insert_message = gdal_merge.stdout.readlines()
-    err = False
     for message in insert_message:
         if 'ERROR' in str(message).upper():
             log_sig_err("{0} in merging image while processing {1}".format(message, tile), sigevent_url)
-            err = True
         else:
             log_info_mssg(str(message).strip())
     returncode = gdal_merge.wait()
     if returncode != 0: 
         log_sig_err('gdal_translate return code {0}'.format(returncode), sigevent_url)
-    if returncode != 0 or err:
         return None
     return new_tile
 
@@ -1750,6 +1751,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
         if tile.lower().endswith(('.png', '.tif', '.tiff')):
             
             gdalinfo_command_list = ['gdalinfo', '-json', tile]
+            log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             returncode = gdalinfo.wait()
             if returncode != 0:
@@ -1917,7 +1919,6 @@ if source_epsg == "detect" or source_epsg != target_epsg:
 
         if not s_epsg:
             # if EPSG can't be determined, remove the tile
-            errors += 1
             log_sig_warn(tile + " has undetectable EPSG", sigevent_url)
             del alltiles[i]
         elif s_epsg != target_epsg:
