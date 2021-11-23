@@ -395,6 +395,17 @@ def make_layer_config(endpoint_config, layer):
     alias = layer_config.get('alias', layer_id)
     empty_tile = layer_config['source_mrf'].get('empty_tile', None)
 
+    # Check if empty_tile file exists, and if not use a default empty tile instead
+    if empty_tile and not os.path.exists(empty_tile):
+        default_empty_tile = "/etc/onearth/empty_tiles/Blank_RGB"
+        if mimetype == "image/jpeg":
+            default_empty_tile += "_" + str(tile_size_x) + ".jpg"
+        else:
+            default_empty_tile += "A_" + str(tile_size_x) + ".png"
+
+        print(f"ERROR: empty_tile '{empty_tile}' not found!  Using default empty tile '{default_empty_tile}' instead.")
+        empty_tile = default_empty_tile
+
     data_file_path = layer_config['source_mrf'].get('data_file_path', None)
     data_file_uri = layer_config['source_mrf'].get('data_file_uri', None)
     if not data_file_path and not data_file_uri:
@@ -578,11 +589,12 @@ def make_layer_config(endpoint_config, layer):
 
 def get_layer_config(layer_config_path):
     with layer_config_path.open() as f:
-        config = yaml.load(f.read())
+        config = yaml.safe_load(f.read())
     return {'path': layer_config_path, 'config': config}
 
 
 def get_layer_configs(endpoint_config):
+    layer_configs = []
     try:
         layer_source = Path(endpoint_config['layer_config_source'])
     except KeyError:
@@ -594,12 +606,20 @@ def get_layer_configs(endpoint_config):
         print(f"Can't find specified layer config location: {layer_source}")
         sys.exit()
     if layer_source.is_file():
-        return [get_layer_config(layer_source)]
+        try:
+            layer_config = get_layer_config(layer_source)
+            layer_configs.append(layer_config)
+        except yaml.constructor.ConstructorError as err:
+            print(f'ERROR: Invalid YAML in layer configuration {err}')
     elif layer_source.is_dir():
-        return [
-            get_layer_config(filepath) for filepath in layer_source.iterdir()
-            if filepath.is_file() and filepath.name.endswith('.yaml')
-        ]
+        for filepath in layer_source.iterdir():
+            if filepath.is_file() and filepath.name.endswith('.yaml'):
+                try:
+                    layer_config = get_layer_config(filepath)
+                    layer_configs.append(layer_config)
+                except yaml.constructor.ConstructorError as err:
+                    print(f'ERROR: Invalid YAML in layer configuration {err}')
+    return layer_configs
 
 
 def write_layer_configs(layer_configs):
