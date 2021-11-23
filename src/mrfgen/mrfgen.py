@@ -1165,11 +1165,12 @@ def create_vrt(basename, empty_tile, epsg, xmin, ymin, xmax, ymax):
     return empty_vrt_filename
 
 
-# call oe_utils' log_sig_err and keep track of errors
-def log_sig_err(mssg, sigevent_url):
+# call oe_utils' log_sig_err and keep track of errors if count_err is True
+def log_sig_err(mssg, sigevent_url, count_err=True):
     global errors
     oe_utils.log_sig_err(mssg, sigevent_url)
-    errors += 1
+    if count_err:
+        errors += 1
 
 
 #-------------------------------------------------------------------------------
@@ -1722,14 +1723,12 @@ if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jp
             img = gdal.Open(tile)
 
             if img is None:
-                errors += 1
                 log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
                 continue
         except RuntimeError as e:
             log_sig_exit('ERROR', 'Failed to execute gdal.Open', sigevent_url)
 
         if img.RasterCount == 1:
-            errors += 1
             log_sig_err("Bad JPEG tile detected: {0}".format(tile), sigevent_url)
             img = None
             continue
@@ -1830,7 +1829,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                         log_sig_warn(mssg, sigevent_url)
                     if RGBApng2Palpng.returncode == 255:
                         mssg = str(RGBApng2Palpng.stderr.readlines()[-1])
-                        log_sig_err("RGBApng2Palpng: " + mssg, sigevent_url)
+                        log_sig_err("RGBApng2Palpng: " + mssg, sigevent_url, count_err=False)
                     errors += RGBApng2Palpng.returncode
                 
                 if os.path.isfile(output_tile):
@@ -1843,7 +1842,6 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     # Replace with new tiles
                     alltiles[i] = output_tile
                 else:
-                    errors += 1
                     log_sig_err("RGBApng2Palpng failed to create {0}".format(output_tile), sigevent_url)
                 
                 # Make a copy of world file
@@ -1855,7 +1853,6 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     else:
                         log_info_mssg("World file does not exist for tile: {0}".format(tile))
                 except:
-                    errors += 1
                     log_sig_err("ERROR: " + mssg, sigevent_url)
 
 
@@ -1866,7 +1863,6 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     else:
                         log_info_mssg("Geolocation file does not exist for tile: " + tile)
                 except:
-                    errors += 1
                     log_sig_err("ERROR: " + mssg, sigevent_url)
                     
                 # add transparency flag for custom color map
@@ -2148,10 +2144,10 @@ elif len(mrf_list) == 1:
         con = None
         
     if mrf_parallel:
-        errors += parallel_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+        parallel_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
-        errors += run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+        run_mrf_insert(alltiles, mrf, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, max_size=mrf_maxsize)
     
     # Clean up
@@ -2162,7 +2158,11 @@ elif len(mrf_list) == 1:
     log_info_mssg(mssg)
 
     # Exit mrfgen because we are done
-    sys.exit(errors)
+    if errors > 0:
+        print("{0} errors encountered".format(errors))
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 # Else, no MRF so continue on with the rest of the processing...
 
@@ -2480,10 +2480,10 @@ else:
 # Insert if there are input tiles to process
 if len(alltiles) > 0:
     if mrf_parallel:
-        errors += parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+        parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
     else:
-        errors += run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
+        run_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, max_size=mrf_maxsize)
 
 
