@@ -71,6 +71,11 @@ LoadModule status_module modules/mod_status.so
 # Off) when the "server-status" handler is called. The default is Off.
 #
 ExtendedStatus On
+
+# Turn off indexes
+<Location />
+      Options -Indexes
+</Location>
 EOS
 
 # Setup Apache with no-cache
