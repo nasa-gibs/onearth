@@ -77,6 +77,8 @@ Alias /{alias} {config_path}
 <Directory {config_path}>
     Reproject_ConfigurationFiles {src_config} {dest_config}
     Reproject_RegExp {alias}
+    Reproject_Source /{source_path}
+    Reproject_SourcePostfix {source_postfix}
 </Directory>
 """
 
@@ -100,8 +102,6 @@ MOD_REPROJECT_DEST_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
     SkippedLevels {skipped_levels}
     Projection {projection}
     BoundingBox {bbox}
-    SourcePath /{source_path}
-    SourcePostfix {source_postfix}
     MimeType {mime}    
     Oversample On
     ExtraLevels 3
@@ -286,6 +286,8 @@ class TestModReproject(unittest.TestCase):
                            self.reproject_config_file_prefix + '.config')),
              ('{alias}', self.reproject_config_file_prefix),
              ('{src_config}', self.reproj_src_config_path),
+             ('{source_path}', self.src_config_file_prefix),
+             ('{source_postfix}', '.jpg'),
              ('{dest_config}', self.reproj_dest_config_path)])
 
         self.apache_config_path = os.path.join(
@@ -355,8 +357,7 @@ class TestModReproject(unittest.TestCase):
              ('{skipped_levels}', '0'), ('{projection}', 'EPSG:3857'),
              ('{bbox}',
               '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-              ), ('{source_path}', self.src_config_file_prefix),
-             ('{source_postfix}', '.jpg'), ('{mime}', 'image/jpeg')])
+              ), ('{mime}', 'image/jpeg')])
 
         with open(self.reproj_dest_config_path, 'w+') as f:
             f.write(mod_reproject_dest_config)

@@ -48,7 +48,14 @@ static void stub_source_dec(j_decompress_ptr cinfo) {}
 /**
 *\Brief: Do nothing stub function for JPEG library
 */
-static void skip_input_data_dec(j_decompress_ptr cinfo, long l) {}
+static void skip_input_data_dec(j_decompress_ptr cinfo, long l)
+{
+    struct jpeg_source_mgr *src = cinfo->src;
+    if (static_cast<size_t>(l) > src->bytes_in_buffer)
+        l = static_cast<long>(src->bytes_in_buffer);
+    src->bytes_in_buffer -= l;
+    src->next_input_byte += l;
+}
 
 // Destination should be already set up
 static void init_or_terminate_destination(j_compress_ptr cinfo) {}

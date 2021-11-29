@@ -17,6 +17,14 @@
 #include <apr_strings.h>
 #include <png.h>
 
+#if defined(DEBUG)
+#define LOG(r, msg, ...) {\
+  ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, msg, ##__VA_ARGS__);\
+}
+#else
+#define LOG(...)
+#endif
+
 // signatures in big endian, to autodetect tile type
 #define PNG_SIG 0x89504e47
 #define JPEG_SIG 0xffd8ffe0
@@ -125,7 +133,7 @@ typedef struct {
 
 struct  repro_conf {
     // http_root path of this configuration
-    const char *doc_path;
+    // const char *doc_path;
 
     // The reprojection function to be used, also used as an enable flag
     PCode code;
@@ -165,6 +173,9 @@ struct  repro_conf {
 
     // Use NearNb, not bilinear interpolation
     int nearNb;
+
+    // Flag to turn on transparency for formats that do support it
+    int has_transparency;
 };
 
 //
@@ -190,9 +201,9 @@ struct jpeg_params : codec_params {
     int quality;
 };
 
-const char *jpeg_stride_decode(codec_params &params, const TiledRaster &raster, storage_manager &src,
+const char *repro_jpeg_stride_decode(codec_params &params, const TiledRaster &raster, storage_manager &src,
     void *buffer);
-const char *jpeg_encode(jpeg_params &params, const TiledRaster &raster, storage_manager &src,
+const char *repro_jpeg_encode(jpeg_params &params, const TiledRaster &raster, storage_manager &src,
     storage_manager &dst);
 
 struct png_params : codec_params {
@@ -203,7 +214,7 @@ struct png_params : codec_params {
     // If true, NDV is the transparent color
     int has_transparency;
     // If has_transparency, this is the transparent color definition
-    png_color_16 NDV;
+    // png_color_16 NDV;
 };
 
 // In PNG_codec.cpp
@@ -212,11 +223,11 @@ struct png_params : codec_params {
 // buffer is the location of the first byte on the first line of decoded data
 // line_stride is the size of a line in buffer (larger or equal to decoded PNG line)
 // Returns NULL if everything looks fine, or an error message
-const char *png_stride_decode(apr_pool_t *p, codec_params &params, const TiledRaster &raster,
+const char *repro_png_stride_decode(codec_params &params, const TiledRaster &raster, 
     storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans);
-const char *png_encode(png_params &params, const TiledRaster &raster,
+const char *repro_png_encode(png_params *params, const TiledRaster &raster, 
     storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans, int &num_trans);
 // Based on the raster configuration, populates a png parameter structure
-int set_png_params(const TiledRaster &raster, png_params *params);
+int repro_set_png_params(const TiledRaster &raster, png_params *params);
 
 #endif
