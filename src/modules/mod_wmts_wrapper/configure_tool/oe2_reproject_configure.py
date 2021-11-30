@@ -355,7 +355,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
         return '3'  # default to 3 bands if not PNG
 
 
-def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
+def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, replace_with_local,
                        layer_xml):
     src_size = get_src_size(source_tms_defs, layer_xml)
     source_tms = get_source_tms(source_tms_defs, layer_xml)
@@ -365,12 +365,16 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
         layer_id = layer_xml.findtext('{*}Identifier')
         print(f"Unable to find matching tilematrixset for {layer_id}")
         return{}
-    bands = get_layer_bands(
-        layer_xml.findtext('{*}Identifier'),
-        layer_xml.find('{*}ResourceURL').attrib.get('format'),
-        format_source_url(
+    
+    identifier = layer_xml.findtext('{*}Identifier')
+    mimetype = layer_xml.find('{*}ResourceURL').attrib.get('format')
+    sample_tile_url = format_source_url(
             layer_xml.find('{*}ResourceURL').attrib.get('template'),
-            source_tms).replace('${date}', 'default') + '/0/0/0.png')
+            source_tms).replace('${date}', 'default') + '/0/0/0.png'
+    if replace_with_local:
+        sample_tile_url = sample_tile_url.replace(replace_with_local, 'http://172.17.0.1')
+    
+    bands = get_layer_bands(identifier, mimetype, sample_tile_url)
     return {
         'layer_id':
         layer_xml.findtext('{*}Identifier'),
@@ -627,7 +631,7 @@ def build_configs(endpoint_config):
     layers = list(
         map(
             partial(parse_layer_gc_xml, target_proj, source_tms_defs,
-                    target_tms_defs), layer_list))
+                    target_tms_defs, replace_with_local), layer_list))
     layers = [x for x in layers if x != {}] # remove layers we can't reproject
 
     # Build configs for each layer
