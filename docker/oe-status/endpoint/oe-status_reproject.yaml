@@ -25,7 +25,7 @@ mapserver:
   internal_endpoint: "/var/www/html/wms/oe-status_reproject"
   mapfile_header:  "/etc/onearth/config/mapserver/oe-status_reproject.header"
   mapfile_location: "/etc/onearth/config/mapserver/oe-status_reproject.map"
-  source_wmts_gc_uri: "http://172.17.0.1:8080/oe-status/1.0.0/WMTSCapabilities.xml"
+  source_wmts_gc_uri: "http://localhost/oe-status/1.0.0/WMTSCapabilities.xml"
   replace_with_local: "http://localhost"
 reproject:
   target_epsg_code: "EPSG:3857"
