@@ -404,7 +404,7 @@ def run_command(cmd, sigevent_url):
     """
     log_info_mssg(' '.join(cmd))
     process = subprocess.Popen(cmd,universal_newlines=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    process.wait()
+    returncode = process.wait()
     for output in process.stdout:
         log_info_mssg(output.strip())
     for error in process.stderr:
@@ -413,6 +413,8 @@ def run_command(cmd, sigevent_url):
         else:
             log_sig_err(error.strip(), sigevent_url)
             raise Exception(error.strip())
+    if returncode != 0:
+        log_sig_err("{0} return code {1}".format(cmd, returncode))
 
 def get_environment(environmentConfig, email_meta):
     """
