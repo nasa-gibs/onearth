@@ -73,6 +73,7 @@ MOD_REPROJECT_APACHE_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
         Reproject_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {internal_endpoint}/{layer_id}/default/{tilematrixset}/reproject.config
         Reproject_RegExp {layer_id}
         WMTSWrapperRole tilematrixset
+        {cache_expiration_block}
 </Directory>
 """
 
@@ -453,6 +454,16 @@ def get_gc_xml(source_gc_uri):
 
 
 def make_apache_layer_config(endpoint_config, layer_config):
+    if 'cache_expiration' in layer_config:
+        cache_expiration = layer_config['cache_expiration']
+        cache_expiration_block = f'Header Always Set Cache-Control "public, max-age={cache_expiration}"'
+    else:
+        cache_expiration_block = 'Header Always Set Pragma "no-cache"\n'
+        cache_expiration_block += '        Header Always Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"\n'
+        cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
+        cache_expiration_block += '        Header Always Unset ETag\n'
+        cache_expiration_block += '        FileETag None'
+
     apache_config = bulk_replace(
         MOD_REPROJECT_APACHE_TEMPLATE,
         [('{time_enabled}', 'On' if layer_config['time_enabled'] else 'Off'),
@@ -460,7 +471,8 @@ def make_apache_layer_config(endpoint_config, layer_config):
           strip_trailing_slash(
               endpoint_config['wmts_service']['internal_endpoint'])),
          ('{layer_id}', layer_config['layer_id']),
-         ('{tilematrixset}', layer_config['tilematrixset']['identifier'])])
+         ('{tilematrixset}', layer_config['tilematrixset']['identifier']),
+         ('{cache_expiration_block}', cache_expiration_block)])
     if layer_config['time_enabled'] and endpoint_config['date_service_info']:
         date_service_uri = endpoint_config['date_service_info']['local']
         date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{date_service_uri}"'
@@ -575,6 +587,32 @@ def get_proxy_paths(layers):
     return proxy_paths
 
 
+def get_layer_config(layer_config_path):
+    with layer_config_path.open() as f:
+        config = yaml.safe_load(f.read())
+    return {'path': str(layer_config_path), 'config': config}
+
+
+def get_layer_configs(endpoint_config):
+    try:
+        layer_source = Path(endpoint_config['layer_config_source'])
+    except KeyError:
+        print("\nERROR: Must specify 'layer_config_source'!")
+        sys.exit()
+
+    # Find all source configs - traversing down a single directory level
+    if not layer_source.exists():
+        print(f"ERROR: Can't find specified layer config location: {layer_source}")
+        sys.exit()
+    if layer_source.is_file():
+        return [get_layer_config(layer_source)]
+    elif layer_source.is_dir():
+        return [
+            get_layer_config(filepath) for filepath in layer_source.iterdir()
+            if filepath.is_file() and filepath.name.endswith('.yaml')
+        ]
+
+
 def build_configs(endpoint_config):
     # Check endpoint configs for necessary stuff
     try:
@@ -634,6 +672,15 @@ def build_configs(endpoint_config):
     endpoint_config['proxy_paths'] = get_proxy_paths(layers)
     endpoint_config['date_service_info'] = get_date_service_info(
         endpoint_config, layers)
+
+    # Get cache_expiration (if exists) from layer configs and add to each layer
+    layer_configs = get_layer_configs(endpoint_config)
+
+    for layer in layers:
+        layer_config = next((lc for lc in layer_configs if layer['layer_id'] == lc['config']['layer_id']), False)
+
+        if layer_config and 'cache_expiration' in layer_config['config']:
+            layer['cache_expiration'] = layer_config['config']['cache_expiration']
 
     layer_apache_configs = map(
         partial(make_apache_layer_config, endpoint_config), layers)

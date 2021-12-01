@@ -7,6 +7,7 @@ mime_type: "image/jpeg"
 static: false
 abstract: "BlueMarble abstract"
 time_config: "DETECT"
+cache_expiration: 1200
 metadata:
   - {}
 source_mrf:
