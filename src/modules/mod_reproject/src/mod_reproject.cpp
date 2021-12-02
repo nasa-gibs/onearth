@@ -6,8 +6,6 @@
  * (C) Lucian Plesea 2016-2017
  */
 
-// TODO: Test
-// TODO: Handle ETag conditional requests
 // TODO: Add LERC support
 // TODO: Allow overlap between tiles
 
@@ -56,7 +54,7 @@ static GDALDataType GetDT(const char *name) {
     if (name == NULL) return GDT_Byte;
     if (!apr_strnatcasecmp(name, "UINT16"))
         return GDT_UInt16;
-    else if (!apr_strnatcasecmp(name, "INT16") || !apr_strnatcasecmp(name, "INT"))
+    else if (!apr_strnatcasecmp(name, "INT16") || !apr_strnatcasecmp(name, "SHORT"))
         return GDT_Int16;
     else if (!apr_strnatcasecmp(name, "UINT32"))
         return GDT_UInt32;
@@ -91,6 +89,7 @@ static int send_image(request_rec *r, const storage_manager &src, const char *mi
 
     ap_set_content_length(r, src.size);
     ap_rwrite(src.buffer, src.size, r);
+    ap_rflush(r);
     return OK;
 }
 
@@ -165,7 +164,7 @@ static apr_uint64_t base32decode(const char *is, int *flag) {
 static void *create_dir_config(apr_pool_t *p, char *path)
 {
     repro_conf *c = (repro_conf *)apr_pcalloc(p, sizeof(repro_conf));
-    c->doc_path = path;
+    // c->doc_path = path;
     return c;
 }
 
@@ -340,7 +339,6 @@ static char *read_empty_tile(cmd_parms *cmd, repro_conf *c, const char *line)
 // One of them has to match if the request is to be considered
 static const char *set_regexp(cmd_parms *cmd, repro_conf *c, const char *pattern)
 {
-    char *err_message = NULL;
     if (c->arr_rxp == 0)
         c->arr_rxp = apr_array_make(cmd->pool, 2, sizeof(ap_regex_t *));
     ap_regex_t **m = (ap_regex_t **)apr_array_push(c->arr_rxp);
@@ -517,7 +515,6 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
     receive_ctx rctx;
     rctx.maxsize = cfg->max_input_size;
     rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
-
     ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, r, r->connection);
 
     codec_params params;
@@ -533,6 +530,9 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
     if (*buffer == NULL) // Allocate the buffer if not provided, filled with zeros
         *buffer = apr_pcalloc(r->pool, bufsize);
 
+    // Count of good tiles
+    int count = 0;
+
     // Retrieve every required tile and decompress it in the right place
     for (int y = int(tl.y); y < br.y; y++) for (int x = int(tl.x); x < br.x; x++) {
         char *sub_uri = apr_pstrcat(r->pool,
@@ -541,6 +541,7 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
             apr_psprintf(r->pool, "%s/%d/%d/%d/%d", cfg->source, int(tl.z), int(tl.l), y, x),
             cfg->postfix, NULL);
 
+        LOG(r, "Requesting %s", sub_uri);
         request_rec *rr = ap_sub_req_lookup_uri(sub_uri, r, r->output_filters);
 
         // Location of first byte of this input tile
@@ -554,14 +555,27 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
         apr_table_setn(rr->headers_in, "User-Agent", user_agent);
 
         rctx.size = 0; // Reset the receive size
-        int rr_status = ap_run_sub_req(rr);
+        ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, rr, rr->connection);
+
+        int rr_status = ap_run_sub_req(rr); // This returns http status, aka 404, 200
+        //int http_status = rr->status; // This is usually 200, is it ever 404?
+        ap_remove_output_filter(rf);
+        // Capture the tag before nuking the subrequest
+
+        const char* ETagIn = apr_table_get(rr->headers_out, "ETag");
+        if (ETagIn)
+            ETagIn = apr_pstrdup(r->pool, ETagIn);
+        ap_destroy_sub_req(rr);
+
         if (rr_status != APR_SUCCESS) {
             ap_remove_output_filter(rf);
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Receive failed for %s", sub_uri);
-            return rr_status; // Pass status along
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+                "Subrequest %s failed, status %u", sub_uri, rr_status);
+            if (rr_status != HTTP_NOT_FOUND)
+                return rr_status;
+            continue; // Ignore not found errors, assume empty (zero)
         }
 
-        const char *ETagIn = apr_table_get(rr->headers_out, "ETag");
         apr_uint64_t etag;
         int empty_flag = 0;
         if (nullptr != ETagIn) {
@@ -581,7 +595,7 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
             }
         }
         // Build up the outgoing ETag
-        etag_out = (etag_out << 8) | (0xff & (etag_out >> 56)); // Rotate existing tag one byte left
+        etag_out = (etag_out << 8) | (0xff & (etag_out >> 56)); // Rotate existing tag
         etag_out ^= etag; // And combine it with the incoming tile etag
 
         storage_manager src = { rctx.buffer, rctx.size };
@@ -591,25 +605,26 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
         switch (hton32(sig))
         {
         case JPEG_SIG:
-            error_message = jpeg_stride_decode(params, cfg->inraster, src, b);
+            error_message = repro_jpeg_stride_decode(params, cfg->inraster, src, b);
             break;
         case PNG_SIG:
-        	error_message = png_stride_decode(r->pool, params, cfg->inraster, src, b, ct, palette, trans, num_trans);
+            error_message = repro_png_stride_decode(params, cfg->inraster, src, b, ct, palette, trans, num_trans);
             break;
         default:
             error_message = "Unsupported format received";
         }
 
         if (error_message != NULL) { // Something went wrong
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s :%s", error_message, sub_uri);
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
             return HTTP_NOT_FOUND;
         }
-    }
 
+        count++; // count the valid tiles
+    }
     ap_remove_output_filter(rf);
     //    apr_table_clear(r->headers_out); // Clean up the headers set by subrequests
-
-    return APR_SUCCESS;
+    //
+    return count ? APR_SUCCESS : HTTP_NOT_FOUND;
 }
 
 // Interpolation line, contains the above line and the relative weight (never zero)
@@ -891,25 +906,21 @@ static int handler(request_rec *r)
     // The order has to match the PCode definitions
     static coord_conv_f *cxf[P_COUNT] = { same_proj, wm2lon, lon2wm, same_proj, same_proj };
     static coord_conv_f *cyf[P_COUNT] = { same_proj, wm2lat, lat2wm, m2wm, wm2m };
+    repro_conf *cfg = reinterpret_cast<repro_conf *>(
+        ap_get_module_config(r->per_dir_config, &reproject_module));
+    auto req_cfg = ap_get_module_config(r->request_config, &reproject_module);
 
-    // TODO: use r->header_only to verify ETags, assuming the subrequests are faster in that mode
+    if (req_cfg)
+        cfg = reinterpret_cast<repro_conf *>(req_cfg);
 
-    // pick up a modified config if one exists in the notes for this request.
-    repro_conf *cfg = ap_get_module_config(r->request_config, &reproject_module)
-        ? (repro_conf *)ap_get_module_config(r->request_config, &reproject_module) :
-            (repro_conf *)ap_get_module_config(r->per_dir_config, &reproject_module);
-
-    if (!our_request(r, cfg)) return DECLINED;
-
-    // LOGGING
-    const char *uuid = apr_table_get(r->headers_in, "UUID") 
-        ? apr_table_get(r->headers_in, "UUID") 
-        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_mod_reproject_handle, timestamp=%ld, uuid=%s",
-        apr_time_now(), uuid);
+    if (!cfg || !our_request(r, cfg))
+        return DECLINED;
 
     apr_array_header_t *tokens = tokenize(r->pool, r->uri);
     if (tokens->nelts < 3) return DECLINED; // At least Level Row Column
+
+    // Paranoid check
+    SERR_IF(!cfg->source, "Reproject_SourcePath not set");
 
     int ct;
     png_colorp png_palette;
@@ -1027,37 +1038,33 @@ static int handler(request_rec *r)
     if (NULL == cfg->mime_type || 0 == apr_strnatcmp(cfg->mime_type, "image/jpeg")) {
         jpeg_params params;
         params.quality = static_cast<int>(cfg->quality);
-        error_message = jpeg_encode(params, cfg->raster, raw, dst);
+        error_message = repro_jpeg_encode(params, cfg->raster, raw, dst);
     }
     else if (0 == apr_strnatcmp(cfg->mime_type, "image/png")) {
         png_params params;
-        set_png_params(cfg->raster, &params);
+        repro_set_png_params(cfg->raster, &params);
         if (cfg->quality < 10) // Otherwise use the default of 6
             params.compression_level = static_cast<int>(cfg->quality);
+        if (cfg->has_transparency)
+            params.has_transparency = true;
         if (png_trans != NULL)
-         	params.has_transparency = TRUE;
+         	params.has_transparency = true;
         if (png_palette != NULL) {
         	params.color_type = ct;
 			params.bit_depth = 8;
         }
-        error_message = png_encode(params, cfg->raster, raw, dst, png_palette, png_trans, num_trans);
+        error_message = repro_png_encode(&params, cfg->raster, raw, dst, png_palette, png_trans, num_trans);
         png_palette = 0;
 		png_trans = 0;
     }
 
     if (error_message) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s from :%s", error_message, r->uri);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s encoding :%s", error_message, r->uri);
         // Something went wrong if compression fails
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     apr_table_set(r->headers_out, "ETag", ETag);
-
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_reproject_handle, timestamp=%ld, uuid=%s",
-        apr_time_now(), uuid);
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_onearth_handle, timestamp=%ld, uuid=%s",
-        apr_time_now(), uuid);
-
     return send_image(r, dst, cfg->mime_type);
 }
 
@@ -1071,13 +1078,13 @@ static const char *read_config(cmd_parms *cmd, repro_conf *c, const char *src, c
     if (NULL == kvp) return err_message;
 
     err_message = const_cast<char*>(ConfigRaster(cmd->pool, kvp, c->inraster));
-    if (err_message) return apr_pstrcat(cmd->pool, "Source ", err_message, NULL);
+    if (err_message) return apr_pstrcat(cmd->pool, "Reading input configuration", err_message, NULL);
 
     // Then the real configuration file
     kvp = read_pKVP_from_file(cmd->temp_pool, fname, &err_message);
     if (NULL == kvp) return err_message;
     err_message = const_cast<char *>(ConfigRaster(cmd->pool, kvp, c->raster));
-    if (err_message) return err_message;
+    if (err_message) return apr_pstrcat(cmd->pool, "Reading output configuration", err_message, NULL);
 
     // Output mime type
     line = apr_table_get(kvp, "MimeType");
@@ -1120,19 +1127,14 @@ static const char *read_config(cmd_parms *cmd, repro_conf *c, const char *src, c
     if (line)
         c->max_output_size = (apr_size_t)apr_strtoi64(line, NULL, 0);
 
-    line = apr_table_get(kvp, "SourcePath");
-    if (!line)
-        return "SourcePath directive is missing";
-    c->source = apr_pstrdup(cmd->pool, line);
-
-    line = apr_table_get(kvp, "SourcePostfix");
-    if (line)
-        c->postfix = apr_pstrdup(cmd->pool, line);
-
     c->quality = 75.0; // Default for JPEG
     line = apr_table_get(kvp, "Quality");
     if (line)
         c->quality = strtod(line, NULL);
+
+    line = apr_table_get(kvp, "Transparency");
+    if (line && !apr_strnatcasecmp(line, "on"))
+        c->has_transparency = TRUE;
 
     // Set the reprojection code
     if (IS_AFFINE_SCALING(c))
@@ -1149,6 +1151,21 @@ static const char *read_config(cmd_parms *cmd, repro_conf *c, const char *src, c
     return NULL;
 }
 
+// Directive: Reproject
+static const char *check_config(cmd_parms *cmd, repro_conf *c, const char *value)
+{
+    // Check the basic requirements
+    if (!c->source)
+        return "Reproject_Source is required";
+
+    // Dump the configuration in a string and return it, debug help
+    if (!apr_strnatcasecmp(value, "verbose")) {
+        return "Unimplemented";
+    }
+
+    return NULL;
+}
+
 static const command_rec cmds[] =
 {
     AP_INIT_TAKE2(
@@ -1156,7 +1173,7 @@ static const command_rec cmds[] =
     (cmd_func)read_config, // Callback
     0, // Self-pass argument
     ACCESS_CONF, // availability
-    "Source and output configuration files"
+    "Required, source and output configuration files"
     ),
 
     AP_INIT_TAKE1(
@@ -1164,7 +1181,33 @@ static const command_rec cmds[] =
     (cmd_func)set_regexp,
     0, // Self-pass argument
     ACCESS_CONF, // availability
-    "Regular expression that the URL has to match.  At least one is required."),
+    "One or more, regular expression that the URL has to match"
+    ),
+
+    AP_INIT_TAKE1(
+    "Reproject_Source",
+    (cmd_func)ap_set_string_slot,
+    (void *)APR_OFFSETOF(repro_conf, source),
+    ACCESS_CONF,
+    "Required, internal redirect path for the source"
+    ),
+
+    AP_INIT_TAKE1(
+    "Reproject_SourcePostfix",
+    (cmd_func)ap_set_string_slot,
+    (void *)APR_OFFSETOF(repro_conf, postfix),
+    ACCESS_CONF,
+    "Optional, internal redirect path ending, to be added after the M/L/R/C"
+    ),
+
+    AP_INIT_TAKE1(
+    "Reproject",
+    (cmd_func)check_config,
+    0,
+    ACCESS_CONF,
+    "On to check the configuration, it should be the last Reproject directive in a given location."
+    " Setting it to verbose will dump the configuration"
+    ),
 
     { NULL }
 };

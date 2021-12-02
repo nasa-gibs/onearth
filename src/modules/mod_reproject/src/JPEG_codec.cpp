@@ -48,7 +48,14 @@ static void stub_source_dec(j_decompress_ptr cinfo) {}
 /**
 *\Brief: Do nothing stub function for JPEG library
 */
-static void skip_input_data_dec(j_decompress_ptr cinfo, long l) {}
+static void skip_input_data_dec(j_decompress_ptr cinfo, long l)
+{
+    struct jpeg_source_mgr *src = cinfo->src;
+    if (static_cast<size_t>(l) > src->bytes_in_buffer)
+        l = static_cast<long>(src->bytes_in_buffer);
+    src->bytes_in_buffer -= l;
+    src->next_input_byte += l;
+}
 
 // Destination should be already set up
 static void init_or_terminate_destination(j_compress_ptr cinfo) {}
@@ -63,7 +70,7 @@ static boolean empty_output_buffer(j_compress_ptr cinfo) { return FALSE; }
 
 // IMPROVE: could reuse the cinfo, to save some memory allocation
 // IMPROVE: Use a jpeg memory manager to link JPEG memory into apache's pool mechanism
-const char *jpeg_stride_decode(codec_params &params, const TiledRaster &raster, storage_manager &src, 
+const char *repro_jpeg_stride_decode(codec_params &params, const TiledRaster &raster, storage_manager &src, 
     void *buffer)
 {
     const char *message = NULL;
@@ -105,7 +112,7 @@ const char *jpeg_stride_decode(codec_params &params, const TiledRaster &raster, 
     return message; // Either null or error message
 }
 
-const char *jpeg_encode(jpeg_params &params, const TiledRaster &raster, storage_manager &src, 
+const char *repro_jpeg_encode(jpeg_params &params, const TiledRaster &raster, storage_manager &src, 
     storage_manager &dst)
 {
     const char *message = NULL;
