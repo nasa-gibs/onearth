@@ -93,17 +93,13 @@ LoadModule status_module modules/mod_status.so
 ExtendedStatus On
 EOS
 
-# Setup Apache with no-cache
+# Setup Apache to cache for 10 minutes
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 
 #
-# Turn off caching
+# Turn on caching for 10 minutes
 #
-Header Set Pragma "no-cache"
-Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
-Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
-Header Unset ETag
-FileETag None
+Header Always Set Cache-Control "public, max-age=600"
 EOS
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
