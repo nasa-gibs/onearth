@@ -1,0 +1,32 @@
+--- a/modules/proxy/mod_proxy.c 2021-12-09 20:24:48.480687000 +0000
++++ b/modules/proxy/mod_proxy.c 2021-12-09 20:29:36.194060000 +0000
+@@ -665,6 +665,9 @@
+                 "Unescaped URL path matched ProxyPass; ignoring unsafe nocanon");
+     }
+
++    if (found && r->main == NULL && (ent->flags & PROXYPASS_NOMAIN))
++        found = NULL;
++
+     if (found) {
+         r->filename = found;
+         r->handler = "proxy-server";
+@@ -1512,6 +1515,9 @@
+         else if (!strcasecmp(word,"noquery")) {
+             flags |= PROXYPASS_NOQUERY;
+         }
++        else if (!strcasecmp(word,"nomain")) {
++            flags |= PROXYPASS_NOMAIN;
++        }
+         else {
+             char *val = strchr(word, '=');
+             if (!val) {
+--- a/modules/proxy/mod_proxy.h	2021-05-12 10:14:42.000000000 +0000
++++ b/modules/proxy/mod_proxy.h	2021-07-28 00:00:43.233589985 +0000
+@@ -124,6 +124,7 @@
+ #define PROXYPASS_NOCANON 0x01
+ #define PROXYPASS_INTERPOLATE 0x02
+ #define PROXYPASS_NOQUERY 0x04
++#define PROXYPASS_NOMAIN 0x08
+ struct proxy_alias {
+     const char  *real;
+     const char  *fake;
