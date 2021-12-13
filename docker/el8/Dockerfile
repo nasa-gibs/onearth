@@ -41,7 +41,7 @@ RUN sed -i 's/Order allow,deny/Require all granted/g' /etc/httpd/conf.d/onearth-
 
 # Generate temporary certs for Apache and reinstall to enable mod_proxy
 RUN /usr/libexec/httpd-ssl-gencerts
-RUN yum -y reinstall httpd-2.4.37-39.module_el8.4.0+950+0577e6ac.1.x86_64
+RUN yum -y reinstall httpd
 
 # Build cgicc for kmlgen
 WORKDIR /usr/share/cgicc/
