@@ -1,6 +1,6 @@
 cycler == 0.10.0	# https://pypi.org/project/Cycler/
 Fiona == 1.8.19     # https://pypi.org/project/Fiona/
-lxml == 4.6.3       # https://pypi.org/project/lxml/
+lxml == 4.6.5       # https://pypi.org/project/lxml/
 mapbox-vector-tile == 1.2.1     # https://pypi.org/project/mapbox-vector-tile/
 requests == 2.7.0  # https://pypi.org/project/requests/
 Rtree == 0.9.4      # https://pypi.org/project/Rtree/
