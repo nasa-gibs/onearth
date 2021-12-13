@@ -8,8 +8,7 @@ RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf config-manager --set-enabled powertools
 RUN dnf install -y python3 python3-devel make gcc
 RUN yum -y install epel-release && yum clean all
-RUN yum -y install httpd-2.4.37-39.module_el8.4.0+950+0577e6ac.1.x86_64 \
-	mod_ssl-1:2.4.37-39.module_el8.4.0+950+0577e6ac.1.x86_64 \
+RUN yum -y install httpd mod_ssl \
 	proj-devel-6.3.2-4.el8.x86_64 \
 	glibc-locale-source glibc-langpack-en && yum clean all
 RUN groupadd -g 1000 gibs && useradd -u 1000 -g gibs -s /bin/sh gibs
