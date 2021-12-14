@@ -53,6 +53,7 @@ import platform
 import smtpd
 import threading
 import asyncore
+import http
 # cElementTree deprecated in python 3.3
 from xml.etree import cElementTree as ElementTree
 import redis
@@ -781,6 +782,9 @@ def get_url(url):
         response = urllib.request.urlopen(url)
     except urllib.error.URLError:
         raise urllib.error.URLError('Cannot access URL: ' + url)
+    except http.client.RemoteDisconnected:
+        # multi-layer WMS requests would close connection prematurely
+        response = urllib.request.urlopen(url)
     return response
 
 
