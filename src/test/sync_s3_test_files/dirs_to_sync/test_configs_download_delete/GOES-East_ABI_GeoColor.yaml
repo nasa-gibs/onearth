@@ -1,0 +1,27 @@
+abstract: GOES-East_ABI_GeoColor abstract
+best_config:
+  1: GOES-East_ABI_GeoColor
+best_layer: GOES-East_ABI_GeoColor
+layer_id: GOES-East_ABI_GeoColor
+layer_name: GOES-East ABI GeoColor tileset
+layer_title: Geo Color (Best Available, ABI, GOES-East)
+metadata: []
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 4
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
+  idx_path: /onearth/idx/epsg4326
+  size_x: 40960
+  size_y: 20480
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+tilematrixset: 1km
+tilematrixset_limits_id: "goes-east-1km"
+time_config:
+- DETECT/PT10M
+wms_layer_group: /Geostationary

@@ -3,6 +3,7 @@ formencode == 1.3.1 # https://pypi.org/project/FormEncode/
 lxml == 4.6.3       # https://pypi.org/project/lxml/
 mapbox-vector-tile == 1.2.0     # https://pypi.org/project/mapbox-vector-tile/
 matplotlib == 2.2.5 # https://pypi.org/project/matplotlib/
+moto[server] == 2.2.17      # https://pypi.org/project/moto/
 numpy == 1.16.6     # https://pypi.org/project/numpy/
 parse_apache_configs == 0.0.2   # https://pypi.org/project/parse_apache_configs/
 pillow == 5.4.1		# https://pypi.org/project/Pillow/

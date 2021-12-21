@@ -133,7 +133,7 @@ def syncConfigs(bucket,
 
         # Delete files from file system that aren't on S3
         for fs_file in list(set(fs_files) - set(s3_files)):
-            cfg_filepath = dir + fs_file
+            cfg_filepath = os.path.join(dir, fs_file)
 
             sync_semaphore.acquire()
             t = threading.Thread(target=deleteObject, args=(cfg_filepath,))

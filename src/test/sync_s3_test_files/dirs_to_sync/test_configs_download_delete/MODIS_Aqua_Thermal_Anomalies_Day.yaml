@@ -1,0 +1,30 @@
+layer_id: "MODIS_Aqua_Thermal_Anomalies_Day"
+layer_title: "Thermal Anomalies and Fires (Day, Best Available, MODIS, Aqua)"
+layer_name: "MODIS_Aqua_Thermal_Anomalies_Day tileset"
+projection: "EPSG:4326"
+tilematrixset: "1km"
+mime_type: "application/vnd.mapbox-vector-tile"
+static: false
+abstract: "MODIS_Aqua_Thermal_Anomalies_Day abstract"
+metadata:
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer", "xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Layer Vector Metadata"}
+  - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer/1.0", "xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Layer Vector Metadata"}
+shapefile_configs:
+- layer_id: "MODIS_Aqua_Thermal_Anomalies_Day_Points"
+  layer_style: "/etc/onearth/config/mapfile_styles/MODIS_Aqua_Thermal_Anomalies_Day.txt"
+  layer_title: "Thermal Anomalies and Fires (Day, Best Available, MODIS, Aqua)"
+  source_shapefile:
+    data_file_uri: "{SHAPEFILE_BUCKET}/epsg4326"
+    feature_type: "POINT"
+source_mrf:
+  size_x: 40960
+  size_y: 20480
+  tile_size_x: 512
+  tile_size_y: 512
+  bands:
+  idx_path: "/onearth/idx/epsg4326"
+  data_file_uri: "{S3_URL}/epsg4326"
+  bbox: -180,-90,180,90
+wms_layer_group: "/Fires and Thermal Anomalies"

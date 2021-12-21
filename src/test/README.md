@@ -11,6 +11,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mod_twms.py` -- tests the mod_twms module
 * `test_mod_wmts_wrapper.py` -- tests the mod_wmts_wrapper module
 * `test_mrfgen.py` -- tests mrfgen
+* `test_sync_s3.py` -- tests `oe_sync_s3_configs.py` and `oe_sync_s3_idx.py`
 * `test_time_service.py` -- tests the OnEarth Time Service
 * `test_time_utils.py` -- tests time configuration utilities
 * `test_vectorgen.py` -- tests vectorgen
@@ -140,3 +141,11 @@ Each test script will output a JUnit XML results file. By default, these files a
 ## Legend Tests:
 
 Tests legends in horizontal and vertical formats as PNGs and SVGs using various GIBS colormaps. The list of colormaps are configured in this [file](legends_test_data/colormaps.json).
+
+## Sync S3 Tests:
+
+1. Downloading a config from an S3 bucket to a directory containing other files
+2. Deleting a config from a directory when the config isn't in the S3 bucket
+3. Downloading a config from S3 and deleting a config that isn't in the S3 bucket
+
+4. Deleting all configs from a directory when syncing with an empty S3 bucket (not in use: commented out)
