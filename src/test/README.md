@@ -147,5 +147,6 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 1. Downloading a config from an S3 bucket to a directory containing other files
 2. Deleting a config from a directory when the config isn't in the S3 bucket
 3. Downloading a config from S3 and deleting a config that isn't in the S3 bucket
+4. Overwriting configs that already exist in the directory using the `-f` (`--force`) argument
 
-4. Deleting all configs from a directory when syncing with an empty S3 bucket (not in use: commented out)
+5. Deleting all configs from a directory when syncing with an empty S3 bucket (not in use: commented out)

@@ -86,18 +86,18 @@ def clear_bucket(delete_bucket=False):
     if delete_bucket:
         bucket.delete()
 
-def compare_directories(sync_dir_path, mock_dir_path):
+def compare_directories(sync_dir_path, mock_dir_path, sync_script):
     result_comp = dircmp(sync_dir_path, mock_dir_path)
     success = True
     failure_msg = ""
     if len(result_comp.left_only) > 0:
         success = False
-        failure_msg += "\noe_sync_s3_configs.py failed to delete the following file(s) from {0} that weren't in the S3 bucket:".format(sync_dir_path)
+        failure_msg += "\n{0} failed to delete the following file(s) from {1} that weren't in the S3 bucket:".format(sync_script, sync_dir_path)
         for filename in result_comp.left_only:
             failure_msg += "\n- {0}".format(filename)
     if len(result_comp.right_only) > 0:
         success = False
-        failure_msg += "\noe_sync_s3_configs.py failed to download the following file(s) from the S3 bucket to {0}:".format(sync_dir_path)
+        failure_msg += "\n{0} failed to download the following file(s) from the S3 bucket to {1}:".format(sync_script, sync_dir_path)
         for filename in result_comp.right_only:
             failure_msg += "\n- {0}".format(filename)
     return success, failure_msg
@@ -134,7 +134,7 @@ class TestSyncS3(unittest.TestCase):
     
     # Test syncing a directory of configs with an S3 bucket containing some configs
     # that the directory lacks.
-    # Passes if the missing configs are downloaded.
+    # Passes if the configs are downloaded.
     def test_sync_configs_download(self):
         mock_dir_name = "test_configs"
         mock_dir_path = os.path.join(os.getcwd(), MOCK_DIR, mock_dir_name)
@@ -142,7 +142,7 @@ class TestSyncS3(unittest.TestCase):
         cmd = "python3 /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py -b {0} -d {1} -s {2}".format(TEST_BUCKET, self.sync_dir_path, MOCK_S3_URI)
         run_command(cmd)
         # check results
-        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path)
+        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path, "oe_sync_s3_configs.py")
         self.assertTrue(success, failure_msg)
     
     # Test syncing a directory of configs with an S3 bucket that doesn't contain
@@ -159,7 +159,7 @@ class TestSyncS3(unittest.TestCase):
         cmd = "python3 /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py -b {0} -d {1} -s {2}".format(TEST_BUCKET, self.sync_dir_path, MOCK_S3_URI)
         run_command(cmd)
         # check results
-        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path)
+        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path, "oe_sync_s3_configs.py")
         self.assertTrue(success, failure_msg)
 
     # Test syncing a directory of configs with an S3 bucket containing some configs
@@ -176,7 +176,7 @@ class TestSyncS3(unittest.TestCase):
         cmd = "python3 /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py -b {0} -d {1} -s {2}".format(TEST_BUCKET, self.sync_dir_path, MOCK_S3_URI)
         run_command(cmd)
         # check results
-        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path)
+        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path, "oe_sync_s3_configs.py")
         self.assertTrue(success, failure_msg)
     
     # Test using the `-n` argument to perform a "dry run" of the S3 syncing without
@@ -193,9 +193,46 @@ class TestSyncS3(unittest.TestCase):
         run_command(cmd)
         # check results
         # this time ensure that the directory's contents haven't changed
-        success, _ = compare_directories(self.sync_dir_path, test_dir_path)
-        failure_msg = "{0} has been altered. The directory should not be altered when -n or (--dry-run) are used when running oe_sync_s3_configs.py"
+        success, _ = compare_directories(self.sync_dir_path, test_dir_path, "oe_sync_s3_configs.py")
+        failure_msg = "{0} has been altered. The directory should not be altered when -n (or --dry-run) are used when running oe_sync_s3_configs.py.".format(self.sync_dir_path)
         self.assertTrue(success, failure_msg)
+    
+    # Test syncing a directory of configs with an S3 bucket containing some configs
+    # that the directory lacks and not containing other configs that the directory has.
+    # Passes if the directory's missing configs are downloaded and its extra configs are deleted.
+    def test_sync_configs_force(self):
+        test_dir_name = "test_configs_force"
+        mock_dir_name = "test_configs"
+        test_dir_path = os.path.join(os.getcwd(), TEST_FILES_DIR, test_dir_name)
+        mock_dir_path = os.path.join(os.getcwd(), MOCK_DIR, mock_dir_name)
+        for filename in os.listdir(test_dir_path):
+            shutil.copy2(os.path.join(test_dir_path, filename), self.sync_dir_path)
+        upload_files(mock_dir_path)
+        cmd = "python3 /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py -f -b {0} -d {1} -s {2}".format(TEST_BUCKET, self.sync_dir_path, MOCK_S3_URI)
+        run_command(cmd)
+        # check results
+        result_comp = dircmp(self.sync_dir_path, mock_dir_path)
+        success = len(result_comp.same_files) == len(result_comp.right_list)
+        failure_msg = "Running oe_sync_s3_configs.py with -f (--force) failed to overwrite configs in {0} that share the same name as configs in the S3 bucket.".format(self.sync_dir_path)
+        self.assertTrue(success, failure_msg)
+    """
+    # Test syncing a directory of configs with an S3 bucket containing some idx files
+    # that the directory lacks.
+    # Passes if the configs are downloaded.
+    def test_sync_idx_download(self):
+        mock_dir_name = "test_idx"
+        mock_dir_path = os.path.join(os.getcwd(), MOCK_DIR, mock_dir_name)
+        upload_files(mock_dir_path)
+        cmd = "python3 /home/oe2/onearth/src/scripts/oe_sync_s3_idx.py -b {0} -d {1} -s {2}".format(TEST_BUCKET, self.sync_dir_path, MOCK_S3_URI)
+        run_command(cmd)
+        # check results
+        success = True
+        failure_msg = ""
+        result_comp = dircmp(self.sync_dir_path, mock_dir_path)
+        print(result_comp.left_list)
+        self.assertTrue(success, failure_msg)
+    """
+    # TODO config checksums
 
     """
     # Test syncing a directory of configs with an empty S3 bucket.
