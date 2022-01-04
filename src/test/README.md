@@ -158,5 +158,4 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 12. Overwriting IDX files that already exist in the directory using the `-f` (`--force`) argument
 13. Overwriting IDX files whose checksums do not match those of corresponding files in S3 using the `-c` (`--checksum`) argument
 14. Deleting all configs from a directory when syncing with an empty S3 bucket (not in use: commented out)
-15. Overwriting config files whose checksums do not match those of corresponding files in S3 using the `-c` (`--checksum`) argument (not in use: commented out)
-16. Deleting all IDX files from a directory when syncing with an empty S3 bucket (not in use: commented out)
+15. Deleting all IDX files from a directory when syncing with an empty S3 bucket (not in use: commented out)

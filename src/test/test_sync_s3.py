@@ -398,26 +398,6 @@ class TestSyncS3(unittest.TestCase):
     """
 
     """
-    # Test syncing a directory of configs with an S3 bucket such that the directory's config files
-    # that share the same name as configs in the S3 bucket but have unique contents (i.e. checksum mismatch)
-    # are overwritten by the configs in the S3 bucket using `-c` (`--checksum`).
-    # Passes if the contents of the directory's files matches the contents of the files in the S3 bucket.
-    def test_sync_configs_checksum(self):
-        test_dir_name = "test_configs_checksum"
-        mock_dir_name = "test_configs"
-        test_dir_path = os.path.join(os.getcwd(), TEST_FILES_DIR, test_dir_name)
-        mock_dir_path = os.path.join(os.getcwd(), MOCK_DIR, mock_dir_name)
-        for filename in os.listdir(test_dir_path):
-            shutil.copy2(os.path.join(test_dir_path, filename), self.sync_dir_path)
-        upload_files(mock_dir_path)
-        cmd = "python3 /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py -c -b {0} -d {1} -s {2}".format(TEST_BUCKET, self.sync_dir_path, MOCK_S3_URI)
-        run_command(cmd)
-        # check results
-        success, failure_msg = compare_directories(self.sync_dir_path, mock_dir_path, "oe_sync_s3_configs.py", check_diff_files=True)
-        self.assertTrue(success, failure_msg)
-    """
-
-    """
     # Test syncing a directory of IDX files with an empty S3 bucket.
     # Passes if the directory's IDX files are deleted.
     def test_sync_idx_delete_all(self):

@@ -43,8 +43,7 @@ Options:
 This script synchronizes OnEarth config files on S3 with those on a file system.
 Files on S3 will always act as the 'master' (i.e., files found on S3 that are not on the file system 
 will be downloaded, while files found on the file system but not on S3 will be deleted).
-File modifications are not detected. Use --force to overwrite existing files. Use --checksum to determine whether
-existing files should be overwritten based on a mismatching checksum with S3 object.
+File modifications are not detected. Use --force to overwrite existing files.
 
 ```
 Usage: oe_sync_s3_configs.py [-h] [-b BUCKET] [-d DIR] [-f] [-c] [-n] [-p PREFIX]
@@ -58,8 +57,6 @@ optional arguments:
                         bucket name
   -d DIR, --dir DIR     Directory on file system to sync
   -f, --force           Force update even if file exists
-  -c, --checksum        Evaluate checksum of local file against s3 object and 
-                        update even mismatched
   -n, --dry-run         Perform a trial run with no changes made
   -p PREFIX, --prefix PREFIX
                         S3 prefix to use
