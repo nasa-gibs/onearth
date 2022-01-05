@@ -72,7 +72,10 @@ MOD_REPROJECT_APACHE_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
         Reproject_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {internal_endpoint}/{layer_id}/default/{tilematrixset}/reproject.config
         Reproject_RegExp {layer_id}
+        Reproject_Source {source_path}
+        Reproject_SourcePostfix {postfix}
         WMTSWrapperRole tilematrixset
+        {cache_expiration_block}
 </Directory>
 """
 
@@ -88,8 +91,6 @@ Nearest {nearest}
 PageSize {tile_size_x} {tile_size_y} 1 {bands}
 Projection {projection}
 BoundingBox {bbox}
-SourcePath {source_path}
-SourcePostfix {postfix}
 MimeType {mimetype}
 Oversample On
 ExtraLevels 3
@@ -355,7 +356,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
         return '3'  # default to 3 bands if not PNG
 
 
-def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
+def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, replace_with_local,
                        layer_xml):
     src_size = get_src_size(source_tms_defs, layer_xml)
     source_tms = get_source_tms(source_tms_defs, layer_xml)
@@ -365,12 +366,16 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs,
         layer_id = layer_xml.findtext('{*}Identifier')
         print(f"Unable to find matching tilematrixset for {layer_id}")
         return{}
-    bands = get_layer_bands(
-        layer_xml.findtext('{*}Identifier'),
-        layer_xml.find('{*}ResourceURL').attrib.get('format'),
-        format_source_url(
+    
+    identifier = layer_xml.findtext('{*}Identifier')
+    mimetype = layer_xml.find('{*}ResourceURL').attrib.get('format')
+    sample_tile_url = format_source_url(
             layer_xml.find('{*}ResourceURL').attrib.get('template'),
-            source_tms).replace('${date}', 'default') + '/0/0/0.png')
+            source_tms).replace('${date}', 'default') + '/0/0/0.png'
+    if replace_with_local:
+        sample_tile_url = sample_tile_url.replace(replace_with_local, 'http://172.17.0.1')
+    
+    bands = get_layer_bands(identifier, mimetype, sample_tile_url)
     return {
         'layer_id':
         layer_xml.findtext('{*}Identifier'),
@@ -453,6 +458,16 @@ def get_gc_xml(source_gc_uri):
 
 
 def make_apache_layer_config(endpoint_config, layer_config):
+    if 'cache_expiration' in layer_config:
+        cache_expiration = layer_config['cache_expiration']
+        cache_expiration_block = f'Header Always Set Cache-Control "public, max-age={cache_expiration}"'
+    else:
+        cache_expiration_block = 'Header Always Set Pragma "no-cache"\n'
+        cache_expiration_block += '        Header Always Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"\n'
+        cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
+        cache_expiration_block += '        Header Always Unset ETag\n'
+        cache_expiration_block += '        FileETag None'
+
     apache_config = bulk_replace(
         MOD_REPROJECT_APACHE_TEMPLATE,
         [('{time_enabled}', 'On' if layer_config['time_enabled'] else 'Off'),
@@ -460,7 +475,12 @@ def make_apache_layer_config(endpoint_config, layer_config):
           strip_trailing_slash(
               endpoint_config['wmts_service']['internal_endpoint'])),
          ('{layer_id}', layer_config['layer_id']),
-         ('{tilematrixset}', layer_config['tilematrixset']['identifier'])])
+         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
+         ('{source_path}',
+          format_source_uri_for_proxy(layer_config['source_url_template'],
+                                      endpoint_config['proxy_paths'])),
+         ('{tilematrixset}', layer_config['tilematrixset']['identifier']),
+         ('{cache_expiration_block}', cache_expiration_block)])
     if layer_config['time_enabled'] and endpoint_config['date_service_info']:
         date_service_uri = endpoint_config['date_service_info']['local']
         date_service_snippet = f'\n        WMTSWrapperTimeLookupUri "{date_service_uri}"'
@@ -493,10 +513,6 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
          ('{projection}', str(layer_config['reproj_projection'])),
          ('{mimetype}', layer_config["mimetype"]),
          ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
-         ('{postfix}', MIME_TO_EXTENSION[layer_config['mimetype']]),
-         ('{source_path}',
-          format_source_uri_for_proxy(layer_config['source_url_template'],
-                                      endpoint_config['proxy_paths'])),
          ('{nearest}',
           'Off' if layer_config['mimetype'] == 'image/jpeg' else 'On')])
 
@@ -575,6 +591,32 @@ def get_proxy_paths(layers):
     return proxy_paths
 
 
+def get_layer_config(layer_config_path):
+    with layer_config_path.open() as f:
+        config = yaml.safe_load(f.read())
+    return {'path': str(layer_config_path), 'config': config}
+
+
+def get_layer_configs(endpoint_config):
+    try:
+        layer_source = Path(endpoint_config['layer_config_source'])
+    except KeyError:
+        print("\nERROR: Must specify 'layer_config_source'!")
+        sys.exit()
+
+    # Find all source configs - traversing down a single directory level
+    if not layer_source.exists():
+        print(f"ERROR: Can't find specified layer config location: {layer_source}")
+        sys.exit()
+    if layer_source.is_file():
+        return [get_layer_config(layer_source)]
+    elif layer_source.is_dir():
+        return [
+            get_layer_config(filepath) for filepath in layer_source.iterdir()
+            if filepath.is_file() and filepath.name.endswith('.yaml')
+        ]
+
+
 def build_configs(endpoint_config):
     # Check endpoint configs for necessary stuff
     try:
@@ -627,13 +669,22 @@ def build_configs(endpoint_config):
     layers = list(
         map(
             partial(parse_layer_gc_xml, target_proj, source_tms_defs,
-                    target_tms_defs), layer_list))
+                    target_tms_defs, replace_with_local), layer_list))
     layers = [x for x in layers if x != {}] # remove layers we can't reproject
 
     # Build configs for each layer
     endpoint_config['proxy_paths'] = get_proxy_paths(layers)
     endpoint_config['date_service_info'] = get_date_service_info(
         endpoint_config, layers)
+
+    # Get cache_expiration (if exists) from layer configs and add to each layer
+    layer_configs = get_layer_configs(endpoint_config)
+
+    for layer in layers:
+        layer_config = next((lc for lc in layer_configs if layer['layer_id'] == lc['config']['layer_id']), False)
+
+        if layer_config and 'cache_expiration' in layer_config['config']:
+            layer['cache_expiration'] = layer_config['config']['cache_expiration']
 
     layer_apache_configs = map(
         partial(make_apache_layer_config, endpoint_config), layers)

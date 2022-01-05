@@ -65,6 +65,7 @@ RUN sed -i 's/{?dist}.1/{?dist}_9.1/g' httpd.spec && \
     HOME="/tmp" rpmbuild -bp httpd.spec && \
     ls /home/oe2/onearth && \
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
+    cp /home/oe2/onearth/docker/proxypass_nomain_flag.patch /tmp/rpmbuild/SOURCES && \
     patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch && \
     HOME="/tmp" rpmbuild -ba httpd.spec && \
     yum -y remove httpd httpd-devel httpd-tools && \

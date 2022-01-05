@@ -131,6 +131,8 @@ MOD_REPROJECT_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name
     WMTSWrapperRole tilematrixset
     Reproject_ConfigurationFiles {src_config} {dest_config}
     Reproject_RegExp {layer_name}
+    Reproject_Source {src_path}
+    Reproject_SourcePostfix {src_postfix}
 </Directory>
 """
 
@@ -149,6 +151,8 @@ MOD_REPROJECT_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
     WMTSWrapperRole tilematrixset
     Reproject_ConfigurationFiles {src_config} {dest_config}
     Reproject_RegExp {layer_name}
+    Reproject_Source {src_path}
+    Reproject_SourcePostfix {src_postfix}
 </Directory>
 """
 
@@ -193,8 +197,6 @@ MOD_REPROJECT_DEST_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
     SkippedLevels {skipped_levels}
     Projection {projection}
     BoundingBox {bbox}
-    SourcePath {src_path}
-    SourcePostfix {src_postfix}
     MimeType {mime}
     Oversample On
     ExtraLevels 3
@@ -521,7 +523,8 @@ class TestModWmtsWrapper(unittest.TestCase):
         tilematrixset = 'GoogleMapsCompatible_Level3'
 
         config_prefix = 'test_reproject_nodate'
-
+        src_path = '/{}/test_mrf_nodate/default/{}'.format(
+            self.endpoint_prefix_mrf, src_tilematrixset)
         # Add Apache config for base imagery layer to be served by mod_mrf
         layer_path = '{}/default/{}'.format(config_prefix, tilematrixset)
         self.reproj_endpoint_path_nodate = os.path.join(
@@ -540,7 +543,9 @@ class TestModWmtsWrapper(unittest.TestCase):
              ('{alias}', self.endpoint_prefix_reproject),
              ('{endpoint_path}', self.reproj_endpoint_path),
              ('{layer_name}', config_prefix),
-             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'Off')])
+             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'Off'),
+             ('{src_postfix}', '.jpg'),
+             ('{src_path}', src_path)])
 
         self.mod_reproj_apache_config_path_nodate = os.path.join(
             apache_conf_dir, config_prefix + '.conf')
@@ -579,8 +584,6 @@ class TestModWmtsWrapper(unittest.TestCase):
         reproj_size_x = 2048
         reproj_size_y = 2048
         reproj_tile_size = 256
-        src_path = '/{}/test_mrf_nodate/default/{}'.format(
-            self.endpoint_prefix_mrf, src_tilematrixset)
         mod_reproj_dest_config = bulk_replace(
             MOD_REPROJECT_DEST_CONFIG_TEMPLATE,
             [('{size_x}', reproj_size_x), ('{size_y}', reproj_size_y),
@@ -590,9 +593,8 @@ class TestModWmtsWrapper(unittest.TestCase):
              ('{skipped_levels}', '0' if size_x == size_y else '1'),
              ('{projection}', 'EPSG:3857'),
              ('{bbox}',
-              '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-              ), ('{src_postfix}', '.jpg'), ('{mime}', 'image/jpeg'),
-             ('{src_path}', src_path)])
+              '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'), 
+             ('{mime}', 'image/jpeg')])
 
         mod_reproj_dest_config_path = os.path.join(
             self.reproj_endpoint_path_nodate, config_prefix + '.config')
@@ -610,7 +612,8 @@ class TestModWmtsWrapper(unittest.TestCase):
         tilematrixset = 'GoogleMapsCompatible_Level3'
 
         config_prefix = 'test_reproject_date'
-
+        src_path = '/{}/test_mrf_date/default/{}/{}'.format(
+                    self.endpoint_prefix_mrf, '${date}', src_tilematrixset)
         # Add Apache config for base imagery layer to be served by mod_mrf
         layer_path = '{}/default/{}'.format(config_prefix, tilematrixset)
         self.reproj_endpoint_path_date = os.path.join(
@@ -629,7 +632,9 @@ class TestModWmtsWrapper(unittest.TestCase):
              ('{alias}', self.endpoint_prefix_reproject),
              ('{endpoint_path}', self.reproj_endpoint_path),
              ('{layer_name}', config_prefix),
-             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'Off')])
+             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'Off'),
+             ('{src_postfix}', '.jpg'),
+             ('{src_path}', src_path)])
 
         self.mod_reproj_apache_config_path_date = os.path.join(
             apache_conf_dir, config_prefix + '.conf')
@@ -668,8 +673,6 @@ class TestModWmtsWrapper(unittest.TestCase):
         reproj_size_x = 2048
         reproj_size_y = 2048
         reproj_tile_size = 256
-        src_path = '/{}/test_mrf_date/default/{}/{}'.format(
-            self.endpoint_prefix_mrf, '${date}', src_tilematrixset)
         mod_reproj_dest_config = bulk_replace(
             MOD_REPROJECT_DEST_CONFIG_TEMPLATE,
             [('{size_x}', reproj_size_x), ('{size_y}', reproj_size_y),
@@ -681,8 +684,7 @@ class TestModWmtsWrapper(unittest.TestCase):
              ('{projection}', 'EPSG:3857'),
              ('{bbox}',
               '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
-              ), ('{src_postfix}', '.jpg'), ('{mime}', 'image/jpeg'),
-             ('{src_path}', src_path)])
+              ), ('{mime}', 'image/jpeg')])
 
         mod_reproj_dest_config_path = os.path.join(
             self.reproj_endpoint_path_nodate, config_prefix + '.config')

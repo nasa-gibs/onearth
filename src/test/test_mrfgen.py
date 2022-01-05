@@ -1356,7 +1356,6 @@ class TestMRFGeneration_nonpaletted_colormap(unittest.TestCase):
         else:
             print("Leaving test results in : " + self.staging_area)
 
-
 class TestMRFGeneration_email_notification(unittest.TestCase):
 
     def setUp(self):
@@ -1711,6 +1710,39 @@ class TestMRFGeneration_jpng(unittest.TestCase):
         else:
             print("Leaving test results in : " + self.staging_area)
 
+class TestRGBA2Pal(unittest.TestCase):
+
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')  
+
+        # Make source image dir
+        input_dir = os.path.join(testdata_path, 'AIRS')
+        make_dir_tree(os.path.join(input_dir), ignore_existing=True)
+        
+        # Make empty dir for output
+        make_dir_tree(os.path.join(self.staging_area, 'output_dir'))
+
+        self.output_img = os.path.join(self.staging_area, "output_dir/AIRS_L2_SST_A_LL_v6_NRT_2019344_indexed.png")
+        self.compare_img = os.path.join(testdata_path, "test_comp11.png")
+            
+        # generate indexed PNG image
+        cmd = "RGBApng2Palpng -v -lut=" + testdata_path + "/colormaps/AIRS_Temperature.xml -fill=0 -of=" + self.output_img + " " + input_dir + "/AIRS_L2_SST_A_LL_v6_NRT_2019344.png"
+        print(cmd)
+        run_command(cmd)
+
+    def test_rgba2pal(self):
+        # Check indexed PNG generation matches expected        
+        if DEBUG:
+            print("Comparing: " + self.output_img + " to " + self.compare_img)
+        self.assertTrue(filecmp.cmp(self.output_img, self.compare_img), "Output image does not match")
+        
+    def tearDown(self):
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print("Leaving test results in : " + self.staging_area)
+
 
 if __name__ == '__main__':
     # Parse options before running tests
@@ -1729,6 +1761,7 @@ if __name__ == '__main__':
         'email_notification': TestMRFGeneration_email_notification,
         'mixed_projections': TestMRFGeneration_mixed_projections,
         'antimeridian_crossing': TestMRFGeneration_antimeridian_crossing,
+        'rgba2pal': TestRGBA2Pal,
         'jpng': TestMRFGeneration_jpng
     }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(list(available_tests.keys()))

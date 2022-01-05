@@ -18,6 +18,7 @@ mkdir -p /onearth
 chmod 755 /onearth
 mkdir -p /etc/onearth/config/endpoint/
 mkdir -p /etc/onearth/config/conf/
+mkdir -p /etc/onearth/config/layers/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]
@@ -27,6 +28,7 @@ then
   # Copy sample configs
   cp ../sample_configs/conf/* /etc/onearth/config/conf/
   cp ../sample_configs/endpoint/* /etc/onearth/config/endpoint/
+  cp -R ../sample_configs/layers/* /etc/onearth/config/layers/
 
   # Load test layers
   mkdir -p /var/www/html/reproject_endpoint/date_test/default/tms
@@ -78,18 +80,9 @@ ExtendedStatus On
 </Location>
 EOS
 
-# Setup Apache with no-cache
-cat >> /etc/httpd/conf/httpd.conf <<EOS
-
-#
-# Turn off caching
-#
-Header Set Pragma "no-cache"
-Header Set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
-Header Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"
-Header Unset ETag
-FileETag None
-EOS
+# Copy oe-status layers
+mkdir -p /etc/onearth/config/layers/oe-status/
+cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 
 # Now configure oe-status and start apache for reproject health checks
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/

@@ -83,7 +83,7 @@ ProxyPassReverse {local_date_service_uri} {date_service_uri}
 """
 
 DATA_FILE_PROXY_TEMPLATE = """SSLProxyEngine on
-ProxyPass {local_data_file_uri} {data_file_uri}
+ProxyPass {local_data_file_uri} {data_file_uri} nomain
 ProxyPassReverse {local_data_file_uri} {data_file_uri}
 """
 
