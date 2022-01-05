@@ -1,0 +1,67 @@
+From 7cbedd4b3154cd631d269b082e1a8f6d9dcc4575 Mon Sep 17 00:00:00 2001
+From: Even Rouault <even.rouault@spatialys.com>
+Date: Wed, 11 Aug 2021 18:11:45 +0200
+Subject: [PATCH] FastCGI signal handling: no longer do heavy work in the
+ signal handler (fixes #6167)
+
+---
+ mapserv.c | 32 +++++++++-----------------------
+ 1 file changed, 9 insertions(+), 23 deletions(-)
+
+diff --git a/mapserv.c b/mapserv.c
+index 0699ebf2d..c31c5e4cb 100644
+--- a/mapserv.c
++++ b/mapserv.c
+@@ -45,34 +45,20 @@
+ /************************************************************************/
+ /*                      FastCGI cleanup functions.                      */
+ /************************************************************************/
++
++static int finish_process = 0;
++
+ #ifndef WIN32
+-void msCleanupOnSignal( int nInData )
++static void msCleanupOnSignal( int nInData )
+ {
+-  /* For some reason, the fastcgi message code does not seem to work */
+-  /* from within the signal handler on Unix.  So we force output through */
+-  /* normal stdio functions. */
+-  msIO_installHandlers( NULL, NULL, NULL );
+-#ifndef NDEBUG
+-  msIO_fprintf( stderr, "In msCleanupOnSignal.\n" );
+-#endif
+-  msCleanup();
+-  exit(0);
++  (void)nInData;
++  finish_process = 1;
+ }
+ #endif
+ 
+ #ifdef WIN32
+-void msCleanupOnExit( void )
++static void msCleanupOnExit( void )
+ {
+-  /* note that stderr and stdout seem to be non-functional in the */
+-  /* fastcgi/win32 case.  If you really want to check functioning do */
+-  /* some sort of hack logging like below ... otherwise just trust it! */
+-
+-#ifdef notdef
+-  FILE *fp_out = fopen( "D:\\temp\\mapserv.log", "w" );
+-
+-  fprintf( fp_out, "In msCleanupOnExit\n" );
+-  fclose( fp_out );
+-#endif
+-  msCleanup(1);
++  finish_process = 1;
+ }
+ #endif
+ 
+@@ -238,7 +222,7 @@ int main(int argc, char *argv[])
+ 
+   /* In FastCGI case we loop accepting multiple requests.  In normal CGI */
+   /* use we only accept and process one request.  */
+-  while( FCGI_Accept() >= 0 ) {
++  while( !finish_process && FCGI_Accept() >= 0 ) {
+ #endif /* def USE_FASTCGI */
+ 
+     /* -------------------------------------------------------------------- */

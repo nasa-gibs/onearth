@@ -37,16 +37,16 @@ WORKDIR /tmp
 RUN wget http://download.osgeo.org/mapserver/mapserver-7.4.4.tar.gz
 RUN tar xf mapserver-7.4.4.tar.gz
 WORKDIR /tmp/mapserver-7.4.4
-# Fix for seg faults https://github.com/MapServer/MapServer/pull/6385
-RUN wget https://raw.githubusercontent.com/MapServer/MapServer/7cbedd4b3154cd631d269b082e1a8f6d9dcc4575/mapserv.c
-RUN sed -i '48,81d' mapserv.c && sed -n '56,75p' mapserv.c.1 > fix && sed -i '47r fix' mapserv.c
+# Remove patch after upgrading to mapserver 8. Fix for seg faults https://github.com/MapServer/MapServer/pull/6385
+COPY docker/wms_service/mapserv.patch /tmp/mapserver-7.4.4/
+RUN patch mapserv.c mapserv.patch
 RUN mkdir build
 WORKDIR /tmp/mapserver-7.4.4/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
-RUN rm -rf /tmp/*
+
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
