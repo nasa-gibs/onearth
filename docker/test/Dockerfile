@@ -158,6 +158,7 @@ RUN cp /home/oe2/onearth/ci/00-mpm.conf /etc/httpd/conf.modules.d/
 RUN cp /home/oe2/onearth/ci/10-worker.conf /etc/httpd/conf.modules.d/
 
 WORKDIR /home/oe2/onearth/src/test
+RUN pip3.6 install --upgrade pip
 RUN pip3.6 install -r requirements.txt
 
 ENV ONEARTH_VERSION=2.5.0

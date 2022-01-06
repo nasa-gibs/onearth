@@ -11,6 +11,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mod_twms.py` -- tests the mod_twms module
 * `test_mod_wmts_wrapper.py` -- tests the mod_wmts_wrapper module
 * `test_mrfgen.py` -- tests mrfgen
+* `test_sync_s3.py` -- tests `oe_sync_s3_configs.py` and `oe_sync_s3_idx.py`
 * `test_time_service.py` -- tests the OnEarth Time Service
 * `test_time_utils.py` -- tests time configuration utilities
 * `test_vectorgen.py` -- tests vectorgen
@@ -140,3 +141,21 @@ Each test script will output a JUnit XML results file. By default, these files a
 ## Legend Tests:
 
 Tests legends in horizontal and vertical formats as PNGs and SVGs using various GIBS colormaps. The list of colormaps are configured in this [file](legends_test_data/colormaps.json).
+
+## Sync S3 Tests:
+
+1. Downloading configs from an S3 bucket to an empty directory
+2. Downloading a config from an S3 bucket to a directory that already contains some of the S3 bucket's configs
+3. Deleting a config from a directory when the config isn't in the S3 bucket
+4. Downloading a config from S3 and deleting a config that isn't in the S3 bucket
+5. Performing a dry run of syncing configs using the `-n` (`--dry-run`) argument
+6. Overwriting configs that already exist in the directory using the `-f` (`--force`) argument
+7. Downloading IDX files from an S3 bucket to an empty directory
+8. Downloading IDX files from an S3 bucket to a directory that already contains some of the S3 bucket's IDX files
+9. Deleting IDX files from a directory that aren't found in the S3 bucket
+10. Downloading IDX files to a directory from S3 and deleting IDX files from the directory that aren't found in the S3 bucket
+11. Performing a dry run of syncing IDX files using the `-n` (`--dry-run`) argument
+12. Overwriting IDX files that already exist in the directory using the `-f` (`--force`) argument
+13. Overwriting IDX files whose checksums do not match those of corresponding files in S3 using the `-c` (`--checksum`) argument
+14. Deleting all configs from a directory when syncing with an empty S3 bucket (not in use: commented out)
+15. Deleting all IDX files from a directory when syncing with an empty S3 bucket (not in use: commented out)

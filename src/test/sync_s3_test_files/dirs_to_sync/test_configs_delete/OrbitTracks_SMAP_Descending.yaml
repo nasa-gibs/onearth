@@ -1,0 +1,51 @@
+abstract: OrbitTracks_SMAP_Descending abstract
+layer_id: OrbitTracks_SMAP_Descending
+layer_name: OrbitTracks SMAP Descending tileset
+layer_title: b'Orbit Tracks (Descending, SMAP)'
+metadata:
+- xlink:href: '{base_uri_meta}/vector-styles/v1.0/OrbitTracks_SMAP_Descending.json'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0
+  xlink:title: Mapbox GL Layer Styles
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/vector-styles/v1.0/OrbitTracks_SMAP_Descending.json'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/
+  xlink:title: Mapbox GL Layer Styles
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/vector-metadata/v1.0/OrbitTracks.json'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/layer/1.0
+  xlink:title: Layer Vector Metadata
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/vector-metadata/v1.0/OrbitTracks.json'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/layer/
+  xlink:title: Layer Vector Metadata
+  xlink:type: simple
+mime_type: application/vnd.mapbox-vector-tile
+projection: EPSG:4326
+shapefile_configs:
+- layer_id: OrbitTracks_SMAP_Descending_Points
+  layer_style: /etc/onearth/config/mapfile_styles/OrbitTracks_SMAP_Descending_Points.txt
+  layer_title: Orbit Tracks (Descending, Points, SMAP)
+  source_shapefile:
+    data_file_uri: "{SHAPEFILE_BUCKET}/epsg4326"
+    feature_type: POINT
+- layer_id: OrbitTracks_SMAP_Descending_Lines
+  layer_style: /etc/onearth/config/mapfile_styles/OrbitTracks_SMAP_Descending_Lines.txt
+  layer_title: Orbit Tracks (Descending, Lines, SMAP)
+  source_shapefile:
+    data_file_uri: "{SHAPEFILE_BUCKET}/epsg4326"
+    feature_type: LINE
+source_mrf:
+  bands: null
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  idx_path: /onearth/idx/epsg4326
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+tilematrixset: 2km
+time_config:
+- 2015-03-13/DETECT/P1D
+wms_layer_group: /Orbital Track/OrbitTracks_SMAP_Descending
