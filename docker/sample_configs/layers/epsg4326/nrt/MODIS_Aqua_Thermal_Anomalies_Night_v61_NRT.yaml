@@ -42,4 +42,4 @@ source_mrf:
 static: false
 tilematrixset: 1km
 time_config:
-- 2020-07-03/DETECT/P1D
+- DETECT/DETECT/P1D
