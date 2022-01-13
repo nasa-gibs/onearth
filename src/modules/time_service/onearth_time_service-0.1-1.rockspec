@@ -14,7 +14,7 @@ description = {
 dependencies = {
    "lua >= 5.1, < 5.4",
    "json-lua == 0.1-3",
-   "md5 == 1.2-1",
+   "md5 == 1.3-1",
    "date == 2.1.2-1"
 }
 build = {
