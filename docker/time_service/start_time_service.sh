@@ -87,12 +87,12 @@ else
 fi
 
 # Load oe-status data
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:BlueMarble16km
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:BlueMarble16km:default "2004-08-01"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:BlueMarble16km:periods "2004-08-01/2004-08-01/P1M"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:MODIS_Terra_Thermal_Anomalies_All
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:MODIS_Terra_Thermal_Anomalies_All:default "2021-07-03"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:MODIS_Terra_Thermal_Anomalies_All:periods "2021-07-03/2021-07-03/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:Raster_Status
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:Raster_Status:default "2004-08-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:Vector_Status
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:Vector_Status:default "2021-07-03"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Vector_Status:periods "2021-07-03/2021-07-03/P1D"
 
 echo "[$(date)] Time service configuration completed" >> /var/log/onearth/config.log
 

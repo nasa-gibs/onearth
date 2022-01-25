@@ -16,8 +16,9 @@ mkdir -p /etc/onearth/config/layers/
 mkdir -p /etc/onearth/mapfile-styles/
 
 # Data for oe-status
-mkdir -p /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021
-cp ../oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/MODIS_Terra_Thermal_Anomalies_All/2021/
+mkdir -p /onearth/shapefiles/oe-status/Vector_Status/2021
+cp ../oe-status/data/shapefiles/* /onearth/shapefiles/oe-status/Vector_Status/2021/
+cp ../sample_configs/mapfile-styles/Vector_Status.txt /etc/onearth/mapfile-styles/
 
 # Scrape OnEarth configs from S3
 if [ -z "$S3_CONFIGS" ]

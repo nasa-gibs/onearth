@@ -175,11 +175,11 @@ cp ../oe-status/endpoint/oe-status.yaml /etc/onearth/config/endpoint/
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 # Data for oe-status
 mkdir -p /etc/onearth/config/layers/oe-status/
-mkdir -p /onearth/idx/oe-status/BlueMarble16km
-mkdir -p /onearth/layers/oe-status/BlueMarble16km
+mkdir -p /onearth/idx/oe-status/Raster_Status
+mkdir -p /onearth/layers/oe-status/Raster_Status
 cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
-cp ../oe-status/data/*.idx /onearth/idx/oe-status/BlueMarble16km/
-cp ../oe-status/data/*.pjg /onearth/layers/oe-status/BlueMarble16km/
+cp ../oe-status/data/*.idx /onearth/idx/oe-status/Raster_Status/
+cp ../oe-status/data/*.pjg /onearth/layers/oe-status/Raster_Status/
 
 # Create internal endpoint directories for WMTS and TWMS endpoints and configure WMTS
 for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
@@ -211,10 +211,10 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
   /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
 fi
 
-# Add BlueMarble time metadata to Redis for status
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:BlueMarble16km
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:BlueMarble16km:default "2004-08-01"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:BlueMarble16km:periods "2004-08-01/2004-08-01/P1M"
+# Add Raster_Status time metadata to Redis for status
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:Raster_Status
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:Raster_Status:default "2004-08-01"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
 
 # Setup Apache extended server status
 cat >> /etc/httpd/conf/httpd.conf <<EOS

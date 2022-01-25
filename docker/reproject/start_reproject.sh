@@ -1,6 +1,6 @@
 #!/bin/sh
 DEBUG_LOGGING=${1:-false}
-TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/BlueMarble16km/default/2004-08-01/16km/0/0/0.jpeg}
+TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/Raster_Status/default/2004-08-01/16km/0/0/0.jpeg}
 GC_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$4
 

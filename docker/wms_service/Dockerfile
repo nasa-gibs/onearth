@@ -113,4 +113,4 @@ CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
-  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=BlueMarble16km,MODIS_Terra_Thermal_Anomalies_All&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
+  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 

@@ -1,20 +1,20 @@
-layer_id: "MODIS_Terra_Thermal_Anomalies_All"
-layer_title: "Thermal Anomalies and Fires (All, Best Available, MODIS, Terra)"
-layer_name: "MODIS_Terra_Thermal_Anomalies_All tileset"
+layer_id: "Vector_Status"
+layer_title: "Vector_Status (All, Best Available, MODIS, Terra)"
+layer_name: "Vector_Status tileset"
 projection: "EPSG:4326"
 tilematrixset: "1km"
 mime_type: "application/vnd.mapbox-vector-tile"
 static: false
-abstract: "MODIS_Terra_Thermal_Anomalies_All abstract"
+abstract: "Vector_Status abstract"
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer", "xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Layer Vector Metadata"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer/1.0", "xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Layer Vector Metadata"}
 shapefile_configs:
-- layer_id: "MODIS_Terra_Thermal_Anomalies_All"
-  layer_style: "/etc/onearth/mapfile-styles/MODIS_Terra_Thermal_Anomalies_All.txt"
-  layer_title: "Thermal Anomalies and Fires (All, Best Available, MODIS, Aqua+Terra)"
+- layer_id: "Vector_Status"
+  layer_style: "/etc/onearth/mapfile-styles/Vector_Status.txt"
+  layer_title: "Vector Status (All, Best Available, MODIS, Aqua+Terra)"
   source_shapefile:
     data_file_uri: "/onearth/shapefiles/oe-status"
     feature_type: "POINT"
@@ -27,4 +27,4 @@ source_mrf:
   idx_path: "/onearth/idx/epsg4326"
   data_file_uri: "{S3_URL}/epsg4326"
   bbox: -180,-90,180,90
-wms_layer_group: "/Fires and Thermal Anomalies"
+wms_layer_group: "/Vector_Status"
