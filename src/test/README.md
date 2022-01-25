@@ -12,6 +12,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mod_wmts_wrapper.py` -- tests the mod_wmts_wrapper module
 * `test_mrfgen.py` -- tests mrfgen
 * `test_sync_s3.py` -- tests `oe_sync_s3_configs.py` and `oe_sync_s3_idx.py`
+* `test_rgb_to_pal.py` -- tests RGB PNG to palette PNG
 * `test_time_service.py` -- tests the OnEarth Time Service
 * `test_time_utils.py` -- tests time configuration utilities
 * `test_vectorgen.py` -- tests vectorgen
@@ -115,6 +116,18 @@ Each test script will output a JUnit XML results file. By default, these files a
 	* Use single z-level
 	* Use time (hh:mm:ss)
 	* Use zdb lookup
+
+## RGB PNG To PAL PNG Tests:
+1. Large image
+2. Small image
+3. RGBAPal image
+4. RGB (No-Alpha) image with one missing color 
+5. Small image with 1 missing color
+6. Small image with 101 missing color
+7. Small image with no matching colors
+8. Small image with mismatched transparency
+9. Small image with invalid fill value
+10. GeoTIFF image
 
 ## vectorgen Tests:
 1. MVT MRF generation from single shapefile

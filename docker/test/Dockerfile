@@ -115,11 +115,21 @@ RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproje
 WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
+# Pillow at least 8.1.0 
+RUN pip3 install --user Pillow==8.1.0
+
+RUN python3 -m pip install --user --upgrade cython
+RUN python3.6 setup.py build_ext --inplace
+
 # Install OnEarth utilties, etc.
 WORKDIR /home/oe2/onearth/
 RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_generate_empty_tile.py
 RUN install -m 755 src/generate_legend/oe_generate_legend.py -D /usr/bin/oe_generate_legend.py
 RUN install -m 755 src/mrfgen/mrfgen.py -D /usr/bin/mrfgen
+RUN install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py
+RUN install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx
+RUN install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py
+RUN install -m 755 src/mrfgen/RgbToPalLib.cpython-36m-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-36m-x86_64-linux-gnu.so
 RUN install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py
 RUN install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py
 RUN install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng

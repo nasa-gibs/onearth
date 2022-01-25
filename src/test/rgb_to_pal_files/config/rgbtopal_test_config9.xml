@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<rgb_to_pal_configuration>
+ <input_img>rgb_to_pal_files/input/MOO_L1D_SST_v2019_NRT_2022003_small.png</input_img>
+ <colormap>rgb_to_pal_files/input/MODIS_Sea_Surface_Temperature.xml</colormap>
+ <fill_value>260</fill_value>
+ <verbose>True</verbose>
+ <compare_code>255</compare_code>
+ <output_img>rgb_to_pal_files/output/MOO_L1D_SST_v2019_NRT_2022003_small.pal5.png</output_img>
+</rgb_to_pal_configuration>

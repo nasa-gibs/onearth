@@ -1764,7 +1764,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             # Read gdal_info output
             if not has_palette:
 
-                # Download tile locally for RGBApng2Palpng script
+                # Download tile locally for RgbPngToPalPng script
                 if tile.startswith("/vsi"):
                     log_info_mssg("Downloading remote file " + tile)
 
@@ -1806,31 +1806,32 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 output_tile_path = os.path.dirname(output_tile)
                 output_tile_basename, output_tile_extension = os.path.splitext(os.path.basename(output_tile))
 
-                # Create the RGBApng2Palpng command.
+                # Create the RgbPngToPalPng command.
                 if vrtnodata == "":
                     fill = 0
                 else:
                     fill = vrtnodata
-                RGBApng2Palpng_command_list=[script_dir+'RGBApng2Palpng', '-v', '-lut=' + colormap,
-                                             '-fill='+str(fill), '-of='+output_tile, tile]
-                # Log the RGBApng2Palpng command.
-                log_the_command(RGBApng2Palpng_command_list)
+                RgbPngToPalPng_command_list=['/usr/bin/python3 ' + script_dir + 'RgbPngToPalPng.py -v -c ' + colormap +
+                                             ' -f ' + str(fill) + ' -o ' + output_tile + ' -i ' + tile]
 
-                # Execute RGBApng2Palpng.
+                # Log the RgbPngToPalPng command.
+                log_the_command(RgbPngToPalPng_command_list)
+
+                # Execute RgbPngToPalPng.
                 try:
-                    RGBApng2Palpng = subprocess.Popen(RGBApng2Palpng_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    RgbPngToPalPng = subprocess.Popen(RgbPngToPalPng_command_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 except OSError:
-                    log_sig_exit('ERROR', "RGBApng2Palpng tool cannot be found.", sigevent_url)
+                    log_sig_exit('ERROR', "RgbPngToPalPng tool cannot be found.", sigevent_url)
 
-                RGBApng2Palpng.wait()
-                if RGBApng2Palpng.returncode != None:
-                    if  0 < RGBApng2Palpng.returncode < 255:
-                        mssg = "RGBApng2Palpng: " + str(RGBApng2Palpng.returncode) + " colors in image not found in color table"
+                RgbPngToPalPng.wait()
+                if RgbPngToPalPng.returncode != None:
+                    if  0 < RgbPngToPalPng.returncode < 255:
+                        mssg = "RgbPngToPalPng: " + str(RgbPngToPalPng.returncode) + " colors in image not found in color table"
                         log_sig_warn(mssg, sigevent_url)
-                    if RGBApng2Palpng.returncode == 255:
-                        mssg = str(RGBApng2Palpng.stderr.readlines()[-1])
-                        log_sig_err("RGBApng2Palpng: " + mssg, sigevent_url, count_err=False)
-                    errors += RGBApng2Palpng.returncode
+                    if RgbPngToPalPng.returncode == 255:
+                        mssg = str(RgbPngToPalPng.stderr.readlines()[-1])
+                        log_sig_err("RgbPngToPalPng: " + mssg, sigevent_url, count_err=False)
+                    errors += RgbPngToPalPng.returncode
 
                 if os.path.isfile(output_tile):
                     mssg = output_tile + " created"
@@ -1842,7 +1843,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     # Replace with new tiles
                     alltiles[i] = output_tile
                 else:
-                    log_sig_err("RGBApng2Palpng failed to create {0}".format(output_tile), sigevent_url)
+                    log_sig_err("RgbPngToPalPng failed to create {0}".format(output_tile), sigevent_url)
 
                 # Make a copy of world file
                 try:

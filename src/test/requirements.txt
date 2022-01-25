@@ -6,7 +6,7 @@ matplotlib == 2.2.5 # https://pypi.org/project/matplotlib/
 moto[server] == 2.2.17      # https://pypi.org/project/moto/
 numpy == 1.16.6     # https://pypi.org/project/numpy/
 parse_apache_configs == 0.0.2   # https://pypi.org/project/parse_apache_configs/
-pillow == 5.4.1		# https://pypi.org/project/Pillow/
+pillow == 8.1.0		# https://pypi.org/project/Pillow/
 pyparsing == 2.4.7  # https://pypi.org/project/pyparsing/
 pypng == 0.0.20     # https://pypi.org/project/pypng/
 python-dateutil == 2.8.1        # https://pypi.org/project/python-dateutil/
