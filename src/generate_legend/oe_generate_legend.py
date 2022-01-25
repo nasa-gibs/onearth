@@ -331,12 +331,11 @@ def parse_legend(legend_xml, colormap_entries):
             showlabel = False
 
         # link transparency to color map
+        transparent = False
         for entry in colormap_entries:
             if entry_id == entry.ref:
                 transparent = entry.transparent
-            else:
-                transparent = False
-
+        
         legend_entry = LegendEntry(entry_id, red, green, blue, transparent, tooltip, label, showtick, showlabel)
         legend_entries.append(legend_entry)
     
