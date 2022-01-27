@@ -299,7 +299,8 @@ def parse_legend(legend_xml, colormap_entries):
     for legend_entry in legend_entry_elements:   
         entry_id = legend_entry.get("id")
         if entry_id == None: 
-            entry_id = 0 
+            print("ERROR: A LegendEntry is missing the required 'id' attribute. Colormap is invalid.")
+            sys.exit(1)
         red, green, blue = legend_entry.get("rgb").split(",")
 
         try:
@@ -331,10 +332,14 @@ def parse_legend(legend_xml, colormap_entries):
             showlabel = False
 
         # link transparency to color map
-        transparent = False
         for entry in colormap_entries:
             if entry_id == entry.ref:
                 transparent = entry.transparent
+                break
+        
+        if transparent is None:
+            print("ERROR: No ColorMapEntry has 'ref={0}' to match the LegendEntry with 'id={0}'. Colormap is invalid.".format(entry_id))
+            sys.exit(1)
         
         legend_entry = LegendEntry(entry_id, red, green, blue, transparent, tooltip, label, showtick, showlabel)
         legend_entries.append(legend_entry)
@@ -417,10 +422,9 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                         labels.append(legend_entry.label)
                        
                 else:
-                    if legend_entry.color != None:
-                        has_values = True
-                        legend_entries.append(legend_entry)
-                        colors.append(legend_entry.color)      
+                    has_values = True
+                    legend_entries.append(legend_entry)
+                    colors.append(legend_entry.color)      
         
         if colormap.style != "classification":
             for idx in range(0, len(legend_entries)):
