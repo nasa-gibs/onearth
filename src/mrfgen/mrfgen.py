@@ -1636,7 +1636,7 @@ else:
 
     if mrf_empty_tile_what == 'jpeg':
         # Check the first 2 characters in case of JPG or JPEG.
-        if mrf_compression_type[0:2] != 'JP':
+        if mrf_compression_type.lower() not in ['jpeg', 'jpg', 'zen']:
             mssg='Empty tile format does not match MRF compression type.'
             log_sig_exit('ERROR', mssg, sigevent_url)
 
@@ -1674,7 +1674,7 @@ if input_files is not None:
     alltiles = input_files.split(',')
 
 if input_dir is not None:
-    if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
+    if mrf_compression_type.lower() in ['jpeg', 'jpg', 'zen']:
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.jpg']))
     else:
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))
@@ -1690,10 +1690,14 @@ for tile in alltiles:
     striptiles.append(tile.strip())
 alltiles = striptiles
 
-if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
+# Set compression type in case of TIFF
+if mrf_compression_type.lower() in ['jpeg', 'jpg', 'zen']:
     tiff_compress = "JPEG"
 else: # Default to png
     tiff_compress = "PNG"
+
+# Set the blocksize for gdal_translate (-co NAME=VALUE).
+blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
 
 # Sanity check to make sure all of the input files exist
 for i, tile in enumerate(alltiles):
@@ -1713,7 +1717,7 @@ for i, tile in enumerate(alltiles):
 
 # Filter out bad JPEGs
 goodtiles = []
-if mrf_compression_type.lower() == 'jpeg' or mrf_compression_type.lower() == 'jpg':
+if mrf_compression_type.lower() in ['jpeg', 'jpg', 'zen']:
     for i, tile in enumerate(alltiles):
         if ".mrf" in tile or ".vrt" in tile:  # ignore MRFs and VRTs
             goodtiles.append(tile)
@@ -2014,6 +2018,35 @@ if mrf_compression_type == 'EPNG':
                 log_sig_err("gdal_translate return code {0}".format(returncode), sigevent_url)
             alltiles[i] = output_tile
 
+#Look for ZenJPEG Output
+if mrf_compression_type.lower() == 'zen':
+    print(mrf_compression_type)
+    for i, tile in enumerate(alltiles):
+        print(tile)
+        tile_path = os.path.dirname(tile)
+        tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
+        tile_mrf = os.path.join(working_dir, tile_basename + "_zen.mrf")
+
+        # Do the MRF creation from the input tile
+        gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', 'compress=JPEG', '-co', blocksize]    
+        gdal_translate_command_list.append('-co')
+        gdal_translate_command_list.append('QUALITY='+quality_prec)
+        gdal_translate_command_list.append('-co')
+        gdal_translate_command_list.append('NOCOPY=true')
+        gdal_translate_command_list.append(tile)
+        gdal_translate_command_list.append(tile_mrf)
+
+        # Log and execute gdal_translate to generate "input" ZenJPEG MRFs
+        log_the_command(gdal_translate_command_list)
+        gdal_translate_stderr_filename=str().join([working_dir, basename, '_gdal_translate_zen_stderr.txt'])
+        gdal_translate_stderr_file=open(gdal_translate_stderr_filename, 'w')
+        subprocess.call(gdal_translate_command_list, stderr=gdal_translate_stderr_file)
+        gdal_translate_stderr_file.close()
+        if os.path.getsize(gdal_translate_stderr_filename) == 0:
+            remove_file(gdal_translate_stderr_filename)
+
+        alltiles[i] = tile_mrf
+
 # sort
 alltiles.sort()
 
@@ -2077,7 +2110,7 @@ if mrf_compression_type in ['PNG', 'PPNG', 'EPNG']:
 elif mrf_compression_type == 'JPNG':
     # Output filename.
     out_filename=str().join([output_dir, basename, '.pjp'])
-elif mrf_compression_type in ['JPG', 'JPEG']:
+elif mrf_compression_type in ['JPG', 'JPEG', 'ZEN']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.pjg'])
 elif mrf_compression_type in ['TIF', 'TIFF']:
@@ -2107,7 +2140,7 @@ else:
     insert_method = 'Avg'
 
 for tile in list(alltiles):
-    if '.mrf' in tile.lower():
+    if '.mrf' in tile.lower() and mrf_compression_type.lower() != 'zen':
         mrf_list.append(tile)
         alltiles.remove(tile)
 
@@ -2301,6 +2334,8 @@ elif mrf_compression_type == 'JPG':
     compress=str('COMPRESS=JPEG')
 elif mrf_compression_type == 'JPEG':
     compress=str('COMPRESS=JPEG')
+elif mrf_compression_type == 'ZEN':
+    compress=str('COMPRESS=JPEG')
 elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
     compress=str('COMPRESS=TIF')
 elif mrf_compression_type == 'LERC':
@@ -2340,9 +2375,6 @@ if colormap != '':
     if os.path.isfile(new_vrt_filename):
         remove_file(colormap2vrt_stderr_filename)
         vrt_filename = new_vrt_filename
-
-# Set the blocksize for gdal_translate (-co NAME=VALUE).
-blocksize=str().join(['BLOCKSIZE=', mrf_blocksize])
 
 # Get input size.
 dom=xml.dom.minidom.parse(vrt_filename)
@@ -2599,6 +2631,11 @@ for tilename in (alltiles):
             remove_file(tilename+'.aux.xml')
         if '_indexed.' in tilename:
             remove_file(tilename.rsplit('.',1)[0]+'.pgw')
+        # Remove intermediary zen MRF files
+        if mrf_compression_type.lower() == 'zen':
+            if '_zen.mrf' in tilename:
+                for zen_file in glob.iglob(tilename+'*'):
+                    remove_file(zen_file)
 
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])

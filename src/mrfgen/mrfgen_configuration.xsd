@@ -85,12 +85,14 @@ limitations under the License.
       <xs:restriction base="xs:string">
         <xs:enumeration value="JPG"/>
         <xs:enumeration value="JPEG"/>
+        <xs:enumeration value="JPNG"/>
         <xs:enumeration value="PNG"/>
         <xs:enumeration value="PPNG"/>
         <xs:enumeration value="EPNG"/>
         <xs:enumeration value="TIF"/>
         <xs:enumeration value="TIFF"/>
         <xs:enumeration value="LERC"/>
+        <xs:enumeration value="ZEN"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
