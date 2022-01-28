@@ -661,6 +661,10 @@ static int pre_hook(request_rec *r)
 
                     // Use the layer_name in the request unless an alias was provided in the config
                     char *layer_name = *(char **)apr_array_pop(tokens);
+
+                    // Add to response header
+                    apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_name);
+
                     if (cfg->layer_alias) {
                     	layer_name = apr_psprintf(r->pool, "%s", cfg->layer_alias);
                     }
@@ -691,7 +695,19 @@ static int pre_hook(request_rec *r)
                     // Add the year dir to the IDX filename if that option is configured
                     if (cfg->year_dir)
                         out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);
-                    ap_set_module_config(r->request_config, mrf_module, out_cfg);  
+                    ap_set_module_config(r->request_config, mrf_module, out_cfg);
+
+                    apr_array_header_t *dfn_tokens = tokenize(r->pool, out_cfg->datafname, '/');
+                    char *actual_filename = *(char **)apr_array_pop(dfn_tokens);
+                    char *actual_layer_name = strtok(actual_filename, "-");
+
+                    // Add to response header
+                    if (actual_layer_name != NULL) {
+                        apr_table_set(r->headers_out, "Layer-Identifier-Actual", actual_layer_name);
+                    }
+
+                    apr_table_set(r->headers_out, "Layer-Time-Request", datetime_str);
+                    apr_table_set(r->headers_out, "Layer-Time-Actual", date_string);
                 }
             }
         }
