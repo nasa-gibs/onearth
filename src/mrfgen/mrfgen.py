@@ -2020,9 +2020,10 @@ if mrf_compression_type == 'EPNG':
 
 #Look for ZenJPEG Output
 if mrf_compression_type.lower() == 'zen':
-    print(mrf_compression_type)
+    # mrf_insert doesn't convert tiles automatically to ZenJPEG
+    # so we first convert each input tile individually into smaller "input" MRFs
+    # and then insert and transform them later just like normal tiles
     for i, tile in enumerate(alltiles):
-        print(tile)
         tile_path = os.path.dirname(tile)
         tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
         tile_mrf = os.path.join(working_dir, tile_basename + "_zen.mrf")
@@ -2031,8 +2032,6 @@ if mrf_compression_type.lower() == 'zen':
         gdal_translate_command_list=['gdal_translate', '-q', '-of', 'MRF', '-co', 'compress=JPEG', '-co', blocksize]    
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('QUALITY='+quality_prec)
-        gdal_translate_command_list.append('-co')
-        gdal_translate_command_list.append('NOCOPY=true')
         gdal_translate_command_list.append(tile)
         gdal_translate_command_list.append(tile_mrf)
 
@@ -2633,8 +2632,8 @@ for tilename in (alltiles):
             remove_file(tilename.rsplit('.',1)[0]+'.pgw')
         # Remove intermediary zen MRF files
         if mrf_compression_type.lower() == 'zen':
-            if '_zen.mrf' in tilename:
-                for zen_file in glob.iglob(tilename+'*'):
+            if '_zen.' in tilename:
+                for zen_file in glob.iglob(os.path.splitext(tilename)[0]+'*'):
                     remove_file(zen_file)
 
 # Send to log.
