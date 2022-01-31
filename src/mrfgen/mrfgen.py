@@ -2139,7 +2139,7 @@ else:
     insert_method = 'Avg'
 
 for tile in list(alltiles):
-    if '.mrf' in tile.lower() and mrf_compression_type.lower() != 'zen':
+    if '.mrf' in tile.lower() and '_zen.' not in tile:
         mrf_list.append(tile)
         alltiles.remove(tile)
 
