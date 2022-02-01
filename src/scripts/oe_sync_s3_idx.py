@@ -144,7 +144,7 @@ def syncIdx(bucket,
 
     def match_checksums(idx_prefix, idx_filepath):
         response = s3.head_object(Bucket=bucket, Key=idx_prefix)
-        s3_cksum = response["ETag"].replace("\"","")
+        s3_cksum = response["ETag"].replace("\"","").strip()
 
         m = re.match("[a-f0-9]*-([0-9]*)", s3_cksum)
         if m:
@@ -158,10 +158,10 @@ def syncIdx(bucket,
                   str(os.stat(idx_filepath).st_size) + " bytes")
             '''
 
-            file_cksum = calculate_s3_etag(idx_filepath, mbChunkSize * 1024 * 1024)
+            file_cksum = calculate_s3_etag(idx_filepath, mbChunkSize * 1024 * 1024).replace("\"","").strip()
         else:
             with open(idx_filepath, 'rb') as idxFile:
-                file_cksum = hashlib.md5(idxFile.read()).hexdigest().strip()
+                file_cksum = hashlib.md5(idxFile.read()).hexdigest().replace("\"","").strip()
 
         return file_cksum == s3_cksum
 
