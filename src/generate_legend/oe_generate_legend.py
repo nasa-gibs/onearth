@@ -785,7 +785,6 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
         try:
             el = xmlid['QuadMesh_1']
             elements = list(el)
-            elements.pop(0) # remove definitions
         except KeyError:
             print("Warning: Unable to add tooltips")
             elements = []
