@@ -57,11 +57,11 @@ COPY ./ /home/oe2/onearth/
 WORKDIR /tmp
 RUN yum install -y yum-utils-1.1.31 rpm-build-4.11.3 && \
     yum clean all && \
-    yumdownloader --source httpd-2.4.6-97.el7.centos.1.x86_64 && \
+    yumdownloader --source httpd-2.4.6-97.el7.centos.4.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.6-97.el7.centos.1.x86_64
+    yum-builddep -y httpd-2.4.6-97.el7.centos.4.x86_64
 WORKDIR /tmp/rpmbuild/SPECS
-RUN sed -i 's/{?dist}.1/{?dist}_9.1/g' httpd.spec && \
+RUN sed -i 's/{?dist}.4/{?dist}_9.4/g' httpd.spec && \
     HOME="/tmp" rpmbuild -bp httpd.spec && \
     ls /home/oe2/onearth && \
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
