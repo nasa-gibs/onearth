@@ -738,9 +738,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
         
         ax = fig.get_axes()[0] # only supports one axis            
         entries = colormaps[0].legend.legend_entries    
-
+        tooltip_count = 0
         for i, entry in enumerate(entries):
             if entry.tooltip:
+                tooltip_count += 1
                 text = entry.tooltip
                 if colormaps[0].units:
                     text = text + " " + colormaps[0].units
@@ -782,12 +783,42 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 None
     
         # Add mouseover events to color bar
-        try:
+        # Handle colorbar with discrete colors
+        if 'QuadMesh_1' in xmlid.keys():
             el = xmlid['QuadMesh_1']
             elements = list(el)
-        except KeyError:
-            print("Warning: Unable to add tooltips")
+        # Handle continuous colorbars, which are represented as image elements
+        else: 
             elements = []
+            # TODO this doesnt work because need to specify namespace
+            colorbar_parents = tree.findall(".//image/..") 
+            if len(colorbar_parents) == 0:
+                print("Warning: Unable to add tooltips")
+            else:
+                for parent in colorbar_parents:
+                    colorbar_imgs = parent.findall("image")
+                    for colorbar_el in colorbar_imgs:
+                        colorbar_size = colorbar_el.get("width") if orientation == "horizontal" else colorbar_el.get("height")
+                        tooltip_size = colorbar_size / tooltip_count
+                        for i in range(tooltip_count):
+                            el = ET.SubElement(parent, "rect")
+                            el.set("fill", "none")
+                            el.set("pointer-events", "all")
+                            el.set("transform", colorbar_el.get("transform"))
+                            if orientation == "horizontal":
+                                el_pos = float(colorbar_el.get("x")) + i * tooltip_size
+                                el.set("x", el_pos)
+                                el.set("y", colorbar_el.get("y"))
+                                el.set("width", tooltip_size)
+                                el.set("height", colorbar_el.get("height"))
+                            else:
+                                el_pos = float(colorbar_el.get("y")) + i * tooltip_size
+                                el.set("y", el_pos)
+                                el.set("x", colorbar_el.get("x"))
+                                el.set("width", colorbar_el.get("width"))
+                                el.set("height", tooltip_size)
+                            elements.append(el)
+
         for i, t in enumerate(elements):
             el = elements[i]
             el.set('onmouseover', "ShowTooltip("+str(i)+")")
