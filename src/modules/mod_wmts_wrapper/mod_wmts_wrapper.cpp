@@ -707,9 +707,13 @@ static int pre_hook(request_rec *r)
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);
 
                     // Add to response header
-                    char *actual_layer_name = strtok(filename, "-");
-                    if (actual_layer_name != NULL) {
-                        apr_table_set(r->headers_out, "Layer-Identifier-Actual", actual_layer_name);
+                    if (filename) {
+                        char *strtok_state;
+                        char *actual_layer_name = apr_strtok(filename, "-", &strtok_state);
+
+                        if (actual_layer_name) {
+                            apr_table_set(r->headers_out, "Layer-Identifier-Actual", actual_layer_name);
+                        }
                     }
 
                     if (datetime_str) {
