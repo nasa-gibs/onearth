@@ -722,6 +722,9 @@ static int pre_hook(request_rec *r)
                     if (date_string) {
                         apr_table_set(r->headers_out, "Layer-Time-Actual", date_string);
                     }
+
+                    // Temporary
+                    apr_table_set(r->headers_out, "Layer-Time-Test", "This is just a test header.");
                 }
             }
         }
