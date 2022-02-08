@@ -788,17 +788,20 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             el = xmlid['QuadMesh_1']
             elements = list(el)
         # Handle continuous colorbars, which are represented as image elements
-        else: 
+        else:
             elements = []
-            # TODO this doesnt work because need to specify namespace
-            colorbar_parents = tree.findall(".//image/..") 
+            svg_ns = {
+                'svg': 'http://www.w3.org/2000/svg', 
+                'xlink': 'http://www.w3.org/1999/xlink'
+            }
+            colorbar_parents = tree.findall(".//svg:image/..", svg_ns) 
             if len(colorbar_parents) == 0:
                 print("Warning: Unable to add tooltips")
             else:
                 for parent in colorbar_parents:
-                    colorbar_imgs = parent.findall("image")
+                    colorbar_imgs = parent.findall("svg:image", svg_ns)
                     for colorbar_el in colorbar_imgs:
-                        colorbar_size = colorbar_el.get("width") if orientation == "horizontal" else colorbar_el.get("height")
+                        colorbar_size = float(colorbar_el.get("width")) if orientation == "horizontal" else float(colorbar_el.get("height"))
                         tooltip_size = colorbar_size / tooltip_count
                         for i in range(tooltip_count):
                             el = ET.SubElement(parent, "rect")
@@ -807,16 +810,16 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                             el.set("transform", colorbar_el.get("transform"))
                             if orientation == "horizontal":
                                 el_pos = float(colorbar_el.get("x")) + i * tooltip_size
-                                el.set("x", el_pos)
+                                el.set("x", str(el_pos))
                                 el.set("y", colorbar_el.get("y"))
-                                el.set("width", tooltip_size)
+                                el.set("width", str(tooltip_size))
                                 el.set("height", colorbar_el.get("height"))
                             else:
                                 el_pos = float(colorbar_el.get("y")) + i * tooltip_size
-                                el.set("y", el_pos)
+                                el.set("y", str(el_pos))
                                 el.set("x", colorbar_el.get("x"))
                                 el.set("width", colorbar_el.get("width"))
-                                el.set("height", tooltip_size)
+                                el.set("height", str(tooltip_size))
                             elements.append(el)
 
         for i, t in enumerate(elements):
