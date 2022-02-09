@@ -1676,7 +1676,7 @@ if input_files is not None:
 if input_dir is not None:
     if mrf_compression_type.lower() in ['jpeg', 'jpg', 'zen']:
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.jpg']))
-    else:
+    if mrf_compression_type.lower() in ['png', 'ppng', 'zen']:
         alltiles = alltiles + glob.glob(str().join([input_dir, '*.png']))
     # check for tiffs
     alltiles = alltiles + glob.glob(str().join([input_dir, '*.tif']))

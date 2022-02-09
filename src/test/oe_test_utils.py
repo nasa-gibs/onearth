@@ -336,10 +336,8 @@ def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
     print('run_command stdout: ' + process.stdout)
     print('**************************************************************************************')
 
-    for line in process.stdout:
-        if line:
-            if show_output is True or 'error' in line.lower() or ignore_warnings and 'warning' in line.lower():
-                print(line)
+    if show_output is True or 'error' in process.stdout.lower() or ignore_warnings and 'warning' in process.stdout.lower():
+        print(process.stdout)
 
 
 def find_string(file_path, string):

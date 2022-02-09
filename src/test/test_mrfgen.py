@@ -1733,6 +1733,9 @@ class TestMRFGeneration_zenjpeg(unittest.TestCase):
         self.compare_img_png = os.path.join(testdata_path, "test_comp12.png")
         self.compare_img_jpg = os.path.join(testdata_path, "test_comp12.jpg")
 
+        # generate extra png input just to make sure mrfgen supports that as well (will get overwritten)
+        run_command('gdal_translate -of PNG -co WORLDFILE=YES ' + testdata_path + '/jpng/GOES-East_B13_LL_v0_NRT_2021100_00:00.tiff ' + testdata_path + '/jpng/temp.png', show_output=DEBUG)
+
         # generate MRF
         cmd = "mrfgen -c " + test_config
         run_command(cmd, show_output=DEBUG)
@@ -1764,7 +1767,7 @@ class TestMRFGeneration_zenjpeg(unittest.TestCase):
             print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 20480, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 10240, "Size does not match")
-        self.assertEqual(dataset.RasterCount, 4, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 4, "Alpha channel not found")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
