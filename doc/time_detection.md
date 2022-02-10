@@ -34,6 +34,11 @@ time_config: "DETECT/DETECT/P5D"
 time_config: "DETECT/P5D"
 ```
 
+7) Known date range format with start time as diff from LATEST date (ex. 30 days back), end time is LATEST date, and duration. (allowable diffs: Y = years, D = days, MM = minutes, S = seconds)
+```json
+time_config: "LATEST-30D/LATEST/P1D"
+```
+
 Sub-daily periods are also supported.
 ```json
 time_config: "2000-01-01T00:00:00Z/DETECT/PT5M"
