@@ -674,25 +674,39 @@ static int handler(request_rec *r)
     }
 
     // Pass-through header
-    const char *layer_id_request = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Identifier-Request") : NULL;
+    const char *layer_id_request = apr_table_get(r->connection->notes, "Layer-Identifier-Request");
     if (layer_id_request) {
         apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_id_request);
     }
-    const char *layer_id_actual = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Identifier-Actual") : NULL;
+    const char *layer_id_request2 = apr_table_get(r->notes, "Layer-Identifier-Request");
+    if (layer_id_request2) {
+        apr_table_set(r->headers_out, "Layer-Identifier-Request2", layer_id_request2);
+    }
+    const char *layer_id_actual = apr_table_get(r->connection->notes, "Layer-Identifier-Actual");
     if (layer_id_actual) {
         apr_table_set(r->headers_out, "Layer-Identifier-Actual", layer_id_actual);
     }
-    const char *layer_time_request = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Time-Request") : NULL;
+    const char *layer_time_request = apr_table_get(r->connection->notes, "Layer-Time-Request");
     if (layer_time_request) {
         apr_table_set(r->headers_out, "Layer-Time-Request", layer_time_request);
     }
-    const char *layer_time_actual = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Time-Actual") : NULL;
+    const char *layer_time_actual = apr_table_get(r->connection->notes, "Layer-Time-Actual");
     if (layer_time_actual) {
         apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
     }
 
     // Temporary
-    apr_table_set(r->headers_out, "mod-mrf-test", "This is just a test header from mod_mrf.");
+    apr_table_set(r->headers_out, "mod-mrf-test", "This is just a test header 6599.");
+
+    const char *test_notes = apr_table_get(r->notes, "notes-test");
+    if (test_notes) {
+        apr_table_set(r->headers_out, "notes-test-pass", test_notes);
+    }
+
+    const char *test_cnotes = apr_table_get(r->connection->notes, "connection-notes-test");
+    if (test_cnotes) {
+        apr_table_set(r->headers_out, "connection-notes-test-pass", test_cnotes);
+    }
 
     // Looks fine, set the outgoing etag and then the image
     apr_table_set(r->headers_out, "ETag", ETag);

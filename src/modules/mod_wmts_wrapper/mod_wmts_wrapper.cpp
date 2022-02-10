@@ -665,6 +665,8 @@ static int pre_hook(request_rec *r)
                     // Add to response header
                     bool layer_header_set = false;
                     if (layer_name) {
+                        apr_table_set(r->connection->notes, "Layer-Identifier-Request", layer_name);
+                        apr_table_set(r->notes, "Layer-Identifier-Request", layer_name);
                         apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_name);
                         layer_header_set = true;
                     }
@@ -674,6 +676,8 @@ static int pre_hook(request_rec *r)
                     }
 
                     if (layer_name && !layer_header_set) {
+                        apr_table_set(r->connection->notes, "Layer-Identifier-Request", layer_name);
+                        apr_table_set(r->notes, "Layer-Identifier-Request", layer_name);
                         apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_name);
                     }
 
@@ -712,19 +716,26 @@ static int pre_hook(request_rec *r)
                         char *actual_layer_name = apr_strtok(filename, "-", &strtok_state);
 
                         if (actual_layer_name) {
+                            apr_table_set(r->connection->notes, "Layer-Identifier-Actual", actual_layer_name);
+                            apr_table_set(r->notes, "Layer-Identifier-Actual", actual_layer_name);
                             apr_table_set(r->headers_out, "Layer-Identifier-Actual", actual_layer_name);
                         }
                     }
-
                     if (datetime_str) {
+                        apr_table_set(r->connection->notes, "Layer-Time-Request", datetime_str);
+                        apr_table_set(r->notes, "Layer-Time-Request", datetime_str);
                         apr_table_set(r->headers_out, "Layer-Time-Request", datetime_str);
                     }
                     if (date_string) {
+                        apr_table_set(r->connection->notes, "Layer-Time-Actual", date_string);
+                        apr_table_set(r->notes, "Layer-Time-Actual", date_string);
                         apr_table_set(r->headers_out, "Layer-Time-Actual", date_string);
                     }
 
                     // Temporary
-                    apr_table_set(r->headers_out, "Layer-Time-Test", "This is just a test header.");
+                    apr_table_set(r->headers_out, "Layer-Time-Test", "This is just a test header 327.");
+                    apr_table_set(r->connection->notes, "connection-notes-test", "test connection notes here 33.");
+                    apr_table_set(r->notes, "notes-test", "test notes here 173.");
                 }
             }
         }
