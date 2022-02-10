@@ -261,10 +261,10 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             return send_response(200, JSON:encode(out_msg))
         end
         -- binary search for find snap date in periods
-        local l, r, m = 1, #layer_datetime_info[layer_name].periods, 0
-        while l <= r do
-            m = l + math.floor( ( r - l ) / 2 )
-            local parsed_period = split("/", layer_datetime_info[layer_name].periods[m])
+        local left, right, mid = 1, #layer_datetime_info[layer_name].periods, 0
+        while left <= right do
+            mid = left + math.floor( ( right - left ) / 2 )
+            local parsed_period = split("/", layer_datetime_info[layer_name].periods[mid])
             local start_date = date_util(parsed_period[1])
         
             if req_date == start_date then
@@ -287,9 +287,9 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             end
         
             if req_date < start_date then
-                r = m - 1
+                right = mid - 1
             else
-                l = m + 1
+                left = mid + 1
             end
         end
 
