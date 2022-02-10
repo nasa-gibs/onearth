@@ -661,9 +661,22 @@ static int pre_hook(request_rec *r)
 
                     // Use the layer_name in the request unless an alias was provided in the config
                     char *layer_name = *(char **)apr_array_pop(tokens);
-                    if (cfg->layer_alias) {
-                    	layer_name = apr_psprintf(r->pool, "%s", cfg->layer_alias);
+
+                    // Add to response header
+                    bool layer_header_set = false;
+                    if (layer_name) {
+                        apr_table_set(r->notes, "Layer-Identifier-Request", layer_name);
+                        layer_header_set = true;
                     }
+
+                    if (cfg->layer_alias) {
+                        layer_name = apr_psprintf(r->pool, "%s", cfg->layer_alias);
+                    }
+
+                    if (layer_name && !layer_header_set) {
+                        apr_table_set(r->notes, "Layer-Identifier-Request", layer_name);
+                    }
+
                     char *prefix = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
                     char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
@@ -691,8 +704,39 @@ static int pre_hook(request_rec *r)
                     // Add the year dir to the IDX filename if that option is configured
                     if (cfg->year_dir)
                         out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);
-                    ap_set_module_config(r->request_config, mrf_module, out_cfg);  
+                    ap_set_module_config(r->request_config, mrf_module, out_cfg);
+
+                    // Add to response header
+                    if (filename) {
+                        char *strtok_state;
+                        char *actual_layer_name = apr_strtok(filename, "-", &strtok_state);
+
+                        if (actual_layer_name) {
+                            apr_table_set(r->notes, "Layer-Identifier-Actual", actual_layer_name);
+                        }
+                    }
+                    if (datetime_str) {
+                        apr_table_set(r->notes, "Layer-Time-Request", datetime_str);
+                    }
+                    if (date_string) {
+                        apr_table_set(r->notes, "Layer-Time-Actual", date_string);
+                    }
                 }
+            } else {
+                // Add to response header for static layer with no time
+                apr_array_pop(tokens); // Discard TMS name
+                apr_array_pop(tokens); // Discard style name
+
+                char *layer_name = *(char **)apr_array_pop(tokens);
+                if (layer_name) {
+                    apr_table_set(r->notes, "Layer-Identifier-Request", layer_name);
+                    apr_table_set(r->notes, "Layer-Identifier-Actual", layer_name);
+                }
+
+                if (datetime_str) {
+                    apr_table_set(r->notes, "Layer-Time-Request", datetime_str);
+                }
+                apr_table_set(r->notes, "Layer-Time-Actual", "");
             }
         }
         if (errors) return wmts_return_all_errors(r, errors, wmts_errors);
@@ -751,17 +795,17 @@ static int post_hook(request_rec *r)
         return wmts_return_all_errors(r, errors, wmts_errors);
     } 
     if (!apr_strnatcasecmp(cfg->role, "style")) {
-    	if (cfg->time) {
-			wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
-			return wmts_return_all_errors(r, errors, wmts_errors);
-    	} else {
-    		apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
+        if (cfg->time) {
+            wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TILEMATRIXSET", "TILEMATRIXSET is invalid for LAYER");
+            return wmts_return_all_errors(r, errors, wmts_errors);
+        } else {
+            apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
             const char *out_uri = remove_date_from_uri(r->pool, tokens);
             const char *datetime_str = get_element_from_uri(r, cfg, "date");
             apr_table_set(r->notes, "mod_wmts_wrapper_date", datetime_str);
             ap_internal_redirect(out_uri, r);
             return OK;
-    	}
+        }
     } 
     if (!apr_strnatcasecmp(cfg->role, "tilematrixset")) {
         // This would be a tile-level request and as such errors are handled by the pre-hook.
@@ -789,7 +833,7 @@ static const char *enable_time(cmd_parms *cmd, void *dconf, int arg)
 {
     wmts_wrapper_conf *cfg = (wmts_wrapper_conf *)dconf;
     cfg->time = arg;
-	return NULL;
+    return NULL;
 }
 
 static const char *enable_year_dir(cmd_parms *cmd, void *dconf, int arg)
@@ -911,7 +955,7 @@ static const command_rec cmds[] =
         "Add year directories when looking up index files"
     ),
 
-	AP_INIT_TAKE1(
+    AP_INIT_TAKE1(
         "WMTSWrapperLayerAlias",
         (cmd_func) set_layer_alias, // Callback
         0, // Self pass argument
