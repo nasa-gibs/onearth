@@ -691,6 +691,9 @@ static int handler(request_rec *r)
         apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
     }
 
+    // Temporary
+    apr_table_set(r->headers_out, "mod-mrf-test", "This is just a test header from mod_mrf.");
+
     // Looks fine, set the outgoing etag and then the image
     apr_table_set(r->headers_out, "ETag", ETag);
     apr_table_set(r->headers_out, "Access-Control-Allow-Origin", "*");
