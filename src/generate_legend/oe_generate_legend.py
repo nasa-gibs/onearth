@@ -736,52 +736,56 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
     # Add tooltips to SVG    
     if output_format == 'svg' and has_values == True:
         
-        ax = fig.get_axes()[0] # only supports one axis            
-        entries = colormaps[0].legend.legend_entries    
-        tooltip_count = 0
-        for i, entry in enumerate(entries):
-            if entry.tooltip:
-                tooltip_count += 1
-                text = entry.tooltip
-                if colormaps[0].units:
-                    text = text + " " + colormaps[0].units
-            else:
-                text = entry.label
-            if orientation == "horizontal":
-                position = (float(i)/float(len(entries)),1)
-            else:
-                position = (1,float(i)/float(len(entries)))
-            ax.annotate(text, 
-            xy=position,
-           xytext=position,
-            textcoords='offset points', 
-            color='black', 
-            ha='center', 
-            fontsize=10,
-            gid='tooltip',
-            bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
-            )
-    
-        # Set id for the annotations
-        for i, t in enumerate(ax.texts):
-            t.set_gid('tooltip_%d' % i)
+        tooltip_counts = [0]
+        axes = fig.get_axes()
+        for j in range(len(axes)):
+
+            ax = axes[j]           
+            entries = colormaps[j].legend.legend_entries
+            tooltip_counts.append(0)
+            for i, entry in enumerate(entries):
+                if entry.tooltip:
+                    tooltip_counts[j + 1] += 1
+                    text = entry.tooltip
+                    if colormaps[j].units:
+                        text = text + " " + colormaps[j].units
+                else:
+                    text = entry.label
+                if orientation == "horizontal":
+                    position = (float(i)/float(len(entries)),1)
+                else:
+                    position = (1,float(i)/float(len(entries)))
+                ax.annotate(text, 
+                xy=position,
+            xytext=position,
+                textcoords='offset points', 
+                color='black', 
+                ha='center', 
+                fontsize=10,
+                gid='tooltip',
+                bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
+                )
         
+            # Set id for the annotations
+            for i, t in enumerate(ax.texts):
+                t.set_gid('tooltip_%d' % (i + sum(tooltip_counts[:j+1])))
+            
         # Save the figure
         f = BytesIO()
         plt.savefig(f, transparent=True, format="svg")     
-        
+            
         # Create XML tree from the SVG file
         tree, xmlid = ET.XMLID(f.getvalue())
         tree.set('onload', 'init(evt)')
-        
+            
         # Hide the tooltips
-        for i, t in enumerate(ax.texts):
+        for i in range(sum(tooltip_counts)):
             try:
                 el = xmlid['tooltip_%d' % i]
                 el.set('visibility', 'hidden')
             except KeyError:
                 None
-    
+        
         # Add mouseover events to color bar
         # Handle colorbar with discrete colors
         if 'QuadMesh_1' in xmlid.keys():
@@ -800,10 +804,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             else:
                 for parent in colorbar_parents:
                     colorbar_imgs = parent.findall("svg:image", svg_ns)
-                    for colorbar_el in colorbar_imgs:
+                    for j, colorbar_el in enumerate(colorbar_imgs):
                         colorbar_size = float(colorbar_el.get("width")) if orientation == "horizontal" else float(colorbar_el.get("height"))
-                        tooltip_size = colorbar_size / tooltip_count
-                        for i in range(tooltip_count):
+                        tooltip_size = colorbar_size / tooltip_counts[j + 1]
+                        for i in range(tooltip_counts[j + 1]):
                             el = ET.SubElement(parent, "rect")
                             el.set("fill", "none")
                             el.set("pointer-events", "all")
