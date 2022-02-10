@@ -674,19 +674,19 @@ static int handler(request_rec *r)
     }
 
     // Pass-through header
-    const char *layer_id_request = apr_table_get(r->headers_in, "Layer-Identifier-Request");
+    const char *layer_id_request = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Identifier-Request") : NULL;
     if (layer_id_request) {
         apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_id_request);
     }
-    const char *layer_id_actual = apr_table_get(r->headers_in, "Layer-Identifier-Actual");
+    const char *layer_id_actual = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Identifier-Actual") : NULL;
     if (layer_id_actual) {
         apr_table_set(r->headers_out, "Layer-Identifier-Actual", layer_id_actual);
     }
-    const char *layer_time_request = apr_table_get(r->headers_in, "Layer-Time-Request");
+    const char *layer_time_request = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Time-Request") : NULL;
     if (layer_time_request) {
         apr_table_set(r->headers_out, "Layer-Time-Request", layer_time_request);
     }
-    const char *layer_time_actual = apr_table_get(r->headers_in, "Layer-Time-Actual");
+    const char *layer_time_actual = r->prev ? apr_table_get(r->prev->headers_out, "Layer-Time-Actual") : NULL;
     if (layer_time_actual) {
         apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
     }
