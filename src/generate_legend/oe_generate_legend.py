@@ -735,26 +735,24 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
         
     # Add tooltips to SVG    
     if output_format == 'svg' and has_values == True:
-        
-        tooltip_counts = [0]
+        tooltip_counts = []
         axes = fig.get_axes()
-        for j in range(len(axes)):
-
-            ax = axes[j]           
-            entries = colormaps[j].legend.legend_entries
+        for i in range(len(axes)):
+            ax = axes[i]           
+            entries = colormaps[i].legend.legend_entries
             tooltip_counts.append(0)
-            for i, entry in enumerate(entries):
+            for j, entry in enumerate(entries):
                 if entry.tooltip:
-                    tooltip_counts[j + 1] += 1
+                    tooltip_counts[i] += 1
                     text = entry.tooltip
-                    if colormaps[j].units:
-                        text = text + " " + colormaps[j].units
+                    if colormaps[i].units:
+                        text = text + " " + colormaps[i].units
                 else:
                     text = entry.label
                 if orientation == "horizontal":
-                    position = (float(i)/float(len(entries)),1)
+                    position = (float(j)/float(len(entries)),1)
                 else:
-                    position = (1,float(i)/float(len(entries)))
+                    position = (1,float(j)/float(len(entries)))
                 ax.annotate(text, 
                 xy=position,
             xytext=position,
@@ -767,8 +765,8 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 )
         
             # Set id for the annotations
-            for i, t in enumerate(ax.texts):
-                t.set_gid('tooltip_%d' % (i + sum(tooltip_counts[:j+1])))
+            for j, t in enumerate(ax.texts):
+                t.set_gid('tooltip_%d' % (j + sum(tooltip_counts[:i])))
             
         # Save the figure
         f = BytesIO()
@@ -791,35 +789,37 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
         if 'QuadMesh_1' in xmlid.keys():
             el = xmlid['QuadMesh_1']
             elements = list(el)
-        # Handle continuous colorbars, which are represented as image elements
-        else:
+
+        else: # Handle continuous colorbars, which are represented as image elements
             elements = []
             svg_ns = {
                 'svg': 'http://www.w3.org/2000/svg', 
                 'xlink': 'http://www.w3.org/1999/xlink'
             }
-            colorbar_parents = tree.findall(".//svg:image/..", svg_ns) 
+            colorbar_parents = tree.findall(".//svg:image/..", svg_ns)
             if len(colorbar_parents) == 0:
                 print("Warning: Unable to add tooltips")
             else:
                 for parent in colorbar_parents:
                     colorbar_imgs = parent.findall("svg:image", svg_ns)
-                    for j, colorbar_el in enumerate(colorbar_imgs):
+                    for i, colorbar_el in enumerate(colorbar_imgs):
                         colorbar_size = float(colorbar_el.get("width")) if orientation == "horizontal" else float(colorbar_el.get("height"))
-                        tooltip_size = colorbar_size / tooltip_counts[j + 1]
-                        for i in range(tooltip_counts[j + 1]):
+                        tooltip_size = colorbar_size / tooltip_counts[i]
+                        # overlay small invisible rectangles on top of the colorbar
+                        # to serve as the mouseover targets
+                        for j in range(tooltip_counts[i]):
                             el = ET.SubElement(parent, "rect")
                             el.set("fill", "none")
                             el.set("pointer-events", "all")
                             el.set("transform", colorbar_el.get("transform"))
                             if orientation == "horizontal":
-                                el_pos = float(colorbar_el.get("x")) + i * tooltip_size
+                                el_pos = float(colorbar_el.get("x")) + j * tooltip_size
                                 el.set("x", str(el_pos))
                                 el.set("y", colorbar_el.get("y"))
                                 el.set("width", str(tooltip_size))
                                 el.set("height", colorbar_el.get("height"))
                             else:
-                                el_pos = float(colorbar_el.get("y")) + i * tooltip_size
+                                el_pos = float(colorbar_el.get("y")) + j * tooltip_size
                                 el.set("y", str(el_pos))
                                 el.set("x", colorbar_el.get("x"))
                                 el.set("width", colorbar_el.get("width"))
