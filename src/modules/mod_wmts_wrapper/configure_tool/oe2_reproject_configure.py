@@ -334,7 +334,11 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                 print(mssg)
                 return '1'  # Assume PNG uses palette
         sample_png = png.Reader(BytesIO(r.content))
-        sample_png.read()
+        try:
+            sample_png.read()
+        except png.FormatError as err:
+            print(err)
+            return '3'  # default to 3 bands if not PNG
         try:
             if sample_png.palette():
                 bands = 1
