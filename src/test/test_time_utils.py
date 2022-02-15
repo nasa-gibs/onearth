@@ -567,6 +567,81 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_periods_config_force_latest_all(self):
+        # Test adding layer with multiple dates
+        test_layers = [('Test_Latest', '2019-01-01',
+                        '2018-12-29/2019-01-13/P1D',),
+                       ('Test_Latest', '2019-01-07',
+                        '2018-12-29/2019-01-13/P1D'),
+                       ('Test_Latest', '2019-01-13',
+                        '2018-12-29/2019-01-13/P1D')]
+        db_keys = ['epsg4326']
+        config = 'LATEST-15D/LATEST/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                f'Layer {layer[0]} not found in list of all layers')
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                f'Layer {layer[0]} has incorrect "period" value -- got {layer_res["periods"][0]}, expected {layer[2]}')
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_config_force_latest_start(self):
+        # Test adding layer with multiple dates
+        test_layers = [('Test_Latest', '2019-01-01',
+                        '2018-12-14/2019-01-13/P1D',),
+                       ('Test_Latest', '2019-01-07',
+                        '2018-12-14/2019-01-13/P1D'),
+                       ('Test_Latest', '2019-01-13',
+                        '2018-12-14/2019-01-13/P1D')]
+        db_keys = ['epsg4326']
+        config = 'LATEST-30D/DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                f'Layer {layer[0]} not found in list of all layers')
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                f'Layer {layer[0]} has incorrect "period" value -- got {layer_res["periods"][0]}, expected {layer[2]}')
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_config_force_latest_end(self):
+        # Test adding layer with multiple dates
+        test_layers = [('Test_Latest', '2019-01-01',
+                        '2019-01-01/2019-01-13/P1D',),
+                       ('Test_Latest', '2019-01-07',
+                        '2019-01-01/2019-01-13/P1D'),
+                       ('Test_Latest', '2019-01-13',
+                        '2019-01-01/2019-01-13/P1D')]
+        db_keys = ['epsg4326']
+        config = 'DETECT/LATEST/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                f'Layer {layer[0]} not found in list of all layers')
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                f'Layer {layer[0]} has incorrect "period" value -- got {layer_res["periods"][0]}, expected {layer[2]}')
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_periods_config_multiple(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_Multiple', '2019-01-01',

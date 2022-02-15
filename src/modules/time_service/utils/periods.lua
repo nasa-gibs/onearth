@@ -394,7 +394,7 @@ local function calculatePeriods(dates, config)
   end
 
   if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
-  -- Skip DETECT if all forced values are provideds
+  -- Skip DETECT if all forced values are provided
     local dateList = {force_start, force_end}
     periods[#periods + 1] = {size=string.match(force_period, "%d+"), dates=dateList, unit=getIntervalUnit(force_period)}
   else
