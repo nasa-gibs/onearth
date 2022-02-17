@@ -717,16 +717,27 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 if len(colormap.title) > 14:
                     fs = 8
                 if len(colormap.title) > 16:
+                    # Handle splitting the title into multiple lines based on # of characters.
+                    # Currently hard-coded to 2 lines but that can easily be increased if needed.
+                    num_splits = 2
+                    split_len = int(len(colormap.title) / num_splits)
                     title_words = colormap.title.split(" ")
-                    half = int(len(title_words)/2)
-                    if len(title_words) > 2: half += 1
-                    title = ""
-                    for word in title_words[0:half]:
-                        title = title + word + " "
-                    title = title + "\n"
-                    for word in title_words[half:len(title_words)]:
-                        title = title + word + " "                    
-                    colormap.title = title
+                    lines = [""]
+                    line_len = 0
+                    for word in title_words:
+                        # Add words to the line until we've reached as close to len(title)/2 as possible
+                        # or if we're on the last line.
+                        if len(lines) > num_splits - 1 or abs(line_len + len(word) - split_len) < abs(line_len - split_len):
+                            lines[-1] += " " + word if len(lines[-1]) > 0 else word
+                            line_len += len(lines[-1])
+                        else:
+                            lines.append(word)
+                            line_len = len(word)
+                    colormap.title = '\n'.join(lines)
+                    # For multiple legends, clipping has only been observed on the leftmost legend
+                    # so only shrink that one further
+                    if legend_count == 1 and len(max(lines, key=len)) > 18:
+                        fs = 6
                 fig_text = fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold', color=label_color) 
                 if stroke_color:
                     fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
