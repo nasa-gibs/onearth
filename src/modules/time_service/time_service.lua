@@ -260,33 +260,36 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             }
             return send_response(200, JSON:encode(out_msg))
         end
-        table.sort(layer_datetime_info[layer_name].periods, period_sort)
-        for _, period in ipairs(layer_datetime_info[layer_name].periods) do
-            local parsed_period = split("/", period)
+        table.sort(layer_datetime_info[layer_name].periods)
+        -- binary search for find snap date in periods
+        local left, right, mid = 1, #layer_datetime_info[layer_name].periods, 0
+        while left <= right do
+            mid = left + math.floor( ( right - left ) / 2 )
+            local parsed_period = split("/", layer_datetime_info[layer_name].periods[mid])
             local start_date = date_util(parsed_period[1])
-
+        
+            if req_date == start_date then
+                snap_date = req_date
+                break
+            end
+        
+            local end_date
             if parsed_period[2] then -- this is a period, so look at both dates
-                local end_date = date_util(parsed_period[2])
-
-                -- If period has a single date and it doesn't match, skip it
-                if req_date == start_date then
-                    snap_date = req_date
-                    break
-                end
+                end_date = date_util(parsed_period[2])
                 if req_date > start_date then
                     local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
                     local interval_size = string.match(parsed_period[3], "%a+$")
                     if string.sub(parsed_period[3], 1, 2) == "PT" and interval_size == "M" then
-                      interval_size = "MM"
+                        interval_size = "MM"
                     end
                     snap_date = get_snap_date(start_date:copy(), req_date, end_date, interval_length, interval_size)
-                    break
                 end
-            else -- this is a single date, so just check if it matches
-                if req_date == start_date then
-                    snap_date = req_date
-                    break
-                end
+            end
+        
+            if req_date < start_date then
+                right = mid - 1
+            else
+                left = mid + 1
             end
         end
 

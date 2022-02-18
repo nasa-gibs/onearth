@@ -241,9 +241,9 @@ def updateDateService(redis_uri,
             print("Best Layer: ", bestLayer)
             if bestLayer is not None:
                 bestLayer=bestLayer.decode("utf-8")
-                date_script(keys=[f'{proj}:best:layer:{bestLayer}'])
+                date_script(keys=[f'{proj}:layer:{bestLayer}'])
                 if reproject and str(proj) == 'epsg4326':
-                    date_script(keys=[f'epsg3857:best:layer:{bestLayer}'])
+                    date_script(keys=[f'epsg3857:layer:{bestLayer}'])
 
         finally:
             scrape_semaphore.release()
