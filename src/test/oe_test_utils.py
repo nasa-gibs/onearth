@@ -880,6 +880,20 @@ def check_response_code(url, code, code_value=''):
     return False
 
 
+def check_layer_headers(test_obj, headers, expected_layer_id_req, expected_layer_id_actual, expected_layer_time_req, expected_layer_time_actual):
+    check_apache_running()
+    headers = dict(headers)
+    layer_id_req = headers['Layer-Identifier-Request']
+    layer_id_actual = headers['Layer-Identifier-Actual']
+    layer_time_req = headers['Layer-Time-Request']
+    layer_time_actual = headers['Layer-Time-Actual']
+
+    test_obj.assertEqual(layer_id_req, expected_layer_id_req, f'Tile header Layer-Identifier-Request is {layer_id_req} but expected {expected_layer_id_req}')
+    test_obj.assertEqual(layer_id_actual, expected_layer_id_actual, f'Tile header Layer-Identifier-Actual is {layer_id_actual} but expected {expected_layer_id_actual}')
+    test_obj.assertEqual(layer_time_req, expected_layer_time_req, f'Tile header Layer-Time-Request is {layer_time_req} but expected {expected_layer_time_req}')
+    test_obj.assertEqual(layer_time_actual, expected_layer_time_actual, f'Tile header Layer-Time-Actual is {layer_time_actual} but expected {expected_layer_time_actual}')
+
+
 def check_wmts_error(url, code, hash):
     """
     Checks WMTS error responses, which often return a HTTP error code and an XML response.
@@ -1108,6 +1122,17 @@ def seed_redis_data(layers, db_keys=None):
         for period in periods:
             r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
                    period)
+
+
+def seed_redis_best_data(layers, filename, db_keys=None):
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    db_keystring = ''
+    if db_keys:
+        for key in db_keys:
+            db_keystring += key + ':'
+
+    for layer in layers:
+        r.hmset('{0}layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
 
 
 def remove_redis_layer(layers, db_keys=None):
