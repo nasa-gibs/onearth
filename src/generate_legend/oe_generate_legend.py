@@ -356,7 +356,38 @@ def parse_legend(legend_xml, colormap_entries):
     legend = Legend(max_label, min_label,legend_element.get("type"), legend_entries)
     
     return legend
-    
+
+# Handle splitting a title into multiple lines based on # of characters.
+# Returns the split title and the number of characters in the longest line of the split title.
+def split_title(title, num_splits):
+    split_len = int(len(title) / num_splits)
+    title_words = title.split(" ")
+    lines = [""]
+    line_len = 0
+    for word in title_words:
+        # Add words to the line until we've reached as close to len(title)/num_splits as possible
+        # or if we're on the last line.
+        if len(lines) > num_splits - 1 or abs(line_len + len(word) - split_len) < abs(line_len - split_len):
+            lines[-1] += " " + word if len(lines[-1]) > 0 else word
+            line_len += len(lines[-1])
+        else:
+            lines.append(word)
+            line_len = len(word)
+    title = '\n'.join(lines)
+    return title, len(max(lines, key=len))
+
+# Handle resizing classification legends (should be same regardless of vertical or horizontal)
+def resize_classification_title(title):
+    fs = 10
+    if len(title) > 16:
+        fs = 9
+    if len(title) > 18:
+        title, max_line_len = split_title(title, 2)
+        if max_line_len > 18:
+            fs = 7
+        else:
+            fs = 8
+    return title, fs
 
 def generate_legend(colormaps, output, output_format, orientation, label_color, colorbar_only, stroke_color):
     
@@ -587,7 +618,10 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     title_loc = 1-t
                 else:
                     title_loc = bottom+height+(0.07/lc)
-                fig_text = fig.text(0.5, title_loc, colormap.title, fontsize=10, horizontalalignment='center', weight='bold', color=label_color)
+                fs = 10
+                if colormap.style == "classification":
+                    colormap.title, fs = resize_classification_title(colormap.title)
+                fig_text = fig.text(0.5, title_loc, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold', color=label_color)
                 if stroke_color:
                     fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
 
@@ -707,37 +741,23 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             if colormap.title != None and colorbar_only == False:
                 title_left = left+(0.08/lc)
                 title_top = 0.935
+                fs = 10
                 if colormap.style == "classification":
                     if lc == 1:
                         title_left = 0.5 #center if only one classification legend
                         title_top = 1-t
-                fs = 10
-                if len(colormap.title) > 10:
-                    fs = 9
-                if len(colormap.title) > 14:
-                    fs = 8
-                if len(colormap.title) > 16:
-                    # Handle splitting the title into multiple lines based on # of characters.
-                    # Currently hard-coded to 2 lines but that can easily be increased if needed.
-                    num_splits = 2
-                    split_len = int(len(colormap.title) / num_splits)
-                    title_words = colormap.title.split(" ")
-                    lines = [""]
-                    line_len = 0
-                    for word in title_words:
-                        # Add words to the line until we've reached as close to len(title)/2 as possible
-                        # or if we're on the last line.
-                        if len(lines) > num_splits - 1 or abs(line_len + len(word) - split_len) < abs(line_len - split_len):
-                            lines[-1] += " " + word if len(lines[-1]) > 0 else word
-                            line_len += len(lines[-1])
-                        else:
-                            lines.append(word)
-                            line_len = len(word)
-                    colormap.title = '\n'.join(lines)
-                    # For multiple legends, clipping has only been observed on the leftmost legend
-                    # so only shrink that one further
-                    if legend_count == 1 and len(max(lines, key=len)) > 18:
-                        fs = 6
+                    colormap.title, fs = resize_classification_title(colormap.title)
+                else:
+                    if len(colormap.title) > 10:
+                        fs = 9
+                    if len(colormap.title) > 14:
+                        fs = 8
+                    if len(colormap.title) > 16:
+                        colormap.title, max_line_len = split_title(colormap.title, 2)
+                        # For multiple legends, clipping has only been observed on the leftmost legend
+                        # so only shrink that one further
+                        if legend_count == 1 and max_line_len > 18:
+                            fs = 6
                 fig_text = fig.text(title_left, title_top, colormap.title, fontsize=fs, horizontalalignment='center', weight='bold', color=label_color) 
                 if stroke_color:
                     fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
