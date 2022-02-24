@@ -733,7 +733,14 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                         cb.ax.set_yticklabels(yticklabels)
                 
                 if colormap.units != None and colorbar_only == False:
-                    fig_text = fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=10, horizontalalignment='center', color=label_color)
+                    fs = 10
+                    if len(colormap.units) > 12:
+                        fs = 9
+                    if len(colormap.units) > 14:
+                        fs = 8
+                    if len(colormap.units) > 17:
+                        fs = 7
+                    fig_text = fig.text(left + (0.08/lc), 0.01, colormap.units, fontsize=fs, horizontalalignment='center', color=label_color)
                     if stroke_color:
                         fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
 
