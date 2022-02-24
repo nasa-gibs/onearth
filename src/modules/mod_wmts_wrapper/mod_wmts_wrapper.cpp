@@ -248,6 +248,26 @@ static const char *remove_date_from_uri(apr_pool_t *p, apr_array_header_t *token
     return out_uri;
 }
 
+static const char *get_actual_layername_from_filename(apr_pool_t *p,  const char *filename) {
+
+    int i, len = strlen(filename);
+    char *actual_layer_name = (char *)apr_pcalloc(p, MAX_STRING_LEN);
+
+    for (i = len - 1; i >= 0; i--) {
+        if (filename[i] == '-')	{		// Use the last '-' to find date in filename
+            break;
+        }
+    }
+
+    if (i != -1) {
+        strncpy(actual_layer_name, filename, i);    // Exclude date in actual layername
+    } else {
+        strncpy(actual_layer_name, filename, len);  // No date in filename, so just use full filename
+    }
+
+    return actual_layer_name;
+}
+
 static const char *get_element_from_uri(request_rec *r, wmts_wrapper_conf *cfg, const char *part) {
     const char* layer_request_uri = r->filename + strlen(cfg->base_path);
     apr_array_header_t *tokens = tokenize(r->pool, layer_request_uri, '/');
@@ -708,12 +728,8 @@ static int pre_hook(request_rec *r)
 
                     // Add to response header
                     if (filename) {
-                        char *strtok_state;
-                        char *actual_layer_name = apr_strtok(filename, "-", &strtok_state);
-
-                        if (actual_layer_name) {
-                            apr_table_set(r->notes, "Layer-Identifier-Actual", actual_layer_name);
-                        }
+                        const char *actual_layer_name = get_actual_layername_from_filename(r->pool, filename);
+                        apr_table_set(r->notes, "Layer-Identifier-Actual", actual_layer_name);
                     }
                     if (datetime_str) {
                         apr_table_set(r->notes, "Layer-Time-Request", datetime_str);

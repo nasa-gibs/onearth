@@ -110,6 +110,20 @@ local function dateToEpoch(dateStr)
   return yearSecCounter + ((doy - 1) * 86400) + (hour * 60 * 60)  + (minute * 60) + second
 end
 
+local function calcEpochDiff(epochDate, count, interval)
+  local intervalInSec
+  if interval == "Y" then intervalInSec = 31536000
+  elseif interval == "D" then intervalInSec = 86400
+  elseif interval == "H" then intervalInSec = 3600
+  elseif interval == "MM" then intervalInSec = 60
+  elseif interval == "S" then intervalInSec = 1
+  end
+  if epochDate and count and intervalInSec then 
+    epochDate = epochDate + ( count * intervalInSec )
+  end
+  return epochDate
+end
+
 local function calcIntervalFromSeconds(interval)
   if interval % 31536000 == 0 then
     return math.floor(interval / 31536000), "year"
@@ -366,6 +380,19 @@ local function calculatePeriods(dates, config)
 
   -- Detect periods
   local periods = {}
+  if force_start:sub(1, 6) == 'LATEST' then
+    local stripLatestPrefix = force_start:sub(7, #force_start)
+    local count = stripLatestPrefix:match("[+-]?%d+")
+    local interval = stripLatestPrefix:match("%a+")
+
+    local latestDateEpoch = dateToEpoch(dates[#dates])
+    local diffEpoch = calcEpochDiff(latestDateEpoch, count, interval)
+    force_start = epochToDate(diffEpoch)
+  end
+  if force_end == 'LATEST' then
+    force_end = dates[#dates]
+  end
+
   if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
   -- Skip DETECT if all forced values are provided
     local dateList = {force_start, force_end}

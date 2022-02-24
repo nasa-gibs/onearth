@@ -44,7 +44,7 @@ from subprocess import Popen, PIPE
 import time
 import redis
 import requests
-from oe_test_utils import restart_apache, make_dir_tree
+from oe_test_utils import restart_apache, make_dir_tree, seed_redis_data, seed_redis_best_data
 
 DEBUG = False
 
@@ -76,31 +76,6 @@ def redis_running():
         return r.ping()
     except redis.exceptions.ConnectionError:
         return False
-
-
-def seed_redis_data(layers, db_keys=None):
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    db_keystring = ''
-    if db_keys:
-        for key in db_keys:
-            db_keystring += key + ':'
-    for layer in layers:
-        r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
-        periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
-        for period in periods:
-            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                   period)
-
-
-def seed_redis_best_data(layers, filename, db_keys=None):
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    db_keystring = ''
-    if db_keys:
-        for key in db_keys:
-            db_keystring += key + ':'
-
-    for layer in layers:
-        r.hmset('{0}layer:{1}:best'.format(db_keystring, layer[0]), {layer[4]:filename})
 
 
 def remove_redis_layer(layer, db_keys=None):

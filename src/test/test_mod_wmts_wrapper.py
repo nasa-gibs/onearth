@@ -38,11 +38,12 @@ import os
 import sys
 import unittest2 as unittest
 import xmlrunner
-from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request, redis_running, seed_redis_data, remove_redis_layer, bulk_replace, check_response_code
+from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request, redis_running, seed_redis_data, seed_redis_best_data, remove_redis_layer, bulk_replace, check_response_code, get_url, check_layer_headers
 from optparse import OptionParser
 import shutil
 from subprocess import Popen, PIPE
 import redis
+import requests
 import time
 
 base_url = 'http://localhost'
@@ -424,6 +425,23 @@ class TestModWmtsWrapper(unittest.TestCase):
         ]
         seed_redis_data(redis_data)
         self.redis_layers.append(redis_data)
+
+        # Create test "best" data files for test_mod_mrf_best_tile_headers test
+        best_filename = 'test_mrf_date-BEST'
+        seed_redis_best_data(redis_data, best_filename, db_keys=[])
+
+        date = '2012001000000'
+        new_date = '2013001000000'
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                            config_prefix + '-' + date + '.idx'),
+            os.path.join(self.mrf_endpoint_path_date,
+                            best_filename + '-' + new_date + '.idx'))
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                            config_prefix + '-' + date + '.pjg'),
+            os.path.join(self.mrf_endpoint_path_date,
+                            best_filename + '-' + new_date + '.pjg'))
 
     @classmethod
     def setup_mrf_date_yeardir(self):
@@ -1308,6 +1326,38 @@ class TestModWmtsWrapper(unittest.TestCase):
             errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
                 tile_url)
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
+
+    def test_mod_mrf_nodate_tile_headers(self):
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_mrf_nodate/default/16km/0/0/0.jpg'
+
+        response = get_url(tile_url)
+        headers = response.getheaders()
+
+        check_layer_headers(self, headers, 'test_mrf_nodate', 'test_mrf_nodate', 'default', '')
+
+    def test_mod_mrf_defaultdate_tile_headers(self):
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_mrf_date/default/default/16km/0/0/0.jpg'
+
+        response = get_url(tile_url)
+        headers = response.getheaders()
+
+        check_layer_headers(self, headers, 'test_mrf_date', 'test_mrf_date', 'default', '2012-01-01T00:00:00Z')
+
+    def test_mod_mrf_date_tile_headers(self):
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_mrf_date/default/2012-03-11/16km/0/0/0.jpg'
+
+        response = get_url(tile_url)
+        headers = response.getheaders()
+
+        check_layer_headers(self, headers, 'test_mrf_date', 'test_mrf_date', '2012-03-11', '2012-01-01T00:00:00Z')
+
+    def test_mod_mrf_best_tile_headers(self):
+        tile_url = f'http://localhost/mod_wmts_wrapper_mrf/test_mrf_date/default/2013-01-01/16km/0/0/0.jpg'
+
+        response = get_url(tile_url)
+        headers = response.getheaders()
+
+        check_layer_headers(self, headers, 'test_mrf_date', 'test_mrf_date-BEST', '2013-01-01', '2013-01-01T00:00:00Z')
 
     def test_mod_mrf_date_tile_yeardir(self):
         for test in [('2012-01-01', '3f84501587adfe3006dcbf59e67cd0a3'),
