@@ -357,15 +357,15 @@ def parse_legend(legend_xml, colormap_entries):
     
     return legend
 
-# Handle splitting a title into multiple lines based on # of characters.
-# Returns the split title and the number of characters in the longest line of the split title.
-def split_title(title, num_splits):
-    split_len = int(len(title) / num_splits)
-    title_words = title.split(" ")
+# Handle splitting a line of text into multiple lines based on # of characters.
+# Returns the split text and the number of characters in the longest line of the split text.
+def split_text(text, num_splits):
+    split_len = int(len(text) / num_splits)
+    text_words = text.split(" ")
     lines = [""]
     line_len = 0
-    for word in title_words:
-        # Add words to the line until we've reached as close to len(title)/num_splits as possible
+    for word in text_words:
+        # Add words to the line until we've reached as close to len(text)/num_splits as possible
         # or if we're on the last line.
         if len(lines) > num_splits - 1 or abs(line_len + len(word) - split_len) < abs(line_len - split_len):
             lines[-1] += " " + word if len(lines[-1]) > 0 else word
@@ -373,8 +373,8 @@ def split_title(title, num_splits):
         else:
             lines.append(word)
             line_len = len(word)
-    title = '\n'.join(lines)
-    return title, len(max(lines, key=len))
+    text = '\n'.join(lines)
+    return text, len(max(lines, key=len))
 
 # Handle resizing classification legends (should be same regardless of vertical or horizontal)
 def resize_classification_title(title):
@@ -382,7 +382,7 @@ def resize_classification_title(title):
     if len(title) > 16:
         fs = 9
     if len(title) > 18:
-        title, max_line_len = split_title(title, 2)
+        title, max_line_len = split_text(title, 2)
         if max_line_len > 18:
             fs = 7
         else:
@@ -522,6 +522,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 if len(legendcolors) < 7 and has_values == False:
                     if lc == 1:
                         fig.set_figheight(1.5)
+                bottom_box_pos = 0.5
                 if len(legendcolors) <= (15/lc): 
                     col = 1
                     fontsize = 9
@@ -530,6 +531,11 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                         fig.set_figwidth(3)
                     col = 2
                     fontsize = 8
+                    for i, label in enumerate(legendlabels):
+                        if len(label) > 18:
+                            legendlabels[i] = split_text(label, 2)[0]
+                            fontsize = 7
+                            bottom_box_pos = 0.45
                 if len(legendcolors) > (30/lc):
                     if lc == 1:
                         fig.set_figwidth(4.2)
@@ -541,7 +547,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.025, bottom+(0.3/lc)], loc='upper left', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0)
                 else:
-                    legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
+                    legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, bottom_box_pos], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
                 for text in legend.get_texts():
                     text.set_color(label_color)
@@ -641,6 +647,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 if len(legendcolors) < 7 and has_values == False:
                     if lc <= 2:
                         fig.set_figheight(1.5)
+                bottom_box_pos = 0.5
                 if len(legendcolors) <= 14: 
                     col = 1
                     fontsize = 9
@@ -649,6 +656,11 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                         fig.set_figwidth(3.2)
                     col = 2
                     fontsize = 8
+                    for i, label in enumerate(legendlabels):
+                        if len(label) > 18:
+                            legendlabels[i] = split_text(label, 2)[0]
+                            fontsize = 7
+                            bottom_box_pos = 0.45
                 if len(legendcolors) > 28:
                     if lc <= 2:
                         fig.set_figwidth(4.2)
@@ -660,7 +672,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     legend = fig.legend(patches, legendlabels, bbox_to_anchor=[left-(0.15/lc), 0.9], loc='upper left', ncol=1, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0)
                 else:
-                    legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, 0.5], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
+                    legend = fig.legend(patches, legendlabels, bbox_to_anchor=[0.5, bottom_box_pos], loc='center', ncol=col, fancybox=True, prop={'size':fontsize})
                     legend.get_frame().set_alpha(0.5)
                 for text in legend.get_texts():
                     text.set_color(label_color)
@@ -760,7 +772,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     if len(colormap.title) > 14:
                         fs = 8
                     if len(colormap.title) > 16:
-                        colormap.title, max_line_len = split_title(colormap.title, 2)
+                        colormap.title, max_line_len = split_text(colormap.title, 2)
                         # For multiple legends, clipping has only been observed on the leftmost legend
                         # so only shrink that one further
                         if legend_count == 1 and max_line_len > 18:
