@@ -562,6 +562,24 @@ static apr_status_t retrieve_source(request_rec *r, work &info, void **buffer, i
         ap_remove_output_filter(rf);
         // Capture the tag before nuking the subrequest
 
+		// Pass-through header
+		const char *layer_id_request = apr_table_get(rr->headers_out, "Layer-Identifier-Request");
+		if (layer_id_request) {
+			apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_id_request);
+		}
+		const char *layer_id_actual = apr_table_get(rr->headers_out, "Layer-Identifier-Actual");
+		if (layer_id_actual) {
+			apr_table_set(r->headers_out, "Layer-Identifier-Actual", layer_id_actual);
+		}
+		const char *layer_time_request = apr_table_get(rr->headers_out, "Layer-Time-Request");
+		if (layer_time_request) {
+			apr_table_set(r->headers_out, "Layer-Time-Request", layer_time_request);
+		}
+		const char *layer_time_actual = apr_table_get(rr->headers_out, "Layer-Time-Actual");
+		if (layer_time_actual) {
+			apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
+		}
+
         const char* ETagIn = apr_table_get(rr->headers_out, "ETag");
         if (ETagIn)
             ETagIn = apr_pstrdup(r->pool, ETagIn);
