@@ -16,6 +16,9 @@ Options:
   -b REQUEST_BBOX, --bbox=REQUEST_BBOX
                         The requested TWMS bounding box to be translated
                         (e.g., "-81,36,-72,45").
+  -e, --epsg            The EPSG code for projection.
+                        Supports EPSG:4326 (default), EPSG:3857, EPSG:3031, EPSG:3413
+  -T, --tilesize        Override the tilesize value
 ```
 
 ## wmts2twmsbox.py
