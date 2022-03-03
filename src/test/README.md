@@ -177,9 +177,13 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 ## WMTS/TWMS Helper Scripts Tests:
 
 1. Converting from a Tiled WMS box to WMTS tile using `twmsbox2wmts.py`
-2. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--scale_denominator` option
-3. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--top_left_bbox` option
-4. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using the `--scale_denominator` option for `wmts2twmsbox.py`
-5. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using the `--top_left_bbox` option for `wmts2twmsbox.py`
-6. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--scale_denominator` option for `wmts2twmsbox.py`
-7. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--top_left_bbox` option for `wmts2twmsbox.py`
+2. Converting from a Tiled WMS box to WMTS tile using `twmsbox2wmts.py` with a specified `--tilesize`
+3. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--scale_denominator` option
+4. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--scale_denominator` option and a specified `--tilesize`
+5. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--top_left_bbox` option
+6. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using the `--scale_denominator` option for `wmts2twmsbox.py`
+7. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using the `--top_left_bbox` option for `wmts2twmsbox.py`
+8. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using a specified `--tilesize` for each script and the `--top_left_bbox` option for `wmts2twmsbox.py`
+9. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--scale_denominator` option for `wmts2twmsbox.py`
+10. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using a specified `--tilesize` for each script and the `--scale_denominator` option for `wmts2twmsbox.py`
+11. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--top_left_bbox` option for `wmts2twmsbox.py`

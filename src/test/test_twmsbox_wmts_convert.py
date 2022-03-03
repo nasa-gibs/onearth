@@ -103,6 +103,28 @@ TILEROW=5
         fail_str += "\nThe following is the actual output from twmsbox2wmts.py:\n{}".format(wmts_output)
         
         self.assertTrue(wmts_output == expected_wmts, fail_str)
+    
+    # Tests converting from a Tiled WMS box to WMTS tile using `twmsbox2wmts.py` with a tilesize specified.
+    def test_twmsbox2wmts_tilesize(self):
+        twmsbox_input = "-81,36,-72,45"
+        tilesize_input = "256"
+        expected_wmts = """Using EPSG:4326
+Using tilesize: 256
+Top Left BBOX: -180,81,-171,90
+Request BBOX: -81,36,-72,45
+Scale Denominator: 13977056.6007179967
+TILECOL=11
+TILEROW=5
+"""
+        twms_cmd = "python3 /home/oe2/onearth/src/scripts/twmsbox2wmts.py -b {0} -T {1}".format(twmsbox_input,
+                                                                                                tilesize_input)
+        wmts_output = subprocess.check_output(twms_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
+        
+        fail_str = "twmsbox2wmts.py output does not match expected.\n"
+        fail_str += "The following is the expected output from twmsbox2wmts.py:\n{}".format(expected_wmts)
+        fail_str += "\nThe following is the actual output from twmsbox2wmts.py:\n{}".format(wmts_output)
+        
+        self.assertTrue(wmts_output == expected_wmts, fail_str)
 
     # Tests converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py`.
     # Uses the Scale Denominator option for `wmts2twmsbox.py`
@@ -124,6 +146,36 @@ Request BBOX: -81.0000000000,36.0000000000,-72.0000000000,45.0000000000
                                                                                                        wmts_input['TILEROW'])
         twmsbox_output = subprocess.check_output(wmts_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
 
+        fail_str = "wmts2twmsbox.py output does not match expected.\n"
+        fail_str += "The following is the expected output from wmts2twmsbox.py:\n{}".format(expected_twmsbox)
+        fail_str += "\nThe following is the actual output from wmts2twmsbox.py:\n{}".format(twmsbox_output)
+        
+        self.assertTrue(twmsbox_output == expected_twmsbox, fail_str)
+    
+    # Tests converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py`
+    # with a specified tilesize.
+    # Uses the Scale Denominator option for `wmts2twmsbox.py`.
+    def test_wmts2twmsbox_scale_denom_tilesize(self):
+        wmts_input = {
+            "Scale Denominator": "6988528.300359",
+            "TILECOL": "11",
+            "TILEROW": "5",
+            "tilesize": "256"
+            }
+        expected_twmsbox = """Using EPSG:4326
+Using tilesize: 256
+Scale Denominator: 6988528.300359
+TILECOL=11
+TILEROW=5
+Top Left BBOX: -180.0000000000,85.5000000000,-175.5000000000,90.0000000000
+Request BBOX: -130.5000000000,63.0000000000,-126.0000000000,67.5000000000
+"""
+        wmts_cmd = "python3 /home/oe2/onearth/src/scripts/wmts2twmsbox.py -s {0} -c {1} -r {2} -T {3}".format(wmts_input['Scale Denominator'],
+                                                                                                       wmts_input['TILECOL'],
+                                                                                                       wmts_input['TILEROW'],
+                                                                                                       wmts_input['tilesize'])
+        twmsbox_output = subprocess.check_output(wmts_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
+        
         fail_str = "wmts2twmsbox.py output does not match expected.\n"
         fail_str += "The following is the expected output from wmts2twmsbox.py:\n{}".format(expected_twmsbox)
         fail_str += "\nThe following is the actual output from wmts2twmsbox.py:\n{}".format(twmsbox_output)
@@ -218,6 +270,39 @@ Request BBOX: -81.0000000000,36.0000000000,-72.0000000000,45.0000000000
         test_result, fail_str = compare_bbox_str(twms_dict["Request BBOX"], twmsbox_input)
         fail_str = "`wmts2twmsbox.py` did not return the correct twmsbox values.\n" + fail_str
         self.assertTrue(test_result, fail_str)
+    
+    # Tests converting from a Tiled WMS box to WMTS tile and back to a Tiled WMS box
+    # with a specified tilesize using first `twmsbox2wmts.py` and then `wmts2twmsbox.py`.
+    # Runs `wmts2twmsbox.py` with Top Left BBOX, TILECOL, and TILEROW as input.
+    def test_twmsbox2wmts2twmsbox_tilesize_top_left_bbox(self):
+        twmsbox_input = "-81,36,-72,45"
+        tilesize_input = "256"
+        fail_str = ""
+        
+        twms_cmd = "python3 /home/oe2/onearth/src/scripts/twmsbox2wmts.py -b {0} -T {1}".format(twmsbox_input, tilesize_input)
+        wmts_output = subprocess.check_output(twms_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
+        # parse the result to use as input for wmts2twmsbox.py
+        wmts_dict, unexpected_lines = parse_twms_wmts_output(wmts_output)
+
+        if unexpected_lines != "":
+            fail_str += "ERROR: Unexpected line(s) in twmsbox2wmts.py output:\n{}".format(unexpected_lines)
+            self.fail(fail_str)
+
+        wmts_cmd = "python3 /home/oe2/onearth/src/scripts/wmts2twmsbox.py -e {0} -t {1} -c {2} -r {3} -T {4}".format(wmts_dict['EPSG'],
+                                                                                                              wmts_dict['Top Left BBOX'],
+                                                                                                              wmts_dict['TILECOL'],
+                                                                                                              wmts_dict['TILEROW'],
+                                                                                                              wmts_dict["tilesize"])
+        twms_output = subprocess.check_output(wmts_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
+        twms_dict, unexpected_lines = parse_twms_wmts_output(twms_output)
+        
+        if unexpected_lines != "":
+            fail_str += "ERROR: Unexpected line(s) in wmts2twmsbox.py output:\n{}".format(unexpected_lines)
+            self.fail(fail_str)
+        
+        test_result, fail_str = compare_bbox_str(twms_dict["Request BBOX"], twmsbox_input)
+        fail_str = "`wmts2twmsbox.py` did not return the correct twmsbox values.\n" + fail_str
+        self.assertTrue(test_result, fail_str)
 
     # Tests converting from a WMTS tile to Tiled WMS box and back to a WMTS box
     # using first `wmts2twmsbox.py` and then `twmsbox2wmts.py`.
@@ -243,6 +328,57 @@ Request BBOX: -81.0000000000,36.0000000000,-72.0000000000,45.0000000000
             self.fail(fail_str)
 
         twms_cmd = "python3 /home/oe2/onearth/src/scripts/twmsbox2wmts.py -b {}".format(twms_dict["Request BBOX"])
+        wmts_output = subprocess.check_output(twms_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
+        wmts_dict, unexpected_lines = parse_twms_wmts_output(wmts_output)
+
+        if unexpected_lines != "":
+            fail_str += "ERROR: Unexpected line(s) in twmsbox2wmts.py output:\n{}".format(unexpected_lines)
+            self.fail(fail_str)
+
+        # check if the original input values were returned
+        test_result = True
+        # use isclose because the values may be rounded differently (6988528.300359 vs 6988528.3003589983)
+        if not isclose(float(wmts_input["Scale Denominator"]),float(wmts_dict["Scale Denominator"])):
+            test_result = False
+            fail_str += "`twmsbox2wmts.py` returned {0} for Scale Denominator when it should have returned {1}\n".format(wmts_dict["Scale Denominator"],
+                                                                                                             wmts_input["Scale Denominator"])
+        if wmts_input["TILECOL"] != wmts_dict["TILECOL"]:
+            test_result = False
+            fail_str += "`twmsbox2wmts.py` returned {0} for TILECOL when it should have returned {1}\n".format(wmts_dict["TILECOL"],
+                                                                                                             wmts_input["TILECOL"])
+        if wmts_input["TILEROW"] != wmts_dict["TILEROW"]:
+            test_result = False
+            fail_str += "`twmsbox2wmts.py` returned {0} for TILEROW when it should have returned {1}\n".format(wmts_dict["TILEROW"],
+                                                                                                             wmts_input["TILEROW"])
+        self.assertTrue(test_result, fail_str)
+    
+    # Tests converting from a WMTS tile to Tiled WMS box and back to a WMTS box
+    # with a specified tilesize using first `wmts2twmsbox.py` and then `twmsbox2wmts.py`.
+    # Runs `wmts2twmsbox.py` with Scale Denominator, TILECOL, and TILEROW as input.
+    def test_wmts2twmsbox2wmts_tilesize_scale_denom(self):
+        wmts_input = {
+            "Scale Denominator": "6988528.300359",
+            "TILECOL": "11",
+            "TILEROW": "5",
+            "tilesize": "256"
+            }
+        fail_str = ""
+
+        wmts_cmd = "python3 /home/oe2/onearth/src/scripts/wmts2twmsbox.py -s {0} -c {1} -r {2} -T {3}".format(wmts_input['Scale Denominator'],
+                                                                                                       wmts_input['TILECOL'],
+                                                                                                       wmts_input['TILEROW'],
+                                                                                                       wmts_input['tilesize'])
+                                                                                                       
+        twms_output = subprocess.check_output(wmts_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
+        # parse the result to use as input for twmsbox2wmts.py
+        twms_dict, unexpected_lines = parse_twms_wmts_output(twms_output)
+
+        if unexpected_lines != "":
+            fail_str += "ERROR: Unexpected line(s) in wmts2twmsbox.py output:\n{}".format(unexpected_lines)
+            self.fail(fail_str)
+
+        twms_cmd = "python3 /home/oe2/onearth/src/scripts/twmsbox2wmts.py -b {0} -T {1}".format(twms_dict["Request BBOX"],
+                                                                                                twms_dict["tilesize"])
         wmts_output = subprocess.check_output(twms_cmd, shell=True, stderr=subprocess.PIPE).decode("utf-8")
         wmts_dict, unexpected_lines = parse_twms_wmts_output(wmts_output)
 
