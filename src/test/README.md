@@ -15,6 +15,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_rgb_to_pal.py` -- tests RGB PNG to palette PNG
 * `test_time_service.py` -- tests the OnEarth Time Service
 * `test_time_utils.py` -- tests time configuration utilities
+* `test_twmsbox_wmts_convert.py` -- tests ancillary WMTS/TWMS helper scripts (`twmsbox2wmts.py` and `wmts2twmsbox.py`)
 * `test_vectorgen.py` -- tests vectorgen
 
 ## Running tests in Docker
@@ -172,3 +173,13 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 13. Overwriting IDX files whose checksums do not match those of corresponding files in S3 using the `-c` (`--checksum`) argument
 14. Deleting all configs from a directory when syncing with an empty S3 bucket (not in use: commented out)
 15. Deleting all IDX files from a directory when syncing with an empty S3 bucket (not in use: commented out)
+
+## WMTS/TWMS Helper Scripts Tests:
+
+1. Converting from a Tiled WMS box to WMTS tile using `twmsbox2wmts.py`
+2. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--scale_denominator` option
+3. Converting from a WMTS tile to a Tiled WMS box using `wmts2twmsbox.py` with the `--top_left_bbox` option
+4. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using the `--scale_denominator` option for `wmts2twmsbox.py`
+5. Using both scripts to convert from a Tiled WMS box to a WMTS tile and back to a Tiled WMS box, using the `--top_left_bbox` option for `wmts2twmsbox.py`
+6. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--scale_denominator` option for `wmts2twmsbox.py`
+7. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--top_left_bbox` option for `wmts2twmsbox.py`

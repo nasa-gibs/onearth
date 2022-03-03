@@ -18,7 +18,7 @@ Options:
                         (e.g., "-81,36,-72,45").
   -e, --epsg            The EPSG code for projection.
                         Supports EPSG:4326 (default), EPSG:3857, EPSG:3031, EPSG:3413
-  -T, --tilesize        Override the tilesize value
+  -T, --tilesize        Override the tilesize value decided by the EPSG code
 ```
 
 ## wmts2twmsbox.py
@@ -31,6 +31,8 @@ Usage: wmts2twmsbox.py --col [TILECOL] --row [TILEROW] --scale_denominator [valu
 Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
+  -e, --epsg            The EPSG code for projection.
+                        Supports EPSG:4326 (default), EPSG:3857, EPSG:3031, EPSG:3413
   -c COL, --col=COL     WMTS TILECOL value.
   -r ROW, --row=ROW     WMTS TILEROW value.
   -s SCALE_DENOMINATOR, --scale_denominator=SCALE_DENOMINATOR
@@ -38,6 +40,7 @@ Options:
   -t TOP_LEFT_BBOX, --top_left_bbox=TOP_LEFT_BBOX
                         The TWMS bounding box for the top-left corner tile
                         (e.g., "-180,81,-171,90").
+  -T, --tilesize        Override the tilesize value decided by the EPSG code
 ```
 
 
