@@ -1,11 +1,11 @@
 # generic stuff
-sudo yum install -q -y python3 dstat zstd
+yum install -q -y python3 dstat zstd
 
 # development tools
-sudo yum install -q -y gcc gcc-c++ automake libtool
+yum install -q -y gcc gcc-c++ automake libtool
 
 # various depenencies
-sudo yum install -q -y tcl zlib-devel libcurl-devel\
+yum install -q -y tcl zlib-devel libcurl-devel\
     libpng-devel libjpeg-devel libwebp-devel python3-devel openssl-devel\
     httpd-devel libzstd-devel
 
@@ -16,8 +16,8 @@ refresh() {
     if [[ ! -d $project ]]
     then
         git clone -q $1
-    else
-        (cd $project; git pull -q)
+    # else
+    #     (cd $project; git pull -q)
     fi
     if [[ ! -z "$2" ]]
     then
@@ -27,8 +27,8 @@ refresh() {
 
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
-mkdir $HOME/src
-pushd $HOME/src
+mkdir $HOME/src/modules
+pushd $HOME/src/modules
 
 # Prevent building cmake multiple times. Current version is 3.20
 (command -v cmake > /dev/null && cmake --version | grep -q "version 3.2") || (

@@ -6,16 +6,17 @@
 export ME=lucianpls
 export THIS_PROJECT=AHTSE
 export GITHUB=https://github.com
+export HOME=/home/oe2/onearth
 
-sudo yum install -q -y git
+yum install -q -y git
 
 refresh() {
     project=$(basename $1)
     if [[ ! -d $project ]]
     then
         git clone -q $1
-    else
-        (cd $project; git pull -q)
+    # else
+    #     (cd $project; git pull -q)
     fi
     if [[ ! -z "$2" ]]
     then
@@ -25,13 +26,13 @@ refresh() {
 }
 
 # Set PREFIX to /usr/local for system install
-export PREFIX=${PREFIX:-$HOME}
-mkdir $HOME/src
+export PREFIX=/usr/local
+mkdir $HOME/src/modules
 
 # $SUDO to be used for install commands
 if [[ $PREFIX =~ ^/usr ]]
 then
-SUDO=sudo
+SUDO=
 else
 SUDO=
 fi
@@ -43,13 +44,13 @@ export NP=$(nproc)
 export PATH=$HOME/bin:$PATH
 export LD_LIBRARY_PATH=$HOME/lib
 
-pushd $HOME/src
+pushd $HOME/src/modules
 
-refresh $GITHUB/$ME/$THIS_PROJECT
+#refresh $GITHUB/$ME/$THIS_PROJECT
 # Execute the updated scripts
-. $HOME/src/$THIS_PROJECT/devtools.bash
-. $HOME/src/$THIS_PROJECT/gdal.bash
-. $HOME/src/$THIS_PROJECT/ahtse.bash
+. $HOME/src/modules/$THIS_PROJECT/devtools.bash
+#. $HOME/src/$THIS_PROJECT/gdal.bash
+. $HOME/src/modules/$THIS_PROJECT/ahtse.bash
 
 # To previous folder
 popd
