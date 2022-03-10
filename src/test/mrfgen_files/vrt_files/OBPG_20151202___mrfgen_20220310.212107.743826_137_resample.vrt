@@ -1,0 +1,297 @@
+<VRTDataset rasterXSize="40960" rasterYSize="20480" subClass="VRTWarpedDataset">
+  <SRS>GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]</SRS>
+  <GeoTransform> -1.8000000000000000e+02,  8.7890625000000000e-03,  0.0000000000000000e+00,  9.0000000000000000e+01,  0.0000000000000000e+00, -8.7890625000000000e-03</GeoTransform>
+  <VRTRasterBand dataType="Byte" band="1" subClass="VRTWarpedRasterBand">
+    <NoDataValue>0</NoDataValue>
+    <ColorInterp>Palette</ColorInterp>
+    <ColorTable>
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+    </ColorTable>
+  </VRTRasterBand>
+  <BlockXSize>512</BlockXSize>
+  <BlockYSize>128</BlockYSize>
+  <GDALWarpOptions>
+    <WarpMemoryLimit>6.71089e+07</WarpMemoryLimit>
+    <ResampleAlg>NearestNeighbour</ResampleAlg>
+    <WorkingDataType>Byte</WorkingDataType>
+    <Option name="INIT_DEST">NO_DATA</Option>
+    <Option name="ERROR_OUT_IF_EMPTY_SOURCE_WINDOW">FALSE</Option>
+    <SourceDataset relativeToVRT="1">OBPG_20151202___mrfgen_20220310.212107.743826_137.vrt</SourceDataset>
+    <Transformer>
+      <ApproxTransformer>
+        <MaxError>0.125</MaxError>
+        <BaseTransformer>
+          <GenImgProjTransformer>
+            <SrcGeoTransform>-180,0.0087890625,0,90,0,-0.0087890625</SrcGeoTransform>
+            <SrcInvGeoTransform>20480,113.777777777777771,0,10240,0,-113.777777777777771</SrcInvGeoTransform>
+            <DstGeoTransform>-180,0.0087890625,0,90,0,-0.0087890625</DstGeoTransform>
+            <DstInvGeoTransform>20480,113.777777777777771,0,10240,0,-113.777777777777771</DstInvGeoTransform>
+          </GenImgProjTransformer>
+        </BaseTransformer>
+      </ApproxTransformer>
+    </Transformer>
+    <BandList>
+      <BandMapping src="1" dst="1">
+        <SrcNoDataReal>0</SrcNoDataReal>
+        <SrcNoDataImag>0</SrcNoDataImag>
+        <DstNoDataReal>0</DstNoDataReal>
+        <DstNoDataImag>0</DstNoDataImag>
+      </BandMapping>
+    </BandList>
+  </GDALWarpOptions>
+</VRTDataset>

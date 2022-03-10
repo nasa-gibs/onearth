@@ -18,14 +18,12 @@
 
 import subprocess
 import sys
-from unittest import expectedFailure
 import unittest2 as unittest
 import xmlrunner
 from optparse import OptionParser
 import os
 
 SCRIPT_PATH = "/usr/bin/oe_validate_palette.py"
-EXPECTED_OUTPUT_DIR = os.path.join(os.getcwd(), "mrfgen_files/oe_validate_palette_expected_outputs")
 
 # Handles parsing the raw output of oe_validate_palette.py in the event of a failure.
 # Returns a dictionary of the relevant results
