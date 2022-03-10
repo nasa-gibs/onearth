@@ -1,0 +1,15 @@
+--- a/modules/proxy/mod_proxy_http.c	2021-04-18 19:11:48.000000000 +0000
++++ b/modules/proxy/mod_proxy_http.c	2021-07-27 23:19:29.439510744 +0000
+@@ -486,7 +486,11 @@
+      */
+     if (!r->kept_body && r->main) {
+         /* XXX: Why DON'T sub-requests use keepalives? */
+-        p_conn->close = 1;
++	// LP: Take this out to improve proxy performance
++        // As the original comment above says, not sure why keepalives 
++        // are not supposed to reuse the connections
++        // Maybe the close can be made conditional on the request
++        // p_conn->close = 1; 
+         req->old_te_val = NULL;
+         req->old_cl_val = NULL;
+         req->rb_method = RB_STREAM_CL;

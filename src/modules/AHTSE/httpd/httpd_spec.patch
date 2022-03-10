@@ -1,0 +1,23 @@
+--- a/SPECS/httpd.spec	2021-06-25 18:52:31.000000000 +0000
++++ b/SPECS/httpd.spec	2021-07-28 00:06:44.411266679 +0000
+@@ -59,6 +59,10 @@
+ Patch30: httpd-2.4.4-cachehardmax.patch
+ Patch35: httpd-2.4.37-sslciphdefault.patch
+ 
++#AHTSE patches
++Patch500: mod_proxy_http_subreq_connection_reuse.patch
++Patch501: proxypass_nomain_flag.patch
++
+ # Amazon patches
+ Patch10000: 0001-mod_proxy-ignore-ap_proxy_define_match_worker.patch
+ 
+@@ -209,6 +213,9 @@
+ %patch30 -p1 -b .cachehardmax
+ %patch35 -p1 -b .sslciphdefault
+ 
++%patch500 -p1
++%patch501 -p1
++
+ %patch10000 -p1
+ 
+ # Patch in the vendor string
