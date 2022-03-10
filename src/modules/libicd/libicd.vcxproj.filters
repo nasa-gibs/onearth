@@ -1,0 +1,226 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\lerc1">
+      <UniqueIdentifier>{4ed60527-ca39-44be-9471-d2caa272018c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lerc1">
+      <UniqueIdentifier>{137b5415-1619-409a-93b9-449297d68b8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\jpeg12">
+      <UniqueIdentifier>{76189cb9-f01f-4d3e-897d-ecbb569cdc67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\jpeg12">
+      <UniqueIdentifier>{a87bde4c-19b5-45df-abed-8f6a6620fe6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Support Files">
+      <UniqueIdentifier>{1255adae-5e7f-4c1f-b9ce-0bb5e756bebd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Support Files\jpeg12">
+      <UniqueIdentifier>{6e0e23c3-7f14-46ad-ab6f-791e70508d5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Support Files\lerc1">
+      <UniqueIdentifier>{a6663fe5-a9ab-49dd-8bb2-e487cc0025f5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\BitMask2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\icd_codecs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JPEG_codec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lerc1\Lerc1Image.h">
+      <Filter>Header Files\lerc1</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\JPEG_codec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JPEG8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JPEG12.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LERC_codec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Packer_RLE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PNG_codec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lerc1\Lerc1Image.cpp">
+      <Filter>Source Files\lerc1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcapimin.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcapistd.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jccoefct.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jccolor.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcdctmgr.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jchuff.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcinit.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcmainct.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcmarker.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcmaster.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcomapi.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcparam.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcphuff.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcprepct.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jcsample.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jctrans.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdapimin.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdapistd.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdatadst.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdatasrc.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdcoefct.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdcolor.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jddctmgr.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdhuff.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdinput.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdmainct.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdmarker.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdmaster.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdmerge.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdphuff.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdpostct.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdsample.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jdtrans.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jerror.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jfdctflt.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jfdctfst.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jfdctint.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jidctflt.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jidctfst.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jidctint.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jidctred.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jmemmgr.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jmemnobs.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jquant1.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jquant2.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg12-6b\jutils.c">
+      <Filter>Source Files\jpeg12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\icd_codecs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\lerc1\Makefile">
+      <Filter>Support Files\lerc1</Filter>
+    </None>
+    <None Include="src\jpeg12-6b\Makefile">
+      <Filter>Support Files\jpeg12</Filter>
+    </None>
+    <None Include="src\Makefile.lcl.example">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="src\Makefile">
+      <Filter>Support Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

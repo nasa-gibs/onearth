@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31105.61
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libicd", "libicd.vcxproj", "{603248F6-B1B6-4803-BC1E-A1640EED95E1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Debug|x64.ActiveCfg = Debug|x64
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Debug|x64.Build.0 = Debug|x64
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Debug|x86.ActiveCfg = Debug|Win32
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Debug|x86.Build.0 = Debug|Win32
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Release|x64.ActiveCfg = Release|x64
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Release|x64.Build.0 = Release|x64
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Release|x86.ActiveCfg = Release|Win32
+		{603248F6-B1B6-4803-BC1E-A1640EED95E1}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B049A180-7BC1-49E6-A800-20DD13A09FDD}
+	EndGlobalSection
+EndGlobal
