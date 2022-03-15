@@ -60,8 +60,27 @@ RUN yum install -y yum-utils-1.1.31 rpm-build-4.11.3 && \
     yumdownloader --source httpd-2.4.6-97.el7.centos.4.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
     yum-builddep -y httpd-2.4.6-97.el7.centos.4.x86_64
+
+# Install APR patch
+WORKDIR /tmp
+RUN wget http://archive.apache.org/dist/apr/apr-1.7.0.tar.gz && \
+    tar xf apr-1.7.0.tar.gz && \
+    cd /tmp/apr-1.7.0 && \
+    patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch && \
+    ./configure --prefix=/usr/local/apr --with-ldap && \
+    make && make install
+
+WORKDIR /tmp
+RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.1.tar.gz && \
+    tar xf apr-util-1.6.1.tar.gz && \
+    cd /tmp/apr-util-1.6.1 && \
+    ./configure --prefix=/usr/local/apr --with-apr=/usr/local/apr --with-ldap && \
+    make && make install
+
 WORKDIR /tmp/rpmbuild/SPECS
 RUN sed -i 's/{?dist}.4/{?dist}_9.4/g' httpd.spec && \
+    sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g' httpd.spec && \
+    sed -i 's:--with-apr-util=%{_prefix}:--with-apr-util=/usr/local/apr/bin/apu-1-config:g' httpd.spec && \
     HOME="/tmp" rpmbuild -bp httpd.spec && \
     ls /home/oe2/onearth && \
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
@@ -71,17 +90,8 @@ RUN sed -i 's/{?dist}.4/{?dist}_9.4/g' httpd.spec && \
     yum -y remove httpd httpd-devel httpd-tools && \
     yum clean all && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm && \
-    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm
-
-# Install APR patch
-WORKDIR /tmp
-RUN wget http://archive.apache.org/dist/apr/apr-1.6.5.tar.gz && \
-    tar xf apr-1.6.5.tar.gz && \
-    cd /tmp/apr-1.6.5 && \
-    patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch && \
-    ./configure --prefix=/lib64 && \
-    make && make install && \
-    cd / && rm -rf /tmp/apr-1.6.5* /tmp/httpd-2.4.6* /tmp/rpmbuild*
+    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm  && \
+    cd / && rm -rf /tmp/apr-1.7.0* /tmp/apr-util-1.6.1* /tmp/httpd-2.4.6* /tmp/rpmbuild* 
 
 # Set the locale
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8

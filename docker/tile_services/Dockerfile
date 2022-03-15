@@ -40,7 +40,6 @@ WORKDIR /home/oe2
 RUN git clone https://github.com/lucianpls/libahtse.git
 WORKDIR /home/oe2/libahtse
 RUN git checkout 709d15cbc7100daa02640a42c82f0eec6e85df6b
-RUN /usr/bin/cp /usr/lib64/include/apr-1/* /usr/include/apr-1/
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_png/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
