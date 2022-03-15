@@ -16,7 +16,6 @@
 # Tests for colormap2vrt.py
 #
 
-import subprocess
 import sys
 import unittest2 as unittest
 import xmlrunner
