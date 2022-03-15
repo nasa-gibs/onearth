@@ -3,6 +3,7 @@
 
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
+* `test_colormap2vrt.py` -- tests `colormap2vrt.py`
 * `test_gc_service.py` -- tests the OnEarth GetCapabilities Service
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 * `test_mapserver.py` -- tests wms requests via mapserver  
@@ -199,3 +200,8 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 6. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--no_index` option
 7. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--ignore_colors` option
 8. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--fill_value` option
+
+## `colormap2vrt.py` Tests:
+
+1. Merging a colormap with a VRT file to create a new VRT file.
+2. Merging a colormap with a VRT file using the `--transparent` option to create a new VRT file.
