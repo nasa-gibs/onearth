@@ -1,0 +1,57 @@
+<VRTDataset rasterXSize="32768" rasterYSize="32768" subClass="VRTWarpedDataset">
+  <SRS>PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]</SRS>
+  <GeoTransform> -2.0037508340000000e+07,  1.2229924523925781e+03,  0.0000000000000000e+00,  2.0037508340000000e+07,  0.0000000000000000e+00, -1.2229924523925781e+03</GeoTransform>
+  <VRTRasterBand dataType="Byte" band="1" subClass="VRTWarpedRasterBand">
+    <NoDataValue>0</NoDataValue>
+    <ColorInterp>Palette</ColorInterp>
+    <ColorTable>
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="175" c2="175" c3="175" c4="255" />
+      <Entry c1="50" c2="210" c3="245" c4="255" />
+      <Entry c1="255" c2="255" c3="0" c4="255" />
+      <Entry c1="250" c2="30" c3="36" c4="255" />
+      <Entry c1="5" c2="5" c3="5" c4="255" />
+      <Entry c1="6" c2="6" c3="6" c4="255" />
+      <Entry c1="7" c2="7" c3="7" c4="255" />
+      <Entry c1="8" c2="8" c3="8" c4="255" />
+      <Entry c1="9" c2="9" c3="9" c4="255" />
+      <Entry c1="10" c2="10" c3="10" c4="255" />
+      <Entry c1="11" c2="11" c3="11" c4="255" />
+      <Entry c1="12" c2="12" c3="12" c4="255" />
+      <Entry c1="13" c2="13" c3="13" c4="255" />
+      <Entry c1="14" c2="14" c3="14" c4="255" />
+      <Entry c1="15" c2="15" c3="15" c4="255" />
+    </ColorTable>
+  </VRTRasterBand>
+  <BlockXSize>512</BlockXSize>
+  <BlockYSize>128</BlockYSize>
+  <GDALWarpOptions>
+    <WarpMemoryLimit>6.71089e+07</WarpMemoryLimit>
+    <ResampleAlg>NearestNeighbour</ResampleAlg>
+    <WorkingDataType>Byte</WorkingDataType>
+    <Option name="INIT_DEST">NO_DATA</Option>
+    <Option name="ERROR_OUT_IF_EMPTY_SOURCE_WINDOW">FALSE</Option>
+    <SourceDataset relativeToVRT="1">Flood_webmerc_20190925___mrfgen_20220315.170501.279643_16.vrt</SourceDataset>
+    <Transformer>
+      <ApproxTransformer>
+        <MaxError>0.125</MaxError>
+        <BaseTransformer>
+          <GenImgProjTransformer>
+            <SrcGeoTransform>-20037508.3399999999,1222.99245239257812,0,20037508.3399999999,0,-1222.99245239257812</SrcGeoTransform>
+            <SrcInvGeoTransform>16384,0.000817666534281277844,0,16384,0,-0.000817666534281277844</SrcInvGeoTransform>
+            <DstGeoTransform>-20037508.3399999999,1222.99245239257812,0,20037508.3399999999,0,-1222.99245239257812</DstGeoTransform>
+            <DstInvGeoTransform>16384,0.000817666534281277844,0,16384,0,-0.000817666534281277844</DstInvGeoTransform>
+          </GenImgProjTransformer>
+        </BaseTransformer>
+      </ApproxTransformer>
+    </Transformer>
+    <BandList>
+      <BandMapping src="1" dst="1">
+        <SrcNoDataReal>0</SrcNoDataReal>
+        <SrcNoDataImag>0</SrcNoDataImag>
+        <DstNoDataReal>0</DstNoDataReal>
+        <DstNoDataImag>0</DstNoDataImag>
+      </BandMapping>
+    </BandList>
+  </GDALWarpOptions>
+</VRTDataset>

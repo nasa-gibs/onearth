@@ -3,6 +3,7 @@
 
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
+* `test_colormap2vrt.py` -- tests `colormap2vrt.py`
 * `test_gc_service.py` -- tests the OnEarth GetCapabilities Service
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 * `test_mapserver.py` -- tests wms requests via mapserver  
@@ -16,6 +17,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_time_service.py` -- tests the OnEarth Time Service
 * `test_time_utils.py` -- tests time configuration utilities
 * `test_twmsbox_wmts_convert.py` -- tests ancillary WMTS/TWMS helper scripts (`twmsbox2wmts.py` and `wmts2twmsbox.py`)
+* `test_validate_palette.py` -- tests `oe_validate_palette.py`
 * `test_vectorgen.py` -- tests vectorgen
 
 ## Running tests in Docker
@@ -187,3 +189,19 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 9. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--scale_denominator` option for `wmts2twmsbox.py`
 10. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using a specified `--tilesize` for each script and the `--scale_denominator` option for `wmts2twmsbox.py`
 11. Using both scripts to convert from a WMTS tile to a Tiled WMS box and back to a WMTS tile, using the `--top_left_bbox` option for `wmts2twmsbox.py`
+
+## `oe_validate_palette.py` Tests:
+
+1. Validating a colormap with a corresponding image that matches the colormap
+2. Validating a colormap with a corresponding image that matches the colormap using the `--no_index` option
+3. Validating a colormap with a corresponding image that matches the colormap using the `--ignore_colors` option
+4. Validating a colormap with a corresponding image that matches the colormap using the `--fill_value` option
+5. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap
+6. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--no_index` option
+7. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--ignore_colors` option
+8. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--fill_value` option
+
+## `colormap2vrt.py` Tests:
+
+1. Merging a colormap with a VRT file to create a new VRT file.
+2. Merging a colormap with a VRT file using the `--transparent` option to create a new VRT file.
