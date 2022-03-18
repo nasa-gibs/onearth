@@ -12,6 +12,8 @@ cat > dist/build_rpms.sh <<EOS
 
 set -evx
 
+dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+dnf -y distro-sync
 yum install -y epel-release
 
 dnf install -y 'dnf-command(config-manager)'
