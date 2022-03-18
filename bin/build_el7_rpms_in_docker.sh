@@ -13,7 +13,7 @@ cat > dist/build_rpms.sh <<EOS
 set -evx
 
 yum install -y epel-release
-
+yum --enablerepo=base clean metadata
 yum install -y \
   @buildsys-build \
   gcc-c++ \
