@@ -113,7 +113,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         if email_recipient == '':
             mssg = 'No email recipient provided for notifications in get_remote_layers.'
             log_sig_err(mssg, sigevent_url)
-            
+
     # Check to see if we want to rewrite locations
     try:
         srcLocationRewrite = dom.getElementsByTagName('SrcLocationRewrite')[0]
@@ -128,7 +128,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         print('Not using SrcLocationRewrite\n')
 
     # Get layers to include or exclude
-    include_layers  = []
+    include_layers = []
     wms_group_names = {}
     for tag in dom.getElementsByTagName('IncludeLayer'):
         identifier = tag.firstChild.data.strip()
@@ -234,7 +234,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                         twms_getcapabilities, sigevent_url)
         # TWMS GetTileService
         try:
-            twms_gettileservice = get_dom_tag_value(dom, 'SrcTWMSGetTileServiceURI') 
+            twms_gettileservice = get_dom_tag_value(dom, 'SrcTWMSGetTileServiceURI')
         except IndexError:
             mssg = 'SrcTWMSGetTileServiceURI element is missing in ' + conf
             log_sig_err(mssg, sigevent_url)
@@ -276,7 +276,6 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
     else:
         print('\nSkipping TWMS')
 
-
     if create_mapfile:
         # Check for all required config info
         try:
@@ -287,7 +286,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except etree.XMLSyntaxError:
             log_sig_err("Can't parse environment config file: {0}".format(
                 environmentConfig), sigevent_url)
-        
+
         mapfile_location = environment_xml.findtext('{*}MapfileLocation')
         if not mapfile_location:
             mssg = 'mapfile creation chosen but no <MapfileLocation> found'
@@ -321,7 +320,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
             mssg = 'mapfile creation chosen but no "basename" attribute found for <MapfileConfigLocation>'
             warnings.append(asctime() + " " + mssg)
             log_sig_warn(mssg, sigevent_url)
-            
+
         try:
             wmts_getcapabilities = get_dom_tag_value(dom, 'SrcWMTSGetCapabilitiesURI')
         except IndexError:
@@ -345,6 +344,7 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
             xlink = '{http://www.w3.org/1999/xlink}'
             gc_layers = gc_xml.find('{*}Contents').findall('{*}Layer')
             for layer in gc_layers:
+                static = True
                 if(debug):
                     print(etree.tostring(layer))
                 identifier = layer.findtext(ows + 'Identifier')
@@ -358,13 +358,13 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                     static = False
                 src_format = layer.findtext('{*}Format')
                 src_title = layer.findtext(ows + 'Title')
-        
+
                 # Get TMSs for this layer and build a config for each
                 tms_list = [elem for elem in tilematrixsets if elem.findtext(
                     ows + 'Identifier') == layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')]
                 layer_tilematrixsets = sorted(tms_list, key=get_max_scale_dem)
-        
-                #HACK
+
+                # HACK
                 if len(layer_tilematrixsets) == 0:
                     print("No layer_tilematrixsets. Skipping layer: " + identifier)
                     continue
@@ -387,27 +387,27 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
                                                                        ('{default}', default_datetime)])
                     validation_info = VALIDATION_TEMPLATE.replace(
                         '{default}', default_datetime)
-                
+
                 # If the source EPSG:4326 layer has a legend, then add that to the EPSG:3857 layer also
                 legendUrlElems = []
-                
+
                 for styleElem in layer.findall('{*}Style'):
                     legendUrlElems.extend(styleElem.findall('{*}LegendURL'))
-                
+
                 for legendUrlElem in legendUrlElems:
                     attributes = legendUrlElem.attrib
                     if attributes[xlink + 'role'].endswith("horizontal"):
                         style_info = bulk_replace(STYLE_TEMPLATE, [('{width}', attributes["width"]),
                                                                    ('{height}', attributes["height"]),
                                                                    ('{href}', attributes[xlink + 'href'].replace(".svg",".png"))])
-                
+
                 # Mapserver automatically converts to RGBA and works better if we
                 # specify that for png layers
                 mapserver_bands = 4 if 'image/png' in src_format else 3
-                
+
                 src_crs = layer_tilematrixsets[0].findtext('{*}SupportedCRS')
                 src_epsg = get_epsg_code_for_proj_string(src_crs)
-                
+
                 target_bbox = map(
                     str, get_bbox_for_proj_string('EPSG:' + src_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
 
@@ -427,8 +427,6 @@ def get_remote_layers(conf, wmts=True, twms=True, sigevent_url=None, debug=False
         except etree.XMLSyntaxError:
             log_sig_err('Can\'t parse WMTS GetCapabilities file (invalid syntax): ' +
                         wmts_getcapabilities, sigevent_url)
-            
-        
 
     return (warnings, errors)
 
