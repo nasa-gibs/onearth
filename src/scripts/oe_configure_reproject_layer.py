@@ -175,8 +175,8 @@ def get_proj_bbox(epsg_code):
 
 def make_gdal_tms_xml(layer, bands, src_epsg, **kwargs):
 
-    bbox = map(str, get_bbox_for_proj_string(
-        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
+    bbox = list(map(str, get_bbox_for_proj_string(
+        'EPSG:' + src_epsg, use_oe_tms=True, get_in_map_units=(src_epsg not in ['4326', '3413', '3031']))))
 
     if "tms" in kwargs:
         tms = kwargs["tms"]
@@ -1031,8 +1031,8 @@ def build_reproject_configs(layer_config_path, tilematrixsets_config_path, wmts=
 
             if not target_epsg:
                 target_epsg = src_epsg
-            target_bbox = map(
-                str, get_bbox_for_proj_string('EPSG:' + target_epsg, get_in_map_units=(src_epsg not in ['4326','3413','3031'])))
+            target_bbox = list(map(str, get_bbox_for_proj_string(
+                'EPSG:' + target_epsg, get_in_map_units=(src_epsg not in ['4326', '3413', '3031']))))
 
             mapfile_snippet = bulk_replace(
                 MAPFILE_TEMPLATE, [('{layer_name}', identifier), ('{data_xml}', make_gdal_tms_xml(src_layer, mapserver_bands, src_epsg)), ('{layer_title}', cgi.escape(src_title)),
