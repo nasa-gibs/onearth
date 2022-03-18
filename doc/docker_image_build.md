@@ -6,7 +6,7 @@ A Docker image that's configured to run OnEarth can be built using the **./bin/b
 
 Example of building an OnEarth Docker image:
 
-`./bin/build_el7_docker_image.sh nasagibs/onearth:1.4.1`
+`./bin/build_el7_docker_image.sh nasagibs/onearth:1.4.2`
 
 The generated image will start Apache when it is run.
 
@@ -20,6 +20,6 @@ takes two parameters:
 * TAG - the tag to be applied to the newly generated image
 
 Example of building an onearth-demo Docker image using the
-"nasagibs/onearth:1.4.1":
+"nasagibs/onearth:1.4.2":
 
-`./bin/build_el7_demo_docker_image.sh nasagibs/onearth:1.4.1 onearth-demo:1.4.1`
+`./bin/build_el7_demo_docker_image.sh nasagibs/onearth:1.4.2 onearth-demo:1.4.2`
