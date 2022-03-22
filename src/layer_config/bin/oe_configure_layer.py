@@ -918,8 +918,8 @@ def generate_legend(colormap, output, legend_url, format, orientation):
     else:
         print("Legend already exists")
         try:
-            colormap_file = urllib.request.urlopen(colormap)
-            last_modified = colormap_file.info().getheader("Last-Modified")
+            colormap_file = urllib.request.urlopen("file://" + colormap)
+            last_modified = colormap_file.info().get("Last-Modified")
             colormap_file.close()
             colormap_time = datetime.strptime(last_modified,
                                               "%a, %d %b %Y %H:%M:%S GMT")
