@@ -16,33 +16,71 @@
 # Tests for oe_generate_empty_tile.py
 #
 
+import filecmp
+import json
 import sys
 import unittest2 as unittest
 import xmlrunner
 from optparse import OptionParser
 from oe_test_utils import run_command
 import os
+import hashlib
 
 SCRIPT_PATH = "/usr/bin/oe_generate_empty_tile.py"
-COLOR_TEST_DIR = "./color_test_files"
-OUTPUT_DIR = os.path.join(COLOR_TEST_DIR, "results")
 
 class TestGenerateEmptyTile(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        os.mkdir(OUTPUT_DIR)
+        self.testdata_path = os.path.join(os.getcwd(), 'empty_tiles_test_data/')
+        self.colormaps_json = os.path.join(self.testdata_path, "colormaps.json")
+        self.new_colormaps_json = os.path.join(self.testdata_path, "new_colormaps.json")
+        test_config = open(self.colormaps_json, "r")
+        self.colormaps = eval(test_config.read())
+        self.colormap_files = []
+        test_config.close()
 
     def test_generate_empty_tile(self):
-        colormap = os.path.join(COLOR_TEST_DIR, "ColorMap_v1.2_Sample.xml")
-        out_filename = os.path.join(OUTPUT_DIR, "empty_tile1.png")
-        cmd = "python3 {0} -c {1} -o {2}".format(SCRIPT_PATH, colormap, out_filename)
-        
-        run_command(cmd)
+        new_colormaps = self.colormaps.copy()
+        hasher = hashlib.md5()
+        for key, value in self.colormaps.items():
+            colormap = os.path.join(self.testdata_path, value['colormap'])
 
-        print(os.listdir(OUTPUT_DIR))
-        self.assertTrue(True, "")
+            # download colormap if it is not stored locally
+            if not os.path.isfile(colormap):
+                colormap = "{}.xml".format(key)
+                run_command("curl -o {0} {1}".format(colormap, value['colormap']))
+
+            # run the command
+            filename = "{}.png".format(os.path.join(self.testdata_path, key))
+            cmd = "python3 {0} -c {1} -o {2} {3}".format(SCRIPT_PATH, colormap, filename, value["options"])
+            run_command(cmd)
+            run_command("gdalinfo {}".format(filename))
+            # hash
+            tile_hash = value["empty_tile_png"]
+            tile_file = open(filename, "rb")
+            hasher.update(tile_file.read())
+            new_colormaps[key]["empty_tile_png"] = hasher.hexdigest()
+            tile_file.close()
+
+            if tile_hash != new_colormaps[key]["empty_tile_png"]:
+                print("Empty tile generated for test {0} does not match expected".format(key))
         
+        new_config = open(self.new_colormaps_json, "w")
+        json.dump(new_colormaps, new_config, sort_keys=True, indent=4)
+        new_config.close()
+        self.assertTrue(filecmp.cmp(self.colormaps_json, self.new_colormaps_json), "Inconsistent empty tiles found")
+    
+    @classmethod
+    def tearDownClass(self):
+        if filecmp.cmp(self.colormaps_json, self.new_colormaps_json):
+            os.remove(self.new_colormaps_json)
+        else:
+            f = open(self.new_colormaps_json, 'r')
+            print("\nResults:\n")
+            print(f.read())
+            f.close()
+
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()

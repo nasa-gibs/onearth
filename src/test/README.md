@@ -5,6 +5,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 
 * `test_colormap2vrt.py` -- tests `colormap2vrt.py`
 * `test_gc_service.py` -- tests the OnEarth GetCapabilities Service
+* `test_generate_empty_tile.py` -- tests empty tile generation with `oe_generate_empty_tile.py`
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
 * `test_mapserver.py` -- tests wms requests via mapserver  
 * `test_mod_mrf.py` -- tests the mod_mrf module
@@ -205,3 +206,12 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 
 1. Merging a colormap with a VRT file to create a new VRT file.
 2. Merging a colormap with a VRT file using the `--transparent` option to create a new VRT file.
+
+## Empty Tile Generation Tests
+
+The following test cases for `oe_generate_empty_tile.py` are defined in this [file](empty_tiles_test_data/colormaps.json):
+1. Generating an empty tile from [ColorMap_v1.2_Sample.xml](empty_tiles_test_data/ColorMap_v1.2_Sample.xml)
+2. Generating an empty tile from [SampleColorMap_v1.2_ContinuousAndClass.xml](empty_tiles_test_data/SampleColorMap_v1.2_ContinuousAndClass.xml)
+3. Generating an empty tile using the `--height` and `--width` options
+4. Generating an empty tile using the `--width` option
+5. Generating an empty tile using the `--type rgba` option

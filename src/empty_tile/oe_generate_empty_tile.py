@@ -269,7 +269,7 @@ try:
         for i in range (0, int(options.height)):
             img.append(rows)
     
-        w = png.Writer(int(options.width), int(options.height), alpha=True)
+        w = png.Writer(int(options.width), int(options.height), alpha=True, greyscale=False)
         w.write(f, img)
     
     f.close()

@@ -1,0 +1,27 @@
+{
+    "Generate_Empty_Tile": {
+        "colormap": "ColorMap_v1.2_Sample.xml",
+        "empty_tile_png": "f088935a98f8ff03dd8d9c4980e35e44",
+        "options": ""
+    },
+    "Generate_Empty_Tile_continuous_class_colormap": {
+        "colormap": "SampleColorMap_v1.2_ContinuousAndClass.xml",
+        "empty_tile_png": "e738aed6ae4472f5f9419132558623ad",
+        "options": ""
+    },
+    "Generate_Empty_Tile_custom_dimensions": {
+        "colormap": "ColorMap_v1.2_Sample.xml",
+        "empty_tile_png": "c169cfc4bfa7d4d844fb0d556e097be9",
+        "options": "--height 256 --width 256"
+    },
+    "Generate_Empty_Tile_index": {
+        "colormap": "ColorMap_v1.2_Sample.xml",
+        "empty_tile_png": "2f3918dc86be8fb685dfc6c8abfa3c3e",
+        "options": "--index 5"
+    },
+    "Generate_Empty_Tile_type_rgba": {
+        "colormap": "Clean_Longwave_Infrared_Window_Band.xml",
+        "empty_tile_png": "ece74193a22ac5308de818b193048d60",
+        "options": "--type rgba"
+    }
+}
