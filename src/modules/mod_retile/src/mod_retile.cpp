@@ -21,6 +21,8 @@
 #include <apr_strings.h>
 #include <vector>
 #include <cmath>
+#include <png.h>
+#include <receive_context.h>
 
 extern module AP_MODULE_DECLARE_DATA retile_module;
 
@@ -294,7 +296,7 @@ static void bbox_to_tile(const TiledRaster &raster, size_t level, const bbox_t &
 // Fetches and decodes all tiles between tl and br, writes output in buffer
 // aligned as a single raster
 // Returns APR_SUCCESS if everything is fine, otherwise an HTTP error code
-static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer)
+static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans)
 {
     const sz5& tl = info.tl, &br = info.br;
     repro_conf* cfg = info.c;
@@ -309,6 +311,10 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer)
     src.size = static_cast<int>(cfg->max_input_size);
     src.buffer = reinterpret_cast<char*>(apr_palloc(r->pool, src.size));
 
+    // receive_ctx rctx;
+    // rctx.maxsize = cfg->max_input_size;
+    // rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
+    // ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, r, r->connection);
     size_t pixel_size = getTypeSize(cfg->inraster.dt);
 
     // inraster->pagesize.c has to be set correctly
@@ -378,7 +384,7 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer)
             void* b = (char*)(*buffer) + pagesize * (tile.y - tl.y) * (br.x - tl.x)
                 + input_line_width * (tile.x - tl.x);
 
-            const char* error_message = stride_decode(params, src, b);
+            const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
             if (error_message) { // Something went wrong
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
                 return HTTP_NOT_FOUND;
@@ -386,6 +392,7 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer)
             count++; // count the valid tiles
         }
     }
+    // ap_remove_output_filter(rf);
     return count ? APR_SUCCESS : HTTP_NOT_FOUND;
 }
 
@@ -586,6 +593,13 @@ static int handler(request_rec *r)
         !cfg->arr_rxp || !requestMatches(r, cfg->arr_rxp))
         return DECLINED;
 
+    int ct;
+    png_colorp png_palette;
+    png_bytep png_trans;
+    png_palette = (png_colorp)apr_pcalloc(r->pool, 256 * sizeof(png_color));
+    png_trans = (png_bytep)apr_pcalloc(r->pool, 256 * sizeof(unsigned char));
+    int num_trans;
+
     work info = {0};
     info.c = cfg;
     info.seed = cfg->seed;
@@ -633,7 +647,7 @@ static int handler(request_rec *r)
 
     // Incoming tiles buffer
     void *buffer = NULL;
-    apr_status_t status = retrieve_source(r, info, &buffer);
+    apr_status_t status = retrieve_source(r, info, &buffer, ct, png_palette, png_trans, num_trans);
     if (APR_SUCCESS != status) {
         if (HTTP_NOT_FOUND != status) {
             LOG(r, "Receive failed with code %d for %s", status, r->uri);
@@ -690,30 +704,60 @@ static int handler(request_rec *r)
     // Output a single tile
     TiledRaster outraster = cfg->raster;
     outraster.size = outraster.pagesize;
-    switch (cfg->raster.format) {
-    case IMG_ANY:
-    case IMG_JPEG: {
+    // switch (cfg->raster.format) {
+    // case IMG_ANY:
+    // case IMG_JPEG: {
+    //     jpeg_params params(outraster);
+    //     params.quality = static_cast<int>(cfg->quality);
+    //     error_message = jpeg_encode(params, raw, dst);
+    // }
+    //                  break;
+    //  case IMG_PNG: {
+    //     png_params params(outraster);
+    //     if (cfg->quality < 10) // Otherwise use the default of 6
+    //         params.compression_level = static_cast<int>(cfg->quality);
+    //     if (cfg->has_transparency)
+    //         params.has_transparency = true;
+    //     if (png_trans != NULL)
+    //      	params.has_transparency = true;
+    //     if (png_palette != NULL) {
+    //     	params.color_type = ct;
+	// 		params.bit_depth = 8;
+    //     }
+    //     error_message = png_encode(params, raw, dst, png_palette, png_trans, num_trans);
+    //     png_palette = 0;
+	// 	png_trans = 0;
+    // }
+    //              break;
+    // case IMG_LERC: {
+    //     lerc_params params(outraster);
+    //     error_message = lerc_encode(params, raw, dst);
+    // }
+    //              break;
+    // default:
+    //     error_message = "Unsupported output format";
+    // }
+
+    if (NULL == cfg->mime_type || 0 == apr_strnatcmp(cfg->mime_type, "image/jpeg")) {
         jpeg_params params(outraster);
         params.quality = static_cast<int>(cfg->quality);
         error_message = jpeg_encode(params, raw, dst);
     }
-                     break;
-    case IMG_PNG: {
+    if (0 == apr_strnatcmp(cfg->mime_type, "image/png")) {
         png_params params(outraster);
         if (cfg->quality < 10) // Otherwise use the default of 6
             params.compression_level = static_cast<int>(cfg->quality);
         if (cfg->has_transparency)
             params.has_transparency = true;
-        error_message = png_encode(params, raw, dst);
-    }
-                break;
-    case IMG_LERC: {
-        lerc_params params(outraster);
-        error_message = lerc_encode(params, raw, dst);
-    }
-                 break;
-    default:
-        error_message = "Unsupported output format";
+        if (png_trans != NULL)
+         	params.has_transparency = true;
+        if (png_palette != NULL) {
+        	params.color_type = ct;
+			params.bit_depth = 8;
+        }
+        error_message = png_encode(params, raw, dst, png_palette, png_trans, num_trans);
+        png_palette = 0;
+		png_trans = 0;
     }
 
     if (error_message) {

@@ -39,8 +39,8 @@ BASE_APACHE_TEMPLATE = """<IfModule !mrf_module>
     LoadModule receive_module modules/mod_receive.so
 </IfModule>
 
-<IfModule !reproject_module>
-    LoadModule reproject_module modules/mod_reproject.so
+<IfModule !retile_module>
+    LoadModule retile_module modules/mod_retile.so
 </IfModule>
 
 <IfModule !wmts_wrapper_module>
@@ -112,10 +112,9 @@ MOD_REPROJECT_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    Reproject_ConfigurationFiles {src_config} {dest_config}
-    Reproject_RegExp {layer_name}
-    Reproject_Source {src_path}
-    Reproject_SourcePostfix {src_postfix}
+    Retile_ConfigurationFiles {src_config} {dest_config}
+    Retile_RegExp {layer_name}
+    Retile_Source {src_path} {src_postfix}
 </Directory>
 """
 
@@ -132,10 +131,9 @@ MOD_REPROJECT_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    Reproject_ConfigurationFiles {src_config} {dest_config}
-    Reproject_RegExp {layer_name}
-    Reproject_Source {src_path}
-    Reproject_SourcePostfix {src_postfix}
+    Retile_ConfigurationFiles {src_config} {dest_config}
+    Retile_RegExp {layer_name}
+    Retile_Source {src_path} {src_postfix}
 </Directory>
 """
 
@@ -1383,20 +1381,20 @@ class TestModWmtsWrapper(unittest.TestCase):
                 tile_url)
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
 
-    @classmethod
-    def tearDownClass(self):
-        shutil.rmtree(self.base_tmp_path)
-        os.remove(self.mod_mrf_apache_config_path_date)
-        os.remove(self.mod_mrf_apache_config_path_date_yeardir)
-        os.remove(self.mod_mrf_apache_config_path_nodate)
-        os.remove(self.mod_reproj_apache_config_path_date)
-        os.remove(self.mod_reproj_apache_config_path_nodate)
-        os.remove(self.date_service_apache_path)
-        os.remove(self.base_apache_path)
+    # @classmethod
+    # def tearDownClass(self):
+    #     shutil.rmtree(self.base_tmp_path)
+    #     os.remove(self.mod_mrf_apache_config_path_date)
+    #     os.remove(self.mod_mrf_apache_config_path_date_yeardir)
+    #     os.remove(self.mod_mrf_apache_config_path_nodate)
+    #     os.remove(self.mod_reproj_apache_config_path_date)
+    #     os.remove(self.mod_reproj_apache_config_path_nodate)
+    #     os.remove(self.date_service_apache_path)
+    #     os.remove(self.base_apache_path)
 
-        for layer in self.redis_layers:
-            remove_redis_layer(layer)
-        restart_apache()
+    #     for layer in self.redis_layers:
+    #         remove_redis_layer(layer)
+    #     restart_apache()
 
 
 if __name__ == '__main__':

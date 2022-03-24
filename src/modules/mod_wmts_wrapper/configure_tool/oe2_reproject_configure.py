@@ -70,10 +70,9 @@ MOD_REPROJECT_APACHE_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 </Directory>
 
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
-        Reproject_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {internal_endpoint}/{layer_id}/default/{tilematrixset}/reproject.config
-        Reproject_RegExp {layer_id}
-        Reproject_Source {source_path}
-        Reproject_SourcePostfix {postfix}
+        Retile_ConfigurationFiles {internal_endpoint}/{layer_id}/default/{tilematrixset}/source.config {internal_endpoint}/{layer_id}/default/{tilematrixset}/reproject.config
+        Retile_RegExp {layer_id}
+        Retile_Source {source_path} {postfix}
         WMTSWrapperRole tilematrixset
         {cache_expiration_block}
 </Directory>
@@ -109,8 +108,8 @@ MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
         LoadModule receive_module modules/mod_receive.so
 </IfModule>
 
-<IfModule !reproject_module>
-        LoadModule reproject_module modules/mod_reproject.so
+<IfModule !retile_module>
+        LoadModule retile_module modules/mod_retile.so
 </IfModule>
 
 <IfModule !proxy_module>

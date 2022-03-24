@@ -61,7 +61,7 @@ IMG_T getFMT(const char *name) {
 }
 
 
-const char* stride_decode(codec_params& params, storage_manager& src, void* buffer)
+const char* stride_decode(codec_params& params, storage_manager& src, void* buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans)
 {
     const char* error_message = nullptr;
     uint32_t sig = 0;
@@ -76,7 +76,7 @@ const char* stride_decode(codec_params& params, storage_manager& src, void* buff
         break;
     case PNG_SIG:
         params.raster.format = IMG_PNG;
-        error_message = png_stride_decode(params, src, buffer);
+        error_message = png_stride_decode(params, src, buffer, ct, palette, trans, num_trans);
         break;
     case LERC_SIG:
         params.raster.format = IMG_LERC;

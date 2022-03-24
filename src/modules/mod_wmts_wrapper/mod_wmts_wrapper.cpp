@@ -41,13 +41,61 @@
 #include <apr_tables.h>
 #include <apr_strings.h>
 #include <apr_lib.h>
+#include <apr_escape.h>
 
 #include "mod_wmts_wrapper.h"
-#include "mod_reproject.h"
 #include "mod_mrf.h"
 #include "receive_context.h"
 #include <jansson.h>
 
+#include <ahtse.h>
+NS_AHTSE_USE
+NS_ICD_USE
+
+typedef enum {
+    P_AFFINE = 0, P_GCS2WM, P_WM2GCS, P_WM2M, P_M2WM, P_GCS2M, P_M2GCS, P_COUNT
+} PCode;
+struct repro_conf {
+    // The output and input raster figures
+    TiledRaster raster, inraster;
+
+    // local web path to redirect the source requests
+    const char* source, * suffix;
+
+    // The reprojection function to be used, also used as an enable flag
+    PCode code;
+
+    // array of guard regex pointers, one of them has to match
+    apr_array_header_t* arr_rxp;
+
+    // Output mime-type, default is JPEG
+    const char* mime_type;
+    // ETag initializer
+    apr_uint64_t seed;
+    // Buffer for the emtpy tile etag
+    char eETag[16];
+
+    // Meaning depends on format
+    double quality;
+    // Normalized earth resolution: 1 / (2 * PI * R)
+    double eres;
+
+    // What is the buffer size for retrieving tiles
+    apr_size_t max_input_size;
+    // What is the buffer size for outgoing tiles
+    apr_size_t max_output_size;
+
+    // Choose a lower res input instead of a higher one
+    int oversample;
+    int max_extra_levels;
+
+    // Use NearNb, not bilinear interpolation
+    int nearNb;
+
+    // Flag to turn on transparency for formats that do support it
+    int has_transparency;
+    int indirect;
+};
 
 // If the condition is met, sends the message to the error log and returns HTTP INTERNAL ERROR
 #define SERR_IF(X, msg) if (X) { \
@@ -203,24 +251,14 @@ static int wmts_return_all_errors(request_rec *r, int errors, wmts_error *wmts_e
     return OK; // Request handled
 }
 
-static apr_array_header_t* tokenize(apr_pool_t *p, const char *s, char sep)
-{
-    apr_array_header_t* arr = apr_array_make(p, 10, sizeof(char *));
-    while (sep == *s) s++;
-    char *val;
-    while (*s && (val = ap_getword(p, &s, sep))) {
-        char **newelt = (char **)apr_array_push(arr);
-        *newelt = val;
-    }
-    return arr;
-}
 
 static const char *find_and_replace_string(apr_pool_t *p, const char *search_str, const char *source_str, const char *replacement_str) {
-    if (const char *replacefield = ap_strstr(source_str, search_str)) {
-        const char *prefix = apr_pstrmemdup(p, source_str, replacefield - source_str);
+    const char *decoded_source_str = apr_punescape_url(p, source_str, NULL, NULL, 0);
+    if (const char *replacefield = ap_strstr(decoded_source_str, search_str)) {
+        const char *prefix = apr_pstrmemdup(p, decoded_source_str, replacefield - decoded_source_str);
         return apr_pstrcat(p, prefix, replacement_str, replacefield + strlen(search_str), NULL);
     }
-    return source_str;
+    return decoded_source_str;
 }
 
 static const char *add_date_to_filename(apr_pool_t *p, const char *source_str, const char *date_str)
@@ -628,9 +666,9 @@ static int pre_hook(request_rec *r)
         int tile_l = apr_atoi64(dim);
 
         // Get AHTSE module configs (if available)
-        module *reproject_module = (module *)ap_find_linked_module("mod_reproject.cpp");
-        repro_conf *reproject_config = reproject_module 
-            ? (repro_conf *)ap_get_module_config(r->per_dir_config, reproject_module)
+        module *retile_module = (module *)ap_find_linked_module("mod_retile.cpp");
+        repro_conf *reproject_config = retile_module 
+            ? (repro_conf *)ap_get_module_config(r->per_dir_config, retile_module)
             : NULL;
 
         module *mrf_module = (module *)ap_find_linked_module("mod_mrf.cpp");
@@ -651,8 +689,8 @@ static int pre_hook(request_rec *r)
             } 
             if (reproject_config && reproject_config->raster.rsets) {
                 rset *rsets = reproject_config->raster.rsets;
-                max_width = rsets[tile_l].width;
-                max_height = rsets[tile_l].height;
+                max_width = rsets[tile_l].w;
+                max_height = rsets[tile_l].h;
             } else if (mrf_config && mrf_config->rsets) {
                 tile_l += mrf_config->skip_levels;
                 mrf_rset *rsets = mrf_config->rsets;
@@ -673,7 +711,7 @@ static int pre_hook(request_rec *r)
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
                     out_cfg->source = find_and_replace_string(r->pool, "${date}", reproject_config->source, datetime_str);
-                    ap_set_module_config(r->request_config, reproject_module, out_cfg);  
+                    ap_set_module_config(r->request_config, retile_module, out_cfg); 
                 } else if (mrf_config && (mrf_config->datafname || mrf_config->redirect)) {
                     apr_array_pop(tokens); // Discard TMS name
                     apr_array_pop(tokens); // Discard style name

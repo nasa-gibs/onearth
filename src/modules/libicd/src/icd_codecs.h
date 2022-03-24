@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <cstddef>
-
+#include <png.h>
 //
 // Define DLL_PUBLIC to make a symbol visible
 // Define DLL_LOCAL to hide a symbol
@@ -243,7 +243,7 @@ struct lerc_params : codec_params {
 // Generic image decode dispatcher, parameters should be already set to what is expected
 // Returns error message or null.
 DLL_PUBLIC const char* image_peek(const storage_manager& src, Raster& raster);
-DLL_PUBLIC const char* stride_decode(codec_params& params, storage_manager& src, void* buffer);
+DLL_PUBLIC const char* stride_decode(codec_params& params, storage_manager& src, void* buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans);
 
 // In JPEG_codec.cpp
 // raster defines the expected tile
@@ -262,8 +262,8 @@ DLL_PUBLIC const char* jpeg_encode(jpeg_params& params, storage_manager& src, st
 // line_stride is the size of a line in buffer (larger or equal to decoded PNG line)
 // Returns NULL if everything looks fine, or an error message
 DLL_PUBLIC const char* png_peek(const storage_manager& src, Raster& raster);
-DLL_PUBLIC const char* png_stride_decode(codec_params& params, storage_manager& src, void* buffer);
-DLL_PUBLIC const char* png_encode(png_params& params, storage_manager& src, storage_manager& dst);
+DLL_PUBLIC const char* png_stride_decode(codec_params& params, storage_manager& src, void* buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans);
+DLL_PUBLIC const char* png_encode(png_params& params, storage_manager& src, storage_manager& dst, png_colorp &palette, png_bytep &trans, int &num_trans);
 
 // In LERC_codec.cpp
 DLL_PUBLIC const char* lerc_peek(const storage_manager& src, Raster& raster);

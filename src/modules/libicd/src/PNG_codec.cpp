@@ -196,12 +196,12 @@ const char* png_peek(const storage_manager& src, Raster& raster)
     return nullptr;
 }
 
-const char *png_stride_decode(codec_params &params, storage_manager &src, void *buffer)
+const char *png_stride_decode(codec_params &params, storage_manager &src, void *buffer, int &ct, png_colorp &palette, png_bytep &trans, int &num_trans)
 {
     png_structp pngp = nullptr;
     png_infop infop = nullptr;
     png_uint_32 width, height;
-    int bit_depth, ct;
+    int bit_depth;
     pngp = png_create_read_struct(PNG_LIBPNG_VER_STRING, &params, pngEH, pngEH);
     if (!pngp)
         return "PNG error while creating decode PNG structure";
@@ -218,6 +218,21 @@ const char *png_stride_decode(codec_params &params, storage_manager &src, void *
     png_read_info(pngp, infop);
 
     png_get_IHDR(pngp, infop, &width, &height, &bit_depth, &ct, NULL, NULL, NULL);
+    
+    int num_palette;
+    png_color_16 *trans_values;
+    png_colorp palettep;
+    png_get_PLTE(pngp, infop, &palettep, &num_palette);
+    for (int p = 0; p < num_palette; p++) {
+        palette[p].red = palettep[p].red;
+        palette[p].green = palettep[p].green;
+        palette[p].blue = palettep[p].blue;
+    }
+    png_bytep transp;
+    png_get_tRNS(pngp, infop, &transp, &num_trans, &trans_values);
+    for (int p = 0; p < num_trans; p++) {
+        trans[p] = transp[p];
+    }
 
     auto const& rsize = params.raster.size;
     if (rsize.y != static_cast<size_t>(height)
@@ -260,7 +275,7 @@ const char *png_stride_decode(codec_params &params, storage_manager &src, void *
     return nullptr;
 }
 
-const char *png_encode(png_params &params, storage_manager &src, storage_manager &dst)
+const char *png_encode(png_params &params, storage_manager &src, storage_manager &dst, png_colorp &palette, png_bytep &trans, int &num_trans)
 {
     png_structp pngp = nullptr;
     png_infop infop = nullptr;
@@ -291,15 +306,20 @@ const char *png_encode(png_params &params, storage_manager &src, storage_manager
     png_set_IHDR(pngp, infop, width, height, params.bit_depth, params.color_type,
         PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     png_set_compression_level(pngp, params.compression_level);
-
+    if (params.color_type == PNG_COLOR_TYPE_PALETTE) {
+        png_set_PLTE(pngp, infop, palette, 256);
+    }
     // Flag NDV as transparent color
     if (params.has_transparency) {
         // TODO: Pass the transparent color via params.
         // For now, 0 is the no data value, regardless of the type of data
-
-        png_color_16 tcolor;
-        memset(&tcolor, 0, sizeof(png_color_16));
-        png_set_tRNS(pngp, infop, 0, 0, &tcolor);
+        if (params.color_type == PNG_COLOR_TYPE_PALETTE) {
+            png_set_tRNS(pngp, infop, trans, num_trans, NULL);
+        } else {
+            png_color_16 tcolor;
+            memset(&tcolor, 0, sizeof(png_color_16));
+            png_set_tRNS(pngp, infop, 0, 0, &tcolor);
+        }
     }
 
 #if defined(NEED_SWAP)
