@@ -4,6 +4,7 @@
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
 * `test_colormap2vrt.py` -- tests `colormap2vrt.py`
+* `test_colormap_html_sld.py` -- tests scripts for converting colormaps to HTML
 * `test_gc_service.py` -- tests the OnEarth GetCapabilities Service
 * `test_generate_empty_tile.py` -- tests empty tile generation with `oe_generate_empty_tile.py`
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
@@ -215,3 +216,8 @@ The following test cases for `oe_generate_empty_tile.py` are defined in this [fi
 3. Generating an empty tile using the `--height` and `--width` options
 4. Generating an empty tile using the `--width` option
 5. Generating an empty tile using the `--type rgba` option
+
+## Colormap to HTML Tests
+
+1. Converting a colormap to HTML using `colorMaptoHTML_v1.0.py`
+2. Converting a colormap to HTML using `colorMaptoHTML_v1.3.py`
