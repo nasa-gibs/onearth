@@ -82,7 +82,7 @@ class TestColormapHTMLSLD(unittest.TestCase):
 
     # Tests converting from a colormap to SLD using colorMaptoSLD.py using `-s 1.1.0`.
     # Uses SampleColorMap_v1.2_ContinuousLinear.xml, which has the "No Data" colormap listed first
-    def test_colorMaptoSLD_v1_1_0(self):
+    def test_colorMaptoSLD_v1_1_0_no_data_first(self):
         cmd = ["python3", COLORMAP_2_SLD_PATH, "-c", os.path.join(self.testdata_path, "SampleColorMap_v1.2_ContinuousLinear.xml"),
                "-l", "test_layer", "-r", "RGBA", "-s", "1.1.0"]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -98,7 +98,7 @@ class TestColormapHTMLSLD(unittest.TestCase):
     
     # Tests converting from a colormap to SLD using colorMaptoSLD.py using `-s 1.1.0`.
     # Uses SampleColorMap_v1.2_ContinuousLinear_nodata_last.xml, which has the "No Data" colormap listed last
-    def test_colorMaptoSLD_v1_1_0(self):
+    def test_colorMaptoSLD_v1_1_0_no_data_last(self):
         cmd = ["python3", COLORMAP_2_SLD_PATH, "-c", os.path.join(self.testdata_path, "SampleColorMap_v1.2_ContinuousLinear_nodata_last.xml"),
                "-l", "test_layer", "-r", "RGBA", "-s", "1.1.0"]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
