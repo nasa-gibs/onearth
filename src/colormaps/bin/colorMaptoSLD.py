@@ -166,31 +166,32 @@ def generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder) :
     print("            <se:Opacity>1.0</se:Opacity>")          
     print("            <se:ColorMap>")       
     
-    
-    fallbackValue = ""
-    for cmEntry in gibsColorMaps[0].cmEntries:
-        if cmEntry.nodata:
-            rgba = cmEntry.rgb
-            rgba.append(0)
-            
-            fallbackValue = RGBToHex(rgba,rgbaOrder)
-           
-    print(("              <se:Categorize fallbackValue=\"" + fallbackValue + "\">"))          
-    print("                <se:LookupValue>Rasterdata</se:LookupValue>")          
-    
+    nodata_str = ""
+    contents_str = ""
+
     firstValue = True
-    for colorMap in gibsColorMaps[1:]:
+    for colorMap in gibsColorMaps:
 
         for cmEntry in colorMap.cmEntries:
-            
-            if firstValue:
-                print(("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"))          
+            if cmEntry.nodata:
+                rgba = cmEntry.rgb
+                rgba.append(0)
+                
+                fallbackValue = RGBToHex(rgba,rgbaOrder)
+
+                nodata_str = "              <se:Categorize fallbackValue=\"" + fallbackValue + "\">"
+                nodata_str += "\n                <se:LookupValue>Rasterdata</se:LookupValue>"
+
+            elif firstValue:
+                contents_str += "                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"
                 firstValue = False
             else:
                 threshold = str(re.match(r"\[([0-9\.\-\+e]*),[0-9\.\-\+e]*", cmEntry.value).group(1))
-                print(("                <se:Threshold>" + threshold + "</se:Threshold>"))     
-                print(("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"))     
-          
+                contents_str += "\n                <se:Threshold>" + threshold + "</se:Threshold>"
+                contents_str += "\n                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"
+
+    print(nodata_str)
+    print(contents_str)
     print("              </se:Categorize>")     
     print("            </se:ColorMap>")     
     print("          </se:RasterSymbolizer>")    

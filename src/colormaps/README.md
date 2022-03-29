@@ -5,7 +5,7 @@ Contains tools for working with GIBS color maps.
 
 ## colorMapToSLD.py
 
-The colorMapToSLD.py script converts an OnEarth XML ColorMap into an SLD document.  The output is printed to the screen and can be piped to an output file.  The output SLD may be formatted in either the version 1.0.0 or 1.1.0 specification version. Note that if the output is to be version 1.1.0, the input XML Colormap must have two _ColorMap_ elements.  The first, for the "No Data" transparent entry.  The second, for opaque data values. 
+The colorMapToSLD.py script converts an OnEarth XML ColorMap into an SLD document.  The output is printed to the screen and can be piped to an output file.  The output SLD may be formatted in either the version 1.0.0 or 1.1.0 specification version. Note that if the output is to be version 1.1.0, the input XML Colormap must have two _ColorMap_ elements.  One should be the "No Data" transparent entry.  The other, for opaque data values. 
 
 ### Usage
 
