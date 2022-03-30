@@ -166,11 +166,46 @@ function onearth_wms_time_service.handler(endpointConfig)
                         local year = string.sub(time_service_output["date"], 0, 4)
 
                         layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F"
+
+                        if 'OrbitTracks' in layer:
+                            -- Add Lines and Points layer PREFIXES also
+                            layers_url = layers_url .. "&" .. layer .. "_Lines_PREFIX=" .. time_service_output["prefix"] .. '_Lines' .. "%2F" .. year .. "%2F"
+                            layers_url = layers_url .. "&" .. layer .. "_Points_PREFIX=" .. time_service_output["prefix"] .. '_Points' .. "%2F" .. year .. "%2F"
+                        end
                     end
 
                     if time_service_output["filename"] then
                         layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
+
+                        if 'OrbitTracks' in layer:
+                            -- Add Lines and Points layer SHAPEFILES also
+                            layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. time_service_output["filename"] .. '_Lines'
+                            layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. time_service_output["filename"] .. '_Points'
+                        end
                     end
+
+
+--                    if 'OrbitTracks' in layer:
+--                        layer_Line = layer + '_LINE'
+--                        layer_points = layer + '_POINTS'
+--                        time_service_output_prefix_line = time_service_output["prefix"] .. '_LINE'
+--                        time_service_output_prefix_points = time_service_output["prefix"] .. '_POINTS'
+
+--                    if time_service_output["date"] and time_service_output["prefix"] then
+--                        local year = string.sub(time_service_output["date"], 0, 4)
+
+--                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F" ..
+--                        "&"" .. layer_Line .. "_PREFIX=" .. time_service_output_prefix_line .. "%2F" .. year .. "%2F" ..
+--                        "&"" .. layer_points .. "_PREFIX=" .. time_service_output_prefix_points .. "%2F" .. year .. "%2F"
+--                    end
+
+--                    if time_service_output["filename"] then
+--                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"] ..
+--                        "&" .. layer_Line .. "_SHAPEFILE=" .. time_service_output["filename"] .. '_LINE' ..
+--                        "&" .. layer_points .. "_SHAPEFILE=" .. time_service_output["filename"] .. '_POINTS' ..
+--                    end
+
+
                 end
             end
 
