@@ -167,7 +167,7 @@ function onearth_wms_time_service.handler(endpointConfig)
 
                         layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F"
 
-                        if 'OrbitTracks' in layer:
+                        if string.find(layer, "OrbitTracks") then
                             -- Add Lines and Points layer PREFIXES also
                             layers_url = layers_url .. "&" .. layer .. "_Lines_PREFIX=" .. time_service_output["prefix"] .. '_Lines' .. "%2F" .. year .. "%2F"
                             layers_url = layers_url .. "&" .. layer .. "_Points_PREFIX=" .. time_service_output["prefix"] .. '_Points' .. "%2F" .. year .. "%2F"
@@ -177,7 +177,7 @@ function onearth_wms_time_service.handler(endpointConfig)
                     if time_service_output["filename"] then
                         layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
 
-                        if 'OrbitTracks' in layer:
+                        if string.find(layer, "OrbitTracks") then
                             -- Add Lines and Points layer SHAPEFILES also
                             layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. time_service_output["filename"] .. '_Lines'
                             layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. time_service_output["filename"] .. '_Points'
