@@ -42,15 +42,19 @@
 #include <apr_strings.h>
 #include <apr_lib.h>
 #include <apr_escape.h>
-
+#include <http_log.h>
 #include "mod_wmts_wrapper.h"
-#include "mod_mrf.h"
+// #include "mod_mrf.h"
 #include "receive_context.h"
 #include <jansson.h>
 
 #include <ahtse.h>
 NS_AHTSE_USE
 NS_ICD_USE
+
+#if defined(APLOG_USE_MODULE)
+APLOG_USE_MODULE(mrf);
+#endif
 
 typedef enum {
     P_AFFINE = 0, P_GCS2WM, P_WM2GCS, P_WM2M, P_M2WM, P_GCS2M, P_M2GCS, P_COUNT
@@ -95,6 +99,36 @@ struct repro_conf {
     // Flag to turn on transparency for formats that do support it
     int has_transparency;
     int indirect;
+};
+
+struct mrf_conf {
+    // array of guard regexp, one of them has to match
+    apr_array_header_t *arr_rxp;
+
+    // The raster represented by this MRF configuration
+    TiledRaster raster;
+
+    // At least one source, but there could be more
+    apr_array_header_t *source;
+
+    // The MRF index file, required
+    vfile_t idx;
+
+    // Used for redirect, how many times to try
+    // defaults to 5
+    int retries;
+
+    // If set, only secondary requests are allowed
+    int indirect;
+
+    // If set, file handles are not held open
+    int dynamic;
+
+    // How do we map M param mapping to a file name?
+    int mmapping;
+
+    // the canned index header size, or 0 for normal index
+    uint64_t can_hsize;
 };
 
 // If the condition is met, sends the message to the error log and returns HTTP INTERNAL ERROR
@@ -667,17 +701,13 @@ static int pre_hook(request_rec *r)
 
         // Get AHTSE module configs (if available)
         module *retile_module = (module *)ap_find_linked_module("mod_retile.cpp");
-        repro_conf *reproject_config = retile_module 
-            ? (repro_conf *)ap_get_module_config(r->per_dir_config, retile_module)
-            : NULL;
+        auto* reproject_config = get_conf<repro_conf>(r, retile_module);
 
         module *mrf_module = (module *)ap_find_linked_module("mod_mrf.cpp");
-        mrf_conf *mrf_config = mrf_module
-            ? (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module)
-            : NULL;
+        auto mrf_config =  get_conf<mrf_conf>(r, mrf_module);
 
         int n_levels = (reproject_config && reproject_config->raster.n_levels) ? reproject_config->raster.n_levels 
-            : (mrf_config && mrf_config->n_levels) ? mrf_config->n_levels : NULL;
+            : (mrf_config && mrf_config->raster.n_levels) ? mrf_config->raster.n_levels : NULL;
         if (n_levels) {
             // Get the tile grid bounds from the tile module config and compare them with the requested tile.
             char *err_msg;
@@ -691,11 +721,11 @@ static int pre_hook(request_rec *r)
                 rset *rsets = reproject_config->raster.rsets;
                 max_width = rsets[tile_l].w;
                 max_height = rsets[tile_l].h;
-            } else if (mrf_config && mrf_config->rsets) {
-                tile_l += mrf_config->skip_levels;
-                mrf_rset *rsets = mrf_config->rsets;
-                max_width = rsets[tile_l].width;
-                max_height = rsets[tile_l].height;
+            } else if (mrf_config && mrf_config->raster.rsets) {
+                tile_l += mrf_config->raster.skip;
+                rset *rsets = mrf_config->raster.rsets;
+                max_width = rsets[tile_l].w;
+                max_height = rsets[tile_l].h;
             }
 
             if (tile_x >= max_width || tile_x < 0) {
@@ -711,8 +741,9 @@ static int pre_hook(request_rec *r)
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
                     out_cfg->source = find_and_replace_string(r->pool, "${date}", reproject_config->source, datetime_str);
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, reproject_config_out_src=%s", out_cfg->source);
                     ap_set_module_config(r->request_config, retile_module, out_cfg); 
-                } else if (mrf_config && (mrf_config->datafname || mrf_config->redirect)) {
+                } else if (mrf_config && (APR_ARRAY_IDX(mrf_config->source, 0, vfile_t).name)) {
                     apr_array_pop(tokens); // Discard TMS name
                     apr_array_pop(tokens); // Discard style name
                     // Get filename from date service and amend the mod_mrf config to point to it
@@ -745,25 +776,26 @@ static int pre_hook(request_rec *r)
                     memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
 
                     const char *year = apr_pstrndup(r->pool, date_string, 4);
-                    if (mrf_config->datafname) {
-                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->datafname, prefix);
-                        out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->datafname, filename);
+                    // // if (0 == mrf_config->source->nelts || !(char * firstname = APR_ARRAY_IDX(c->source, 0, vfile_t).name))
+                    if (mrf_config->source) {
+                        APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name = (char *)find_and_replace_string(r->pool, "${prefix}", APR_ARRAY_IDX(mrf_config->source, 0, vfile_t).name, prefix);
+                        APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name = (char *)find_and_replace_string(r->pool, "${filename}", APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name, filename);
                         if (cfg->year_dir)
-                            out_cfg->datafname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->datafname, year);
+                            APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name = (char *)find_and_replace_string(r->pool, "${YYYY}", APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name, year);
                     }
-                    if (mrf_config->redirect) {
-                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->redirect, prefix);
-                        out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->redirect, filename);
-                        if (cfg->year_dir)
-                            out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->redirect, year);
-                    }
-                    out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->idxfname, prefix);
-                    out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->idxfname, filename);
+                    // if (mrf_config->redirect) {
+                    //     out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->redirect, prefix);
+                    //     out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->redirect, filename);
+                    //     if (cfg->year_dir)
+                    //         out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->redirect, year);
+                    // }
+                    out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->idx.name, prefix);
+                    out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->idx.name, filename);
                     // Add the year dir to the IDX filename if that option is configured
                     if (cfg->year_dir)
-                        out_cfg->idxfname = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idxfname, year);
+                        out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idx.name, year);
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_out_src=%s", APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name);
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);
-
                     // Add to response header
                     if (filename) {
                         const char *actual_layer_name = get_actual_layername_from_filename(r->pool, filename);
@@ -780,6 +812,7 @@ static int pre_hook(request_rec *r)
                 // Add to response header for static layer with no time
                 apr_array_pop(tokens); // Discard TMS name
                 apr_array_pop(tokens); // Discard style name
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "else layer name");
 
                 char *layer_name = *(char **)apr_array_pop(tokens);
                 if (layer_name) {

@@ -44,7 +44,7 @@ MOD_MRF_APACHE_TEMPLATE = """<IfModule !mrf_module>
 Alias /{alias} {config_path}
 
 <Directory {config_path}>
-    MRF On
+    #MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {alias}
 </Directory>

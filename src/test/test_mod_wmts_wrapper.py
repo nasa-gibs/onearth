@@ -74,7 +74,7 @@ MOD_MRF_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    MRF On
+    #MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {alias}
 </Directory>
@@ -95,7 +95,7 @@ MOD_MRF_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
     WMTSWrapperRole tilematrixset
     WMTSWrapperEnableYearDir {year_dir}
     WMTSWrapperLayerAlias {layer_name}
-    MRF On
+    #MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {layer_name}
 </Directory>
@@ -1381,20 +1381,20 @@ class TestModWmtsWrapper(unittest.TestCase):
                 tile_url)
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
 
-    # @classmethod
-    # def tearDownClass(self):
-    #     shutil.rmtree(self.base_tmp_path)
-    #     os.remove(self.mod_mrf_apache_config_path_date)
-    #     os.remove(self.mod_mrf_apache_config_path_date_yeardir)
-    #     os.remove(self.mod_mrf_apache_config_path_nodate)
-    #     os.remove(self.mod_reproj_apache_config_path_date)
-    #     os.remove(self.mod_reproj_apache_config_path_nodate)
-    #     os.remove(self.date_service_apache_path)
-    #     os.remove(self.base_apache_path)
+    @classmethod
+    def tearDownClass(self):
+        shutil.rmtree(self.base_tmp_path)
+        os.remove(self.mod_mrf_apache_config_path_date)
+        os.remove(self.mod_mrf_apache_config_path_date_yeardir)
+        os.remove(self.mod_mrf_apache_config_path_nodate)
+        os.remove(self.mod_reproj_apache_config_path_date)
+        os.remove(self.mod_reproj_apache_config_path_nodate)
+        os.remove(self.date_service_apache_path)
+        os.remove(self.base_apache_path)
 
-    #     for layer in self.redis_layers:
-    #         remove_redis_layer(layer)
-    #     restart_apache()
+        for layer in self.redis_layers:
+            remove_redis_layer(layer)
+        restart_apache()
 
 
 if __name__ == '__main__':

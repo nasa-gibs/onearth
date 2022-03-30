@@ -1,22 +1,31 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_mrf", "mod_mrf.vcxproj", "{C7E01836-333F-490D-A3B5-3554A8935040}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C7E01836-333F-490D-A3B5-3554A8935040}.Debug|Win32.ActiveCfg = Debug|Win32
 		{C7E01836-333F-490D-A3B5-3554A8935040}.Debug|Win32.Build.0 = Debug|Win32
+		{C7E01836-333F-490D-A3B5-3554A8935040}.Debug|x64.ActiveCfg = Debug|x64
+		{C7E01836-333F-490D-A3B5-3554A8935040}.Debug|x64.Build.0 = Debug|x64
 		{C7E01836-333F-490D-A3B5-3554A8935040}.Release|Win32.ActiveCfg = Release|Win32
 		{C7E01836-333F-490D-A3B5-3554A8935040}.Release|Win32.Build.0 = Release|Win32
+		{C7E01836-333F-490D-A3B5-3554A8935040}.Release|x64.ActiveCfg = Release|x64
+		{C7E01836-333F-490D-A3B5-3554A8935040}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5643073-62AA-4472-AEC6-7057F30D5683}
 	EndGlobalSection
 EndGlobal
