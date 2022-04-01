@@ -44,7 +44,6 @@
 #include <apr_escape.h>
 #include <http_log.h>
 #include "mod_wmts_wrapper.h"
-// #include "mod_mrf.h"
 #include "receive_context.h"
 #include <jansson.h>
 
@@ -287,14 +286,12 @@ static int wmts_return_all_errors(request_rec *r, int errors, wmts_error *wmts_e
 
 
 static const char *find_and_replace_string(apr_pool_t *p, const char *search_str, const char *source_str, const char *replacement_str) {
-    const char *decoded_source_str = apr_punescape_url(p, source_str, NULL, NULL, 0);
-    if (const char *replacefield = ap_strstr(decoded_source_str, search_str)) {
-        const char *prefix = apr_pstrmemdup(p, decoded_source_str, replacefield - decoded_source_str);
+    if (const char *replacefield = ap_strstr(source_str, search_str)) {
+        const char *prefix = apr_pstrmemdup(p, source_str, replacefield - source_str);
         return apr_pstrcat(p, prefix, replacement_str, replacefield + strlen(search_str), NULL);
     }
-    return decoded_source_str;
+    return source_str;
 }
-
 static const char *add_date_to_filename(apr_pool_t *p, const char *source_str, const char *date_str)
 {
     struct tm req_time = {0};
@@ -556,8 +553,8 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
             time_request_uri = apr_psprintf(r->pool, "%s&key%d=%s", time_request_uri, i+1, value);
         }
     }
-    
-    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
+
+     ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
     request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
 
     // LOGGING
@@ -599,7 +596,7 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_prefix_found", *prefix);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_found", *date_string);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_filename_found", *filename);
-
+    
     return APR_SUCCESS;
 }
 
@@ -701,10 +698,14 @@ static int pre_hook(request_rec *r)
 
         // Get AHTSE module configs (if available)
         module *retile_module = (module *)ap_find_linked_module("mod_retile.cpp");
-        auto* reproject_config = get_conf<repro_conf>(r, retile_module);
+        repro_conf *reproject_config = retile_module 
+            ? (repro_conf *)ap_get_module_config(r->per_dir_config, retile_module)
+            : NULL;
 
         module *mrf_module = (module *)ap_find_linked_module("mod_mrf.cpp");
-        auto mrf_config =  get_conf<mrf_conf>(r, mrf_module);
+        mrf_conf *mrf_config = mrf_module
+            ? (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module)
+            : NULL;
 
         int n_levels = (reproject_config && reproject_config->raster.n_levels) ? reproject_config->raster.n_levels 
             : (mrf_config && mrf_config->raster.n_levels) ? mrf_config->raster.n_levels : NULL;
@@ -741,9 +742,8 @@ static int pre_hook(request_rec *r)
                     repro_conf *out_cfg = (repro_conf *)apr_palloc(r->pool, sizeof(repro_conf));
                     memcpy(out_cfg, reproject_config, sizeof(repro_conf));
                     out_cfg->source = find_and_replace_string(r->pool, "${date}", reproject_config->source, datetime_str);
-                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, reproject_config_out_src=%s", out_cfg->source);
-                    ap_set_module_config(r->request_config, retile_module, out_cfg); 
-                } else if (mrf_config && (APR_ARRAY_IDX(mrf_config->source, 0, vfile_t).name)) {
+                    ap_set_module_config(r->request_config, retile_module, out_cfg);  
+                } else if (mrf_config && mrf_config->source && (0 != mrf_config->source->nelts )) {
                     apr_array_pop(tokens); // Discard TMS name
                     apr_array_pop(tokens); // Discard style name
                     // Get filename from date service and amend the mod_mrf config to point to it
@@ -776,25 +776,27 @@ static int pre_hook(request_rec *r)
                     memcpy(out_cfg, mrf_config, sizeof(mrf_conf));
 
                     const char *year = apr_pstrndup(r->pool, date_string, 4);
-                    // // if (0 == mrf_config->source->nelts || !(char * firstname = APR_ARRAY_IDX(c->source, 0, vfile_t).name))
-                    if (mrf_config->source) {
-                        APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name = (char *)find_and_replace_string(r->pool, "${prefix}", APR_ARRAY_IDX(mrf_config->source, 0, vfile_t).name, prefix);
-                        APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name = (char *)find_and_replace_string(r->pool, "${filename}", APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name, filename);
-                        if (cfg->year_dir)
-                            APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name = (char *)find_and_replace_string(r->pool, "${YYYY}", APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name, year);
-                    }
-                    // if (mrf_config->redirect) {
-                    //     out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->redirect, prefix);
-                    //     out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->redirect, filename);
-                    //     if (cfg->year_dir)
-                    //         out_cfg->redirect = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->redirect, year);
-                    // }
+
+                    // find and replace data source file name variables
+                    vfile_t *mrf_cfg_src = &APR_ARRAY_IDX(mrf_config->source, 0, vfile_t);
+                    char *mrf_cfg_src_name = apr_pstrmemdup(r->pool, mrf_cfg_src->name, strlen(mrf_cfg_src->name));
+
+                    mrf_cfg_src_name = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_cfg_src_name, prefix);
+                    mrf_cfg_src_name = (char *)find_and_replace_string(r->pool, "${filename}", mrf_cfg_src_name, filename);
+                    if (cfg->year_dir)
+                        mrf_cfg_src_name = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_cfg_src_name, year);
+                    
+                    vfile_t *mrf_cfg_out_src = &APR_ARRAY_IDX(out_cfg->source, 0, vfile_t);
+                    mrf_cfg_out_src->name = mrf_cfg_src_name;
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_src_out_name=%s nelts%d", mrf_cfg_src_name,mrf_config->source->nelts);
+
+                    // find and replace idx file name variables
                     out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->idx.name, prefix);
                     out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->idx.name, filename);
                     // Add the year dir to the IDX filename if that option is configured
                     if (cfg->year_dir)
                         out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idx.name, year);
-                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_out_src=%s", APR_ARRAY_IDX(out_cfg->source, 0, vfile_t).name);
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_idx_name=%s", out_cfg->idx.name);
                     ap_set_module_config(r->request_config, mrf_module, out_cfg);
                     // Add to response header
                     if (filename) {
@@ -812,7 +814,6 @@ static int pre_hook(request_rec *r)
                 // Add to response header for static layer with no time
                 apr_array_pop(tokens); // Discard TMS name
                 apr_array_pop(tokens); // Discard style name
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "else layer name");
 
                 char *layer_name = *(char **)apr_array_pop(tokens);
                 if (layer_name) {
