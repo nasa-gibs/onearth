@@ -31,6 +31,11 @@ local function get_query_param(param, query_string)
     return date_string
 end
 
+function findLast(s, str)
+    local i=s:match(".*"..str.."()")
+    if i==nil then return nil else return i-1 end
+end
+
 local function sendErrorResponse(code, locator, msg_string)
 	local return_msg = '<?xml version="1.0" encoding="UTF-8"?>\n'
 	return_msg = return_msg .. '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.1.0" xml:lang="en">\n'
@@ -75,8 +80,10 @@ local function getTimeServiceOutput(endpointConfig, layer, time)
         dateServiceUri = dateServiceUri .. keyString
     end
     dateServiceUri = dateServiceUri .. "&layer=" .. layer .. "&datetime=" .. time
+    print("Calling time_service uri: " .. dateServiceUri)
     local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
     local body = assert(stream:get_body_as_string())
+    print("time_service output: " .. body)
     if headers:get ":status" ~= "200" then
         print("Error contacting date service: " .. body)
         return {}
@@ -161,6 +168,7 @@ function onearth_wms_time_service.handler(endpointConfig)
 
                 for _, layer in pairs(layers) do
                     local time_service_output = getTimeServiceOutput(endpointConfig, layer, time_string)
+                    local filename = time_service_output["filename"]
 
                     if time_service_output["date"] and time_service_output["prefix"] then
                         local year = string.sub(time_service_output["date"], 0, 4)
@@ -174,38 +182,22 @@ function onearth_wms_time_service.handler(endpointConfig)
                         end
                     end
 
-                    if time_service_output["filename"] then
-                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
+                    if filename then
+                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. filename
 
                         if string.find(layer, "OrbitTracks") then
                             -- Add Lines and Points layer SHAPEFILES also
-                            layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. time_service_output["filename"] .. '_Lines'
-                            layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. time_service_output["filename"] .. '_Points'
+                            local index = findLast(filename, "-")
+
+                            if index then
+                                local parent_layer = string.sub(filename, 0, index-1)
+                                local date_str = string.sub(filename, index)
+
+                                layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. parent_layer .. '_Lines' .. date_str
+                                layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. parent_layer .. '_Points' .. date_str
+                            end
                         end
                     end
-
-
---                    if 'OrbitTracks' in layer:
---                        layer_Line = layer + '_LINE'
---                        layer_points = layer + '_POINTS'
---                        time_service_output_prefix_line = time_service_output["prefix"] .. '_LINE'
---                        time_service_output_prefix_points = time_service_output["prefix"] .. '_POINTS'
-
---                    if time_service_output["date"] and time_service_output["prefix"] then
---                        local year = string.sub(time_service_output["date"], 0, 4)
-
---                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F" ..
---                        "&"" .. layer_Line .. "_PREFIX=" .. time_service_output_prefix_line .. "%2F" .. year .. "%2F" ..
---                        "&"" .. layer_points .. "_PREFIX=" .. time_service_output_prefix_points .. "%2F" .. year .. "%2F"
---                    end
-
---                    if time_service_output["filename"] then
---                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"] ..
---                        "&" .. layer_Line .. "_SHAPEFILE=" .. time_service_output["filename"] .. '_LINE' ..
---                        "&" .. layer_points .. "_SHAPEFILE=" .. time_service_output["filename"] .. '_POINTS' ..
---                    end
-
-
                 end
             end
 
