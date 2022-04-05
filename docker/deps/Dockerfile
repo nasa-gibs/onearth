@@ -78,7 +78,7 @@ RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.1.tar.gz && \
     make && make install
 
 WORKDIR /tmp/rpmbuild/SPECS
-RUN sed -i 's/{?dist}.4/{?dist}_9.4/g' httpd.spec && \
+RUN sed -i 's/{?dist}.5/{?dist}_9.5/g' httpd.spec && \
     sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g' httpd.spec && \
     sed -i 's:--with-apr-util=%{_prefix}:--with-apr-util=/usr/local/apr/bin/apu-1-config:g' httpd.spec && \
     HOME="/tmp" rpmbuild -bp httpd.spec && \
