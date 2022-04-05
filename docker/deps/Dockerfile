@@ -57,9 +57,9 @@ COPY ./ /home/oe2/onearth/
 WORKDIR /tmp
 RUN yum install -y yum-utils-1.1.31 rpm-build-4.11.3 && \
     yum clean all && \
-    yumdownloader --source httpd-2.4.6-97.el7.centos.4.x86_64 && \
+    yumdownloader --source httpd-2.4.6-97.el7.centos.5.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.6-97.el7.centos.4.x86_64
+    yum-builddep -y httpd-2.4.6-97.el7.centos.5.x86_64
 
 # Install APR patch
 WORKDIR /tmp
