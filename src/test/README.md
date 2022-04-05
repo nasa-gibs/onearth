@@ -225,4 +225,9 @@ The following test cases for `oe_generate_empty_tile.py` are defined in this [fi
 4. Converting a colormap that has its "No Data" colormap listed first to a v1.1.0 SLD using `colorMaptoSLD.py` with `-s 1.1.0`
 5. Converting a colormap that has its "No Data" colormap listed last to a v1.1.0 SLD using `colorMaptoSLD.py` with `-s 1.1.0`
 6. Converting a v1.0.0 SLD to a colormap using `SLDtoColorMap.py`
-7. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py`
+7. Converting a v1.0.0 SLD to a colormap using `SLDtoColorMap.py` with the `--offset` and `--factor` options
+8. Converting a v1.0.0 SLD to a colormap using `SLDtoColorMap.py` with the `--precision` option
+9. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py`
+10. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--offset` and `--factor` options
+11. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--precision` option
+12. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--densify` option with `r` specified for "ramp"

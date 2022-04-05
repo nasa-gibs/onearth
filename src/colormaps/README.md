@@ -61,6 +61,8 @@ Options:
   -h, --help                show this help message and exit
   -s SLD_FILE, --sld SLD_FILE
 							Path to SLD file to be converted
+  -c COLORMAP_FILE, --sld COLORMAP_FILE
+              Path to colormap file to be created.  If not provided, output is printed to stdout
   -l LAYER_NAME, --layer LAYER_NAME
 							Value to be placed in the NamedLayer/Name element
   -u UNITS, --units UNITS
@@ -72,6 +74,8 @@ Options:
   -r RGBA_ORDER , --rgba_order RGBA_ORDER
 							The RGBA ordering to be used when parsing the SLD v1.1.0 fallbackValue.
 							The alpha value is optional.  Sample values "RGB", "ARGB"
+  -p PRECISION, --precision PRECISION
+              The number of decimal places to round values to plus the format specifier for floating point (f) or exponential (e).  Example: '2f' or '3e'  (Optional)
 ```
 
 Example execution:

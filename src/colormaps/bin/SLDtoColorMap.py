@@ -556,7 +556,7 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
 
             outputHandle.write("      <ColorMapEntry rgb=\"" + rgb + "\" " + 
                "transparent=\"" + ("true" if cMapEntry.transparent else "false") + "\" " + 
-               ("" if not cMapEntry.sourceValue else ("sourceValue=\"" + value + "\" ")) + 
+               ("" if not cMapEntry.sourceValue else ("sourceValue=\"" + sourceValue + "\" ")) + 
                ("" if not cMapEntry.value else ("value=\"" + value + "\" ")) + 
                "label=\"" + cMapEntry.label + "\" " + 
                ("" if not cMapEntry.nodata else ("nodata=\"true\" ")) +
