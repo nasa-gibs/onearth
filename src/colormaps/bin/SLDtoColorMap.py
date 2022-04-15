@@ -201,7 +201,9 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                     
                 # Process the SLD entries into the XML ColorMap
                 gibsCMap  = GIBS_ColorMap()
-                        
+                
+                currRef = 1
+
                 prevValue   = sldCMapEntries[0].quantity
                 prevOpacity = (sldCMapEntries[0].opacity == 0.0)
                 prevRGB     = sldCMapEntries[0].rgb
@@ -215,6 +217,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                     gibsCMapEntry.value       = [prevValue, sldCMapEntry.quantity]
                     gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((sldCMapEntry.quantity - offset) / factor)]
                     gibsCMapEntry.transparent = prevOpacity
+                    gibsCMapEntry.ref         = currRef
                             
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                            
@@ -222,6 +225,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                     prevOpacity = (sldCMapEntry.opacity == 0.0)
                     prevRGB     = sldCMapEntry.rgb
 
+                    currRef += 1
                 
                 
                 # If the last entry has the same color as it's previous entry, then update the last 
@@ -234,6 +238,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                     gibsCMapEntry.value       = [prevValue,sldCMapEntries[-1].quantity]
                     gibsCMapEntry.sourceValue = [prevValue, ((sldCMapEntries[-1].quantity - offset) / factor)]
                     gibsCMapEntry.transparent = prevOpacity
+                    gibsCMapEntry.ref         = currRef
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
                 else:
@@ -244,14 +249,18 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                     gibsCMapEntry.value       = [prevValue, sldCMapEntries[-1].quantity]
                     gibsCMapEntry.sourceValue = [((prevValue - offset) / factor), ((sldCMapEntries[-1].quantity - offset) / factor)]
                     gibsCMapEntry.transparent = prevOpacity
+                    gibsCMapEntry.ref         = currRef
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
+                    currRef += 1
+
                     gibsCMapEntry             = GIBS_ColorMapEntry()
                     gibsCMapEntry.rgb         = sldCMapEntries[-1].rgb
                     gibsCMapEntry.label       = format.format(sldCMapEntries[-1].quantity) + ("" if not units else (" " + units))	
                     gibsCMapEntry.value       = [sldCMapEntries[-1].quantity]
                     gibsCMapEntry.sourceValue = [((sldCMapEntries[-1].quantity - offset) / factor), "+INF"]
                     gibsCMapEntry.transparent = (sldCMapEntries[-1].opacity == 0.0)
+                    gibsCMapEntry.ref         = currRef
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
                 gibsCMap.maxLabel    = gibsCMap.cmEntries[-1].label
@@ -320,6 +329,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                     gibsCMapEntry.ref         = 1
                     
                     gibsCMap  = GIBS_ColorMap()
+                    gibsCMap.showLegend = True
                     gibsCMap.cmEntries = []
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                     gibsColorMaps.append(gibsCMap)
@@ -509,19 +519,21 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
     else:
        outputHandle = sys.stdout
 
-    outputHandle.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-    outputHandle.write("<ColorMaps>")
+    outputHandle.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+    outputHandle.write("""<ColorMaps xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://gibs.earthdata.nasa.gov/schemas/ColorMap_v1.3.xsd">\n""")
     
     for colorMap in gibsColorMaps:
 
         # <ColorMap title="Sea Ice Concentration" units="%">
         outputHandle.write("  <ColorMap" + 
-            ((" units=\"" + units + "\"") if colorMap.showUnits and units else "") + ">")
+            ((" units=\"" + units + "\"") if colorMap.showUnits and units else "") + 
+            (" title=\"No Data\"" if colorMap.cmEntries[0].nodata else "") + ">\n")
 
         # <Entries minLabel="0 %" maxLabel="100 %">      
         outputHandle.write("    <Entries" + 
             ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\" ")) + 
-            ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">")
+            ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">\n")
     
         for cMapEntry in colorMap.cmEntries:
             # <ColorMapEntry rgb="9,9,255" transparent="false" sourceValue="[9,10)" value="[9,10)" label="3.6 %" ref="1"/>
@@ -544,21 +556,22 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
 
             outputHandle.write("      <ColorMapEntry rgb=\"" + rgb + "\" " + 
                "transparent=\"" + ("true" if cMapEntry.transparent else "false") + "\" " + 
-               ("" if not cMapEntry.sourceValue else ("sourceValue=\"" + value + "\" ")) + 
+               ("" if not cMapEntry.sourceValue else ("sourceValue=\"" + sourceValue + "\" ")) + 
                ("" if not cMapEntry.value else ("value=\"" + value + "\" ")) + 
                "label=\"" + cMapEntry.label + "\" " + 
                ("" if not cMapEntry.nodata else ("nodata=\"true\" ")) +
                ("" if not colorMap.showLegend else ("ref=\"" + str(cMapEntry.ref) + "\" ")) + 
-               "/>")
+               "/>\n")
 
-        outputHandle.write("    </Entries>")
+        outputHandle.write("    </Entries>\n")
         
         
         if colorMap.showLegend:
             # <Entries minLabel="0 %" maxLabel="100 %">      
-            outputHandle.write("    <Legend type=\"continuous\" " + 
+            outputHandle.write("    <Legend type=\"" +
+                ("classification" if colorMap.cmEntries[0].nodata else "continuous") + "\" " + 
                 ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\" ")) + 
-                ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">")
+                ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">\n")
     
     
             prevRef = -1
@@ -576,16 +589,16 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
                                            (cMapEntry.value[1] if isinstance(cMapEntry.value[1], str) else format.format(cMapEntry.value[1])) + ")"
         
                     outputHandle.write("      <LegendEntry rgb=\"" + rgb + "\" " + 
-                       ("" if not colorMap.showLegend else ("id=\"" + str(cMapEntry.ref) + "\" ")) + "/>")
+                       ("" if not colorMap.showLegend else ("id=\"" + str(cMapEntry.ref) + "\" ")) + "/>\n")
                        
                     
                 prevRef    = cMapEntry.ref
 
-            outputHandle.write("    </Legend>")
+            outputHandle.write("    </Legend>\n")
     
-        outputHandle.write("  </ColorMap>")
+        outputHandle.write("  </ColorMap>\n")
         
-    outputHandle.write("</ColorMaps>")
+    outputHandle.write("</ColorMaps>\n")
 
     if colormapFile:
        outputHandle.close()

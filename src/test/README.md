@@ -4,7 +4,7 @@
 This directory contains files and scripts to test various aspects of OnEarth. The included tests are:
 
 * `test_colormap2vrt.py` -- tests `colormap2vrt.py`
-* `test_colormap_html_sld.py` -- tests scripts for converting colormaps to HTML
+* `test_colormap_html_sld.py` -- tests scripts for converting colormaps to HTML and SLD
 * `test_gc_service.py` -- tests the OnEarth GetCapabilities Service
 * `test_generate_empty_tile.py` -- tests empty tile generation with `oe_generate_empty_tile.py`
 * `test_legends.py` -- tests the oe_generate_legend tool with GIBS colormaps
@@ -217,7 +217,17 @@ The following test cases for `oe_generate_empty_tile.py` are defined in this [fi
 4. Generating an empty tile using the `--width` option
 5. Generating an empty tile using the `--type rgba` option
 
-## Colormap to HTML Tests
+## Colormap to HTML/SLD Tests
 
 1. Converting a colormap to HTML using `colorMaptoHTML_v1.0.py`
 2. Converting a colormap to HTML using `colorMaptoHTML_v1.3.py`
+3. Converting a colormap to a v1.0.0 SLD using `colorMaptoSLD.py` with `-s 1.0.0`
+4. Converting a colormap that has its "No Data" colormap listed first to a v1.1.0 SLD using `colorMaptoSLD.py` with `-s 1.1.0`
+5. Converting a colormap that has its "No Data" colormap listed last to a v1.1.0 SLD using `colorMaptoSLD.py` with `-s 1.1.0`
+6. Converting a v1.0.0 SLD to a colormap using `SLDtoColorMap.py`
+7. Converting a v1.0.0 SLD to a colormap using `SLDtoColorMap.py` with the `--offset` and `--factor` options
+8. Converting a v1.0.0 SLD to a colormap using `SLDtoColorMap.py` with the `--precision` option
+9. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py`
+10. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--offset` and `--factor` options
+11. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--precision` option
+12. Converting a v1.1.0 SLD to a colormap using `SLDtoColorMap.py` with the `--densify` option with `r` specified for "ramp"
