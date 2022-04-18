@@ -128,6 +128,7 @@ MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
 PROXY_TEMPLATE = """SSLProxyEngine on
 ProxyPass {local_endpoint} {remote_endpoint}
 ProxyPassReverse {local_endpoint} {remote_endpoint}
+SetEnv proxy-nokeepalive 1
 """
 
 PROXY_PREFIX = '/oe2-reproject-proxy'
