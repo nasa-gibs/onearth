@@ -188,7 +188,7 @@ for layer in layers:
         template_string = template_string.replace(replace_with_local, 'http://172.17.0.1:8080')
 
     dimension_info = ''
-    validation_info = ''
+    validation_info = VALIDATION_TEMPLATE
     style_info = ''
     
     dimension = layer.find('{*}Dimension')
@@ -258,6 +258,12 @@ for layer in layers:
             "default_{0}_SHAPEFILE"          ""
             '''.format(shp_config['layer_id'])
                 validation_info = VALIDATION_TEMPLATE.replace('{shapefile_validation}', shapefile_validation)
+                
+                if has_time:
+                    default_datetime = dimension.findtext('{*}Default')
+                    period_str = ','.join(elem.text for elem in dimension.findall("{*}Value"))
+                    dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
+                    validation_info = validation_info.replace('{default}', default_datetime)
 
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),
@@ -278,7 +284,7 @@ for layer in layers:
             print("WARN: Vector layer config {0} has no field 'shapefile_configs'".format(layer_config['path']))
     # handle raster layers
     else:
-        validation_info = VALIDATION_TEMPLATE.replace('{shapefile_validation}', '')
+        validation_info = validation_info.replace('{shapefile_validation}', '')
         out_root = etree.Element('GDAL_WMS')
 
         service_element = etree.SubElement(out_root, 'Service')

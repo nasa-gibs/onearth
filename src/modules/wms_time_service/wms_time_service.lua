@@ -168,7 +168,6 @@ function onearth_wms_time_service.handler(endpointConfig)
 
                 for _, layer in pairs(layers) do
                     local time_service_output = getTimeServiceOutput(endpointConfig, layer, time_string)
-                    local filename = time_service_output["filename"]
 
                     if time_service_output["date"] and time_service_output["prefix"] then
                         local year = string.sub(time_service_output["date"], 0, 4)
@@ -182,19 +181,19 @@ function onearth_wms_time_service.handler(endpointConfig)
                         end
                     end
 
-                    if filename then
-                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. filename
+                    if time_service_output["filename"] then
+                        layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
 
                         if string.find(layer, "OrbitTracks") then
                             -- Add Lines and Points layer SHAPEFILES also
-                            local index = findLast(filename, "-")
+                            local index = findLast(time_service_output["filename"], "-")
 
                             if index then
-                                local parent_layer = string.sub(filename, 0, index-1)
-                                local date_str = string.sub(filename, index)
+                                local layer_root = string.sub(time_service_output["filename"], 0, index-1)
+                                local date_str = string.sub(time_service_output["filename"], index)
 
-                                layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. parent_layer .. '_Lines' .. date_str
-                                layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. parent_layer .. '_Points' .. date_str
+                                layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. layer_root .. '_Lines' .. date_str
+                                layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. layer_root .. '_Points' .. date_str
                             end
                         end
                     end
