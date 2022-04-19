@@ -259,10 +259,7 @@ for layer in layers:
             '''.format(shp_config['layer_id'])
                 validation_info = VALIDATION_TEMPLATE.replace('{shapefile_validation}', shapefile_validation)
                 
-                if has_time:
-                    default_datetime = dimension.findtext('{*}Default')
-                    period_str = ','.join(elem.text for elem in dimension.findall("{*}Value"))
-                    dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
+                if default_datetime:
                     validation_info = validation_info.replace('{default}', default_datetime)
 
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
