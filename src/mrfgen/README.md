@@ -293,6 +293,39 @@ Options:
                         separated by "|"
 ```
 
+
+## colormap2vrt.py
+
+colormap2vrt.py is a tool for converting SLD ColorMaps to a VRT ColorTable template.
+
+```Shell
+Usage: colormap2vrt.py --colormap [colormap.xml] --output [output.vrt] --merge [merge.vrt] --transparent
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -c COLORMAP_FILENAME, --colormap=COLORMAP_FILENAME
+                        Full path of colormap filename.
+  -m MERGE_FILENAME, --merge=MERGE_FILENAME
+                        Full path of VRT in which to merge colormap
+  -o OUTPUT_FILENAME, --output=OUTPUT_FILENAME
+                        Full path of the final output VRT
+  -t, --transparent     Use transparent alpha value as default
+  -s, --send_email      Send email notification for errors and warnings.
+  --email_server=EMAIL_SERVER
+                        The server where email is sent from (overrides
+                        configuration file value)
+  --email_recipient=EMAIL_RECIPIENT
+                        The recipient address for email notifications
+                        (overrides configuration file value)
+  --email_sender=EMAIL_SENDER
+                        The sender for email notifications (overrides
+                        configuration file value)
+  --email_logging_level=EMAIL_LOGGING_LEVEL
+                        Logging level for email notifications: ERROR, WARN, or
+                        INFO.  Default: ERROR
+```
+
 ## Contact
 
 Contact us by sending an email to

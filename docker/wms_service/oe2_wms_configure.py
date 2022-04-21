@@ -257,7 +257,10 @@ for layer in layers:
             "{0}_SHAPEFILE"   "^."
             "default_{0}_SHAPEFILE"          ""
             '''.format(shp_config['layer_id'])
-                validation_info = validation_info.replace('{shapefile_validation}', shapefile_validation)
+                validation_info = VALIDATION_TEMPLATE.replace('{shapefile_validation}', shapefile_validation)
+                
+                if default_datetime:
+                    validation_info = validation_info.replace('{default}', default_datetime)
 
                 new_layer_string = bulk_replace(template_string, [('${layer_name}', shp_config['layer_id']),
                                                                   ('${layer_type}', shp_config['source_shapefile']['feature_type']),

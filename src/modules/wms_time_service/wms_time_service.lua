@@ -31,6 +31,11 @@ local function get_query_param(param, query_string)
     return date_string
 end
 
+function findLast(s, str)
+    local i=s:match(".*"..str.."()")
+    if i==nil then return nil else return i-1 end
+end
+
 local function sendErrorResponse(code, locator, msg_string)
 	local return_msg = '<?xml version="1.0" encoding="UTF-8"?>\n'
 	return_msg = return_msg .. '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.1.0" xml:lang="en">\n'
@@ -75,8 +80,10 @@ local function getTimeServiceOutput(endpointConfig, layer, time)
         dateServiceUri = dateServiceUri .. keyString
     end
     dateServiceUri = dateServiceUri .. "&layer=" .. layer .. "&datetime=" .. time
+    print("Calling time_service uri: " .. dateServiceUri)
     local headers, stream = assert(request.new_from_uri(dateServiceUri):go(5))
     local body = assert(stream:get_body_as_string())
+    print("time_service output: " .. body)
     if headers:get ":status" ~= "200" then
         print("Error contacting date service: " .. body)
         return {}
@@ -166,10 +173,29 @@ function onearth_wms_time_service.handler(endpointConfig)
                         local year = string.sub(time_service_output["date"], 0, 4)
 
                         layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F"
+
+                        if string.find(layer, "OrbitTracks") then
+                            -- Add Lines and Points layer PREFIXES also
+                            layers_url = layers_url .. "&" .. layer .. "_Lines_PREFIX=" .. time_service_output["prefix"] .. '_Lines' .. "%2F" .. year .. "%2F"
+                            layers_url = layers_url .. "&" .. layer .. "_Points_PREFIX=" .. time_service_output["prefix"] .. '_Points' .. "%2F" .. year .. "%2F"
+                        end
                     end
 
                     if time_service_output["filename"] then
                         layers_url = layers_url .. "&" .. layer .. "_SHAPEFILE=" .. time_service_output["filename"]
+
+                        if string.find(layer, "OrbitTracks") then
+                            -- Add Lines and Points layer SHAPEFILES also
+                            local index = findLast(time_service_output["filename"], "-")
+
+                            if index then
+                                local layer_root = string.sub(time_service_output["filename"], 0, index-1)
+                                local date_str = string.sub(time_service_output["filename"], index)
+
+                                layers_url = layers_url .. "&" .. layer .. "_Lines_SHAPEFILE=" .. layer_root .. '_Lines' .. date_str
+                                layers_url = layers_url .. "&" .. layer .. "_Points_SHAPEFILE=" .. layer_root .. '_Points' .. date_str
+                            end
+                        end
                     end
                 end
             end

@@ -596,7 +596,12 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_prefix_found", *prefix);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_date_found", *date_string);
     apr_table_set(r->connection->notes, "mod_wmts_wrapper_last_filename_found", *filename);
+<<<<<<< HEAD
     
+=======
+
+    ap_destroy_sub_req(rr);
+>>>>>>> d71674361364138bdbb5e12736ffa6ca8475dfa1
     return APR_SUCCESS;
 }
 

@@ -81,62 +81,64 @@ def generateSLD_v1_0_0(gibsColorMaps, layerName, rgbaOrder) :
     print("   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">")
 
     print("  <NamedLayer>")
-    print(("    <se:Name>" + layerName + "</se:Name>"))
+    print(("    <Name>" + layerName + "</Name>"))
     print("    <UserStyle>")    
-    print("      <se:Title>GIBS Imagery Style</se:Title>")
-    print("      <se:FeatureTypeStyle>")    
-    print("        <se:Rule>")        
-    print("          <se:RasterSymbolizer>")   
-    print("            <se:Opacity>1.0</se:Opacity>")          
-    print("            <se:ColorMap>")  
+    print("      <Title>GIBS Imagery Style</Title>")
+    print("      <FeatureTypeStyle>")    
+    print("        <Rule>")        
+    print("          <RasterSymbolizer>")   
+    print("            <Opacity>1.0</Opacity>")          
+    print("            <ColorMap>")  
 
     for colorMap in gibsColorMaps:
         for cmEntry in colorMap.cmEntries:
             
             
-            m = re.match(r"\[([0-9\.\-]*)[,]*([0-9\.\-]*)[\)\]]", cmEntry.value)
+            m = re.match(r"[\(\[]([0-9\.\-]*|\-INF)[,]*([0-9\.\-]*|\+?INF)[\)\]]", cmEntry.value)
             
-            # if this is last entry:
-            if colorMap == gibsColorMaps[-1] and cmEntry == colorMap.cmEntries[-1]:
-            
-                # if it's a range, print out the extra colormap entry
-                if len(m.group(2)) > 0:
+            # the "INF" value is not relevant in SLDs
+            if "INF" not in m.group(1):
+                # if this is last entry:
+                if colorMap == gibsColorMaps[-1] and cmEntry == colorMap.cmEntries[-1]:
+                
+                    # if it's a range, print out the extra colormap entry unless te extra is "INF"
+                    if len(m.group(2)) > 0 and "INF" not in m.group(2):
+                        quantity = str(m.group(1))
+                        label    = str(m.group(1)) + " - " + str(m.group(2))
+                    
+                        print(("              <ColorMapEntry " + 
+                                "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
+                                "quantity=\""+ quantity + "\" " + 
+                                "label=\""+ label + "\" />"))        
+                                
+                        quantity = str(m.group(2))
+                        label    = str(m.group(2))
+                    
+                        print(("              <ColorMapEntry " + 
+                                "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
+                                "quantity=\""+ quantity + "\" " + 
+                                "label=\""+ label + "\" />"))  
+                    else:  
+                        quantity = str(m.group(1))
+                        label    = str(m.group(1))
+                    
+                        print(("              <ColorMapEntry " + 
+                                "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
+                                "quantity=\""+ quantity + "\" " + 
+                                "label=\""+ label + "\" />"))            
+                else:
                     quantity = str(m.group(1))
-                    label    = str(m.group(1)) + " - " + str(m.group(2))
-                
-                    print(("              <se:ColorMapEntry " + 
+                    label    = str(m.group(1)) + " - " + str(m.group(2))#cmEntry.label
+                    
+                    print(("              <ColorMapEntry " + 
                             "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
                             "quantity=\""+ quantity + "\" " + 
-                            "label=\""+ label + "\" />"))        
-                            
-                    quantity = str(m.group(2))
-                    label    = str(m.group(2))
-                
-                    print(("              <se:ColorMapEntry " + 
-                            "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-                            "quantity=\""+ quantity + "\" " + 
-                            "label=\""+ label + "\" />"))  
-                else:  
-                    quantity = str(m.group(1))
-                    label    = str(m.group(1))
-                
-                    print(("              <se:ColorMapEntry " + 
-                            "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-                            "quantity=\""+ quantity + "\" " + 
-                            "label=\""+ label + "\" />"))            
-            else:
-                quantity = str(m.group(1))
-                label    = str(m.group(1)) + " - " + str(m.group(2))#cmEntry.label
-                
-                print(("              <se:ColorMapEntry " + 
-                        "color=\"" + RGBToHex(cmEntry.rgb, "RGB") + "\" " + 
-                        "quantity=\""+ quantity + "\" " + 
-                        "label=\""+ label + "\" />"))
+                            "label=\""+ label + "\" />"))
  
-    print("            </se:ColorMap>")     
-    print("          </se:RasterSymbolizer>")    
-    print("        </se:Rule>")    
-    print("      </se:FeatureTypeStyle>")    
+    print("            </ColorMap>")     
+    print("          </RasterSymbolizer>")    
+    print("        </Rule>")    
+    print("      </FeatureTypeStyle>")    
     print("    </UserStyle>")    
     print("  </NamedLayer>")
     print("</StyledLayerDescriptor>")
@@ -164,31 +166,32 @@ def generateSLD_v1_1_0(gibsColorMaps, layerName, rgbaOrder) :
     print("            <se:Opacity>1.0</se:Opacity>")          
     print("            <se:ColorMap>")       
     
-    
-    fallbackValue = ""
-    for cmEntry in gibsColorMaps[0].cmEntries:
-        if cmEntry.nodata:
-            rgba = cmEntry.rgb
-            rgba.append(0)
-            
-            fallbackValue = RGBToHex(rgba,rgbaOrder)
-           
-    print(("              <se:Categorize fallbackValue=\"" + fallbackValue + "\">"))          
-    print("                <se:LookupValue>Rasterdata</se:LookupValue>")          
-    
+    nodata_str = ""
+    contents_str = ""
+
     firstValue = True
-    for colorMap in gibsColorMaps[1:]:
+    for colorMap in gibsColorMaps:
 
         for cmEntry in colorMap.cmEntries:
-            
-            if firstValue:
-                print(("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"))          
+            if cmEntry.nodata:
+                rgba = cmEntry.rgb
+                rgba.append(0)
+                
+                fallbackValue = RGBToHex(rgba,rgbaOrder)
+
+                nodata_str = "              <se:Categorize fallbackValue=\"" + fallbackValue + "\">"
+                nodata_str += "\n                <se:LookupValue>Rasterdata</se:LookupValue>"
+
+            elif firstValue:
+                contents_str += "                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"
                 firstValue = False
             else:
                 threshold = str(re.match(r"\[([0-9\.\-\+e]*),[0-9\.\-\+e]*", cmEntry.value).group(1))
-                print(("                <se:Threshold>" + threshold + "</se:Threshold>"))     
-                print(("                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"))     
-          
+                contents_str += "\n                <se:Threshold>" + threshold + "</se:Threshold>"
+                contents_str += "\n                <se:Value>" + RGBToHex(cmEntry.rgb, "RGB") + "</se:Value>"
+
+    print(nodata_str)
+    print(contents_str)
     print("              </se:Categorize>")     
     print("            </se:ColorMap>")     
     print("          </se:RasterSymbolizer>")    
