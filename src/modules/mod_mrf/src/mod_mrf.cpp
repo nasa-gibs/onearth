@@ -340,6 +340,7 @@ static int vfile_pread(request_rec *r, storage_manager &mgr,
         apr_time_t now = apr_time_now();
         do {
             request_rec *sr = ap_sub_req_lookup_uri(name, r, r->output_filters);
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin in mrf, filterName=%s", r->output_filters->frec->name);
             apr_table_setn(sr->headers_in, "Range", Range);
             ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx,
                 sr, sr->connection);
@@ -384,7 +385,7 @@ static int vfile_pread(request_rec *r, storage_manager &mgr,
         stat = apr_file_open(&pfh, fname, open_flags, 0, r->pool);
     else
         stat = openConnFile(r, &pfh, fname, token, APR_FOPEN_BUFFERED);
-
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin mrf_read , fname=%s name=%s stat=%d t=%s", fname,name,stat,token);
     if (stat != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
             "Can't open file %s", name);
@@ -397,7 +398,7 @@ static int vfile_pread(request_rec *r, storage_manager &mgr,
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
             "Read error in %s offset %" APR_OFF_T_FMT, name, offset);
         sz = 0;
-    }
+    } 
 
     if (dynamic)
         apr_file_close(pfh);
@@ -538,6 +539,8 @@ static int handler(request_rec *r) {
     apr_time_t start_index_lookup = apr_time_now();
     range_t index;
     const char *idx_fname = apply_mmapping(r, &tile, cfg->idx.name);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%ld, IDX=%s",
+        apr_time_now() - start_index_lookup, idx_fname);
     const char *message = read_index(r, &index, tidx_offset, idx_fname);
     if (message) { // Fatal error
         if (!apr_strnatcmp(idx_fname, cfg->idx.name)) {
@@ -568,6 +571,8 @@ static int handler(request_rec *r) {
     // Now for the data part
     const vfile_t *src = pick_source(cfg->source, &index);
     const char *name = (src && src->name) ? apply_mmapping(r, &tile, src->name) : nullptr;
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_data_read, duration=%ld, DATA=%s",
+        apr_time_now() - start_index_lookup, name);
     SERR_IF(!name, apr_psprintf(r->pool, "No data file configured for %s", r->uri));
 
     apr_size_t size = static_cast<apr_size_t>(index.size);

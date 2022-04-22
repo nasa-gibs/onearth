@@ -306,15 +306,10 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
     int nt = ntiles(tl, br);
     SERVER_ERR_IF(nt > 6, r, "Too many input tiles required, maximum is 64");
 
-    // Allocate a buffer for receiving responses, gets reused
-    storage_manager src;
-    src.size = static_cast<int>(cfg->max_input_size);
-    src.buffer = reinterpret_cast<char*>(apr_palloc(r->pool, src.size));
-
-    // receive_ctx rctx;
-    // rctx.maxsize = cfg->max_input_size;
-    // rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
-    // ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, r, r->connection);
+    receive_ctx rctx;
+    rctx.maxsize = cfg->max_input_size;
+    rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
+    ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, r, r->connection);
     size_t pixel_size = getTypeSize(cfg->inraster.dt);
 
     // inraster->pagesize.c has to be set correctly
@@ -342,57 +337,99 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
     // overwrite the line stride
     params.line_stride = int((br.x - tl.x) * input_line_width);
 
-    for (tile.y = tl.y; tile.y < br.y; tile.y++) {
-        for (tile.x = tl.x; tile.x < br.x; tile.x++) {
-            char* sub_uri = tile_url(r->pool, cfg->source, tile, cfg->suffix);
-            subr srequest(r);
-            srequest.agent = user_agent;
+    for (tile.y = tl.y; tile.y < br.y; tile.y++) for (tile.x = tl.x; tile.x < br.x; tile.x++) {
+        char* sub_uri = tile_url(r->pool, cfg->source, tile, cfg->suffix);
 
-            LOGNOTE(r, "Requesting %s", sub_uri);
-            src.size = static_cast<int>(cfg->max_input_size);
-            auto status = srequest.fetch(sub_uri, src);
-            if (status != APR_SUCCESS) {
-                if (status == HTTP_NOT_FOUND)
-                    continue; // Ignore errors
-                return status; // Othey type of error, passed through
-            }
+        // Location of first byte of this input tile
+        void* b = (char*)(*buffer) + pagesize * (tile.y - tl.y) * (br.x - tl.x)
+            + input_line_width * (tile.x - tl.x);
+        LOG(r, "Requesting %s", sub_uri);
+        request_rec *rr = ap_sub_req_lookup_uri(sub_uri, r, r->output_filters);
 
-            apr_uint64_t etag;
-            int empty_flag = 0;
-            if (!srequest.ETag.empty()) {
-                etag = base32decode(srequest.ETag.c_str(), &empty_flag);
-                if (empty_flag)
-                    continue; // Ignore empty input tiles, they don't get counted
-            }
-            else { // Input came without an ETag, make one up
-                etag = src.size; // Start with the input tile size
-                // And pick some data out of the input buffer, towards the end
-                if (src.size > 50) {
-                    char* tptr = static_cast<char *>(src.buffer) + src.size - 24; // Temporary pointer
-                    tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
-                    etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
-                    tptr = static_cast<char *>(src.buffer) + src.size - 35; // Temporary pointer
-                    tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
-                    etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
-                }
-            }
-            // Build up the outgoing ETag
-            etag_out = (etag_out << 8) | (0xff & (etag_out >> 56)); // Rotate existing tag
-            etag_out ^= etag; // And combine it with the incoming tile etag
+        // // Location of first byte of this input tile
+        // void *b = (char *)(*buffer) + pagesize * (y - tl.y) * (br.x - tl.x)
+        //     + input_line_width * (x - tl.x);
 
-            // Location of first byte of this input tile
-            void* b = (char*)(*buffer) + pagesize * (tile.y - tl.y) * (br.x - tl.x)
-                + input_line_width * (tile.x - tl.x);
+        // Set up user agent signature, prepend the info
+        const char *user_agent = apr_table_get(r->headers_in, "User-Agent");
+        user_agent = user_agent == NULL ? USER_AGENT :
+            apr_pstrcat(r->pool, USER_AGENT ", ", user_agent, NULL);
+        apr_table_setn(rr->headers_in, "User-Agent", user_agent);
 
-            const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
-            if (error_message) { // Something went wrong
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
-                return HTTP_NOT_FOUND;
-            }
-            count++; // count the valid tiles
+        rctx.size = 0; // Reset the receive size
+        ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, rr, rr->connection);
+
+        int rr_status = ap_run_sub_req(rr); // This returns http status, aka 404, 200
+        //int http_status = rr->status; // This is usually 200, is it ever 404?
+        ap_remove_output_filter(rf);
+        // Capture the tag before nuking the subrequest
+
+        // Pass-through header
+        const char *layer_id_request = apr_table_get(rr->headers_out, "Layer-Identifier-Request");
+        if (layer_id_request) {
+            apr_table_set(r->headers_out, "Layer-Identifier-Request", layer_id_request);
         }
+        const char *layer_id_actual = apr_table_get(rr->headers_out, "Layer-Identifier-Actual");
+        if (layer_id_actual) {
+            apr_table_set(r->headers_out, "Layer-Identifier-Actual", layer_id_actual);
+        }
+        const char *layer_time_request = apr_table_get(rr->headers_out, "Layer-Time-Request");
+        if (layer_time_request) {
+            apr_table_set(r->headers_out, "Layer-Time-Request", layer_time_request);
+        }
+        const char *layer_time_actual = apr_table_get(rr->headers_out, "Layer-Time-Actual");
+        if (layer_time_actual) {
+            apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
+        }
+
+        const char* ETagIn = apr_table_get(rr->headers_out, "ETag");
+        if (ETagIn)
+            ETagIn = apr_pstrdup(r->pool, ETagIn);
+        ap_destroy_sub_req(rr);
+
+        if (rr_status != APR_SUCCESS) {
+            ap_remove_output_filter(rf);
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+                "Subrequest %s failed, status %u", sub_uri, rr_status);
+            if (rr_status != HTTP_NOT_FOUND)
+                return rr_status;
+            continue; // Ignore not found errors, assume empty (zero)
+        }
+
+        apr_uint64_t etag;
+        int empty_flag = 0;
+        if (nullptr != ETagIn) {
+            etag = base32decode(ETagIn, &empty_flag);
+            if (empty_flag) continue; // Ignore empty input tiles
+        }
+        else { // Input came without an ETag, make one up
+            etag = rctx.size; // Start with the input tile size
+            // And pick some data out of the input buffer, towards the end
+            if (rctx.size > 50) {
+                char *tptr = rctx.buffer + rctx.size - 24; // Temporary pointer
+                tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
+                etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
+                tptr = rctx.buffer + rctx.size - 35; // Temporary pointer
+                tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
+                etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
+            }
+        }
+        // Build up the outgoing ETag
+        etag_out = (etag_out << 8) | (0xff & (etag_out >> 56)); // Rotate existing tag
+        etag_out ^= etag; // And combine it with the incoming tile etag
+
+        storage_manager src = { rctx.buffer, rctx.size };
+
+        const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin mrf_request, mrf_sub_url=%s size=%d", sub_uri,src.size);
+        if (error_message) { // Something went wrong
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
+            return HTTP_NOT_FOUND;
+        }
+        count++; // count the valid tiles
     }
-    // ap_remove_output_filter(rf);
+    
+    ap_remove_output_filter(rf);
     return count ? APR_SUCCESS : HTTP_NOT_FOUND;
 }
 
@@ -592,7 +629,7 @@ static int handler(request_rec *r)
         (cfg->indirect && r->main == nullptr) ||
         !cfg->arr_rxp || !requestMatches(r, cfg->arr_rxp))
         return DECLINED;
-
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=Start Retile");
     int ct;
     png_colorp png_palette;
     png_bytep png_trans;
@@ -737,6 +774,42 @@ static int handler(request_rec *r)
     // default:
     //     error_message = "Unsupported output format";
     // }
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=FORMAT %s",cfg->raster.format);
+    switch (cfg->raster.format) {
+    case IMG_ANY: {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=ANY");
+    }
+    case IMG_JPEG: {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=JPEG");
+    }
+                     break;
+     case IMG_PNG: {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=PNG");
+        png_params params(outraster);
+        if (cfg->quality < 10) // Otherwise use the default of 6
+            params.compression_level = static_cast<int>(cfg->quality);
+        if (cfg->has_transparency)
+            params.has_transparency = true;
+        if (png_trans != NULL)
+         	params.has_transparency = true;
+        if (png_palette != NULL) {
+        	params.color_type = ct;
+			params.bit_depth = 8;
+        }
+        // error_message = png_encode(params, raw, dst, png_palette, png_trans, num_trans);
+        png_palette = 0;
+		png_trans = 0;
+    }
+                 break;
+    case IMG_LERC: {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "LERC");
+        lerc_params params(outraster);
+        error_message = lerc_encode(params, raw, dst);
+    }
+                 break;
+    default:
+        error_message = "Unsupported output format";
+    }
 
     if (NULL == cfg->mime_type || 0 == apr_strnatcmp(cfg->mime_type, "image/jpeg")) {
         jpeg_params params(outraster);

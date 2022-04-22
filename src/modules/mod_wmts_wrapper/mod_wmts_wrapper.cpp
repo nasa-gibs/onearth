@@ -46,7 +46,6 @@
 #include "mod_wmts_wrapper.h"
 #include "receive_context.h"
 #include <jansson.h>
-
 #include <ahtse.h>
 NS_AHTSE_USE
 NS_ICD_USE
@@ -527,7 +526,7 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         *prefix = apr_pstrdup(r->pool, last_prefix_found);
         *date_string = apr_pstrdup(r->pool, last_date_found);
         *filename = apr_pstrdup(r->pool, last_filename_found);
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Found cached date data!");
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Found cached date data! filename:%s", *filename);
         return APR_SUCCESS;
     }
 
@@ -554,8 +553,10 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
         }
     }
 
-     ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
-    request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, r->output_filters);
+    //ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, r, r->connection);
+    request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, NULL);
+    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, rr, rr->connection); 
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin date request, filterName=%s", r->output_filters->frec->name);
 
     // LOGGING
     const char *uuid = apr_table_get(r->headers_in, "UUID") 
@@ -699,13 +700,13 @@ static int pre_hook(request_rec *r)
 
         // Get AHTSE module configs (if available)
         module *retile_module = (module *)ap_find_linked_module("mod_retile.cpp");
-        repro_conf *reproject_config = retile_module 
-            ? (repro_conf *)ap_get_module_config(r->per_dir_config, retile_module)
+        auto *reproject_config = retile_module 
+            ? get_conf<repro_conf>(r, retile_module)
             : NULL;
 
         module *mrf_module = (module *)ap_find_linked_module("mod_mrf.cpp");
-        mrf_conf *mrf_config = mrf_module
-            ? (mrf_conf *)ap_get_module_config(r->per_dir_config, mrf_module)
+        auto *mrf_config = mrf_module
+            ? get_conf<mrf_conf>(r, mrf_module)
             : NULL;
 
         int n_levels = (reproject_config && reproject_config->raster.n_levels) ? reproject_config->raster.n_levels 
@@ -779,19 +780,24 @@ static int pre_hook(request_rec *r)
                     const char *year = apr_pstrndup(r->pool, date_string, 4);
 
                     // find and replace data source file name variables
-                    vfile_t *mrf_cfg_src = &APR_ARRAY_IDX(mrf_config->source, 0, vfile_t);
-                    char *mrf_cfg_src_name = apr_pstrmemdup(r->pool, mrf_cfg_src->name, strlen(mrf_cfg_src->name));
-
-                    mrf_cfg_src_name = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_cfg_src_name, prefix);
-                    mrf_cfg_src_name = (char *)find_and_replace_string(r->pool, "${filename}", mrf_cfg_src_name, filename);
+                    apr_array_header_t *mrf_cfg_src_arr_update = apr_array_copy(r->pool, mrf_config->source);
+                    vfile_t *mrf_cfg_first_src_update = &APR_ARRAY_IDX(mrf_cfg_src_arr_update, 0, vfile_t);
+                    //char *mrf_cfg_first_name_update = apr_pstrdup(r->pool, mrf_cfg_first_src_update->name);
+                    char *mrf_cfg_first_name_update = apr_pstrdup(r->pool, mrf_cfg_first_src_update->name);
+                    mrf_cfg_first_name_update = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_cfg_first_name_update, prefix);
+                    mrf_cfg_first_name_update = (char *)find_and_replace_string(r->pool, "${filename}", mrf_cfg_first_name_update, filename);
                     if (cfg->year_dir)
-                        mrf_cfg_src_name = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_cfg_src_name, year);
-                    
+                        mrf_cfg_first_name_update = (char *)find_and_replace_string(r->pool, "${YYYY}", mrf_cfg_first_name_update, year);
+                    mrf_cfg_first_src_update->name = mrf_cfg_first_name_update;
+                    out_cfg->source = mrf_cfg_src_arr_update;
                     vfile_t *mrf_cfg_out_src = &APR_ARRAY_IDX(out_cfg->source, 0, vfile_t);
-                    mrf_cfg_out_src->name = mrf_cfg_src_name;
-                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_src_out_name=%s nelts%d", mrf_cfg_src_name,mrf_config->source->nelts);
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_src_out=%s nelts%d", mrf_cfg_out_src->name,out_cfg->source->nelts);
 
-                    // find and replace idx file name variables
+                    // vfile_t *mrf_cfg_src = &APR_ARRAY_IDX(mrf_config->source, 0, vfile_t);  APR_ARRAY_IDX(cfg->source, 0, vfile_t).name
+                    // char *mrf_cfg_src_name = apr_pstrdup(r->pool, mrf_cfg_src->name);
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_src_Original=%s nelts%d", APR_ARRAY_IDX(mrf_config->source, 0, vfile_t).name,mrf_config->source->nelts);
+
+                    // find and replace idx file name variables 
                     out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${prefix}", mrf_config->idx.name, prefix);
                     out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${filename}", out_cfg->idx.name, filename);
                     // Add the year dir to the IDX filename if that option is configured

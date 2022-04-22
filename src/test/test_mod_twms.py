@@ -73,7 +73,6 @@ MOD_MRF_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    #MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {alias}
 </Directory>
@@ -94,7 +93,6 @@ MOD_MRF_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
     WMTSWrapperRole tilematrixset
     WMTSWrapperEnableYearDir {year_dir}
     WMTSWrapperLayerAlias {layer_name}
-    #MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {layer_name}
 </Directory>

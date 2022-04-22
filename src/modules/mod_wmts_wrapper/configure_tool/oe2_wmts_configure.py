@@ -97,7 +97,6 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 </Directory>
 
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
-        #MRF On
         MRF_ConfigurationFile {config_file_path}
         MRF_RegExp {alias}
         WMTSWrapperRole tilematrixset
