@@ -421,6 +421,7 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
         storage_manager src = { rctx.buffer, rctx.size };
 
         const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=CODEC format=%d", params.raster.format);
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin mrf_request, mrf_sub_url=%s size=%d", sub_uri,src.size);
         if (error_message) { // Something went wrong
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
@@ -739,6 +740,7 @@ static int handler(request_rec *r)
     // TODO: Implement output image selection in libahtse
 
     // Output a single tile
+    // cfg->raster.format = info.c.inraster.format;
     TiledRaster outraster = cfg->raster;
     outraster.size = outraster.pagesize;
     // switch (cfg->raster.format) {
@@ -774,7 +776,7 @@ static int handler(request_rec *r)
     // default:
     //     error_message = "Unsupported output format";
     // }
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=FORMAT %s",cfg->raster.format);
+    //ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=FORMAT %s",cfg->raster.format);
     switch (cfg->raster.format) {
     case IMG_ANY: {
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=ANY");
