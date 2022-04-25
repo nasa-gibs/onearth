@@ -421,6 +421,7 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
         storage_manager src = { rctx.buffer, rctx.size };
 
         const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
+        info.c->raster.format = params.raster.format;
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=CODEC format=%d", params.raster.format);
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin mrf_request, mrf_sub_url=%s size=%d", sub_uri,src.size);
         if (error_message) { // Something went wrong
@@ -740,85 +741,17 @@ static int handler(request_rec *r)
     // TODO: Implement output image selection in libahtse
 
     // Output a single tile
-    // cfg->raster.format = info.c.inraster.format;
     TiledRaster outraster = cfg->raster;
     outraster.size = outraster.pagesize;
-    // switch (cfg->raster.format) {
-    // case IMG_ANY:
-    // case IMG_JPEG: {
-    //     jpeg_params params(outraster);
-    //     params.quality = static_cast<int>(cfg->quality);
-    //     error_message = jpeg_encode(params, raw, dst);
-    // }
-    //                  break;
-    //  case IMG_PNG: {
-    //     png_params params(outraster);
-    //     if (cfg->quality < 10) // Otherwise use the default of 6
-    //         params.compression_level = static_cast<int>(cfg->quality);
-    //     if (cfg->has_transparency)
-    //         params.has_transparency = true;
-    //     if (png_trans != NULL)
-    //      	params.has_transparency = true;
-    //     if (png_palette != NULL) {
-    //     	params.color_type = ct;
-	// 		params.bit_depth = 8;
-    //     }
-    //     error_message = png_encode(params, raw, dst, png_palette, png_trans, num_trans);
-    //     png_palette = 0;
-	// 	png_trans = 0;
-    // }
-    //              break;
-    // case IMG_LERC: {
-    //     lerc_params params(outraster);
-    //     error_message = lerc_encode(params, raw, dst);
-    // }
-    //              break;
-    // default:
-    //     error_message = "Unsupported output format";
-    // }
-    //ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=FORMAT %s",cfg->raster.format);
     switch (cfg->raster.format) {
-    case IMG_ANY: {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=ANY");
-    }
+    case IMG_ANY:
     case IMG_JPEG: {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=JPEG");
-    }
-                     break;
-     case IMG_PNG: {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=PNG");
-        png_params params(outraster);
-        if (cfg->quality < 10) // Otherwise use the default of 6
-            params.compression_level = static_cast<int>(cfg->quality);
-        if (cfg->has_transparency)
-            params.has_transparency = true;
-        if (png_trans != NULL)
-         	params.has_transparency = true;
-        if (png_palette != NULL) {
-        	params.color_type = ct;
-			params.bit_depth = 8;
-        }
-        // error_message = png_encode(params, raw, dst, png_palette, png_trans, num_trans);
-        png_palette = 0;
-		png_trans = 0;
-    }
-                 break;
-    case IMG_LERC: {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "LERC");
-        lerc_params params(outraster);
-        error_message = lerc_encode(params, raw, dst);
-    }
-                 break;
-    default:
-        error_message = "Unsupported output format";
-    }
-
-    if (NULL == cfg->mime_type || 0 == apr_strnatcmp(cfg->mime_type, "image/jpeg")) {
         jpeg_params params(outraster);
         params.quality = static_cast<int>(cfg->quality);
         error_message = jpeg_encode(params, raw, dst);
     }
-    if (0 == apr_strnatcmp(cfg->mime_type, "image/png")) {
+                     break;
+     case IMG_PNG: {
         png_params params(outraster);
         if (cfg->quality < 10) // Otherwise use the default of 6
             params.compression_level = static_cast<int>(cfg->quality);
@@ -833,6 +766,15 @@ static int handler(request_rec *r)
         error_message = png_encode(params, raw, dst, png_palette, png_trans, num_trans);
         png_palette = 0;
 		png_trans = 0;
+    }
+                 break;
+    case IMG_LERC: {
+        lerc_params params(outraster);
+        error_message = lerc_encode(params, raw, dst);
+    }
+                 break;
+    default:
+        error_message = "Unsupported output format";
     }
 
     if (error_message) {
