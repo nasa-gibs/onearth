@@ -29,12 +29,14 @@ pushd $HOME/src/modules
 
 # libicd is not yet part of AHTSE
 refresh $GITHUB/$ME/libicd
+#copy custom libicd files
+cp -R $HOME/src/modules/AHTSE/libicd/src/* $HOME/src/modules/libicd/src/
+
 pushd libicd/src
 cat <<LABEL >Makefile.lcl
 CP = cp
 PREFIX = $PREFIX
 LABEL
-sed -i 's/error_message(""),/error_message({0}),/g' icd_codecs.h
 make -j $NP
 $SUDO make install
 make clean

@@ -1,3 +1,0 @@
-CP = cp
-PREFIX = $(HOME)
-# DEBUG = -DDEBUG

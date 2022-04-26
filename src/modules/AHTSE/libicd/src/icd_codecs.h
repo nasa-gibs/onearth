@@ -191,7 +191,7 @@ struct codec_params {
     DLL_PUBLIC codec_params(const Raster& r) :
         raster(r),
         line_stride(0),
-        error_message(""),
+        error_message({0}),
         modified(false)
     { reset(); }
 
