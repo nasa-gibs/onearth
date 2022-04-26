@@ -603,7 +603,15 @@ static int handler(request_rec *r) {
     // Looks fine, set the outgoing etag and then the image
     apr_table_set(r->headers_out, "ETag", ETag);
     apr_table_set(r->headers_out, "Access-Control-Allow-Origin", "*");
-    return sendImage(r, img);
+    
+    int status = sendImage(r, img);
+    // LOGGING
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_mrf_handle, timestamp=%ld, uuid=%s",
+        apr_time_now(), uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_onearth_handle, timestamp=%ld, uuid=%s",
+        apr_time_now(), uuid);
+
+    return status;
 }
 
 static const command_rec cmds[] = {
