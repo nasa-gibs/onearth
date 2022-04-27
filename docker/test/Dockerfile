@@ -60,7 +60,6 @@ RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_wmts_wrapper
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN cp /home/oe2/onearth/src/modules/mod_reproject/src/mod_reproject.h .
 RUN make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
