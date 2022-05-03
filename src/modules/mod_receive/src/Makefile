@@ -6,23 +6,23 @@ HEADER = receive_context.h
 
 FILES = $(C_SRC) $(HEADER)
 
-# Create a file Makefile.lcl. It should define INCLUDES and MOD_PATH
-# For example on how to create Makefile.lcl see Makefile.example.lcl
+DEFINES = $(DEBUG) -DLINUX -D_REENTRANT -D_GNU_SOURCE
 
-include Makefile.lcl
+# Create a file Makefile.lcl. It should define EXTRA_INCLUDES and MOD_PATH
+# For example on how to create Makefile.lcl see Makefile.example.lcl
+MAKEOPT ?= Makefile.lcl
+include $(MAKEOPT)
 
 default	: $(TARGET)
 
 # Make it do c++
 $(TARGET)	:	$(FILES)
-	libtool --silent --mode=compile g++ -prefer-pic -O2 -Wall  -DLINUX -D_REENTRANT -D_GNU_SOURCE -pthread $(INCLUDES) -c -o $(MODULE).lo $(C_SRC) && touch $(MODULE).slo
-	libtool --silent --mode=link g++ -o $(MODULE).la -rpath $(MOD_PATH) -module -avoid-version $(MODULE).lo
+	$(LIBTOOL) --silent --mode=compile g++ -prefer-pic -O2 -Wall $(DEFINES) -pthread $(EXTRA_INCLUDES) -c -o mod_receive.lo $(C_SRC) && touch mod_receive.slo
+	$(LIBTOOL) --silent --mode=link g++ -o mod_receive.la -rpath $(LIBEXECDIR) -module -avoid-version mod_receive.lo
 
-install	:	$(TARGET)
-	cp $(TARGET)	$(MOD_PATH)
-	cp $(HEADER)	$(HTTPD_INCLUDES_PATH)
-
+install	:	$(TARGET) $(HEADER)
+	$(SUDO)	$(CP) $< $(DEST)
+	$(SUDO)	$(CP) $(HEADER) $(EXP_INCLUDEDIR)
 
 clean	:
-	rm -rf .libs *.o *.lo *.slo *.la
-
+	$(RM) -rf .libs *.o *.lo *.slo *.la

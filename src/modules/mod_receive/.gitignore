@@ -27,6 +27,7 @@
 ipch
 Debug
 Release
+.vs
 
 # Executables
 *.exe
@@ -38,3 +39,10 @@ Release
 
 # Debug files
 *.dSYM/
+
+# Local files
+*.lcl
+
+# Linux
+*.slo
+.libs

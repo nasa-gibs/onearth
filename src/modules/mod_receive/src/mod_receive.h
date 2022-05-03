@@ -21,4 +21,13 @@ APLOG_USE_MODULE(receive);
 // 1MB
 #define START_BUF_SZ 1024*1024
 
+#if defined(DEBUG)
+#include <http_log.h>
+#define LOG(r, msg, ...) {\
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, msg, ##__VA_ARGS__);\
+}
+#else
+#define LOG(...)
+#endif
+
 #endif

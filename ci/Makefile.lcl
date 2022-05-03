@@ -8,3 +8,4 @@ CP = cp
 RM = rm
 LIBEXECDIR = \$(shell \$(APXS) -q libexecdir 2>/dev/null)
 APXS = apxs
+EXP_INCLUDEDIR = /usr/local/include
