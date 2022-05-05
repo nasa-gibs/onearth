@@ -1,6 +1,6 @@
 Name:		onearth
-Version:	1.4.2
-Release:	2%{?dist}
+Version:	1.4.3
+Release:	1%{?dist}
 Summary:	Installation packages for OnEarth
 
 License:	ASL 2.0+
@@ -20,6 +20,7 @@ BuildRequires:	httpd-devel
 BuildRequires:	libpng-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  turbojpeg-devel
+BuildRequires:  libjpeg-turbo-devel
 BuildRequires:	python3-devel
 %if 0%{?centos} == 7
 Requires:	httpd = 2.4.6

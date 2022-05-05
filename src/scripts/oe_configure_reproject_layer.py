@@ -1352,4 +1352,4 @@ if __name__ == '__main__':
             "no_xml specified, getCapabilities and getTileService files will be staged only")
 
     build_reproject_configs(layer_config_path, tilematrixsets_config_path, base_wmts_gc=base_wmts_gc, base_twms_gc=base_twms_gc,
-                            base_twms_get_tile_service=base_twms_get_tile_service, wmts=wmts, twms=twms, xml=xml, sigevent_url=sigevent_url, stage_only=options.stage_only, debug=options.debug)
+                            base_twms_get_tile_service=base_twms_get_tile_service, wmts=wmts, twms=twms, create_gc=xml, sigevent_url=sigevent_url, stage_only=options.stage_only, debug=options.debug)

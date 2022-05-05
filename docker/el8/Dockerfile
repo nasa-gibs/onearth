@@ -4,6 +4,8 @@ COPY rpms/onearth-*.el8.*.rpm /rpms/
 COPY run-onearth.sh /usr/local/bin/run-onearth.sh
 
 # Install initial dependencies
+RUN dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+RUN dnf -y distro-sync
 RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf config-manager --set-enabled powertools
 RUN dnf install -y python3 python3-devel make gcc
