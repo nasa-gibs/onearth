@@ -88,7 +88,7 @@ import importlib
 
 importlib.reload(sys)
 
-versionNumber = '1.4.2'
+versionNumber = '1.4.3'
 
 class WMTSEndPoint:
     """End point data for WMTS"""
