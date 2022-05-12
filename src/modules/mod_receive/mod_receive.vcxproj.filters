@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Support Files">
+      <UniqueIdentifier>{decc4d6b-aa5a-4820-940e-e2fb59dd1c0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\mod_receive.h">
@@ -22,5 +25,22 @@
     <ClCompile Include="src\mod_receive.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="LICENSE">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="src\Makefile">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="src\Makefile.lcl.example">
+      <Filter>Support Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

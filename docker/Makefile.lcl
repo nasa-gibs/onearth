@@ -10,3 +10,4 @@ RM = rm
 # DEBUG = -DDEBUG
 # SUDO = sudo
 LIBEXECDIR = \$(shell \$(APXS) -q libexecdir 2>/dev/null)
+EXP_INCLUDEDIR = /usr/local/include
