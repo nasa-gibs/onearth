@@ -44,23 +44,21 @@ MOD_MRF_APACHE_TEMPLATE = """<IfModule !mrf_module>
 Alias /{alias} {config_path}
 
 <Directory {config_path}>
-    MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {alias}
 </Directory>
 """
 
-MOD_REPROJECT_APACHE_TEMPLATE = """<IfModule !reproject_module>
-   LoadModule reproject_module modules/mod_reproject.so
+MOD_REPROJECT_APACHE_TEMPLATE = """<IfModule !retile_module>
+   LoadModule retile_module modules/mod_retile.so
 </IfModule>
 
 Alias /{alias} {config_path}
 
 <Directory {config_path}>
-    Reproject_ConfigurationFiles {src_config} {dest_config}
-    Reproject_RegExp {alias}
-    Reproject_Source /{source_path}
-    Reproject_SourcePostfix {source_postfix}
+    Retile_ConfigurationFiles {src_config} {dest_config}
+    Retile_RegExp {alias}
+    Retile_Source /{source_path} {source_postfix}
 </Directory>
 """
 

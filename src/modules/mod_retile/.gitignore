@@ -15,6 +15,7 @@
 *.lo
 *.slo
 .libs
+.vs
 
 # Shared objects (inc. Windows DLLs)
 *.dll

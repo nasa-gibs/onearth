@@ -1,8 +1,12 @@
 MOD_PATH = /usr/lib64/httpd/modules
 HTTPD_INCLUDES_PATH = /usr/include/httpd
 INCLUDES = -I $(HTTPD_INCLUDES_PATH) -I /usr/local/apr/include/apr-1 -I /home/oe2/libahtse/src
+EXTRA_INCLUDES = -I $(HTTPD_INCLUDES_PATH) -I /usr/local/apr/include/apr-1
 DEST = $(MOD_PATH)
 APXS = apxs
-LIBTOOL = /usr/lib64/apr-1/build/libtool
+LIBTOOL = $(shell $(APXS) -q LIBTOOL 2>/dev/null)
 CP = cp
+RM = rm
 # DEBUG = -DDEBUG
+# SUDO = sudo
+LIBEXECDIR = \$(shell \$(APXS) -q libexecdir 2>/dev/null)

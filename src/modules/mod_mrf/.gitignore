@@ -30,6 +30,7 @@ ipch
 Debug
 Release
 *.lcl
+.vs
 
 # Executables
 *.exe

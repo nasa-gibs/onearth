@@ -1,24 +1,28 @@
-C_SRC = mod_mrf.cpp
-FILES = $(C_SRC)
+MODULE = mod_mrf
+TARGET = .libs/$(MODULE).so
+C_SRC = $(MODULE).cpp
 
-DEFINES = -DLINUX -D_REENTRANT -D_GNU_SOURCE
+DEFINES = -DLINUX -D_REENTRANT -D_GNU_SOURCE $(DEBUG)
 
 # Create the ../Makefile.lcl, which should define
-# MOD_PATH, the folder where the apache module should reside
+# DEST, the folder where the apache module should reside
 # INCLUDES, the gcc include commands for httpd, apr headers
+# LIBTOOL, DEBUG ...
 
-include Makefile.lcl
-TARGET = .libs/mod_mrf.so
+MAKEOPT ?= Makefile.lcl
+include $(MAKEOPT)
 
 # Can't use apxs to build c++ modules
 # The options used here might depend on how apache was built
-$(TARGET)       :       $(FILES)
-	libtool --silent --mode=compile g++ -prefer-pic -O2 -Wall $(DEFINES) $(INCLUDES) -pthread -c -o mod_mrf.lo $(C_SRC) && touch mod_mrf.slo
-	libtool --silent --mode=link g++ -o mod_mrf.la -rpath $(MOD_PATH) -module -avoid-version mod_mrf.lo
+
+default	:	$(TARGET)
+
+$(TARGET)       :       $(C_SRC)
+	$(LIBTOOL) --silent --mode=compile g++ -std=c++11 -prefer-pic -O2 -Wall $(DEFINES) $(EXTRA_INCLUDES) -I $(EXP_INCLUDEDIR) -pthread -c -o $(MODULE).lo $< && touch $(MODULE).slo
+	$(LIBTOOL) --silent --mode=link g++ -std=c++11 -o $(MODULE).la -rpath $(LIBEXECDIR) -module -avoid-version $(MODULE).lo
 
 install : $(TARGET)
-	cp $(TARGET) $(MOD_PATH)
+	$(SUDO) $(CP) $(TARGET) $(DEST)
 
 clean   :
-	rm -rf .libs *.{o,lo,slo,la}
-
+	$(RM) -r .libs *.{o,lo,slo,la}

@@ -9,21 +9,31 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="DOC">
-      <UniqueIdentifier>{a73e6c46-3010-4cc7-b8fa-4d7c875ede0f}</UniqueIdentifier>
+    <Filter Include="Support Files">
+      <UniqueIdentifier>{76786145-6ccc-4796-bd24-c8edce17e2a3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\mod_mrf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="README.md">
-      <Filter>DOC</Filter>
+    <None Include=".gitignore">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="LICENSE">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="src\Makefile">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="src\Makefile.lcl.example">
+      <Filter>Support Files</Filter>
     </None>
     <None Include="apr_FOPEN_RANDOM.patch">
-      <Filter>DOC</Filter>
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Support Files</Filter>
+    </None>
+    <None Include="mod_proxy_http.patch">
+      <Filter>Support Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

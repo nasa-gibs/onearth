@@ -39,8 +39,8 @@ BASE_APACHE_TEMPLATE = """<IfModule !mrf_module>
     LoadModule receive_module modules/mod_receive.so
 </IfModule>
 
-<IfModule !reproject_module>
-    LoadModule reproject_module modules/mod_reproject.so
+<IfModule !retile_module>
+    LoadModule retile_module modules/mod_retile.so
 </IfModule>
 
 <IfModule !wmts_wrapper_module>
@@ -74,7 +74,6 @@ MOD_MRF_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {alias}
 </Directory>
@@ -95,7 +94,6 @@ MOD_MRF_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
     WMTSWrapperRole tilematrixset
     WMTSWrapperEnableYearDir {year_dir}
     WMTSWrapperLayerAlias {layer_name}
-    MRF On
     MRF_ConfigurationFile {config_file_path}
     MRF_RegExp {layer_name}
 </Directory>
@@ -112,10 +110,9 @@ MOD_REPROJECT_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    Reproject_ConfigurationFiles {src_config} {dest_config}
-    Reproject_RegExp {layer_name}
-    Reproject_Source {src_path}
-    Reproject_SourcePostfix {src_postfix}
+    Retile_ConfigurationFiles {src_config} {dest_config}
+    Retile_RegExp {layer_name}
+    Retile_Source {src_path} {src_postfix}
 </Directory>
 """
 
@@ -132,10 +129,9 @@ MOD_REPROJECT_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 
 <Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
     WMTSWrapperRole tilematrixset
-    Reproject_ConfigurationFiles {src_config} {dest_config}
-    Reproject_RegExp {layer_name}
-    Reproject_Source {src_path}
-    Reproject_SourcePostfix {src_postfix}
+    Retile_ConfigurationFiles {src_config} {dest_config}
+    Retile_RegExp {layer_name}
+    Retile_Source {src_path} {src_postfix}
 </Directory>
 """
 

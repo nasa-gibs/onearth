@@ -97,7 +97,6 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 </Directory>
 
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
-        MRF On
         MRF_ConfigurationFile {config_file_path}
         MRF_RegExp {alias}
         WMTSWrapperRole tilematrixset
@@ -504,7 +503,7 @@ def make_layer_config(endpoint_config, layer):
 
     data_path_str = ''
     if data_file_uri:
-        data_path_str = f'Redirect {data_file_uri}'
+        data_path_str = f'DataFile :/{data_file_uri}'
     elif data_file_path:
         data_path_str = f'DataFile {data_file_path}'
 
