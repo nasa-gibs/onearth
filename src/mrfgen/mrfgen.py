@@ -173,26 +173,36 @@ def diff_resolution(tiles):
         gdalinfo_command_list=['gdalinfo', '-json', tile]
         log_the_command(gdalinfo_command_list)
         gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        """
         returncode = gdalinfo.wait()
         if returncode != 0:
             log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
             return(False, next_x)
         tileInfo = json.loads(gdalinfo.stdout.read())
+        """
+        try:
+            outs, errs = gdalinfo.communicate(timeout=90)
+            if len(errs) > 0:
+                log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            tileInfo = json.loads(outs)
 
-        tile_res_x = float(tileInfo["geoTransform"][1])
-        tile_res_y = float(tileInfo["geoTransform"][5])
+            tile_res_x = float(tileInfo["geoTransform"][1])
+            tile_res_y = float(tileInfo["geoTransform"][5])
 
-        if not res:
-            log_info_mssg("Input tile pixel size is: " + str(tile_res_x) + ", " + str(tile_res_y))
-            res   = tile_res_x
-            res_x = tile_res_x
-            res_y = tile_res_y
-        else:
-            next_x = tile_res_x
-            next_y = tile_res_y
-            if res_x != next_x and res_y != next_y:
-                log_info_mssg("Different tile resolutions detected")
-                return (True, next_x)
+            if not res:
+                log_info_mssg("Input tile pixel size is: " + str(tile_res_x) + ", " + str(tile_res_y))
+                res   = tile_res_x
+                res_x = tile_res_x
+                res_y = tile_res_y
+            else:
+                next_x = tile_res_x
+                next_y = tile_res_y
+                if res_x != next_x and res_y != next_y:
+                    log_info_mssg("Different tile resolutions detected")
+                    return (True, next_x)
+        except subprocess.TimeoutExpired:
+            gdalinfo.kill()
+            log_sig_err('gdalinfo timed out', sigevent_url)
 
     return (False, next_x)
 
@@ -213,21 +223,31 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
     log_the_command(gdalinfo_command_list)
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    """
     returncode = gdalinfo.wait()
     if returncode != 0:
         log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
         return False
     tileInfo = json.loads(gdalinfo.stdout.read())
+    """
+    try:
+        outs, errs = gdalinfo.communicate(timeout=90)
+        if len(errs) > 0:
+            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+        tileInfo = json.loads(outs)
 
-    in_xmin = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
-    in_ymax = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
-    in_xmax = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
-    in_ymin = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
+        in_xmin = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
+        in_ymax = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
+        in_xmax = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
+        in_ymin = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
 
-    if int(round(float(in_xmin))) <= int(round(float(xmin))) and int(round(float(in_ymax))) >= int(round(float(ymax))):
-        upper_left = True
-    if int(round(float(in_xmax))) >= int(round(float(xmax))) and int(round(float(in_ymin))) <= int(round(float(ymin))):
-        lower_right = True
+        if int(round(float(in_xmin))) <= int(round(float(xmin))) and int(round(float(in_ymax))) >= int(round(float(ymax))):
+            upper_left = True
+        if int(round(float(in_xmax))) >= int(round(float(xmax))) and int(round(float(in_ymin))) <= int(round(float(ymin))):
+            lower_right = True
+    except subprocess.TimeoutExpired:
+        gdalinfo.kill()
+        log_sig_err('gdalinfo timed out', sigevent_url)
 
     if upper_left and lower_right:
         log_info_mssg(tile + " is a global image")
@@ -246,21 +266,31 @@ def get_image_epsg(tile):
     gdalinfo_command_list = ['gdalinfo', '-json', tile]
     log_the_command(gdalinfo_command_list)
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    """
     returncode = gdalinfo.wait()
     if returncode != 0:
         log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
         return None
     tileInfo = json.loads(gdalinfo.stdout.read())
-
-    wkt = tileInfo["coordinateSystem"]["wkt"]
-
+    """
     epsg = None
-    if wkt != "":
-        lastAuth = wkt.rfind("AUTHORITY")
-        if lastAuth != -1:
-            m = re.search(".*EPSG.*([0-9]{4}).*", wkt[lastAuth:])
-            if m:
-                epsg = "EPSG:" + m.group(1)
+    try:
+        outs, errs = gdalinfo.communicate(timeout=90)
+        if len(errs) > 0:
+            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+        tileInfo = json.loads(outs)
+
+        wkt = tileInfo["coordinateSystem"]["wkt"]
+
+        if wkt != "":
+            lastAuth = wkt.rfind("AUTHORITY")
+            if lastAuth != -1:
+                m = re.search(".*EPSG.*([0-9]{4}).*", wkt[lastAuth:])
+                if m:
+                    epsg = "EPSG:" + m.group(1)
+    except subprocess.TimeoutExpired:
+        gdalinfo.kill()
+        log_sig_err('gdalinfo timed out', sigevent_url)
 
     return epsg
 
@@ -276,11 +306,18 @@ def get_image_extents(tile):
     log_the_command(gdalinfo_command_list)
 
     gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    """
     returncode = gdalinfo.wait()
     if returncode != 0:
         log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
     try:
         tileInfo = json.loads(gdalinfo.stdout.read())
+    """
+    try:
+        outs, errs = gdalinfo.communicate(timeout=90)
+        if len(errs) > 0:
+            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+        tileInfo = json.loads(outs)
 
         ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
         uly = str(tileInfo["cornerCoordinates"]["upperLeft"][1])
@@ -288,6 +325,10 @@ def get_image_extents(tile):
         lry = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
 
         return [ulx, uly, lrx, lry]
+
+    except subprocess.TimeoutExpired:
+        gdalinfo.kill()
+        log_sig_err('gdalinfo timed out', sigevent_url)
     except:
         log_sig_exit('ERROR', "Error reading " + tile, sigevent_url)
 
@@ -303,14 +344,25 @@ def has_color_table(tile):
     gdalinfo_command_list=['gdalinfo', '-json', tile]
     log_the_command(gdalinfo_command_list)
     gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    """
     returncode = gdalinfo.wait()
     if returncode != 0:
         log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
         return False
     tileInfo = json.loads(gdalinfo.stdout.read())
+    """
+    try:
+        outs, errs = gdalinfo.communicate(timeout=90)
+        if len(errs) > 0:
+            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+        tileInfo = json.loads(outs)
 
-    for band in tileInfo["bands"]:
-        has_color_table |= "colorTable" in band
+        for band in tileInfo["bands"]:
+            has_color_table |= "colorTable" in band
+
+    except subprocess.TimeoutExpired:
+        gdalinfo.kill()
+        log_sig_err('gdalinfo timed out', sigevent_url)
 
     log_info_mssg(("No color table found", "Color table found in image")[has_color_table])
     return has_color_table
@@ -1756,14 +1808,23 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             gdalinfo_command_list = ['gdalinfo', '-json', tile]
             log_the_command(gdalinfo_command_list)
             gdalinfo = subprocess.Popen(gdalinfo_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            """
             returncode = gdalinfo.wait()
             if returncode != 0:
                 log_sig_err('gdalinfo return code {0}'.format(returncode), sigevent_url)
             tileInfo = json.loads(gdalinfo.stdout.read())
-
+            """
             has_palette = False
-            for band in tileInfo["bands"]:
-                has_palette |= (band["colorInterpretation"] == "Palette")
+            try:
+                outs, errs = gdalinfo.communicate(timeout=90)
+                if len(errs) > 0:
+                    log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+                tileInfo = json.loads(outs)           
+                for band in tileInfo["bands"]:
+                    has_palette |= (band["colorInterpretation"] == "Palette")
+            except subprocess.TimeoutExpired:
+                gdalinfo.kill()
+                log_sig_err('gdalinfo timed out', sigevent_url)
 
             # Read gdal_info output
             if not has_palette:
