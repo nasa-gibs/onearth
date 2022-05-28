@@ -222,18 +222,19 @@ const char *png_stride_decode(codec_params &params, storage_manager &src, void *
     int num_palette;
     png_color_16 *trans_values;
     png_colorp palettep;
-    png_get_PLTE(pngp, infop, &palettep, &num_palette);
-    for (int p = 0; p < num_palette; p++) {
-        palette[p].red = palettep[p].red;
-        palette[p].green = palettep[p].green;
-        palette[p].blue = palettep[p].blue;
+    if (params.raster.size.c == 1) {
+        png_get_PLTE(pngp, infop, &palettep, &num_palette);
+        for (int p = 0; p < num_palette; p++) {
+            palette[p].red = palettep[p].red;
+            palette[p].green = palettep[p].green;
+            palette[p].blue = palettep[p].blue;
+        }
+        png_bytep transp;
+        png_get_tRNS(pngp, infop, &transp, &num_trans, &trans_values);
+        for (int p = 0; p < num_trans; p++) {
+            trans[p] = transp[p];
+        }
     }
-    png_bytep transp;
-    png_get_tRNS(pngp, infop, &transp, &num_trans, &trans_values);
-    for (int p = 0; p < num_trans; p++) {
-        trans[p] = transp[p];
-    }
-
     auto const& rsize = params.raster.size;
     if (rsize.y != static_cast<size_t>(height)
         || rsize.x != static_cast<size_t>(width)) {
@@ -285,8 +286,8 @@ const char *png_encode(png_params &params, storage_manager &src, storage_manager
     // Check inputs for sanity
     if (getTypeSize(params.raster.dt) > 2)
         return "Invalid PNG encoding data type";
-    if (rsize.x * rsize.y * getTypeSize(params.raster.dt) > src.size)
-        return "Insufficient input data for PNG encoding";
+    // if (rsize.x * rsize.y * getTypeSize(params.raster.dt) > src.size)
+    //     return "Insufficient input data for PNG encoding";
     // Use a vector so it cleans up itself
     std::vector<png_bytep> png_rowp(height);
 
@@ -331,10 +332,10 @@ const char *png_encode(png_params &params, storage_manager &src, storage_manager
     for (size_t i = 0; i < png_rowp.size(); i++)
         png_rowp[i] = reinterpret_cast<png_bytep>(src.buffer) + i * rowbytes;
     // Last check, do we have enough input
-    if (png_rowp.size() * rowbytes > src.size) {
-        png_destroy_write_struct(&pngp, &infop);
-        return "Insufficient input data for PNG encoding";
-    }
+    // if (png_rowp.size() * rowbytes > src.size) {
+    //     png_destroy_write_struct(&pngp, &infop);
+    //     return "Insufficient input data for PNG encoding";
+    // }
 
     png_write_info(pngp, infop);
     png_write_image(pngp, png_rowp.data());

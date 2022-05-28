@@ -603,8 +603,10 @@ static int handler(request_rec *r) {
     // Looks fine, set the outgoing etag and then the image
     apr_table_set(r->headers_out, "ETag", ETag);
     apr_table_set(r->headers_out, "Access-Control-Allow-Origin", "*");
-    
-    int status = sendImage(r, img);
+    auto status = sendImage(r, img);
+    if (status != OK) {
+        return status;
+    }
     // LOGGING
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_mod_mrf_handle, timestamp=%ld, uuid=%s",
         apr_time_now(), uuid);
