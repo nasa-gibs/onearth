@@ -8,7 +8,7 @@ ARG GDAL_RELEASE=3
 RUN yum install -y proj-4.8.0 proj-devel-4.8.0
 RUN yum install -y python-backports-1.0 python-backports-ssl_match_hostname-3.5.0.1
 RUN yum install -y sqlite-3.7.17 turbojpeg-1.2.90 turbojpeg-devel-1.2.90 agg-2.5 agg-devel-2.5
-RUN pip3.6 install apacheconfig==0.2.8 numpy==1.16.6 matplotlib==2.2.5 parse_apache_configs==0.0.2
+RUN pip3.6 install apacheconfig==0.2.8 numpy==1.16.6 matplotlib==2.2.5 parse_apache_configs==0.0.2 wheel==0.37.1
 
 # Install wms dependencies
 RUN yum install -y fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2
@@ -29,7 +29,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip3.6 install protobuf==3.19.4 wheel==0.37.1 Fiona==1.8.19 Shapely==1.8.2 Rtree==0.9.7 mapbox-vector-tile==1.2.1
+RUN pip3.6 install protobuf==3.19.4 Fiona==1.8.19 Shapely==1.8.2 Rtree==0.9.7 mapbox-vector-tile==1.2.1
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
