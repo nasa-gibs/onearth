@@ -29,7 +29,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip3.6 install protobuf==3.19.4 Fiona==1.8.19 Shapely==1.8.2 Rtree==0.9.7 mapbox-vector-tile==1.2.1
+RUN pip3.6 install protobuf==3.19.4 Fiona==1.8.13 Shapely==1.8.2 Rtree==0.9.7 mapbox-vector-tile==1.2.1
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
