@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.6.0
+FROM nasagibs/onearth-deps:2.6.1
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=3
@@ -29,7 +29,7 @@ WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip3.6 install Fiona==1.8.13 Shapely==1.7.0 Rtree==0.9.4 mapbox-vector-tile==1.2.0
+RUN pip3.6 install protobuf==3.19.4 wheel==0.37.1 Fiona==1.8.19 Shapely==1.8.2 Rtree==0.9.7 mapbox-vector-tile==1.2.1
 
 WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
@@ -173,7 +173,7 @@ WORKDIR /home/oe2/onearth/src/test
 RUN pip3.6 install --upgrade pip
 RUN pip3.6 install -r requirements.txt
 
-ENV ONEARTH_VERSION=2.6.0
+ENV ONEARTH_VERSION=2.6.1
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh
