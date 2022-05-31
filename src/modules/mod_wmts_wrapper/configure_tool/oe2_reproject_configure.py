@@ -83,6 +83,7 @@ PageSize {tile_size_x} {tile_size_y} 1 {bands}
 SkippedLevels {skipped_levels}
 Projection {projection}
 BoundingBox {bbox}
+{format}
 """
 
 MOD_REPROJECT_REPRO_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
@@ -90,9 +91,9 @@ Nearest {nearest}
 PageSize {tile_size_x} {tile_size_y} 1 {bands}
 Projection {projection}
 BoundingBox {bbox}
-MimeType {mimetype}
 Oversample On
 ExtraLevels 3
+{format}
 """
 
 MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
@@ -495,6 +496,8 @@ def make_apache_layer_config(endpoint_config, layer_config):
 
 
 def make_mod_reproject_configs(endpoint_config, layer_config):
+    format = f'Format {layer_config["mimetype"]}' if layer_config["mimetype"].startswith('image') else ''
+
     src_config = bulk_replace(
         MOD_REPROJECT_SOURCE_TEMPLATE,
         [('{size_x}', str(layer_config['src_size_x'])),
@@ -504,6 +507,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
          ('{tile_size_y}', str(layer_config['tile_size_y'])),
          ('{projection}', layer_config['projection']),
          ('{bbox}', ','.join(map(str, layer_config['bbox']))),
+         ('{format}', format),
          ('{skipped_levels}',
           '1' if layer_config['projection'] == 'EPSG:4326' else '0')])
 
@@ -515,7 +519,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
          ('{tile_size_x}', str(layer_config['reproj_tile_size_x'])),
          ('{tile_size_y}', str(layer_config['reproj_tile_size_y'])),
          ('{projection}', str(layer_config['reproj_projection'])),
-         ('{mimetype}', layer_config["mimetype"]),
+         ('{format}', format),
          ('{bbox}', ','.join(map(str, layer_config['reproj_bbox']))),
          ('{nearest}',
           'Off' if layer_config['mimetype'] == 'image/jpeg' else 'On')])
