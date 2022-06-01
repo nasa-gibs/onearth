@@ -139,8 +139,6 @@ struct  repro_conf {
     // array of guard regex pointers, one of them has to match
     apr_array_header_t* arr_rxp;
 
-    // Output mime-type, default is JPEG
-    const char* mime_type;
     // ETag initializer
     apr_uint64_t seed;
     // Buffer for the emtpy tile etag
@@ -784,7 +782,7 @@ static int handler(request_rec *r)
     }
 
     apr_table_set(r->headers_out, "ETag", ETag);
-    return sendImage(r, dst, cfg->mime_type);
+    return sendImage(r, dst, nullptr); // sendImage detects the output format
 }
 
 static const char *read_config(cmd_parms *cmd, repro_conf *c, const char *src, const char *fname)
@@ -808,10 +806,6 @@ static const char *read_config(cmd_parms *cmd, repro_conf *c, const char *src, c
     // In theory, we could alow the sign/unsigned to slip through
     if (getTypeSize(c->raster.dt) != getTypeSize(c->inraster.dt))
         return "Input datatype different from output";
-
-    // Output mime type, defaults to jpeg
-    line = apr_table_get(kvp, "MimeType");
-    c->mime_type = (line) ? apr_pstrdup(cmd->pool, line) : "image/jpeg";
 
     // Get the planet circumference in meters, for partial coverages
     line = apr_table_get(kvp, "Radius");

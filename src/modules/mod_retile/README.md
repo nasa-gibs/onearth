@@ -65,9 +65,6 @@ Optional, if set the module only responds to indirect requests
 ## EmptyTile size offset filename
   - Size is required, Offset defaults to zero and filename defaults to sourcepath
 
-## MimeType mtype
-  - Output mime type, defaults to input format.  image/jpeg, image/png, raster/lerc.  If specified, forces the output type
-
 ## Format mtype
   - Output format
 
