@@ -166,6 +166,7 @@ matrix_width = int(tm[0].findtext('{*}MatrixWidth'))
 matrix_height = int(tm[0].findtext('{*}MatrixHeight'))
 
 for layer in layers:
+    reprojected = None
     layer_name = layer.findtext('{*}Identifier')
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
     bbox = layer.find('{*}BoundingBox')
@@ -199,12 +200,38 @@ for layer in layers:
         dimension_info = DIMENSION_TEMPLATE.replace('{periods}', period_str).replace('{default}', default_datetime)
         validation_info = VALIDATION_TEMPLATE.replace('{default}', default_datetime)
 
+    # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
+    layer_config = next((lc for lc in layer_configs if layer_name + ".yaml" in lc['path']), False)
+    wms_layer_group = ""
+    if layer_config:
+        try:
+            wms_layer_group = '"wms_layer_group"       "{0}"'.format(layer_config['config']['wms_layer_group'])
+        except KeyError:
+            print("WARN: Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
+    else:
+        print("WARN: Layer config for layer {0} not found".format(layer_name))
+
     wms_srs    = "{0}".format(epsg_code)
     if epsg_code == "EPSG:4326":
-        wms_extent = "-180 -90 180 90"
-        # Explicitly show that EPSG:4326 and EPSG:3857 requests are supported through an EPSG:4326 endpoint
-        wms_srs    = "EPSG:4326 EPSG:3857"
-        layer_proj = epsg_code.lower()
+        if layer_config and layer_config["config"].get("reprojected", None) == False:
+            # Forcing static layer to not be reprojected and stay in EPSG 3857
+            reprojected = False
+            wms_extent = "-20037508.342789248 -20048966.104014635 20048966.104014624 20037508.342789248"
+            wms_srs    = "EPSG:3857"
+            layer_proj = "epsg:3857"
+            tile_width = 256
+            tile_height = 256
+            matrix_width = 1
+            bounds[0] = -20037508.342789248
+            bounds[1] = -20048966.104014624
+            bounds[2] = 20048966.104014624
+            bounds[3] = 20037508.342789248
+            tms = "GoogleMapsCompatible_Level9"
+        else:
+            wms_extent = "-180 -90 180 90"
+            # Explicitly show that EPSG:4326 and EPSG:3857 requests are supported through an EPSG:4326 endpoint
+            wms_srs    = "EPSG:4326 EPSG:3857"
+            layer_proj = epsg_code.lower()
     elif epsg_code in ["EPSG:3031", "EPSG:3413"]:
         # Hard coded to GIBS TileMatrixSet values. These are not the projection's native extents. If that's a problem,
         # then the values could be read from the remote Capabilities
@@ -222,17 +249,6 @@ for layer in layers:
         wms_extent = "{0}, {1}, {2}, {3}".format(upper_left_x, lower_right_y, lower_right_x, upper_left_y)
         layer_proj = epsg_code.lower()
         break
-
-    # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
-    layer_config = next((lc for lc in layer_configs if layer_name in lc['path']), False)
-    wms_layer_group = ""
-    if layer_config:
-        try:
-            wms_layer_group = '"wms_layer_group"       "{0}"'.format(layer_config['config']['wms_layer_group'])
-        except KeyError:
-            print("WARN: Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
-    else:
-        print("WARN: Layer config for layer {0} not found".format(layer_name))
 
     # handle vector layers
     if layer_config and resource_url.get('format') == 'application/vnd.mapbox-vector-tile':
@@ -286,6 +302,8 @@ for layer in layers:
 
         service_element = etree.SubElement(out_root, 'Service')
         service_element.set('name', 'TMS')
+        if reprojected == False:
+            template_string = template_string.replace('4326', '3857')
         etree.SubElement(service_element, 'ServerUrl').text = template_string.replace(
             '{TileMatrixSet}', tms).replace('{Time}', '%time%').replace('{TileMatrix}', '${z}').replace('{TileRow}', '${y}').replace('{TileCol}', '${x}')
 
@@ -294,12 +312,18 @@ for layer in layers:
         etree.SubElement(data_window_element, 'UpperLeftY').text = str(bounds[3])
         etree.SubElement(data_window_element, 'LowerRightX').text = str(bounds[2])
         etree.SubElement(data_window_element, 'LowerRightY').text = str(bounds[1])
-        etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
+        if reprojected == False:
+            etree.SubElement(data_window_element, 'TileLevel').text = "9"
+        else:
+            etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
         etree.SubElement(data_window_element, 'TileCountX').text = str(matrix_width)
         etree.SubElement(data_window_element, 'TileCountY').text = str(matrix_height)
         etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
-        etree.SubElement(out_root, 'Projection').text = epsg_code
+        if reprojected == False:
+            etree.SubElement(out_root, 'Projection').text = layer_proj.upper()
+        else:
+            etree.SubElement(out_root, 'Projection').text = epsg_code
         etree.SubElement(out_root, 'BlockSizeX').text = str(tile_width)
         etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
         etree.SubElement(out_root, 'BandsCount').text = str(bands_count)

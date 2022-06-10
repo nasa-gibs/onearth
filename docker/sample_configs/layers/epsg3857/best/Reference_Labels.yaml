@@ -16,4 +16,5 @@ source_mrf:
   tile_size_y: 256
   year_dir: false
 static: true
+reprojected: false
 tilematrixset: GoogleMapsCompatible_Level9
