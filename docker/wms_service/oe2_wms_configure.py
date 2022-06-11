@@ -102,6 +102,34 @@ def get_layer_configs(endpoint_config):
             if filepath.is_file() and filepath.name.endswith('.yaml')
         ]
 
+def get_gc(url):
+    # Get source GetCapabilities
+    print('Fetching ' + url)
+    attempt = 1
+    retries = 10
+    duration = 30 # in seconds
+    try:
+        r = requests.get(url)
+        if r.status_code != 200:
+            print("Can't get GetCapabilities file from url " + gc_url)
+            sys.exit()
+
+        return r.content
+    except:
+        while attempt < retries:
+            time.sleep(duration)
+            attempt = attempt + 1
+            print("Failed attempt " + str(attempt) + " to connect to " + gc_url)
+            try:
+                r = requests.get(gc_url)
+                if r.status_code == 200:
+                    break
+            except Exception as e:
+                print("ERROR:", e)
+        if attempt == retries:
+            print("Can't get GetCapabilities file from url " + gc_url)
+            sys.exit()
+
 # Parse arguments
 parser = argparse.ArgumentParser(description='Make WMS endpoint.')
 parser.add_argument('endpoint_config', type=str, help='an endpoint config YAML file')
@@ -128,32 +156,11 @@ gc_url = endpoint_config['mapserver']['source_wmts_gc_uri']
 if endpoint_config['mapserver'].get('replace_with_local'):
     replace_with_local = endpoint_config['mapserver']['replace_with_local']
     gc_url = gc_url.replace(replace_with_local, 'http://172.17.0.1:8080')
-print('Fetching ' + gc_url)
-attempt = 1
-retries = 10
-duration = 30 # in seconds
-try:
-    r = requests.get(gc_url)
-    if r.status_code != 200:
-        print("Can't get GetCapabilities file from url " + gc_url)
-        sys.exit()
-except:
-    while attempt < retries:
-        time.sleep(duration)
-        attempt = attempt + 1
-        print("Failed attempt " + str(attempt) + " to connect to " + gc_url)
-        try:
-            r = requests.get(gc_url)
-            if r.status_code == 200:
-                break
-        except Exception as e:
-            print("ERROR:", e)
-    if attempt == retries:
-        print("Can't get GetCapabilities file from url " + gc_url)
-        sys.exit()
+
+gc_content = get_gc(gc_url)
 
 # Read GetCapabilities
-root = etree.fromstring(r.content)
+root = etree.fromstring(gc_content)
 layers = root.find('{*}Contents').findall('{*}Layer')
 layer_strings = []
 
@@ -166,7 +173,7 @@ matrix_width = int(tm[0].findtext('{*}MatrixWidth'))
 matrix_height = int(tm[0].findtext('{*}MatrixHeight'))
 
 for layer in layers:
-    reprojected = None
+    web_mercator = None
     layer_name = layer.findtext('{*}Identifier')
     tms = layer.find('{*}TileMatrixSetLink').findtext('{*}TileMatrixSet')
     bbox = layer.find('{*}BoundingBox')
@@ -213,20 +220,25 @@ for layer in layers:
 
     wms_srs    = "{0}".format(epsg_code)
     if epsg_code == "EPSG:4326":
-        if layer_config and layer_config["config"].get("reprojected", None) == False:
-            # Forcing static layer to not be reprojected and stay in EPSG 3857
-            reprojected = False
-            wms_extent = "-20037508.342789248 -20048966.104014635 20048966.104014624 20037508.342789248"
-            wms_srs    = "EPSG:3857"
-            layer_proj = "epsg:3857"
-            tile_width = 256
-            tile_height = 256
-            matrix_width = 1
-            bounds[0] = -20037508.342789248
-            bounds[1] = -20048966.104014624
-            bounds[2] = 20048966.104014624
-            bounds[3] = 20037508.342789248
-            tms = "GoogleMapsCompatible_Level9"
+        if layer_config and 'web_mercator_config_path' in layer_config["config"]:
+            gc_3857 = get_gc(gc_url.replace("4326", "3857"))
+            root = etree.fromstring(gc_3857)
+
+            tilematrixsets = root.find('{*}Contents').findall('{*}TileMatrixSet')
+            tm = tilematrixsets[0].findall('{*}TileMatrix')
+            scale_denominator = Decimal(tm[0].findtext('{*}ScaleDenominator'))
+            tile_width = int(tm[0].findtext('{*}TileWidth'))
+            tile_height = int(tm[0].findtext('{*}TileHeight'))
+            matrix_width = int(tm[0].findtext('{*}MatrixWidth'))
+            matrix_height = int(tm[0].findtext('{*}MatrixHeight'))
+
+            wm_layer_config = get_layer_config(Path(layer_config["config"]["web_mercator_config_path"]))    
+            web_mercator = False
+            wms_extent = wm_layer_config["config"]["source_mrf"]["bbox"]
+            wms_srs    = wm_layer_config["config"]["projection"]
+            layer_proj = wms_srs.lower()
+            bounds = wm_layer_config["config"]["source_mrf"]["bbox"].split(",")
+            tms = wm_layer_config["config"]["tilematrixset"]
         else:
             wms_extent = "-180 -90 180 90"
             # Explicitly show that EPSG:4326 and EPSG:3857 requests are supported through an EPSG:4326 endpoint
@@ -302,7 +314,7 @@ for layer in layers:
 
         service_element = etree.SubElement(out_root, 'Service')
         service_element.set('name', 'TMS')
-        if reprojected == False:
+        if web_mercator == False:
             template_string = template_string.replace('4326', '3857')
         etree.SubElement(service_element, 'ServerUrl').text = template_string.replace(
             '{TileMatrixSet}', tms).replace('{Time}', '%time%').replace('{TileMatrix}', '${z}').replace('{TileRow}', '${y}').replace('{TileCol}', '${x}')
@@ -312,15 +324,12 @@ for layer in layers:
         etree.SubElement(data_window_element, 'UpperLeftY').text = str(bounds[3])
         etree.SubElement(data_window_element, 'LowerRightX').text = str(bounds[2])
         etree.SubElement(data_window_element, 'LowerRightY').text = str(bounds[1])
-        if reprojected == False:
-            etree.SubElement(data_window_element, 'TileLevel').text = "9"
-        else:
-            etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
+        etree.SubElement(data_window_element, 'TileLevel').text = get_tile_level(tms, tilematrixsets)
         etree.SubElement(data_window_element, 'TileCountX').text = str(matrix_width)
         etree.SubElement(data_window_element, 'TileCountY').text = str(matrix_height)
         etree.SubElement(data_window_element, 'YOrigin').text = 'top'
 
-        if reprojected == False:
+        if web_mercator == False:
             etree.SubElement(out_root, 'Projection').text = layer_proj.upper()
         else:
             etree.SubElement(out_root, 'Projection').text = epsg_code
