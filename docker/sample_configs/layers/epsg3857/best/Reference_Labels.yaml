@@ -16,5 +16,4 @@ source_mrf:
   tile_size_y: 256
   year_dir: false
 static: true
-web_mercator_config_path: /etc/onearth/config/layers/epsg3857/best/Reference_Labels.yaml
 tilematrixset: GoogleMapsCompatible_Level9
