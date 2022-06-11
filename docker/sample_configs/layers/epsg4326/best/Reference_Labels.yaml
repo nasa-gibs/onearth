@@ -1,0 +1,23 @@
+abstract: Reference_Labels abstract
+cache_expiration: 259200
+layer_id: Reference_Labels
+layer_name: Reference Labels tileset
+layer_title: b'Reference Labels (OSM)'
+metadata: []
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 4
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326/Reference_Labels/Reference_Labels.ppg'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
+  idx_path: /onearth/idx/epsg4326/Reference_Labels/Reference_Labels.idx
+  size_x: 163840
+  size_y: 81920
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: false
+static: true
+tilematrixset: 250m
+web_mercator_config_path: /etc/onearth/config/layers/epsg3857/best/Reference_Labels.yaml
+wms_layer_group: /Reference Map
