@@ -1749,7 +1749,7 @@ class TestMRFGeneration_zenjpeg(unittest.TestCase):
             print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
         self.assertEqual(dataset.RasterXSize, 20480, "Size does not match")
         self.assertEqual(dataset.RasterYSize, 10240, "Size does not match")
-        self.assertEqual(dataset.RasterCount, 3, "Alpha channel not found")
+        self.assertEqual(dataset.RasterCount, 3, "Not an RGB image")
 
         geotransform = dataset.GetGeoTransform()
         if DEBUG:
@@ -1764,7 +1764,7 @@ class TestMRFGeneration_zenjpeg(unittest.TestCase):
 
         if DEBUG:
             print("Comparing: " + self.output_img_png + " to " + self.compare_img_png)
-        #self.assertTrue(filecmp.cmp(self.output_img_png, self.compare_img_png), "PNG output image does not match")
+        self.assertTrue(filecmp.cmp(self.output_img_png, self.compare_img_png), "PNG output image does not match")
 
         if DEBUG:
             print("Comparing: " + self.output_img_jpg + " to " + self.compare_img_jpg)
