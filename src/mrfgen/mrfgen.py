@@ -1477,6 +1477,13 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''
+    try:
+        if get_dom_tag_value(dom, 'mrf_nocopy') == "false":
+            nocopy = False
+        else:
+            nocopy = True
+    except:
+        nocopy = None
         # noaddo, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_noaddo') == "false":
@@ -1637,6 +1644,7 @@ log_info_mssg(str().join(['config reprojection resampling: ', reprojection_resam
 log_info_mssg(str().join(['config resize resampling:       ', resize_resampling]))
 log_info_mssg(str().join(['config colormap:                ', colormap]))
 log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
+log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
 log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
@@ -2110,6 +2118,27 @@ if mrf_compression_type.lower() == 'zen':
 # sort
 alltiles.sort()
 
+# determine if nocopy should be used if not set
+if nocopy is None:
+    if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
+        if is_global_image(alltiles[0],xmin, ymin, xmax, ymax) == True:
+            # Don't do inserts if we have a single global image
+            nocopy = False
+        else:
+            nocopy = True
+    elif len(alltiles) == 1 and alltiles[0].endswith('empty.vrt') == True: #empty VRT, use nocopy
+        nocopy = True
+    else:
+        if (res*8) < (float(mrf_blocksize)/float(target_x)):
+            # Avoid inserts if the target MRF resolution is too low
+            nocopy = False
+        elif source_epsg != target_epsg:
+            # Avoid inserts if reprojecting
+            nocopy = False
+        else:
+            nocopy = True
+    log_info_mssg("Setting MRF nocopy to " + str(nocopy)) 
+
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
 try:
@@ -2488,13 +2517,13 @@ if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
 
-gdal_translate_command_list.append('-co')
-gdal_translate_command_list.append('NOCOPY=true')
-# use UNIFORM_SCALE if empty MRF, single input, or noaddo
-if noaddo or len(alltiles) <= 1:
+if nocopy == True:
     gdal_translate_command_list.append('-co')
-    gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
-
+    gdal_translate_command_list.append('NOCOPY=true')
+    if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
+        gdal_translate_command_list.append('-co')
+        gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
+        
 # add ending parameters
 gdal_translate_command_list.append(vrt_filename)
 gdal_translate_command_list.append(gdal_mrf_filename)
@@ -2571,7 +2600,7 @@ else:
     actual_size=max([int(sizeX), int(sizeY)])
 
 # Insert if there are input tiles to process
-if len(alltiles) > 0:
+if len(alltiles) > 0 and nocopy==True:
     if mrf_parallel:
         parallel_mrf_insert(alltiles, gdal_mrf_filename, insert_method, resize_resampling, target_x, target_y, mrf_blocksize,
                              [target_xmin, target_ymin, target_xmax, target_ymax], target_epsg, vrtnodata, merge, working_dir, mrf_cores)
@@ -2588,7 +2617,7 @@ if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
 
     # Run gdaladdo if noaddo==False, we have more than one tile, and we have none or >1 overviews
-    if (not noaddo) and (len(alltiles) > 1) and (overview_levels == '' or int(overview_levels[0]) > 1):
+    if (not noaddo) or (nocopy):
         # Create the gdaladdo command.
         gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
                                str(gdal_mrf_filename)]
