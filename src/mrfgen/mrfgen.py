@@ -1477,21 +1477,22 @@ else:
         zkey = get_dom_tag_value(dom, 'mrf_z_key')
     except:
         zkey = ''
+    # nocopy
     try:
-        if get_dom_tag_value(dom, 'mrf_nocopy') == "false":
-            nocopy = False
-        else:
+        if get_dom_tag_value(dom, 'mrf_nocopy') == "true":
             nocopy = True
+        else:
+            nocopy = False
     except:
         nocopy = None
-        # noaddo, defaults to False
+    # noaddo
     try:
         if get_dom_tag_value(dom, 'mrf_noaddo') == "false":
             noaddo = False
         else:
             noaddo = True
     except:
-        noaddo = False
+        noaddo = None
 
     # mrf_cores (max number of cpu cores to run on if mrf_parallel is set, defaults to 4
     try:
@@ -2118,10 +2119,13 @@ if mrf_compression_type.lower() == 'zen':
 # sort
 alltiles.sort()
 
+# check for different resolutions
+diff_res, res = diff_resolution(alltiles)
+
 # determine if nocopy should be used if not set
 if nocopy is None:
     if len(alltiles) == 1 and alltiles[0].endswith('.vrt') == False:
-        if is_global_image(alltiles[0],xmin, ymin, xmax, ymax) == True:
+        if is_global_image(alltiles[0],source_xmin, source_ymin, source_xmax, source_ymax) == True:
             # Don't do inserts if we have a single global image
             nocopy = False
         else:
@@ -2137,7 +2141,12 @@ if nocopy is None:
             nocopy = False
         else:
             nocopy = True
-    log_info_mssg("Setting MRF nocopy to " + str(nocopy)) 
+    log_info_mssg("Setting MRF nocopy to " + str(nocopy))
+
+# determine if noaddo should be used if not set
+if noaddo is None:
+    # nocopy implies mrf_insert is used, which already builds overviews
+    noaddo = nocopy
 
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
@@ -2522,7 +2531,7 @@ if nocopy == True:
     gdal_translate_command_list.append('NOCOPY=true')
     if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
         gdal_translate_command_list.append('-co')
-        gdal_translate_command_list.append('UNIFORM_SCALE='+str(overview))
+        gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
         
 # add ending parameters
 gdal_translate_command_list.append(vrt_filename)
@@ -2616,8 +2625,8 @@ old_stats=os.stat(idx_filename)
 if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
 
-    # Run gdaladdo if noaddo==False, we have more than one tile, and we have none or >1 overviews
-    if (not noaddo) or (nocopy):
+    # Run gdaladdo if noaddo==False or if we have no overviews
+    if (not noaddo) or (overview_levels == '' or int(overview_levels[0]) == 0):
         # Create the gdaladdo command.
         gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
                                str(gdal_mrf_filename)]

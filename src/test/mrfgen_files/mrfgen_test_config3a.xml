@@ -16,4 +16,5 @@
  <outsize>1024 1024</outsize>
  <target_epsg>3857</target_epsg>
  <source_epsg>4326</source_epsg>
+ <mrf_nocopy>true</mrf_nocopy>
 </mrfgen_configuration>
