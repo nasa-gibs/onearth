@@ -208,7 +208,7 @@ def diff_resolution(tiles):
 
 def is_global_image(tile, xmin, ymin, xmax, ymax):
     """
-    Test if input tile fills entire extent
+    Test if input tile fills entire extent (+/- 10 deg lat)
     Argument:
         tile -- Tile to test
         xmin -- Minimum x value
@@ -241,9 +241,11 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
         in_xmax = str(tileInfo["cornerCoordinates"]["lowerRight"][0])
         in_ymin = str(tileInfo["cornerCoordinates"]["lowerRight"][1])
 
-        if int(round(float(in_xmin))) <= int(round(float(xmin))) and int(round(float(in_ymax))) >= int(round(float(ymax))):
+        if (int(round(float(in_xmin))) <= int(round(float(xmin))) and
+                int(round(float(in_ymax))) >= int(round(float(ymax)-10))):
             upper_left = True
-        if int(round(float(in_xmax))) >= int(round(float(xmax))) and int(round(float(in_ymin))) <= int(round(float(ymin))):
+        if (int(round(float(in_xmax))) >= int(round(float(xmax))) and
+                int(round(float(in_ymin))) <= int(round(float(ymin)+10))):
             lower_right = True
     except subprocess.TimeoutExpired:
         gdalinfo.kill()
