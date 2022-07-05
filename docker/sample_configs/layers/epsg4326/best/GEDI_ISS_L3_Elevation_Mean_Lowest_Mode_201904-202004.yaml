@@ -1,0 +1,57 @@
+abstract: GEDI_ISS_L3_Elevation_Mean_Lowest_Mode_201904-202004 abstract
+time_config:
+  - "1900-01-01/2899-12-31/P1000Y"
+best_config:
+  1: GEDI_ISS_L3_Elevation_Mean_Lowest_Mode_201904-202004_v1_STD
+layer_id: GEDI_ISS_L3_Elevation_Mean_Lowest_Mode_201904-202004
+layer_name: GEDI ISS L3 Elevation Mean Lowest Mode 201904-202004 tileset
+layer_title: b'Ground Elevation Mean (L3, Lowest Mode, Best Available, 201904-202004,
+  GEDI, ISS)'
+metadata:
+- xlink:href: '{base_uri_meta}/colormaps/v1.0/GEDI_Elev_Lowestmode_Mean_Color_Index.xml'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0
+  xlink:title: 'GIBS Color Map: Data - RGB Mapping'
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/colormaps/v1.3/GEDI_Elev_Lowestmode_Mean_Color_Index.xml'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3
+  xlink:title: 'GIBS Color Map: Data - RGB Mapping'
+  xlink:type: simple
+- xlink:href: '{base_uri_meta}/colormaps/v1.3/GEDI_Elev_Lowestmode_Mean_Color_Index.xml'
+  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/colormap/
+  xlink:title: 'GIBS Color Map: Data - RGB Mapping'
+  xlink:type: simple
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 1
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
+  idx_path: /onearth/idx/epsg4326
+  size_x: 40960
+  size_y: 20480
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: false
+static: true
+style:
+  default: true
+  identifier: default
+  title: default
+  urls:
+  - format: image/svg+xml
+    height: 85.5
+    width: 378.0
+    xlink:href: '{base_uri_meta}/legends/GEDI_Elev_Lowestmode_Mean_Color_Index_H.svg'
+    xlink:role: http://earthdata.nasa.gov/gibs/legend-type/horizontal
+    xlink:title: 'GIBS Color Map Legend: Horizontal'
+    xlink:type: simple
+  - format: image/svg+xml
+    height: 288.0
+    width: 135.0
+    xlink:href: '{base_uri_meta}/legends/GEDI_Elev_Lowestmode_Mean_Color_Index_V.svg'
+    xlink:role: http://earthdata.nasa.gov/gibs/legend-type/vertical
+    xlink:title: 'GIBS Color Map Legend: Vertical'
+    xlink:type: simple
+tilematrixset: 1km
+wms_layer_group: /Terrain Elevation

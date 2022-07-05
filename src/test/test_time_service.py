@@ -31,7 +31,7 @@ from oe_test_utils import restart_apache, make_dir_tree, seed_redis_data, seed_r
 DEBUG = False
 
 DATE_SERVICE_LUA_TEMPLATE = """local onearthTimeService = require "onearthTimeService"
-handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="hash"})
+handler = onearthTimeService.timeService({handler_type="redis", host="127.0.0.1"}, {filename_format="basic"})
 """
 
 DATE_SERVICE_APACHE_TEMPLATE = """Alias /date_service {config_path}
@@ -479,6 +479,34 @@ class TestDateService(unittest.TestCase):
             returned_date = res['date']
             if not DEBUG:
                 remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
+            
+    def test_static_best(self):
+        test_layers = [
+            ('test1_static_best', '2899-12-31', [
+                '1900-01-01/2899-12-31/P1000Y',
+            ], '2000-08-01', '1900-01-01T00:00:00Z')
+        ]
+
+        seed_redis_data(test_layers)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            returned_filename = res['filename']
+            filename = test_layer[0]        
+            if not DEBUG:
+                remove_redis_layer(test_layer)            
+            self.assertEqual(
+                returned_filename, filename,
+                f'Error with static best: date {test_layer[3]} was requested and filename {returned_filename} was returned. Should be {filename}')
             self.assertEqual(
                 returned_date, test_layer[4],
                 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'

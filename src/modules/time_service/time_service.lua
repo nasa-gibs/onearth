@@ -165,7 +165,12 @@ end
 -- Handlers to format output filenames
 local function basic_date_formatter (options)
     return function (layer_name, date)
-        return layer_name .. "-" .. date:fmt(datetime_filename_format)
+        -- static layer hack
+        if ((tonumber(date:fmt("%Y")) <= 1900) or (tonumber(date:fmt("%Y")) >= 2899)) then
+            return layer_name
+        else
+            return layer_name .. "-" .. date:fmt(datetime_filename_format)
+        end
     end
 end
 

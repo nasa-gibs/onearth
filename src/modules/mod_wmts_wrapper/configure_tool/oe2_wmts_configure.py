@@ -393,6 +393,7 @@ def make_layer_config(endpoint_config, layer):
     year_dir = layer_config['source_mrf'].get('year_dir', False)
     alias = layer_config.get('alias', layer_id)
     empty_tile = layer_config['source_mrf'].get('empty_tile', None)
+    best = layer_config.get('best_config', None)
 
     # Check if empty_tile file exists, and if not use a default empty tile instead
     if empty_tile and not os.path.exists(empty_tile):
@@ -473,6 +474,10 @@ def make_layer_config(endpoint_config, layer):
         cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
         cache_expiration_block += '        Header Always Unset ETag\n'
         cache_expiration_block += '        FileETag None'
+        
+    # Override static if best available layer
+    if best is not None:
+        static = False
 
     # Apache <Directory> stuff
     apache_config = bulk_replace(
