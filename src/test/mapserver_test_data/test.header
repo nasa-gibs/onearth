@@ -172,4 +172,87 @@ MAP
         End
     End
   END
+  LAYER
+  GROUP "OrbitTracks_Aqua_Descending"
+	NAME	"OrbitTracks_Aqua_Descending_Lines"
+	TYPE	LINE
+	STATUS	ON
+	VALIDATION
+		"default_OrbitTracks_Aqua_Descending_Lines_TIME"		"TTTTTTT"
+		"OrbitTracks_Aqua_Descending_Lines_TIME"			"^[0-9]{7}$"
+		"default_OrbitTracks_Aqua_Descending_Lines_YEAR"	"YYYY"
+		"OrbitTracks_Aqua_Descending_Lines_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+    "wms_group_title" "OrbitTracks_Aqua_Descending"
+		"wms_title"		"Orbit Tracks (Descending, Lines, Aqua)"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2021-07-19/2021-07-19/P1D"
+		"wms_timedefault"		"2021-07-19"
+		"wfs_getfeature_formatlist"		"geojson,csv"
+		"gml_include_items"		"all"
+	END
+	DATA	"/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/OrbitTracks_Aqua_Descending_Lines/YYYY/OrbitTracks_Aqua_Descending_LinesTTTTTTT_.shp"
+    Class
+      Name   "Ground Track"
+      Style
+          Width	1.5
+          Color	64 244 208
+      END
+    END
+  END
+  LAYER
+  GROUP "OrbitTracks_Aqua_Descending"
+	NAME	"OrbitTracks_Aqua_Descending_Points"
+	TYPE	POINT
+	STATUS	ON
+	VALIDATION
+		"default_OrbitTracks_Aqua_Descending_Points_TIME"		"TTTTTTT"
+		"OrbitTracks_Aqua_Descending_Points_TIME"			"^[0-9]{7}$"
+		"default_OrbitTracks_Aqua_Descending_Points_YEAR"	"YYYY"
+		"OrbitTracks_Aqua_Descending_Points_YEAR"		"^[0-9]{4}$"
+	END
+	METADATA
+    "wms_group_title" "OrbitTracks_Aqua_Descending"
+		"wms_title"		"Orbit Tracks (Descending, Points, Aqua)"
+		"wms_extent"		"-180 -90 180 90"
+		"wms_timeextent"		"2021-07-19/2021-07-19/P1D"
+		"wms_timedefault"		"2021-07-19"
+		"wfs_getfeature_formatlist"		"geojson,csv"
+		"gml_include_items"		"all"
+	END
+	DATA	"/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/OrbitTracks_Aqua_Descending_Points/YYYY/OrbitTracks_Aqua_Descending_PointsTTTTTTT_.shp"
+    LabelItem       "LABEL"
+    ClassItem       "DATETIME"
+    Class
+        Name            ":05 Intervals"
+        Expression       /^.*[ T][0-2][0-9]:[0-5][0,5].00.*$/
+        Style
+            Symbol      "circle"
+            Size        10
+            Color       64 244 208
+        END
+
+        Label
+            Color           255 255 255
+            OutlineColor    128 128 128
+            Font            "verdana-bold"
+            Type            truetype
+            Size            7.5
+            Position        Auto
+            Partials        False
+            Buffer          10
+        End
+    End
+
+    Class
+        Name            ":01 Intervals"
+        Expression      /^.*[ T][0-2][0-9]:[0-5][1,2,3,4,6,7,8,9].00.*$/
+        Style
+            Symbol      "circle"
+            Size        7.5
+            Color       64 244 208
+        End
+    End
+  END
 
