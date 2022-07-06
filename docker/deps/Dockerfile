@@ -29,6 +29,7 @@ RUN yum -y update && \
         python36-devel-3.6.8 \
         python36-pip-9.0.1 \
         cronie \
+        logrotate \
         parallel && \
     pip3.6 install \
         requests==2.7.0 \
