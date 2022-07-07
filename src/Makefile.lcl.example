@@ -1,0 +1,11 @@
+APXS = apxs
+PREFIX ?= $(HOME)
+includedir = $(shell $(APXS) -q includedir 2>/dev/null)
+EXTRA_INCLUDES = $(shell $(APXS) -q EXTRA_INCLUDES 2>/dev/null)
+LIBTOOL = $(shell $(APXS) -q LIBTOOL 2>/dev/null)
+LIBEXECDIR = $(shell $(APXS) -q libexecdir 2>/dev/null)
+EXP_INCLUDEDIR = $(PREFIX)/include
+
+# SUDO = sudo
+CP = cp
+DEST = $(PREFIX)/modules
