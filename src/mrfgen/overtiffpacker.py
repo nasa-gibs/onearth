@@ -33,7 +33,7 @@
 
 import argparse
 from osgeo import gdal, gdalconst
-from gdalconst import *
+from osgeo.gdalconst import *
 import numpy as np
 import numpy.ma as ma
 import math
