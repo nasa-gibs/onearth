@@ -511,6 +511,19 @@ class TestMapserver(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Group layer does not match what\'s expected. URL: ' + req_url)
 
+    def test_wms_status(self):
+        """
+        33. Tests the request used in the "/wms/status" endpoint in the OnEarth Demo.
+            Requests a raster layer and a vector layer together.
+        """
+        ref_hash = 'db56a57c1ce987bd0786b4e6884eb872'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34'
+        if DEBUG:
+            print('\nTesting: Request group layer')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, '/wms/status layers request result does not match expected. URL: ' + req_url)
+
     # TEARDOWN
 
     @classmethod
