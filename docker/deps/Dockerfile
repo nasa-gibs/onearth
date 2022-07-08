@@ -34,7 +34,7 @@ RUN yum -y update && \
     pip3.6 install \
         requests==2.7.0 \
         pyaml==18.11.0 \
-        lxml==4.6.3 \
+        lxml==4.9.1 \
         pypng==0.0.20 \
         boto3==1.9 \
         redis==3.5.3 \
