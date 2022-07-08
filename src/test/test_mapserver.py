@@ -498,6 +498,32 @@ class TestMapserver(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS GetLegendGraphic does not match what\'s expected. URL: ' + req_url)
 
+    def test_request_group_layer(self):
+        """
+        32. Test requesting an OrbitTracks group layer to verify that both its underlying
+            "Points" layer and "Lines" layer are included.
+        """
+        ref_hash = '35fb7f2003637140173f5c2670073a30'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=OrbitTracks_Aqua_Descending&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
+        if DEBUG:
+            print('\nTesting: Request group layer')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Group layer does not match what\'s expected. URL: ' + req_url)
+
+    def test_wms_status(self):
+        """
+        33. Tests the request used in the "/wms/status" endpoint in the OnEarth Demo.
+            Requests a raster layer and a vector layer together.
+        """
+        ref_hash = 'db56a57c1ce987bd0786b4e6884eb872'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34'
+        if DEBUG:
+            print('\nTesting: Request group layer')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, '/wms/status layers request result does not match expected. URL: ' + req_url)
+
     # TEARDOWN
 
     @classmethod

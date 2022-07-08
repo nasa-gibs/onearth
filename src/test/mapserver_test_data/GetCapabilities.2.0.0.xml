@@ -239,6 +239,58 @@
       </ows:WGS84BoundingBox>
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Terra_Orbit_Dsc_Dots"/>
     </FeatureType>
+    <FeatureType>
+      <Name>ms:OrbitTracks_Aqua_Descending_Lines</Name>
+      <Title>OrbitTracks_Aqua_Descending_Lines</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+        <Format>application/json; subtype=geojson</Format>
+        <Format>text/csv</Format>
+      </OutputFormats>
+      <ows:WGS84BoundingBox dimensions="2">
+        <ows:LowerCorner>-179.957 -81.833</ows:LowerCorner>
+        <ows:UpperCorner>179.904 81.833</ows:UpperCorner>
+      </ows:WGS84BoundingBox>
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Lines"/>
+    </FeatureType>
+    <FeatureType>
+      <Name>ms:OrbitTracks_Aqua_Descending_Points</Name>
+      <Title>OrbitTracks_Aqua_Descending_Points</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+        <Format>application/json; subtype=geojson</Format>
+        <Format>text/csv</Format>
+      </OutputFormats>
+      <ows:WGS84BoundingBox dimensions="2">
+        <ows:LowerCorner>-179.957 -81.833</ows:LowerCorner>
+        <ows:UpperCorner>179.904 81.833</ows:UpperCorner>
+      </ows:WGS84BoundingBox>
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Points"/>
+    </FeatureType>
+    <FeatureType>
+      <Name>ms:Vector_Status</Name>
+      <Title>Vector_Status</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+      </OutputFormats>
+      <ows:WGS84BoundingBox dimensions="2">
+        <ows:LowerCorner>-175.068 -42.912</ows:LowerCorner>
+        <ows:UpperCorner>176.326 75.494</ows:UpperCorner>
+      </ows:WGS84BoundingBox>
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Vector_Status"/>
+    </FeatureType>
   </FeatureTypeList>
   <fes:Filter_Capabilities>
     <fes:Conformance>

@@ -94,6 +94,10 @@ sleep 2
 /usr/bin/redis-cli  -n 0 DEL layer:snap_test_year_boundary
 /usr/bin/redis-cli  -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"
 /usr/bin/redis-cli  -n 0 SADD layer:snap_test_year_boundary:periods "2000-09-03/2000-09-03/P144D"
+# Load oe-status data
+/usr/bin/redis-cli -n 0 DEL layer:Raster_Status
+/usr/bin/redis-cli -n 0 SET layer:Raster_Status:default "2004-08-01"
+/usr/bin/redis-cli -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
 /usr/bin/redis-cli  -n 0 SAVE
 
 # MapServer configs
