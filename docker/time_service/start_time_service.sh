@@ -79,11 +79,11 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 else
   # Load custom time period configurations in parallel
   grep -L 'EPSG:3857' /etc/onearth/config/endpoint/epsg*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST >> /var/log/onearth/config.log 2>&1
+fi
 
-	# Load time periods by scraping S3 bucket, if requested
-	if [ "$FORCE_TIME_SCRAPE" = true ]; then
-		python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
-	fi
+# Load time periods by scraping S3 bucket, if requested
+if [ "$FORCE_TIME_SCRAPE" = true ]; then
+	python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
 fi
 
 # Load oe-status data
