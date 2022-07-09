@@ -1900,7 +1900,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                     fill = 0
                 else:
                     fill = vrtnodata
-                RgbPngToPalPng_command_list=['/usr/bin/python3 ' + script_dir + 'RgbPngToPalPng.py -v -c ' + colormap +
+                RgbPngToPalPng_command_list=['python3 ' + script_dir + 'RgbPngToPalPng.py -v -c ' + colormap +
                                              ' -f ' + str(fill) + ' -o ' + output_tile + ' -i ' + tile]
 
                 # Log the RgbPngToPalPng command.
