@@ -528,12 +528,12 @@ class TestMapserver(unittest.TestCase):
         """
         34. Tests requesting a legend using a GetLegendGraphic request that includes "wms.cgi".
         """
-        ref_hash = 'd41d8cd98f00b204e9800998ecf8427e'
+        ref_hash = '3ae936d500bbf86b94281833e07a2d41'
         req_url = 'http://localhost/wms/test/wms.cgi?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=OrbitTracks_Aqua_Descending&format=image/png&STYLE=default'
         if DEBUG:
             print('\nTesting: Perform GetLegendGraphic request using a URL including \"wms.cgi\"')
             print('URL: ' + req_url)
-        check_result = check_tile_request(req_url, ref_hash, "legendwmscgi")
+        check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'GetLegendGraphic request with \"wms.cgi\" result does not match expected. URL: ' + req_url)
 
     def test_wms_getlegendgraphic_no_wmscgi(self):
@@ -541,12 +541,12 @@ class TestMapserver(unittest.TestCase):
         34. Tests requesting a legend using a GetLegendGraphic request that omits "wms.cgi".
             The URL should be rewritten by a mod_rewrite rule via oe2_wms.conf to include "wms.cgi".
         """
-        ref_hash = 'd41d8cd98f00b204e9800998ecf8427e'
+        ref_hash = '3ae936d500bbf86b94281833e07a2d41'
         req_url = 'http://localhost/wms/test/?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=OrbitTracks_Aqua_Descending&format=image/png&STYLE=default'
         if DEBUG:
             print('\nTesting: Perform GetLegendGraphic request using a URL that lacks \"wms.cgi\"')
             print('URL: ' + req_url)
-        check_result = check_tile_request(req_url, ref_hash, "legend_no_wmscgi")
+        check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'GetLegendGraphic request without \"wms.cgi\" result does not match expected. URL: ' + req_url)        
 
     # TEARDOWN
