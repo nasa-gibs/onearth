@@ -523,6 +523,9 @@ def make_layer_config(endpoint_config, layer):
         if year_dir:
             data_path_str += '${prefix}/${YYYY}/'
             idx_path += '${prefix}/${YYYY}/'
+        else:
+            data_path_str += '${prefix}/'
+            idx_path += '${prefix}/'      
         # add filename
         data_path_str += '${filename}'
         data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
