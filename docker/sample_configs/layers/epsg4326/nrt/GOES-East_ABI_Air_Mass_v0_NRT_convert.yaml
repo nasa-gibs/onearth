@@ -1,0 +1,26 @@
+abstract: GOES-East_ABI_Air_Mass_v0_NRT_convert abstract
+best_layer: GOES-East_ABI_Air_Mass_v0_NRT_convert
+layer_id: GOES-East_ABI_Air_Mass_v0_NRT_convert
+layer_name: GOES-East ABI Air Mass v0 NRT convert tileset
+layer_title: b'Air Mass (ABI, GOES-East-Convert)'
+metadata: []
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
+  idx_path: /onearth/idx/epsg4326
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+convert_mrf: 
+  convert_source: GOES-East_ABI_Air_Mass_v0_NRT .jpeg
+static: false
+tilematrixset: 2km
+tilematrixset_limits_id: goes-east-2km
+time_config:
+- DETECT/PT10M

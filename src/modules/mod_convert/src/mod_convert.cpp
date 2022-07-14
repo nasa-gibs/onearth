@@ -13,6 +13,8 @@
 #include <http_request.h>
 #include <http_log.h>
 #include <apr_strings.h>
+#include <png.h>
+#include <receive_context.h>
 
 NS_AHTSE_USE
 NS_ICD_USE
@@ -165,27 +167,39 @@ static void *convert_dt(const convert_conf *cfg, void *src) {
     return result;
 }
 
+static const char *find_and_replace_string(apr_pool_t *p, const char *search_str, const char *source_str, const char *replacement_str) {
+    if (const char *replacefield = ap_strstr(source_str, search_str)) {
+        const char *prefix = apr_pstrmemdup(p, source_str, replacefield - source_str);
+        return apr_pstrcat(p, prefix, replacement_str, replacefield + strlen(search_str), NULL);
+    }
+    return source_str;
+}
+
 static int handler(request_rec *r)
 {
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Start convert");
     const char *message;
     if (r->method_number != M_GET)
         return DECLINED;
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Starting convert");
 
-    auto *cfg = get_conf<convert_conf>(r, &convert_module);
+    convert_conf *cfg = (convert_conf *)ap_get_module_config(r->per_dir_config, &convert_module);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Config source: %s", cfg->source);
 
     // If indirect is set, only activate on subrequests
     if (cfg->indirect && r->main == nullptr)
         return DECLINED;
-
-    if (!cfg || !cfg->arr_rxp || !requestMatches(r, cfg->arr_rxp))
+    if (!cfg || !cfg->arr_rxp || !requestMatches(r, cfg->arr_rxp)){
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Request %s doesn't match regex %s",r->uri, cfg->arr_rxp);
         return DECLINED;
-
+    }
     apr_array_header_t *tokens = tokenize(r->pool, r->uri);
-    if (tokens->nelts < 3)
+    if (tokens->nelts < 3) {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Failed tokenize");
         return DECLINED; // At least three values, for RLC
-
+    }
     // This is a request to be handled here
-
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Not Declined");
     // server configuration error ?
     SERVER_ERR_IF(!ap_get_output_filter_handle("Receive"),
         r, "mod_receive not found");
@@ -197,6 +211,8 @@ static int handler(request_rec *r)
     tile.y = apr_atoi64(ARRAY_POP(tokens, char *)); RETURN_ERR_IF(errno);
     tile.l = apr_atoi64(ARRAY_POP(tokens, char *)); RETURN_ERR_IF(errno);
 
+    const char *datetime_str;
+    datetime_str = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") : "default";
     // Ignore the error on the M, it defaults to zero
     if (cfg->raster.size.z != 1 && tokens->nelts > 0)
         tile.z = apr_atoi64(ARRAY_POP(tokens, char *));
@@ -220,7 +236,7 @@ static int handler(request_rec *r)
         tile.y >= cfg->inraster.rsets[tile.l].h)
         return sendEmptyTile(r, cfg->raster.missing);
 
-    // Convert to true input level
+     // Convert to true input level
     tile.l -= cfg->inraster.skip;
 
     // Create the subrequest
@@ -229,33 +245,51 @@ static int handler(request_rec *r)
     user_agent = (nullptr == user_agent) ?
         USER_AGENT : apr_pstrcat(r->pool, USER_AGENT ", ", user_agent, NULL);
     char* sub_uri = tile_url(r->pool, cfg->source, tile, cfg->suffix);
-    subr subreq(r);
-    subreq.agent = user_agent;
-    LOG(r, "Requesting %s", sub_uri);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Before replace %s", sub_uri);
+    sub_uri = (char *)find_and_replace_string(r->pool, "${date}", sub_uri, datetime_str);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "After replace %s", sub_uri);
 
-    storage_manager src;
-    src.size = static_cast<int>(cfg->max_input_size);
-    src.buffer = reinterpret_cast<char*>(apr_palloc(r->pool, src.size));
+    receive_ctx rctx;
+    rctx.maxsize = cfg->max_input_size;
+    rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
+    ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, r, r->connection);    
+    uint64_t evalue = 0;
+    int missing = 0;
 
-    auto status = subreq.fetch(sub_uri, src);
-    
-    if (status != APR_SUCCESS) {
-        LOGNOTE(r, "Receive failed with code %d for %s", status, sub_uri);
-        return HTTP_NOT_FOUND == status ? sendEmptyTile(r, cfg->raster.missing) : status;
+    request_rec *rr = ap_sub_req_lookup_uri(sub_uri, r, r->output_filters);
+    rctx.size = 0; // Reset the receive size
+    int rr_status = ap_run_sub_req(rr); // This returns http status, aka 404, 200
+
+    // input ETag, if any, before destroying subrequest
+    const char *intag = apr_table_get(rr->headers_out, "ETag");
+    if (intag)
+        evalue = base32decode(intag, &missing);
+    // Build an etag from raw content, if it's large enough
+    if (!evalue && rctx.size > 128) {
+        evalue = *(reinterpret_cast<uint64_t*>(rctx.buffer) + 4);
+        evalue |= *(reinterpret_cast<uint64_t*>(rctx.buffer) + rctx.size / 8 - 4);
+        evalue ^= *(reinterpret_cast<uint64_t*>(rctx.buffer) + rctx.size / 8 - 6);
+    }
+
+    char etagsrc[14] = { 0 };
+    tobase32(evalue, etagsrc, missing);
+
+    if (rr_status != APR_SUCCESS) {
+        LOGNOTE(r, "Receive failed with code %d for %s", rr_status, sub_uri);
+        return HTTP_NOT_FOUND == rr_status ? sendEmptyTile(r, cfg->raster.missing) : rr_status;
     }
 
     // Etag is not modified, just passes through
     // remember to set the output etag later
-    if (etagMatches(r, subreq.ETag.c_str())) {
-        apr_table_set(r->headers_out, "ETag", subreq.ETag.c_str());
+    if (etagMatches(r, etagsrc)) {
+        apr_table_set(r->headers_out, "ETag", etagsrc);
         return HTTP_NOT_MODIFIED;
     }
 
     // If the input tile is the empty tile, send the output empty tile right now
 
-    int missing = 0;
-    base32decode(subreq.ETag.c_str(), &missing);
-    if (missing && subreq.ETag == cfg->inraster.missing.eTag)
+    base32decode(etagsrc, &missing);
+    if (missing && etagsrc == cfg->inraster.missing.eTag)
         return sendEmptyTile(r, cfg->raster.missing);
 
     codec_params params(cfg->inraster);
@@ -266,12 +300,22 @@ static int handler(request_rec *r)
     raw.size = static_cast<int>(params.get_buffer_size());
     raw.buffer = reinterpret_cast<char *>(apr_palloc(r->pool, raw.size));
     SERVER_ERR_IF(raw.buffer == nullptr, r, "Memmory allocation error");
+    
+    int ct;
+    png_colorp png_palette;
+    png_bytep png_trans;
+    png_palette = (png_colorp)apr_pcalloc(r->pool, 256 * sizeof(png_color));
+    png_trans = (png_bytep)apr_pcalloc(r->pool, 256 * sizeof(unsigned char));
+    int num_trans;
 
+    storage_manager src = { rctx.buffer, rctx.size };
     // Accept any input format
     LOGNOTE(r, "Decoding");
-    message = stride_decode(params, src, raw.buffer);
+    message = stride_decode(params, src, raw.buffer, ct, png_palette, png_trans, num_trans);
     LOGNOTE(r, "Decoding returned %s", message);
 
+    ap_destroy_sub_req(rr);
+    ap_remove_output_filter(rf);
     if (message) {
         ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, "%s from %s", message, sub_uri);
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "raster type is %d size %d", 
@@ -291,7 +335,7 @@ static int handler(request_rec *r)
     // This part is only for converting Zen JPEGs to JPNG, as needed
     if (IMG_JPEG == params.raster.format && params.modified == 0) {
         // Zen mask absent or superfluous, just send the input
-        apr_table_set(r->headers_out, "ETag", subreq.ETag.c_str());
+        apr_table_set(r->headers_out, "ETag", etagsrc);
         return sendImage(r, src, "image/jpeg");
     }
 
@@ -315,7 +359,7 @@ static int handler(request_rec *r)
         if (params.modified)
             out_params.has_transparency = true;
 
-        message = png_encode(out_params, raw, dst);
+        message = png_encode(out_params, raw, dst, png_palette, png_trans, num_trans);
         SERVER_ERR_IF(message != nullptr, r, "PNG encoding error: %s from %s", message, r->uri);
         out_mime = "image/png";
         break;
@@ -332,7 +376,7 @@ static int handler(request_rec *r)
         SERVER_ERR_IF(true, r, "Output format not implemented, from %s", r->uri);
     }
 
-    apr_table_set(r->headers_out, "ETag", subreq.ETag.c_str());
+    apr_table_set(r->headers_out, "ETag", etagsrc);
     return sendImage(r, dst, out_mime);
 }
 

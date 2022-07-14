@@ -97,8 +97,7 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
 </Directory>
 
 <Directory {internal_endpoint}/{layer_id}/default/{tilematrixset}>
-        MRF_ConfigurationFile {config_file_path}
-        MRF_RegExp {alias}
+        {mrf_or_convert_configs}     
         WMTSWrapperRole tilematrixset
         WMTSWrapperEnableYearDir {year_dir}
         WMTSWrapperLayerAlias {alias}
@@ -120,6 +119,11 @@ LAYER_MOD_MRF_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
 PageSize {tile_size_x} {tile_size_y} 1 {bands}
 SkippedLevels {skipped_levels}
 IndexFile {idx_path}"""
+
+LAYER_MOD_CONVERT_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+PageSize {tile_size_x} {tile_size_y} 1 {bands}
+SkippedLevels {skipped_levels}
+"""
 
 LAYER_MOD_TWMS_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
 PageSize {tile_size_x} {tile_size_y} 1 {bands}
@@ -238,7 +242,6 @@ def make_apache_config(endpoint_config, layer_configs):
 
     datafile_proxy_needed = any(
         layer_config.get('data_file_uri') for layer_config in layer_configs)
-
     try:
         internal_endpoint = strip_trailing_slash(
             endpoint_config['wmts_service']['internal_endpoint'])
@@ -384,6 +387,7 @@ def make_layer_config(endpoint_config, layer):
         bands = layer_config['source_mrf']['bands'] if layer_config['source_mrf']['bands'] is not None else 1
         idx_path = layer_config['source_mrf']['idx_path']
         mimetype = layer_config['mime_type']
+        convert_src = layer_config['convert_mrf'].get('convert_source', None) if 'convert_mrf' in layer_config else False
     except KeyError as err:
         print(
             f"\n{layer_config_path} is missing required config element {err}")
@@ -444,9 +448,6 @@ def make_layer_config(endpoint_config, layer):
     # if static and requests.head(data_file_uri).status_code != 200:
     #     print(f"\nWARNING: Can't access data file uri: {data_file_uri}")
 
-    config_file_path = Path(internal_endpoint, layer_id, "default",
-                            tilematrixset, 'mod_mrf.config')
-
     # Create Apache snippet
 
     # Proxy setup for data file (if needed)
@@ -479,6 +480,26 @@ def make_layer_config(endpoint_config, layer):
         cache_expiration_block += '        Header Always Unset ETag\n'
         cache_expiration_block += '        FileETag None'
 
+    config_file_path = Path(internal_endpoint, layer_id, "default",
+                            tilematrixset, 'mod_mrf.config')
+
+    mrf_or_convert_configs = ''
+    if convert_src:
+        convert_src_name , format = convert_src.split(" ")
+        
+        convert_file_path = Path(internal_endpoint, layer_id, "default",
+                                tilematrixset, 'mod_convert.config')
+        src_mrf_file_path = Path(internal_endpoint, convert_src_name, "default",
+                            tilematrixset, 'mod_mrf.config')
+        mrf_or_convert_configs = (
+            f'Convert_RegExp {external_endpoint}/{alias}/\n'
+            f'        Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format}\n'
+            f'        Convert_ConfigurationFiles {src_mrf_file_path} {convert_file_path}')
+    else:
+        mrf_or_convert_configs = (
+            f'MRF_ConfigurationFile {config_file_path}\n'
+            f'        MRF_RegExp {alias}')
+
     # Apache <Directory> stuff
     apache_config = bulk_replace(
         LAYER_APACHE_CONFIG_TEMPLATE,
@@ -488,6 +509,7 @@ def make_layer_config(endpoint_config, layer):
          ('{tilematrixset}', tilematrixset),
          ('{cache_expiration_block}', cache_expiration_block),
          ('{proxy_exemption_block}', proxy_exemption_block),
+         ('{mrf_or_convert_configs}', mrf_or_convert_configs),
          ('{config_file_path}', config_file_path.as_posix()),
          ('{mime_type}', mimetype)])
 
@@ -511,7 +533,7 @@ def make_layer_config(endpoint_config, layer):
         data_path_str = f'DataFile :/{data_file_uri}'
     elif data_file_path:
         data_path_str = f'DataFile {data_file_path}'
-
+    print(layer_id, data_path_str,"path ", data_file_path)
     # Add in substitution strings for mod_wmts_wrapper for non-static layers
     if not static:
         # check for slashes
@@ -528,14 +550,30 @@ def make_layer_config(endpoint_config, layer):
         data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
         idx_path += '${filename}.idx'
 
-    main_wmts_config = bulk_replace(
-        LAYER_MOD_MRF_CONFIG_TEMPLATE,
+    if convert_src:
+        wmts_convert_config = bulk_replace(
+        LAYER_MOD_CONVERT_CONFIG_TEMPLATE,
         [('{size_x}', str(size_x)), ('{size_y}', str(size_y)),
          ('{tile_size_x}', str(tile_size_x)),
          ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
-         ('{idx_path}', idx_path),
          ('{skipped_levels}',
           '0' if projection == 'EPSG:3857' else '1')])
+
+        convert_config = generate_string_from_set(
+        '\n', [(wmts_convert_config, True)])
+
+        layer_config_out['mod_convert_config'] = {
+        'path': convert_file_path,
+        'contents': convert_config
+    }
+    main_wmts_config = bulk_replace(
+    LAYER_MOD_MRF_CONFIG_TEMPLATE,
+    [('{size_x}', str(size_x)), ('{size_y}', str(size_y)),
+        ('{tile_size_x}', str(tile_size_x)),
+        ('{tile_size_y}', str(tile_size_y)), ('{bands}', str(bands)),
+        ('{idx_path}', idx_path),
+        ('{skipped_levels}',
+        '0' if projection == 'EPSG:3857' else '1')])
 
     # Handle optionals like EmptyTile
     empty_tile_config = None
@@ -649,6 +687,18 @@ def write_layer_configs(layer_configs):
                 layer_config['twms_config']['contents'])
             print(
                 f'\nTWMS layer config written to: {layer_config["twms_config"]["path"]}'
+            )
+
+        # Write out mod_convert config if included
+        if layer_config.get('mod_convert_config', None):
+            Path.mkdir(
+                layer_config['mod_convert_config']['path'].parent,
+                parents=True,
+                exist_ok=True)
+            layer_config['mod_convert_config']['path'].write_text(
+                layer_config['mod_convert_config']['contents'])
+            print(
+                f'\nConvert layer config written to: {layer_config["mod_convert_config"]["path"]}'
             )
 
 
