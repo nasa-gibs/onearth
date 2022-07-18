@@ -11,6 +11,12 @@ The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4
 
 `redis-cli --eval periods.lua epsg4326:layer:layer_name`
 
+## `best.lua` -- Best layer generator script
+
+This script will check if the layer provided is part of a best layer, by checking to see if layer has best_layer key in redis. If one exist, best.lua it will retrieve the best layers' best_config:. The best_config will contain all the real layers that make up the virtual best layer, along with the prority of each layer. Best.lua will check from highest priority to lowest with the date provided. This first layer with a valid date will the best layer and will be added to the the best layer :best HMSET. This :best HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist. This date will also be added to the best layers dates for periods generation.   
+
+best.lua is used by ingest, oe-redis-update, and oe_scrape_time. 
+
 ## `oe_periods_configure.py` -- Custom time configuration loader
 
 This tool will load custom time period configurations as specified in a layer configuration file's `time_config` item into Redis for evaluation when the periods.lua script is executed. The tool will also load custom best available configurations as specified in a layer configuration file's `best_config` item into Redis.

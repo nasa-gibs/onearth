@@ -239,7 +239,22 @@ source_mrf:
   empty_tile: "The empty tile to use for the layer"
   year_dir: "true/false" whether this layer contains a year subdirectory"
 ```
+### Optional for WMTS/TWMS
+```
+Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. 
+convert_mrf: 
+  convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT .jpeg) of the source zenjpeg. 
+  
+  This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. 
 
+A best layer is made up of one virtual layer(best layer). The one best layer is mapped to many actual layers. 
+On the config for the best layer there will be a:
+best_config: lists the various layers and their priority(higher score, higher priority). 
+
+On the config of each of actual layers that make up the best layer, there will be a: 
+best_layer: which points to the virtual best layer(the presenese of this config will generate a best_layer key in redis). 
+The presense of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
+```
 ### Optional for Time Service
 ```
 time_config: Custom time period configuration for layer
