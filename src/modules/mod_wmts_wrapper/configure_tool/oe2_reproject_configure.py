@@ -336,7 +336,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                 return '1'  # Assume PNG uses palette
         sample_png = png.Reader(BytesIO(r.content))
         try:
-            sample_png.read()
+            sample_png_read_info = sample_png.read()[3]
         except png.FormatError as err:
             print(err)
             return '3'  # default to 3 bands if not PNG
@@ -346,11 +346,11 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                 print(identifier + ' contains palette')
         except png.FormatError:
             # No palette, check for greyscale
-            if sample_png.asDirect()[3]['greyscale'] is True:
+            if sample_png_read_info['greyscale'] is True:
                 bands = 1
                 print(identifier + ' is greyscale')
             else:  # Check for alpha
-                if sample_png.asDirect()[3]['alpha'] is True:
+                if sample_png_read_info['alpha'] is True:
                     bands = 4
                     print(identifier + ' is RGBA')
                 else:
