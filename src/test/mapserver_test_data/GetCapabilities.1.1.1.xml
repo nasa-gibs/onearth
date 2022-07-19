@@ -126,6 +126,97 @@
           </LegendURL>
         </Style>
     </Layer>
+    <Layer>
+      <Name>OrbitTracks_Aqua_Descending</Name>
+      <Title>OrbitTracks_Aqua_Descending</Title>
+      <Abstract>OrbitTracks_Aqua_Descending</Abstract>
+    <Style>
+       <Name>default</Name>
+       <Title>default</Title>
+       <LegendURL width="114" height="50">
+          <Format>image/png</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?version=1.1.1&amp;service=WMS&amp;request=GetLegendGraphic&amp;layer=OrbitTracks_Aqua_Descending&amp;format=image/png&amp;STYLE=default"/>
+       </LegendURL>
+    </Style>
+      <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>OrbitTracks_Aqua_Descending_Lines</Name>
+        <Title>Orbit Tracks (Descending, Lines, Aqua)</Title>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <Dimension name="time" units="ISO8601"/>
+        <Extent name="time" default="2021-07-19" nearestValue="0">2021-07-19/2021-07-19/P1D</Extent>
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Lines"/>
+        </MetadataURL>
+        <Style>
+          <Name>default</Name>
+          <Title>default</Title>
+          <LegendURL width="114" height="20">
+             <Format>image/png</Format>
+             <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?version=1.1.1&amp;service=WMS&amp;request=GetLegendGraphic&amp;layer=OrbitTracks_Aqua_Descending_Lines&amp;format=image/png&amp;STYLE=default"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>OrbitTracks_Aqua_Descending_Points</Name>
+        <Title>Orbit Tracks (Descending, Points, Aqua)</Title>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <Dimension name="time" units="ISO8601"/>
+        <Extent name="time" default="2021-07-19" nearestValue="0">2021-07-19/2021-07-19/P1D</Extent>
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Points"/>
+        </MetadataURL>
+        <Style>
+          <Name>default</Name>
+          <Title>default</Title>
+          <LegendURL width="108" height="35">
+             <Format>image/png</Format>
+             <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?version=1.1.1&amp;service=WMS&amp;request=GetLegendGraphic&amp;layer=OrbitTracks_Aqua_Descending_Points&amp;format=image/png&amp;STYLE=default"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>Vector_Status</Name>
+        <Title>Vector Status (All, Best Available, MODIS, Aqua+Terra)</Title>
+        <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=Vector_Status"/>
+        </MetadataURL>
+        <Style>
+          <Name>default</Name>
+          <Title>default</Title>
+          <LegendURL width="138" height="23">
+             <Format>image/png</Format>
+             <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?version=1.1.1&amp;service=WMS&amp;request=GetLegendGraphic&amp;layer=Vector_Status&amp;format=image/png&amp;STYLE=default"/>
+          </LegendURL>
+        </Style>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>Raster_Status</Name>
+        <Title>Raster_Status</Title>
+        <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <Dimension name="time" units="ISO8601"/>
+        <Extent name="time" default="2004-08-01" nearestValue="0">2004-08-01/2004-08-01/P1M</Extent>
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=Raster_Status"/>
+        </MetadataURL>
+    </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
         <Name>snap_test_3a</Name>
         <Title>snap_test_3a</Title>
