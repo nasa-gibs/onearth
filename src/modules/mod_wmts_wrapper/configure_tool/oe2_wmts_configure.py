@@ -533,7 +533,7 @@ def make_layer_config(endpoint_config, layer):
         data_path_str = f'DataFile :/{data_file_uri}'
     elif data_file_path:
         data_path_str = f'DataFile {data_file_path}'
-    print(layer_id, data_path_str,"path ", data_file_path)
+
     # Add in substitution strings for mod_wmts_wrapper for non-static layers
     if not static:
         # check for slashes
