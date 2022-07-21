@@ -24,7 +24,7 @@ RUN yum -y update && \
         mod_ssl \
         openssl-devel \
         luarocks-2.3.0 \
-        redis5 \
+        redis6 \
         python36-3.6.8 \
         python36-devel-3.6.8 \
         python36-pip-9.0.1 \
