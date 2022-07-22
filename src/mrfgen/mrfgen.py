@@ -2148,10 +2148,7 @@ if nocopy is None:
     elif len(alltiles) == 1 and alltiles[0].endswith('empty.vrt') == True: #empty VRT, use nocopy
         nocopy = True
     else:
-        if (res*8) < (float(mrf_blocksize)/float(target_x)):
-            # Avoid inserts if the target MRF resolution is too low
-            nocopy = False
-        elif source_epsg != target_epsg:
+        if source_epsg != target_epsg:
             # Avoid inserts if reprojecting
             nocopy = False
         else:
