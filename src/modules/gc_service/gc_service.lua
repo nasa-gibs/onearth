@@ -574,11 +574,12 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     local template_static = baseUriGC .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     local template_default = baseUriGC .. layerId .. "/" .. "default" .. "/default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     local template_time = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
-    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
-    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
     if not static then
         layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_time}))
     end
+    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
+    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
+
     return layerElem
 end
 
