@@ -1367,7 +1367,7 @@ class TestDateService(unittest.TestCase):
         expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
-        found = resource_url_elems[2].get('template')
+        found = resource_url_elems[0].get('template')
         self.assertEqual(
             found, expected,
             'Incorrect "template" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'
@@ -1816,7 +1816,7 @@ class TestDateService(unittest.TestCase):
         expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
-        found = resource_url_elems[2].get('template')
+        found = resource_url_elems[0].get('template')
         self.assertEqual(
             found, expected,
             'Incorrect "template" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'
@@ -2214,7 +2214,7 @@ class TestDateService(unittest.TestCase):
         expected = apache_config['gc_base_url'] + '/' + \
             layer['layer_id'] + \
             '/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpeg'
-        found = resource_url_elems[2].get('template')
+        found = resource_url_elems[0].get('template')
         self.assertEqual(
             found, expected,
             'Incorrect "template" attribute for <ResourceURL>. Expected {}, found {}. Url: {}'
