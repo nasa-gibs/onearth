@@ -127,8 +127,10 @@ def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=Fal
                     layer = str(layer_config['config']['layer_id'])
                     best_layer = str(layer_config['config']['best_config'][1])
                     print(f'Configuring best layer {layer} -> {best_layer}')
+                    r.hset(key_config.replace('config','best'), '1900-01-01T00:00:00Z', best_layer)
                     r.hset(key_config.replace('config','best'), '2899-12-31T00:00:00Z', best_layer)
                     if 'epsg4326' in key:
+                        r.hset(key_config_wm.replace('config','best'), '1900-01-01T00:00:00Z', best_layer)
                         r.hset(key_config_wm.replace('config','best'), '2899-12-31T00:00:00Z', best_layer)
         else:
             print('No time configuration found for ' +
