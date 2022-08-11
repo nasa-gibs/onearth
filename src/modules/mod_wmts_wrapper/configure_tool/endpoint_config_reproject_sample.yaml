@@ -5,6 +5,11 @@ include_layers:
   - 'AMSR2_Cloud_Liquid_Water_Day'
   - 'AMSR2_Cloud_Liquid_Water_Night'
   - 'BlueMarble_NextGeneration'
+exclude_layers:
+  - 'Reference_Labels'
+  - 'Reference_Labels_15m'
+  - 'Reference_Features'
+  - 'Reference_Features_15m'
 layer_config_source: layer_config.yaml
 base_uri_gc: 'http://some-uri/'
 wmts_service:

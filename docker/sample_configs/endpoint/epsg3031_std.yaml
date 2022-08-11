@@ -1,6 +1,11 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
 time_service_keys: ["epsg3031", "std"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg3031/std/gc"
+exclude_layers:
+  - 'Reference_Labels'
+  - 'Reference_Labels_15m'
+  - 'Reference_Features'
+  - 'Reference_Features_15m'
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
 layer_config_source: "/etc/onearth/config/layers/epsg3031/std/"
 apache_config_location: "/etc/httpd/conf.d/"
