@@ -621,7 +621,8 @@ def get_layer_configs(endpoint_config):
     elif layer_source.is_dir():
         return [
             get_layer_config(filepath) for filepath in layer_source.iterdir()
-            if filepath.is_file() and filepath.name.endswith('.yaml')
+            if filepath.is_file() and filepath.name.endswith('.yaml') and
+                Path(filepath).name not in endpoint_config.get('exclude_layers', [])
         ]
 
 
@@ -679,7 +680,8 @@ def build_configs(endpoint_config):
             partial(parse_layer_gc_xml, target_proj, source_tms_defs,
                     target_tms_defs, replace_with_local), layer_list))
     layers = [x for x in layers if x != {}] # remove layers we can't reproject
-
+    # Filter out any layers in the "exclude_layers" list, if applicable
+    layers = list(filter(lambda x: x['layer_id'] not in endpoint_config.get('exclude_layers', []), layers))
     # Build configs for each layer
     endpoint_config['proxy_paths'] = get_proxy_paths(layers)
     endpoint_config['date_service_info'] = get_date_service_info(

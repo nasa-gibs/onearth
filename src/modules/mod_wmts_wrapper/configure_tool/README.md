@@ -247,6 +247,11 @@ include_layers:
   - 'AMSR2_Cloud_Liquid_Water_Day'
   - 'AMSR2_Cloud_Liquid_Water_Night'
   - 'BlueMarble_NextGeneration'
+exclude_layers:
+  - 'Reference_Labels'
+  - 'Reference_Labels_15m'
+  - 'Reference_Features'
+  - 'Reference_Features_15m'
 layer_config_source: layer_config.yaml
 base_uri_gc: 'http://some-uri/'
 wmts_service:
@@ -274,6 +279,9 @@ configured to read when it starts up). Defaults to `/etc/httpd/conf.d`
 service. Keys will be positioned in the order configured.
 
 `gc_service_uri` (optional) -- If you are using the dynamic GC/GTS service, this url should point there.
+
+`exclude_layers` (optional) -- Prevent the listed layers from being reprojected.
+Useful for preventing text-based layers from being reprojected, which could create warped and illegible text.
 
 `tms_defs_file` (optional) -- If using a Tile Matrix Sets file different from
 the one bundled with the script, you can define it here instead of using the
