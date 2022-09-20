@@ -27,6 +27,7 @@ from optparse import OptionParser
 import urllib.request, urllib.error
 import datetime
 import json
+import html
 from xml.etree import cElementTree as ElementTree
 
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_wmts_error
@@ -579,6 +580,35 @@ class TestMapserver(unittest.TestCase):
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'GetLegendGraphic request without \"wms.cgi\" result does not match expected. URL: ' + req_url)        
+
+    def test_request_missing_shapefile(self):
+        """
+        38. Test requesting an vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
+            This test ensures that the internal directory path doesn't get printed by the msShapefileOpen() error that occurs.
+        """
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Layer_Missing_Shapefile&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
+        if DEBUG:
+            print('\nTesting: Missing Shapefile')
+            print('URL: ' + req_url)
+
+        response = get_url(req_url).read()
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/MissingShapefileResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for requesting a layer with a missing shapefile does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
     # TEARDOWN
 

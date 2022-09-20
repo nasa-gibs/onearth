@@ -276,6 +276,22 @@
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Points"/>
     </FeatureType>
     <FeatureType>
+      <Name>ms:Layer_Missing_Shapefile</Name>
+      <Title>Layer_Missing_Shapefile</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+        <Format>application/json; subtype=geojson</Format>
+        <Format>text/csv</Format>
+      </OutputFormats>
+      <ows:WGS84BoundingBox/>
+      <!--WARNING: Optional WGS84BoundingBox could not be established for this layer.  Consider setting the EXTENT in the LAYER object, or wfs_extent metadata. Also check that your data exists in the DATA statement-->
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Layer_Missing_Shapefile"/>
+    </FeatureType>
+    <FeatureType>
       <Name>ms:Vector_Status</Name>
       <Title>Vector_Status</Title>
       <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>

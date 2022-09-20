@@ -256,6 +256,60 @@ MAP
     End
   END
   LAYER
+    NAME	"Layer_Missing_Shapefile"
+    TYPE	POINT
+    STATUS	ON
+    VALIDATION
+      "default_Layer_Missing_Shapefile_TIME"		"TTTTTTT"
+      "Layer_Missing_Shapefile_TIME"			"^[0-9]{7}$"
+      "default_Layer_Missing_Shapefile_YEAR"	"YYYY"
+      "Layer_Missing_Shapefile_YEAR"		"^[0-9]{4}$"
+    END
+    METADATA
+      "wms_title"		"Layer_Missing_Shapefile"
+      "wms_extent"		"-180 -90 180 90"
+      "wms_timeextent"		"2016-03-05/2016-03-05/P1D"
+      "wms_timedefault"		"2016-03-05"
+      "wfs_getfeature_formatlist"		"geojson,csv"
+      "gml_include_items"		"all"
+    END
+    DATA	"/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/Layer_Missing_Shapefile/YYYY/Layer_Missing_ShapefileTTTTTTT_.shp"
+    PROJECTION
+      "init=epsg:4326"
+    END
+    LabelItem       "LABEL"
+    ClassItem       "TIME"
+    Class
+        Name            "Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][0,5]$/
+        Style
+            Symbol      "circle"
+            Size        10
+            Color       242 135 34
+        End
+
+        Label
+            Color           255 255 255
+            OutlineColor    128 128 128
+            Type            truetype
+            Size            7.5
+            Position        Auto
+            Partials        False
+            Buffer          10
+        End
+    End
+
+    Class
+        Name            "Non-Fifth Dot"
+        Expression      /^[0-9][0-9]:[0-9][1,2,3,4,6,7,8,9]$/
+        Style
+            Symbol      "circle"
+            Size        7.5
+            Color       242 135 34
+        End
+    End
+  END
+  LAYER
     NAME    "Vector_Status"
     TYPE    POINT
     STATUS  ON
