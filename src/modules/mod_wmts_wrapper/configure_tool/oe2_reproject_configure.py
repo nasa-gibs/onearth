@@ -371,7 +371,7 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, replace_wi
         layer_id = layer_xml.findtext('{*}Identifier')
         print(f"Unable to find matching tilematrixset for {layer_id}")
         return{}
-    
+
     identifier = layer_xml.findtext('{*}Identifier')
     mimetype = layer_xml.find('{*}ResourceURL').attrib.get('format')
     sample_tile_url = format_source_url(
@@ -379,7 +379,7 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, replace_wi
             source_tms).replace('${date}', 'default') + '/0/0/0.png'
     if replace_with_local:
         sample_tile_url = sample_tile_url.replace(replace_with_local, 'http://172.17.0.1')
-    
+
     bands = get_layer_bands(identifier, mimetype, sample_tile_url)
     return {
         'layer_id':
@@ -472,6 +472,10 @@ def make_apache_layer_config(endpoint_config, layer_config):
         cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
         cache_expiration_block += '        Header Always Unset ETag\n'
         cache_expiration_block += '        FileETag None'
+
+    # We need to add the ${date} keyword back
+    if layer_config['time_enabled']:
+        layer_config['source_url_template'] = layer_config['source_url_template'].replace('default/default', 'default/${date}')
 
     apache_config = bulk_replace(
         MOD_REPROJECT_APACHE_TEMPLATE,

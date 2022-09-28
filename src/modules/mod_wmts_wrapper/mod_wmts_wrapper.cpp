@@ -622,11 +622,11 @@ This allows us to keep a flat directory structure for the configs despite the fa
 the date param is always changing. 
 
 -- Then, when the request comes back around (this time into the TMS directory), we grab the configuration for
-mod_reproject, modify it with a source path that includes the date, and put the new config in the request_config
+mod_retile, modify it with a source path that includes the date, and put the new config in the request_config
 area.
 
 -- We also do a basic check to see if the tile request is within the accepted dimensions for this TMS.
-This is possible because we're grabbing the mod_reproject configuration and getting those values from it.
+This is possible because we're grabbing the mod_retile configuration and getting those values from it.
 */
 static int pre_hook(request_rec *r)
 {
@@ -674,7 +674,7 @@ static int pre_hook(request_rec *r)
         const char *filename = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_filename") : NULL;
         datetime_str = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") : "default";
         
-        // Start by verifying the requested tile coordinates/format from the URI against the mod_reproject configuration for this endpoint
+        // Start by verifying the requested tile coordinates/format from the URI against the mod_retile configuration for this endpoint
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *dim;
 
