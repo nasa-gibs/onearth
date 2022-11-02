@@ -380,6 +380,9 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
             apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
         }
 
+        // CORS safelist
+        apr_table_set(r->headers_out, "Access-Control-Expose-Headers", "layer-identifier-request, layer-identifier-actual, layer-time-request, layer-time-actual");
+
         const char* ETagIn = apr_table_get(rr->headers_out, "ETag");
         if (ETagIn)
             ETagIn = apr_pstrdup(r->pool, ETagIn);

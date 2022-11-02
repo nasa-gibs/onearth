@@ -600,9 +600,12 @@ static int handler(request_rec *r) {
         apr_table_set(r->headers_out, "Layer-Time-Actual", layer_time_actual);
     }
 
+    // CORS safelist
+    apr_table_set(r->headers_out, "Access-Control-Expose-Headers", "layer-identifier-request, layer-identifier-actual, layer-time-request, layer-time-actual");
+    apr_table_set(r->headers_out, "Access-Control-Allow-Origin", "*");
+
     // Looks fine, set the outgoing etag and then the image
     apr_table_set(r->headers_out, "ETag", ETag);
-    apr_table_set(r->headers_out, "Access-Control-Allow-Origin", "*");
     auto status = sendImage(r, img);
     if (status != OK) {
         return status;
