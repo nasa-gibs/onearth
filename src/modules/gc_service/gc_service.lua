@@ -455,6 +455,10 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
         dateInfo = dateList[layerId] or dateList[config.alias]
         if dateInfo then
             defaultDate = config.default_date or dateInfo["default"]
+            -- Make sure Z is included for subdaily times
+            if string.find(defaultDate, "T") then
+              defaultDate = defaultDate .. "Z"
+            end
             periods = config.periods or dateInfo["periods"]
         else
             print("Can't find entry for layer " .. layerId .. " in date service list.")
