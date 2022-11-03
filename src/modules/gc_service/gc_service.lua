@@ -456,8 +456,12 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
         if dateInfo then
             defaultDate = config.default_date or dateInfo["default"]
             -- Make sure Z is included for subdaily times
-            if string.find(defaultDate, "T") then
-              defaultDate = defaultDate .. "Z"
+            if defaultDate then
+                if string.find(defaultDate, "T") then
+                    if not string.find(defaultDate, "Z") then
+                        defaultDate = defaultDate .. "Z"
+                    end
+                end
             end
             periods = config.periods or dateInfo["periods"]
         else
