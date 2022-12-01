@@ -1304,6 +1304,43 @@ class TestModWmtsWrapper(unittest.TestCase):
             errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
                 tile_url)
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
+    
+    """
+    TODO: finish these two milliseconds tests
+    
+    The following rewrite rules would be able to remove milliseconds from the URLs as done in oe2_wms.conf
+    based on testing using the tool at https://htaccess.madewithlove.com/,
+    but I haven't been able to get them to work in any .conf file yet for some reason.
+    Not sure if rewrite rules are useable WMTS requests.
+    ```
+    RewriteEngine On
+    # REST milliseconds removal
+    RewriteCond %{REQUEST_URI} (.+T\d{2}:\d{2}:\d{2}).\d{3}(.*)
+    RewriteRule (.+) %1%2
+
+    # KVP milliseconds removal
+    RewriteCond %{QUERY_STRING} (.+T\d{2}:\d{2}:\d{2})\.\d{3}(.*)
+    RewriteRule (.+) $1?%1%2
+    ```
+    def test_mod_mrf_datetime_milliseconds_tile(self):
+        for test in [('2012-01-01T12:00:00.000Z', '3f84501587adfe3006dcbf59e67cd0a3'),
+                     ('2015-01-01T12:00:00.000Z', '9b38d90baeeebbcadbc8560a29481a5e')]:
+            tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_mrf_date/default/{}/16km/0/0/0.jpg'.format(
+                test[0])
+
+            errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
+                tile_url)
+            self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
+    
+    def test_kvp_mod_mrf_datetime_milliseconds_tile(self):
+        for test in [('2012-01-01T12:00:00.000Z', '3f84501587adfe3006dcbf59e67cd0a3'),
+                     ('2015-01-01T12:00:00.000Z', '9b38d90baeeebbcadbc8560a29481a5e')]:
+            tile_url = 'http://localhost/mod_wmts_wrapper_mrf/wmts.cgi?version=1.0.0&layer=test_mrf_date&service=wmts&request=gettile&format=image/jpeg&tilematrixset=16km&tilematrix=0&tilerow=0&tilecol=0&time={}'.format(
+                    test[0])
+
+            errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
+                tile_url)
+            self.assertTrue(check_tile_request(tile_url, test[1]), errstring)"""
 
     def test_mod_mrf_nodate_tile_headers(self):
         tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_mrf_nodate/default/16km/0/0/0.jpg'
