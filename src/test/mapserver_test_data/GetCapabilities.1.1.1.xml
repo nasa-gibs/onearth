@@ -225,6 +225,32 @@
         </Style>
     </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>test_zenjpeg</Name>
+        <Title>test_zenjpeg</Title>
+        <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_zenjpeg"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>test_zenjpeg_convert</Name>
+        <Title>test_zenjpeg_convert</Title>
+        <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
+        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180" miny="-90" maxx="180" maxy="90" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_zenjpeg_convert"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
         <Name>Raster_Status</Name>
         <Title>Raster_Status</Title>
         <SRS>EPSG:4326</SRS>
