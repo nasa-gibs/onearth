@@ -20,7 +20,6 @@ cp ./docker/deps/Dockerfile .
 docker build \
   --tag "$TAG" \
   --no-cache \
-  --platform=linux/amd64 \
   --squash \
   ./
 
