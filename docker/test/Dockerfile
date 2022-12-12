@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.6.4
+FROM nasagibs/onearth-deps:2.6.5
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=3
@@ -38,9 +38,6 @@ COPY ./ /home/oe2/onearth/
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
-
-WORKDIR /home/oe2/onearth/src/modules/AHTSE/
-RUN bash bootstrap.bash
 
 WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
