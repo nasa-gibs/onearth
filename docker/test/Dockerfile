@@ -170,7 +170,7 @@ WORKDIR /home/oe2/onearth/src/test
 RUN pip3.6 install --upgrade pip
 RUN pip3.6 install -r requirements.txt
 
-ENV ONEARTH_VERSION=2.6.4
+ENV ONEARTH_VERSION=2.6.5
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh
