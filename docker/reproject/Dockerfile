@@ -77,13 +77,6 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
-# Remove unneeded kernel headers
-RUN yum remove -y kernel-headers kernel-debug-devel
-
-# Remove python2 and link python3
-RUN rm /usr/bin/python && \
-    ln -s /usr/bin/python3 /usr/bin/python
-
 # Change user
 USER www-data
 

@@ -45,7 +45,8 @@ WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
 # Install pip dependencies
-RUN pip install -r onearth/requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r onearth/docker/deps/requirements.txt
 
 # Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
@@ -84,6 +85,9 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm  && \
     cd / && rm -rf /tmp/apr-1.7.0* /tmp/apr-util-1.6.1* /tmp/httpd-2.4.53* /tmp/rpmbuild*
+
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
