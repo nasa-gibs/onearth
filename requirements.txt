@@ -1,0 +1,7 @@
+requests==2.28.1
+pyaml==21.10.1
+lxml==4.9.2
+pypng==0.20220715.0
+boto3==1.26.42
+redis==4.4.0
+urllib3==1.26.13
