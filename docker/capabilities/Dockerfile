@@ -49,7 +49,8 @@ RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
 
 # Setup cron for logrotate
-RUN chmod 755 /etc/cron.daily/logrotate && \
+RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.daily/ && \
+    chmod 755 /etc/cron.daily/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.daily.httpd /etc/logrotate.d/httpd
 
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
@@ -74,6 +75,12 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
+
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
+
+# Generate SSL certs
+RUN /usr/libexec/httpd-ssl-gencerts
 
 # Change user
 USER www-data

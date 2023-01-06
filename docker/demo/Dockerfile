@@ -33,6 +33,9 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 # Remove unneeded kernel headers
 RUN yum remove -y kernel-headers kernel-debug-devel
 
+# Generate SSL certs
+RUN /usr/libexec/httpd-ssl-gencerts
+
 # Change user
 USER www-data
 

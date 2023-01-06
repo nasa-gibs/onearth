@@ -104,12 +104,8 @@ RUN \
 RUN yum remove -y gibs-gdal
 RUN rm -rf /tmp/*
 
-# Add non-root user
-RUN groupadd dockeruser && useradd -g dockeruser dockeruser
-RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log && chmod 1777 /tmp
-
-# Change user
-USER dockeruser
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
 
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION
