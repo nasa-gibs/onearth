@@ -82,6 +82,7 @@ RUN yum remove -y kernel-headers kernel-debug-devel
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
+RUN chown www-data /etc/pki/tls/private/localhost.key
 
 # Change user
 USER www-data
