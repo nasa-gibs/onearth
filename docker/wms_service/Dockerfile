@@ -18,6 +18,12 @@ WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
 RUN luarocks make json-lua-0.1-4.rockspec
 
+WORKDIR /tmp
+RUN git clone https://github.com/lunarmodules/luafilesystem.git
+WORKDIR /tmp/luafilesystem/
+RUN luarocks make luafilesystem-scm-1.rockspec
+RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
+
 # Install wms_time_service module
 RUN mkdir -p /etc/onearth/config/endpoint
 WORKDIR /home/oe2/onearth/src/modules/wms_time_service

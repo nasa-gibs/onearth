@@ -1,7 +1,7 @@
 local onearth_gc_service = {}
 
 local lfs = require "lfs"
-local lyaml = require "lyaml"
+local yaml = require "yaml"
 local request = require "http.request"
 local JSON = require "JSON"
 local xml = require "pl.xml"
@@ -206,7 +206,7 @@ end
 local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = lyaml.load(configFile:read("*all"))
+    local config = yaml.eval(configFile:read("*all"))
     configFile:close()
 
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
@@ -387,7 +387,7 @@ end
 local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = lyaml.load(configFile:read("*all"))
+    local config = yaml.eval(configFile:read("*all"))
     configFile:close()
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
@@ -433,7 +433,7 @@ end
 local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC, baseUriMeta)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = lyaml.load(configFile:read("*all"))
+    local config = yaml.eval(configFile:read("*all"))
     configFile:close()
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
@@ -771,7 +771,7 @@ local function generateFromEndpointConfig()
     -- Load endpoint config
     assert(arg[1], "Must specifiy an endpoint config file!")
     local endpointConfigFile = assert(io.open(arg[1], "r"), "Can't open endpoint config file: " .. arg[1])
-    local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
+    local endpointConfig = yaml.eval(endpointConfigFile:read("*all"))
     endpointConfigFile:close()
     if arg[2] == "--make_gts" then
         return makeGTS(endpointConfig)

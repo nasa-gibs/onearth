@@ -28,6 +28,7 @@ RUN yum -y update && \
         cronie-1.5.7 \
         logrotate-3.18.0 \
         python3-devel-3.9.14 \
+        mod_lua-2.4.53 \
         parallel && \
     dnf clean all
 

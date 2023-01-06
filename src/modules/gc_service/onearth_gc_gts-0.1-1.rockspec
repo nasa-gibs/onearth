@@ -14,7 +14,7 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "luafilesystem",
-   "lyaml",
+   "lua-yaml",
    "luasocket",
    "json-lua",
    "http",

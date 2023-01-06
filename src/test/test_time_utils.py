@@ -150,7 +150,7 @@ class TestTimeUtils(unittest.TestCase):
         test_layers = [('Test_Layer', '2017-01-04',
                         '2017-01-01/2017-01-04/P1D')]
 
-        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -b test-bucket 127.0.0.1"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -b test-bucket 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326']
         r = requests.get(self.date_service_url + 'key1=epsg4326')
@@ -174,7 +174,7 @@ class TestTimeUtils(unittest.TestCase):
                        ('MODIS_Aqua_Aerosol', '2017-01-15',
                        '2017-01-01T00:00:00Z/2017-01-15T00:00:00Z/PT1S')]
 
-        cmd = "python3.6 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -b test-inventory 127.0.0.1"
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -i -r -b test-inventory 127.0.0.1"
         run_command(cmd, True)
         db_keys = ['epsg4326']
         r = requests.get(self.date_service_url + 'key1=epsg4326')

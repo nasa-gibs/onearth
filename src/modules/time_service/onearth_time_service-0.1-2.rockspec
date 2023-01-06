@@ -13,9 +13,9 @@ description = {
 }
 dependencies = {
    "lua >= 5.1",
-   "json-lua == 0.1-4",
-   "md5 == 1.3-1",
-   "date == 2.1.2-1"
+   "json-lua >= 0.1-4",
+   "md5 >= 1.3-1",
+   "date >= 2.1.2-1"
 }
 build = {
    type = "builtin",

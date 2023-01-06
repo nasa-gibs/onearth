@@ -30,6 +30,17 @@ WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
 RUN luarocks make json-lua-0.1-4.rockspec
 
+WORKDIR /tmp
+RUN git clone https://github.com/lunarmodules/luafilesystem.git
+WORKDIR /tmp/luafilesystem/
+RUN luarocks make luafilesystem-scm-1.rockspec
+RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
+
+RUN luarocks install lpeg && luarocks install cqueues
+RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/
+
 # Install GC Service configs
 RUN mkdir -p /etc/onearth/config/endpoint
 RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
@@ -77,7 +88,7 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Remove unneeded kernel headers
-RUN yum remove -y kernel-headers kernel-debug-devel
+# RUN yum remove -y kernel-headers kernel-debug-devel
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
