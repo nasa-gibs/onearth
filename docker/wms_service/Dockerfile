@@ -1,8 +1,7 @@
 ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
-RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2 && \
-	yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-devel-2.4.4-2.el7.x86_64.rpm" && \
+RUN yum install -y proj-8.2.0 proj-devel-8.2.0 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 gdal-3.4.0 gdal-devel-3.4.0 && \
 	yum clean all
 
 COPY ./ /home/oe2/onearth/
@@ -34,14 +33,11 @@ RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-7.4.4.tar.gz
-RUN tar xf mapserver-7.4.4.tar.gz
-WORKDIR /tmp/mapserver-7.4.4
-# Remove patch after upgrading to mapserver 8. Fix for seg faults https://github.com/MapServer/MapServer/pull/6385
-COPY docker/wms_service/mapserv.patch /tmp/mapserver-7.4.4/
-RUN patch mapserv.c mapserv.patch
+RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.0.tar.gz
+RUN tar xf mapserver-8.0.0.tar.gz
+WORKDIR /tmp/mapserver-8.0.0
 RUN mkdir build
-WORKDIR /tmp/mapserver-7.4.4/build
+WORKDIR /tmp/mapserver-8.0.0/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
@@ -107,6 +103,7 @@ RUN yum remove -y kernel-headers kernel-debug-devel
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
+RUN chown www-data /etc/pki/tls/private/localhost.key
 
 # Change user
 USER www-data
