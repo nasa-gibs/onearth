@@ -1,0 +1,22 @@
+layer_id: "test_static_jpg"
+layer_title: "test_static_jpg"
+layer_name: "test_static_jpg tileset"
+projection: "EPSG:4326"
+tilematrixset: "16km"
+mime_type: "image/jpeg"
+static: true
+abstract: "test_static_jpg abstract"
+wms_layer_group: "/test_static_jpg"
+metadata:
+  - {}
+source_mrf:
+  size_x: 2560
+  size_y: 1280
+  bands: 3
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_static_jpg/test_static_jpg.idx"
+  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_static_jpg/test_static_jpg.pjg"
+  year_dir: false
+  bbox: -180,-90,180,90
+  empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"
