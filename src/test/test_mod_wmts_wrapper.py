@@ -1306,22 +1306,9 @@ class TestModWmtsWrapper(unittest.TestCase):
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
     
     """
-    TODO: finish these two milliseconds tests
+    TODO: These two tests are for handling (ignoring) milliseconds,
+            functionality that should be implemented with GITC-4101.
     
-    The following rewrite rules would be able to remove milliseconds from the URLs as done in oe2_wms.conf
-    based on testing using the tool at https://htaccess.madewithlove.com/,
-    but I haven't been able to get them to work in any .conf file yet for some reason.
-    Not sure if rewrite rules are useable WMTS requests.
-    ```
-    RewriteEngine On
-    # REST milliseconds removal
-    RewriteCond %{REQUEST_URI} (.+T\d{2}:\d{2}:\d{2}).\d{3}(.*)
-    RewriteRule (.+) %1%2
-
-    # KVP milliseconds removal
-    RewriteCond %{QUERY_STRING} (.+T\d{2}:\d{2}:\d{2})\.\d{3}(.*)
-    RewriteRule (.+) $1?%1%2
-    ```
     def test_mod_mrf_datetime_milliseconds_tile(self):
         for test in [('2012-01-01T12:00:00.000Z', '3f84501587adfe3006dcbf59e67cd0a3'),
                      ('2015-01-01T12:00:00.000Z', '9b38d90baeeebbcadbc8560a29481a5e')]:
