@@ -4,6 +4,25 @@ ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
 RUN mkdir -p /var/www
+RUN dnf -y install mod_lua-2.4.53
+
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/tiye/json-lua.git
+WORKDIR /tmp/json-lua/
+RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
+RUN luarocks make json-lua-0.1-4.rockspec
+
+WORKDIR /tmp
+RUN git clone https://github.com/lunarmodules/luafilesystem.git
+WORKDIR /tmp/luafilesystem/
+RUN luarocks make luafilesystem-scm-1.rockspec
+RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
+
+RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
+RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -22,24 +41,6 @@ RUN make && make install
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
-
-# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
-WORKDIR /tmp
-RUN git clone https://github.com/tiye/json-lua.git
-WORKDIR /tmp/json-lua/
-RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
-RUN luarocks make json-lua-0.1-4.rockspec
-
-WORKDIR /tmp
-RUN git clone https://github.com/lunarmodules/luafilesystem.git
-WORKDIR /tmp/luafilesystem/
-RUN luarocks make luafilesystem-scm-1.rockspec
-RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
-
-RUN luarocks install lpeg && luarocks install cqueues
-RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/
 
 # Install GC Service configs
 RUN mkdir -p /etc/onearth/config/endpoint
