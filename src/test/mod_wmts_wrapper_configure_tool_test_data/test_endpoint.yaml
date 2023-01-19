@@ -1,0 +1,23 @@
+time_service_uri: "http://localhost/time"
+gc_service_uri: "http://localhost/wmts/test/gc"
+tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
+layer_config_source: "/home/oe2/onearth/src/test/mapserver_test_data/layers/"
+apache_config_location: "/etc/httpd/conf.d/"
+base_uri_gc: "http://localhost/wmts/test/"
+base_uri_gts: "http://localhost/wmts/test/"
+base_uri_meta: "https://gibs.earthdata.nasa.gov"
+epsg_code: "EPSG:4326"
+gc_service:
+  internal_endpoint: "/build/test/ci_tests/wmts/test"
+  external_endpoint: "/wmts/test/gc"
+  config_prefix: "wmts_test_gc_service"
+  gc_header_file: "/etc/onearth/config/conf/header_gc.xml"
+  gts_header_file: "/etc/onearth/config/conf/header_gts.xml"
+  twms_gc_header_file: "/etc/onearth/config/conf/header_twms_gc.xml"
+wmts_service:
+  internal_endpoint: "/build/test/ci_tests/wmts/test"
+  external_endpoint: "/wmts/test"
+  config_prefix: "wmts_test"
+twms_service:
+  internal_endpoint: "/build/test/ci_tests/wmts/test"
+  external_endpoint: "/oe-status"

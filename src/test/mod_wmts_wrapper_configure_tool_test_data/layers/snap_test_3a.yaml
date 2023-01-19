@@ -1,0 +1,22 @@
+layer_id: "snap_test_3a"
+layer_title: "snap_test_3a"
+layer_name: "snap_test_3a tileset"
+projection: "EPSG:4326"
+tilematrixset: "16km"
+mime_type: "image/jpeg"
+static: false
+abstract: "snap_test_3a abstract"
+wms_layer_group: "/snap_test_3a"
+metadata:
+  - {}
+source_mrf:
+  size_x: 8192
+  size_y: 4096
+  bands: 3
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
+  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
+  year_dir: false
+  bbox: -180,-90,180,90
+  empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"

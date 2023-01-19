@@ -317,10 +317,11 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
                 print(error)
                 output_err.write(error)
         output_err.close
-    print('run_command stdout: ' + process.stdout.read())
+    result = process.stdout.read()
+    print('run_command stdout: ' + result)
     print('run_command stderr: ' + process.stderr.read())
     print('**************************************************************************************')
-    return None
+    return result
 
 
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):

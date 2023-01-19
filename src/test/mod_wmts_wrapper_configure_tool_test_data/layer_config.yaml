@@ -1,0 +1,15 @@
+layer_id: "AMSR2_Snow_Water_Equivalent"
+static: true
+tilematrixset: "EPSG4326_16km"
+cache_expiration: 1500
+source_mrf:
+  size_x: 2560
+  size_y: 1280
+  bands: 3
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "../mod_wmts_wrapper_test_data/test_mrf_date-2012001000000.idx"
+  data_file_uri: "../mod_wmts_wrapper_test_data/test_mrf_date-2012001000000.pjg"
+  year_dir: false
+  bbox: -180,-90,180,90
+mime_type: "image/png"

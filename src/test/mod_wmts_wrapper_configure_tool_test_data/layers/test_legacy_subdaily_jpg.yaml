@@ -1,0 +1,22 @@
+layer_id: "test_legacy_subdaily_jpg"
+layer_title: "test_legacy_subdaily_jpg"
+layer_name: "test_legacy_subdaily_jpg tileset"
+projection: "EPSG:4326"
+tilematrixset: "16km"
+mime_type: "image/jpeg"
+static: false
+abstract: "test_legacy_subdaily_jpg abstract"
+wms_layer_group: "/test_legacy_subdaily_jpg"
+metadata:
+  - {}
+source_mrf:
+  size_x: 2560
+  size_y: 1280
+  bands: 3
+  tile_size_x: 512
+  tile_size_y: 512
+  idx_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
+  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
+  year_dir: true
+  bbox: -180,-90,180,90
+  empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"
