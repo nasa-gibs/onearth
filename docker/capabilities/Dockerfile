@@ -21,8 +21,7 @@ RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 
 RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
 RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2

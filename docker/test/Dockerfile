@@ -81,8 +81,7 @@ RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 
 RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
 RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
 # Install Lua module for time snapping
 WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
