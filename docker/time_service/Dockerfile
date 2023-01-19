@@ -3,6 +3,8 @@
 ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
+RUN dnf -y install mod_lua-2.4.53
+
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
