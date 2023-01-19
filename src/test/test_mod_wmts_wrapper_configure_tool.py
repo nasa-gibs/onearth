@@ -44,22 +44,23 @@ class TestModWmtsWrapperConfigureTool(unittest.TestCase):
         for type in configs:
             for config in configs[type]:
                 file_name = "_".join(config.split("/")[1:])
-                with open(f"{self.test_data_path}/configs/{type.lower()}/{file_name}", "r") as conf_file:
+                with open(f"{self.test_data_path}/configs/{type.lower()}/{file_name}", "r") as conf_file, open(f"{config}", "r") as gen_file:
                     conf_str = conf_file.read()
+                    gen_str = gen_file.read()
+
                     split_conf_str = conf_str.split("\n")
-                    gen_str = ""
-                    with open(f"{config}", "r") as gen_file:
-                        gen_str = gen_file.read()
-                        split_gen_str = gen_str.split("\n")
-                        if len(split_gen_str) >= len(split_conf_str) and split_gen_str[-1] == "" and len(split_gen_str) - len(split_conf_str) <= 1:
-                            for i in range(0, len(split_conf_str)):
-                                try:
-                                    self.assertEqual(split_gen_str[i], split_conf_str[i],
-                                                f"{config} == {file_name}")
-                                except Exception as e:
-                                    print(e)
-                        else:
-                            self.assertEqual(conf_str, gen_str, f"{config} == {file_name}")
+                    split_conf_str.remove("")
+                    split_gen_str = gen_str.split("\n")
+                    split_gen_str.remove("")
+                    
+                    for i in range(0, len(split_conf_str)):
+                        try:
+                            self.assertEqual(split_gen_str[i], split_conf_str[i],
+                                        f"{config} == {file_name}")
+                        except Exception as e:
+                            print(e)
+                    else:
+                        self.assertEqual(conf_str, gen_str, f"{config} == {file_name}")
 
 
 if __name__ == '__main__':
