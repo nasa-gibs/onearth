@@ -170,9 +170,6 @@ RUN cp /home/oe2/onearth/docker/00-mpm.conf /etc/httpd/conf.modules.d/ && \
 
 ENV ONEARTH_VERSION=2.7.0
 
-# Remove unneeded kernel headers
-RUN yum remove -y kernel-headers kernel-debug-devel
-
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
 
