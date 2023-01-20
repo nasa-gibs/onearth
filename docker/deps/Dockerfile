@@ -100,5 +100,12 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
+WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
+RUN cp /home/oe2/onearth/ci/Makefile.lcl .
+RUN make && make install
+
+WORKDIR /home/oe2/onearth/src/modules/AHTSE/
+RUN bash bootstrap.bash
+
 WORKDIR /home/oe2
 RUN rm -rf ./onearth
