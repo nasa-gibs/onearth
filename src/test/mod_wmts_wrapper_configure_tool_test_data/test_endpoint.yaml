@@ -1,7 +1,7 @@
 time_service_uri: "http://localhost/time"
 gc_service_uri: "http://localhost/wmts/test/gc"
 tms_defs_file: "/etc/onearth/config/conf/tilematrixsets.xml"
-layer_config_source: "/home/oe2/onearth/src/test/mapserver_test_data/layers/"
+layer_config_source: "/home/oe2/onearth/src/test/mod_wmts_wrapper_configure_tool_test_data/layers/"
 apache_config_location: "/etc/httpd/conf.d/"
 base_uri_gc: "http://localhost/wmts/test/"
 base_uri_gts: "http://localhost/wmts/test/"
