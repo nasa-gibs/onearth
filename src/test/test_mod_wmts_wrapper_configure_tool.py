@@ -17,7 +17,7 @@ class TestModWmtsWrapperConfigureTool(unittest.TestCase):
     def cleanup_configure_tool_stdout(self, output):
         configs = output.split(" layer config written to: ")
         configs_dict = {
-            "WTMS": [],
+            "WMTS": [],
             "TWMS": [],
             "Apache": [],
         }
