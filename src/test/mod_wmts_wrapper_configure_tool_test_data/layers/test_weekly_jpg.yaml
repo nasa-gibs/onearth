@@ -19,4 +19,4 @@ source_mrf:
   data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
   year_dir: true
   bbox: -180,-90,180,90
-  empty_tile: "/etc/onearth/empty_tiles/Blank_RGB_512.jpg"
+  empty_tile: "/home/oe2/onearth/src/test/mod_wmts_wrapper_configure_tool_test_data/empty_tiles/Blank_RGB_512.jpg"
