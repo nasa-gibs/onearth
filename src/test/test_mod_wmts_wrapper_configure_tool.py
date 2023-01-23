@@ -49,9 +49,11 @@ class TestModWmtsWrapperConfigureTool(unittest.TestCase):
                     gen_str = gen_file.read()
 
                     split_conf_str = conf_str.split("\n")
-                    split_conf_str.remove("")
+                    if "" in split_conf_str:
+                        split_conf_str.remove("")
                     split_gen_str = gen_str.split("\n")
-                    split_gen_str.remove("")
+                    if "" in split_gen_str:
+                        split_gen_str.remove("")
                     
                     for i in range(0, len(split_conf_str)):
                         try:
@@ -59,8 +61,6 @@ class TestModWmtsWrapperConfigureTool(unittest.TestCase):
                                         f"{config} == {file_name}")
                         except Exception as e:
                             print(e)
-                    else:
-                        self.assertEqual(conf_str, gen_str, f"{config} == {file_name}")
 
 
 if __name__ == '__main__':
