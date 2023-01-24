@@ -32,7 +32,7 @@ The GetCapabilities can output each of the following types of files:
 
 To request a specific file, use the `request=` url parameter. Valid options are `wmtsgetcapabilities`, `twmsgetcapabilities`, and `gettileservice`.
 
-For example, the following request would produce a WTMS GetCapabilities file:
+For example, the following request would produce a WMTS GetCapabilities file:
 `http://endpoint/gc_service/gc_service?request=wmtsgetcapabilities`
 
 ### The Configuration Tool

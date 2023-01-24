@@ -677,7 +677,7 @@ def write_layer_configs(layer_configs):
         layer_config['mod_mrf_config']['path'].write_text(
             layer_config['mod_mrf_config']['contents'])
         print(
-            f'\nWTMS layer config written to: {layer_config["mod_mrf_config"]["path"]}'
+            f'\nWMTS layer config written to: {layer_config["mod_mrf_config"]["path"]}'
         )
 
         # Write out TWMS config if included
