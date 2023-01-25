@@ -131,6 +131,7 @@ RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 # pip updates
 RUN python3 -m pip install --user --upgrade cython
 RUN python3 setup.py build_ext --inplace
+RUN pip3 install --force-reinstall numpy==1.24.1
 
 # Install OnEarth utilties, etc.
 WORKDIR /home/oe2/onearth/
