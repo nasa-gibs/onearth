@@ -128,9 +128,6 @@ RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_co
 WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
-# Pillow at least 9.2.0
-RUN pip install --user Pillow==9.2.0
-
 # pip updates
 RUN python3 -m pip install --user --upgrade cython
 RUN python3 setup.py build_ext --inplace
