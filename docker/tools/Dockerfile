@@ -1,108 +1,76 @@
 # This Dockerfile must be run from source root
+FROM nasagibs/onearth-deps:2.7.0
 
-FROM rockylinux:9.1
+ARG GDAL_VERSION=2.4.4
+ARG GDAL_RELEASE=5
 
-# Copy mrfgen/vectorgen
-RUN mkdir -p /var/task/bin
-COPY ./src/mrfgen/*.py /var/task/bin/
-COPY ./src/mrfgen/RGBApng2Palpng.c /var/task/bin/
-COPY ./src/vectorgen/*.py /var/task/bin/
-COPY ./src/scripts/*.py /var/task/bin/
-COPY ./src/empty_tile/*.py /var/task/bin/
-COPY ./src/generate_legend/*.py /var/task/bin/
-COPY ./src/colormaps/bin/*.py /var/task/bin/
+# Install dependencies
+RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 mod_lua-2.4.53 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
+	yum clean all
 
-WORKDIR /tmp
-RUN touch /var/lib/rpm/* && \
-	yum install -y epel-release python3-devel make libpng-devel
+# Copy OnEarth to home directory
+RUN mkdir -p /home/oe2
+WORKDIR /home/oe2
+COPY ./ /home/oe2/onearth/
+
+# Install pip dependencies
+RUN pip install --upgrade pip
+RUN pip install -r onearth/requirements.txt
 
 # Install GDAL
-RUN yum install -y turbojpeg-1.2.90 turbojpeg-devel-1.2.90
-RUN yum groupinstall -y "Development Tools"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el7.x86_64.rpm" && \
-	yum clean all
-RUN pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
+                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
+                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
+RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
-# Copy binaries and libs
-RUN cp /usr/bin/*mrf* /var/task/bin
-RUN cp /usr/bin/epsg_tr.py /var/task/bin
-RUN cp /usr/bin/esri2wkt.py /var/task/bin
-RUN cp /usr/bin/gcps2vec.py /var/task/bin
-RUN cp /usr/bin/gcps2wld.py /var/task/bin
-RUN cp /usr/bin/gdal* /var/task/bin
-RUN cp /usr/bin/gnmanalyse /var/task/bin
-RUN cp /usr/bin/gnmmanage /var/task/bin
-RUN cp /usr/bin/mkgraticule.py /var/task/bin
-RUN cp /usr/bin/nearblack /var/task/bin
-RUN cp /usr/bin/ogr* /var/task/bin
-RUN cp /usr/bin/pct2rgb.py /var/task/bin
-RUN cp /usr/bin/rgb2pct.py /var/task/bin
-RUN cp /usr/bin/testepsg /var/task/bin
-RUN mkdir /var/task/lib64/
-RUN cp /usr/lib64/libgdal.so.20 /var/task/lib64/
-RUN cp /usr/lib64/libgeos-3.4.2.so /var/task/lib64/
-RUN cp /usr/lib64/libgeos_c.so.1 /var/task/lib64/
-RUN mkdir /var/task/lib64/pkgconfig
-RUN cp /usr/lib64/pkgconfig/gdal.pc /var/task/lib64/pkgconfig
-RUN mkdir -p /var/task/share/gdal/
-RUN cp -R /usr/share/gdal/* /var/task/share/gdal/
-
-ENV GDAL_DATA=/var/task/gdal
-#ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib/python2.7/site-packages
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64:/var/task/lib
-ENV PATH=$PATH:/var/task/bin
-
-# Install mrfgen and OnEarth utils dependencies
-RUN pip3 install --prefix=/var/task --ignore-installed apacheconfig==0.2.8
-RUN pip3 install --ignore-installed apacheconfig==0.2.8
-RUN pip3 install --prefix=/var/task --ignore-installed numpy==1.16.6
-RUN pip3 install --ignore-installed numpy==1.16.6
-
-# Fetch PROJ.4
-RUN curl -L http://download.osgeo.org/proj/proj-4.9.3.tar.gz | tar zxf - -C /tmp
-
-# Build and install PROJ.4
-WORKDIR /tmp/proj-4.9.3
-RUN \
-  ./configure \
-    --prefix=/var/task && \
-  make -j $(nproc) && \
-  make install
-
-# Install vectorgen dependencies
 WORKDIR /tmp
-RUN curl -L http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz | tar xzf - -C /tmp
+RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz
 WORKDIR /tmp/spatialindex-src-1.8.5
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
-RUN pip3 install wheel==0.37.1
-RUN pip3 install --prefix=/var/task --ignore-installed Fiona==1.8.19 Shapely==1.5.16 Rtree==0.9.7 mapbox_vector_tile==1.2.1 lxml==4.9.1 protobuf==3.19.5
-RUN pip3 install --ignore-installed Fiona==1.8.19 Shapely==1.5.16 Rtree==0.9.7 mapbox_vector_tile==1.2.1 lxml==4.9.1 protobuf==3.19.5
-# TODO: Sort out weirdness with some dependencies expecting specific lib locations
-RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
-RUN pip3 uninstall -y protobuf && pip3 install protobuf==3.19.5
 
-RUN pip3 install matplotlib==2.2.5
-RUN pip3 install pypng==0.0.20
-
-RUN mkdir -p /var/task/lib64/python2.7/site-packages
-RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin && \
+    cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 
 # Build RGBApng2Palpng
-WORKDIR /var/task/bin
+WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
-RUN rm RGBApng2Palpng.c
 
-# Clean up
-WORKDIR /var/task
-RUN \
-  strip lib64/libgdal.so.20* && \
-  strip lib64/libgeos* && \
-  strip lib64/libspatialindex*so* && \
-  strip lib/libproj.so.12.*
-RUN yum remove -y gibs-gdal
-RUN rm -rf /tmp/*
+# Pillow at least 8.1.0 
+RUN pip install --user Pillow==8.1.0
+
+RUN python3 -m pip install --user --upgrade cython
+RUN python3 setup.py build_ext --inplace
+
+# Install OnEarth utilties, etc.
+WORKDIR /home/oe2/onearth/
+RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_generate_empty_tile.py && \
+    install -m 755 src/generate_legend/oe_generate_legend.py -D /usr/bin/oe_generate_legend.py && \
+    install -m 755 src/mrfgen/mrfgen.py -D /usr/bin/mrfgen && \
+    install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
+    install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
+    install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
+    install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
+    install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \
+    install -m 755 src/mrfgen/oe_validate_palette.py -D /usr/bin/oe_validate_palette.py && \
+    install -m 755 src/scripts/oe_utils.py -D /usr/bin/oe_utils.py && \
+    install -m 755 src/scripts/twmsbox2wmts.py -D /usr/bin/twmsbox2wmts.py && \
+    install -m 755 src/scripts/wmts2twmsbox.py -D /usr/bin/wmts2twmsbox.py && \
+    install -m 755 src/colormaps/bin/colorMaptoHTML_v1.0.py -D /usr/bin/colorMaptoHTML_v1.0.py && \
+    install -m 755 src/colormaps/bin/colorMaptoHTML_v1.3.py -D /usr/bin/colorMaptoHTML_v1.3.py && \
+    install -m 755 src/colormaps/bin/colorMaptoSLD.py -D /usr/bin/colorMaptoSLD.py && \
+    install -m 755 src/colormaps/bin/SLDtoColorMap.py -D /usr/bin/SLDtoColorMap.py && \
+    install -m 755 src/vectorgen/oe_vectorgen.py -D /usr/bin/oe_vectorgen && \
+    install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py && \
+    install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py && \
+    install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py && \
+    install -m 755 docker/wms_service/oe2_wms_configure.py -D /usr/bin/oe2_wms_configure.py && \
+    install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
 
 # Remove unneeded kernel headers
 RUN yum remove -y kernel-headers kernel-debug-devel

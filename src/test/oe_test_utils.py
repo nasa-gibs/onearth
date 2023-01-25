@@ -257,14 +257,6 @@ def restart_apache():
     apache = subprocess.Popen(['httpd', '-k', 'restart'],
                               stderr=subprocess.STDOUT,
                               stdout=subprocess.PIPE)
-    # try:
-    #     check_apache_running()
-    #     if "el7" in platform.release():
-    #         apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    #     else:
-    #         apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    # except ValueError:
-    #     apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     (stdout, stderr) = apache.communicate()
     if stdout != None and len(stdout) != 0:
         sys.stderr.write(
@@ -278,22 +270,8 @@ def restart_apache():
 def restart_redis():
     try:
         check_redis_running()
-#        if "el7" in platform.release():
-#            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-#            redis = subprocess.Popen(['redis-server'], close_fds=True)
-#        else:
-#            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-#            redis = subprocess.Popen(['redis-server'], close_fds=True)
     except ValueError:
-        #redis = subprocess.Popen(['redis-server'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         redis = subprocess.Popen(['redis-server'], close_fds=True)
-
-
-#    (stdout, stderr) = redis.communicate()
-#    if stdout != None and len(stdout) != 0:
-#        sys.stderr.write("\n=== STDOUT from restart_redis():\n%s\n===\n" % stdout.rstrip())
-#    if stderr != None and len(stderr) != 0:
-#        sys.stderr.write("\n=== STDERR from restart_redis():\n%s\n===\n" % stderr.rstrip())
     subprocess.call(['sleep', '2'])
 
 

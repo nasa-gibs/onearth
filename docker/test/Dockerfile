@@ -4,11 +4,8 @@ FROM nasagibs/onearth-deps:2.7.0
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=5
 
-# Install mrfgen and OnEarth utils dependencies
-RUN dnf install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 mod_lua-2.4.53
-
-# Install wms dependencies
-RUN yum install -y fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
+# Install dependencies
+RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 mod_lua-2.4.53 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
 	yum clean all
 
 # Copy OnEarth to home directory
