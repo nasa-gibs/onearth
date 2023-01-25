@@ -3,6 +3,8 @@
 ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
+RUN dnf -y install mod_lua-2.4.53
+
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
 WORKDIR /home/oe2
@@ -43,7 +45,7 @@ RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
 
 # Setup cron for logrotate
-RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.hourly/ && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
@@ -73,9 +75,9 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 # Remove unneeded kernel headers
 RUN yum remove -y kernel-headers kernel-debug-devel
 
-# Remove python2 and link python3
-RUN rm /usr/bin/python && \
-    ln -s /usr/bin/python3 /usr/bin/python
+# Generate SSL certs
+RUN /usr/libexec/httpd-ssl-gencerts
+RUN chown www-data /etc/pki/tls/private/localhost.key
 
 # Change user
 USER www-data

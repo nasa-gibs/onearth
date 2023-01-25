@@ -4,6 +4,24 @@ ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
 RUN mkdir -p /var/www
+RUN dnf -y install mod_lua-2.4.53
+
+# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/tiye/json-lua.git
+WORKDIR /tmp/json-lua/
+RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
+RUN luarocks make json-lua-0.1-4.rockspec
+
+WORKDIR /tmp
+RUN git clone https://github.com/lunarmodules/luafilesystem.git
+WORKDIR /tmp/luafilesystem/
+RUN luarocks make luafilesystem-scm-1.rockspec
+RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
+
+RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
+RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -22,13 +40,6 @@ RUN make && make install
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
-
-# Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
-WORKDIR /tmp
-RUN git clone https://github.com/tiye/json-lua.git
-WORKDIR /tmp/json-lua/
-RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
-RUN luarocks make json-lua-0.1-4.rockspec
 
 # Install GC Service configs
 RUN mkdir -p /etc/onearth/config/endpoint
@@ -49,7 +60,8 @@ RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
 
 # Setup cron for logrotate
-RUN chmod 755 /etc/cron.daily/logrotate && \
+RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.daily/ && \
+    chmod 755 /etc/cron.daily/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.daily.httpd /etc/logrotate.d/httpd
 
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
@@ -76,11 +88,11 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Remove unneeded kernel headers
-RUN yum remove -y kernel-headers kernel-debug-devel
+# RUN yum remove -y kernel-headers kernel-debug-devel
 
-# Remove python2 and link python3
-RUN rm /usr/bin/python && \
-    ln -s /usr/bin/python3 /usr/bin/python
+# Generate SSL certs
+RUN /usr/libexec/httpd-ssl-gencerts
+RUN chown www-data /etc/pki/tls/private/localhost.key
 
 # Change user
 USER www-data

@@ -12,9 +12,7 @@ description = {
    license = "MIT"
 }
 dependencies = {
-   "lua >= 5.1, < 5.4",
-   "luafilesystem",
-   "lyaml",
+   "lua >= 5.1",
    "luasocket",
    "json-lua",
    "http",

@@ -1,6 +1,6 @@
---- a/modules/proxy/mod_proxy.c 2021-12-09 20:24:48.480687000 +0000
-+++ b/modules/proxy/mod_proxy.c 2021-12-09 20:29:36.194060000 +0000
-@@ -665,6 +665,9 @@
+--- a/modules/proxy/mod_proxy.c 2023-01-05 03:12:21.566832721 +0000
++++ b/modules/proxy/mod_proxy.c 2023-01-05 03:19:53.244032607 +0000
+@@ -959,6 +959,9 @@
                  "Unescaped URL path matched ProxyPass; ignoring unsafe nocanon");
      }
 
@@ -8,8 +8,8 @@
 +        found = NULL;
 +
      if (found) {
-         r->filename = found;
-         r->handler = "proxy-server";
+         /* A proxy module is assigned this URL, check whether it's interested
+          * in the request itself (e.g. proxy_wstunnel cares about Upgrade
 @@ -1512,6 +1515,9 @@
          else if (!strcasecmp(word,"noquery")) {
              flags |= PROXYPASS_NOQUERY;
@@ -20,13 +20,13 @@
          else {
              char *val = strchr(word, '=');
              if (!val) {
---- a/modules/proxy/mod_proxy.h	2021-05-12 10:14:42.000000000 +0000
-+++ b/modules/proxy/mod_proxy.h	2021-07-28 00:00:43.233589985 +0000
-@@ -124,6 +124,7 @@
+--- a/modules/proxy/mod_proxy.h	2023-01-05 03:12:21.514832725 +0000
++++ b/modules/proxy/mod_proxy.h 2023-01-05 03:21:39.435225468 +0000
+@@ -125,6 +125,7 @@
  #define PROXYPASS_NOCANON 0x01
  #define PROXYPASS_INTERPOLATE 0x02
  #define PROXYPASS_NOQUERY 0x04
 +#define PROXYPASS_NOMAIN 0x08
+ #define PROXYPASS_MAP_ENCODED 0x08
+ #define PROXYPASS_MAP_SERVLET 0x18 /* + MAP_ENCODED */
  struct proxy_alias {
-     const char  *real;
-     const char  *fake;

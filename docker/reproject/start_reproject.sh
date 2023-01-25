@@ -44,8 +44,8 @@ then
 else
   echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
-  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
-  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
   for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
     CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
@@ -53,7 +53,7 @@ else
 
     mkdir -p $CONFIG_SOURCE
 
-    python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
+    python3 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
   done
 fi
 
@@ -96,7 +96,7 @@ cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 # Now configure oe-status and start apache for reproject health checks
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
-python3.6 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
+python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart
@@ -132,7 +132,7 @@ for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
 done
 
 # Run endpoint configuration in parallel
-grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 python3.6 /usr/bin/oe2_reproject_configure.py {} >>/var/log/onearth/config.log 2>&1
+grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 python3 /usr/bin/oe2_reproject_configure.py {} >>/var/log/onearth/config.log 2>&1
 
 echo "[$(date)] Completed reproject configuration" >> /var/log/onearth/config.log
 

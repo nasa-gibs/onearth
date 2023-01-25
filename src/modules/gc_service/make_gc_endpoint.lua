@@ -1,4 +1,4 @@
-local lyaml = require "lyaml"
+local yaml = require "yaml"
 local lfs = require "lfs"
 local argparse = require "argparse"
 
@@ -78,7 +78,7 @@ end
 
 local function create_config(endpointConfigFilename)
     local endpointConfigFile = assert(io.open(endpointConfigFilename, "r"), "Can't open endpoint config file: " .. endpointConfigFilename)
-    local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
+    local endpointConfig = yaml.eval(endpointConfigFile:read("*all"))
     endpointConfigFile:close()
 
     local tmsDefsFilename = assert(endpointConfig["tms_defs_file"], "No 'tms_defs_file' specified in endpoint config.")

@@ -15,8 +15,8 @@ fi
 # Sync IDX files if true
 if [ "$IDX_SYNC" = true ]; then
     echo "[$(date)] Starting IDX file sync" >> /var/log/onearth/config.log
-    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p epsg >>/var/log/onearth/config.log 2>&1
-    python3.6 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p oe-status >>/var/log/onearth/config.log 2>&1
+    python3 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p epsg >>/var/log/onearth/config.log 2>&1
+    python3 /usr/bin/oe_sync_s3_idx.py -b $S3_URL -d /onearth/idx -p oe-status >>/var/log/onearth/config.log 2>&1
     echo "[$(date)] Completed IDX file sync" >> /var/log/onearth/config.log
 fi
 
@@ -98,30 +98,30 @@ else
 	echo "[$(date)] S3_CONFIGS set for OnEarth configs, downloading from S3" >> /var/log/onearth/config.log
 
   # empty tiles
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
 
   # colormaps
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
 
   # legends
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/legends/' -b $S3_CONFIGS -p legends >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/legends/' -b $S3_CONFIGS -p legends >>/var/log/onearth/config.log 2>&1
   
   # layer-metadata
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/layer-metadata/index.html' -b $S3_CONFIGS -p layer-metadata/index.html >>/var/log/onearth/config.log 2>&1
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/layer-metadata/v1.0' -b $S3_CONFIGS -p layer-metadata/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/layer-metadata/index.html' -b $S3_CONFIGS -p layer-metadata/index.html >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/layer-metadata/v1.0' -b $S3_CONFIGS -p layer-metadata/v1.0 >>/var/log/onearth/config.log 2>&1
   
   # vector-metadata
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-metadata/index.html' -b $S3_CONFIGS -p vector-metadata/index.html >>/var/log/onearth/config.log 2>&1
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-metadata/v1.0' -b $S3_CONFIGS -p vector-metadata/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-metadata/index.html' -b $S3_CONFIGS -p vector-metadata/index.html >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-metadata/v1.0' -b $S3_CONFIGS -p vector-metadata/v1.0 >>/var/log/onearth/config.log 2>&1
   
   # vector-styles
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-styles/index.html' -b $S3_CONFIGS -p vector-styles/index.html >>/var/log/onearth/config.log 2>&1
-  python3.6 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-styles/v1.0' -b $S3_CONFIGS -p vector-styles/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-styles/index.html' -b $S3_CONFIGS -p vector-styles/index.html >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/vector-styles/v1.0' -b $S3_CONFIGS -p vector-styles/v1.0 >>/var/log/onearth/config.log 2>&1
 
   # main configs
-  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
-  python3.6 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/endpoint/' -b $S3_CONFIGS -p config/endpoint >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -f -d '/etc/onearth/config/conf/' -b $S3_CONFIGS -p config/conf >>/var/log/onearth/config.log 2>&1
 
   for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
     CONFIG_SOURCE=$(yq eval ".layer_config_source" $f)
@@ -129,7 +129,7 @@ else
 
     mkdir -p $CONFIG_SOURCE
 
-    python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
+    python3 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
   done
 fi
 # Replace with S3 URL
@@ -189,7 +189,7 @@ for f in $(grep -L 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
   # TWMS Endpoint
   mkdir -p $(yq eval ".twms_service.internal_endpoint" $f)
 
-  python3.6 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe2_wmts_configure.py $f >>/var/log/onearth/config.log 2>&1
 done
 
 echo "[$(date)] WMTS/TWMS configuration completed" >> /var/log/onearth/config.log

@@ -1,7 +1,5 @@
 local onearth_wms_time_service = {}
 
-local lfs = require "lfs"
-local lyaml = require "lyaml"
 local request = require "http.request"
 local JSON = require "JSON"
 local xml = require "pl.xml"

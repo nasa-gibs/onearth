@@ -1,11 +1,24 @@
 ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
-RUN yum install -y proj-epsg-4.8.0 proj-devel-4.8.0 fribidi-devel-1.0.2 cairo-devel-1.15.12 cmake-2.8.12.2 geos-devel-3.4.2 harfbuzz-devel-1.7.5 fcgi-devel-2.4.0 protobuf-c-devel-1.0.2 && \
-	yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-2.4.4-2.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-2/gibs-gdal-devel-2.4.4-2.el7.x86_64.rpm" && \
+ARG GDAL_VERSION=2.4.4
+ARG GDAL_RELEASE=5
+
+RUN dnf -y install mod_lua-2.4.53
+RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
 	yum clean all
 
 COPY ./ /home/oe2/onearth/
+
+# Install pip dependencies
+RUN pip install --upgrade pip
+RUN pip install -r onearth/requirements.txt
+
+# Install GDAL
+RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
+                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
+                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
+RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
@@ -18,6 +31,12 @@ RUN git clone https://github.com/tiye/json-lua.git
 WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
 RUN luarocks make json-lua-0.1-4.rockspec
+
+WORKDIR /tmp
+RUN git clone https://github.com/lunarmodules/luafilesystem.git
+WORKDIR /tmp/luafilesystem/
+RUN luarocks make luafilesystem-scm-1.rockspec
+RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 
 # Install wms_time_service module
 RUN mkdir -p /etc/onearth/config/endpoint
@@ -34,14 +53,11 @@ RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-7.4.4.tar.gz
-RUN tar xf mapserver-7.4.4.tar.gz
-WORKDIR /tmp/mapserver-7.4.4
-# Remove patch after upgrading to mapserver 8. Fix for seg faults https://github.com/MapServer/MapServer/pull/6385
-COPY docker/wms_service/mapserv.patch /tmp/mapserver-7.4.4/
-RUN patch mapserv.c mapserv.patch
+RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.0.tar.gz
+RUN tar xf mapserver-8.0.0.tar.gz
+WORKDIR /tmp/mapserver-8.0.0
 RUN mkdir build
-WORKDIR /tmp/mapserver-7.4.4/build
+WORKDIR /tmp/mapserver-8.0.0/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
@@ -75,7 +91,7 @@ COPY docker/wms_service/logrotate.daily.mapserver /etc/logrotate.d/mapserver
 COPY docker/logrotate.daily.onearth /etc/logrotate.d/onearth
 
 # Setup cron for logrotate
-RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate && \
+RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.hourly/ && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
@@ -105,9 +121,9 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 # Remove unneeded kernel headers
 RUN yum remove -y kernel-headers kernel-debug-devel
 
-# Remove python2 and link python3
-RUN rm /usr/bin/python && \
-    ln -s /usr/bin/python3 /usr/bin/python
+# Generate SSL certs
+RUN /usr/libexec/httpd-ssl-gencerts
+RUN chown www-data /etc/pki/tls/private/localhost.key
 
 # Change user
 USER www-data

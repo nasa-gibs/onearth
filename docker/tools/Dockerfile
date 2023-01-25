@@ -1,6 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM centos:7
+FROM rockylinux:9.1
 
 # Copy mrfgen/vectorgen
 RUN mkdir -p /var/task/bin
@@ -104,18 +104,8 @@ RUN \
 RUN yum remove -y gibs-gdal
 RUN rm -rf /tmp/*
 
-# Set the locale
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-
-# Add non-root user
-RUN groupadd dockeruser && useradd -g dockeruser dockeruser
-RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log && chmod 1777 /tmp
-
-# Change user
-USER dockeruser
+# Remove unneeded kernel headers
+RUN yum remove -y kernel-headers kernel-debug-devel
 
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION
