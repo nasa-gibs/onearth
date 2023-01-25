@@ -24,9 +24,13 @@ RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_V
 RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-RUN tar xzf spatialindex-src-1.8.5.tar.gz
+RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz && \
+    wget https://download.osgeo.org/proj/proj-4.8.0.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz && tar xzf proj-4.8.0.tar.gz
 WORKDIR /tmp/spatialindex-src-1.8.5
+RUN ./configure --libdir=/usr/lib64
+RUN make && make install
+WORKDIR /tmp/proj-4.8.0
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
@@ -124,9 +128,10 @@ RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_co
 WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
-# Pillow at least 8.1.0 
-RUN pip install --user Pillow==8.1.0
+# Pillow at least 9.2.0
+RUN pip install --user Pillow==9.2.0
 
+# pip updates
 RUN python3 -m pip install --user --upgrade cython
 RUN python3 setup.py build_ext --inplace
 

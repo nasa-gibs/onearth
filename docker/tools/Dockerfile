@@ -1,10 +1,31 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.7.0
+FROM rockylinux:9.1
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=5
 
 # Install dependencies
+RUN yum -y update && \
+    yum groupinstall -y "Development Tools" && \
+    yum clean all && \
+    dnf config-manager --set-enabled crb && \
+	dnf install -y epel-release && \
+    dnf install -y \
+        lua-devel-5.4.2 \
+        jansson-devel-2.14 \
+        libpng-devel-1.6.37 \
+        pcre-devel-8.44 \
+        wget-1.21.1 \
+        libyaml-devel-0.2.5 \
+        libcurl-devel-7.76.1 \
+        libjpeg-turbo-devel-2.0.90 \
+        libxml2-devel-2.9.13 \
+        luarocks-3.9.1 \
+        redis-6.2.7 \
+        cronie-1.5.7 \
+        logrotate-3.18.0 \
+        python3-devel-3.9.14 && \
+    dnf clean all
 RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 mod_lua-2.4.53 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
 	yum clean all
 
@@ -15,6 +36,7 @@ COPY ./ /home/oe2/onearth/
 
 # Install pip dependencies
 RUN pip install --upgrade pip
+RUN pip install -r onearth/docker/deps/requirements.txt
 RUN pip install -r onearth/requirements.txt
 
 # Install GDAL
@@ -24,9 +46,13 @@ RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_V
 RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-RUN tar xzf spatialindex-src-1.8.5.tar.gz
+RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz && \
+    wget https://download.osgeo.org/proj/proj-4.8.0.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz && tar xzf proj-4.8.0.tar.gz
 WORKDIR /tmp/spatialindex-src-1.8.5
+RUN ./configure --libdir=/usr/lib64
+RUN make && make install
+WORKDIR /tmp/proj-4.8.0
 RUN ./configure --libdir=/usr/lib64
 RUN make && make install
 RUN ldconfig
@@ -39,9 +65,10 @@ RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_co
 WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
-# Pillow at least 8.1.0 
-RUN pip install --user Pillow==8.1.0
+# Pillow at least 9.2.0
+RUN pip install --user Pillow==9.2.0
 
+# pip updates
 RUN python3 -m pip install --user --upgrade cython
 RUN python3 setup.py build_ext --inplace
 
