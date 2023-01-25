@@ -36,13 +36,6 @@ RUN make && make install
 RUN ldconfig
 
 # Install Apache modules
-WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
-
-WORKDIR /home/oe2/onearth/src/modules/AHTSE/
-RUN bash bootstrap.bash
-
 WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
