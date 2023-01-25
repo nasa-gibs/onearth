@@ -26,7 +26,7 @@ RUN yum -y update && \
         logrotate-3.18.0 \
         python3-devel-3.9.14 && \
     dnf clean all
-RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 mod_lua-2.4.53 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
+RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 mod_lua-2.4.53 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 python3-numpy-1.20.1 && \
 	yum clean all
 
 # Copy OnEarth to home directory
