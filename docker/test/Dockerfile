@@ -120,6 +120,9 @@ RUN luarocks make onearth_wms_time-0.1-1.rockspec
 # Install GC Service configs
 WORKDIR /home/oe2/onearth/src/modules/gc_service
 RUN luarocks make onearth_gc_gts-0.1-1.rockspec
+RUN cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin && \

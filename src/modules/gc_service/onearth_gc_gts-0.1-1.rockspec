@@ -19,7 +19,9 @@ dependencies = {
    "json-lua",
    "http",
    "argparse",
-   "penlight"
+   "penlight",
+   "luaossl",
+   "md5"
 }
 build = {
    type = "builtin",
