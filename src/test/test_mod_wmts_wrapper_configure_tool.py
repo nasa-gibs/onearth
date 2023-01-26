@@ -38,7 +38,7 @@ class TestModWmtsWrapperConfigureTool(unittest.TestCase):
 
     def test_modwmtswrapperconfiguretool(self):
         stdout = run_command(
-            f"python3.6 /bin/oe2_wmts_configure.py {self.test_data_path}/test_endpoint.yaml"
+            f"python3 /bin/oe2_wmts_configure.py {self.test_data_path}/test_endpoint.yaml"
         )
         configs = self.cleanup_configure_tool_stdout(stdout)
         for type in configs:
