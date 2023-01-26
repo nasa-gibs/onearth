@@ -371,7 +371,7 @@ class TestDateService(unittest.TestCase):
         if r.status_code != 200:
             print(
                 "WARNING: Can't access date service at url: {}. Tests may fail"
-            ).format(self.date_service_url)
+            .format(self.date_service_url))
 
     @classmethod
     def set_up_gc_service(self, test_name, target_proj,
