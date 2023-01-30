@@ -13,11 +13,15 @@ description = {
 }
 dependencies = {
    "lua >= 5.1",
+   "luafilesystem",
+   "lua-yaml",
    "luasocket",
    "json-lua",
    "http",
    "argparse",
-   "penlight"
+   "penlight",
+   "luaossl",
+   "md5"
 }
 build = {
    type = "builtin",

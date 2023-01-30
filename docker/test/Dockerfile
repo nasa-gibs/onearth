@@ -165,7 +165,8 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
 
 # Copy WMS setups
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/ && \
-    cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
+    cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi && \
+    cp /home/oe2/onearth/docker/wms_service/mapserver.conf /usr/local/etc/mapserver.conf
 RUN mkdir -p /etc/onearth/config/mapserver
 RUN cp /home/oe2/onearth/docker/wms_service/fonts.txt /etc/onearth/config/mapserver/ && \
     cp /home/oe2/onearth/docker/wms_service/symbols.sym /etc/onearth/config/mapserver/ && \

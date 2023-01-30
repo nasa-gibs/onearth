@@ -32,16 +32,27 @@ WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
 RUN luarocks make json-lua-0.1-4.rockspec
 
+# Install lua dependencies
 WORKDIR /tmp
 RUN git clone https://github.com/lunarmodules/luafilesystem.git
 WORKDIR /tmp/luafilesystem/
 RUN luarocks make luafilesystem-scm-1.rockspec
 RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
+RUN luarocks install lpeg && \
+    luarocks install cqueues && \
+    luarocks install openssl && \
+    luarocks install md5 && \
+    luarocks install luasocket
+RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
 # Install wms_time_service module
 RUN mkdir -p /etc/onearth/config/endpoint
 WORKDIR /home/oe2/onearth/src/modules/wms_time_service
 RUN luarocks make onearth_wms_time-0.1-1.rockspec
+RUN cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
 
 # FastCGI module
 WORKDIR /tmp
@@ -74,18 +85,18 @@ WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
     cp cors.conf /etc/httpd/conf.d/
-	
-# Copy setups
-COPY docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/
-COPY docker/wms_service/oe2_status.conf /etc/httpd/conf.d/
-COPY docker/cors.conf /etc/httpd/conf.d/
-RUN cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi
+
+# Copy WMS setups
+RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/ && \
+    cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi && \
+    cp /home/oe2/onearth/docker/wms_service/mapserver.conf /usr/local/etc/mapserver.conf
 RUN mkdir -p /etc/onearth/config/mapserver
-COPY docker/wms_service/fonts.txt /etc/onearth/config/mapserver/
-COPY docker/wms_service/symbols.sym /etc/onearth/config/mapserver/
-COPY docker/wms_service/fonts/* /usr/share/fonts/
+RUN cp /home/oe2/onearth/docker/wms_service/fonts.txt /etc/onearth/config/mapserver/ && \
+    cp /home/oe2/onearth/docker/wms_service/symbols.sym /etc/onearth/config/mapserver/ && \
+    cp /home/oe2/onearth/docker/wms_service/fonts/* /usr/share/fonts/
 RUN mkdir /var/log/mapserver && touch /var/log/mapserver/error.log && chmod 777 /var/log/mapserver/error.log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
+
 
 COPY docker/wms_service/logrotate.daily.mapserver /etc/logrotate.d/mapserver
 COPY docker/logrotate.daily.onearth /etc/logrotate.d/onearth
