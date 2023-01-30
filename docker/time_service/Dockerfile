@@ -21,6 +21,17 @@ WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
 RUN luarocks make json-lua-0.1-4.rockspec
 
+# Install lua dependencies
+RUN luarocks install lpeg && \
+    luarocks install cqueues && \
+    luarocks install openssl && \
+    luarocks install md5 && \
+    luarocks install luasocket
+RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
+    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
+
 # Install Lua module for time snapping
 WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec

@@ -92,7 +92,7 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Remove unneeded kernel headers
-# RUN yum remove -y kernel-headers kernel-debug-devel
+RUN yum remove -y kernel-headers kernel-debug-devel
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

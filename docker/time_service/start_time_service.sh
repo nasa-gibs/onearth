@@ -105,7 +105,7 @@ if [ "$DEBUG_LOGGING" = true ]; then
 fi
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
-/usr/sbin/apachectl
+/usr/sbin/httpd -k start
 sleep 2
 
 # Run logrotate hourly
