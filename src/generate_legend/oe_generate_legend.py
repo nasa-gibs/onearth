@@ -800,9 +800,9 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 else:
                     text = entry.label
                 if orientation == "horizontal":
-                    position = (float(j)/float(len(entries)),1)
+                    position = (j,1)
                 else:
-                    position = (1,float(j)/float(len(entries)))
+                    position = (1,j)
                 ax.annotate(text, 
                 xy=position,
             xytext=position,
@@ -875,6 +875,69 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                                 el.set("width", colorbar_el.get("width"))
                                 el.set("height", str(tooltip_size))
                             elements.append(el)
+
+                            # Correct the position of the tooltips by editing the position values in the SVG
+                            tooltip = parent.find('''.//*[@id='tooltip_{}']'''.format(j))
+                            if tooltip is not None:
+                                g_els = tooltip.findall('svg:g', svg_ns)
+                                if orientation == "horizontal":
+                                    left_x_coord = 0
+                                    # Handle repositioning the box the text resides in
+                                    for g in g_els:
+                                        if "id" in g.attrib.keys():
+                                            # Make a list of path commands, each being represented by its own list
+                                            path_el = g.find('svg:path', svg_ns)
+                                            d = path_el.get("d")
+                                            path_cmd_lst = d.split("  ")
+                                            path_cmd_lst = list(map(lambda x: x.split(' '), path_cmd_lst))                  
+                                            # find center x coordinate
+                                            center_x = (float(path_cmd_lst[0][1]) + float(path_cmd_lst[1][1])) / 2
+                                            # calculate how much shift is required
+                                            correction = center_x - el_pos
+                                            # apply correction to each entry
+                                            # skip last entry, which should just be 'z'
+                                            for cmd in path_cmd_lst[:-1]:
+                                                # correct x-coordinates
+                                                cmd[1] = str(float(cmd[1]) - correction)
+                                                if cmd[0] == "Q":
+                                                    cmd[3] = str(float(cmd[3]) - correction)
+                                            left_x_coord = float(path_cmd_lst[0][1])
+                                    # correct the text position
+                                    for g in g_els:
+                                        if "transform" in g.attrib.keys():
+                                            new_transform = re.sub(r"(translate)\(-?\d+\.\d+(.+)", "\\1({}\\2".format(left_x_coord), g.get("transform"))
+                                            g.set("transform", new_transform)
+
+                                # Handle vertical legends
+                                else: 
+                                    # Handle repositioning the box the text resides in
+                                    for g in g_els:
+                                        if "id" in g.attrib.keys():
+                                            frame_text_offset = 5.08
+                                            # Make a list of path commands, each being represented by its own list
+                                            path_el = g.find('svg:path', svg_ns)
+                                            d = path_el.get("d")
+                                            path_cmd_lst = d.split("  ")
+                                            path_cmd_lst = list(map(lambda x: x.split(' '), path_cmd_lst)) 
+                                            # calculate how much shift is required
+                                            correction = - el_pos - float(path_cmd_lst[0][2]) + colorbar_size + frame_text_offset
+                                            # apply correction to each entry
+                                            # skip last entry, which is just 'z'
+                                            for cmd in path_cmd_lst[:-1]:
+                                                # correct y-coordinates
+                                                cmd[2] = str(float(cmd[2]) + correction)
+                                                if cmd[0] == "Q":
+                                                    cmd[4] = str(float(cmd[4]) + correction)
+                                        
+                                        # correct the text position
+                                        if "transform" in g.attrib.keys():
+                                            new_transform = re.sub(r"(translate\(-?\d+\.\d+) -?\d+\.\d+(.+)", "\\1 {}\\2".format(- el_pos + colorbar_size), g.get("transform"))
+                                            g.set("transform", new_transform)
+                                
+                                # reassemble path command attribute
+                                path_cmd_lst = list(map(lambda x: ' '.join(x), path_cmd_lst))
+                                new_d = "  ".join(path_cmd_lst)
+                                path_el.set("d", new_d)
 
         for i, t in enumerate(elements):
             el = elements[i]
