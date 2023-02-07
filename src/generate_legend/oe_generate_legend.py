@@ -852,9 +852,9 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
             if len(colorbar_parents) == 0:
                 print("Warning: Unable to add tooltips")
             else:
-                for parent in colorbar_parents:
+                for i, parent in enumerate(colorbar_parents):
                     colorbar_imgs = parent.findall("svg:image", svg_ns)
-                    for i, colorbar_el in enumerate(colorbar_imgs):
+                    for colorbar_el in colorbar_imgs:
                         colorbar_size = float(colorbar_el.get("width")) if orientation == "horizontal" else float(colorbar_el.get("height"))
                         tooltip_size = colorbar_size / tooltip_counts[i]
                         # overlay small invisible rectangles on top of the colorbar
@@ -879,7 +879,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                             elements.append(el)
 
                             # Correct the position of the tooltips by editing the position values in the SVG
-                            tooltip = parent.find('''.//*[@id='tooltip_{}']'''.format(j))
+                            tooltip = parent.find('''.//*[@id='tooltip_{}']'''.format(sum(tooltip_counts[:i]) + j))
                             if tooltip is not None:
                                 g_els = tooltip.findall('svg:g', svg_ns)
                                 if orientation == "horizontal":
