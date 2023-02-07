@@ -570,7 +570,8 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 else:
                     norm = mpl.colors.BoundaryNorm(list(range(len(colors)+1)), cmap.N)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
-                    cb.ax.set_xticklabels(ticklabels) 
+                    cb.ax.set_xticklabels(ticklabels)
+                cb.ax.minorticks_off()
                     
                 cb.solids.set_edgecolor("face")
             
@@ -695,7 +696,8 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 else:
                     norm = mpl.colors.BoundaryNorm(list(range(len(colors)+1)), cmap.N)
                     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm, ticks=ticks, orientation=orientation)
-                    cb.ax.set_yticklabels(ticklabels)                         
+                    cb.ax.set_yticklabels(ticklabels)
+                cb.ax.minorticks_off()
                     
                 cb.solids.set_edgecolor("face")
                         
