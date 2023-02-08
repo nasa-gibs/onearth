@@ -8,7 +8,7 @@ fi
 source ../version.sh
 
 # Make sure right proj version is used
-yum reinstall proj-8.2.0 proj-devel-8.2.0
+yum reinstall -y proj-8.2.0 proj-devel-8.2.0
 
 cp httpd.conf /etc/httpd/conf/
 mkdir -p /build/test/ci_tests
