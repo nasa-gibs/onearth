@@ -105,7 +105,7 @@ class XmlDictConfig(dict):
     '''
 
     def __init__(self, parent_element):
-        childrenNames = [child.tag for child in parent_element.getchildren()]
+        childrenNames = [child.tag for child in list(parent_element)]
 
         if list(parent_element.items()):
             self.update(dict(list(parent_element.items())))
