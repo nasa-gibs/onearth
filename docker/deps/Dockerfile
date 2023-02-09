@@ -3,7 +3,7 @@
 # This version of the Dockerfile packs commands together to minimize layers and
 # to minimize image size.
 
-FROM rockylinux:9.1
+FROM almalinux:9.1
 
 # Install dependencies
 RUN yum -y update && \
@@ -36,9 +36,16 @@ RUN yum -y update && \
 RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
-WORKDIR /opt
+WORKDIR /tmp
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.2.0/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq
+
+# Download RPM source for Apache
+RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
+    yum clean all && \
+    yumdownloader --source httpd-2.4.53-7.el9.x86_64 && \
+    HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
+    yum-builddep -y httpd-2.4.53-7.el9.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -49,13 +56,7 @@ COPY ./ /home/oe2/onearth/
 RUN pip install --upgrade pip
 RUN pip install -r onearth/docker/deps/requirements.txt
 
-# Download RPM source for Apache, configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp
-RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
-    yum clean all && \
-    yumdownloader --source httpd-2.4.53-7.el9.x86_64 && \
-    HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.53-7.el9.x86_64
 
 # Install APR patch
 RUN wget http://archive.apache.org/dist/apr/apr-1.7.0.tar.gz && \
@@ -70,7 +71,8 @@ RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.1.tar.gz && \
     cd /tmp/apr-util-1.6.1 && \
     ./configure --prefix=/usr/local/apr --with-apr=/usr/local/apr --with-ldap && \
     make && make install
-
+    
+# Configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp/rpmbuild/SPECS
 RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g' httpd.spec && \
     sed -i 's:--with-apr-util=%{_prefix}:--with-apr-util=/usr/local/apr/bin/apu-1-config:g' httpd.spec && \

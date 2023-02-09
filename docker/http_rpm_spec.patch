@@ -1,15 +1,15 @@
---- a/SPECS/httpd.spec	2023-01-05 02:37:35.945797692 +0000
-+++ b/SPECS/httpd.spec	2023-01-05 02:43:13.769595143 +0000
+--- a/SPECS/httpd.spec	2023-02-09 03:50:18.574257834 +0000
++++ b/SPECS/httpd.spec	2023-02-09 03:49:31.367512014 +0000
 @@ -131,6 +131,9 @@
  # https://bugzilla.redhat.com/show_bug.cgi?id=2095018
- Patch206:             httpd-2.4.53-CVE-2022-30556.patch
+ Patch206: httpd-2.4.53-CVE-2022-30556.patch
  
 +Patch900: mod_proxy_http.patch
 +Patch901: proxypass_nomain_flag.patch
 +
- License:              ASL 2.0
- BuildRequires:        gcc, autoconf, pkgconfig, findutils, xmlto
- BuildRequires:        perl-interpreter, perl-generators, systemd-devel
+ License: ASL 2.0
+ BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
+ BuildRequires: perl-interpreter, perl-generators, systemd-devel
 @@ -305,6 +308,9 @@
  %patch205 -p1 -b .CVE-2022-30522
  %patch206 -p1 -b .CVE-2022-30556

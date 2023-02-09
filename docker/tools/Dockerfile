@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM rockylinux:9.1
+FROM almalinux:9.1
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=5
