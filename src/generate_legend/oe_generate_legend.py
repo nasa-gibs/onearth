@@ -54,6 +54,7 @@ from io import BytesIO
 import math
 import re
 import os
+import hashlib
 
 # for SVG tooltips
 try:
@@ -785,196 +786,226 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
     
     fig.savefig(output, transparent=True, format=output_format)
         
-    # Add tooltips to SVG    
-    if output_format == 'svg' and has_values == True:
-        tooltip_counts = []
-        axes = fig.get_axes()
-        for i in range(len(axes)):
-            ax = axes[i]           
-            entries = colormaps[i].legend.legend_entries
-            tooltip_counts.append(0)
-            for j, entry in enumerate(entries):
-                if entry.tooltip:
-                    tooltip_counts[i] += 1
-                    text = entry.tooltip
-                    if colormaps[i].units:
-                        text = text + " " + colormaps[i].units
-                else:
-                    text = entry.label
-                if orientation == "horizontal":
-                    position = (j,1)
-                else:
-                    position = (1,j)
-                ax.annotate(text, 
-                xy=position,
-            xytext=position,
-                textcoords='offset points', 
-                color='black', 
-                ha='center', 
-                fontsize=10,
-                gid='tooltip',
-                bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
-                )
-        
-            # Set id for the annotations
-            for j, t in enumerate(ax.texts):
-                t.set_gid('tooltip_%d' % (j + sum(tooltip_counts[:i])))
+    if output_format == 'svg':
+        # Add tooltips to SVG 
+        if has_values:
+            tooltip_counts = []
+            axes = fig.get_axes()
+            for i in range(len(axes)):
+                ax = axes[i]           
+                entries = colormaps[i].legend.legend_entries
+                tooltip_counts.append(0)
+                for j, entry in enumerate(entries):
+                    if entry.tooltip:
+                        tooltip_counts[i] += 1
+                        text = entry.tooltip
+                        if colormaps[i].units:
+                            text = text + " " + colormaps[i].units
+                    else:
+                        text = entry.label
+                    if orientation == "horizontal":
+                        position = (j,1)
+                    else:
+                        position = (1,j)
+                    ax.annotate(text, 
+                    xy=position,
+                xytext=position,
+                    textcoords='offset points', 
+                    color='black', 
+                    ha='center', 
+                    fontsize=10,
+                    gid='tooltip',
+                    bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
+                    )
             
-        # Save the figure
-        f = BytesIO()
-        plt.savefig(f, transparent=True, format="svg")     
+                # Set id for the annotations
+                for j, t in enumerate(ax.texts):
+                    t.set_gid('tooltip_%d' % (j + sum(tooltip_counts[:i])))
+                
+            # Save the figure
+            f = BytesIO()
+            plt.savefig(f, transparent=True, format="svg")     
+                
+            # Create XML tree from the SVG file
+            tree, xmlid = ET.XMLID(f.getvalue())
+            tree.set('onload', 'init(evt)')
+                
+            # Hide the tooltips
+            for i in range(sum(tooltip_counts)):
+                try:
+                    el = xmlid['tooltip_%d' % i]
+                    el.set('visibility', 'hidden')
+                except KeyError:
+                    None
             
-        # Create XML tree from the SVG file
-        tree, xmlid = ET.XMLID(f.getvalue())
-        tree.set('onload', 'init(evt)')
-            
-        # Hide the tooltips
-        for i in range(sum(tooltip_counts)):
-            try:
-                el = xmlid['tooltip_%d' % i]
-                el.set('visibility', 'hidden')
-            except KeyError:
-                None
-        
-        # Add mouseover events to color bar
-        # Handle colorbar with discrete colors
-        if 'QuadMesh_1' in xmlid.keys():
-            el = xmlid['QuadMesh_1']
-            elements = list(el)
+            # Add mouseover events to color bar
+            # Handle colorbar with discrete colors
+            if 'QuadMesh_1' in xmlid.keys():
+                el = xmlid['QuadMesh_1']
+                elements = list(el)
 
-        else: # Handle continuous colorbars, which are represented as image elements
-            elements = []
-            svg_ns = {
-                'svg': 'http://www.w3.org/2000/svg', 
-                'xlink': 'http://www.w3.org/1999/xlink'
-            }
-            colorbar_parents = tree.findall(".//svg:image/..", svg_ns)
-            if len(colorbar_parents) == 0:
-                print("Warning: Unable to add tooltips")
-            else:
-                for i, parent in enumerate(colorbar_parents):
-                    colorbar_imgs = parent.findall("svg:image", svg_ns)
-                    for colorbar_el in colorbar_imgs:
-                        colorbar_size = float(colorbar_el.get("width")) if orientation == "horizontal" else float(colorbar_el.get("height"))
-                        tooltip_size = colorbar_size / tooltip_counts[i]
-                        # overlay small invisible rectangles on top of the colorbar
-                        # to serve as the mouseover targets
-                        for j in range(tooltip_counts[i]):
-                            el = ET.SubElement(parent, "rect")
-                            el.set("fill", "none")
-                            el.set("pointer-events", "all")
-                            el.set("transform", colorbar_el.get("transform"))
-                            if orientation == "horizontal":
-                                el_pos = float(colorbar_el.get("x")) + j * tooltip_size
-                                el.set("x", str(el_pos))
-                                el.set("y", colorbar_el.get("y"))
-                                el.set("width", str(tooltip_size))
-                                el.set("height", colorbar_el.get("height"))
-                            else:
-                                el_pos = float(colorbar_el.get("y")) + j * tooltip_size
-                                el.set("y", str(el_pos))
-                                el.set("x", colorbar_el.get("x"))
-                                el.set("width", colorbar_el.get("width"))
-                                el.set("height", str(tooltip_size))
-                            elements.append(el)
-
-                            # Correct the position of the tooltips by editing the position values in the SVG
-                            tooltip = parent.find('''.//*[@id='tooltip_{}']'''.format(sum(tooltip_counts[:i]) + j))
-                            if tooltip is not None:
-                                g_els = tooltip.findall('svg:g', svg_ns)
+            else: # Handle continuous colorbars, which are represented as image elements
+                elements = []
+                svg_ns = {
+                    'svg': 'http://www.w3.org/2000/svg', 
+                    'xlink': 'http://www.w3.org/1999/xlink'
+                }
+                colorbar_parents = tree.findall(".//svg:image/..", svg_ns)
+                if len(colorbar_parents) == 0:
+                    print("Warning: Unable to add tooltips")
+                else:
+                    for i, parent in enumerate(colorbar_parents):
+                        colorbar_imgs = parent.findall("svg:image", svg_ns)
+                        for colorbar_el in colorbar_imgs:
+                            colorbar_size = float(colorbar_el.get("width")) if orientation == "horizontal" else float(colorbar_el.get("height"))
+                            tooltip_size = colorbar_size / tooltip_counts[i]
+                            # overlay small invisible rectangles on top of the colorbar
+                            # to serve as the mouseover targets
+                            for j in range(tooltip_counts[i]):
+                                el = ET.SubElement(parent, "rect")
+                                el.set("fill", "none")
+                                el.set("pointer-events", "all")
+                                el.set("transform", colorbar_el.get("transform"))
                                 if orientation == "horizontal":
-                                    left_x_coord = 0
-                                    # Handle repositioning the box the text resides in
-                                    for g in g_els:
-                                        if "id" in g.attrib.keys():
-                                            # Make a list of path commands, each being represented by its own list
-                                            path_el = g.find('svg:path', svg_ns)
-                                            d = path_el.get("d")
-                                            path_cmd_lst = d.split("  ")
-                                            path_cmd_lst = list(map(lambda x: x.split(' '), path_cmd_lst))                  
-                                            # find center x coordinate
-                                            center_x = (float(path_cmd_lst[0][1]) + float(path_cmd_lst[1][1])) / 2
-                                            # calculate how much shift is required
-                                            correction = center_x - el_pos
-                                            # apply correction to each entry
-                                            # skip last entry, which should just be 'z'
-                                            for cmd in path_cmd_lst[:-1]:
-                                                # correct x-coordinates
-                                                cmd[1] = str(float(cmd[1]) - correction)
-                                                if cmd[0] == "Q":
-                                                    cmd[3] = str(float(cmd[3]) - correction)
-                                            left_x_coord = float(path_cmd_lst[0][1])
-                                    # correct the text position
-                                    for g in g_els:
-                                        if "transform" in g.attrib.keys():
-                                            new_transform = re.sub(r"(translate)\(-?\d+\.\d+(.+)", "\\1({}\\2".format(left_x_coord), g.get("transform"))
-                                            g.set("transform", new_transform)
+                                    el_pos = float(colorbar_el.get("x")) + j * tooltip_size
+                                    el.set("x", str(el_pos))
+                                    el.set("y", colorbar_el.get("y"))
+                                    el.set("width", str(tooltip_size))
+                                    el.set("height", colorbar_el.get("height"))
+                                else:
+                                    el_pos = float(colorbar_el.get("y")) + j * tooltip_size
+                                    el.set("y", str(el_pos))
+                                    el.set("x", colorbar_el.get("x"))
+                                    el.set("width", colorbar_el.get("width"))
+                                    el.set("height", str(tooltip_size))
+                                elements.append(el)
 
-                                # Handle vertical legends
-                                else: 
-                                    # Handle repositioning the box the text resides in
-                                    for g in g_els:
-                                        if "id" in g.attrib.keys():
-                                            frame_text_offset = 5.08
-                                            # Make a list of path commands, each being represented by its own list
-                                            path_el = g.find('svg:path', svg_ns)
-                                            d = path_el.get("d")
-                                            path_cmd_lst = d.split("  ")
-                                            path_cmd_lst = list(map(lambda x: x.split(' '), path_cmd_lst)) 
-                                            # calculate how much shift is required
-                                            correction = - el_pos - float(path_cmd_lst[0][2]) + colorbar_size + frame_text_offset
-                                            # apply correction to each entry
-                                            # skip last entry, which is just 'z'
-                                            for cmd in path_cmd_lst[:-1]:
-                                                # correct y-coordinates
-                                                cmd[2] = str(float(cmd[2]) + correction)
-                                                if cmd[0] == "Q":
-                                                    cmd[4] = str(float(cmd[4]) + correction)
-                                        
+                                # Correct the position of the tooltips by editing the position values in the SVG
+                                tooltip = parent.find('''.//*[@id='tooltip_{}']'''.format(sum(tooltip_counts[:i]) + j))
+                                if tooltip is not None:
+                                    g_els = tooltip.findall('svg:g', svg_ns)
+                                    if orientation == "horizontal":
+                                        left_x_coord = 0
+                                        # Handle repositioning the box the text resides in
+                                        for g in g_els:
+                                            if "id" in g.attrib.keys():
+                                                # Make a list of path commands, each being represented by its own list
+                                                path_el = g.find('svg:path', svg_ns)
+                                                d = path_el.get("d")
+                                                path_cmd_lst = d.split("  ")
+                                                path_cmd_lst = list(map(lambda x: x.split(' '), path_cmd_lst))                  
+                                                # find center x coordinate
+                                                center_x = (float(path_cmd_lst[0][1]) + float(path_cmd_lst[1][1])) / 2
+                                                # calculate how much shift is required
+                                                correction = center_x - el_pos
+                                                # apply correction to each entry
+                                                # skip last entry, which should just be 'z'
+                                                for cmd in path_cmd_lst[:-1]:
+                                                    # correct x-coordinates
+                                                    cmd[1] = str(float(cmd[1]) - correction)
+                                                    if cmd[0] == "Q":
+                                                        cmd[3] = str(float(cmd[3]) - correction)
+                                                left_x_coord = float(path_cmd_lst[0][1])
                                         # correct the text position
-                                        if "transform" in g.attrib.keys():
-                                            new_transform = re.sub(r"(translate\(-?\d+\.\d+) -?\d+\.\d+(.+)", "\\1 {}\\2".format(- el_pos + colorbar_size), g.get("transform"))
-                                            g.set("transform", new_transform)
-                                
-                                # reassemble path command attribute
-                                path_cmd_lst = list(map(lambda x: ' '.join(x), path_cmd_lst))
-                                new_d = "  ".join(path_cmd_lst)
-                                path_el.set("d", new_d)
+                                        for g in g_els:
+                                            if "transform" in g.attrib.keys():
+                                                new_transform = re.sub(r"(translate)\(-?\d+\.\d+(.+)", "\\1({}\\2".format(left_x_coord), g.get("transform"))
+                                                g.set("transform", new_transform)
 
-        for i, t in enumerate(elements):
-            el = elements[i]
-            el.set('onmouseover', "ShowTooltip("+str(i)+")")
-            el.set('onmouseout', "HideTooltip("+str(i)+")")
-        
-        # This is the script defining the ShowTooltip and HideTooltip functions.
-        script = """
-            <script type="text/ecmascript">
-            <![CDATA[
+                                    # Handle vertical legends
+                                    else: 
+                                        # Handle repositioning the box the text resides in
+                                        for g in g_els:
+                                            if "id" in g.attrib.keys():
+                                                frame_text_offset = 5.08
+                                                # Make a list of path commands, each being represented by its own list
+                                                path_el = g.find('svg:path', svg_ns)
+                                                d = path_el.get("d")
+                                                path_cmd_lst = d.split("  ")
+                                                path_cmd_lst = list(map(lambda x: x.split(' '), path_cmd_lst)) 
+                                                # calculate how much shift is required
+                                                correction = - el_pos - float(path_cmd_lst[0][2]) + colorbar_size + frame_text_offset
+                                                # apply correction to each entry
+                                                # skip last entry, which is just 'z'
+                                                for cmd in path_cmd_lst[:-1]:
+                                                    # correct y-coordinates
+                                                    cmd[2] = str(float(cmd[2]) + correction)
+                                                    if cmd[0] == "Q":
+                                                        cmd[4] = str(float(cmd[4]) + correction)
+                                            
+                                            # correct the text position
+                                            if "transform" in g.attrib.keys():
+                                                new_transform = re.sub(r"(translate\(-?\d+\.\d+) -?\d+\.\d+(.+)", "\\1 {}\\2".format(- el_pos + colorbar_size), g.get("transform"))
+                                                g.set("transform", new_transform)
+                                    
+                                    # reassemble path command attribute
+                                    path_cmd_lst = list(map(lambda x: ' '.join(x), path_cmd_lst))
+                                    new_d = "  ".join(path_cmd_lst)
+                                    path_el.set("d", new_d)
+
+            for i, t in enumerate(elements):
+                el = elements[i]
+                el.set('onmouseover', "ShowTooltip("+str(i)+")")
+                el.set('onmouseout', "HideTooltip("+str(i)+")")
             
-            function init(evt) {
-                if ( window.svgDocument == null ) {
-                    svgDocument = evt.target.ownerDocument;
+            # This is the script defining the ShowTooltip and HideTooltip functions.
+            script = """
+                <script type="text/ecmascript">
+                <![CDATA[
+                
+                function init(evt) {
+                    if ( window.svgDocument == null ) {
+                        svgDocument = evt.target.ownerDocument;
+                        }
                     }
-                }
-                
-            function ShowTooltip(idx) {
-                var tip = svgDocument.getElementById('tooltip_'+idx);
-                tip.setAttribute('visibility',"visible")
-                }
-                
-            function HideTooltip(idx) {
-                var tip = svgDocument.getElementById('tooltip_'+idx);
-                tip.setAttribute('visibility',"hidden")
-                }
-                
-            ]]>
-            </script>
-            """
+                    
+                function ShowTooltip(idx) {
+                    var tip = svgDocument.getElementById('tooltip_'+idx);
+                    tip.setAttribute('visibility',"visible")
+                    }
+                    
+                function HideTooltip(idx) {
+                    var tip = svgDocument.getElementById('tooltip_'+idx);
+                    tip.setAttribute('visibility',"hidden")
+                    }
+                    
+                ]]>
+                </script>
+                """
+            
+            # Insert the script at the top of the file and save it.
+            tree.insert(0, ET.XML(script))
+            ET.ElementTree(tree).write(output)
+            print("SVG tooltips added")
+
+        # Re-open the SVG as a string to fix non-deterministic aspects
+        # to allow testing this script with hashing
+        svg_file = open(output, "r")
+        svg_str = svg_file.read()
+        svg_file.close()
+
+        # Remove date element
+        svg_str = re.sub(r'\s+<dc:date>.+</dc:date>', '', svg_str)
+
+        # Find non-deterministic ids to replace
+        tree = ET.parse(output)
+        filename = os.path.split(output)[-1]
+        cp_el = tree.find(".//{*}clipPath")
+        if cp_el is not None:
+            old_cp_id = cp_el.attrib['id']
+            new_cp_id = str(int(hashlib.sha1(str(filename + "clippath").encode("utf-8")).hexdigest(), 16))
+            svg_str = svg_str.replace(old_cp_id, new_cp_id)
         
-        # Insert the script at the top of the file and save it.
-        tree.insert(0, ET.XML(script))
-        ET.ElementTree(tree).write(output)
-        print("SVG tooltips added")
+        path_el = tree.find(".//*[@id='line2d_1']/{*}defs/{*}path")
+        if path_el is not None:
+            old_path_id = path_el.attrib['id']
+            new_path_id = str(int(hashlib.sha1(str(filename + "path").encode("utf-8")).hexdigest(), 16))
+            svg_str = svg_str.replace(old_path_id, new_path_id)
+        
+        # Save the result
+        svg_file = open(output, "w")
+        svg_file.write(svg_str)
+        svg_file.close()
     
     print(output + " generated successfully")
     
