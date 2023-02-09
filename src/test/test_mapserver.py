@@ -103,7 +103,7 @@ class TestMapserver(unittest.TestCase):
         """
         5. Request tile with date from "year" layer via WMS
         """
-        ref_hash = 'b66c0096d12f89b50623a8f2f9e86f24'
+        ref_hash = '31692be7d450e2f585590674550424b8'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22'
         if DEBUG:
             print('\nTesting: Request tile with date from "year" layer via WMS')
@@ -260,7 +260,7 @@ class TestMapserver(unittest.TestCase):
         """
         16. Request tile with multi-day period and snap to available date via WMS
         """
-        ref_hash = '9b0659e9804de008e48093931fbe9e4b'
+        ref_hash = 'd0a3e8c29263e09575ba9473b2360da1'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-01-15'
         if DEBUG:
             print('\nTesting: Request tile with multi-day period and snap to available date via WMS')
@@ -382,7 +382,6 @@ class TestMapserver(unittest.TestCase):
         """
         25. Request GeoJSON from vector source file via WFS
         """
-        ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson'
         if DEBUG:
             print('\nTesting: Request GeoJSON from vector source file via WFS')
@@ -391,7 +390,8 @@ class TestMapserver(unittest.TestCase):
  
         # Check if the response is valid JSON
         try:
-            JSONdict = json.loads(response.read().decode('utf-8'))
+            response_str = response.read().decode('utf-8')
+            JSONdict = json.loads(response_str)
             JSON_check = True
         except:
             JSON_check = False
@@ -419,7 +419,6 @@ class TestMapserver(unittest.TestCase):
         """
         27. Request GeoJSON from vector source file with time via WFS
         """
-        ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request GeoJSON from vector source file with time via WFS')
@@ -428,7 +427,8 @@ class TestMapserver(unittest.TestCase):
  
         # Check if the response is valid JSON
         try:
-            JSONdict = json.loads(response.read().decode('utf-8'))
+            response_str = response.read().decode('utf-8')
+            JSONdict = json.loads(response_str)
             JSON_check = True
         except:
             JSON_check = False
@@ -547,7 +547,7 @@ class TestMapserver(unittest.TestCase):
         35. Test requesting an OrbitTracks group layer to verify that both its underlying
             "Points" layer and "Lines" layer are included.
         """
-        ref_hash = '35fb7f2003637140173f5c2670073a30'
+        ref_hash = 'c396fab5caf1f6879e737bbca3b48b3f'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=OrbitTracks_Aqua_Descending&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
         if DEBUG:
             print('\nTesting: Request group layer')
