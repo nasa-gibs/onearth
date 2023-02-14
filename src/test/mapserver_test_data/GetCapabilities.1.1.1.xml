@@ -6,7 +6,7 @@
 
 <WMT_MS_Capabilities version="1.1.1">
 
-<!-- MapServer version 7.4.3 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WFS_SERVER SUPPORTS=WCS_SERVER SUPPORTS=FASTCGI SUPPORTS=GEOS INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
+<!-- MapServer version 8.0.0 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WFS_SERVER SUPPORTS=WCS_SERVER SUPPORTS=OGCAPI_SERVER SUPPORTS=FASTCGI SUPPORTS=GEOS INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF -->
 
 <Service>
   <Name>OGC:WMS</Name>
@@ -101,16 +101,16 @@
     </KeywordList>
     <SRS>EPSG:4326</SRS>
     <SRS>EPSG:3857</SRS>
-    <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+    <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
     <BoundingBox SRS="EPSG:4326"
-                minx="-180" miny="-90" maxx="180" maxy="90" />
+                minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
     <Layer queryable="0" opaque="0" cascaded="0">
         <Name>Terra_Orbit_Dsc_Dots</Name>
         <Title>Terra_Orbit_Dsc_Dots</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2016-03-05" nearestValue="0">2016-03-05/2016-03-05/P1D</Extent>
         <MetadataURL type="TC211">
@@ -141,9 +141,9 @@
       <Layer queryable="0" opaque="0" cascaded="0">
         <Name>OrbitTracks_Aqua_Descending_Lines</Name>
         <Title>Orbit Tracks (Descending, Lines, Aqua)</Title>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2021-07-19" nearestValue="0">2021-07-19/2021-07-19/P1D</Extent>
         <MetadataURL type="TC211">
@@ -162,9 +162,9 @@
       <Layer queryable="0" opaque="0" cascaded="0">
         <Name>OrbitTracks_Aqua_Descending_Points</Name>
         <Title>Orbit Tracks (Descending, Points, Aqua)</Title>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2021-07-19" nearestValue="0">2021-07-19/2021-07-19/P1D</Extent>
         <MetadataURL type="TC211">
@@ -185,9 +185,9 @@
         <Name>Layer_Missing_Shapefile</Name>
         <Title>Layer_Missing_Shapefile</Title>
         <SRS>EPSG:4326</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2016-03-05" nearestValue="0">2016-03-05/2016-03-05/P1D</Extent>
         <MetadataURL type="TC211">
@@ -208,9 +208,9 @@
         <Title>Vector Status (All, Best Available, MODIS, Aqua+Terra)</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=Vector_Status"/>
@@ -229,9 +229,9 @@
         <Title>Raster_Status</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2004-08-01" nearestValue="0">2004-08-01/2004-08-01/P1M</Extent>
         <MetadataURL type="TC211">
@@ -244,9 +244,9 @@
         <Title>snap_test_3a</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2015-01-01" nearestValue="0">1948-01-01/1948-03-01/P1M,2015-01-01/2016-01-01/P1M</Extent>
         <MetadataURL type="TC211">
@@ -259,9 +259,9 @@
         <Title>snap_test_3b</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2015-01-01" nearestValue="0">2015-01-01/2016-01-01/P3M</Extent>
         <MetadataURL type="TC211">
@@ -274,9 +274,9 @@
         <Title>test_legacy_subdaily_jpg</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2012-02-29T14:00:00Z" nearestValue="0">2012-02-29T12:00:00Z/2012-02-29T14:00:00Z/PT2H</Extent>
         <MetadataURL type="TC211">
@@ -289,9 +289,9 @@
         <Title>test_static_jpg</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_static_jpg"/>
@@ -302,9 +302,9 @@
         <Title>test_weekly_jpg</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <Dimension name="time" units="ISO8601"/>
         <Extent name="time" default="2012-02-29" nearestValue="0">2012-02-22/2012-02-29/P7D</Extent>
         <MetadataURL type="TC211">

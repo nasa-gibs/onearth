@@ -49,7 +49,7 @@ class TestMapserver(unittest.TestCase):
         All the tile tests follow this template.
         """
         # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = 'f22eb8446a4411ba6843d24d3fbd3721'
+        ref_hash = '23ccf2a8871a261eeafb01136bddb7a8'
 
         # The URL of the tile to be requested
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
@@ -67,7 +67,7 @@ class TestMapserver(unittest.TestCase):
         """
         2. Request current (no time) PNG via WMS
         """
-        ref_hash = '2a14051fb08e4bd18cbe349dd51bcbba'
+        ref_hash = '148c715805765dcbd163ea35ee38f7b0'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request current (no TIME) PNG via WMS')
@@ -79,7 +79,7 @@ class TestMapserver(unittest.TestCase):
         """
         3. Request current (time=default) JPEG tile via WMS
         """
-        ref_hash = 'f22eb8446a4411ba6843d24d3fbd3721'
+        ref_hash = '23ccf2a8871a261eeafb01136bddb7a8'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print('\nTesting: Request current (time=default) JPEG tile via WMS')
@@ -91,7 +91,7 @@ class TestMapserver(unittest.TestCase):
         """
         4. Request current (time=default) PNG tile via WMS
         """
-        ref_hash = '2a14051fb08e4bd18cbe349dd51bcbba'
+        ref_hash = '148c715805765dcbd163ea35ee38f7b0'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print('\nTesting: Request current (time=default) PNG tile via WMS')
@@ -123,7 +123,8 @@ class TestMapserver(unittest.TestCase):
 
         # Check if the response is valid XML
         try:
-            XMLroot = ElementTree.XML(response.read())
+            result = response.read()
+            XMLroot = ElementTree.XML(result)
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
         except:
@@ -149,7 +150,8 @@ class TestMapserver(unittest.TestCase):
 
         # Check if the response is valid XML
         try:
-            XMLroot = ElementTree.XML(response.read())
+            result = response.read()
+            XMLroot = ElementTree.XML(result)
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
         except:
@@ -176,7 +178,8 @@ class TestMapserver(unittest.TestCase):
 
         # Check if the response is valid XML
         try:
-            XMLroot = ElementTree.XML(response.read())
+            result = response.read()
+            XMLroot = ElementTree.XML(result)
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
         except:
@@ -248,8 +251,8 @@ class TestMapserver(unittest.TestCase):
         """
         15. Request tile with date and time (sub-daily) and milliseconds. The milliseconds should be ignored
         """
-        ref_hash = '8aa5908b251f3d9122a25ae93ec9fef2'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg,test_legacy_subdaily_jpg&map.layer[test_legacy_subdaily_jpg]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00.000Z'
+        ref_hash = 'c412c1cdf3df9c68ef9ad4045405f0b9'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00.000Z'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and milliseconds via WMS')
             print('URL: ' + req_url)
@@ -296,7 +299,7 @@ class TestMapserver(unittest.TestCase):
         """
         19. Request multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS
         """
-        ref_hash = '64096bc3d66c6200ff45ee13930e3df7'
+        ref_hash = 'b3173ab26942ec98da867be8ed5bd098'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02'
         if DEBUG:
             print('\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS')
@@ -345,7 +348,7 @@ class TestMapserver(unittest.TestCase):
         """
         23. Request tile with time (sub-daily) and snap to available date time via WMS
         """
-        ref_hash = 'cd18076fca03c636843c5b664097c17f'
+        ref_hash = 'c412c1cdf3df9c68ef9ad4045405f0b9'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
@@ -370,7 +373,7 @@ class TestMapserver(unittest.TestCase):
         """
         24. Request image from vector source file with time via WMS
         """
-        ref_hash = 'e014ec400b5807dc04cc8dbb5d9cebee'
+        ref_hash = '0509ad6e1dd0aafcf59daba3c60104c9'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Terra_Orbit_Dsc_Dots&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request image from vector source file with time via WMS')
@@ -510,7 +513,7 @@ class TestMapserver(unittest.TestCase):
         """
         32. Request missing layers via WMS
         """
-        ref_hash = '76453fe3c6c2490243d41595c964b2e8'
+        ref_hash = '8ff06e9113d2ebbfebb2505c2c8e864e'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request missing layers via WMS')

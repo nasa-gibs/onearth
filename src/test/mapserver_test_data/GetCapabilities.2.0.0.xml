@@ -234,8 +234,8 @@
         <Format>text/csv</Format>
       </OutputFormats>
       <ows:WGS84BoundingBox dimensions="2">
-        <ows:LowerCorner>-179.925 -81.847</ows:LowerCorner>
-        <ows:UpperCorner>179.94 81.846</ows:UpperCorner>
+        <ows:LowerCorner>-179.925000 -81.847000</ows:LowerCorner>
+        <ows:UpperCorner>179.940000 81.846000</ows:UpperCorner>
       </ows:WGS84BoundingBox>
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Terra_Orbit_Dsc_Dots"/>
     </FeatureType>
@@ -252,8 +252,8 @@
         <Format>text/csv</Format>
       </OutputFormats>
       <ows:WGS84BoundingBox dimensions="2">
-        <ows:LowerCorner>-179.957 -81.833</ows:LowerCorner>
-        <ows:UpperCorner>179.904 81.833</ows:UpperCorner>
+        <ows:LowerCorner>-179.957000 -81.833000</ows:LowerCorner>
+        <ows:UpperCorner>179.904000 81.833000</ows:UpperCorner>
       </ows:WGS84BoundingBox>
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Lines"/>
     </FeatureType>
@@ -270,8 +270,8 @@
         <Format>text/csv</Format>
       </OutputFormats>
       <ows:WGS84BoundingBox dimensions="2">
-        <ows:LowerCorner>-179.957 -81.833</ows:LowerCorner>
-        <ows:UpperCorner>179.904 81.833</ows:UpperCorner>
+        <ows:LowerCorner>-179.957000 -81.833000</ows:LowerCorner>
+        <ows:UpperCorner>179.904000 81.833000</ows:UpperCorner>
       </ows:WGS84BoundingBox>
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=OrbitTracks_Aqua_Descending_Points"/>
     </FeatureType>
@@ -287,7 +287,6 @@
         <Format>application/json; subtype=geojson</Format>
         <Format>text/csv</Format>
       </OutputFormats>
-      <ows:WGS84BoundingBox/>
       <!--WARNING: Optional WGS84BoundingBox could not be established for this layer.  Consider setting the EXTENT in the LAYER object, or wfs_extent metadata. Also check that your data exists in the DATA statement-->
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Layer_Missing_Shapefile"/>
     </FeatureType>
@@ -302,8 +301,8 @@
         <Format>text/xml; subtype=gml/2.1.2</Format>
       </OutputFormats>
       <ows:WGS84BoundingBox dimensions="2">
-        <ows:LowerCorner>-175.068 -42.912</ows:LowerCorner>
-        <ows:UpperCorner>176.326 75.494</ows:UpperCorner>
+        <ows:LowerCorner>-175.068000 -42.912000</ows:LowerCorner>
+        <ows:UpperCorner>176.326000 75.494000</ows:UpperCorner>
       </ows:WGS84BoundingBox>
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Vector_Status"/>
     </FeatureType>
