@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.6.5
+FROM nasagibs/onearth-deps:2.6.6
 
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=3
@@ -166,7 +166,7 @@ WORKDIR /home/oe2/onearth/src/test
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 
-ENV ONEARTH_VERSION=2.6.5
+ENV ONEARTH_VERSION=2.6.6
 
 WORKDIR /home/oe2/onearth/ci
 CMD sh start_ci2.sh
