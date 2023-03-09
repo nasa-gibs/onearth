@@ -4,7 +4,6 @@ ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
 RUN mkdir -p /var/www
-RUN dnf -y install mod_lua-2.4.53
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
 WORKDIR /tmp

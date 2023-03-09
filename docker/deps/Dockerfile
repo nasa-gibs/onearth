@@ -28,7 +28,6 @@ RUN yum -y update && \
         cronie-1.5.7 \
         logrotate-3.18.0 \
         python3-devel-3.9.14 \
-        mod_lua-2.4.53 \
         parallel && \
     dnf clean all
 
@@ -87,7 +86,8 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     yum -y install system-logos-httpd /etc/mime.types sscg && \
     yum clean all && \
     rpm -ivh /tmp/rpmbuild/RPMS/*/httpd*.rpm && \
-    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm  && \
+    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm && \
+    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_lua*.rpm && \
     cd / && rm -rf /tmp/apr-1.7.0* /tmp/apr-util-1.6.1* /tmp/httpd-2.4.53* /tmp/rpmbuild*
 
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/

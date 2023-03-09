@@ -28,7 +28,6 @@ RUN yum -y update && \
         proj-8.2.0 \
         proj-devel-8.2.0 \
         geos-3.10.1 \
-        mod_lua-2.4.53 \
         fribidi-devel-1.0.10 \
         cairo-devel-1.17.4 \
         cmake-3.20.2 \
