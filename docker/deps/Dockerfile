@@ -94,6 +94,9 @@ WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
 
+# Generate SSL certs for bootstrap to complete
+RUN /usr/libexec/httpd-ssl-gencerts
+
 WORKDIR /home/oe2/onearth/src/modules/AHTSE/
 RUN bash bootstrap.bash
 
