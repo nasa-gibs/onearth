@@ -43,9 +43,9 @@ RUN wget https://github.com/mikefarah/yq/releases/download/v4.31.1/yq_linux_amd6
 # Download RPM source for Apache
 RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
     yum clean all && \
-    yumdownloader --source httpd-2.4.53-7.el9.x86_64 && \
+    yumdownloader --source httpd-2.4.53-7.el9_1.1.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.53-7.el9.x86_64
+    yum-builddep -y httpd-2.4.53-7.el9_1.1.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -66,6 +66,7 @@ RUN wget http://archive.apache.org/dist/apr/apr-1.7.0.tar.gz && \
     ./configure --prefix=/usr/local/apr --with-ldap && \
     make && make install
 
+WORKDIR /tmp
 RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.1.tar.gz && \
     tar xf apr-util-1.6.1.tar.gz && \
     cd /tmp/apr-util-1.6.1 && \
@@ -83,9 +84,9 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch && \
     HOME="/tmp" rpmbuild -ba httpd.spec && \
     yum -y remove httpd httpd-devel httpd-tools && \
-    yum -y install system-logos-httpd /etc/mime.types sscg httpd-filesystem-2.4.53 && \
+    yum -y install system-logos-httpd /etc/mime.types sscg && \
     yum clean all && \
-    rpm -ivh /tmp/rpmbuild/RPMS/x86_64/httpd*.rpm && \
+    rpm -ivh /tmp/rpmbuild/RPMS/*/httpd*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm  && \
     cd / && rm -rf /tmp/apr-1.7.0* /tmp/apr-util-1.6.1* /tmp/httpd-2.4.53* /tmp/rpmbuild*
 
