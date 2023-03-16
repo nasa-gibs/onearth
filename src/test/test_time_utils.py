@@ -608,16 +608,13 @@ class TestTimeUtils(unittest.TestCase):
     def test_periods_config_force_latest_end(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_Latest_End', '2019-01-01',
-                        ['2019-01-01/2019-01-01/P1D', 
-                        '2019-01-02/2019-01-02/P1D', 
+                        ['2019-01-01/2019-01-02/P1D', 
                         '2019-01-05/2019-01-05/P1D']),
                        ('Test_Latest_End', '2019-01-02',
-                        ['2019-01-01/2019-01-01/P1D', 
-                        '2019-01-02/2019-01-02/P1D', 
+                        ['2019-01-01/2019-01-02/P1D', 
                         '2019-01-05/2019-01-05/P1D']),
                        ('Test_Latest_End', '2019-01-05',
-                        ['2019-01-01/2019-01-01/P1D', 
-                        '2019-01-02/2019-01-02/P1D', 
+                        ['2019-01-01/2019-01-02/P1D', 
                         '2019-01-05/2019-01-05/P1D'])]
         db_keys = ['epsg4326']
         config = 'DETECT/LATEST/P1D'
