@@ -34,8 +34,7 @@ RUN yum -y update && \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 \
-        python3-numpy-1.20.1 && \
+        protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
 # libspatialindex
