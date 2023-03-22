@@ -62,6 +62,8 @@ RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_V
                    "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
                    "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
 RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+# Fix gdal_merge.py python3 call
+RUN sed -i 's|/usr/bin/python3 -s|/usr/bin/python3|g' /usr/bin/gdal_merge.py
 
 # proj hack
 WORKDIR /tmp
