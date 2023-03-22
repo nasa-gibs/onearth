@@ -39,6 +39,24 @@ WORKDIR /tmp
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.32.2/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
+# Install supercronic
+WORKDIR /tmp
+RUN wget https://go.dev/dl/go1.20.2.linux-amd64.tar.gz && \
+    tar xf go1.20.2.linux-amd64.tar.gz && \
+    mv go /usr/local/ && \
+    ln -s /usr/local/go/bin/go /usr/local/bin/go && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.2.tar.gz && \
+    tar xf v0.2.2.tar.gz && \
+    cd supercronic-0.2.2 && \
+    sed -i 's/386 arm arm64//g' build.sh && \
+    go mod vendor && \
+    sh build.sh && \
+    mv dist/supercronic-linux-amd64 /usr/local/bin/ && \
+    ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic && \
+    cd /tmp/ && \
+    rm -rf /tmp/* && \
+    rm -rf /usr/local/go /usr/local/bin/go
+
 # Download RPM source for Apache
 RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
     yum clean all && \
