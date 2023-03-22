@@ -36,8 +36,8 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.31.1/yq_linux_amd64.tar.gz -O - |\
-  tar xz && mv yq_linux_amd64 /usr/bin/yq
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.32.2/yq_linux_amd64.tar.gz -O - |\
+  tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Download RPM source for Apache
 RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
@@ -101,4 +101,4 @@ WORKDIR /home/oe2/onearth/src/modules/AHTSE/
 RUN bash bootstrap.bash
 
 WORKDIR /home/oe2
-RUN rm -rf ./onearth
+RUN rm -rf ./onearth /tmp/*
