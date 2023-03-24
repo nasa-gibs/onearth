@@ -118,5 +118,8 @@ RUN yum remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-
     yum autoremove && \
     yum clean all
 
+# Reinstall packaging
+RUN pip install packaging==23.0
+
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION
