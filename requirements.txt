@@ -7,6 +7,7 @@ mapbox-vector-tile==2.0.1     # https://pypi.org/project/mapbox-vector-tile/
 matplotlib==3.6.3   # https://pypi.org/project/matplotlib/
 moto[server]==4.1.0 # https://pypi.org/project/moto/
 numpy==1.24.2       # https://pypi.org/project/numpy/
+packaging==23.0     # https://pypi.org/project/packaging/
 parse_apache_configs==0.0.2 # https://pypi.org/project/parse_apache_configs/
 Pillow==9.4.0	    # https://pypi.org/project/Pillow/
 pyparsing==3.0.9    # https://pypi.org/project/pyparsing/
