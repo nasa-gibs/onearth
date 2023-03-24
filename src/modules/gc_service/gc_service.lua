@@ -206,7 +206,11 @@ end
 local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = yaml.eval(configFile:read("*all"))
+    local status, config = pcall(yaml.eval, configFile:read("*all"))
+    if not status then
+        error("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        return nil
+    end
     configFile:close()
 
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
@@ -308,7 +312,10 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     end
     
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode, targetEpsgCode)
+        node = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode, targetEpsgCode)
+        if node ~= nil then
+            nodeList[1] = node
+        end
     end
 
     if fileAttrs["mode"] == "directory" then
@@ -316,8 +323,11 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
         for file in lfs.dir(layerConfigSource) do
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
-                nodeList[#nodeList + 1] = makeTiledGroupFromConfig(layerConfigSource .. "/" .. file,
+                node = makeTiledGroupFromConfig(layerConfigSource .. "/" .. file,
                  tmsDefs, epsgCode, targetEpsgCode)
+                if node ~= nil then
+                    nodeList[#nodeList + 1] = node
+                end
             end
         end
     end
@@ -387,7 +397,11 @@ end
 local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = yaml.eval(configFile:read("*all"))
+    local status, config = pcall(yaml.eval, configFile:read("*all"))
+    if not status then
+        error("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        return nil
+    end
     configFile:close()
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
@@ -433,8 +447,12 @@ end
 local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC, baseUriMeta)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = yaml.eval(configFile:read("*all"))
+    local status, config = pcall(yaml.eval, configFile:read("*all"))
     configFile:close()
+    if not status then
+        error("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        return nil
+    end
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
@@ -614,15 +632,21 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     end
 
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+        node = buildFunc(layerConfigSource, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+        if node ~= nil then
+            nodeList[1] = node
+        end
     end
     if fileAttrs["mode"] == "directory" then
         -- Only going down a single directory level
         for file in lfs.dir(layerConfigSource) do
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
-                nodeList[#nodeList + 1] = buildFunc(layerConfigSource .. "/" .. file,
+                node = buildFunc(layerConfigSource .. "/" .. file,
                  tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+                if node ~= nil then
+                    nodeList[#nodeList + 1] = node
+                end
             end
         end
     end
@@ -771,7 +795,10 @@ local function generateFromEndpointConfig()
     -- Load endpoint config
     assert(arg[1], "Must specifiy an endpoint config file!")
     local endpointConfigFile = assert(io.open(arg[1], "r"), "Can't open endpoint config file: " .. arg[1])
-    local endpointConfig = yaml.eval(endpointConfigFile:read("*all"))
+    local status, endpointConfig = pcall(yaml.eval, endpointConfigFile:read("*all"))
+    if not status then
+        error("Failed to parse endpoint config " .. arg[1] .. ": " .. endpointConfig)
+    end
     endpointConfigFile:close()
     if arg[2] == "--make_gts" then
         return makeGTS(endpointConfig)
