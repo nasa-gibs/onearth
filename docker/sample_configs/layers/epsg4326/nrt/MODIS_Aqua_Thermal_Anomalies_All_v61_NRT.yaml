@@ -3,22 +3,10 @@ layer_id: MODIS_Aqua_Thermal_Anomalies_All_v61_NRT
 layer_name: MODIS Aqua Thermal Anomalies All v61 NRT tileset
 layer_title: b'Thermal Anomalies and Fires (All, v6.1, Near Real-Time, MODIS, Aqua)'
 metadata:
-- xlink:href: '{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies_v61_NRT.json'
-  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0
-  xlink:title: Mapbox GL Layer Styles
-  xlink:type: simple
-- xlink:href: '{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies_v61_NRT.json'
-  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/
-  xlink:title: Mapbox GL Layer Styles
-  xlink:type: simple
-- xlink:href: '{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json'
-  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/layer/1.0
-  xlink:title: Layer Vector Metadata
-  xlink:type: simple
-- xlink:href: '{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json'
-  xlink:role: http://earthdata.nasa.gov/gibs/metadata-type/layer/
-  xlink:title: Layer Vector Metadata
-  xlink:type: simple
+  - {"xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies_v61_NRT.json", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0", "xlink:title": "Mapbox GL Layer Styles", "xlink:type": "simple"}
+  - {"xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies_v61_NRT.json", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/", "xlink:title": "Mapbox GL Layer Styles", "xlink:type": "simple"}
+  - {"xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer/1.0", "xlink:title": "Layer Vector Metadata", "xlink:type": "simple"}
+  - {"xlink:href": "{base_uri_meta}/vector-metadata/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/layer/", "xlink:title": "Layer Vector Metadata", "xlink:type": "simple"}
 mime_type: application/vnd.mapbox-vector-tile
 projection: EPSG:4326
 shapefile_configs:
