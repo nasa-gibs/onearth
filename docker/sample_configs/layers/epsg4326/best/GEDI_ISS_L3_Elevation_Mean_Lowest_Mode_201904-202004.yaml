@@ -30,7 +30,7 @@ style:
   identifier: default
   title: default
   urls:
-  - {"format": "image/svg+xml", "height": 85.5, "width": 378.0, "xlink:href": "{base_uri_meta}/legends/GEDI_Elev_Lowestmode_Mean_Color_Index_H.svg", "xlink:role": "http://earthdata.nasa.gov/gibs/legend-type/horizontal", "xlink:title": "GIBS Color Map Legend: Horizontal", "xlink:type": "simple"}
-  - {"format": "image/svg+xml", "height": 288.0, "width": 135.0, "xlink:href": "{base_uri_meta}/legends/GEDI_Elev_Lowestmode_Mean_Color_Index_V.svg", "xlink:role": "http://earthdata.nasa.gov/gibs/legend-type/vertical", "xlink:title": "GIBS Color Map Legend: Vertical", "xlink:type": "simple"}
+  - {format: "image/svg+xml", height: 85.5, width: 378.0, "xlink:href": "{base_uri_meta}/legends/GEDI_Elev_Lowestmode_Mean_Color_Index_H.svg", "xlink:role": "http://earthdata.nasa.gov/gibs/legend-type/horizontal", "xlink:title": "GIBS Color Map Legend: Horizontal", "xlink:type": "simple"}
+  - {format: "image/svg+xml", height: 288.0, width: 135.0, "xlink:href": "{base_uri_meta}/legends/GEDI_Elev_Lowestmode_Mean_Color_Index_V.svg", "xlink:role": "http://earthdata.nasa.gov/gibs/legend-type/vertical", "xlink:title": "GIBS Color Map Legend: Vertical", "xlink:type": "simple"}
 tilematrixset: 1km
 wms_layer_group: /Terrain Elevation

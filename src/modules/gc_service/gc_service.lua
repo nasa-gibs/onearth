@@ -530,6 +530,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     if config.metadata then
         for _, metadata in pairs(config.metadata) do
             local metadataNode = xml.new("ows:Metadata")
+            assert(type(metadata) == "table", "ERROR: metadata is not a table! It is probably a string. Layer config: " .. filename)
             for key, value in pairs(metadata) do
                 metadataNode:set_attrib(key, string.gsub(value, "{base_uri_meta}", baseUriMeta or ""))
             end
