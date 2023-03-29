@@ -232,6 +232,11 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local bbox = projInfo["bbox"] or projInfo["bbox84"]
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
 
+    -- Maintain backward compatibility with layer titles that include unicode xB5
+    if string.find(layerTitle, "\\xB5") then
+        layerTitle = layerTitle:gsub("\\xB5", "µ")
+    end
+
     local tiledGroupNode = xml.elem("TiledGroup", {
         xml.new("Name"):text(layerName),
         xml.new("Title", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)),
@@ -409,6 +414,11 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     local layerAbstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
     -- local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+
+    -- Maintain backward compatibility with layer titles that include unicode xB5
+    if string.find(layerTitle, "\\xB5") then
+        layerTitle = layerTitle:gsub("\\xB5", "µ")
+    end
 
     local layerElem = xml.new("Layer", {queryable="0"})
     layerElem:add_child(xml.new("Name"):text(layerId))
