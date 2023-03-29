@@ -208,7 +208,7 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local configFile = assert(io.open(filename, "r"))
     local status, config = pcall(yaml.eval, configFile:read("*all"))
     if not status then
-        error("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        print("ERROR: Failed to parse config " .. filename .. ": " .. config)
         return nil
     end
     configFile:close()
@@ -399,7 +399,7 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     local configFile = assert(io.open(filename, "r"))
     local status, config = pcall(yaml.eval, configFile:read("*all"))
     if not status then
-        error("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        print("ERROR: Failed to parse config " .. filename .. ": " .. config)
         return nil
     end
     configFile:close()
@@ -450,7 +450,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     local status, config = pcall(yaml.eval, configFile:read("*all"))
     configFile:close()
     if not status then
-        error("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        print("ERROR: Failed to parse config " .. filename .. ": " .. config)
         return nil
     end
 
@@ -489,6 +489,10 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
 
     local layerElem = xml.elem("Layer")
 
+    -- Maintain backward compatibility with layer titles that include unicode xB5
+    if string.find(layerTitle, "\\xB5") then
+        layerTitle = layerTitle:gsub("\\xB5", "µ")
+    end
     layerElem:add_child(xml.new("ows:Title", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)))
 
     -- Get the information we need from the TMS definitions and add bbox node
