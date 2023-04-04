@@ -88,7 +88,8 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
 # Copy WMS setups
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/ && \
     cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi && \
-    cp /home/oe2/onearth/docker/wms_service/mapserver.conf /usr/local/etc/mapserver.conf
+    cp /home/oe2/onearth/docker/wms_service/mapserver.conf /usr/local/etc/mapserver.conf && \
+    cp /home/oe2/onearth/docker/wms_service/oe2_status.conf /etc/httpd/conf.d/
 RUN mkdir -p /etc/onearth/config/mapserver
 RUN cp /home/oe2/onearth/docker/wms_service/fonts.txt /etc/onearth/config/mapserver/ && \
     cp /home/oe2/onearth/docker/wms_service/symbols.sym /etc/onearth/config/mapserver/ && \
