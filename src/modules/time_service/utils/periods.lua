@@ -448,11 +448,18 @@ local function calculatePeriods(dates, config)
     end
 
     if dates[3] ~= nil and annual == false then
-      -- Figure out the size and interval of the period based on first 3 values
+      -- Use the given size and interval of the period if they are present.
+      -- Otherwise figure out the size and interval of the period based on first 3 values.
       local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
       local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
-      if (diff1 == diff2) then
-        local size, unit = calcIntervalFromSeconds(diff1)
+      if (diff1 == diff2) or (force_period ~= 'DETECT') then
+        local size, unit
+        if (force_period ~= 'DETECT') then
+          size = tonumber(string.match(force_period, "%d+"))
+          unit = getIntervalUnit(force_period)
+        else
+          size, unit = calcIntervalFromSeconds(diff1)
+        end
         if isValidPeriod(size, unit) then
           local dateList = {}
           dateList[1] = dates[1] -- set start time to first time

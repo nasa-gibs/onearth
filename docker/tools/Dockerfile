@@ -28,15 +28,13 @@ RUN yum -y update && \
         proj-8.2.0 \
         proj-devel-8.2.0 \
         geos-3.10.1 \
-        mod_lua-2.4.53 \
         fribidi-devel-1.0.10 \
         cairo-devel-1.17.4 \
         cmake-3.20.2 \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 \
-        python3-numpy-1.20.1 && \
+        protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
 # libspatialindex
@@ -63,6 +61,8 @@ RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_V
                    "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
                    "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
 RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+# Fix gdal_merge.py python3 call
+RUN sed -i 's|/usr/bin/python3 -s|/usr/bin/python3|g' /usr/bin/gdal_merge.py
 
 # proj hack
 WORKDIR /tmp
@@ -112,6 +112,14 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py && \
     install -m 755 docker/wms_service/oe2_wms_configure.py -D /usr/bin/oe2_wms_configure.py && \
     install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
+
+# Remove unneeded packages
+RUN yum remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc && \
+    yum autoremove && \
+    yum clean all
+
+# Reinstall packaging
+RUN pip install packaging==23.0
 
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION

@@ -4,7 +4,6 @@ FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 ARG GDAL_VERSION=2.4.4
 ARG GDAL_RELEASE=5
 
-RUN dnf -y install mod_lua-2.4.53
 RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
 	yum clean all
 
@@ -89,7 +88,8 @@ RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
 # Copy WMS setups
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms.conf /etc/httpd/conf.d/ && \
     cp /usr/local/bin/mapserv /var/www/cgi-bin/mapserv.fcgi && \
-    cp /home/oe2/onearth/docker/wms_service/mapserver.conf /usr/local/etc/mapserver.conf
+    cp /home/oe2/onearth/docker/wms_service/mapserver.conf /usr/local/etc/mapserver.conf && \
+    cp /home/oe2/onearth/docker/wms_service/oe2_status.conf /etc/httpd/conf.d/
 RUN mkdir -p /etc/onearth/config/mapserver
 RUN cp /home/oe2/onearth/docker/wms_service/fonts.txt /etc/onearth/config/mapserver/ && \
     cp /home/oe2/onearth/docker/wms_service/symbols.sym /etc/onearth/config/mapserver/ && \
@@ -106,16 +106,6 @@ RUN cp /home/oe2/onearth/docker/logrotate /etc/cron.hourly/ && \
     chmod 755 /etc/cron.hourly/logrotate && \
     cp /home/oe2/onearth/docker/logrotate.hourly.httpd /etc/logrotate.d/httpd
 
-ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
-    SUPERCRONIC=supercronic-linux-amd64 \
-    SUPERCRONIC_SHA1SUM=048b95b48b708983effb2e5c935a1ef8483d9e3e
-
-RUN curl -fsSLO "$SUPERCRONIC_URL" \
- && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
- && chmod +x "$SUPERCRONIC" \
- && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
- && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
-
 RUN mkdir /onearth
 
 # Add non-root user
@@ -129,8 +119,10 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 #setcap to bind to privileged ports as non-root
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
-# Remove unneeded kernel headers
-RUN yum remove -y kernel-headers kernel-debug-devel
+# Remove unneeded packages
+RUN yum remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc && \
+    yum autoremove && \
+    yum clean all
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

@@ -389,7 +389,7 @@ static int vfile_pread(request_rec *r, storage_manager &mgr,
     if (stat != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
             "Can't open file %s", name);
-        return 0; // No file
+        return HTTP_NOT_FOUND; // No file
     }
 
     apr_size_t sz = static_cast<apr_size_t>(mgr.size);
