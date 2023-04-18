@@ -11,7 +11,7 @@ RUN yum -y update && \
     dnf config-manager --set-enabled crb && \
 	dnf install -y epel-release && \
     dnf install -y \
-        lua-devel-5.4.2 \
+        lua-devel-5.4.4 \
         jansson-devel-2.14 \
         libpng-devel-1.6.37 \
         pcre-devel-8.44 \
