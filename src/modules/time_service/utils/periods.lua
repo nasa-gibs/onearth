@@ -194,7 +194,7 @@ local function addDaysToDate(date, days)
   local year = tonumber(date:sub(1, 4))
   local daysInYear = getDaysInYear(year)
   while doy + days > daysInYear do
-    remainingDays = daysInYear - doy
+    local remainingDays = daysInYear - doy
     doy = 0
     days = days - remainingDays
     year = year + 1
@@ -385,6 +385,23 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
 
+  -- If the force_start date isn't a date we have, then treat it as DETECT
+  if force_start ~= 'DETECT' and force_start:sub(1,6) ~= 'LATEST' then
+    local has_force_start = false
+    local forced_epoch = dateToEpoch(force_start)
+    for i = 1, #dates do
+      if forced_epoch == dateToEpoch(dates[i]) then
+        -- remove all dates prior to the forced_start date, we don't need them
+        dates = {unpack(dates, i, #dates)}
+        has_force_start = true
+        break
+      end
+    end
+    if not has_force_start then
+      force_start = 'DETECT'
+    end
+  end
+  
   -- Don't return any periods if DETECT and no dates available
   if dates[1] == nil then
     if force_start == 'DETECT' or force_end == 'DETECT' then
@@ -495,16 +512,22 @@ local function calculatePeriods(dates, config)
             local dateEpoch1 = dateToEpoch(date1)
             if dates[i+1] == nil then
               dateList[#dateList + 1] = date1
+              for _, dateEntry in ipairs(dateList) do
+                datesInPeriods[dateEntry] = true
+              end
               periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
             else
               local dateEpoch2 = dateToEpoch(dates[i+1])
               local diff = math.abs(dateEpoch2 - dateEpoch1)
-              if diff ~= diff1 then
+              if (diff ~= diff1 and unit ~= 'month') or
+                  (unit == 'month' and dateToEpoch(addMonthsToDate(dates[1], size)) ~= dateToEpoch(dates[2])) then
                 dateList[#dateList + 1] = date1
                 local period = {}
                 period[1] = dateList[1]
                 period[2] = dateList[2]
                 periods[#periods + 1] = {size=size, dates=period, unit=unit}
+                datesInPeriods[dateList[1]] = true
+                datesInPeriods[dateList[2]] = true
                 dateList[1] = dates[i+1]
                 dateList[2] = nil
               end
