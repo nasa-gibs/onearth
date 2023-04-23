@@ -1,20 +1,55 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.7.0
+FROM nasagibs/onearth-deps:2.7.1
 
-ARG GDAL_VERSION=2.4.4
-ARG GDAL_RELEASE=5
+ARG GDAL_VERSION=3.6.4
+ENV GDAL_VERSION=$GDAL_VERSION
 
 # Install dependencies
-RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
-	yum clean all
+RUN dnf install -y \
+        proj-8.2.0 \
+        proj-devel-8.2.0 \
+        geos-3.10.1 \
+        fribidi-devel-1.0.10 \
+        cairo-devel-1.17.4 \
+        cmake-3.20.2 \
+        geos-devel-3.10.1 \
+        harfbuzz-devel-2.7.4 \
+        fcgi-devel-2.4.0 \
+        protobuf-c-devel-1.3.3 && \
+	dnf clean all
 
+# libspatialindex
 WORKDIR /tmp
 RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-RUN tar xzf spatialindex-src-1.8.5.tar.gz
-WORKDIR /tmp/spatialindex-src-1.8.5
-RUN ./configure --libdir=/usr/lib64
-RUN make && make install
+RUN tar xzf spatialindex-src-1.8.5.tar.gz 
+RUN cd /tmp/spatialindex-src-1.8.5 && \
+    ./configure --libdir=/usr/lib64 && \
+    make && make install && \
+    ldconfig && \
+    cd ..
+
+# Install GDAL using Miniconda
+RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -bfp /usr/local/ \
+    && conda install -y python=3.11 \
+    && conda update -y conda \
+    && conda clean --all --yes
+RUN conda install -c conda-forge -y gdal==${GDAL_VERSION} \
+    && conda clean --all --yes
+RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
+
+# Install mrf_apps
+RUN git clone https://github.com/nasa-gibs/mrf.git && \
+    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h
+ENV LD_LIBRARY_PATH=:/usr/local/lib
 RUN ldconfig
+RUN cd mrf/mrf_apps/ && \
+    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
+    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
+    sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
+    make && make install && \
+    ldconfig && \
+    cp *.py /usr/bin/
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
 WORKDIR /tmp
@@ -41,6 +76,18 @@ WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
 RUN make && make install
 
+# Mapserver
+WORKDIR /tmp
+RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.1.tar.gz
+RUN tar xf mapserver-8.0.1.tar.gz
+WORKDIR /tmp/mapserver-8.0.1
+RUN mkdir build
+WORKDIR /tmp/mapserver-8.0.1/build
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
+RUN make && make install
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
+RUN ldconfig -v
+
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2/onearth
 WORKDIR /home/oe2/onearth
@@ -49,35 +96,6 @@ COPY requirements.txt .
 # Install pip dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-
-# Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
-                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
-                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
-RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
-# Fix gdal_merge.py python3 call
-RUN sed -i 's|/usr/bin/python3 -s|/usr/bin/python3|g' /usr/bin/gdal_merge.py
-
-# Mapserver
-WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.0.tar.gz
-RUN tar xf mapserver-8.0.0.tar.gz
-WORKDIR /tmp/mapserver-8.0.0
-RUN mkdir build
-WORKDIR /tmp/mapserver-8.0.0/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
-RUN make && make install
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
-RUN ldconfig -v
-
-WORKDIR /tmp
-RUN wget https://download.osgeo.org/proj/proj-4.8.0.tar.gz
-RUN tar xzf proj-4.8.0.tar.gz
-WORKDIR /tmp/proj-4.8.0
-RUN ./configure
-RUN make && make install
-RUN cp /usr/local/lib/libproj.so /usr/lib64/
-RUN ldconfig
 
 RUN rm -rf /tmp/*
 WORKDIR /home/oe2/onearth
@@ -146,7 +164,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
     install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
     install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
-    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-311-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-311-x86_64-linux-gnu.so && \
     install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
     install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
     install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \
@@ -184,7 +202,7 @@ RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf &&
 RUN cp /home/oe2/onearth/docker/00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp /home/oe2/onearth/docker/10-worker.conf /etc/httpd/conf.modules.d/
 
-ENV ONEARTH_VERSION=2.7.0
+ENV ONEARTH_VERSION=2.7.1
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

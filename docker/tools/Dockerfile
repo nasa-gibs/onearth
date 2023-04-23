@@ -1,6 +1,9 @@
 # This Dockerfile must be run from source root
 FROM almalinux:9.1
 
+ARG GDAL_VERSION=3.6.4
+ENV GDAL_VERSION=$GDAL_VERSION
+
 # Install dependencies
 RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
@@ -26,29 +29,41 @@ RUN dnf -y update && \
         cmake-3.20.2 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 \
-        gdal-3.4.0-2 \
-        gdal-devel-3.4.0-2 && \
+        protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
-# mrf_apps
-RUN git clone https://github.com/nasa-gibs/mrf.git && \
-    curl "https://raw.githubusercontent.com/OSGeo/gdal/v3.6.4/frmts/mrf/marfa.h" -o /usr/include/gdal/marfa.h
-RUN cd mrf/mrf_apps/ && \
-    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/include/gdal/' >> Makefile.lcl && \
-    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
-    sed -i 's/papszOptions) override/papszOptions)/g' /usr/include/gdal/marfa.h && \
-    make && make install && \
-    cp *.py /usr/bin/
-    
 # libspatialindex
 WORKDIR /tmp
 RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-RUN tar xzf spatialindex-src-1.8.5.tar.gz
-WORKDIR /tmp/spatialindex-src-1.8.5
-RUN ./configure --libdir=/usr/lib64 && \
+RUN tar xzf spatialindex-src-1.8.5.tar.gz 
+RUN cd /tmp/spatialindex-src-1.8.5 && \
+    ./configure --libdir=/usr/lib64 && \
     make && make install && \
-    ldconfig
+    ldconfig && \
+    cd ..
+
+# Install GDAL using Miniconda
+RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -bfp /usr/local/ \
+    && conda install -y python=3.11 \
+    && conda update -y conda \
+    && conda clean --all --yes
+RUN conda install -c conda-forge -y gdal==${GDAL_VERSION} \
+    && conda clean --all --yes
+RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
+
+# Install mrf_apps
+RUN git clone https://github.com/nasa-gibs/mrf.git && \
+    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h
+ENV LD_LIBRARY_PATH=:/usr/local/lib
+RUN ldconfig
+RUN cd mrf/mrf_apps/ && \
+    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
+    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
+    sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
+    make && make install && \
+    ldconfig && \
+    cp *.py /usr/bin/
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -100,9 +115,10 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
 
 # Remove unneeded packages
-RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
-    dnf autoremove && \
-    dnf clean all
+#RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
+#    dnf autoremove && \
+#    dnf clean all
+#RUN rm -rf /tmp/*
 
 # Reinstall packaging
 RUN pip install packaging==23.1

@@ -1,31 +1,35 @@
 ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
-ARG GDAL_VERSION=2.4.4
-ARG GDAL_RELEASE=5
+ARG GDAL_VERSION=3.6.4
+ENV GDAL_VERSION=$GDAL_VERSION
 
-RUN yum install -y proj-8.2.0 proj-devel-8.2.0 geos-3.10.1 fribidi-devel-1.0.10 cairo-devel-1.17.4 cmake-3.20.2 geos-devel-3.10.1 harfbuzz-devel-2.7.4 fcgi-devel-2.4.0 protobuf-c-devel-1.3.3 && \
-	yum clean all
+RUN dnf install -y \
+        proj-8.2.0 \
+        proj-devel-8.2.0 \
+        geos-3.10.1 \
+        fribidi-devel-1.0.10 \
+        cairo-devel-1.17.4 \
+        cmake-3.20.2 \
+        geos-devel-3.10.1 \
+        harfbuzz-devel-2.7.4 \
+        fcgi-devel-2.4.0 \
+        protobuf-c-devel-1.3.3 && \
+	dnf clean all
 
-COPY ./ /home/oe2/onearth/
+WORKDIR /tmp
 
-# Install pip dependencies
-RUN pip install --upgrade pip
-RUN pip install -r onearth/requirements.txt
-
-# Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
-                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
-                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
-RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
-
-# Install Apache modules
-WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
+# Install GDAL using Miniconda
+RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -bfp /usr/local/ \
+    && conda install -y python=3.11 \
+    && conda update -y conda \
+    && conda clean --all --yes
+RUN conda install -c conda-forge -y gdal==${GDAL_VERSION} \
+    && conda clean --all --yes
+RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
-WORKDIR /tmp
 RUN git clone https://github.com/tiye/json-lua.git
 WORKDIR /tmp/json-lua/
 RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
@@ -45,14 +49,6 @@ RUN luarocks install lpeg && \
 RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
     cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
-# Install wms_time_service module
-RUN mkdir -p /etc/onearth/config/endpoint
-WORKDIR /home/oe2/onearth/src/modules/wms_time_service
-RUN luarocks make onearth_wms_time-0.1-1.rockspec
-RUN cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/ && \
-    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
-    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
-
 # FastCGI module
 WORKDIR /tmp
 RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
@@ -63,16 +59,35 @@ RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.0.tar.gz
-RUN tar xf mapserver-8.0.0.tar.gz
-WORKDIR /tmp/mapserver-8.0.0
+RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.1.tar.gz
+RUN tar xf mapserver-8.0.1.tar.gz
+WORKDIR /tmp/mapserver-8.0.1
 RUN mkdir build
-WORKDIR /tmp/mapserver-8.0.0/build
+WORKDIR /tmp/mapserver-8.0.1/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
 RUN rm -rf /tmp/*
+
+COPY ./ /home/oe2/onearth/
+WORKDIR /home/oe2/onearth
+# Install pip dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Install Apache modules
+WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
+RUN make && make install
+
+# Install wms_time_service module
+RUN mkdir -p /etc/onearth/config/endpoint
+WORKDIR /home/oe2/onearth/src/modules/wms_time_service
+RUN luarocks make onearth_wms_time-0.1-1.rockspec
+RUN cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
+    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
