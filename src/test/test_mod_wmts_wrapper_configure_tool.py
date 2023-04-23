@@ -1,7 +1,7 @@
 import os
 import sys
 import subprocess
-import unittest
+import unittest2 as unittest
 import xmlrunner
 from optparse import OptionParser
 from oe_test_utils import run_command

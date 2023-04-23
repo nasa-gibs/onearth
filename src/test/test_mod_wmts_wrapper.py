@@ -18,7 +18,7 @@ Test suite for mod_wmts_wrapper.
 
 import os
 import sys
-import unittest
+import unittest2 as unittest
 import xmlrunner
 from oe_test_utils import file_text_replace, restart_apache, test_wmts_error, make_dir_tree, check_tile_request, redis_running, seed_redis_data, seed_redis_best_data, remove_redis_layer, bulk_replace, check_response_code, get_url, check_layer_headers
 from optparse import OptionParser
