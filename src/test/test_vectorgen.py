@@ -38,7 +38,7 @@
 import os
 import sys
 import subprocess
-import unittest2 as unittest
+import unittest
 import struct
 import glob
 import io

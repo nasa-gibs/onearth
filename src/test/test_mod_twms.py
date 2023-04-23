@@ -19,7 +19,7 @@
 
 import os
 import sys
-import unittest2 as unittest
+import unittest
 import xmlrunner
 from optparse import OptionParser
 import time

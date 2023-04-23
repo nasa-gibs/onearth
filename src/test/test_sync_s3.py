@@ -21,7 +21,7 @@ import os
 from subprocess import run
 import subprocess
 import sys
-import unittest2 as unittest
+import unittest
 import xmlrunner
 from oe_test_utils import run_command
 from optparse import OptionParser

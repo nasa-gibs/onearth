@@ -19,7 +19,7 @@
 
 import os
 import sys
-import unittest2 as unittest
+import unittest
 import xmlrunner
 from optparse import OptionParser
 from oe_test_utils import restart_apache, make_dir_tree, get_file_hash, check_tile_request
