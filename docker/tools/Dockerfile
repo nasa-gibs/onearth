@@ -1,17 +1,14 @@
 # This Dockerfile must be run from source root
 FROM almalinux:9.1
 
-ARG GDAL_VERSION=2.4.4
-ARG GDAL_RELEASE=5
-
 # Install dependencies
-RUN yum -y update && \
-    yum groupinstall -y "Development Tools" && \
-    yum clean all && \
+RUN dnf -y update && \
+    dnf groupinstall -y "Development Tools" && \
+    dnf clean all && \
     dnf config-manager --set-enabled crb && \
 	dnf install -y epel-release && \
     dnf install -y \
-        lua-devel-5.4.2 \
+        lua-devel-5.4.4 \
         jansson-devel-2.14 \
         libpng-devel-1.6.37 \
         pcre-devel-8.44 \
@@ -24,27 +21,34 @@ RUN yum -y update && \
         redis-6.2.7 \
         cronie-1.5.7 \
         logrotate-3.18.0 \
-        python3-devel-3.9.14 \
-        proj-8.2.0 \
-        proj-devel-8.2.0 \
-        geos-3.10.1 \
         fribidi-devel-1.0.10 \
         cairo-devel-1.17.4 \
         cmake-3.20.2 \
-        geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 && \
+        protobuf-c-devel-1.3.3 \
+        gdal-3.4.0-2 \
+        gdal-devel-3.4.0-2 && \
 	dnf clean all
 
+# mrf_apps
+RUN git clone https://github.com/nasa-gibs/mrf.git && \
+    curl "https://raw.githubusercontent.com/OSGeo/gdal/v3.6.4/frmts/mrf/marfa.h" -o /usr/include/gdal/marfa.h
+RUN cd mrf/mrf_apps/ && \
+    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/include/gdal/' >> Makefile.lcl && \
+    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
+    sed -i 's/papszOptions) override/papszOptions)/g' /usr/include/gdal/marfa.h && \
+    make && make install && \
+    cp *.py /usr/bin/
+    
 # libspatialindex
 WORKDIR /tmp
 RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
 RUN tar xzf spatialindex-src-1.8.5.tar.gz
 WORKDIR /tmp/spatialindex-src-1.8.5
-RUN ./configure --libdir=/usr/lib64
-RUN make && make install
-RUN ldconfig
+RUN ./configure --libdir=/usr/lib64 && \
+    make && make install && \
+    ldconfig
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -55,24 +59,6 @@ COPY ./ /home/oe2/onearth/
 RUN pip install --upgrade pip
 RUN pip install -r onearth/docker/deps/requirements.txt
 RUN pip install -r onearth/requirements.txt
-
-# Install GDAL
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
-                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-devel-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm" \
-                   "https://github.com/nasa-gibs/mrf/releases/download/v${GDAL_VERSION}-${GDAL_RELEASE}/gibs-gdal-apps-${GDAL_VERSION}-${GDAL_RELEASE}.el9.x86_64.rpm"
-RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
-# Fix gdal_merge.py python3 call
-RUN sed -i 's|/usr/bin/python3 -s|/usr/bin/python3|g' /usr/bin/gdal_merge.py
-
-# proj hack
-WORKDIR /tmp
-RUN wget https://download.osgeo.org/proj/proj-4.8.0.tar.gz
-RUN tar xzf proj-4.8.0.tar.gz
-WORKDIR /tmp/proj-4.8.0
-RUN ./configure
-RUN make && make install
-RUN cp /usr/local/lib/libproj.so /usr/lib64/
-RUN ldconfig
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin && \
@@ -94,7 +80,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
     install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
     install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
-    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-311-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-311-x86_64-linux-gnu.so && \
     install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
     install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
     install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \
@@ -114,12 +100,12 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
 
 # Remove unneeded packages
-RUN yum remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc && \
-    yum autoremove && \
-    yum clean all
+RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
+    dnf autoremove && \
+    dnf clean all
 
 # Reinstall packaging
-RUN pip install packaging==23.0
+RUN pip install packaging==23.1
 
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION
