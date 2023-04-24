@@ -6,9 +6,9 @@
 FROM almalinux:9.1
 
 # Install dependencies
-RUN yum -y update && \
-    yum groupinstall -y "Development Tools" && \
-    yum clean all && \
+RUN dnf -y update && \
+    dnf groupinstall -y "Development Tools" && \
+    dnf clean all && \
     dnf config-manager --set-enabled crb && \
 	dnf install -y epel-release && \
     dnf install -y \

@@ -1,7 +1,7 @@
 # This Dockerfile must be run from source root
 FROM almalinux:9.1
 
-ARG GDAL_VERSION=3.4.3
+ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
 
 # Install dependencies
@@ -34,8 +34,7 @@ RUN dnf -y update && \
         geos-3.10.1 \
         geos-devel-3.10.1 \
         python3-devel-3.9.14 \
-        protobuf-c-devel-1.3.3 \
-        python3-numpy && \
+        protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
 # libspatialindex
@@ -50,47 +49,36 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     rm -rf /tmp/*
 
 # Install GDAL
+ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN pip install numpy==1.24.3
 RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
     tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
     cd gdal-${GDAL_VERSION}/ && \
     mkdir build && \
-    ./configure \
-    	--prefix=/usr/local \
-		--libdir=/usr/local/lib \
-		--mandir=/usr/local/share/man \
-		--with-threads \
-		--without-bsb \
-		--with-geotiff=internal \
-		--with-libtiff=internal \
-		--without-ogdi \
-		--with-libz \
-		--with-geos \
-		--with-jasper=no \
-		--with-png \
-		--with-gif \
-		--with-jpeg \
-		--with-curl \
-		--with-python=yes \
-		--with-pcraster \
-		--with-jpeg12=no \
-		--enable-shared \
-		--with-gdal-ver=${GDAL_VERSION} \
-		--disable-rpath \
-		--with-expat \
-		--without-teigha \
-		--without-cad \
-		--without-pg \
-		--with-openjpeg && \
-	make && make install && \
-    cd /tmp/ && \
-    rm -rf /tmp/*
+    cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_PREFIX_PATH=/usr/local/ \
+      -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+      -DCMAKE_INSTALL_LIBDIR=lib \
+      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_TESTING=OFF \
+      -DGDAL_USE_PARQUET=OFF \
+      -DGDAL_USE_ARROW=OFF \
+      -DGDAL_USE_ARROWDATASET=OFF \
+      -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
+      -DBUILD_PYTHON_BINDINGS:BOOL=ON \
+      -DBUILD_JAVA_BINDINGS:BOOL=OFF \
+      -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
+      .. && \
+    cmake --build . && \
+    cmake --build . --config Release --target install && \
+    export LD_LIBRARY_PATH=:/usr/local/lib && \
+    ldconfig && \
+    cd /tmp/ && rm -rf /tmp/*
+RUN ldconfig -v
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Install mrf_apps
-ENV LD_LIBRARY_PATH=:/usr/local/lib
-RUN ldconfig
 RUN git clone https://github.com/nasa-gibs/mrf.git && \
     curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
     cd mrf/mrf_apps/ && \
@@ -153,13 +141,10 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
 
 # Remove unneeded packages
-#RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
-#    dnf autoremove && \
-#    dnf clean all
-#RUN rm -rf /tmp/*
-
-# Reinstall packaging
-RUN pip install packaging==23.1
+RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
+    dnf autoremove && \
+    dnf clean all
+RUN rm -rf /tmp/*
 
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION
