@@ -81,9 +81,9 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Remove unneeded packages
-RUN yum remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc && \
-    yum autoremove && \
-    yum clean all
+RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc && \
+    dnf autoremove && \
+    dnf clean all
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

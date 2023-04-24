@@ -1,8 +1,8 @@
-requests==2.28.1
+requests==2.28.2
 pyaml==21.10.1
 lxml==4.9.2
 pypng==0.20220715.0
 boto3==1.26.42
 redis==5.0.0b1
-urllib3==1.26.13
+urllib3==1.26.15
 setuptools==65.5.1
