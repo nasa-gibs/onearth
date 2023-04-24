@@ -1,7 +1,7 @@
 ARG ONEARTH_VERSION
 FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
-ARG GDAL_VERSION=3.6.4
+ARG GDAL_VERSION=3.4.3
 ENV GDAL_VERSION=$GDAL_VERSION
 
 RUN dnf install -y \
@@ -14,19 +14,49 @@ RUN dnf install -y \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 && \
+        protobuf-c-devel-1.3.3 \
+        python3-numpy && \
 	dnf clean all
 
 WORKDIR /tmp
 
-# Install GDAL using Miniconda
-RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -bfp /usr/local/ \
-    && conda install -y python=3.11 \
-    && conda update -y conda \
-    && conda clean --all --yes
-RUN conda install -c conda-forge -y gdal==${GDAL_VERSION} \
-    && conda clean --all --yes
+# Install GDAL
+WORKDIR /tmp
+RUN pip install numpy==1.24.3
+RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
+    tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
+    cd gdal-${GDAL_VERSION}/ && \
+    mkdir build && \
+    ./configure \
+    	--prefix=/usr/local \
+		--libdir=/usr/local/lib \
+		--mandir=/usr/local/share/man \
+		--with-threads \
+		--without-bsb \
+		--with-geotiff=internal \
+		--with-libtiff=internal \
+		--without-ogdi \
+		--with-libz \
+		--with-geos \
+		--with-jasper=no \
+		--with-png \
+		--with-gif \
+		--with-jpeg \
+		--with-curl \
+		--with-python=yes \
+		--with-pcraster \
+		--with-jpeg12=no \
+		--enable-shared \
+		--with-gdal-ver=${GDAL_VERSION} \
+		--disable-rpath \
+		--with-expat \
+		--without-teigha \
+		--without-cad \
+		--without-pg \
+		--with-openjpeg && \
+	make && make install && \
+    cd /tmp/ && \
+    rm -rf /tmp/*
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
@@ -135,9 +165,9 @@ RUN chmod 755 -R /etc/pki && chmod 1777 /tmp && chown -hR www-data:www-data /etc
 RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Remove unneeded packages
-RUN yum remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc && \
-    yum autoremove && \
-    yum clean all
+RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
+    dnf autoremove && \
+    dnf clean all
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

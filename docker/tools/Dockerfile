@@ -1,7 +1,7 @@
 # This Dockerfile must be run from source root
 FROM almalinux:9.1
 
-ARG GDAL_VERSION=3.6.4
+ARG GDAL_VERSION=3.4.3
 ENV GDAL_VERSION=$GDAL_VERSION
 
 # Install dependencies
@@ -29,7 +29,13 @@ RUN dnf -y update && \
         cmake-3.20.2 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 && \
+        proj-8.2.0 \
+        proj-devel-8.2.0 \
+        geos-3.10.1 \
+        geos-devel-3.10.1 \
+        python3-devel-3.9.14 \
+        protobuf-c-devel-1.3.3 \
+        python3-numpy && \
 	dnf clean all
 
 # libspatialindex
@@ -40,30 +46,62 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     ./configure --libdir=/usr/lib64 && \
     make && make install && \
     ldconfig && \
-    cd ..
+    cd .. && \
+    rm -rf /tmp/*
 
-# Install GDAL using Miniconda
-RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -bfp /usr/local/ \
-    && conda install -y python=3.11 \
-    && conda update -y conda \
-    && conda clean --all --yes
-RUN conda install -c conda-forge -y gdal==${GDAL_VERSION} \
-    && conda clean --all --yes
+# Install GDAL
+WORKDIR /tmp
+RUN pip install numpy==1.24.3
+RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
+    tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
+    cd gdal-${GDAL_VERSION}/ && \
+    mkdir build && \
+    ./configure \
+    	--prefix=/usr/local \
+		--libdir=/usr/local/lib \
+		--mandir=/usr/local/share/man \
+		--with-threads \
+		--without-bsb \
+		--with-geotiff=internal \
+		--with-libtiff=internal \
+		--without-ogdi \
+		--with-libz \
+		--with-geos \
+		--with-jasper=no \
+		--with-png \
+		--with-gif \
+		--with-jpeg \
+		--with-curl \
+		--with-python=yes \
+		--with-pcraster \
+		--with-jpeg12=no \
+		--enable-shared \
+		--with-gdal-ver=${GDAL_VERSION} \
+		--disable-rpath \
+		--with-expat \
+		--without-teigha \
+		--without-cad \
+		--without-pg \
+		--with-openjpeg && \
+	make && make install && \
+    cd /tmp/ && \
+    rm -rf /tmp/*
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Install mrf_apps
-RUN git clone https://github.com/nasa-gibs/mrf.git && \
-    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 RUN ldconfig
-RUN cd mrf/mrf_apps/ && \
+RUN git clone https://github.com/nasa-gibs/mrf.git && \
+    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
+    cd mrf/mrf_apps/ && \
     echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
     sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
     sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
     make && make install && \
     ldconfig && \
-    cp *.py /usr/bin/
+    cp *.py /usr/bin/ && \
+    cd /tmp/ && \
+    rm -rf /tmp/*
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -95,7 +133,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
     install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
     install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
-    install -m 755 src/mrfgen/RgbToPalLib.cpython-311-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-311-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
     install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
     install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
     install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \

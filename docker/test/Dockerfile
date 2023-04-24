@@ -1,7 +1,7 @@
 # This Dockerfile must be run from source root
 FROM nasagibs/onearth-deps:2.7.1
 
-ARG GDAL_VERSION=3.6.4
+ARG GDAL_VERSION=3.4.3
 ENV GDAL_VERSION=$GDAL_VERSION
 
 # Install dependencies
@@ -15,7 +15,8 @@ RUN dnf install -y \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 && \
+        protobuf-c-devel-1.3.3 \
+        python3-numpy && \
 	dnf clean all
 
 # libspatialindex
@@ -28,14 +29,43 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     ldconfig && \
     cd ..
 
-# Install GDAL using Miniconda
-RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -bfp /usr/local/ \
-    && conda install -y python=3.11 \
-    && conda update -y conda \
-    && conda clean --all --yes
-RUN conda install -c conda-forge -y gdal==${GDAL_VERSION} \
-    && conda clean --all --yes
+# Install GDAL
+WORKDIR /tmp
+RUN pip install numpy==1.24.3
+RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
+    tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
+    cd gdal-${GDAL_VERSION}/ && \
+    mkdir build && \
+    ./configure \
+    	--prefix=/usr/local \
+		--libdir=/usr/local/lib \
+		--mandir=/usr/local/share/man \
+		--with-threads \
+		--without-bsb \
+		--with-geotiff=internal \
+		--with-libtiff=internal \
+		--without-ogdi \
+		--with-libz \
+		--with-geos \
+		--with-jasper=no \
+		--with-png \
+		--with-gif \
+		--with-jpeg \
+		--with-curl \
+		--with-python=yes \
+		--with-pcraster \
+		--with-jpeg12=no \
+		--enable-shared \
+		--with-gdal-ver=${GDAL_VERSION} \
+		--disable-rpath \
+		--with-expat \
+		--without-teigha \
+		--without-cad \
+		--without-pg \
+		--with-openjpeg && \
+	make && make install && \
+    cd /tmp/ && \
+    rm -rf /tmp/*
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Install mrf_apps
@@ -164,7 +194,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
     install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
     install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
-    install -m 755 src/mrfgen/RgbToPalLib.cpython-311-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-311-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
     install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
     install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
     install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \
