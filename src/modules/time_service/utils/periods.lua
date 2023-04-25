@@ -392,7 +392,11 @@ local function calculatePeriods(dates, config)
     for i = 1, #dates do
       if forced_epoch == dateToEpoch(dates[i]) then
         -- remove all dates prior to the forced_start date, we don't need them
-        dates = {unpack(dates, i, #dates)}
+        local new_dates = {}
+        for j = i,#dates do
+          new_dates[#new_dates + 1] = dates[j]
+        end
+        dates = new_dates
         has_force_start = true
         break
       end
