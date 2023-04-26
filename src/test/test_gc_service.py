@@ -262,6 +262,7 @@ def remove_redis_layer(layer, db_keys=None):
             db_keystring += key + ':'
     r.delete('{0}layer:{1}:default'.format(db_keystring, layer[0]))
     r.delete('{0}layer:{1}:periods'.format(db_keystring, layer[0]))
+    r.delete('{0}layer:{1}:dates'.format(db_keystring, layer[0]))
 
 
 def bulk_replace(source_str, replace_list):
@@ -2378,17 +2379,17 @@ class TestDateService(unittest.TestCase):
         # Months
         # Create and write layer config
         layer = TEST_LAYERS['test_2']
-        layer_config_path = self.write_config_for_test_layer(layer)
+        layer2_config_path = self.write_config_for_test_layer(layer)
 
         num_dates = 10000
         date_start = datetime.datetime(1970, 1, 1)
         date_lst = [str((date_start + relativedelta(months=idx)).date()) for idx in range(num_dates)]
         period = str(date_start.date()) + '/' + date_lst[-1] + '/P1M'
-        test_layers = []
+        test_layers2 = []
         for date_entry in date_lst:
-            test_layers.append((layer['layer_id'], date_entry, period))
+            test_layers2.append((layer['layer_id'], date_entry, period))
 
-        seed_redis_data(test_layers, db_keys=date_service_keys, calc_periods=True)
+        seed_redis_data(test_layers2, db_keys=date_service_keys, calc_periods=True)
 
         # Download GC file
         url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
@@ -2396,7 +2397,10 @@ class TestDateService(unittest.TestCase):
 
         if not START_SERVER:
             os.remove(layer_config_path)
-            remove_redis_layer(test_layers, db_keys=date_service_keys)
+            os.remove(layer2_config_path)
+            for test_layer_list in [test_layers, test_layers2]:
+                for test_layer in test_layer_list:
+                    remove_redis_layer(test_layer, db_keys=date_service_keys)
 
         self.assertEqual(
             r.status_code, 200,
