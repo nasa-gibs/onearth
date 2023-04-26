@@ -32,6 +32,8 @@ import json
 from formencode.doctest_xml_compare import xml_compare
 import math
 from functools import partial
+import datetime
+from dateutil.relativedelta import relativedelta
 
 DEBUG = False
 START_SERVER = False
@@ -231,17 +233,25 @@ def redis_running():
         return False
 
 
-def seed_redis_data(layers, db_keys=None):
+def seed_redis_data(layers, db_keys=None, calc_periods=False):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     db_keystring = ''
     if db_keys:
         for key in db_keys:
             db_keystring += key + ':'
-    for layer in layers:
-        r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
-        for period in layer[2]:
-            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                   period)
+    if not calc_periods:
+        for layer in layers:
+            r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
+            for period in layer[2]:
+                r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                    period)    
+    else:
+        for layer in layers:
+            r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})
+        with open('periods.lua', 'r') as f:
+            lua_script = f.read()
+        date_script = r.register_script(lua_script)
+        date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])])
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -459,6 +469,7 @@ class TestDateService(unittest.TestCase):
         make_dir_tree(self.layer_config_base_path, ignore_existing=True)
 
         self.test_apache_configs = []
+        shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.lua", os.getcwd() + '/periods.lua')
 
     def test_gc_layer_info(self):
         # Check that <Layer> block for a static layer is being generated
@@ -2338,6 +2349,89 @@ class TestDateService(unittest.TestCase):
             'Incorrect values for <Value> in <Dimension>. Expected {}, found {}. Url: {}'
             .format(expected, found, url))
 
+    def test_dynamic_layer_xml_date_service_stress_keys(self):
+        # Test adding a huge amount of dates to make sure GC service is still responsive
+    
+        date_service_keys = ['test1', 'test2']
+        apache_config = self.set_up_gc_service(
+            'test_dynamic_layer_xml_date_service_stress_keys',
+            'EPSG:4326',
+            date_service_keys=date_service_keys)
+
+        # Days
+        # Create and write layer config
+        # Use test_1 for convenience but make it non-static just for this test
+        layer = TEST_LAYERS['test_1'].copy()
+        layer['static'] = 'false'
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        num_dates = 100000
+        date_start = datetime.datetime(2000, 1, 1)
+        date_lst = [str((date_start + datetime.timedelta(days=idx)).date()) for idx in range(num_dates)]
+        period = str(date_start.date()) + '/' + date_lst[-1] + '/P1D'
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append((layer['layer_id'], date_entry, period))
+
+        seed_redis_data(test_layers, db_keys=date_service_keys, calc_periods=True)
+        
+        # Months
+        # Create and write layer config
+        layer = TEST_LAYERS['test_2']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        num_dates = 10000
+        date_start = datetime.datetime(1970, 1, 1)
+        date_lst = [str((date_start + relativedelta(months=idx)).date()) for idx in range(num_dates)]
+        period = str(date_start.date()) + '/' + date_lst[-1] + '/P1M'
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append((layer['layer_id'], date_entry, period))
+
+        seed_redis_data(test_layers, db_keys=date_service_keys, calc_periods=True)
+
+        # Download GC file
+        url = apache_config['endpoint'] + '?request=wmtsgetcapabilities'
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            remove_redis_layer(test_layers, db_keys=date_service_keys)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading GetCapabilities file from url: {}.'.format(url))
+
+        # Make sure it is valid xml
+        try:
+            gc_dom = etree.fromstring(r.text)
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        time_limit = 1
+        self.assertTrue(r.elapsed.total_seconds() < time_limit, "GetCapabilities response took more than {} second to return".format(time_limit))
+        
+        # Test XML for this layer
+        contents_elem = gc_dom.find('{*}Contents')
+        layer_elems = contents_elem.findall('{*}Layer')
+        self.assertNotEqual(
+            len(layer_elems), 0,
+            'Layer not found in generated GC file. Url: {}'.format(url))
+        self.assertEqual(len(layer_elems), 2, 'Incorrect number of <Layer> elements found - should be 2. Url: {}'.format(url))
+        
+        for layer_elem in layer_elems:
+            dimension_elems = layer_elem.findall('{*}Dimension')
+            self.assertNotEqual(
+                len(dimension_elems), 0,
+                '<Dimension> not found in generated GC file <Layer> element. Url: {}'
+                .format(url))
+            self.assertEqual(
+                len(dimension_elems), 1,
+                'Incorrect number of < Dimension > elements found - should be 1 for this layer element. Url: {}'
+                .format(url))
+        
     def test_gc_header_equal(self):
         apache_config = self.set_up_gc_service('test_gc_header_equal',
                                                'EPSG:4326')
@@ -3360,6 +3454,7 @@ class TestDateService(unittest.TestCase):
             shutil.rmtree(self.test_config_base_path)
             for cfg in self.test_apache_configs:
                 os.remove(cfg)
+        os.remove(os.getcwd() + '/periods.lua')
 
 
 if __name__ == '__main__':
