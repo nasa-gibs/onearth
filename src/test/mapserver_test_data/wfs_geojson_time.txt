@@ -742,5 +742,5 @@
 { "type": "Feature", "properties": { "direction": "T", "ident": "1772", "day_offset": "1", "label": "02:26 (+1)", "day_night": "D", "time": "02:26", "datetime": "2016-03-06T02:26:00 UTC" }, "bbox": [ -136.512, 81.654, -136.512, 81.654 ], "geometry": { "type": "Point", "coordinates": [ -136.512, 81.654 ] } },
 { "type": "Feature", "properties": { "direction": "D", "ident": "1773", "day_offset": "1", "label": "02:27 (+1)", "day_night": "D", "time": "02:27", "datetime": "2016-03-06T02:27:00 UTC" }, "bbox": [ -161.934, 81.644, -161.934, 81.644 ], "geometry": { "type": "Point", "coordinates": [ -161.934, 81.644 ] } }
 ],
-"bbox": [ -179.925, -81.847, 179.94, 81.846 ]
+"bbox": [ -179.925, -81.847, 179.940, 81.846 ]
 }
