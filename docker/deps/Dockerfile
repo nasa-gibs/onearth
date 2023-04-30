@@ -41,8 +41,8 @@ RUN wget https://github.com/mikefarah/yq/releases/download/v4.32.2/yq_linux_amd6
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.20.2.linux-amd64.tar.gz && \
-    tar xf go1.20.2.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.20.3.linux-amd64.tar.gz && \
+    tar xf go1.20.3.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.2.tar.gz && \
@@ -60,9 +60,9 @@ RUN wget https://go.dev/dl/go1.20.2.linux-amd64.tar.gz && \
 # Download RPM source for Apache
 RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
     yum clean all && \
-    yumdownloader --source httpd-2.4.53-7.el9_1.1.x86_64 && \
+    yumdownloader --source httpd-2.4.53-7.el9_1.5.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.53-7.el9_1.1.x86_64
+    yum-builddep -y httpd-2.4.53-7.el9_1.5.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
