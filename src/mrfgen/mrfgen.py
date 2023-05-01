@@ -2120,7 +2120,7 @@ if mrf_compression_type.lower() == 'zen':
         tile_mrf = os.path.join(working_dir, tile_basename + "_zen.mrf")
 
         # Do the MRF creation from the input tile
-        gdal_translate_command_list=['gdal_translate', '-q', '-b', '1', '-b', '2', '-b', '3', '-mask', '4', '-of', 'MRF', '-co', 'compress=JPEG', '-co', blocksize]    
+        gdal_translate_command_list=['gdal_translate', '-q', '-b', '1', '-b', '2', '-b', '3', '-of', 'MRF', '-co', 'compress=JPEG', '-co', blocksize, '-co', 'PHOTOMETRIC=DEFAULT']    
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('QUALITY='+quality_prec)
         gdal_translate_command_list.append(tile)
