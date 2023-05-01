@@ -291,10 +291,16 @@ def get_image_epsg(tile):
                 m = re.search(".*EPSG.*([0-9]{4}).*", wkt[lastAuth:])
                 if m:
                     epsg = "EPSG:" + m.group(1)
+            else:
+                epsg_id = wkt.rfind("ID")
+                if epsg_id != -1:
+                    m = re.search(".*EPSG.*([0-9]{4}).*", wkt[epsg_id:])
+                    if m:
+                        epsg = "EPSG:" + m.group(1)               
     except subprocess.TimeoutExpired:
         gdalinfo.kill()
         log_sig_err('gdalinfo timed out', sigevent_url)
-
+    log_info_mssg(epsg)
     return epsg
 
 
