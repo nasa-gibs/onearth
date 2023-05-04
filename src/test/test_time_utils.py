@@ -28,6 +28,8 @@ import redis
 import requests
 import shutil
 from oe_test_utils import restart_apache, make_dir_tree, mrfgen_run_command as run_command
+import datetime
+from dateutil.relativedelta import relativedelta
 
 DEBUG = False
 
@@ -291,6 +293,31 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_periods_double_date(self):
+        # Test adding layer with two dates
+        test_layers = [('Test_Double', '2019-01-15',
+                        '2019-01-15/2019-01-16/P1D'),
+                        ('Test_Double', '2019-01-16',
+                        '2019-01-15/2019-01-16/P1D')]
+
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer[2], layer_res['periods'][0]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_periods_subdaily(self):
         # Test subdaily period
         test_layers = [('Test_Subdaily', '2020-01-01T00:00:00Z',
@@ -352,6 +379,58 @@ class TestTimeUtils(unittest.TestCase):
                         '2019-01-01/2019-04-01/P1M')]
 
         db_keys = ['epsg4326']
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer[2], layer_res['periods'][0]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+    
+    def test_periods_monthly_2dates_DETECT(self):
+        # Test adding layer with multiple months
+        test_layers = [('Test_Monthly_2dates_DETECT', '2023-02-01T00:00:00',
+                        '2023-02-01/2023-03-01/P1M'),
+                        ('Test_Monthly_2dates_DETECT', '2023-03-01T00:00:00',
+                        '2023-02-01/2023-03-01/P1M')]
+        
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1M'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer[2], layer_res['periods'][0]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_monthly_3dates_DETECT(self):
+        # Test adding layer with three months
+        test_layers = [('Test_Monthly_3dates_DETECT', '2023-01-01T00:00:00',
+                        '2023-01-01/2023-03-01/P1M'),
+                        ('Test_Monthly_3dates_DETECT', '2023-02-01T00:00:00',
+                        '2023-01-01/2023-03-01/P1M'),
+                        ('Test_Monthly_3dates_DETECT', '2023-03-01T00:00:00',
+                        '2023-01-01/2023-03-01/P1M')]
+        
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1M'
+        add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
@@ -474,13 +553,13 @@ class TestTimeUtils(unittest.TestCase):
     def test_periods_config_force_all(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_ForceAll', '2019-01-01',
-                        '2017-01-01/2020-12-01/P8D'),
+                        '2019-01-07/2020-12-01/P8D'),
                        ('Test_ForceAll', '2019-01-07',
-                        '2017-01-01/2020-12-01/P8D'),
+                        '2019-01-07/2020-12-01/P8D'),
                        ('Test_ForceAll', '2019-01-13',
-                        '2017-01-01/2020-12-01/P8D')]
+                        '2019-01-07/2020-12-01/P8D')]
         db_keys = ['epsg4326']
-        config = '2017-01-01/2020-12-01/P8D'
+        config = '2019-01-07/2020-12-01/P8D'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
@@ -498,15 +577,41 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_periods_config_force_start(self):
-        # Test adding layer with multiple dates
+        # Tests using force_start to forcibly select the first date
         test_layers = [('Test_ForceStart', '2019-01-01',
-                        '2017-01-01T00:00:00Z/2019-01-13T:23:59:59Z/PT1M'),
-                       ('Test_ForceStart', '2019-01-07',
-                        '2017-01-01T00:00:00Z/2019-01-13T:23:59:59Z/PT1M'),
-                       ('Test_ForceStart', '2019-01-13T:23:59:59',
-                        '2017-01-01T00:00:00Z/2019-01-13T:23:59:59Z/PT1M')]
+                        '2019-02-01/2019-03-01/P1M'),
+                       ('Test_ForceStart', '2019-02-01',
+                        '2019-02-01/2019-03-01/P1M'),
+                       ('Test_ForceStart', '2019-03-01',
+                        '2019-02-01/2019-03-01/P1M')]
         db_keys = ['epsg4326']
-        config = '2017-01-01/DETECT/PT1M'
+        config = '2019-02-01/DETECT/P1M'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'][0], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_config_force_start_nodate(self):
+        # Tests when there's no data for the forced start date (should treat it like DETECT)
+        test_layers = [('Test_ForceStart', '2019-01-01',
+                        '2019-01-01/2019-03-01/P1M'),
+                       ('Test_ForceStart', '2019-02-01',
+                        '2019-01-01/2019-03-01/P1M'),
+                       ('Test_ForceStart', '2019-03-01',
+                        '2019-01-01/2019-03-01/P1M')]
+        db_keys = ['epsg4326']
+        config = '2017-01-01/DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
@@ -525,12 +630,12 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_periods_config_force_end(self):
         # Test adding layer with multiple dates
-        test_layers = [('Test_ForceEnd', '2019-01-01',
-                        '2019-01-01/2020-12-01/P1M'),
-                       ('Test_ForceEnd', '2019-01-07',
-                        '2019-01-01/2020-12-01/P1M'),
-                       ('Test_ForceEnd', '2019-01-13',
-                        '2019-01-01/2020-12-01/P1M')]
+        test_layers = [('Test_ForceEnd', '2018-12-01',
+                        '2018-12-01/2020-12-01/P1M'),
+                       ('Test_ForceEnd', '2019-01-01',
+                        '2018-12-01/2020-12-01/P1M'),
+                       ('Test_ForceEnd', '2019-02-01',
+                        '2018-12-01/2020-12-01/P1M')]
         db_keys = ['epsg4326']
         config = 'DETECT/2020-12-01/P1M'
         add_redis_config(test_layers, db_keys, config)
@@ -636,13 +741,13 @@ class TestTimeUtils(unittest.TestCase):
     def test_periods_config_multiple(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_Multiple', '2019-01-01',
-                        '2016-01-01/2017-12-31/P1D'),
+                        '2019-01-01/2017-12-31/P1D'),
                        ('Test_Multiple', '2019-01-02',
                         '2019-01-01/2019-01-04/P1D'),
                        ('Test_Multiple', '2019-01-03',
                         '2019-01-02/2019-01-04/P1D'),
                        ('Test_Multiple', '2019-01-04',
-                        '2022-01-01/2022-12-01/P1M')]
+                        '2019-01-04/2022-12-01/P1M')]
         db_keys = ['epsg4326']
         # forced period
         config = '2016-01-01/2017-12-31/P1D'
@@ -654,7 +759,7 @@ class TestTimeUtils(unittest.TestCase):
         config = '2019-01-02/DETECT/P1D'
         add_redis_config(test_layers, db_keys, config)
         # forced period
-        config = '2022-01-01/2022-12-01/P1M'
+        config = '2019-01-04/2022-12-01/P1M'
         add_redis_config(test_layers, db_keys, config)
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
@@ -668,6 +773,60 @@ class TestTimeUtils(unittest.TestCase):
                 layer[2], layer_res['periods'][i],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
                 .format(layer[0], layer_res['periods'][i], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_stress_days(self):
+        # Test adding a huge amount of dates
+        num_dates = 100000
+        date_start = datetime.datetime(2000, 1, 1)
+        date_lst = [str((date_start + datetime.timedelta(days=idx)).date()) for idx in range(num_dates)]
+        period = str(date_start.date()) + '/' + date_lst[-1] + '/P1D'
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Stress_Days', date_entry, period))
+        db_keys = ['epsg4326']
+        config = 'DETECT/DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'][0], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_stress_months(self):
+        # Test adding a huge amount of dates
+        num_dates = 10000
+        date_start = datetime.datetime(1970, 1, 1)
+        date_lst = [str((date_start + relativedelta(months=idx)).date()) for idx in range(num_dates)]
+        period = str(date_start.date()) + '/' + date_lst[-1] + '/P1M'
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Stress_Months', date_entry, period))
+        db_keys = ['epsg4326']
+        config = 'DETECT/DETECT/P1M'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 

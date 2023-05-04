@@ -193,9 +193,24 @@ local function addDaysToDate(date, days)
   local doy = calcDayOfYear(date)
   local year = tonumber(date:sub(1, 4))
   local daysInYear = getDaysInYear(year)
-  if doy + days <= daysInYear then
-    return dayOfYearToDate(doy + days, year)
+  while doy + days > daysInYear do
+    local remainingDays = daysInYear - doy
+    doy = 0
+    days = days - remainingDays
+    year = year + 1
+    daysInYear = getDaysInYear(year)
   end
+  return dayOfYearToDate(doy + days, year)
+end
+
+local function addMonthsToDate(date, monthCount)
+  for i=1,monthCount do
+    local month = tonumber(date:sub(6, 7))
+    local year = tonumber(date:sub(1, 4))
+    local daysToAdd = getDaysInMonth(month, year)
+    date = addDaysToDate(date, daysToAdd)
+  end
+  return date
 end
 
 local function dateAtInterval(baseDate, interval, dateList, unit)
@@ -370,6 +385,27 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
 
+  -- If the force_start date isn't a date we have, then treat it as DETECT
+  if force_start ~= 'DETECT' and force_start:sub(1,6) ~= 'LATEST' then
+    local has_force_start = false
+    local forced_epoch = dateToEpoch(force_start)
+    for i = 1, #dates do
+      if forced_epoch == dateToEpoch(dates[i]) then
+        -- remove all dates prior to the forced_start date, we don't need them
+        local new_dates = {}
+        for j = i,#dates do
+          new_dates[#new_dates + 1] = dates[j]
+        end
+        dates = new_dates
+        has_force_start = true
+        break
+      end
+    end
+    if not has_force_start then
+      force_start = 'DETECT'
+    end
+  end
+  
   -- Don't return any periods if DETECT and no dates available
   if dates[1] == nil then
     if force_start == 'DETECT' or force_end == 'DETECT' then
@@ -445,6 +481,19 @@ local function calculatePeriods(dates, config)
         periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
         annual = true
       end
+    elseif force_period ~= 'DETECT' and dates[2] ~= nil then
+      -- only 2 dates, check if they're in the same period
+      local size = tonumber(string.match(force_period, "%d+"))
+      local unit = getIntervalUnit(force_period)
+      local interval = getIntervalLetter(unit)
+      if isValidPeriod(size, unit) then
+        if (calcEpochDiff(dateToEpoch(dates[1]), size, interval) == dateToEpoch(dates[2])) or
+            (unit == 'month' and dateToEpoch(addMonthsToDate(dates[1], size)) == dateToEpoch(dates[2])) then
+          periods[#periods + 1] = {size=size, dates=dates, unit=unit}
+          datesInPeriods[dates[1]] = true
+          datesInPeriods[dates[2]] = true
+        end
+      end
     end
 
     if dates[3] ~= nil and annual == false then
@@ -467,16 +516,22 @@ local function calculatePeriods(dates, config)
             local dateEpoch1 = dateToEpoch(date1)
             if dates[i+1] == nil then
               dateList[#dateList + 1] = date1
+              for _, dateEntry in ipairs(dateList) do
+                datesInPeriods[dateEntry] = true
+              end
               periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
             else
               local dateEpoch2 = dateToEpoch(dates[i+1])
               local diff = math.abs(dateEpoch2 - dateEpoch1)
-              if diff ~= diff1 then
+              if (diff ~= diff1 and unit ~= 'month') or
+                  (unit == 'month' and dateToEpoch(addMonthsToDate(dates[1], size)) ~= dateToEpoch(dates[2])) then
                 dateList[#dateList + 1] = date1
                 local period = {}
                 period[1] = dateList[1]
                 period[2] = dateList[2]
                 periods[#periods + 1] = {size=size, dates=period, unit=unit}
+                datesInPeriods[dateList[1]] = true
+                datesInPeriods[dateList[2]] = true
                 dateList[1] = dates[i+1]
                 dateList[2] = nil
               end
