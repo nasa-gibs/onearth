@@ -744,8 +744,8 @@ def setup_test_layer(test_file_path, cache_path, prefix):
                     os.path.join(test_file_path, file),
                     os.path.join(cache_path, 'cache_all_wmts.config'))
 
-    run_command('apachectl stop')
-    run_command('apachectl start')
+    run_command('httpd -k stop')
+    run_command('httpd -k start')
     return
 
 

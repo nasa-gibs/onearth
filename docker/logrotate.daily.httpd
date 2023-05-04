@@ -7,6 +7,6 @@
     compress
     delaycompress
     postrotate
-        /usr/sbin/apachectl -k graceful > /dev/null 2>/dev/null || true
+        /usr/sbin/httpd -k graceful > /dev/null 2>/dev/null || true
     endscript
 }
