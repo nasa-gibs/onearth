@@ -21,7 +21,7 @@ limitations under the License.
  <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGBA_256.png</mrf_empty_tile_filename>
  <mrf_blocksize>512</mrf_blocksize>
  <mrf_compression_type>PNG</mrf_compression_type>
- <overview_resampling>nearest</overview_resampling>
+ <overview_resampling>nnb</overview_resampling>
  <resize_resampling>near</resize_resampling>
  <target_x>2048</target_x>
  <source_epsg>detect</source_epsg>

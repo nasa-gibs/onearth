@@ -6,13 +6,13 @@
 FROM almalinux:9.1
 
 # Install dependencies
-RUN yum -y update && \
-    yum groupinstall -y "Development Tools" && \
-    yum clean all && \
+RUN dnf -y update && \
+    dnf groupinstall -y "Development Tools" && \
+    dnf clean all && \
     dnf config-manager --set-enabled crb && \
 	dnf install -y epel-release && \
     dnf install -y \
-        lua-devel-5.4.2 \
+        lua-devel-5.4.4 \
         jansson-devel-2.14 \
         libpng-devel-1.6.37 \
         pcre-devel-8.44 \

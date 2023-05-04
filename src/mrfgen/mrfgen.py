@@ -291,10 +291,16 @@ def get_image_epsg(tile):
                 m = re.search(".*EPSG.*([0-9]{4}).*", wkt[lastAuth:])
                 if m:
                     epsg = "EPSG:" + m.group(1)
+            else:
+                epsg_id = wkt.rfind("ID")
+                if epsg_id != -1:
+                    m = re.search(".*EPSG.*([0-9]{4}).*", wkt[epsg_id:])
+                    if m:
+                        epsg = "EPSG:" + m.group(1)               
     except subprocess.TimeoutExpired:
         gdalinfo.kill()
         log_sig_err('gdalinfo timed out', sigevent_url)
-
+    log_info_mssg(epsg)
     return epsg
 
 
@@ -2114,7 +2120,7 @@ if mrf_compression_type.lower() == 'zen':
         tile_mrf = os.path.join(working_dir, tile_basename + "_zen.mrf")
 
         # Do the MRF creation from the input tile
-        gdal_translate_command_list=['gdal_translate', '-q', '-b', '1', '-b', '2', '-b', '3', '-mask', '4', '-of', 'MRF', '-co', 'compress=JPEG', '-co', blocksize]    
+        gdal_translate_command_list=['gdal_translate', '-q', '-b', '1', '-b', '2', '-b', '3', '-of', 'MRF', '-co', 'compress=JPEG', '-co', blocksize, '-co', 'PHOTOMETRIC=DEFAULT']    
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('QUALITY='+quality_prec)
         gdal_translate_command_list.append(tile)
@@ -2245,7 +2251,7 @@ remove_file(vrt_filename)
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
 if overview_resampling[:4].lower() == 'near' or overview_resampling.lower() == 'nnb':
-    insert_method = 'NearNB'
+    insert_method = 'NNb'
 else:
     insert_method = 'Avg'
 

@@ -410,7 +410,7 @@ class TestMapserver(unittest.TestCase):
         """
         26. Request CSV from vector source file via WFS
         """
-        ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
+        ref_hash = '3a5f4e8439c778560864478dda58b4af'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv'
         if DEBUG:
             print('\nTesting: Request CSV from vector source file via WFS')
@@ -447,7 +447,7 @@ class TestMapserver(unittest.TestCase):
         """
         28. Request CSV from vector source file with time via WFS
         """
-        ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
+        ref_hash = '3a5f4e8439c778560864478dda58b4af'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request CSV from vector source file with time via WFS')

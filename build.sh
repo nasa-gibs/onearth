@@ -43,7 +43,6 @@ docker build \
 
 # Build the onearth-wms image
 docker build \
-    --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/wms_service/Dockerfile \
     -t nasagibs/onearth-wms:$ONEARTH_VERSION-$ONEARTH_RELEASE \
@@ -51,7 +50,6 @@ docker build \
 
 # Build the onearth-tools image
 docker build \
-    --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/tools/Dockerfile \
     -t nasagibs/onearth-tools:$ONEARTH_VERSION-$ONEARTH_RELEASE \
