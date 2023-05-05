@@ -60,9 +60,9 @@ RUN wget https://go.dev/dl/go1.20.3.linux-amd64.tar.gz && \
 # Download RPM source for Apache
 RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
     yum clean all && \
-    yumdownloader --source httpd-2.4.53-7.el9_1.5.x86_64 && \
+    yumdownloader --source httpd-2.4.53-7.el9_1.1.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.53-7.el9_1.5.x86_64
+    yum-builddep -y httpd-2.4.53-7.el9_1.1.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
