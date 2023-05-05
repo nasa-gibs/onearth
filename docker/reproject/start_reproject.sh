@@ -106,14 +106,14 @@ sleep 2
 time_out=600
 echo "[$(date)] Begin checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
 while [[ "$(curl -s -m 10 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
-         "$(curl -s -m 15 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
-  if [[ $time_out -lt 0 ]]; then
+         "$(curl -s -m 60 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
+  if [[ $time_out -le 0 ]]; then
     echo "[$(date)] ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1;
     /usr/sbin/httpd stop; cat /var/log/onearth/config.log; exit 1;
   else
   	echo "[$(date)] Waiting for $GC_HEALTHCHECK or $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
-  	sleep 5; #curl in 5 second intervals
-  	time_out=$(($time_out-5));
+  	sleep 60; #curl in 60 second intervals
+  	time_out=$(($time_out-60));
   fi
 done
 
