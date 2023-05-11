@@ -14,8 +14,7 @@ RUN dnf install -y \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 \
-        mod_fcgid-2.3.9 && \
+        protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
 # Install GDAL
@@ -80,6 +79,14 @@ RUN luarocks install lpeg && \
     luarocks install luasocket
 RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
     cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
+
+# FastCGI module
+WORKDIR /tmp
+RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN tar xf mod_fcgid-2.3.9.tar.gz
+WORKDIR /tmp/mod_fcgid-2.3.9
+RUN APXS=/usr/bin/apxs ./configure.apxs
+RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
@@ -176,4 +183,4 @@ CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
-  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1 
+  CMD curl --fail "http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34" || exit 1

@@ -15,14 +15,13 @@ RUN dnf install -y \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 \
-        mod_fcgid-2.3.9 && \
+        protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
 # libspatialindex
 WORKDIR /tmp
 RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
-RUN tar xzf spatialindex-src-1.8.5.tar.gz 
+RUN tar xzf spatialindex-src-1.8.5.tar.gz
 RUN cd /tmp/spatialindex-src-1.8.5 && \
     ./configure --libdir=/usr/lib64 && \
     make && make install && \
@@ -88,6 +87,14 @@ RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
 RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
     cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
+
+# FastCGI module
+WORKDIR /tmp
+RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN tar xf mod_fcgid-2.3.9.tar.gz
+WORKDIR /tmp/mod_fcgid-2.3.9
+RUN APXS=/usr/bin/apxs ./configure.apxs
+RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
