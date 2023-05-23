@@ -430,7 +430,7 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         if (16 != result)
             return "Bitmap read error";
         else if(result == -1)
-            return "PPG Not Found";
+            return "MRF data file not found";
 
 #if defined(be32toh)
         // Change to host endian
@@ -554,7 +554,7 @@ static int handler(request_rec *r) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%ld, IDX=%s",
         apr_time_now() - start_index_lookup, idx_fname);
     const char *message = read_index(r, &index, tidx_offset, idx_fname);
-    if (message && strcmp(message, "PPG Not Found") == 0) { // Not Found error
+    if (message && strcmp(message, "MRF data file not found") == 0) { // Not Found error
         REQ_NF_IF(message);
     } else if (message) {
         if (!apr_strnatcmp(idx_fname, cfg->idx.name)) {
