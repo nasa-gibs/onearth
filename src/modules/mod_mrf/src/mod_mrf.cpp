@@ -427,10 +427,10 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         storage_manager lmgr(line, 16);
         int result = vfile_pread(r, lmgr, 
             16 * (1 + (boffset / 96)), fname, "MRF_INDEX");
-        if (16 != result)
-            return "Bitmap read error";
-        else if(result == -1)
+        if(result == -1)
             return "MRF data file not found";
+        else if (16 != result)
+            return "Bitmap read error";
 
 #if defined(be32toh)
         // Change to host endian
