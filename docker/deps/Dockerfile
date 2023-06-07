@@ -22,12 +22,12 @@ RUN dnf -y update && \
         libjpeg-turbo-devel-2.0.90 \
         libxml2-devel-2.9.13 \
         mod_ssl-2.4.53 \
-        openssl-devel-3.0.1 \
-        luarocks-3.9.1 \
+        openssl-devel-3.0.7 \
+        luarocks-3.9.2 \
         redis-6.2.7 \
         cronie-1.5.7 \
         logrotate-3.18.0 \
-        python3-devel-3.9.14 \
+        python3-devel-3.9.16 \
         parallel && \
     dnf clean all
 
@@ -58,11 +58,11 @@ RUN wget https://go.dev/dl/go1.20.3.linux-amd64.tar.gz && \
     rm -rf /usr/local/go /usr/local/bin/go
 
 # Download RPM source for Apache
-RUN yum install -y yum-utils-4.1.0 rpm-build-4.16.1.3 && \
+RUN yum install -y yum-utils-4.3.0 rpm-build-4.16.1.3 && \
     yum clean all && \
-    yumdownloader --source httpd-2.4.53-7.el9_1.5.x86_64 && \
+    yumdownloader --source httpd-2.4.53-11.el9_1.5.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.53-7.el9_1.5.x86_64
+    yum-builddep -y httpd-2.4.53-11.el9_1.5.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
