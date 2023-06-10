@@ -360,6 +360,10 @@ static int vfile_pread(request_rec *r, storage_manager &mgr,
             }
         } while (!failed && static_cast<size_t>(rctx.size) != mgr.size);
 
+        if (failed) {
+            return -1;
+        }
+
         return rctx.size;
     } // Redirect read
 
@@ -421,8 +425,11 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         // Read the line containing the target bit
         uint32_t line[4];
         storage_manager lmgr(line, 16);
-        if (16 != vfile_pread(r, lmgr, 
-            16 * (1 + (boffset / 96)), fname, "MRF_INDEX"))
+        int result = vfile_pread(r, lmgr, 
+            16 * (1 + (boffset / 96)), fname, "MRF_INDEX");
+        if(result == -1)
+            return "MRF data file not found";
+        else if (16 != result)
             return "Bitmap read error";
 
 #if defined(be32toh)
@@ -456,6 +463,11 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
 // Quiet error
 #define REQ_ERR_IF(X) if (X) {\
     return HTTP_BAD_REQUEST; \
+}
+
+// Not Found error
+#define REQ_NF_IF(X) if (X) {\
+    return HTTP_NOT_FOUND; \
 }
 
 // Logged error
@@ -542,7 +554,9 @@ static int handler(request_rec *r) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%ld, IDX=%s",
         apr_time_now() - start_index_lookup, idx_fname);
     const char *message = read_index(r, &index, tidx_offset, idx_fname);
-    if (message) { // Fatal error
+    if (message && strcmp(message, "MRF data file not found") == 0) { // Not Found error
+        REQ_NF_IF(message);
+    } else if (message) {
         if (!apr_strnatcmp(idx_fname, cfg->idx.name)) {
             SERR_IF(message, message);
         }
