@@ -1,4 +1,4 @@
-requests==2.28.2
+requests==2.31.0
 pyaml==21.10.1
 lxml==4.9.2
 pypng==0.20220715.0
