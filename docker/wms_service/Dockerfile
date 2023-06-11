@@ -77,8 +77,6 @@ RUN luarocks install lpeg && \
     luarocks install openssl && \
     luarocks install md5 && \
     luarocks install luasocket
-RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
 # FastCGI module
 WORKDIR /tmp
@@ -116,9 +114,6 @@ RUN make && make install
 RUN mkdir -p /etc/onearth/config/endpoint
 WORKDIR /home/oe2/onearth/src/modules/wms_time_service
 RUN luarocks make onearth_wms_time-0.1-1.rockspec
-RUN cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/ && \
-    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
-    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
 
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/

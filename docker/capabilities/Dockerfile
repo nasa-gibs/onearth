@@ -19,8 +19,6 @@ RUN luarocks make luafilesystem-scm-1.rockspec
 RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 
 RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
-RUN cp /usr/lib/lua/5.4/lpeg.so /usr/lib64/lua/5.4/ && \
-    cp /usr/lib/lua/5.4/_cqueues.so /usr/lib64/lua/5.4/
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -45,10 +43,6 @@ RUN mkdir -p /etc/onearth/config/endpoint
 RUN cp -R /home/oe2/onearth/src/modules/gc_service/conf /etc/onearth/config/
 WORKDIR /home/oe2/onearth/src/modules/gc_service
 RUN luarocks make onearth_gc_gts-0.1-1.rockspec
-RUN cp /usr/lib/lua/5.4/_openssl.so /usr/lib64/lua/5.4/ && \
-    cp -r /usr/lib/lua/5.4/md5 /usr/lib64/lua/5.4/ && \
-    cp -r /usr/lib/lua/5.4/socket /usr/lib64/lua/5.4/
-
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker

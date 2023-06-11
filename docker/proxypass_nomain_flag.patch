@@ -1,5 +1,5 @@
---- a/modules/proxy/mod_proxy.c 2023-02-09 03:46:15.082246669 +0000
-+++ b/modules/proxy/mod_proxy.c	2023-02-09 03:53:34.021474139 +0000
+--- a/modules/proxy/mod_proxy.c	2023-06-11 03:28:45.660830658 +0000
++++ b/modules/proxy/mod_proxy.c	2023-06-11 03:33:12.163572446 +0000
 @@ -959,6 +959,9 @@
                  "Unescaped URL path matched ProxyPass; ignoring unsafe nocanon");
      }
@@ -8,9 +8,9 @@
 +        found = NULL;
 +
      if (found) {
-         /* A proxy module is assigned this URL, check whether it's interested
-          * in the request itself (e.g. proxy_wstunnel cares about Upgrade
-@@ -2062,6 +2065,9 @@
+         unsigned int encoded = ent->flags & PROXYPASS_MAP_ENCODED;
+ 
+@@ -2067,6 +2070,9 @@
          else if (!strcasecmp(word,"noquery")) {
              flags |= PROXYPASS_NOQUERY;
          }

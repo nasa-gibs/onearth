@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM almalinux:9.1
+FROM almalinux:9.2
 
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
@@ -9,7 +9,7 @@ RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release && \
+	dnf install -y epel-release-9-2.el9 && \
     dnf install -y \
         lua-devel-5.4.4 \
         jansson-devel-2.14 \
@@ -20,7 +20,7 @@ RUN dnf -y update && \
         libcurl-devel-7.76.1 \
         libjpeg-turbo-devel-2.0.90 \
         libxml2-devel-2.9.13 \
-        luarocks-3.9.1 \
+        luarocks-3.9.2 \
         redis-6.2.7 \
         cronie-1.5.7 \
         logrotate-3.18.0 \
@@ -33,7 +33,7 @@ RUN dnf -y update && \
         proj-devel-8.2.0 \
         geos-3.10.1 \
         geos-devel-3.10.1 \
-        python3-devel-3.9.14 \
+        python3-devel-3.9.16 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
 

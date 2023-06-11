@@ -3,14 +3,14 @@
 # This version of the Dockerfile packs commands together to minimize layers and
 # to minimize image size.
 
-FROM almalinux:9.1
+FROM almalinux:9.2
 
 # Install dependencies
 RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release && \
+	dnf install -y epel-release-9-2.el9 && \
     dnf install -y \
         lua-devel-5.4.4 \
         jansson-devel-2.14 \
