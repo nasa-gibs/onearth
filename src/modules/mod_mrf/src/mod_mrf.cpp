@@ -448,9 +448,12 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         // Adjust the offset before reading the data
         offset = cfg->can_hsize + blockn * BSZ + offset % BSZ;
     }
-
-    if (sizeof(range_t) != vfile_pread(r, dst, offset, fname, "MRF_INDEX"))
+    int result = vfile_pread(r, dst, offset, fname, "MRF_INDEX");
+    if (result == -1) {
+        return "MRF data file not found";
+    } else if (sizeof(range_t) != result) {
         return "Read error";
+    }
 
 #if defined(be64toh)
     idx->offset = be64toh(idx->offset);
