@@ -557,7 +557,7 @@ static int handler(request_rec *r) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%ld, IDX=%s",
         apr_time_now() - start_index_lookup, idx_fname);
     const char *message = read_index(r, &index, tidx_offset, idx_fname);
-    if (message && strcmp(message, "MRF data file not found") == 0) { // Not Found error
+    if (message && strcmp(message, "MRF index file not found") == 0) { // Not Found error
         REQ_NF_IF(message);
     } else if (message) {
         if (!apr_strnatcmp(idx_fname, cfg->idx.name)) {
@@ -590,7 +590,8 @@ static int handler(request_rec *r) {
     const char *name = (src && src->name) ? apply_mmapping(r, &tile, src->name) : nullptr;
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_data_read, duration=%ld, DATA=%s",
         apr_time_now() - start_index_lookup, name);
-    SERR_IF(!name, apr_psprintf(r->pool, "No data file configured for %s", r->uri));
+    // Changing to Not found error since this means it was not found.
+    REQ_NF_IF(!name, apr_psprintf(r->pool, "No data file configured for %s", r->uri));
 
     apr_size_t size = static_cast<apr_size_t>(index.size);
     storage_manager img(apr_palloc(r->pool, size), size);
