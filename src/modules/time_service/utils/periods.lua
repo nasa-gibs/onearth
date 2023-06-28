@@ -515,9 +515,8 @@ local function calculatePeriods(dates, config)
         end
         local interval = getIntervalLetter(unit)
         if isValidPeriod(size, unit) then
-          local i = 1
           local dateList = {}
-          while (i <= #dates) do
+          for i = 1, #dates do
             dateList[#dateList + 1] = dates[i]
             if (dates[i+1] == nil) or
                 (calcEpochDiff(dates[i], size, interval) ~= dateToEpoch(dates[i+1])) then
@@ -530,7 +529,6 @@ local function calculatePeriods(dates, config)
               periods[#periods + 1] = {size=size, dates=period, unit=unit}
               dateList = {}
             end
-            i = i + 1
           end
         end
       else -- More complicated scenarios
