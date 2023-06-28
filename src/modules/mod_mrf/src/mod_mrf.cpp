@@ -591,7 +591,7 @@ static int handler(request_rec *r) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_data_read, duration=%ld, DATA=%s",
         apr_time_now() - start_index_lookup, name);
     // Changing to Not found error since this means it was not found.
-    REQ_NF_IF(!name, apr_psprintf(r->pool, "No data file configured for %s", r->uri));
+    REQ_NF_IF(!name);
 
     apr_size_t size = static_cast<apr_size_t>(index.size);
     storage_manager img(apr_palloc(r->pool, size), size);
