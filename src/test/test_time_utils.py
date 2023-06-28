@@ -318,6 +318,45 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_periods_multiple_periods_one_config(self):
+        # Test adding layer with one config but multiple periods
+        test_layers = [('Test_Multiple_Periods_One_Config', '2022-06-21',
+                        '2022-06-21/2022-06-21/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-06-27',
+                        '2022-06-27/2022-06-29/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-06-28',
+                        '2022-06-27/2022-06-29/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-06-29',
+                        '2022-06-27/2022-06-29/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-10-07',
+                        '2022-10-07/2022-10-10/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-10-08',
+                        '2022-10-07/2022-10-10/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-10-09',
+                        '2022-10-07/2022-10-10/P1D'),
+                        ('Test_Multiple_Periods_One_Config', '2022-10-10',
+                        '2022-10-07/2022-10-10/P1D')]
+
+        periods = ['2022-06-21/2022-06-21/P1D', '2022-06-27/2022-06-29/P1D', '2022-10-07/2022-10-10/P1D']
+
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for i, layer in enumerate(test_layers):
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_periods_subdaily(self):
         # Test subdaily period
         test_layers = [('Test_Subdaily', '2020-01-01T00:00:00Z',
@@ -501,11 +540,11 @@ class TestTimeUtils(unittest.TestCase):
     def test_periods_config_DETECTDETECTP5D(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_DETECTDETECTP5D', '2019-01-01',
-                        '2019-01-01/2019-01-13/P5D'),
-                       ('Test_DETECTDETECTP5D', '2019-01-07',
-                        '2019-01-01/2019-01-13/P5D'),
-                       ('Test_DETECTDETECTP5D', '2019-01-13',
-                        '2019-01-01/2019-01-13/P5D')]
+                        '2019-01-01/2019-01-11/P5D'),
+                       ('Test_DETECTDETECTP5D', '2019-01-06',
+                        '2019-01-01/2019-01-11/P5D'),
+                       ('Test_DETECTDETECTP5D', '2019-01-11',
+                        '2019-01-01/2019-01-11/P5D')]
         db_keys = ['epsg4326']
         config = 'DETECT/DETECT/P5D'
         add_redis_config(test_layers, db_keys, config)
@@ -527,11 +566,11 @@ class TestTimeUtils(unittest.TestCase):
     def test_periods_config_DETECTP10D(self):
         # Test adding layer with multiple dates
         test_layers = [('Test_DETECTP10D', '2019-01-01',
-                        '2019-01-01/2019-01-13/P10D'),
-                       ('Test_DETECTP10D', '2019-01-07',
-                        '2019-01-01/2019-01-13/P10D'),
-                       ('Test_DETECTP10D', '2019-01-13',
-                        '2019-01-01/2019-01-13/P10D')]
+                        '2019-01-01/2019-01-21/P10D'),
+                       ('Test_DETECTP10D', '2019-01-11',
+                        '2019-01-01/2019-01-21/P10D'),
+                       ('Test_DETECTP10D', '2019-01-21',
+                        '2019-01-01/2019-01-21/P10D')]
         db_keys = ['epsg4326']
         config = 'DETECT/P10D'
         add_redis_config(test_layers, db_keys, config)
