@@ -428,7 +428,7 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         int result = vfile_pread(r, lmgr, 
             16 * (1 + (boffset / 96)), fname, "MRF_INDEX");
         if(result == -1)
-            return "MRF data file not found";
+            return "MRF index file not found";
         else if (16 != result)
             return "Bitmap read error";
 
@@ -448,12 +448,8 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         // Adjust the offset before reading the data
         offset = cfg->can_hsize + blockn * BSZ + offset % BSZ;
     }
-    int result = vfile_pread(r, dst, offset, fname, "MRF_INDEX");
-    if (result == -1) {
-        return "MRF data file not found";
-    } else if (sizeof(range_t) != result) {
+    if (sizeof(range_t) != vfile_pread(r, dst, offset, fname, "MRF_INDEX"))
         return "Read error";
-    }
 
 #if defined(be64toh)
     idx->offset = be64toh(idx->offset);
