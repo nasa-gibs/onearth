@@ -1,8 +1,8 @@
 /var/log/httpd/*log {
     daily
     rotate 3
+    maxage 3
     missingok
-    notifempty
     sharedscripts
     compress
     delaycompress

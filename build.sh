@@ -28,7 +28,8 @@ docker build \
     .
 
 # Build the onearth-reproject image
-docker build --no-cache \
+docker build \
+    --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/reproject/Dockerfile \
     -t nasagibs/onearth-reproject:$ONEARTH_VERSION-$ONEARTH_RELEASE \
