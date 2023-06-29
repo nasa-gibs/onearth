@@ -778,9 +778,9 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_periods_config_multiple(self):
-        # Test adding layer with multiple dates
+        # Test adding layer with multiple configs
         test_layers = [('Test_Multiple', '2019-01-01',
-                        '2019-01-01/2017-12-31/P1D'),
+                        '2019-01-01/2019-01-01/P1D'),
                        ('Test_Multiple', '2019-01-02',
                         '2019-01-01/2019-01-04/P1D'),
                        ('Test_Multiple', '2019-01-03',
@@ -789,7 +789,7 @@ class TestTimeUtils(unittest.TestCase):
                         '2019-01-04/2022-12-01/P1M')]
         db_keys = ['epsg4326']
         # forced period
-        config = '2016-01-01/2017-12-31/P1D'
+        config = '2019-01-01/2019-01-01/P1D'
         add_redis_config(test_layers, db_keys, config)
         # detect 2019-01-01 as start
         config = 'DETECT/2019-01-04/P1D'

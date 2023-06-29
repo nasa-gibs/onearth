@@ -602,13 +602,18 @@ local function calculatePeriods(dates, config)
     if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
       periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
       if period["unit"] == "minute" then
-       -- Remove the MM hack for minutes
-       periodStr = periodStr:sub(1, #periodStr - 1)
+        -- Remove the MM hack for minutes
+        periodStr = periodStr:sub(1, #periodStr - 1)
       end
     else
       periodStr =  string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][#period["dates"]], 0, 10) .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
     end
-    periodStrings[#periodStrings + 1] = periodStr
+    -- Sanity check: make sure that end date in the period is no earlier than the start date in the period
+    if dateToEpoch(period["dates"][1]) <= dateToEpoch(period["dates"][#period["dates"]]) then
+      periodStrings[#periodStrings + 1] = periodStr
+    else
+      redis.call('ECHO', 'Warning: generated period ' .. periodStr .. ' has a start date that is later than its end date. This period will be excluded.')
+    end
   end
   --Not needed since values are stored in an unordered list in Redis
   --table.sort(periodStrings)
