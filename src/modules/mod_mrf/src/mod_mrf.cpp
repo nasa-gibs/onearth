@@ -597,8 +597,7 @@ static int handler(request_rec *r) {
     storage_manager img(apr_palloc(r->pool, size), size);
 
     SERR_IF(!img.buffer, "Memory allocation error in mod_mrf");
-    SERR_IF(img.size != static_cast<size_t>(vfile_pread(r, img, index.offset, name)),
-        "Data read error");
+    REQ_NF_IF(img.size != static_cast<size_t>(vfile_pread(r, img, index.offset, name)));
 
     // Pass-through header
     const char *layer_id_request = apr_table_get(r->notes, "Layer-Identifier-Request");
