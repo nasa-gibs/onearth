@@ -819,14 +819,14 @@ class TestTimeUtils(unittest.TestCase):
         # Test multiple configs on subdaily times
         num_dates = 127400
         date_start = datetime.datetime(2021, 1, 26, 10, 40, 0, 0)
-        # calculate the datetimes
+        # calculate the datetimes between 2021-01-26T10:40:00 and 2023-06-30T03:50:00
         date_lst = [str((date_start + datetime.timedelta(minutes=idx * 10))) for idx in range(num_dates)]
         # add the "T" between the date and the time
         for i in range(len(date_lst)):
             date_lst[i] = date_lst[i][:10] + 'T' + date_lst[i][11:]
         test_layers = []
         for date_entry in date_lst:
-            test_layers.append(('Test_Stress_Days', date_entry))
+            test_layers.append(('Test_Multiple_Config_Subdaily', date_entry))
         db_keys = ['epsg4326']
         config = '2021-09-13T09:50:00/2021-09-14T09:20:00/PT10M'
         add_redis_config(test_layers, db_keys, config)
