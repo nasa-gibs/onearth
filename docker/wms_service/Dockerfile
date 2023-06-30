@@ -165,6 +165,7 @@ RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-
     dnf autoremove && \
     dnf clean all && \
     rm -rf /tmp/*
+RUN pip uninstall -y pip
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
