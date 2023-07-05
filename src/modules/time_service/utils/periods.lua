@@ -110,20 +110,6 @@ local function dateToEpoch(dateStr)
   return yearSecCounter + ((doy - 1) * 86400) + (hour * 60 * 60)  + (minute * 60) + second
 end
 
-local function calcEpochDiff(epochDate, count, interval)
-  local intervalInSec
-  if interval == "Y" then intervalInSec = 31536000
-  elseif interval == "D" then intervalInSec = 86400
-  elseif interval == "H" then intervalInSec = 3600
-  elseif interval == "MM" then intervalInSec = 60
-  elseif interval == "S" then intervalInSec = 1
-  end
-  if epochDate and count and intervalInSec then 
-    epochDate = epochDate + ( count * intervalInSec )
-  end
-  return epochDate
-end
-
 local function calcIntervalFromSeconds(interval)
   if interval % 31536000 == 0 then
     return math.floor(interval / 31536000), "year"
@@ -211,6 +197,26 @@ local function addMonthsToDate(date, monthCount)
     date = addDaysToDate(date, daysToAdd)
   end
   return date
+end
+
+-- Takes date argument in string format, returns result as an epoch
+local function calcEpochDiff(date, count, interval)
+  if interval == "M" then
+    return dateToEpoch(addMonthsToDate(date, count))
+  else
+    local epochDate = dateToEpoch(date)
+    local intervalInSec
+    if interval == "Y" then intervalInSec = 31536000
+    elseif interval == "D" then intervalInSec = 86400
+    elseif interval == "H" then intervalInSec = 3600
+    elseif interval == "MM" then intervalInSec = 60
+    elseif interval == "S" then intervalInSec = 1
+    end
+    if epochDate and count and intervalInSec then 
+      epochDate = epochDate + ( count * intervalInSec )
+    end
+    return epochDate
+  end
 end
 
 local function dateAtInterval(baseDate, interval, dateList, unit)
@@ -421,8 +427,7 @@ local function calculatePeriods(dates, config)
     local count = stripLatestPrefix:match("[+-]?%d+")
     local interval = stripLatestPrefix:match("%a+")
 
-    local latestDateEpoch = dateToEpoch(dates[#dates])
-    local diffEpoch = calcEpochDiff(latestDateEpoch, count, interval)
+    local diffEpoch = calcEpochDiff(dates[#dates], count, interval)
     force_start = epochToDate(diffEpoch)
   end
   if force_end == 'LATEST' then
@@ -487,8 +492,7 @@ local function calculatePeriods(dates, config)
       local unit = getIntervalUnit(force_period)
       local interval = getIntervalLetter(unit)
       if isValidPeriod(size, unit) then
-        if (calcEpochDiff(dateToEpoch(dates[1]), size, interval) == dateToEpoch(dates[2])) or
-            (unit == 'month' and dateToEpoch(addMonthsToDate(dates[1], size)) == dateToEpoch(dates[2])) then
+        if (calcEpochDiff(dates[1], size, interval) == dateToEpoch(dates[2])) then
           periods[#periods + 1] = {size=size, dates=dates, unit=unit}
           datesInPeriods[dates[1]] = true
           datesInPeriods[dates[2]] = true
@@ -509,32 +513,21 @@ local function calculatePeriods(dates, config)
         else
           size, unit = calcIntervalFromSeconds(diff1)
         end
+        local interval = getIntervalLetter(unit)
         if isValidPeriod(size, unit) then
           local dateList = {}
-          dateList[1] = dates[1] -- set start time to first time
-          for i, date1 in ipairs(dates) do
-            local dateEpoch1 = dateToEpoch(date1)
-            if dates[i+1] == nil then
-              dateList[#dateList + 1] = date1
+          for i = 1, #dates do
+            dateList[#dateList + 1] = dates[i]
+            if (dates[i+1] == nil) or
+                (calcEpochDiff(dates[i], size, interval) ~= dateToEpoch(dates[i+1])) then
               for _, dateEntry in ipairs(dateList) do
                 datesInPeriods[dateEntry] = true
               end
-              periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-            else
-              local dateEpoch2 = dateToEpoch(dates[i+1])
-              local diff = math.abs(dateEpoch2 - dateEpoch1)
-              if (diff ~= diff1 and unit ~= 'month') or
-                  (unit == 'month' and dateToEpoch(addMonthsToDate(dates[1], size)) ~= dateToEpoch(dates[2])) then
-                dateList[#dateList + 1] = date1
-                local period = {}
-                period[1] = dateList[1]
-                period[2] = dateList[2]
-                periods[#periods + 1] = {size=size, dates=period, unit=unit}
-                datesInPeriods[dateList[1]] = true
-                datesInPeriods[dateList[2]] = true
-                dateList[1] = dates[i+1]
-                dateList[2] = nil
-              end
+              local period = {}
+              period[1] = dateList[1]
+              period[2] = dateList[#dateList]
+              periods[#periods + 1] = {size=size, dates=period, unit=unit}
+              dateList = {}
             end
           end
         end
@@ -609,13 +602,18 @@ local function calculatePeriods(dates, config)
     if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
       periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
       if period["unit"] == "minute" then
-       -- Remove the MM hack for minutes
-       periodStr = periodStr:sub(1, #periodStr - 1)
+        -- Remove the MM hack for minutes
+        periodStr = periodStr:sub(1, #periodStr - 1)
       end
     else
       periodStr =  string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][#period["dates"]], 0, 10) .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
     end
-    periodStrings[#periodStrings + 1] = periodStr
+    -- Sanity check: make sure that end date in the period is no earlier than the start date in the period
+    if dateToEpoch(period["dates"][1]) <= dateToEpoch(period["dates"][#period["dates"]]) then
+      periodStrings[#periodStrings + 1] = periodStr
+    else
+      redis.call('ECHO', 'Warning: generated period ' .. periodStr .. ' has a start date that is later than its end date. This period will be excluded.')
+    end
   end
   --Not needed since values are stored in an unordered list in Redis
   --table.sort(periodStrings)
