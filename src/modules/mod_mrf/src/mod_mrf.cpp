@@ -428,7 +428,7 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         int result = vfile_pread(r, lmgr, 
             16 * (1 + (boffset / 96)), fname, "MRF_INDEX");
         if(result == -1)
-            return "MRF data file not found";
+            return "MRF index file not found";
         else if (16 != result)
             return "Bitmap read error";
 
@@ -448,7 +448,6 @@ static const char *read_index(request_rec *r, range_t *idx, apr_off_t offset, co
         // Adjust the offset before reading the data
         offset = cfg->can_hsize + blockn * BSZ + offset % BSZ;
     }
-
     if (sizeof(range_t) != vfile_pread(r, dst, offset, fname, "MRF_INDEX"))
         return "Read error";
 
@@ -554,7 +553,7 @@ static int handler(request_rec *r) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=mod_mrf_index_read, duration=%ld, IDX=%s",
         apr_time_now() - start_index_lookup, idx_fname);
     const char *message = read_index(r, &index, tidx_offset, idx_fname);
-    if (message && strcmp(message, "MRF data file not found") == 0) { // Not Found error
+    if (message && strcmp(message, "MRF index file not found") == 0) { // Not Found error
         REQ_NF_IF(message);
     } else if (message) {
         if (!apr_strnatcmp(idx_fname, cfg->idx.name)) {
@@ -593,8 +592,7 @@ static int handler(request_rec *r) {
     storage_manager img(apr_palloc(r->pool, size), size);
 
     SERR_IF(!img.buffer, "Memory allocation error in mod_mrf");
-    SERR_IF(img.size != static_cast<size_t>(vfile_pread(r, img, index.offset, name)),
-        "Data read error");
+    REQ_NF_IF(img.size != static_cast<size_t>(vfile_pread(r, img, index.offset, name)));
 
     // Pass-through header
     const char *layer_id_request = apr_table_get(r->notes, "Layer-Identifier-Request");
