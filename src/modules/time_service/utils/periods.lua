@@ -360,6 +360,30 @@ end
 --   end
 --end
 
+local function findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+  -- Loop through all the dates and keep track of when periods begin and end
+  local interval = getIntervalLetter(unit)
+  if isValidPeriod(size, unit) then
+    local dateList = {}
+    for i = 1, #dates do
+      if not datesInPeriods[dates[i]] then
+        dateList[#dateList + 1] = dates[i]
+        if (dates[i+1] == nil) or
+            (calcEpochDiff(dates[i], size, interval) ~= dateToEpoch(dates[i+1])) then
+          for _, dateEntry in ipairs(dateList) do
+            datesInPeriods[dateEntry] = true
+          end
+          local period = {}
+          period[1] = dateList[1]
+          period[2] = dateList[#dateList]
+          periods[#periods + 1] = {size=size, dates=period, unit=unit}
+          dateList = {}
+        end
+      end
+    end
+  end
+end
+
 local function calculatePeriods(dates, config)
   -- Parse time configurations
   local configs = {}
@@ -513,50 +537,21 @@ local function calculatePeriods(dates, config)
         else
           size, unit = calcIntervalFromSeconds(diff1)
         end
-        local interval = getIntervalLetter(unit)
-        if isValidPeriod(size, unit) then
-          local dateList = {}
-          for i = 1, #dates do
-            dateList[#dateList + 1] = dates[i]
-            if (dates[i+1] == nil) or
-                (calcEpochDiff(dates[i], size, interval) ~= dateToEpoch(dates[i+1])) then
-              for _, dateEntry in ipairs(dateList) do
-                datesInPeriods[dateEntry] = true
-              end
-              local period = {}
-              period[1] = dateList[1]
-              period[2] = dateList[#dateList]
-              periods[#periods + 1] = {size=size, dates=period, unit=unit}
-              dateList = {}
-            end
-          end
-        end
-      else -- More complicated scenarios
-        -- TODO: Detect breaks in periods
+        findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+      else -- More complicated scenarios: when the first and second intervals are different
         -- Check for monthly periods
-        if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) then
+        if (calcEpochDiff(dates[1], 1, "M") == dateToEpoch(dates[2])) or
+            (calcEpochDiff(dates[2], 1, "M") == dateToEpoch(dates[3])) then
           local size = math.floor(diff1/2419200)
           local unit = "month"
-          local dateList = {}
-          dateList[1] = dates[1] -- set start time to first time
-          dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
-          periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
+          findPeriodsAndBreaks(dates, 1, unit, datesInPeriods, periods)
+        -- If not monthly, use seconds for subdaily and days otherwise
+        elseif (diff1<86400) then
+          local unit = "second"
+          findPeriodsAndBreaks(dates, 1, unit, datesInPeriods, periods)
         else
-          -- Use seconds for subdaily and days otherwise
           local unit = "day"
-          if (diff1<86400) then
-            unit = "second"
-            local dateList = {}
-            dateList[1] = dates[1] -- set start time to first time
-            dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
-            periods[#periods + 1] = {size=1, dates=dateList, unit=unit}
-          else
-            for _, date in ipairs(dates) do
-              if not datesInPeriods[date] then
-                periods[#periods + 1] = {size=1, dates={date}, unit=unit}
-              end
-            end
-          end
+          findPeriodsAndBreaks(dates, 1, unit, datesInPeriods, periods)
         end
       end
     else
