@@ -906,6 +906,105 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_periods_lone_start_date_detect_all_4_days(self):
+        # Test when there's a gap between the earliest date and the rest of the dates
+        # and there's no period interval duration specified in the time config
+        # and it should be detected to be a 4-day period
+        num_dates = 30
+        date_start = datetime.datetime(2022, 6, 27)
+        # calculate the datetimes between 2022-06-27 and 2022-10-21
+        date_lst = [str((date_start + datetime.timedelta(days=idx * 4)).date()) for idx in range(num_dates)]
+        date_lst = ["2022-06-21"] + date_lst
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Lone_Start_Date_Detect_All_4_Days', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2022-06-21/2022-06-21/P4D',
+                    '2022-06-27/2022-10-21/P4D']
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_lone_start_date_detect_all_8_days(self):
+        # Test when there's a gap between the earliest date and the rest of the dates
+        # and there's no period interval duration specified in the time config
+        # and it should be detected to be an 8-day period
+        num_dates = 30
+        date_start = datetime.datetime(2022, 6, 27)
+        # calculate the datetimes between 2022-06-27 and 2023-02-14
+        date_lst = [str((date_start + datetime.timedelta(days=idx * 8)).date()) for idx in range(num_dates)]
+        date_lst = ["2022-06-10"] + date_lst
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Lone_Start_Date_Detect_All_8_Days', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2022-06-10/2022-06-10/P8D',
+                    '2022-06-27/2023-02-14/P8D']
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_lone_start_date_detect_all_16_days(self):
+        # Test when there's a gap between the earliest date and the rest of the dates
+        # and there's no period interval duration specified in the time config
+        # and it should be detected to be an 16-day period
+        num_dates = 30
+        date_start = datetime.datetime(2022, 6, 27)
+        # calculate the datetimes between 2022-06-27 and 2023-10-04
+        date_lst = [str((date_start + datetime.timedelta(days=idx * 16)).date()) for idx in range(num_dates)]
+        date_lst = ["2022-06-01"] + date_lst
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Lone_Start_Date_Detect_All_16_Days', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2022-06-01/2022-06-01/P16D',
+                    '2022-06-27/2023-10-04/P16D']
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_periods_lone_start_date_detect_all_months(self):
         # Test when there's a gap between the earliest date and the rest of the dates
         # and there's no period interval duration specified in the time config
@@ -923,6 +1022,38 @@ class TestTimeUtils(unittest.TestCase):
 
         periods = ['2020-01-01/2020-01-01/P1M',
                     '2020-06-01/2022-11-01/P1M']
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+    
+    def test_periods_lone_start_date_detect_all_3_months(self):
+        # Test when there's a gap between the earliest date and the rest of the dates
+        # and there's no period interval duration specified in the time config
+        num_dates = 30
+        date_start = datetime.datetime(2020, 6, 1)
+        # calculate the datetimes between 2020-06-01 and 2027-09-01
+        date_lst = [str((date_start + relativedelta(months=idx * 3)).date()) for idx in range(num_dates)]
+        date_lst = ["2020-01-01"] + date_lst
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Lone_Start_Date_Detect_All_3_Months', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2020-01-01/2020-01-01/P3M',
+                    '2020-06-01/2027-09-01/P3M']
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()

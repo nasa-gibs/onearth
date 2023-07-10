@@ -539,19 +539,36 @@ local function calculatePeriods(dates, config)
         end
         findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
       else -- More complicated scenarios: when the first and second intervals are different
+        local size = 1
         -- Check for monthly periods
         if (calcEpochDiff(dates[1], 1, "M") == dateToEpoch(dates[2])) or
             (calcEpochDiff(dates[2], 1, "M") == dateToEpoch(dates[3])) then
-          local size = math.floor(diff1/2419200)
           local unit = "month"
-          findPeriodsAndBreaks(dates, 1, unit, datesInPeriods, periods)
+          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+        -- Check for 3-month periods
+        elseif (calcEpochDiff(dates[1], 3, "M") == dateToEpoch(dates[2])) or
+            (calcEpochDiff(dates[2], 3, "M") == dateToEpoch(dates[3])) then
+          local size = 3
+          local unit = "month"
+          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
         -- If not monthly, use seconds for subdaily and days otherwise
         elseif (diff1<86400) then
           local unit = "second"
-          findPeriodsAndBreaks(dates, 1, unit, datesInPeriods, periods)
+          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
         else
           local unit = "day"
-          findPeriodsAndBreaks(dates, 1, unit, datesInPeriods, periods)
+          local minInterval = diff1
+          for i = 2, #dates - 1 do
+            local currentInterval = math.abs(dateToEpoch(dates[i]) - dateToEpoch(dates[i + 1]))
+            if currentInterval < minInterval then
+              minInterval = currentInterval
+            end
+          end
+          -- Check if it's a 4-day, 8-day, or 16-day period
+          if minInterval == 345600 or minInterval == 691200 or 1382400 then
+            size, unit = calcIntervalFromSeconds(minInterval)
+          end
+          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
         end
       end
     else
