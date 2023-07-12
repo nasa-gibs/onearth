@@ -627,6 +627,17 @@ local function calculatePeriods(dates, config)
       redis.call('ECHO', 'Warning: generated period ' .. periodStr .. ' has a start date that is later than its end date. This period will be excluded.')
     end
   end
+
+  -- Truncate to the most recent 100 periods if there are more than 100 periods
+  if #periodStrings > 100 then
+    table.sort(periodStrings)
+    local truncated = {}
+    for i = #periodStrings - 99, #periodStrings do
+      truncated[#truncated+1] = periodStrings[i]
+    end
+    periodStrings = truncated
+  end
+
   --Not needed since values are stored in an unordered list in Redis
   --table.sort(periodStrings)
   --redis.call('ECHO', dump(periodStrings))
