@@ -111,7 +111,15 @@ local function getDateList(endpointConfig)
         end
         dateServiceUri = dateServiceUri .. keyString
     end
-    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(300))
+
+    local success, headers, stream = pcall(function ()
+        return assert(request.new_from_uri(dateServiceUri):go(300))
+    end)
+    if not success then
+       print("Error: " .. headers .. " -- Skipping periods for this layer")
+       return {}
+    end
+    
     local body = assert(stream:get_body_as_string())
     if headers:get ":status" ~= "200" then
         print("Error contacting date service: " .. body)
