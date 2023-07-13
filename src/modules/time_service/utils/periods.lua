@@ -415,27 +415,6 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
 
-  -- If the force_start date isn't a date we have, then treat it as DETECT
-  if force_start ~= 'DETECT' and force_start:sub(1,6) ~= 'LATEST' then
-    local has_force_start = false
-    local forced_epoch = dateToEpoch(force_start)
-    for i = 1, #dates do
-      if forced_epoch == dateToEpoch(dates[i]) then
-        -- remove all dates prior to the forced_start date, we don't need them
-        local new_dates = {}
-        for j = i,#dates do
-          new_dates[#new_dates + 1] = dates[j]
-        end
-        dates = new_dates
-        has_force_start = true
-        break
-      end
-    end
-    if not has_force_start then
-      force_start = 'DETECT'
-    end
-  end
-  
   -- Don't return any periods if DETECT and no dates available
   if dates[1] == nil then
     if force_start == 'DETECT' or force_end == 'DETECT' then

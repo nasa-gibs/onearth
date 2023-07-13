@@ -656,13 +656,13 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_periods_config_force_start_nodate(self):
-        # Tests when there's no data for the forced start date (should treat it like DETECT)
+        # Tests when there's no data for the forced start date (should still force the start date)
         test_layers = [('Test_ForceStart', '2019-01-01',
-                        '2019-01-01/2019-03-01/P1M'),
+                        '2017-01-01/2019-03-01/P1M'),
                        ('Test_ForceStart', '2019-02-01',
-                        '2019-01-01/2019-03-01/P1M'),
+                        '2017-01-01/2019-03-01/P1M'),
                        ('Test_ForceStart', '2019-03-01',
-                        '2019-01-01/2019-03-01/P1M')]
+                        '2017-01-01/2019-03-01/P1M')]
         db_keys = ['epsg4326']
         config = '2017-01-01/DETECT/P1M'
         add_redis_config(test_layers, db_keys, config)
@@ -858,6 +858,45 @@ class TestTimeUtils(unittest.TestCase):
                     '2021-12-19T00:00:00Z/2022-01-17T00:00:00Z/PT10M',
                     '2023-02-21T00:00:00Z/2023-02-28T23:50:00Z/PT10M',
                     '2023-04-01T03:50:00Z/2023-06-30T03:50:00Z/PT10M'
+                    ]
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_periods_config_multiple_force_latest_subdaily(self):
+        # Test multiple configs on subdaily times with forced periods
+        num_dates = 127400
+        date_start = datetime.datetime(2021, 5, 29, 0, 0, 0, 0)
+        # calculate the datetimes between 2021-01-26T10:40:00 and 2023-06-30T03:50:00
+        date_lst = [str((date_start + datetime.timedelta(minutes=idx * 10))) for idx in range(num_dates)]
+        # add the "T" between the date and the time, and also remove some entries to test whether its looking for breaks in periods
+        date_lst_filtered = []
+        for i in range(len(date_lst)):
+            # arbitrarily remove every 10th and every 11th entries
+            if i % 10 == 0 or i % 11 == 0:
+                date_lst_filtered.append(date_lst[i][:10] + 'T' + date_lst[i][11:])
+        test_layers = []
+        for date_entry in date_lst_filtered:
+            test_layers.append(('Test_Multiple_Config_Force_Latest_Subdaily', date_entry))
+        db_keys = ['epsg4326']
+        config = '2021-05-29T05:00:00/2022-01-16T23:50:00/PT10M'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2022-01-17T00:00:00/LATEST/PT10M'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2021-05-29T05:00:00Z/2022-01-16T23:50:00Z/PT10M',
+                    '2022-01-17T00:00:00Z/2023-10-30T15:50:00Z/PT10M'
                     ]
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
