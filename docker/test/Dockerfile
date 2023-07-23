@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.7.1
+FROM nasagibs/onearth-deps:2.7.3
 
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
@@ -217,7 +217,7 @@ RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf &&
 RUN cp /home/oe2/onearth/docker/00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp /home/oe2/onearth/docker/10-worker.conf /etc/httpd/conf.modules.d/
 
-ENV ONEARTH_VERSION=2.7.1
+ENV ONEARTH_VERSION=2.7.3
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts
