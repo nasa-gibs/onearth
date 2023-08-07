@@ -2624,7 +2624,7 @@ else:
     # Close file.
     mrf_file.close()
     # Get largest dimension, usually X.
-    actual_size=max([int(sizeX), int(sizeY)])
+    actual_size = max([float(sizeX), float(sizeY)])
 
 # Insert if there are input tiles to process
 if len(alltiles) > 0 and nocopy==True:
