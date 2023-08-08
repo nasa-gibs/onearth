@@ -70,13 +70,15 @@ def seed_redis_data(layers, db_keys=None):
         for key in db_keys:
             db_keystring += key + ':'
 
-    for layer in layers:
-        r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})
+    # Don't require there to be dates added to a layer in order to run periods.lua
+    if len(layers[0]) > 1:
+        for layer in layers:
+            r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})
 
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
-    date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])])
+    date_script(keys=['{0}layer:{1}'.format(db_keystring, layers[0][0])])
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -873,6 +875,28 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'], periods))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
+
+    def test_periods_config_latest_no_dates(self):
+        # Tests that using LATEST when there are no dates available will successfully return no periods
+        layer_name = 'Test_Periods_Config_Latest_No_Dates'
+        db_keys = ['epsg4326']
+        config = 'LATEST-90D/LATEST/PT10M'
+        add_redis_config([[layer_name]], db_keys, config)
+        seed_redis_data([[layer_name]], db_keys=db_keys)
+        
+        periods = []
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        layer_res = res.get(layer_name)
+        self.assertIsNotNone(
+            layer_res,
+            'Layer {0} not found in list of all layers'.format(layer_name))
+        self.assertEqual(
+            periods, layer_res['periods'],
+            'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+            .format(layer_name, layer_res['periods'], periods))
+        if not DEBUG:
+            remove_redis_layer([layer_name], db_keys)
 
     def test_periods_config_multiple_force_latest_subdaily(self):
         # Test multiple configs on subdaily times with forced periods

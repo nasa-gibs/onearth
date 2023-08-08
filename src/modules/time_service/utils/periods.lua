@@ -415,10 +415,14 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
 
-  -- Don't return any periods if DETECT and no dates available
+  -- Don't return any periods if DETECT or LATEST and no dates available
   if dates[1] == nil then
     if force_start == 'DETECT' or force_end == 'DETECT' then
       redis.call('ECHO', 'No dates available for DETECT')
+      return {}
+    end
+    if force_start:sub(1, 6) == 'LATEST' or force_end == 'LATEST' then
+      redis.call('ECHO', 'No dates available for LATEST')
       return {}
     end
   end
