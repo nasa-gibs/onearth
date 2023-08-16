@@ -467,10 +467,25 @@ class TestModTwms(unittest.TestCase):
             'TWMS current JPG request does not match what\'s expected. URL: ' +
             req_url)
 
-    def test_request_twms_time(self):
+    def test_request_twms_date(self):
         for date, ref_hash in [('2012-01-01',
                                 '3f84501587adfe3006dcbf59e67cd0a3'),
                                ('2015-01-01',
+                                '9b38d90baeeebbcadbc8560a29481a5e')]:
+            req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
+                base_url, self.endpoint_prefix_twms,
+                self.endpoint_prefix_twms + '_date', date)
+
+            check_result = check_tile_request(req_url, ref_hash)
+            self.assertTrue(
+                check_result,
+                'TWMS JPG request does not match what\'s expected. URL: ' +
+                req_url)
+
+    def test_request_twms_datetime(self):
+        for date, ref_hash in [('2012-01-01T00:00:00Z',
+                                '3f84501587adfe3006dcbf59e67cd0a3'),
+                               ('2015-01-01T00:00:00.000Z',
                                 '9b38d90baeeebbcadbc8560a29481a5e')]:
             req_url = '{}/{}/{}/twms.cgi?request=GetMap&layers=test&srs=EPSG:4326&format=image%2Fjpeg&styles=&width=512&height=512&bbox=-180,-198,108,90&time={}'.format(
                 base_url, self.endpoint_prefix_twms,
