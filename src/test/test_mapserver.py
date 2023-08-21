@@ -30,24 +30,7 @@ import json
 import html
 from xml.etree import cElementTree as ElementTree
 
-from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_wmts_error, get_file_hash, check_apache_running
-
-def check_tile_request_save(url, ref_hash, layername):
-    """
-    Checks to see if Apache is running, downloads a tile from the specified URL,
-    and checks it against a hash value. Returns true or false.
-    Arguments
-        url -- the URL of the tile to be tested
-        ref_hash -- the hash that the file will be tested against.
-    """
-    check_apache_running()
-    tile = get_url(url)
-    with open("/results/{}.png".format(layername), "wb+") as f:
-        f.write(tile.read())
-    tile_hash = get_file_hash(tile)
-    print(layername + "tile_hash: " + tile_hash)
-    hash_check = tile_hash == ref_hash
-    return hash_check
+from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_wmts_error
 
 DEBUG = False
 
