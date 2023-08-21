@@ -162,10 +162,15 @@ function onearth_wms_time_service.handler(endpointConfig)
 
         if time_string then
             if time_string ~= "default" then
-                if string.find(time_string, '^(.+)/(.+)/P1D$') then
-                    local start_time, end_time = string.match(time_string, '^(.+)/(.+)/P1D$')
+                local start_time, end_time
+                if string.find(time_string, '^(.+)/(.+)/.*$') then
+                    start_time, end_time = string.match(time_string, '^(.+)/(.+)/.*$')
+                elseif string.find(time_string, '^(.+)/(.+)$') then
+                    start_time, end_time = string.match(time_string, '^(.+)/(.+)$')
+                end
+                if start_time then
                     if not validate_time(start_time) or not validate_time(end_time) then
-                        return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time range format, must be YYYY-MM-DD/YYYY-MM-DD/P1D or YYYY-MM-DDThh:mm:ssZ/YYYY-MM-DDThh:mm:ssZ/P1D")
+                        return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time range format, must be YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ/YYYY-MM-DDThh:mm:ssZ/interval")
                     end
                     time_string = start_time
                     query_string = set_query_param("time", time_string, query_string)

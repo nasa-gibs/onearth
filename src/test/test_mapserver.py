@@ -116,12 +116,24 @@ class TestMapserver(unittest.TestCase):
         6. Request tile with date using a date range via WMS
         """
         ref_hash = '31692be7d450e2f585590674550424b8'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25/P1D'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25'
         if DEBUG:
             print('\nTesting: Request tile with using a date range via WMS')
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS date request using a date range does not match what\'s expected. URL: ' + req_url)
+
+    def test_request_wms_date_range__interval_layer(self):
+        """
+        7. Request tile with date using a date range including an interval via WMS
+        """
+        ref_hash = '31692be7d450e2f585590674550424b8'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25/P1D'
+        if DEBUG:
+            print('\nTesting: Request tile with using a date range via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS date request using a date range with an interval does not match what\'s expected. URL: ' + req_url)
 
     def test_wms_get_capabilities_1_1_1(self):
         """
