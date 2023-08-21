@@ -70,9 +70,6 @@ sleep 2
 /usr/bin/redis-cli  -n 0 DEL layer:snap_test_3b
 /usr/bin/redis-cli  -n 0 SET layer:snap_test_3b:default "2015-01-01"
 /usr/bin/redis-cli  -n 0 SADD layer:snap_test_3b:periods "2015-01-01/2016-01-01/P3M"
-/usr/bin/redis-cli  -n 0 DEL layer:test_time_range
-/usr/bin/redis-cli  -n 0 SET layer:test_time_range:default "2015-01-01"
-/usr/bin/redis-cli  -n 0 SADD layer:test_time_range:periods "2015-01-01/2015-01-03/P1D"
 /usr/bin/redis-cli  -n 0 DEL layer:snap_test_3c
 /usr/bin/redis-cli  -n 0 SET layer:snap_test_3c:default "2000-01-01"
 /usr/bin/redis-cli  -n 0 SADD layer:snap_test_3c:periods "1990-01-01/2016-01-01/P1Y"

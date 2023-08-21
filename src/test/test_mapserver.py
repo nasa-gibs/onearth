@@ -30,7 +30,24 @@ import json
 import html
 from xml.etree import cElementTree as ElementTree
 
-from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_wmts_error
+from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_wmts_error, get_file_hash, check_apache_running
+
+def check_tile_request_save(url, ref_hash, layername):
+    """
+    Checks to see if Apache is running, downloads a tile from the specified URL,
+    and checks it against a hash value. Returns true or false.
+    Arguments
+        url -- the URL of the tile to be tested
+        ref_hash -- the hash that the file will be tested against.
+    """
+    check_apache_running()
+    tile = get_url(url)
+    with open("/results/{}.png".format(layername), "wb+") as f:
+        f.write(tile.read())
+    tile_hash = get_file_hash(tile)
+    print(layername + "tile_hash: " + tile_hash)
+    hash_check = tile_hash == ref_hash
+    return hash_check
 
 DEBUG = False
 
@@ -110,18 +127,19 @@ class TestMapserver(unittest.TestCase):
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
-    """
+    
     def test_request_wms_date_range_layer(self):
-        
-        5. Request tile with date from "year" layer via WMS
-        
+        """
+        6. Request tile with date using a date range via WMS
+        """
         ref_hash = '31692be7d450e2f585590674550424b8'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_time_range&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2015-01-01/2015-01-01/P1D'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25/P1D'
         if DEBUG:
-            print('\nTesting: Request tile with date from "year" layer via WMS')
+            print('\nTesting: Request tile with using a date range via WMS')
             print('URL: ' + req_url)
-        check_result = check_tile_request(req_url, ref_hash, "date_range_result")
-        self.assertTrue(check_result, 'WMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)"""
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS date request using a date range does not match what\'s expected. URL: ' + req_url)
+
     def test_wms_get_capabilities_1_1_1(self):
         """
         8. Request WMS GetCapabilities 1.1.1

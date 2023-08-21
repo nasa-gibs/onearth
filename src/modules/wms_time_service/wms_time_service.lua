@@ -29,6 +29,19 @@ local function get_query_param(param, query_string)
     return date_string
 end
 
+local function set_query_param(param, new_value, query_string)
+    local query_parts = split("&", query_string)
+    local new_query_parts = {}
+    for _, part in pairs(query_parts) do
+        local query_pair = split("=", part)
+        if string.lower(query_pair[1]) == param then
+            query_pair[2] = new_value
+        end
+        new_query_parts[#new_query_parts + 1] = table.concat(query_pair, "=")
+    end
+    return table.concat(new_query_parts, "&")
+end
+
 function findLast(s, str)
     local i=s:match(".*"..str.."()")
     if i==nil then return nil else return i-1 end
@@ -154,6 +167,8 @@ function onearth_wms_time_service.handler(endpointConfig)
                     if not validate_time(start_time) or not validate_time(end_time) then
                         return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time range format, must be YYYY-MM-DD/YYYY-MM-DD/P1D or YYYY-MM-DDThh:mm:ssZ/YYYY-MM-DDThh:mm:ssZ/P1D")
                     end
+                    time_string = start_time
+                    query_string = set_query_param("time", time_string, query_string)
                 elseif validate_time(time_string) == false then
                     return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ")
                 end
