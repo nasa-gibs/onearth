@@ -185,6 +185,13 @@ function onearth_wms_time_service.handler(endpointConfig)
         local redirect_url = notes["URI"]:gsub("wms", "mapserver", 1) .. "?" .. query_string
         req = req:lower()
         if req == "getmap" then
+            local format = get_query_param("format", query_string)
+            if not format then
+                return sendResponse(200, 'No FORMAT parameter specified')
+            end
+            if format ~= "image%2Fpng" and format ~= "image/png" and format ~= "image%2Fjpeg" and format ~= "image/jpeg" then
+                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be image/png or image/jpeg for GetMap requests.")
+            end
             local layers_string = get_query_param("layers", query_string)
             local layers_url = ""
 
@@ -226,6 +233,14 @@ function onearth_wms_time_service.handler(endpointConfig)
             end
 
             redirect_url = redirect_url .. layers_url
+        elseif req == "getfeature" then
+            local format = get_query_param("outputformat", query_string)
+            if not format then
+                return sendResponse(200, 'No FORMAT parameter specified')
+            end
+            if format ~= "csv" and format ~= "geojson" then
+                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be csv or geojson for GetFeature requests")
+            end
         end
 
         return sendResponseRedirect(redirect_url)

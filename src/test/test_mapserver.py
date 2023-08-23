@@ -251,7 +251,7 @@ class TestMapserver(unittest.TestCase):
         """
         13. Request erroneous layer via WMS
         """
-        ref_hash = '8ff06e9113d2ebbfebb2505c2c8e864e'
+        ref_hash = 'cfbe0fe497a8b9278a21d36e7dac8704'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=blah&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request erroneous layer via WMS')
@@ -536,7 +536,7 @@ class TestMapserver(unittest.TestCase):
         """
         32. Request missing layers via WMS
         """
-        ref_hash = '8ff06e9113d2ebbfebb2505c2c8e864e'
+        ref_hash = 'cfbe0fe497a8b9278a21d36e7dac8704'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request missing layers via WMS')
@@ -621,7 +621,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_missing_shapefile(self):
         """
-        39. Test requesting an vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
+        39. Test requesting a vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
             This test ensures that the internal directory path doesn't get printed by the msShapefileOpen() error that occurs.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Layer_Missing_Shapefile&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
@@ -647,6 +647,62 @@ class TestMapserver(unittest.TestCase):
 
         self.assertTrue(decodedResponse == expectedResponse,
                         'The response for requesting a layer with a missing shapefile does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
+
+    def test_request_invalid_getmap_format(self):
+        """
+        40. Test a GetMap request using an invalid format.
+        """
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=cr2&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
+        if DEBUG:
+            print('\nTesting: Invalid WMS Format')
+            print('URL: ' + req_url)
+
+        response = get_url(req_url).read()
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/InvalidGetMapFormatResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for performing a GetMap request with an invalid format does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
+        
+    def test_request_invalid_getfeature_format(self):
+        """
+        41. Test a GetFeature request using an invalid format.
+        """
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=gojson'
+        if DEBUG:
+            print('\nTesting: Invalid WMS Format')
+            print('URL: ' + req_url)
+
+        response = get_url(req_url).read()
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/InvalidGetFeatureFormatResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for performing a GetFeature request with an invalid format does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
     # TEARDOWN
 
