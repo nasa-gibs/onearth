@@ -12,7 +12,7 @@ LAYER
         END
         ${data_xml}
         PROJECTION
-                "init=${epsg_code}"
+                ${proj_params}
         END
         ${validation_info}
         ${class_style}
