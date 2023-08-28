@@ -239,7 +239,7 @@ function onearth_wms_time_service.handler(endpointConfig)
                 return sendResponse(200, 'No FORMAT parameter specified')
             end
             if format ~= "csv" and format ~= "geojson" then
-                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be csv or geojson for GetFeature requests")
+                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be csv or geojson for GetFeature requests.")
             end
         end
 
