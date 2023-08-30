@@ -198,8 +198,6 @@ class TestTimeUtils(unittest.TestCase):
         res = r.json()
         for layer in test_layers:
             layer_res = res.get(layer[0])
-            print("MUH EXPECTD PERIODS:", layer[2])
-            print("MUH ACTUAL PERIODS:", layer_res['periods'])
             self.assertIsNotNone(
                 layer_res,
                 'Layer {0} not found in list of all layers'.format(layer[0]))
