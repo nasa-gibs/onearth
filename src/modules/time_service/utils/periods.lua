@@ -512,8 +512,8 @@ local function calculatePeriods(dates, config)
       -- Otherwise figure out the size and interval of the period based on first 3 values.
       local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
       local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
+      local size, unit
       if (diff1 == diff2) or (force_period ~= 'DETECT') then
-        local size, unit
         if (force_period ~= 'DETECT') then
           size = tonumber(string.match(force_period, "%d+"))
           unit = getIntervalUnit(force_period)
@@ -522,37 +522,32 @@ local function calculatePeriods(dates, config)
         end
         findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
       else -- More complicated scenarios: when the first and second intervals are different
-        local size = 1
-        -- Check for monthly periods
-        if (calcEpochDiff(dates[1], 1, "M") == dateToEpoch(dates[2])) or
-            (calcEpochDiff(dates[2], 1, "M") == dateToEpoch(dates[3])) then
-          local unit = "month"
-          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
-        -- Check for 3-month periods
-        elseif (calcEpochDiff(dates[1], 3, "M") == dateToEpoch(dates[2])) or
-            (calcEpochDiff(dates[2], 3, "M") == dateToEpoch(dates[3])) then
-          local size = 3
-          local unit = "month"
-          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
-        -- If not monthly, use seconds for subdaily and days otherwise
-        elseif (diff1<86400) then
-          local unit = "second"
-          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
-        else
-          local unit = "day"
-          local minInterval = diff1
-          for i = 2, #dates - 1 do
-            local currentInterval = math.abs(dateToEpoch(dates[i]) - dateToEpoch(dates[i + 1]))
-            if currentInterval < minInterval then
-              minInterval = currentInterval
-            end
+        local minInterval = diff1
+        local minIntervalStartDate, minIntervalEndEpoch
+        for i = 2, #dates - 1 do
+          local currentInterval = math.abs(dateToEpoch(dates[i]) - dateToEpoch(dates[i + 1]))
+          if currentInterval < minInterval then
+            minInterval = currentInterval
+            minIntervalStartDate = dates[i]
+            minIntervalEndEpoch = dateToEpoch(dates[i + 1])
           end
-          -- Check if it's a 4-day, 8-day, or 16-day period
-          if minInterval == 345600 or minInterval == 691200 or 1382400 then
+        end
+        -- Check for monthly interval if it's at least 28 days
+        if minInterval >= 2419200 then
+          local i = 1
+          while dateToEpoch(addMonthsToDate(minIntervalStartDate, i)) < minIntervalEndEpoch do
+            i = i + 1
+          end
+          if dateToEpoch(addMonthsToDate(minIntervalStartDate, i)) == minIntervalEndEpoch then
+            size = i
+            unit = "month"
+          else
             size, unit = calcIntervalFromSeconds(minInterval)
           end
-          findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+        else
+          size, unit = calcIntervalFromSeconds(minInterval)
         end
+        findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
       end
     else
       -- Leftover times are likely loners
