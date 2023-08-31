@@ -12,11 +12,10 @@ Pillow==9.4.0	    # https://pypi.org/project/Pillow/
 pyparsing==3.0.9    # https://pypi.org/project/pyparsing/
 pypng==0.20220715.0    # https://pypi.org/project/pypng/
 python-dateutil==2.8.1 # https://pypi.org/project/python-dateutil/
-redis==4.6.0        # https://pypi.org/project/redis/
+redis==5.0.0        # https://pypi.org/project/redis/
 requests==2.31.0    # https://pypi.org/project/requests/
 Rtree==1.0.1        # https://pypi.org/project/Rtree/
 setuptools==65.5.1  # https://pypi.org/project/setuptools/
-Shapely==2.0.1      # https://pypi.org/project/Shapely/
 unittest2==1.1.0    # https://pypi.org/project/unittest2/
 unittest-xml-reporting==3.2.0 # https://pypi.org/project/unittest-xml-reporting/
 urllib3==1.26.15       # https://pypi.org/project/urllib3/
