@@ -1,13 +1,4 @@
-<?xml version='1.0' encoding="UTF-8" standalone="no" ?>
-<!DOCTYPE WMT_MS_Capabilities SYSTEM "http://schemas.opengis.net/wms/1.1.1/WMS_MS_Capabilities.dtd"
- [
- <!ELEMENT VendorSpecificCapabilities EMPTY>
- ]>  <!-- end of DOCTYPE declaration -->
-
 <WMT_MS_Capabilities version="1.1.1">
-
-<!-- MapServer version 8.0.0 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WFS_SERVER SUPPORTS=WCS_SERVER SUPPORTS=OGCAPI_SERVER SUPPORTS=FASTCGI SUPPORTS=GEOS INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF -->
-
 <Service>
   <Name>OGC:WMS</Name>
   <Title>NASA Global Imagery Browse Services for EOSDIS WMS (Geographic - EPSG:4326)</Title>
@@ -229,9 +220,9 @@
         <Title>test_zenjpeg</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_zenjpeg"/>
@@ -242,9 +233,9 @@
         <Title>test_zenjpeg_convert</Title>
         <SRS>EPSG:4326</SRS>
         <SRS>EPSG:3857</SRS>
-        <LatLonBoundingBox minx="-180" miny="-90" maxx="180" maxy="90" />
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <BoundingBox SRS="EPSG:4326"
-                    minx="-180" miny="-90" maxx="180" maxy="90" />
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
         <MetadataURL type="TC211">
           <Format>text/xml</Format>
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_zenjpeg_convert"/>
