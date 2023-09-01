@@ -1,8 +1,0 @@
-protobuf==3.19.5
-wheel==0.37.1
-Fiona==1.8.19
-Shapely==1.5.16
-Rtree==0.9.7
-mapbox-vector-tile==1.2.1
-lxml==4.9.1
-urllib3==1.26.6

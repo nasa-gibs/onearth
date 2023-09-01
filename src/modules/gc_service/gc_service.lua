@@ -1,7 +1,7 @@
 local onearth_gc_service = {}
 
 local lfs = require "lfs"
-local lyaml = require "lyaml"
+local yaml = require "yaml"
 local request = require "http.request"
 local JSON = require "JSON"
 local xml = require "pl.xml"
@@ -111,7 +111,15 @@ local function getDateList(endpointConfig)
         end
         dateServiceUri = dateServiceUri .. keyString
     end
-    local headers, stream = assert(request.new_from_uri(dateServiceUri):go(300))
+
+    local success, headers, stream = pcall(function ()
+        return assert(request.new_from_uri(dateServiceUri):go(300))
+    end)
+    if not success then
+       print("Error: " .. headers .. " -- Skipping periods for this layer")
+       return {}
+    end
+    
     local body = assert(stream:get_body_as_string())
     if headers:get ":status" ~= "200" then
         print("Error contacting date service: " .. body)
@@ -206,7 +214,11 @@ end
 local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = lyaml.load(configFile:read("*all"))
+    local status, config = pcall(yaml.eval, configFile:read("*all"))
+    if not status then
+        print("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        return nil
+    end
     configFile:close()
 
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
@@ -227,6 +239,11 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     end
     local bbox = projInfo["bbox"] or projInfo["bbox84"]
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+
+    -- Maintain backward compatibility with layer titles that include unicode xB5
+    if string.find(layerTitle, "\\xB5") then
+        layerTitle = layerTitle:gsub("\\xB5", "µ")
+    end
 
     local tiledGroupNode = xml.elem("TiledGroup", {
         xml.new("Name"):text(layerName),
@@ -308,7 +325,10 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     end
     
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode, targetEpsgCode)
+        node = makeTiledGroupFromConfig(layerConfigSource, tmsDefs, epsgCode, targetEpsgCode)
+        if node ~= nil then
+            nodeList[1] = node
+        end
     end
 
     if fileAttrs["mode"] == "directory" then
@@ -316,8 +336,11 @@ local function getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
         for file in lfs.dir(layerConfigSource) do
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
-                nodeList[#nodeList + 1] = makeTiledGroupFromConfig(layerConfigSource .. "/" .. file,
+                node = makeTiledGroupFromConfig(layerConfigSource .. "/" .. file,
                  tmsDefs, epsgCode, targetEpsgCode)
+                if node ~= nil then
+                    nodeList[#nodeList + 1] = node
+                end
             end
         end
     end
@@ -387,7 +410,11 @@ end
 local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = lyaml.load(configFile:read("*all"))
+    local status, config = pcall(yaml.eval, configFile:read("*all"))
+    if not status then
+        print("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        return nil
+    end
     configFile:close()
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
@@ -395,6 +422,11 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     local layerAbstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
     -- local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+
+    -- Maintain backward compatibility with layer titles that include unicode xB5
+    if string.find(layerTitle, "\\xB5") then
+        layerTitle = layerTitle:gsub("\\xB5", "µ")
+    end
 
     local layerElem = xml.new("Layer", {queryable="0"})
     layerElem:add_child(xml.new("Name"):text(layerId))
@@ -433,8 +465,12 @@ end
 local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, baseUriGC, baseUriMeta)
     -- Load and parse the YAML config file
     local configFile = assert(io.open(filename, "r"))
-    local config = lyaml.load(configFile:read("*all"))
+    local status, config = pcall(yaml.eval, configFile:read("*all"))
     configFile:close()
+    if not status then
+        print("ERROR: Failed to parse config " .. filename .. ": " .. config)
+        return nil
+    end
 
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
@@ -471,6 +507,10 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
 
     local layerElem = xml.elem("Layer")
 
+    -- Maintain backward compatibility with layer titles that include unicode xB5
+    if string.find(layerTitle, "\\xB5") then
+        layerTitle = layerTitle:gsub("\\xB5", "µ")
+    end
     layerElem:add_child(xml.new("ows:Title", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)))
 
     -- Get the information we need from the TMS definitions and add bbox node
@@ -512,6 +552,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     if config.metadata then
         for _, metadata in pairs(config.metadata) do
             local metadataNode = xml.new("ows:Metadata")
+            assert(type(metadata) == "table", "ERROR: metadata is not a table! It is probably a string. Layer config: " .. filename)
             for key, value in pairs(metadata) do
                 metadataNode:set_attrib(key, string.gsub(value, "{base_uri_meta}", baseUriMeta or ""))
             end
@@ -614,15 +655,21 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     end
 
     if fileAttrs["mode"] == "file" then
-        nodeList[1] = buildFunc(layerConfigSource, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+        node = buildFunc(layerConfigSource, tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+        if node ~= nil then
+            nodeList[1] = node
+        end
     end
     if fileAttrs["mode"] == "directory" then
         -- Only going down a single directory level
         for file in lfs.dir(layerConfigSource) do
             if lfs.attributes(layerConfigSource .. "/" .. file)["mode"] == "file" and
                 string.sub(file, 0, 1) ~= "." then
-                nodeList[#nodeList + 1] = buildFunc(layerConfigSource .. "/" .. file,
+                node = buildFunc(layerConfigSource .. "/" .. file,
                  tmsDefs, tmsLimitsDefs, dateList, epsgCode, targetEpsgCode, endpointConfig["base_uri_gc"], endpointConfig["base_uri_meta"])
+                if node ~= nil then
+                    nodeList[#nodeList + 1] = node
+                end
             end
         end
     end
@@ -771,7 +818,10 @@ local function generateFromEndpointConfig()
     -- Load endpoint config
     assert(arg[1], "Must specifiy an endpoint config file!")
     local endpointConfigFile = assert(io.open(arg[1], "r"), "Can't open endpoint config file: " .. arg[1])
-    local endpointConfig = lyaml.load(endpointConfigFile:read("*all"))
+    local status, endpointConfig = pcall(yaml.eval, endpointConfigFile:read("*all"))
+    if not status then
+        error("Failed to parse endpoint config " .. arg[1] .. ": " .. endpointConfig)
+    end
     endpointConfigFile:close()
     if arg[2] == "--make_gts" then
         return makeGTS(endpointConfig)

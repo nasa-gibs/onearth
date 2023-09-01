@@ -110,20 +110,6 @@ local function dateToEpoch(dateStr)
   return yearSecCounter + ((doy - 1) * 86400) + (hour * 60 * 60)  + (minute * 60) + second
 end
 
-local function calcEpochDiff(epochDate, count, interval)
-  local intervalInSec
-  if interval == "Y" then intervalInSec = 31536000
-  elseif interval == "D" then intervalInSec = 86400
-  elseif interval == "H" then intervalInSec = 3600
-  elseif interval == "MM" then intervalInSec = 60
-  elseif interval == "S" then intervalInSec = 1
-  end
-  if epochDate and count and intervalInSec then 
-    epochDate = epochDate + ( count * intervalInSec )
-  end
-  return epochDate
-end
-
 local function calcIntervalFromSeconds(interval)
   if interval % 31536000 == 0 then
     return math.floor(interval / 31536000), "year"
@@ -193,8 +179,43 @@ local function addDaysToDate(date, days)
   local doy = calcDayOfYear(date)
   local year = tonumber(date:sub(1, 4))
   local daysInYear = getDaysInYear(year)
-  if doy + days <= daysInYear then
-    return dayOfYearToDate(doy + days, year)
+  while doy + days > daysInYear do
+    local remainingDays = daysInYear - doy
+    doy = 0
+    days = days - remainingDays
+    year = year + 1
+    daysInYear = getDaysInYear(year)
+  end
+  return dayOfYearToDate(doy + days, year)
+end
+
+local function addMonthsToDate(date, monthCount)
+  for i=1,monthCount do
+    local month = tonumber(date:sub(6, 7))
+    local year = tonumber(date:sub(1, 4))
+    local daysToAdd = getDaysInMonth(month, year)
+    date = addDaysToDate(date, daysToAdd)
+  end
+  return date
+end
+
+-- Takes date argument in string format, returns result as an epoch
+local function calcEpochDiff(date, count, interval)
+  if interval == "M" then
+    return dateToEpoch(addMonthsToDate(date, count))
+  else
+    local epochDate = dateToEpoch(date)
+    local intervalInSec
+    if interval == "Y" then intervalInSec = 31536000
+    elseif interval == "D" then intervalInSec = 86400
+    elseif interval == "H" then intervalInSec = 3600
+    elseif interval == "MM" then intervalInSec = 60
+    elseif interval == "S" then intervalInSec = 1
+    end
+    if epochDate and count and intervalInSec then 
+      epochDate = epochDate + ( count * intervalInSec )
+    end
+    return epochDate
   end
 end
 
@@ -339,6 +360,30 @@ end
 --   end
 --end
 
+local function findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+  -- Loop through all the dates and keep track of when periods begin and end
+  local interval = getIntervalLetter(unit)
+  if isValidPeriod(size, unit) then
+    local dateList = {}
+    for i = 1, #dates do
+      if not datesInPeriods[dates[i]] then
+        dateList[#dateList + 1] = dates[i]
+        if (dates[i+1] == nil) or
+            (calcEpochDiff(dates[i], size, interval) ~= dateToEpoch(dates[i+1])) then
+          for _, dateEntry in ipairs(dateList) do
+            datesInPeriods[dateEntry] = true
+          end
+          local period = {}
+          period[1] = dateList[1]
+          period[2] = dateList[#dateList]
+          periods[#periods + 1] = {size=size, dates=period, unit=unit}
+          dateList = {}
+        end
+      end
+    end
+  end
+end
+
 local function calculatePeriods(dates, config)
   -- Parse time configurations
   local configs = {}
@@ -370,10 +415,14 @@ local function calculatePeriods(dates, config)
   redis.call('ECHO', 'force_period=' .. tostring(force_period))
   --redis.call('ECHO', dump(dates))
 
-  -- Don't return any periods if DETECT and no dates available
+  -- Don't return any periods if DETECT or LATEST and no dates available
   if dates[1] == nil then
     if force_start == 'DETECT' or force_end == 'DETECT' then
       redis.call('ECHO', 'No dates available for DETECT')
+      return {}
+    end
+    if force_start:sub(1, 6) == 'LATEST' or force_end == 'LATEST' then
+      redis.call('ECHO', 'No dates available for LATEST')
       return {}
     end
   end
@@ -385,8 +434,7 @@ local function calculatePeriods(dates, config)
     local count = stripLatestPrefix:match("[+-]?%d+")
     local interval = stripLatestPrefix:match("%a+")
 
-    local latestDateEpoch = dateToEpoch(dates[#dates])
-    local diffEpoch = calcEpochDiff(latestDateEpoch, count, interval)
+    local diffEpoch = calcEpochDiff(dates[#dates], count, interval)
     force_start = epochToDate(diffEpoch)
   end
   if force_end == 'LATEST' then
@@ -445,64 +493,61 @@ local function calculatePeriods(dates, config)
         periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
         annual = true
       end
+    elseif force_period ~= 'DETECT' and dates[2] ~= nil then
+      -- only 2 dates, check if they're in the same period
+      local size = tonumber(string.match(force_period, "%d+"))
+      local unit = getIntervalUnit(force_period)
+      local interval = getIntervalLetter(unit)
+      if isValidPeriod(size, unit) then
+        if (calcEpochDiff(dates[1], size, interval) == dateToEpoch(dates[2])) then
+          periods[#periods + 1] = {size=size, dates=dates, unit=unit}
+          datesInPeriods[dates[1]] = true
+          datesInPeriods[dates[2]] = true
+        end
+      end
     end
 
     if dates[3] ~= nil and annual == false then
-      -- Figure out the size and interval of the period based on first 3 values
+      -- Use the given size and interval of the period if they are present.
+      -- Otherwise figure out the size and interval of the period based on first 3 values.
       local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
       local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
-      if (diff1 == diff2) then
-        local size, unit = calcIntervalFromSeconds(diff1)
-        if isValidPeriod(size, unit) then
-          local dateList = {}
-          dateList[1] = dates[1] -- set start time to first time
-          for i, date1 in ipairs(dates) do
-            local dateEpoch1 = dateToEpoch(date1)
-            if dates[i+1] == nil then
-              dateList[#dateList + 1] = date1
-              periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
-            else
-              local dateEpoch2 = dateToEpoch(dates[i+1])
-              local diff = math.abs(dateEpoch2 - dateEpoch1)
-              if diff ~= diff1 then
-                dateList[#dateList + 1] = date1
-                local period = {}
-                period[1] = dateList[1]
-                period[2] = dateList[2]
-                periods[#periods + 1] = {size=size, dates=period, unit=unit}
-                dateList[1] = dates[i+1]
-                dateList[2] = nil
-              end
-            end
-          end
-        end
-      else -- More complicated scenarios
-        -- TODO: Detect breaks in periods
-        -- Check for monthly periods
-        if (diff1 % 2678400 == 0) or (diff2 % 2678400 == 0) or (diff1 % 5270400 == 0) or (diff2 % 5270400 == 0) then
-          local size = math.floor(diff1/2419200)
-          local unit = "month"
-          local dateList = {}
-          dateList[1] = dates[1] -- set start time to first time
-          dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
-          periods[#periods + 1] = {size=size, dates=dateList, unit=unit}
+      local size, unit
+      if (diff1 == diff2) or (force_period ~= 'DETECT') then
+        if (force_period ~= 'DETECT') then
+          size = tonumber(string.match(force_period, "%d+"))
+          unit = getIntervalUnit(force_period)
         else
-          -- Use seconds for subdaily and days otherwise
-          local unit = "day"
-          if (diff1<86400) then
-            unit = "second"
-            local dateList = {}
-            dateList[1] = dates[1] -- set start time to first time
-            dateList[#dateList + 1] = dates[#dates]  -- set end time to last time
-            periods[#periods + 1] = {size=1, dates=dateList, unit=unit}
-          else
-            for _, date in ipairs(dates) do
-              if not datesInPeriods[date] then
-                periods[#periods + 1] = {size=1, dates={date}, unit=unit}
-              end
-            end
+          size, unit = calcIntervalFromSeconds(diff1)
+        end
+        findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+      else -- More complicated scenarios: when the first and second intervals are different
+        local minInterval = diff1
+        local minIntervalStartDate, minIntervalEndEpoch
+        for i = 2, #dates - 1 do
+          local currentInterval = math.abs(dateToEpoch(dates[i]) - dateToEpoch(dates[i + 1]))
+          if currentInterval < minInterval then
+            minInterval = currentInterval
+            minIntervalStartDate = dates[i]
+            minIntervalEndEpoch = dateToEpoch(dates[i + 1])
           end
         end
+        -- Check for monthly interval if it's at least 28 days
+        if minInterval >= 2419200 then
+          local i = 1
+          while dateToEpoch(addMonthsToDate(minIntervalStartDate, i)) < minIntervalEndEpoch do
+            i = i + 1
+          end
+          if dateToEpoch(addMonthsToDate(minIntervalStartDate, i)) == minIntervalEndEpoch then
+            size = i
+            unit = "month"
+          else
+            size, unit = calcIntervalFromSeconds(minInterval)
+          end
+        else
+          size, unit = calcIntervalFromSeconds(minInterval)
+        end
+        findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
       end
     else
       -- Leftover times are likely loners
@@ -547,14 +592,31 @@ local function calculatePeriods(dates, config)
     if getIntervalLetter(period["unit"]) == "H" or getIntervalLetter(period["unit"]) == "MM" or getIntervalLetter(period["unit"]) == "S" then
       periodStr =  period["dates"][1] .. "Z/" .. period["dates"][#period["dates"]] .. "Z/PT" .. period["size"] .. getIntervalLetter(period["unit"])
       if period["unit"] == "minute" then
-       -- Remove the MM hack for minutes
-       periodStr = periodStr:sub(1, #periodStr - 1)
+        -- Remove the MM hack for minutes
+        periodStr = periodStr:sub(1, #periodStr - 1)
       end
     else
       periodStr =  string.sub(period["dates"][1], 0, 10) .. "/" .. string.sub(period["dates"][#period["dates"]], 0, 10) .. "/P" .. period["size"] .. getIntervalLetter(period["unit"])
     end
-    periodStrings[#periodStrings + 1] = periodStr
+    -- Sanity check: make sure that end date in the period is no earlier than the start date in the period
+    if dateToEpoch(period["dates"][1]) <= dateToEpoch(period["dates"][#period["dates"]]) then
+      periodStrings[#periodStrings + 1] = periodStr
+    else
+      redis.call('ECHO', 'Warning: generated period ' .. periodStr .. ' has a start date that is later than its end date. This period will be excluded.')
+    end
   end
+
+  -- Truncate to the most recent 100 periods if there are more than 100 periods
+  if #periodStrings > 100 then
+    redis.call('ECHO', 'Warning: ' .. #periodStrings .. ' periods have been found. Only the most recent 100 will be returned.')
+    table.sort(periodStrings)
+    local truncated = {}
+    for i = #periodStrings - 99, #periodStrings do
+      truncated[#truncated+1] = periodStrings[i]
+    end
+    periodStrings = truncated
+  end
+
   --Not needed since values are stored in an unordered list in Redis
   --table.sort(periodStrings)
   --redis.call('ECHO', dump(periodStrings))

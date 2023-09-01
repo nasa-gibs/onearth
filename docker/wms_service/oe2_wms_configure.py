@@ -37,6 +37,53 @@ VALIDATION_TEMPLATE = """
             {shapefile_validation}
         END
 """
+PROJ_PARAMS = { "epsg:4326":
+"""
+            "proj=longlat"
+	        "datum=WGS84"
+	        "no_defs"
+	        "type=crs"
+""", "epsg:3857":
+"""
+            "proj=merc"
+            "a=6378137"
+            "b=6378137"
+            "lat_ts=0"
+            "lon_0=0"
+            "x_0=0"
+            "y_0=0"
+            "k=1"
+            "units=m"
+            "nadgrids=@null"
+            "wktext"
+            "no_defs"
+            "type=crs"
+""", "epsg:3031":
+"""
+            "proj=stere"
+            "lat_0=-90"
+            "lat_ts=-71"
+            "lon_0=0"
+            "x_0=0"
+            "y_0=0"
+            "datum=WGS84"
+            "units=m"
+            "no_defs"
+            "type=crs"
+""", "epsg:3413":
+"""
+            "proj=stere"
+            "lat_0=90"
+            "lat_ts=70"
+            "lon_0=-45"
+            "x_0=0"
+            "y_0=0"
+            "datum=WGS84"
+            "units=m"
+            "no_defs"
+            "type=crs"
+"""
+ }
 STR_BYTES_REMOVAL = re.compile(r"^b'(.*)'$")
 
 
@@ -299,7 +346,7 @@ for layer in layers:
                                                                   ('${dimension_info}', ''),
                                                                   ('${style_info}', style_info),
                                                                   ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
-                                                                  ('${epsg_code}', layer_proj),
+                                                                  ('${proj_params}', PROJ_PARAMS[layer_proj]),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style)])
                 layer_strings.append(new_layer_string)
@@ -362,7 +409,7 @@ for layer in layers:
                                                          ('${data_xml}', 'DATA    \'{0}\''.format(etree.tostring(out_root).decode())),
                                                          ('${class_style}', ''),
                                                          ('${validation_info}', validation_info),
-                                                         ('${epsg_code}', layer_proj)])
+                                                         ('${proj_params}', PROJ_PARAMS[layer_proj])])
     
         layer_strings.append(template_string)
 

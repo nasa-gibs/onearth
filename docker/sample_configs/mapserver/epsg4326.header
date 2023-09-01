@@ -87,6 +87,7 @@ MAP
       "wms_srs"                 "EPSG:4326"
       "wms_connectiontimeout"   "180"
       "wms_layerlimit"			"5"
+      "wms_allow_getmap_without_styles" "true"
       # Uncomment the line below to enable WFS
       # "wfs_enable_request" "*"
       "wfs_title"          		"NASA Global Imagery Browse Services for EOSDIS WFS (Geographic - EPSG:4326)"

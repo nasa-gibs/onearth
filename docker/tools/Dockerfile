@@ -1,121 +1,151 @@
 # This Dockerfile must be run from source root
+FROM almalinux:9.2
 
-FROM centos:7
+ARG GDAL_VERSION=3.6.4
+ENV GDAL_VERSION=$GDAL_VERSION
 
-# Copy mrfgen/vectorgen
-RUN mkdir -p /var/task/bin
-COPY ./src/mrfgen/*.py /var/task/bin/
-COPY ./src/mrfgen/RGBApng2Palpng.c /var/task/bin/
-COPY ./src/vectorgen/*.py /var/task/bin/
-COPY ./src/scripts/*.py /var/task/bin/
-COPY ./src/empty_tile/*.py /var/task/bin/
-COPY ./src/generate_legend/*.py /var/task/bin/
-COPY ./src/colormaps/bin/*.py /var/task/bin/
+# Install dependencies
+RUN dnf -y update && \
+    dnf groupinstall -y "Development Tools" && \
+    dnf clean all && \
+    dnf config-manager --set-enabled crb && \
+	dnf install -y epel-release-9-2.el9 && \
+    dnf install -y \
+        lua-devel-5.4.4 \
+        jansson-devel-2.14 \
+        libpng-devel-1.6.37 \
+        pcre-devel-8.44 \
+        wget-1.21.1 \
+        libyaml-devel-0.2.5 \
+        libcurl-devel-7.76.1 \
+        libjpeg-turbo-devel-2.0.90 \
+        libxml2-devel-2.9.13 \
+        luarocks-3.9.2 \
+        redis-6.2.7 \
+        cronie-1.5.7 \
+        logrotate-3.18.0 \
+        fribidi-devel-1.0.10 \
+        cairo-devel-1.17.4 \
+        cmake-3.20.2 \
+        harfbuzz-devel-2.7.4 \
+        fcgi-devel-2.4.0 \
+        proj-8.2.0 \
+        proj-devel-8.2.0 \
+        geos-3.10.1 \
+        geos-devel-3.10.1 \
+        python3-devel-3.9.16 \
+        protobuf-c-devel-1.3.3 && \
+	dnf clean all
 
+# libspatialindex
 WORKDIR /tmp
-RUN touch /var/lib/rpm/* && \
-	yum install -y epel-release python3-devel make libpng-devel
+RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz 
+RUN cd /tmp/spatialindex-src-1.8.5 && \
+    ./configure --libdir=/usr/lib64 && \
+    make && make install && \
+    ldconfig && \
+    cd .. && \
+    rm -rf /tmp/*
 
 # Install GDAL
-RUN yum install -y turbojpeg-1.2.90 turbojpeg-devel-1.2.90
-RUN yum groupinstall -y "Development Tools"
-RUN yum install -y "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-devel-2.4.4-3.el7.x86_64.rpm" "https://github.com/nasa-gibs/mrf/releases/download/v2.4.4-3/gibs-gdal-apps-2.4.4-3.el7.x86_64.rpm" && \
-	yum clean all
-RUN pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
-
-# Copy binaries and libs
-RUN cp /usr/bin/*mrf* /var/task/bin
-RUN cp /usr/bin/epsg_tr.py /var/task/bin
-RUN cp /usr/bin/esri2wkt.py /var/task/bin
-RUN cp /usr/bin/gcps2vec.py /var/task/bin
-RUN cp /usr/bin/gcps2wld.py /var/task/bin
-RUN cp /usr/bin/gdal* /var/task/bin
-RUN cp /usr/bin/gnmanalyse /var/task/bin
-RUN cp /usr/bin/gnmmanage /var/task/bin
-RUN cp /usr/bin/mkgraticule.py /var/task/bin
-RUN cp /usr/bin/nearblack /var/task/bin
-RUN cp /usr/bin/ogr* /var/task/bin
-RUN cp /usr/bin/pct2rgb.py /var/task/bin
-RUN cp /usr/bin/rgb2pct.py /var/task/bin
-RUN cp /usr/bin/testepsg /var/task/bin
-RUN mkdir /var/task/lib64/
-RUN cp /usr/lib64/libgdal.so.20 /var/task/lib64/
-RUN cp /usr/lib64/libgeos-3.4.2.so /var/task/lib64/
-RUN cp /usr/lib64/libgeos_c.so.1 /var/task/lib64/
-RUN mkdir /var/task/lib64/pkgconfig
-RUN cp /usr/lib64/pkgconfig/gdal.pc /var/task/lib64/pkgconfig
-RUN mkdir -p /var/task/share/gdal/
-RUN cp -R /usr/share/gdal/* /var/task/share/gdal/
-
-ENV GDAL_DATA=/var/task/gdal
-#ENV PYTHONPATH=${PYTHONPATH}:/var/task/lib64/python2.7/site-packages:/var/task/lib/python2.7/site-packages
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/task/lib64:/var/task/lib
-ENV PATH=$PATH:/var/task/bin
-
-# Install mrfgen and OnEarth utils dependencies
-RUN pip3 install --prefix=/var/task --ignore-installed apacheconfig==0.2.8
-RUN pip3 install --ignore-installed apacheconfig==0.2.8
-RUN pip3 install --prefix=/var/task --ignore-installed numpy==1.16.6
-RUN pip3 install --ignore-installed numpy==1.16.6
-
-# Fetch PROJ.4
-RUN curl -L http://download.osgeo.org/proj/proj-4.9.3.tar.gz | tar zxf - -C /tmp
-
-# Build and install PROJ.4
-WORKDIR /tmp/proj-4.9.3
-RUN \
-  ./configure \
-    --prefix=/var/task && \
-  make -j $(nproc) && \
-  make install
-
-# Install vectorgen dependencies
+ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN curl -L http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz | tar xzf - -C /tmp
-WORKDIR /tmp/spatialindex-src-1.8.5
-RUN ./configure --libdir=/usr/lib64
-RUN make && make install
-RUN ldconfig
-RUN pip3 install wheel==0.37.1
-RUN pip3 install --prefix=/var/task --ignore-installed Fiona==1.8.19 Shapely==1.5.16 Rtree==0.9.7 mapbox_vector_tile==1.2.1 lxml==4.9.1 protobuf==3.19.5
-RUN pip3 install --ignore-installed Fiona==1.8.19 Shapely==1.5.16 Rtree==0.9.7 mapbox_vector_tile==1.2.1 lxml==4.9.1 protobuf==3.19.5
-# TODO: Sort out weirdness with some dependencies expecting specific lib locations
-RUN cp /usr/lib64/libspatialindex*so* /var/task/lib64/
-RUN pip3 uninstall -y protobuf && pip3 install protobuf==3.19.5
+RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
+    tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
+    cd gdal-${GDAL_VERSION}/ && \
+    mkdir build && \
+    cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_PREFIX_PATH=/usr/local/ \
+      -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+      -DCMAKE_INSTALL_LIBDIR=lib \
+      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_TESTING=OFF \
+      -DGDAL_USE_PARQUET=OFF \
+      -DGDAL_USE_ARROW=OFF \
+      -DGDAL_USE_ARROWDATASET=OFF \
+      -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
+      -DBUILD_PYTHON_BINDINGS:BOOL=ON \
+      -DBUILD_JAVA_BINDINGS:BOOL=OFF \
+      -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
+      .. && \
+    cmake --build . && \
+    cmake --build . --config Release --target install && \
+    export LD_LIBRARY_PATH=:/usr/local/lib && \
+    ldconfig && \
+    cd /tmp/ && rm -rf /tmp/*
+RUN ldconfig -v
+RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
-RUN pip3 install matplotlib==2.2.5
-RUN pip3 install pypng==0.0.20
+# Install mrf_apps
+RUN git clone https://github.com/nasa-gibs/mrf.git && \
+    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
+    cd mrf/mrf_apps/ && \
+    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
+    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
+    sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
+    make && make install && \
+    ldconfig && \
+    cp *.py /usr/bin/ && \
+    cd /tmp/ && \
+    rm -rf /tmp/*
 
-RUN mkdir -p /var/task/lib64/python2.7/site-packages
-RUN cp -R /usr/lib64/python2.7/site-packages/* /var/task/lib64/python2.7/site-packages
+# Copy OnEarth to home directory
+RUN mkdir -p /home/oe2
+WORKDIR /home/oe2
+COPY ./ /home/oe2/onearth/
+
+# Install pip dependencies
+RUN pip install --upgrade pip
+RUN pip install -r onearth/docker/deps/requirements.txt
+RUN pip install -r onearth/requirements.txt
+
+# Install layer configuration tools
+RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin && \
+    cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 
 # Build RGBApng2Palpng
-WORKDIR /var/task/bin
+WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
-RUN rm RGBApng2Palpng.c
 
-# Clean up
-WORKDIR /var/task
-RUN \
-  strip lib64/libgdal.so.20* && \
-  strip lib64/libgeos* && \
-  strip lib64/libspatialindex*so* && \
-  strip lib/libproj.so.12.*
-RUN yum remove -y gibs-gdal
+# pip updates
+RUN python3 -m pip install --user --upgrade cython
+RUN python3 setup.py build_ext --inplace
+
+# Install OnEarth utilties, etc.
+WORKDIR /home/oe2/onearth/
+RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_generate_empty_tile.py && \
+    install -m 755 src/generate_legend/oe_generate_legend.py -D /usr/bin/oe_generate_legend.py && \
+    install -m 755 src/mrfgen/mrfgen.py -D /usr/bin/mrfgen && \
+    install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
+    install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
+    install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
+    install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
+    install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \
+    install -m 755 src/mrfgen/oe_validate_palette.py -D /usr/bin/oe_validate_palette.py && \
+    install -m 755 src/scripts/oe_utils.py -D /usr/bin/oe_utils.py && \
+    install -m 755 src/scripts/twmsbox2wmts.py -D /usr/bin/twmsbox2wmts.py && \
+    install -m 755 src/scripts/wmts2twmsbox.py -D /usr/bin/wmts2twmsbox.py && \
+    install -m 755 src/colormaps/bin/colorMaptoHTML_v1.0.py -D /usr/bin/colorMaptoHTML_v1.0.py && \
+    install -m 755 src/colormaps/bin/colorMaptoHTML_v1.3.py -D /usr/bin/colorMaptoHTML_v1.3.py && \
+    install -m 755 src/colormaps/bin/colorMaptoSLD.py -D /usr/bin/colorMaptoSLD.py && \
+    install -m 755 src/colormaps/bin/SLDtoColorMap.py -D /usr/bin/SLDtoColorMap.py && \
+    install -m 755 src/vectorgen/oe_vectorgen.py -D /usr/bin/oe_vectorgen && \
+    install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py && \
+    install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py && \
+    install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py && \
+    install -m 755 docker/wms_service/oe2_wms_configure.py -D /usr/bin/oe2_wms_configure.py && \
+    install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
+
+# Remove unneeded packages
+RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
+    dnf autoremove && \
+    dnf clean all
+RUN pip uninstall -y pip
 RUN rm -rf /tmp/*
-
-# Set the locale
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-
-# Add non-root user
-RUN groupadd dockeruser && useradd -g dockeruser dockeruser
-RUN chown -hR dockeruser:dockeruser /var/task && chown -hR dockeruser:dockeruser /var/log && chmod 1777 /tmp
-
-# Change user
-USER dockeruser
 
 ARG ONEARTH_VERSION
 ENV ONEARTH_VERSION=$ONEARTH_VERSION

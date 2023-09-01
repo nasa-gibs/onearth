@@ -69,17 +69,16 @@ MAP
       "wms_onlineresource"     "http://gibs.earthdata.nasa.gov/oe-status_reproject/"
       "wms_keywordlist"        "GIBS,NASA,WMS,Earth"
       "wms_srs"                "epsg:3857"
-
       "wms_enable_request"     "GetMap GetCapabilities"
       "wms_connectiontimeout"  "180"
       "wms_layerlimit"         "5"
-
       "wms_contactperson"                   "GIBS User Support"
       "wms_contactposition"                 "GIBS User Support"
       "wms_contactorganization"             "EOSDIS NASA GIBS"
       "wms_contactelectronicmailaddress"    "support@earthdata.nasa.gov"
       "wms_fees"               "none"
       "wms_accessconstraints"  "none"
+      "wms_allow_getmap_without_styles" "true"
      END
 
     VALIDATION

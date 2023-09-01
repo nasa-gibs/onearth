@@ -7,7 +7,7 @@ yum install -q -y gcc gcc-c++ automake libtool
 # various depenencies
 yum install -q -y tcl zlib-devel libcurl-devel\
     libpng-devel libjpeg-devel libwebp-devel python3-devel openssl-devel\
-    httpd-devel libzstd-devel
+    libzstd-devel
 
 pip3 -q install boto3 pytest numpy
 

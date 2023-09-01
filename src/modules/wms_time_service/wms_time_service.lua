@@ -1,7 +1,5 @@
 local onearth_wms_time_service = {}
 
-local lfs = require "lfs"
-local lyaml = require "lyaml"
 local request = require "http.request"
 local JSON = require "JSON"
 local xml = require "pl.xml"
@@ -29,6 +27,19 @@ local function get_query_param(param, query_string)
         end
     end
     return date_string
+end
+
+local function set_query_param(param, new_value, query_string)
+    local query_parts = split("&", query_string)
+    local new_query_parts = {}
+    for _, part in pairs(query_parts) do
+        local query_pair = split("=", part)
+        if string.lower(query_pair[1]) == param then
+            query_pair[2] = new_value
+        end
+        new_query_parts[#new_query_parts + 1] = table.concat(query_pair, "=")
+    end
+    return table.concat(new_query_parts, "&")
 end
 
 function findLast(s, str)
@@ -150,8 +161,22 @@ function onearth_wms_time_service.handler(endpointConfig)
         end
 
         if time_string then
-            if time_string ~= "default" and validate_time(time_string) == false then
-                return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ")
+            if time_string ~= "default" then
+                local start_time, end_time
+                if string.find(time_string, '^(.+)/(.+)/.*$') then
+                    start_time, end_time = string.match(time_string, '^(.+)/(.+)/.*$')
+                elseif string.find(time_string, '^(.+)/(.+)$') then
+                    start_time, end_time = string.match(time_string, '^(.+)/(.+)$')
+                end
+                if start_time then
+                    if not validate_time(start_time) or not validate_time(end_time) then
+                        return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time range format, must be YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ/YYYY-MM-DDThh:mm:ssZ/interval")
+                    end
+                    time_string = start_time
+                    query_string = set_query_param("time", time_string, query_string)
+                elseif validate_time(time_string) == false then
+                    return sendErrorResponse("InvalidParameterValue", "TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ")
+                end
             end
         else
             time_string = "default"
@@ -160,6 +185,13 @@ function onearth_wms_time_service.handler(endpointConfig)
         local redirect_url = notes["URI"]:gsub("wms", "mapserver", 1) .. "?" .. query_string
         req = req:lower()
         if req == "getmap" then
+            local format = get_query_param("format", query_string)
+            if not format then
+                return sendResponse(200, 'No FORMAT parameter specified')
+            end
+            if format ~= "image%2Fpng" and format ~= "image/png" and format ~= "image%2Fjpeg" and format ~= "image/jpeg" then
+                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be image/png or image/jpeg for GetMap requests.")
+            end
             local layers_string = get_query_param("layers", query_string)
             local layers_url = ""
 
@@ -201,6 +233,14 @@ function onearth_wms_time_service.handler(endpointConfig)
             end
 
             redirect_url = redirect_url .. layers_url
+        elseif req == "getfeature" then
+            local format = get_query_param("outputformat", query_string)
+            if not format then
+                return sendResponse(200, 'No FORMAT parameter specified')
+            end
+            if format ~= "csv" and format ~= "geojson" then
+                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be csv or geojson for GetFeature requests.")
+            end
         end
 
         return sendResponseRedirect(redirect_url)

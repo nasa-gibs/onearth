@@ -283,6 +283,22 @@ static int wmts_return_all_errors(request_rec *r, int errors, wmts_error *wmts_e
     return OK; // Request handled
 }
 
+static const char *remove_milliseconds_from_date(apr_pool_t *p, const char* date_string)
+{
+    // If the length of the date string is 24, then milliseconds are present and must be removed
+    if (date_string != NULL && strlen(date_string) == 24)
+    {
+        char *date_trim = (char *)apr_pcalloc(p, MAX_STRING_LEN);
+        char *trim_pt = date_trim;
+        for (int i = 0; i < 19; i++) {
+            *trim_pt++ = date_string[i];
+        }
+        *trim_pt++ = 'Z';
+        *trim_pt = '\0';
+        return date_trim;
+    }
+    return date_string;
+}
 
 static const char *find_and_replace_string(apr_pool_t *p, const char *search_str, const char *source_str, const char *replacement_str) {
     if (const char *replacefield = ap_strstr(source_str, search_str)) {
@@ -398,6 +414,7 @@ static int handleKvP(request_rec *r)
     const char *time = NULL;
     if ((param = apr_table_get(args_table, "TIME")) && strlen(param)) {
         // Verify that the date is in the right format
+        param = remove_milliseconds_from_date(r->pool, param);
         if (ap_regexec(cfg->date_regexp, param, 0, NULL, 0) == AP_REG_NOMATCH 
             && apr_strnatcasecmp(param, "default")) {
             wmts_errors[errors++] = wmts_make_error(400,"InvalidParameterValue","TIME", "Invalid time format, must be YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ");
@@ -650,6 +667,7 @@ static int pre_hook(request_rec *r)
         }
 
         datetime_str = get_element_from_uri(r, cfg, "date");
+        datetime_str = remove_milliseconds_from_date(r->pool, datetime_str);
         if (datetime_str == NULL 
             || ap_regexec(cfg->date_regexp, datetime_str, 0, NULL, 0) == AP_REG_NOMATCH 
             && apr_strnatcasecmp(datetime_str, "default") != 0) {
@@ -673,7 +691,7 @@ static int pre_hook(request_rec *r)
 
         const char *filename = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_filename") : NULL;
         datetime_str = r->prev ? apr_table_get(r->prev->notes, "mod_wmts_wrapper_date") : "default";
-        
+        datetime_str = remove_milliseconds_from_date(r->pool, datetime_str);
         // Start by verifying the requested tile coordinates/format from the URI against the mod_retile configuration for this endpoint
         apr_array_header_t *tokens = tokenize(r->pool, r->uri, '/');
         const char *dim;

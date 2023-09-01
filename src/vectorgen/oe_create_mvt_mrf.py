@@ -282,8 +282,7 @@ def create_vector_mrf(input_file_path,
                 mvt_tile = mapbox_vector_tile.encode(
                     [new_layer],
                     quantize_bounds=tile_bbox.bounds,
-                    y_coord_down=False,
-                    round_fn=None)
+                    y_coord_down=False)
 
                 # Write out artifact mvt files for debug mode.
                 if debug and mvt_tile:

@@ -105,7 +105,7 @@ class XmlDictConfig(dict):
     '''
 
     def __init__(self, parent_element):
-        childrenNames = [child.tag for child in parent_element.getchildren()]
+        childrenNames = [child.tag for child in list(parent_element)]
 
         if list(parent_element.items()):
             self.update(dict(list(parent_element.items())))
@@ -257,14 +257,6 @@ def restart_apache():
     apache = subprocess.Popen(['httpd', '-k', 'restart'],
                               stderr=subprocess.STDOUT,
                               stdout=subprocess.PIPE)
-    # try:
-    #     check_apache_running()
-    #     if "el7" in platform.release():
-    #         apache = subprocess.Popen('pkill --signal HUP --uid root httpd'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    #     else:
-    #         apache = subprocess.Popen(['apachectl', 'restart'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    # except ValueError:
-    #     apache = subprocess.Popen(['httpd'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     (stdout, stderr) = apache.communicate()
     if stdout != None and len(stdout) != 0:
         sys.stderr.write(
@@ -278,22 +270,8 @@ def restart_apache():
 def restart_redis():
     try:
         check_redis_running()
-#        if "el7" in platform.release():
-#            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-#            redis = subprocess.Popen(['redis-server'], close_fds=True)
-#        else:
-#            subprocess.Popen('pkill --signal TERM --uid root redis-server'.split(), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-#            redis = subprocess.Popen(['redis-server'], close_fds=True)
     except ValueError:
-        #redis = subprocess.Popen(['redis-server'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         redis = subprocess.Popen(['redis-server'], close_fds=True)
-
-
-#    (stdout, stderr) = redis.communicate()
-#    if stdout != None and len(stdout) != 0:
-#        sys.stderr.write("\n=== STDOUT from restart_redis():\n%s\n===\n" % stdout.rstrip())
-#    if stderr != None and len(stderr) != 0:
-#        sys.stderr.write("\n=== STDERR from restart_redis():\n%s\n===\n" % stderr.rstrip())
     subprocess.call(['sleep', '2'])
 
 
@@ -317,10 +295,11 @@ def run_command(cmd, ignore_warnings=False, wait=True, ignore_errors=False):
                 print(error)
                 output_err.write(error)
         output_err.close
-    print('run_command stdout: ' + process.stdout.read())
+    result = process.stdout.read()
+    print('run_command stdout: ' + result)
     print('run_command stderr: ' + process.stderr.read())
     print('**************************************************************************************')
-    return None
+    return result
 
 
 def mrfgen_run_command(cmd, ignore_warnings=False, show_output=False):
@@ -765,8 +744,8 @@ def setup_test_layer(test_file_path, cache_path, prefix):
                     os.path.join(test_file_path, file),
                     os.path.join(cache_path, 'cache_all_wmts.config'))
 
-    run_command('apachectl stop')
-    run_command('apachectl start')
+    run_command('httpd -k stop')
+    run_command('httpd -k start')
     return
 
 

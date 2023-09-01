@@ -49,7 +49,7 @@ class TestMapserver(unittest.TestCase):
         All the tile tests follow this template.
         """
         # Reference MD5 hash value -- the one that we're testing against
-        ref_hash = 'f22eb8446a4411ba6843d24d3fbd3721'
+        ref_hash = '23ccf2a8871a261eeafb01136bddb7a8'
 
         # The URL of the tile to be requested
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
@@ -67,7 +67,7 @@ class TestMapserver(unittest.TestCase):
         """
         2. Request current (no time) PNG via WMS
         """
-        ref_hash = '2a14051fb08e4bd18cbe349dd51bcbba'
+        ref_hash = '148c715805765dcbd163ea35ee38f7b0'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request current (no TIME) PNG via WMS')
@@ -79,7 +79,7 @@ class TestMapserver(unittest.TestCase):
         """
         3. Request current (time=default) JPEG tile via WMS
         """
-        ref_hash = 'f22eb8446a4411ba6843d24d3fbd3721'
+        ref_hash = '23ccf2a8871a261eeafb01136bddb7a8'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print('\nTesting: Request current (time=default) JPEG tile via WMS')
@@ -91,7 +91,7 @@ class TestMapserver(unittest.TestCase):
         """
         4. Request current (time=default) PNG tile via WMS
         """
-        ref_hash = '2a14051fb08e4bd18cbe349dd51bcbba'
+        ref_hash = '148c715805765dcbd163ea35ee38f7b0'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=default'
         if DEBUG:
             print('\nTesting: Request current (time=default) PNG tile via WMS')
@@ -103,13 +103,37 @@ class TestMapserver(unittest.TestCase):
         """
         5. Request tile with date from "year" layer via WMS
         """
-        ref_hash = 'b66c0096d12f89b50623a8f2f9e86f24'
+        ref_hash = '31692be7d450e2f585590674550424b8'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22'
         if DEBUG:
             print('\nTesting: Request tile with date from "year" layer via WMS')
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS date request from "year" layer does not match what\'s expected. URL: ' + req_url)
+    
+    def test_request_wms_date_range_layer(self):
+        """
+        6. Request tile with date using a date range via WMS
+        """
+        ref_hash = '31692be7d450e2f585590674550424b8'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25'
+        if DEBUG:
+            print('\nTesting: Request tile with using a date range via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS date request using a date range does not match what\'s expected. URL: ' + req_url)
+
+    def test_request_wms_date_range__interval_layer(self):
+        """
+        7. Request tile with date using a date range including an interval via WMS
+        """
+        ref_hash = '31692be7d450e2f585590674550424b8'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&time=2012-02-22/2012-02-25/P1D'
+        if DEBUG:
+            print('\nTesting: Request tile with using a date range via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS date request using a date range with an interval does not match what\'s expected. URL: ' + req_url)
 
     def test_wms_get_capabilities_1_1_1(self):
         """
@@ -123,7 +147,8 @@ class TestMapserver(unittest.TestCase):
 
         # Check if the response is valid XML
         try:
-            XMLroot = ElementTree.XML(response.read())
+            result = response.read()
+            XMLroot = ElementTree.XML(result)
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
         except:
@@ -149,7 +174,8 @@ class TestMapserver(unittest.TestCase):
 
         # Check if the response is valid XML
         try:
-            XMLroot = ElementTree.XML(response.read())
+            result = response.read()
+            XMLroot = ElementTree.XML(result)
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
         except:
@@ -176,7 +202,8 @@ class TestMapserver(unittest.TestCase):
 
         # Check if the response is valid XML
         try:
-            XMLroot = ElementTree.XML(response.read())
+            result = response.read()
+            XMLroot = ElementTree.XML(result)
             XMLdict = XmlDictConfig(XMLroot)
             xml_check = True
         except:
@@ -224,7 +251,7 @@ class TestMapserver(unittest.TestCase):
         """
         13. Request erroneous layer via WMS
         """
-        ref_hash = '8ff06e9113d2ebbfebb2505c2c8e864e'
+        ref_hash = 'cfbe0fe497a8b9278a21d36e7dac8704'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=blah&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request erroneous layer via WMS')
@@ -236,19 +263,31 @@ class TestMapserver(unittest.TestCase):
         """
         14. Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS
         """
-        ref_hash = '8aa5908b251f3d9122a25ae93ec9fef2'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg,test_legacy_subdaily_jpg&map.layer[test_legacy_subdaily_jpg]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
+        ref_hash = '9d78ea88a09b4be0e61bea51a43dca68'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg,test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Etest_legacy_subdaily_jpg%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'WMS tile with date and time (sub-daily) and another layer with YYYY-MM-DD time does not match what\'s expected. URL: ' + req_url)
-        
+    
+    def test_request_wms_with_milliseconds(self):
+        """
+        15. Request tile with date and time (sub-daily) and milliseconds. The milliseconds should be ignored
+        """
+        ref_hash = 'c412c1cdf3df9c68ef9ad4045405f0b9'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00.000Z'
+        if DEBUG:
+            print('\nTesting: Request tile with date and time (sub-daily) and milliseconds via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS tile with date and time (sub-daily) and milliseconds does not match what\'s expected. URL: ' + req_url)
+
     def test_request_wms_datesnap(self):
         """
-        15. Request tile with multi-day period and snap to available date via WMS
+        16. Request tile with multi-day period and snap to available date via WMS
         """
-        ref_hash = '9b0659e9804de008e48093931fbe9e4b'
+        ref_hash = 'd0a3e8c29263e09575ba9473b2360da1'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-01-15'
         if DEBUG:
             print('\nTesting: Request tile with multi-day period and snap to available date via WMS')
@@ -258,10 +297,10 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_datesnap_multilayer(self):
         """
-        16. Request multiple layers with multi-day period and snap to available date via WMS
+        17. Request multiple layers with multi-day period and snap to available date via WMS
         """
-        ref_hash = 'ec5a4906f8a7498cbbc73dafd608b618'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-12-15'
+        ref_hash = 'c7c125a4cb3bb948f2c8f000e8ab6eb6'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2015-12-15&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Esnap_test_3b%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request  multiple layers with multi-day period and snap to available date via WMS')
             print('URL: ' + req_url)
@@ -270,7 +309,7 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_datesnap_outofrange(self):
         """
-        17. Request multiple layers with multi-day period and snap to date that is out of range via WMS
+        18. Request multiple layers with multi-day period and snap to date that is out of range via WMS
         """
         ref_hash = '3f935e491dc208f39c6a34b1db9caa65'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-04-02'
@@ -282,9 +321,9 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_datesnap_some_layers_outofrange(self):
         """
-        18. Request multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS
+        19. Request multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS
         """
-        ref_hash = '64096bc3d66c6200ff45ee13930e3df7'
+        ref_hash = 'b3173ab26942ec98da867be8ed5bd098'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02'
         if DEBUG:
             print('\nTesting: Request  multiple layers with multi-day period and snap to date that is out of range for one of the layers via WMS')
@@ -295,7 +334,7 @@ class TestMapserver(unittest.TestCase):
     # Waiting for "GITC-1327 Validate WMS time format" to be implemented. 
 #     def test_request_wms_baddateformat(self):
 #         """
-#         19. Request multiple layers with bad date format via WMS
+#         20. Request multiple layers with bad date format via WMS
 #         """
 #         ref_hash = 'c8f9d083f85fca56a7c0539fc5813793'
 #         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03'
@@ -307,7 +346,7 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_reprojection(self):
         """
-        20. Request layer with date and reproject from EPSG:4326 to EPSG:3857 via WMS
+        21. Request layer with date and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
         ref_hash = 'bea72af03789933b7d7f5405522d58fc'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_weekly_jpg&CRS=EPSG%3A3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&time=2012-02-22'
@@ -319,10 +358,10 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_reprojection_multilayer(self):
         """
-        21. Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS
+        22. Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS
         """
         ref_hash = '2379ec819b6dc11e599a750ccc173ac0'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3a,snap_test_3b&map.layer[snap_test_3a]=OPACITY+50&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG:3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&TIME=2015-01-01'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3a,snap_test_3b&CRS=EPSG:3857&STYLES=&WIDTH=1280&HEIGHT=1280&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34&TIME=2015-01-01&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Esnap_test_3a%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3CNamedLayer%3E%3CName%3Esnap_test_3b%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request multiple layers and reproject from EPSG:4326 to EPSG:3857 via WMS')
             print('URL: ' + req_url)
@@ -331,9 +370,9 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_subdaily_timesnap(self):
         """
-        22. Request tile with time (sub-daily) and snap to available date time via WMS
+        23. Request tile with time (sub-daily) and snap to available date time via WMS
         """
-        ref_hash = 'cd18076fca03c636843c5b664097c17f'
+        ref_hash = 'c412c1cdf3df9c68ef9ad4045405f0b9'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
             print('\nTesting: Request tile with date and time (sub-daily) and another layer with YYYY-MM-DD time via WMS')
@@ -356,9 +395,9 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_wms_from_vector(self):
         """
-        23. Request image from vector source file with time via WMS
+        24. Request image from vector source file with time via WMS
         """
-        ref_hash = 'e014ec400b5807dc04cc8dbb5d9cebee'
+        ref_hash = '0509ad6e1dd0aafcf59daba3c60104c9'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Terra_Orbit_Dsc_Dots&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request image from vector source file with time via WMS')
@@ -368,9 +407,8 @@ class TestMapserver(unittest.TestCase):
  
     def test_request_wfs_geojson(self):
         """
-        24. Request GeoJSON from vector source file via WFS
+        25. Request GeoJSON from vector source file via WFS
         """
-        ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson'
         if DEBUG:
             print('\nTesting: Request GeoJSON from vector source file via WFS')
@@ -379,7 +417,8 @@ class TestMapserver(unittest.TestCase):
  
         # Check if the response is valid JSON
         try:
-            JSONdict = json.loads(response.read().decode('utf-8'))
+            response_str = response.read().decode('utf-8')
+            JSONdict = json.loads(response_str)
             JSON_check = True
         except:
             JSON_check = False
@@ -393,9 +432,9 @@ class TestMapserver(unittest.TestCase):
          
     def test_request_wfs_csv(self):
         """
-        25. Request CSV from vector source file via WFS
+        26. Request CSV from vector source file via WFS
         """
-        ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
+        ref_hash = '3a5f4e8439c778560864478dda58b4af'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv'
         if DEBUG:
             print('\nTesting: Request CSV from vector source file via WFS')
@@ -405,9 +444,8 @@ class TestMapserver(unittest.TestCase):
          
     def test_request_wfs_geojson_with_time(self):
         """
-        26. Request GeoJSON from vector source file with time via WFS
+        27. Request GeoJSON from vector source file with time via WFS
         """
-        ref_hash = 'd28dab255366e4bf69d8eaf6d649d930'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=geojson&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request GeoJSON from vector source file with time via WFS')
@@ -416,7 +454,8 @@ class TestMapserver(unittest.TestCase):
  
         # Check if the response is valid JSON
         try:
-            JSONdict = json.loads(response.read().decode('utf-8'))
+            response_str = response.read().decode('utf-8')
+            JSONdict = json.loads(response_str)
             JSON_check = True
         except:
             JSON_check = False
@@ -430,9 +469,9 @@ class TestMapserver(unittest.TestCase):
          
     def test_request_wfs_csv_with_time(self):
         """
-        27. Request CSV from vector source file with time via WFS
+        28. Request CSV from vector source file with time via WFS
         """
-        ref_hash = '5e14e53eec6b21de6e22be093b5763e4'
+        ref_hash = '3a5f4e8439c778560864478dda58b4af'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=csv&TIME=2016-03-05'
         if DEBUG:
             print('\nTesting: Request CSV from vector source file with time via WFS')
@@ -442,7 +481,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_wms_baddate(self):
         """
-        28. Request multiple layers with bad date via WMS
+        29. Request multiple layers with bad date via WMS
         """
         ref_hash = '3f935e491dc208f39c6a34b1db9caa65'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-11-31'
@@ -454,9 +493,8 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_badtime(self):
         """
-        29. Request multiple layers with bad time via WMS
+        30. Request multiple layers with bad time via WMS
         """
-        ref_hash = '64096bc3d66c6200ff45ee13930e3df7'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02T23:30:99Z'
         if DEBUG:
             print('\nTesting: Request multiple layers bad time via WMS')
@@ -483,7 +521,7 @@ class TestMapserver(unittest.TestCase):
     # Waiting for "GITC-1327 Validate WMS time format" to be implemented. 
 #     def test_request_wms_badtimeformat(self):
 #         """
-#         30. Request multiple layers with bad time format via WMS
+#         31. Request multiple layers with bad time format via WMS
 #         """
 #         ref_hash = 'c8f9d083f85fca56a7c0539fc5813793'
 #         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=snap_test_3a,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2016-03-02T23:30:59'
@@ -496,9 +534,9 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_no_layer_error(self):
         """
-        31. Request missing layers via WMS
+        32. Request missing layers via WMS
         """
-        ref_hash = '76453fe3c6c2490243d41595c964b2e8'
+        ref_hash = 'cfbe0fe497a8b9278a21d36e7dac8704'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request missing layers via WMS')
@@ -508,10 +546,10 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_wms_multilayer(self):
         """
-        32. Request multiple layers in one request with no time
+        33. Request multiple layers in one request with no time
         """
-        ref_hash = '3af983385aafa0323f410496f6e04453'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3b&map.layer[snap_test_3b]=OPACITY+50&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
+        ref_hash = '702072b6f43312f4d4643c19c4b127de'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_static_jpg,snap_test_3b&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&SLD_BODY=%3CStyledLayerDescriptor%20xmlns%3Asld%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%22%20version%3D%221.0.0%22%20xsi%3AschemaLocation%3D%22http%3A%2F%2Fwww.opengis.net%2Fsld%20http%3A%2F%2Fschemas.opengis.net%2Fsld%2F1.0.0%2FStyledLayerDescriptor.xsd%22%20xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%22%20xmlns%3Aogc%3D%22http%3A%2F%2Fwww.opengis.net%2Fogc%22%20xmlns%3Agml%3D%22http%3A%2F%2Fwww.opengis.net%2Fgml%22%3E%3CNamedLayer%3E%3CName%3Esnap_test_3b%3C%2FName%3E%3CUserStyle%3E%3CFeatureTypeStyle%3E%3CRule%3E%3CRasterSymbolizer%3E%3COpacity%3E0.5%3C%2FOpacity%3E%3C%2FRasterSymbolizer%3E%3C%2FRule%3E%3C%2FFeatureTypeStyle%3E%3C%2FUserStyle%3E%3C%2FNamedLayer%3E%3C%2FStyledLayerDescriptor%3E'
         if DEBUG:
             print('\nTesting: Request multiple layers in one request with no time via WMS')
             print('URL: ' + req_url)
@@ -520,7 +558,7 @@ class TestMapserver(unittest.TestCase):
        
     def test_request_wms_getlegendgraphic(self):
         """
-        33. Test GetLegendGraphic request
+        34. Test GetLegendGraphic request
         """
         ref_hash = '13b34c39c2fda83972a2df4cc2b5c394'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=getlegendGRAPHIC&layer=Terra_Orbit_Dsc_Dots&FORMAT=image/png&SLD_VERSION=1.1.0'
@@ -532,10 +570,10 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_group_layer(self):
         """
-        34. Test requesting an OrbitTracks group layer to verify that both its underlying
+        35. Test requesting an OrbitTracks group layer to verify that both its underlying
             "Points" layer and "Lines" layer are included.
         """
-        ref_hash = '35fb7f2003637140173f5c2670073a30'
+        ref_hash = 'c396fab5caf1f6879e737bbca3b48b3f'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=OrbitTracks_Aqua_Descending&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
         if DEBUG:
             print('\nTesting: Request group layer')
@@ -545,7 +583,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_wms_status(self):
         """
-        35. Tests the request used in the "/wms/status" endpoint in the OnEarth Demo.
+        36. Tests the request used in the "/wms/status" endpoint in the OnEarth Demo.
             Requests a raster layer and a vector layer together.
         """
         ref_hash = 'db56a57c1ce987bd0786b4e6884eb872'
@@ -558,7 +596,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_wms_getlegendgraphic_with_wmscgi(self):
         """
-        36. Tests requesting a legend using a GetLegendGraphic request that includes "wms.cgi".
+        37. Tests requesting a legend using a GetLegendGraphic request that includes "wms.cgi".
         """
         ref_hash = '3ae936d500bbf86b94281833e07a2d41'
         req_url = 'http://localhost/wms/test/wms.cgi?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=OrbitTracks_Aqua_Descending&format=image/png&STYLE=default'
@@ -570,7 +608,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_wms_getlegendgraphic_no_wmscgi(self):
         """
-        37. Tests requesting a legend using a GetLegendGraphic request that omits "wms.cgi".
+        38. Tests requesting a legend using a GetLegendGraphic request that omits "wms.cgi".
             The URL should be rewritten by a mod_rewrite rule via oe2_wms.conf to include "wms.cgi".
         """
         ref_hash = '3ae936d500bbf86b94281833e07a2d41'
@@ -583,7 +621,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_missing_shapefile(self):
         """
-        38. Test requesting an vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
+        39. Test requesting a vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
             This test ensures that the internal directory path doesn't get printed by the msShapefileOpen() error that occurs.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Layer_Missing_Shapefile&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
@@ -658,6 +696,62 @@ class TestMapserver(unittest.TestCase):
         check_result = check_tile_request_save(req_url, ref_hash, "test_zenjpeg_convert.png")
         self.assertTrue(check_result, 'Group layer does not match what\'s expected. URL: ' + req_url)"""
 
+
+    def test_request_invalid_getmap_format(self):
+        """
+        40. Test a GetMap request using an invalid format.
+        """
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=cr2&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
+        if DEBUG:
+            print('\nTesting: Invalid WMS Format')
+            print('URL: ' + req_url)
+
+        response = get_url(req_url).read()
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/InvalidGetMapFormatResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for performing a GetMap request with an invalid format does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
+        
+    def test_request_invalid_getfeature_format(self):
+        """
+        41. Test a GetFeature request using an invalid format.
+        """
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=gojson'
+        if DEBUG:
+            print('\nTesting: Invalid WMS Format')
+            print('URL: ' + req_url)
+
+        response = get_url(req_url).read()
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/InvalidGetFeatureFormatResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for performing a GetFeature request with an invalid format does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
     # TEARDOWN
 

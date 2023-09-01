@@ -1,6 +1,6 @@
---- a/modules/proxy/mod_proxy_http.c	2017-10-31 02:35:40.000000000 +0000
-+++ b/modules/proxy/mod_proxy_http.c	2017-10-31 02:37:46.000000000 +0000
-@@ -732,7 +732,11 @@
+--- a/modules/proxy/mod_proxy_http.c	2022-03-03 09:31:51.000000000 +0000
++++ b/modules/proxy/mod_proxy_http.c	2023-02-09 03:48:35.283945201 +0000
+@@ -486,7 +486,11 @@
       */
      if (!r->kept_body && r->main) {
          /* XXX: Why DON'T sub-requests use keepalives? */
@@ -9,7 +9,7 @@
 +        // As the original comment above says, not sure why keepalives 
 +        // are not allowed.
 +        // Maybe the close can be made conditional on the request
-+        // p_conn->close = 1; 
-         if (old_cl_val) {
-             old_cl_val = NULL;
-             apr_table_unset(r->headers_in, "Content-Length");
++        // p_conn->close = 1;
+         req->old_te_val = NULL;
+         req->old_cl_val = NULL;
+         req->rb_method = RB_STREAM_CL;

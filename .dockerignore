@@ -3,8 +3,7 @@
 upstream
 build
 /dist/
-/docker/el6/rpms/
-/docker/el7/rpms/
+/docker/el9/rpms/
 /src/test/*.pyc
 /src/test/legends_test_data/*.png
 /src/test/legends_test_data/*.svg

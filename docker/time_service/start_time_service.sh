@@ -41,7 +41,7 @@ else
 
 	  mkdir -p $CONFIG_SOURCE
 
-    python3.6 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
+    python3 /usr/bin/oe_sync_s3_configs.py -f -d $CONFIG_SOURCE -b $S3_CONFIGS -p $CONFIG_PREFIX >>/var/log/onearth/config.log 2>&1
   done
 fi
 
@@ -105,7 +105,7 @@ if [ "$DEBUG_LOGGING" = true ]; then
 fi
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
-/usr/sbin/apachectl
+/usr/sbin/httpd -k start
 sleep 2
 
 # Run logrotate hourly

@@ -4,6 +4,8 @@ local md5 = require "md5"
 local date_util = require "date"
 local socket = require "socket"
 
+local unpack = _G.unpack or table.unpack
+
 local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
 local datetime_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
 local datetime_filename_format = "%Y%j%H%M%S"
@@ -157,7 +159,8 @@ local function redis_handler (options)
             -- If no layer name specified, dump all data
             returnValue = redis_get_all_layers(client, prefix_string)
         end
-        print(string.format("step=time_database_request duration=%d uuid=%s", socket.gettime() * 1000 * 1000 - start_db_request, uuid))
+        -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+        print(string.format("step=time_database_request duration=%d uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_db_request + 0.5), uuid))
         return returnValue
     end
 end
@@ -210,7 +213,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
 
         -- A blank query returns the entire list of layers and periods
         if not query_string or not layer_name then
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(layer_handler(nil, uuid, lookup_keys, nil)))
         end
 
@@ -222,7 +226,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
 
         -- A layer but no date returns the default date and available periods for that layer
         if not request_date_string then
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000- start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(layer_datetime_info))
         end
 
@@ -234,7 +239,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
                 prefix = best_layer_name,
                 date = default_date:fmt(datetime_format),
                 filename = filename_handler(best_layer_name, default_date)}
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -243,7 +249,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             local out_msg = {
                 err_msg = "Invalid Date"
             }
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -253,7 +260,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             local out_msg = {
                 err_msg = "Invalid Date"
             }
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(out_msg))
         end
 
@@ -308,13 +316,15 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
                 prefix = best_layer_name,
                 date = snap_date_string,
                 filename = filename_handler(best_layer_name, snap_date)}
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(out_msg))
         else
             local out_msg = {
                 err_msg = "Date out of range"
             }
-            print(string.format("step=timesnap_request duration=%u uuid=%s", socket.gettime() * 1000 * 1000 - start_timestamp, uuid))
+            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             return send_response(200, JSON:encode(out_msg))
         end
     end
