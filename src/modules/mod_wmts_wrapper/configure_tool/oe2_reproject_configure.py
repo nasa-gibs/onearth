@@ -347,7 +347,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
         except png.FormatError:
             # No palette, check for greyscale
             if sample_png.asDirect()[3]['greyscale'] is True:
-                bands = 1
+                bands = 2
                 print(identifier + ' is greyscale')
             else:  # Check for alpha
                 if sample_png_read_info['alpha'] is True:
