@@ -350,7 +350,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                 print("readinfo", sample_png_read_info)
                 if sample_png_read_info['alpha'] is True:
                     bands = 2
-                    print(identifier + ' is greyscale and alpha')
+                    print(identifier + ' is greyscale and has alpha')
                 else:
                     bands = 1
                     print(identifier + ' is greyscale')
