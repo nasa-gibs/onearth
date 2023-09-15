@@ -15,6 +15,7 @@ Alias ${external_endpoint} ${internal_endpoint}
         AHTSE_lua_Script ${script_loc}
         AHTSE_lua_Redirect On
         AHTSE_lua_KeepAlive On
+        Header Always Set Cache-Control "public, max-age=1800"
 </Directory>
 ]]
 
