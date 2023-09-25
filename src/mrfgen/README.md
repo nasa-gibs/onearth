@@ -93,12 +93,6 @@ Directory paths may be different than the example. Directories that do not exist
 * mrf_blocksize: The MRF tile size. All tiles are square.
 * mrf_compression_type: The internal image of the MRF. Valid values are JPEG, PNG (for RGBA PNGs), PPNG (for 256 color paletted PNGs), EPNG (for encoded PNGs, requires [overtiffpacker.py](overtiffpacker.py)), JPNG (for blended JPEG/PNG MRF), TIFF, or [LERC](https://github.com/Esri/lerc).
 * target_x: The full x output size of the MRF image. target_y is calculated to maintain native aspect ratio if not defined in ```<target_y>```.  ```<outsize>``` may be used to specify both x and y output size as one parameter.  
-* mrf_merge: (true/false) Whether overlapping input images should be merged on a last-in basis when performing inserts. Defaults to "false" for faster performance.
-* mrf_noaddo: (true/false) Don't run gdaladdo if UNIFORM_SCALE has been set. Defaults to "false".
-* mrf_clean: (true/false) run mrf_clean.py script on generated mrf file to reduce file size
-* mrf_parallel: (true/false) run mrf_insert calls in parallel to improve performance. See num_cores.
-* num_cores: (int) number of cores to use with mrf_parallel. Recommended is 2-4, depending on number of input files.
-* mrf_strict_palette: (true/false) Validate that the colors in input files match the MRF colormap. A warning is sent if there are mismatches. Defaults to "false".
 
 These parameters are available but not used in the example above nor necessarily required.
 
@@ -123,6 +117,13 @@ These parameters are available but not used in the example above nor necessarily
 * email_server: The SMTP server where email notifications are sent from.
 * email_recipient: The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.
 * email_sender: The sender address for email notifications.
+* mrf_merge: (true/false) Whether overlapping input images should be merged on a last-in basis when performing inserts. Defaults to "false" for faster performance.
+* mrf_noaddo: (true/false) Don't run gdaladdo if UNIFORM_SCALE has been set. Defaults to "false".
+* mrf_clean: (true/false) run mrf_clean.py script on generated mrf file to reduce file size
+* mrf_parallel: (true/false) run mrf_insert calls in parallel to improve performance. See num_cores.
+* num_cores: (int) number of cores to use with mrf_parallel. Recommended is 2-4, depending on number of input files.
+* mrf_strict_palette: (true/false) Validate that the colors in input files match the MRF colormap. A warning is sent if there are mismatches. Defaults to "false".
+* mrf_overwrite_colormap: (true/false) Overwrite the image palette using the GIBS colormap file specified with the "colormap" option. Defaults to "false".
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 

@@ -1564,6 +1564,14 @@ else:
             strict_palette = True
     except:
         strict_palette = False
+    # overwrite_colormap, defaults to False
+    try:
+        if get_dom_tag_value(dom, 'mrf_overwrite_colormap') == "false":
+            overwrite_colormap = False
+        else:
+            overwrite_colormap = True
+    except:
+        overwrite_colormap = False
     # mrf data
     try:
         mrf_data_scale = get_dom_tag_value(dom, 'mrf_data_scale')
@@ -1674,6 +1682,7 @@ log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
 log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
 log_info_mssg(str().join(['config mrf_maxsize:             ', str(mrf_maxsize)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
+log_info_mssg(str().join(['config mrf_overwrite_colormap:  ', str(overwrite_colormap)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
 log_info_mssg(str().join(['config mrf_data_scale:          ', mrf_data_scale]))
@@ -2460,9 +2469,9 @@ else:
     mssg='Unrecognized compression type for MRF.'
     log_sig_exit('ERROR', mssg, sigevent_url)
 
-# Insert color map into VRT if provided
-# TODO This could be problematic if we're overwriting with a different palette than what is in the imagery.
-if colormap != '':
+# Insert colormap into VRT if a colormap is provided and colormap overwriting is enabled.
+# This could be problematic if we're overwriting with a different palette than what is in the imagery.
+if overwrite_colormap and colormap != '':
     new_vrt_filename = vrt_filename.replace('.vrt','_newcolormap.vrt')
     colormap2vrt_command_list=[script_dir+'colormap2vrt.py','--colormap',colormap,'--output',new_vrt_filename,'--merge',vrt_filename]
     if add_transparency == True:

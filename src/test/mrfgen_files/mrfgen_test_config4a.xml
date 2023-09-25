@@ -33,4 +33,5 @@ limitations under the License.
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_merge>true</mrf_merge>
  <mrf_z_levels>3</mrf_z_levels>
+ <mrf_overwrite_colormap>true</mrf_overwrite_colormap>
 </mrfgen_configuration>
