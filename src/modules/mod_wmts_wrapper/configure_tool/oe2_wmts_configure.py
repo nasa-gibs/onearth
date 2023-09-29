@@ -172,6 +172,11 @@ MIME_TO_MRF_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.pvt'
 }
 
+CONVERT_MRF_EXTENSION = {
+    '.png': '.ppg',
+    '.jpeg': '.pjg'
+}
+
 # Utility functions
 
 
@@ -550,7 +555,10 @@ def make_layer_config(endpoint_config, layer):
             idx_path += '${prefix}/'      
         # add filename
         data_path_str += '${filename}'
-        data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
+        if convert_mrf:
+            data_path_str += CONVERT_MRF_EXTENSION[convert_mrf]
+        else:
+            data_path_str += MIME_TO_MRF_EXTENSION[mimetype] 
         idx_path += '${filename}.idx'
 
     if convert_mrf:
