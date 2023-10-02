@@ -631,6 +631,14 @@ local dates = {}
 local configs = {}
 local cursor = "0"
 
+-- Determine if it is a ZenJPEG layer.
+-- `converted_layer_name` will be the layer that serves PNGs by converting the ZenJPEG.
+-- Periods will be added to both the ZenJPEG layer and the converted layer, if applicable.
+local converted_layer_key = nil
+if (KEYS[1]):sub(-4) == "_ZEN" then
+  converted_layer_key = (KEYS[1]):sub(#KEYS[1] - 4)
+end
+
 -- GITC mod: Add new date and only update if there was a change
 if ARGV[1] ~= nil and ARGV[1] ~= "false" then
   local result = 0
@@ -660,22 +668,30 @@ until cursor == "0"
 if next(configs) == nil then
   local config = redis.call("GET", KEYS[1] .. ":config")
   local periodStrings = calculatePeriods(dates, config)
-  if redis.call("EXISTS", KEYS[1] .. ":periods") then
-    redis.call("DEL", KEYS[1] .. ":periods")
-  end
-  for i, periodString in ipairs(periodStrings) do
-    redis.call("SADD", KEYS[1] .. ":periods", periodString)
+  for _, key in ipairs({KEYS[1], converted_layer_key}) do
+    if key ~= nil then
+      if redis.call("EXISTS", KEYS[1] .. ":periods") then
+        redis.call("DEL", KEYS[1] .. ":periods")
+      end
+      for i, periodString in ipairs(periodStrings) do
+        redis.call("SADD", KEYS[1] .. ":periods", periodString)
+      end
+    end
   end
 else
   for i, config in ipairs(configs) do
     local periodStrings = calculatePeriods(dates, config)
-    if i == 1 then
-      if redis.call("EXISTS", KEYS[1] .. ":periods") then
-        redis.call("DEL", KEYS[1] .. ":periods")
+    for _, key in ipairs({KEYS[1], converted_layer_key}) do
+      if key ~= nil then
+        if i == 1 then
+          if redis.call("EXISTS", KEYS[1] .. ":periods") then
+            redis.call("DEL", KEYS[1] .. ":periods")
+          end
+        end
+        for i, periodString in ipairs(periodStrings) do
+          redis.call("SADD", KEYS[1] .. ":periods", periodString)
+        end
       end
-    end
-    for i, periodString in ipairs(periodStrings) do
-      redis.call("SADD", KEYS[1] .. ":periods", periodString)
     end
   end
 end
@@ -687,7 +703,11 @@ if defaultDate ~= nil then
   if string.sub(dates[#dates], 12) == "00:00:00" then
     defaultDate = string.sub(dates[#dates], 0, 10)
   end
-  redis.call("SET", KEYS[1] .. ":default", defaultDate)
+  for _, key in ipairs({KEYS[1], converted_layer_key}) do
+    if key ~= nil then
+      redis.call("SET", KEYS[1] .. ":default", defaultDate)
+    end
+  end
 else
   -- use last config time if there are no dates
   local lastConfig = nil
@@ -709,7 +729,11 @@ else
       if string.sub(configParts[2], 12) == "00:00:00" then
         defaultDate = string.sub(configParts[2], 0, 10)
       end
-      redis.call("SET", KEYS[1] .. ":default", defaultDate)
+      for _, key in ipairs({KEYS[1], converted_layer_key}) do
+        if key ~= nil then
+          redis.call("SET", KEYS[1] .. ":default", defaultDate)
+        end
+      end
     end
   end
 end

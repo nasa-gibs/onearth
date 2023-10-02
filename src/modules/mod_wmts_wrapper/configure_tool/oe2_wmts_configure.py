@@ -172,11 +172,6 @@ MIME_TO_MRF_EXTENSION = {
     'application/vnd.mapbox-vector-tile': '.pvt'
 }
 
-CONVERT_MRF_EXTENSION = {
-    '.png': '.ppg',
-    '.jpeg': '.pjg'
-}
-
 # Utility functions
 
 
@@ -392,7 +387,7 @@ def make_layer_config(endpoint_config, layer):
         bands = layer_config['source_mrf']['bands'] if layer_config['source_mrf']['bands'] is not None else 1
         idx_path = layer_config['source_mrf']['idx_path']
         mimetype = layer_config['mime_type']
-        convert_mrf = layer_config.get('convert_mrf', False)
+        convert_src = layer_config['convert_mrf'].get('convert_source', None) if 'convert_mrf' in layer_config else False
     except KeyError as err:
         print(
             f"\n{layer_config_path} is missing required config element {err}")
@@ -489,16 +484,16 @@ def make_layer_config(endpoint_config, layer):
                             tilematrixset, 'mod_mrf.config')
 
     mrf_or_convert_configs = ''
-    if convert_mrf:
-        format = convert_mrf
+    if convert_src:
+        convert_src_name , format = convert_src.split(" ")
         
         convert_file_path = Path(internal_endpoint, layer_id, "default",
                                 tilematrixset, 'mod_convert.config')
-        src_mrf_file_path = Path(internal_endpoint, layer_id, "default",
+        src_mrf_file_path = Path(internal_endpoint, convert_src_name, "default",
                             tilematrixset, 'mod_mrf.config')
         mrf_or_convert_configs = (
             f'Convert_RegExp {external_endpoint}/{alias}/\n'
-            f'        Convert_Source {external_endpoint}/{layer_id}/default/${{date}}/{tilematrixset}/ {format}\n'
+            f'        Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format}\n'
             f'        Convert_ConfigurationFiles {src_mrf_file_path} {convert_file_path}')
     else:
         mrf_or_convert_configs = (
@@ -555,13 +550,10 @@ def make_layer_config(endpoint_config, layer):
             idx_path += '${prefix}/'      
         # add filename
         data_path_str += '${filename}'
-        if convert_mrf:
-            data_path_str += CONVERT_MRF_EXTENSION[convert_mrf]
-        else:
-            data_path_str += MIME_TO_MRF_EXTENSION[mimetype] 
+        data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
         idx_path += '${filename}.idx'
 
-    if convert_mrf:
+    if convert_src:
         wmts_convert_config = bulk_replace(
         LAYER_MOD_CONVERT_CONFIG_TEMPLATE,
         [('{size_x}', str(size_x)), ('{size_y}', str(size_y)),
