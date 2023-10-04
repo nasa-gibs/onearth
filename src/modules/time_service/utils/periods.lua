@@ -636,7 +636,7 @@ local cursor = "0"
 -- Periods will be added to both the ZenJPEG layer and the converted layer, if applicable.
 local converted_layer_key = nil
 if (KEYS[1]):sub(-4) == "_ZEN" then
-  converted_layer_key = (KEYS[1]):sub(#KEYS[1] - 4)
+  converted_layer_key = (KEYS[1]):sub(0, #KEYS[1] - 4)
 end
 
 -- GITC mod: Add new date and only update if there was a change
@@ -670,11 +670,11 @@ if next(configs) == nil then
   local periodStrings = calculatePeriods(dates, config)
   for _, key in ipairs({KEYS[1], converted_layer_key}) do
     if key ~= nil then
-      if redis.call("EXISTS", KEYS[1] .. ":periods") then
-        redis.call("DEL", KEYS[1] .. ":periods")
+      if redis.call("EXISTS", key .. ":periods") then
+        redis.call("DEL", key .. ":periods")
       end
       for i, periodString in ipairs(periodStrings) do
-        redis.call("SADD", KEYS[1] .. ":periods", periodString)
+        redis.call("SADD", key .. ":periods", periodString)
       end
     end
   end
@@ -684,12 +684,12 @@ else
     for _, key in ipairs({KEYS[1], converted_layer_key}) do
       if key ~= nil then
         if i == 1 then
-          if redis.call("EXISTS", KEYS[1] .. ":periods") then
-            redis.call("DEL", KEYS[1] .. ":periods")
+          if redis.call("EXISTS", key .. ":periods") then
+            redis.call("DEL", key .. ":periods")
           end
         end
         for i, periodString in ipairs(periodStrings) do
-          redis.call("SADD", KEYS[1] .. ":periods", periodString)
+          redis.call("SADD", key .. ":periods", periodString)
         end
       end
     end
@@ -705,7 +705,7 @@ if defaultDate ~= nil then
   end
   for _, key in ipairs({KEYS[1], converted_layer_key}) do
     if key ~= nil then
-      redis.call("SET", KEYS[1] .. ":default", defaultDate)
+      redis.call("SET", key .. ":default", defaultDate)
     end
   end
 else
@@ -731,7 +731,7 @@ else
       end
       for _, key in ipairs({KEYS[1], converted_layer_key}) do
         if key ~= nil then
-          redis.call("SET", KEYS[1] .. ":default", defaultDate)
+          redis.call("SET", key .. ":default", defaultDate)
         end
       end
     end
