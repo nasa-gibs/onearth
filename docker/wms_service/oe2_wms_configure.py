@@ -265,6 +265,10 @@ for layer in layers:
     else:
         print("WARN: Layer config for layer {0} not found".format(layer_name))
 
+    offsite = ""
+    if layer_config['config'].get('convert_mrf'):
+        offsite = "OFFSITE  0 0 0"
+
     wms_srs    = "{0}".format(epsg_code)
     if epsg_code == "EPSG:4326":
         if layer_config and 'web_mercator_config_path' in layer_config["config"]:
@@ -383,6 +387,10 @@ for layer in layers:
         etree.SubElement(out_root, 'BlockSizeX').text = str(tile_width)
         etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
         etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
+        
+        if layer_config['config'].get('convert_mrf'):
+            data_values_element = etree.SubElement(out_root, 'DataValues')
+            data_values_element.set('NoData', '0 0 0')
 
         etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
         etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
@@ -409,7 +417,8 @@ for layer in layers:
                                                          ('${data_xml}', 'DATA    \'{0}\''.format(etree.tostring(out_root).decode())),
                                                          ('${class_style}', ''),
                                                          ('${validation_info}', validation_info),
-                                                         ('${proj_params}', PROJ_PARAMS[layer_proj])])
+                                                         ('${proj_params}', PROJ_PARAMS[layer_proj]),
+                                                         ('${offsite}', offsite)])
     
         layer_strings.append(template_string)
 
