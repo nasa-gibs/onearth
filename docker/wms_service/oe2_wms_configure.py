@@ -352,7 +352,8 @@ for layer in layers:
                                                                   ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
                                                                   ('${proj_params}', PROJ_PARAMS[layer_proj]),
                                                                   ('${validation_info}', validation_info),
-                                                                  ('${class_style}', class_style)])
+                                                                  ('${class_style}', class_style),
+                                                                  ('${offsite}', offsite)])
                 layer_strings.append(new_layer_string)
 
         except KeyError:
