@@ -553,6 +553,11 @@ def make_layer_config(endpoint_config, layer):
         data_path_str += MIME_TO_MRF_EXTENSION[mimetype]
         idx_path += '${filename}.idx'
 
+    # Handle optionals like EmptyTile
+    empty_tile_config = None
+    if empty_tile:
+        empty_tile_config = f'EmptyTile {empty_tile}'
+
     if convert_src:
         wmts_convert_config = bulk_replace(
         LAYER_MOD_CONVERT_CONFIG_TEMPLATE,
@@ -563,7 +568,8 @@ def make_layer_config(endpoint_config, layer):
           '0' if projection == 'EPSG:3857' else '1')])
 
         convert_config = generate_string_from_set(
-        '\n', [(wmts_convert_config, True)])
+        '\n', [(wmts_convert_config, True),
+               (empty_tile_config, empty_tile)])
 
         layer_config_out['mod_convert_config'] = {
         'path': convert_file_path,
@@ -577,11 +583,6 @@ def make_layer_config(endpoint_config, layer):
         ('{idx_path}', idx_path),
         ('{skipped_levels}',
         '0' if projection == 'EPSG:3857' else '1')])
-
-    # Handle optionals like EmptyTile
-    empty_tile_config = None
-    if empty_tile:
-        empty_tile_config = f'EmptyTile {empty_tile}'
 
     wmts_config = generate_string_from_set(
         '\n', ((main_wmts_config, True),
