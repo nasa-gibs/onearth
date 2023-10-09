@@ -389,9 +389,6 @@ for layer in layers:
         etree.SubElement(out_root, 'BlockSizeY').text = str(tile_height)
         etree.SubElement(out_root, 'BandsCount').text = str(bands_count)
         
-        if layer_config['config'].get('convert_mrf'):
-            data_values_element = etree.SubElement(out_root, 'DataValues')
-            data_values_element.set('NoData', '0 0 0')
 
         etree.SubElement(out_root, 'ZeroBlockHttpCodes').text = '404,400'
         etree.SubElement(out_root, 'ZeroBlockOnServerException').text = 'true'
