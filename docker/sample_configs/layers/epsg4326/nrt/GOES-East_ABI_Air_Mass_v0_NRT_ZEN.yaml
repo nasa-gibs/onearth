@@ -4,7 +4,7 @@ layer_id: GOES-East_ABI_Air_Mass_v0_NRT_ZEN
 layer_name: GOES-East ABI Air Mass v0 NRT ZEN tileset
 layer_title: b'Air Mass (ABI, GOES-East, ZEN)'
 metadata: []
-mime_type: image/png
+mime_type: image/jpeg
 projection: EPSG:4326
 source_mrf:
   bands: 3
@@ -17,7 +17,9 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   year_dir: true
-convert_mrf: .jpeg
+copy_periods:
+  - "GOES-East_ABI_Air_Mass_v0_NRT_convert"
+  - "GOES-East_ABI_Air_Mass"
 static: false
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km
