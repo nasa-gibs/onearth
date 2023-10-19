@@ -746,7 +746,6 @@ class TestMapserver(unittest.TestCase):
     def tearDownClass(self):
         restart_apache()
 
-
 if __name__ == '__main__':
     # Parse options before running tests
     parser = OptionParser()
