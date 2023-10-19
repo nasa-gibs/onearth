@@ -648,6 +648,33 @@ class TestMapserver(unittest.TestCase):
         self.assertTrue(decodedResponse == expectedResponse,
                         'The response for requesting a layer with a missing shapefile does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
+
+    """
+    def test_request_zenjpeg_jpeg(self):
+        
+        # 39. Test requesting a ZenJPEG layer JPEG
+        
+        ref_hash = '35fb7f2003637140173f5c2670073a30'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180'
+        if DEBUG:
+            print('\nTesting: Request group layer')
+            print('URL: ' + req_url)
+        check_result = check_tile_request_save(req_url, ref_hash, "test_zenjpeg.jpg")
+        self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
+    
+    def test_request_zenjpeg_png(self):
+        
+        # 40. Test requesting a ZenJPEG layer PNG
+        
+        ref_hash = '35fb7f2003637140173f5c2670073a30'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Raster_Status,test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180'
+        if DEBUG:
+            print('\nTesting: Request group layer')
+            print('URL: ' + req_url)
+        check_result = check_tile_request_save(req_url, ref_hash, "test_zenjpeg.png")
+        self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
+
+    
     """
     def test_request_zenjpeg_jpeg(self):
         
@@ -675,39 +702,39 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_zenjpeg_convert_jpeg(self):
         
-        # 39. Test requesting a ZenJPEG layer JPEG
+        # 40. Test requesting a ZenJPEG layer JPEG
         
-        ref_hash = '35fb7f2003637140173f5c2670073a30'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg_convert&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180'
+        ref_hash = 'ebd89876fb7b45802717434f3c80f926'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
-            print('\nTesting: Request group layer')
+            print('\nTesting: Request ZenJPEG-sourced PNG layer as a JPEG via WMS')
             print('URL: ' + req_url)
-        check_result = check_tile_request_save(req_url, ref_hash, "test_zenjpeg_convert.jpg")
+        check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
     
     def test_request_zenjpeg_convert_png(self):
         
-        # 40. Test requesting a ZenJPEG layer PNG
+        # 41. Test requesting a ZenJPEG layer PNG
         
-        ref_hash = '35fb7f2003637140173f5c2670073a30'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_zenjpeg_convert&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180'
+        ref_hash = '154efc5e23fc1177c054e99bc9aa026f'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
-            print('\nTesting: Request group layer')
+            print('\nTesting: Request ZenJPEG-sourced PNG layer as a PNG via WMS')
             print('URL: ' + req_url)
-        check_result = check_tile_request_save(req_url, ref_hash, "test_zenjpeg_convert.png")
+        check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
 
     def test_request_zenjpeg_convert_multilayer_png(self):
         
-        # 40. Test requesting a ZenJPEG layer and another layer as a PNG
+        # 42. Test requesting a ZenJPEG layer and another layer as a PNG
         
-        ref_hash = '35fb7f2003637140173f5c2670073a30'
-        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Raster_Status,test_zenjpeg_convert&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180'
+        ref_hash = '9662f74bf44df726abe0509ec52eabbd'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=false&LAYERS=test_static_jpg,test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=2048&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
-            print('\nTesting: Request group layer')
+            print('\nTesting: Request ZenJPEG PNG layer and an underlying layer via WMS')
             print('URL: ' + req_url)
-        check_result = check_tile_request_save(req_url, ref_hash, "test_zenjpeg_convert_multilayer.png")
-        self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url) """
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Image containing ZenJPEG layer and underlying layer does not match what\'s expected. URL: ' + req_url)
 
     def test_request_invalid_getmap_format(self):
         """

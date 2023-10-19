@@ -9,13 +9,14 @@ projection: EPSG:4326
 source_mrf:
   bands: 3
   bbox: -180,-90,180,90
-  data_file_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_zenjpeg/test_zenjpeg.pjg
-  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
-  idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_zenjpeg/test_zenjpeg.idx
+  data_file_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512_ZEN.jpg
+  idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
   size_x: 20480
   size_y: 10240
   tile_size_x: 512
   tile_size_y: 512
-static: true
+  year_dir: true
+static: false
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km
