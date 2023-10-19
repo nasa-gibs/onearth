@@ -99,6 +99,27 @@ MOD_MRF_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
 </Directory>
 """
 
+MOD_CONVERT_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
+    WMTSWrapperRole layer
+    WMTSWrapperMimeType image/png
+</Directory>
+
+<Directory {endpoint_path}/{layer_name}/default>
+    WMTSWrapperRole style
+    WMTSWrapperEnableTime On
+    WMTSWrapperTimeLookupUri /date_service/date_service
+</Directory>
+
+<Directory {endpoint_path}/{layer_name}/default/{tilematrixset}>
+    WMTSWrapperRole tilematrixset
+    WMTSWrapperEnableYearDir {year_dir}
+    WMTSWrapperLayerAlias {layer_name}
+    Convert_ConfigurationFiles {config_files_paths}
+    Convert_RegExp {layer_name}
+    Convert_Source {convert_source}
+</Directory>
+"""
+
 MOD_REPROJECT_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
     WMTSWrapperRole layer
     WMTSWrapperMimeType image/jpeg
@@ -118,7 +139,7 @@ MOD_REPROJECT_NODATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name
 
 MOD_REPROJECT_DATE_APACHE_TEMPLATE = """<Directory {endpoint_path}/{layer_name}>
     WMTSWrapperRole layer
-    WMTSWrapperMimeType image/jpeg
+    WMTSWrapperMimeType {mime}
 </Directory>
 
 <Directory {endpoint_path}/{layer_name}/default>
@@ -161,6 +182,12 @@ MOD_MRF_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
     SkippedLevels {skipped_levels}
     IndexFile {idx_path}
     {data_config}
+"""
+
+MOD_CONVERT_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
+    PageSize {tile_size_x} {tile_size_y} 1 {bands}
+    SkippedLevels {skipped_levels}
+    EmptyTile {empty_tile}
 """
 
 MOD_REPROJECT_SRC_CONFIG_TEMPLATE = """Size {size_x} {size_y} 1 {bands}
@@ -218,6 +245,8 @@ class TestModWmtsWrapper(unittest.TestCase):
         self.setup_mrf_date_yeardir()
         self.setup_mrf_reproject_nodate()
         self.setup_mrf_reproject_date()
+        self.setup_zenjpeg_source_mrf_date_yeardir()
+        self.setup_zenjpeg_convert_mrf_date_yeardir()
 
         restart_apache()
 
@@ -508,6 +537,197 @@ class TestModWmtsWrapper(unittest.TestCase):
         ]
         seed_redis_data(redis_data)
         self.redis_layers.append(redis_data)
+    
+    @classmethod
+    def setup_zenjpeg_source_mrf_date_yeardir(self):
+        # Configure mod_mrf setup
+        size_x = 20480
+        size_y = 10240
+        tile_size = 512
+        image_type = "jpeg"
+        tilematrixset = '2km'
+        year = '2012'
+
+        config_prefix = 'test_zenjpeg_source_mrf_date_yeardir'
+
+        # Add Apache config for base imagery layer to be served by mod_mrf
+        layer_path = '{}/default/{}'.format(config_prefix, tilematrixset)
+        self.mrf_zenjpeg_source_endpoint_path_date_yeardir = os.path.join(
+            self.endpoint_path, layer_path)
+        self.mrf_url_date = '{}/{}/{}'.format(
+            base_url, self.endpoint_prefix_mrf, config_prefix)
+        apache_config = bulk_replace(
+            MOD_MRF_DATE_APACHE_TEMPLATE,
+            [('{config_path}', self.mrf_zenjpeg_source_endpoint_path_date_yeardir),
+             ('{config_file_path}',
+              os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
+                           config_prefix + '.config')),
+             ('{alias}', self.endpoint_prefix_mrf),
+             ('{endpoint_path}', self.endpoint_path),
+             ('{layer_name}', config_prefix),
+             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'On')])
+
+        self.mod_mrf_zenjpeg_source_apache_config_path_date_yeardir = os.path.join(
+            apache_conf_dir, config_prefix + '.conf')
+        with open(self.mod_mrf_zenjpeg_source_apache_config_path_date_yeardir, 'w+') as f:
+            f.write(apache_config)
+
+        # Copy test imagery
+        test_imagery_path = os.path.join(os.getcwd(),
+                                         'mod_wmts_wrapper_test_data')
+        make_dir_tree(
+            self.mrf_zenjpeg_source_endpoint_path_date_yeardir, ignore_existing=True)
+
+        date = '2012053000000'
+        yeardir = os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
+                                date[:4])
+
+        make_dir_tree(yeardir, ignore_existing=True)
+
+        date_idx_path = os.path.join(yeardir,
+                                        config_prefix + '-' + date + '.idx')
+        date_data_path = os.path.join(yeardir,
+                                        config_prefix + '-' + date + '.pjg')
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                            config_prefix + '-' + date + '.idx'),
+            date_idx_path)
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                            config_prefix + '-' + date + '.pjg'),
+            date_data_path)
+
+        idx_path = os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
+                                '${YYYY}/${filename}.idx')
+        data_path = os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
+                                 '${YYYY}/${filename}.pjg')
+
+        # Build layer config
+        data_config = 'DataFile ' + data_path
+        mod_mrf_config = bulk_replace(
+            MOD_MRF_CONFIG_TEMPLATE,
+            [('{size_x}', size_x), ('{size_y}', size_y),
+             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
+             ('{idx_path}', idx_path), ('{data_config}', data_config),
+             ('{skipped_levels}', '0' if size_x == size_y else '1')])
+
+        mod_mrf_config_path = os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
+                                           config_prefix + '.config')
+
+        with open(mod_mrf_config_path, 'w+') as f:
+            f.write(mod_mrf_config)
+
+        redis_data = [
+            ('test_zenjpeg_source_mrf_date_yeardir', '2012-02-22',
+             '2012-02-22/2012-02-22/P1D'),
+        ]
+        seed_redis_data(redis_data)
+        self.redis_layers.append(redis_data)
+
+    @classmethod
+    def setup_zenjpeg_convert_mrf_date_yeardir(self):
+        # Configure mod_mrf setup
+        size_x = 20480
+        size_y = 10240
+        tile_size = 512
+        image_type = "png"
+        tilematrixset = '2km'
+        year = '2012'
+
+        config_prefix = 'test_zenjpeg_convert_mrf_date_yeardir'
+
+        # Add Apache config for base imagery layer to be served by mod_mrf
+        layer_path = '{}/default/{}'.format(config_prefix, tilematrixset)
+        self.mrf_zenjpeg_convert_endpoint_path_date_yeardir = os.path.join(
+            self.endpoint_path, layer_path)
+        self.mrf_url_date = '{}/{}/{}'.format(
+            base_url, self.endpoint_prefix_mrf, config_prefix)
+        apache_config = bulk_replace(
+            MOD_CONVERT_DATE_APACHE_TEMPLATE,
+            [('{config_path}', self.mrf_zenjpeg_convert_endpoint_path_date_yeardir),
+             ('{config_files_paths}',
+              os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
+                           'test_zenjpeg_source_mrf_date_yeardir' + '.config') + " " \
+                            + os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
+                           'test_zenjpeg_convert_mrf_date_yeardir' + '_mod_convert.config')),
+             ('{convert_source}', '/mod_wmts_wrapper_mrf/test_zenjpeg_source_mrf_date_yeardir/default/${date}/2km/ .jpeg'),
+             ('{alias}', self.endpoint_prefix_mrf),
+             ('{endpoint_path}', self.endpoint_path),
+             ('{layer_name}', config_prefix),
+             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'On')])
+
+        self.mod_mrf_zenjpeg_convert_apache_config_path_date_yeardir = os.path.join(
+            apache_conf_dir, config_prefix + '.conf')
+        with open(self.mod_mrf_zenjpeg_convert_apache_config_path_date_yeardir, 'w+') as f:
+            f.write(apache_config)
+
+        # Copy test imagery
+        test_imagery_path = os.path.join(os.getcwd(),
+                                         'mod_wmts_wrapper_test_data')
+        make_dir_tree(
+            self.mrf_zenjpeg_convert_endpoint_path_date_yeardir, ignore_existing=True)
+
+        date = '2012053000000'
+        yeardir = os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
+                                date[:4])
+
+        make_dir_tree(yeardir, ignore_existing=True)
+
+        date_idx_path = os.path.join(yeardir,
+                                        config_prefix + '-' + date + '.idx')
+        date_data_path = os.path.join(yeardir,
+                                        config_prefix + '-' + date + '.pjg')
+
+        idx_path = os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
+                                '${YYYY}/${filename}.idx')
+        data_path = os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
+                                 '${YYYY}/${filename}.pjg')
+
+        # Build layer config
+        data_config = 'DataFile ' + data_path
+        mod_mrf_config = bulk_replace(
+            MOD_MRF_CONFIG_TEMPLATE,
+            [('{size_x}', size_x), ('{size_y}', size_y),
+             ('{bands}', 3),
+             ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
+             ('{idx_path}', idx_path), ('{data_config}', data_config),
+             ('{skipped_levels}', '0' if size_x == size_y else '1')])
+
+        mod_mrf_config_path = os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
+                                           config_prefix + '.config')
+
+        with open(mod_mrf_config_path, 'w+') as f:
+            f.write(mod_mrf_config)
+
+        # Build convert config
+        empty_tile = 'Blank_RGB_512_ZEN.jpg'
+        empty_tile_path = '/etc/onearth/empty_tiles/'
+        make_dir_tree(empty_tile_path, ignore_existing=True)
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                            empty_tile),
+            empty_tile_path)
+        mod_convert_config = bulk_replace(
+            MOD_CONVERT_CONFIG_TEMPLATE,
+            [('{size_x}', size_x), ('{size_y}', size_y),
+             ('{bands}', 3),
+             ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
+             ('{skipped_levels}', '0' if size_x == size_y else '1'),
+             ('{empty_tile}', os.path.join(empty_tile_path, empty_tile))])
+
+        mod_convert_config_path = os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
+                                           config_prefix + '_mod_convert.config')
+
+        with open(mod_convert_config_path, 'w+') as f:
+            f.write(mod_convert_config)
+
+        redis_data = [
+            ('test_zenjpeg_convert_mrf_date_yeardir', '2012-02-22',
+             '2012-02-22/2012-02-22/P1D'),
+        ]
+        seed_redis_data(redis_data)
+        self.redis_layers.append(redis_data)
 
     @classmethod
     def setup_mrf_reproject_nodate(self):
@@ -623,6 +843,7 @@ class TestModWmtsWrapper(unittest.TestCase):
         apache_config = bulk_replace(
             MOD_REPROJECT_DATE_APACHE_TEMPLATE,
             [('{config_path}', self.reproj_endpoint_path_date),
+             ('{mime}', 'image/' + image_type),
              ('{src_config}', src_config_path),
              ('{dest_config}', dest_config_path),
              ('{alias}', self.endpoint_prefix_reproject),
@@ -1399,6 +1620,22 @@ class TestModWmtsWrapper(unittest.TestCase):
             errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
                 tile_url)
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
+            
+    def test_zenjpeg_source_mrf_date_yeardir_tile(self):
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_source_mrf_date_yeardir/default/2012-02-22/2km/0/0/0.jpg'
+
+        ref_hash = 'c6d8c3f38079ef866fb0b681b486296e'
+        errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
+            tile_url)
+        self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
+
+    def test_zenjpeg_convert_mrf_date_yeardir_tile(self):
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_convert_mrf_date_yeardir/default/2012-02-22/2km/0/0/0.png'
+
+        ref_hash = 'eb55408ec5e50d58793f5353ec43735d'
+        errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
+            tile_url)
+        self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     @classmethod
     def tearDownClass(self):

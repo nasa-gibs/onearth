@@ -686,7 +686,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_invalid_getmap_format(self):
         """
-        40. Test a GetMap request using an invalid format.
+        43. Test a GetMap request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=cr2&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
@@ -714,7 +714,7 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_invalid_getfeature_format(self):
         """
-        41. Test a GetFeature request using an invalid format.
+        44. Test a GetFeature request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=gojson'
         if DEBUG:
