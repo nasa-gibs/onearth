@@ -17,6 +17,8 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   year_dir: true
+copy_periods:
+ - test_zenjpeg
 static: false
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km
