@@ -746,29 +746,6 @@ class TestMapserver(unittest.TestCase):
     def tearDownClass(self):
         restart_apache()
 
-# This function is a modified version of `check_tile_request` from oe_test_utils
-# that saves the outputted tile in the /results folder. This is just so that
-# we can easily see the tile returned by the request without
-# having to go into the docker container and copy it out.
-# Remove this after the ZenJPEG tiles are being returned correctly for GITC-3350. 
-from oe_test_utils import check_apache_running, get_file_hash
-def check_tile_request_save(url, ref_hash, filename):
-    """
-    Checks to see if Apache is running, downloads a tile from the specified URL,
-    and checks it against a hash value. Returns true or false.
-    Arguments
-        url -- the URL of the tile to be tested
-        ref_hash -- the hash that the file will be tested against.
-    """
-    check_apache_running()
-    tile = get_url(url)
-    with open("/results/{}".format(filename), "wb+") as f:
-        f.write(tile.read())
-    tile_hash = get_file_hash(tile)
-    print("tile_hash: " + tile_hash)
-    hash_check = tile_hash == ref_hash
-    return hash_check
-
 
 if __name__ == '__main__':
     # Parse options before running tests
