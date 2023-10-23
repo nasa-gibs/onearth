@@ -94,7 +94,7 @@ class Environment:
         self.emailRecipient = emailRecipient
         self.emailSender = emailSender
        
-def sigevent_email(type, mssg, smtp_server, recipient, sender):
+def sigevent_email(type, mssg, smtp_server, recipient, sender, use_ssl=False, mail_user="", mail_pass=""):
     """
     Send a sigevent message via email.
     Arguments:
@@ -135,9 +135,18 @@ def sigevent_email(type, mssg, smtp_server, recipient, sender):
     msg['From'] = sender
     msg['To'] = recipient
     try:
-        s = smtplib.SMTP(smtp_server)
-        s.sendmail(sender, recipient.replace(",",";").split(";"), msg.as_string())
-        s.quit()
+        if use_ssl:
+            s = smtplib.SMTP_SSL(smtp_server)
+            if mail_user != "" and mail_pass != "":
+                s.login(mail_user, mail_pass)
+            s.sendmail(sender, recipient.replace(",",";").split(";"), msg.as_string())
+            s.quit()
+        else:
+            s = smtplib.SMTP(smtp_server)
+            if mail_user != "" and mail_pass != "":
+                s.login(mail_user, mail_pass)
+            s.sendmail(sender, recipient.replace(",",";").split(";"), msg.as_string())
+            s.quit()
     except Exception as e:
         log_info_mssg("ERROR: Cannot send email using SMTP server " + smtp_server + ", " + str(e))
         
