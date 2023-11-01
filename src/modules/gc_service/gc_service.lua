@@ -24,6 +24,11 @@ local PROJECTIONS = {
         bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, 38.807151}, upperCorner={180, 90}},
         bbox={crs="urn:ogc:def:crs:EPSG::3413", lowerCorner={-4194304, -4194304}, upperCorner={4194304, 4194304}}
     },
+    ["EPSG:3413-Extended"] = {
+        wkt='PROJCS["WGS 84 / NSIDC Sea Ice Polar Stereographic North",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Polar_Stereographic"],PARAMETER["latitude_of_origin",70],PARAMETER["central_meridian",-45],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],AUTHORITY["EPSG","3413"]]',
+        bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-90, -19.897867}, upperCorner={90, -19.897867}},
+        bbox={crs="urn:ogc:def:crs:EPSG::3031", lowerCorner={-12400000, -12400000}, upperCorner={12400000, 12400000}}
+    },
     ["EPSG:3857"] = {
         wkt='PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]',
         bbox84={crs="urn:ogc:def:crs:OGC:2:84", lowerCorner={-180, -85.051129}, upperCorner={180, 85.051129}},
@@ -421,6 +426,7 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     local layerAbstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
+    local proj = assert(config.projection, "Can't find projection name in YAML!")
     -- local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
 
     -- Maintain backward compatibility with layer titles that include unicode xB5
@@ -442,7 +448,7 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     --     _, tmsDef = getReprojectedTms(tmsDef, targetEpsgCode, tmsDefs)
     -- end
 
-    local bbox = PROJECTIONS[targetEpsgCode or epsgCode]["bbox"] or PROJECTIONS[targetEpsgCode or epsgCode]["bbox84"]
+    local bbox = PROJECTIONS[targetEpsgCode or proj]["bbox"] or PROJECTIONS[targetEpsgCode or proj]["bbox84"]
 
     layerElem:add_child(xml.new("LatLonBoundingBox", {
         minx=tostring(bbox["lowerCorner"][1]),
@@ -514,7 +520,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     layerElem:add_child(xml.new("ows:Title", {["xml:lang"]="en"}):text(stripDecodeBytesFormat(layerTitle)))
 
     -- Get the information we need from the TMS definitions and add bbox node
-    local tmsDef = tmsDefs[epsgCode][tmsName]
+    local tmsDef = tmsDefs[proj][tmsName]
     if not tmsDef then
         print("Can't find TileMatrixSet (" .. tmsName .. ") for this layer in the TileMatrixSet definitions file." )
     end
