@@ -245,7 +245,17 @@ Currently mod_convert need two layers to be setup. One will serve the source ZEN
 convert_mrf: 
   convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT .jpeg) of the source zenjpeg. 
   
-  This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. 
+  This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. convert_mrf must also be listed in the layer's "best" configuration file.
+
+copy_periods:
+  - layer_id
+  - layer_id
+  
+  List the layer_id's of any layers that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, copy_periods option should be included in the source layer's layer configuration and should include the layer_id of the converted layer and the layer_id of the "best" layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_periods listing both the converted layer_id and the "best" layer_id:
+
+  copy_periods:
+    - GOES-East_ABI_GeoColor_v0_NRT
+    - GOES-East_ABI_GeoColor
 
 A best layer is made up of one virtual layer(best layer). The one best layer is mapped to many actual layers. 
 On the config for the best layer there will be a:
@@ -331,4 +341,97 @@ source_mrf:
   bbox: -180,-90,180,90
   empty_tile: "/etc/onearth/empty_tiles/Blank_RGBA_512.png"
 ```
+
+Sample ZENJPEG source layer configuration:
+```
+abstract: GOES-East_ABI_GeoColor_v0_NRT_ZEN abstract
+layer_id: GOES-East_ABI_GeoColor_v0_NRT_ZEN
+layer_name: GOES-East ABI GeoColor v0 NRT ZEN tileset
+layer_title: Geo Color (v0, Near Real-Time, ABI, GOES-East, ZEN)
+metadata: []
+mime_type: image/jpeg
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512_ZEN.jpg
+  idx_path: /onearth/idx/epsg4326
+  size_x: 40960
+  size_y: 20480
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+copy_periods: 
+- GOES-East_ABI_GeoColor_v0_NRT
+- GOES-East_ABI_GeoColor
+tilematrixset: 1km
+tilematrixset_limits_id: goes-east-1km
+time_config:
+- DETECT/PT10M
+```
+
+Sample ZENJPEG converted layer configuration:
+```
+abstract: GOES-East_ABI_GeoColor_v0_NRT abstract
+best_layer: GOES-East_ABI_GeoColor
+layer_id: GOES-East_ABI_GeoColor_v0_NRT
+layer_name: GOES-East ABI GeoColor v0 NRT tileset
+layer_title: Geo Color (v0, Near Real-Time, ABI, GOES-East)
+metadata: []
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512_ZEN.jpg
+  idx_path: /onearth/idx/epsg4326
+  size_x: 40960
+  size_y: 20480
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+convert_mrf: 
+  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZEN .jpeg
+static: false
+tilematrixset: 1km
+tilematrixset_limits_id: goes-east-1km
+time_config:
+- DETECT/PT10M
+```
+
+Sample ZENJPEG best layer configuration:
+```
+abstract: GOES-East_ABI_GeoColor abstract
+best_config:
+  1: GOES-East_ABI_GeoColor_v0_NRT
+layer_id: GOES-East_ABI_GeoColor
+layer_name: GOES-East ABI GeoColor tileset
+layer_title: Geo Color (Best Available, ABI, GOES-East)
+metadata: []
+mime_type: image/png
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_uri: '{S3_URL}/epsg4326'
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512_ZEN.jpg
+  idx_path: /onearth/idx/epsg4326
+  size_x: 40960
+  size_y: 20480
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+convert_mrf: 
+  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZEN .jpeg
+tilematrixset: 1km
+tilematrixset_limits_id: goes-east-1km
+time_config:
+- DETECT/PT10M
+wms_layer_group: /Geostationary
+```
+
 See [docker/sample_configs/layers](../docker/sample_configs/layers) for more samples.

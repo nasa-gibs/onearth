@@ -56,6 +56,12 @@ sleep 2
 /usr/bin/redis-cli  -n 0 DEL layer:test_weekly_jpg
 /usr/bin/redis-cli  -n 0 SET layer:test_weekly_jpg:default "2012-02-29"
 /usr/bin/redis-cli  -n 0 SADD layer:test_weekly_jpg:periods "2012-02-22/2012-02-29/P7D"
+/usr/bin/redis-cli  -n 0 DEL layer:test_zenjpeg_ZEN
+/usr/bin/redis-cli  -n 0 SET layer:test_zenjpeg_ZEN:default "2012-02-22"
+/usr/bin/redis-cli  -n 0 SADD layer:test_zenjpeg_ZEN:periods "2012-02-22/2012-02-22/P1D"
+/usr/bin/redis-cli  -n 0 DEL layer:test_zenjpeg
+/usr/bin/redis-cli  -n 0 SET layer:test_zenjpeg:default "2012-02-22"
+/usr/bin/redis-cli  -n 0 SADD layer:test_zenjpeg:periods "2012-02-22/2012-02-22/P1D"
 /usr/bin/redis-cli  -n 0 DEL layer:snap_test_1a
 /usr/bin/redis-cli  -n 0 SET layer:snap_test_1a:default "2016-02-29"
 /usr/bin/redis-cli  -n 0 SADD layer:snap_test_1a:periods "2015-01-01/2016-12-31/P1D"

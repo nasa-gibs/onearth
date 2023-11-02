@@ -648,9 +648,45 @@ class TestMapserver(unittest.TestCase):
         self.assertTrue(decodedResponse == expectedResponse,
                         'The response for requesting a layer with a missing shapefile does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
+    def test_request_zenjpeg_convert_jpeg(self):
+        
+        # 40. Test requesting a ZenJPEG layer JPEG
+        
+        ref_hash = 'ebd89876fb7b45802717434f3c80f926'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
+        if DEBUG:
+            print('\nTesting: Request ZenJPEG-sourced PNG layer as a JPEG via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
+    
+    def test_request_zenjpeg_convert_png(self):
+        
+        # 41. Test requesting a ZenJPEG layer PNG
+        
+        ref_hash = '154efc5e23fc1177c054e99bc9aa026f'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
+        if DEBUG:
+            print('\nTesting: Request ZenJPEG-sourced PNG layer as a PNG via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
+
+    def test_request_zenjpeg_convert_multilayer_png(self):
+        
+        # 42. Test requesting a ZenJPEG layer and another layer as a PNG
+        
+        ref_hash = '9662f74bf44df726abe0509ec52eabbd'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=false&LAYERS=test_static_jpg,test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=2048&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
+        if DEBUG:
+            print('\nTesting: Request ZenJPEG PNG layer and an underlying layer via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Image containing ZenJPEG layer and underlying layer does not match what\'s expected. URL: ' + req_url)
+
     def test_request_invalid_getmap_format(self):
         """
-        40. Test a GetMap request using an invalid format.
+        43. Test a GetMap request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=cr2&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
@@ -678,7 +714,7 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_invalid_getfeature_format(self):
         """
-        41. Test a GetFeature request using an invalid format.
+        44. Test a GetFeature request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=gojson'
         if DEBUG:

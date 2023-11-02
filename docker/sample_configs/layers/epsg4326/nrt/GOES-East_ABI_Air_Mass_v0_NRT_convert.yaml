@@ -10,7 +10,7 @@ source_mrf:
   bands: 3
   bbox: -180,-90,180,90
   data_file_uri: '{S3_URL}/epsg4326'
-  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512.png
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGBA_512_ZEN.jpg
   idx_path: /onearth/idx/epsg4326
   size_x: 20480
   size_y: 10240
@@ -18,7 +18,7 @@ source_mrf:
   tile_size_y: 512
   year_dir: true
 convert_mrf: 
-  convert_source: GOES-East_ABI_Air_Mass_v0_NRT .jpeg
+  convert_source: GOES-East_ABI_Air_Mass_v0_NRT_ZEN .jpeg
 static: false
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km

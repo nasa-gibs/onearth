@@ -744,7 +744,7 @@ static int handler(request_rec *r)
     // Output a single tile
     TiledRaster outraster = cfg->raster;
     outraster.size = outraster.pagesize;
-    switch (cfg->raster.format) {
+    switch (cfg->inraster.format) {
     case IMG_ANY:
     case IMG_JPEG: {
         jpeg_params params(outraster);
