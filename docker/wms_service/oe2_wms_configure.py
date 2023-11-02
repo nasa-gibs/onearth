@@ -265,6 +265,10 @@ for layer in layers:
     else:
         print("WARN: Layer config for layer {0} not found".format(layer_name))
 
+    offsite = ""
+    if layer_config['config'].get('convert_mrf'):
+        offsite = "OFFSITE  0 0 0"
+
     wms_srs    = "{0}".format(epsg_code)
     if epsg_code == "EPSG:4326":
         if layer_config and 'web_mercator_config_path' in layer_config["config"]:
@@ -348,7 +352,8 @@ for layer in layers:
                                                                   ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
                                                                   ('${proj_params}', PROJ_PARAMS[layer_proj]),
                                                                   ('${validation_info}', validation_info),
-                                                                  ('${class_style}', class_style)])
+                                                                  ('${class_style}', class_style),
+                                                                  ('${offsite}', offsite)])
                 layer_strings.append(new_layer_string)
 
         except KeyError:
@@ -409,7 +414,8 @@ for layer in layers:
                                                          ('${data_xml}', 'DATA    \'{0}\''.format(etree.tostring(out_root).decode())),
                                                          ('${class_style}', ''),
                                                          ('${validation_info}', validation_info),
-                                                         ('${proj_params}', PROJ_PARAMS[layer_proj])])
+                                                         ('${proj_params}', PROJ_PARAMS[layer_proj]),
+                                                         ('${offsite}', offsite)])
     
         layer_strings.append(template_string)
 
