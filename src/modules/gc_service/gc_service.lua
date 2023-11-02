@@ -221,6 +221,15 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     end
     configFile:close()
 
+    -- Skip hidden layers
+    local hidden = false
+    if config.hidden ~= nil then
+        hidden = config.hidden
+    end
+    if config.hidden then
+        return nil
+    end
+
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
@@ -417,6 +426,15 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     end
     configFile:close()
 
+    -- Skip hidden layers
+    local hidden = false
+    if config.hidden ~= nil then
+        hidden = config.hidden
+    end
+    if config.hidden then
+        return nil
+    end
+
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
@@ -472,13 +490,22 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
         return nil
     end
 
+    -- Skip hidden layers
+    local hidden = false
+    if config.hidden ~= nil then
+        hidden = config.hidden
+    end
+    if config.hidden then
+        return nil
+    end
+
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     -- local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
-    local proj = assert(config.projection, "Can't find projection name in YAML!")
+    local proj = assert(config.projection, "Can't find projection name in YAML!") 
     local static = true
     if config.static ~= nil then
         static = config.static

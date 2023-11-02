@@ -189,7 +189,7 @@ class TestMapserver(unittest.TestCase):
 
         check_result = check_dicts(XMLdict, refXMLdict)
         self.assertTrue(check_result, 'WMS Get GetCapabilities Request 1.3.0 does not match what\'s expected. URL: ' + req_url)
-        
+
     def test_wfs_get_capabilities_2_0_0(self):
         """
         10. Request WFS GetCapabilities 2.0.0
@@ -536,13 +536,29 @@ class TestMapserver(unittest.TestCase):
         """
         32. Request missing layers via WMS
         """
-        ref_hash = 'cfbe0fe497a8b9278a21d36e7dac8704'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270'
         if DEBUG:
             print('\nTesting: Request missing layers via WMS')
             print('URL: ' + req_url)
-        check_result = check_tile_request(req_url, ref_hash)
-        self.assertTrue(check_result, 'Request missing layers via WMS does not match what\'s expected. URL: ' + req_url)
+        
+        response = get_url(req_url).read()
+
+        # Check if the response is valid XML
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/MissingLayerResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for requesting a missing layer does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
         
     def test_request_wms_multilayer(self):
         """
@@ -649,9 +665,9 @@ class TestMapserver(unittest.TestCase):
                         'The response for requesting a layer with a missing shapefile does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
     def test_request_zenjpeg_convert_jpeg(self):
-        
-        # 40. Test requesting a ZenJPEG layer JPEG
-        
+        """
+        40. Test requesting a ZenJPEG layer JPEG
+        """
         ref_hash = 'ebd89876fb7b45802717434f3c80f926'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
@@ -661,9 +677,9 @@ class TestMapserver(unittest.TestCase):
         self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
     
     def test_request_zenjpeg_convert_png(self):
-        
-        # 41. Test requesting a ZenJPEG layer PNG
-        
+        """
+        41. Test requesting a ZenJPEG layer PNG
+        """
         ref_hash = '154efc5e23fc1177c054e99bc9aa026f'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
@@ -673,9 +689,9 @@ class TestMapserver(unittest.TestCase):
         self.assertTrue(check_result, 'ZenJPEG layer does not match what\'s expected. URL: ' + req_url)
 
     def test_request_zenjpeg_convert_multilayer_png(self):
-        
-        # 42. Test requesting a ZenJPEG layer and another layer as a PNG
-        
+        """
+        42. Test requesting a ZenJPEG layer and another layer as a PNG
+        """
         ref_hash = '9662f74bf44df726abe0509ec52eabbd'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=false&LAYERS=test_static_jpg,test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=2048&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         if DEBUG:
@@ -684,9 +700,37 @@ class TestMapserver(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Image containing ZenJPEG layer and underlying layer does not match what\'s expected. URL: ' + req_url)
 
+    def test_request_zenjpeg_source_jpeg(self):
+        """
+        43. Test requesting a ZenJPEG source layer JPEG
+        """
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg_ZEN&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
+        
+        if DEBUG:
+            print('\nTesting: ZenJPEG Source Layer')
+            print('URL: ' + req_url)
+
+        # Check if the response is valid XML
+        response = get_url(req_url).read()
+        try:
+            XMLroot = ElementTree.XML(response)
+            XMLdict = XmlDictConfig(XMLroot)
+            xml_check = True
+        except:
+            xml_check = False
+        self.assertTrue(xml_check, 'Response is not a valid XML file. URL: ' + req_url)
+
+        # Check if the response matches the expected response
+        decodedResponse = html.unescape(response.decode('utf-8'))
+        with open(os.path.join(os.getcwd(), 'mapserver_test_data/MissingLayerResponse.xml')) as f:
+            expectedResponse = f.read()
+
+        self.assertTrue(decodedResponse == expectedResponse,
+                        'The response for requesting a ZenJPEG source layer does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
+
     def test_request_invalid_getmap_format(self):
         """
-        43. Test a GetMap request using an invalid format.
+        44. Test a GetMap request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=cr2&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
@@ -714,7 +758,7 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_invalid_getfeature_format(self):
         """
-        44. Test a GetFeature request using an invalid format.
+        45. Test a GetFeature request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=gojson'
         if DEBUG:
