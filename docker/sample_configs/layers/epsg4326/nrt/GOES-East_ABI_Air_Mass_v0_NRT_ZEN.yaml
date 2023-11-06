@@ -21,6 +21,7 @@ copy_periods:
   - "GOES-East_ABI_Air_Mass_v0_NRT_convert"
   - "GOES-East_ABI_Air_Mass"
 static: false
+hidden: true
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km
 time_config:

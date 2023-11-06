@@ -257,6 +257,9 @@ copy_periods:
     - GOES-East_ABI_GeoColor_v0_NRT
     - GOES-East_ABI_GeoColor
 
+hidden: true
+  A layer config with "hidden: true" will result in its layer being excluded from the WMTS and TWMS GetCapabilities documents. Consequently, the layer will also be excluded from WMS GetCapabilities and will not be available for use in WMS at all. WMTS requests for the layer will still work, however. For ZenJPEG, the source layer config should have this option enabled so that the source layer is not advertised, as users should only be using the converted layer.
+
 A best layer is made up of one virtual layer(best layer). The one best layer is mapped to many actual layers. 
 On the config for the best layer there will be a:
 best_config: lists the various layers and their priority(higher score, higher priority). 
@@ -363,6 +366,7 @@ source_mrf:
   tile_size_y: 512
   year_dir: true
 static: false
+hidden: true
 copy_periods: 
 - GOES-East_ABI_GeoColor_v0_NRT
 - GOES-East_ABI_GeoColor

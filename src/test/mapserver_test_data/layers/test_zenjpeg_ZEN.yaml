@@ -20,5 +20,6 @@ source_mrf:
 copy_periods:
  - test_zenjpeg
 static: false
+hidden: true
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km
