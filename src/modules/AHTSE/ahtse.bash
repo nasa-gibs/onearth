@@ -28,7 +28,7 @@ NP=${NP:-$(nproc)}
 pushd $HOME/src/modules
 
 # libicd is not yet part of AHTSE
-refresh $GITHUB/$ME/libicd
+refresh $GITHUB/$ME/libicd 6c0ad1d50bab26fed89548bcd626b3fa7ba50046
 #copy custom libicd files
 cp -R $HOME/src/modules/AHTSE/libicd/src/* $HOME/src/modules/libicd/src/
 
