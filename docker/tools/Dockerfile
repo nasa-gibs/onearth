@@ -9,7 +9,7 @@ RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-2.el9 && \
+	dnf install -y epel-release-9-5.el9 && \
     dnf install -y \
         lua-devel-5.4.4 \
         jansson-devel-2.14 \
