@@ -257,17 +257,17 @@ for layer in layers:
     # find the corresponding layer configuration and check the mime_type to see if it is vector data we should get from S3
     layer_config = next((lc for lc in layer_configs if layer_name + ".yaml" in lc['path']), False)
     wms_layer_group = ""
+    offsite = ""
     if layer_config:
         try:
             wms_layer_group = '"wms_layer_group"       "{0}"'.format(layer_config['config']['wms_layer_group'])
         except KeyError:
             print("WARN: Layer config {0} has no field 'wms_layer_group'".format(layer_config['path']))
+
+        if layer_config['config'].get('convert_mrf'):
+            offsite = "OFFSITE  0 0 0"
     else:
         print("WARN: Layer config for layer {0} not found".format(layer_name))
-
-    offsite = ""
-    if layer_config['config'].get('convert_mrf'):
-        offsite = "OFFSITE  0 0 0"
 
     wms_srs    = "{0}".format(epsg_code)
     if epsg_code == "EPSG:4326":
