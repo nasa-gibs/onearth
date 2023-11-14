@@ -81,7 +81,7 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/httpd && getcap /usr/sbin/httpd
 
 # Remove unneeded packages
 RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
-    dnf autoremove && \
+    dnf autoremove -y && \
     dnf clean all
 RUN pip uninstall -y pip
 
