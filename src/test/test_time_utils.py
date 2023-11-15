@@ -496,7 +496,7 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[2], layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
-                .format(layer[0], layer[2], layer_res['periods'][0]))
+                .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
@@ -896,7 +896,7 @@ class TestTimeUtils(unittest.TestCase):
             .format(layer_name, layer_res['periods'], periods))
         if not DEBUG:
             remove_redis_layer([layer_name], db_keys)
-
+    
     def test_periods_config_multiple_force_latest_subdaily(self):
         # Test multiple configs on subdaily times with forced periods
         num_dates = 127400
@@ -1188,6 +1188,144 @@ class TestTimeUtils(unittest.TestCase):
         periods = ['2021-01-26T10:00:00Z/2021-01-26T10:00:00Z/PT10M',
                     '2021-01-26T10:40:00Z/2021-01-26T15:30:00Z/PT10M',
                     '2021-01-27T10:40:00Z/2021-01-27T10:40:00Z/PT10M']
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+    
+    def test_periods_force_detect_8_days(self):
+        # Test when we force many periods and then detect the last one for 8-day periods
+        num_years = 23
+        num_dates_per_year = 45
+        date_lst = []
+        for i in range(num_years):
+            date_start = datetime.datetime(2000 + i, 1, 1)
+            date_lst = date_lst + [str((date_start + datetime.timedelta(days=idx * 8)).date()) for idx in range(num_dates_per_year)]
+        date_lst = date_lst + [str((datetime.datetime(2023, 1, 1) + datetime.timedelta(days=idx * 8)).date()) for idx in range(32)]
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('test_periods_force_detect_8_days', date_entry))
+        db_keys = ['epsg4326']
+        
+        config = '2000-02-26/2000-12-26/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2001-01-01/2001-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2002-01-01/2002-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2003-01-01/2003-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2004-01-01/2004-12-26/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2005-01-01/2005-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2006-01-01/2006-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2007-01-01/2007-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2008-01-01/2008-12-26/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2009-01-01/2009-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2010-01-01/2010-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2011-01-01/2011-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2012-01-01/2012-12-26/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2013-01-01/2013-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2014-01-01/2014-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2015-01-01/2015-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2016-01-01/2016-12-26/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2017-01-01/2017-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2018-01-01/2018-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2019-01-01/2019-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2020-01-01/2020-12-26/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2021-01-01/2021-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2022-01-01/2022-12-27/P8D'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2023-01-01/DETECT/P8D'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2000-02-26/2000-12-26/P8D',
+                    '2001-01-01/2001-12-27/P8D',
+                    '2002-01-01/2002-12-27/P8D',
+                    '2003-01-01/2003-12-27/P8D',
+                    '2004-01-01/2004-12-26/P8D',
+                    '2005-01-01/2005-12-27/P8D',
+                    '2006-01-01/2006-12-27/P8D',
+                    '2007-01-01/2007-12-27/P8D',
+                    '2008-01-01/2008-12-26/P8D',
+                    '2009-01-01/2009-12-27/P8D',
+                    '2010-01-01/2010-12-27/P8D',
+                    '2011-01-01/2011-12-27/P8D',
+                    '2012-01-01/2012-12-26/P8D',
+                    '2013-01-01/2013-12-27/P8D',
+                    '2014-01-01/2014-12-27/P8D',
+                    '2015-01-01/2015-12-27/P8D',
+                    '2016-01-01/2016-12-26/P8D',
+                    '2017-01-01/2017-12-27/P8D',
+                    '2018-01-01/2018-12-27/P8D',
+                    '2019-01-01/2019-12-27/P8D',
+                    '2020-01-01/2020-12-26/P8D',
+                    '2021-01-01/2021-12-27/P8D',
+                    '2022-01-01/2022-12-27/P8D',
+                    '2023-01-01/2023-09-06/P8D']
+
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+        
+    def test_periods_force_start_skip_gaps(self):
+        # Test that periods are detected properly when the start date is forced,
+        # the end date is DETECT, and there are gaps in the dates that are being skipped by "force start"
+        num_groups = 23
+        num_dates_per_group = 25
+        date_lst = []
+        for i in range(num_groups):
+            date_start = datetime.datetime(2000 + i, 1, 1)
+            date_lst = date_lst + [str((date_start + datetime.timedelta(days=idx + i)).date()) for idx in range(num_dates_per_group)]
+        date_lst = date_lst + [str((datetime.datetime(2023, 1, 1) + datetime.timedelta(days=idx)).date()) for idx in range(33)]
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('test_periods_force_start_skip_gaps', date_entry))
+        db_keys = ['epsg4326']
+
+        config = '2023-01-01/DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+
+        periods = ['2023-01-01/2023-02-02/P1D']
+
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
