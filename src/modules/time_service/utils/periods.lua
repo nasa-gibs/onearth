@@ -441,25 +441,39 @@ local function calculatePeriods(dates, config)
     force_end = dates[#dates]
   end
 
+  -- Filter out any dates that occur before force_start or after force_end
+  local currentDates
+  if force_start ~= 'DETECT' or force_end ~= 'DETECT' then
+    currentDates = {}
+    for i = 1, #dates do
+      if (force_start == 'DETECT' or (force_start ~= 'DETECT' and dateToEpoch(force_start) <= dateToEpoch(dates[i]))) and
+          (force_end == 'DETECT' or (force_end ~= 'DETECT' and dateToEpoch(force_end) >= dateToEpoch(dates[i]))) then
+        currentDates[#currentDates + 1] = dates[i]
+      end
+    end
+  else
+    currentDates = dates
+  end
+
   if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
   -- Skip DETECT if all forced values are provided
     local dateList = {force_start, force_end}
     periods[#periods + 1] = {size=string.match(force_period, "%d+"), dates=dateList, unit=getIntervalUnit(force_period)}
   else
     -- Calculate periods based on dates list
-    -- table.sort(dates, dateSort)
+    -- table.sort(currentDates, dateSort)
     -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.
     local datesInPeriods = {}
 
     -- Check for year matches
     local annual = false
-    if dates[3] ~= nil then
-      local tail1 = dates[1]:sub(5)
-      local baseYear = tonumber(dates[1]:sub(1, 4))
-      local tail2 = dates[2]:sub(5)
-      local date2Year = tonumber(dates[2]:sub(1, 4))
-      local tail3 = dates[3]:sub(5)
-      local date3Year = tonumber(dates[3]:sub(1, 4))
+    if currentDates[3] ~= nil then
+      local tail1 = currentDates[1]:sub(5)
+      local baseYear = tonumber(currentDates[1]:sub(1, 4))
+      local tail2 = currentDates[2]:sub(5)
+      local date2Year = tonumber(currentDates[2]:sub(1, 4))
+      local tail3 = currentDates[3]:sub(5)
+      local date3Year = tonumber(currentDates[3]:sub(1, 4))
 
       local interval = date2Year - baseYear
       if tail1 == tail2
@@ -468,24 +482,24 @@ local function calculatePeriods(dates, config)
         and date2Year + interval == date3Year
       then
         -- We've found 3 dates at this interval, so it's a valid period. Now find the rest.
-        local dateList = {dates[1], dates[2]}
-        datesInPeriods[dates[1]] = true
-        datesInPeriods[dates[2]] = true
+        local dateList = {currentDates[1], currentDates[2]}
+        datesInPeriods[currentDates[1]] = true
+        datesInPeriods[currentDates[2]] = true
 
         local prevTail = tail2
         local prevYear =date2Year
-        for i = 3, #dates do
-          local tailI = dates[i]:sub(5)
-          local dateIYear = tonumber(dates[i]:sub(1, 4))
+        for i = 3, #currentDates do
+          local tailI = currentDates[i]:sub(5)
+          local dateIYear = tonumber(currentDates[i]:sub(1, 4))
 
           if prevYear + interval == dateIYear and tailI == prevTail then
-            dateList[#dateList+1] = dates[i]
+            dateList[#dateList+1] = currentDates[i]
           else
             periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
-            dateList = {dates[i]}
+            dateList = {currentDates[i]}
           end
 
-          datesInPeriods[dates[i]] = true
+          datesInPeriods[currentDates[i]] = true
           prevTail = tailI
           prevYear = dateIYear
         end
@@ -493,25 +507,25 @@ local function calculatePeriods(dates, config)
         periods[#periods + 1] = {size=interval, dates=dateList, unit="year"}
         annual = true
       end
-    elseif force_period ~= 'DETECT' and dates[2] ~= nil then
+    elseif force_period ~= 'DETECT' and currentDates[2] ~= nil then
       -- only 2 dates, check if they're in the same period
       local size = tonumber(string.match(force_period, "%d+"))
       local unit = getIntervalUnit(force_period)
       local interval = getIntervalLetter(unit)
       if isValidPeriod(size, unit) then
-        if (calcEpochDiff(dates[1], size, interval) == dateToEpoch(dates[2])) then
-          periods[#periods + 1] = {size=size, dates=dates, unit=unit}
-          datesInPeriods[dates[1]] = true
-          datesInPeriods[dates[2]] = true
+        if (calcEpochDiff(currentDates[1], size, interval) == dateToEpoch(currentDates[2])) then
+          periods[#periods + 1] = {size=size, dates=currentDates, unit=unit}
+          datesInPeriods[currentDates[1]] = true
+          datesInPeriods[currentDates[2]] = true
         end
       end
     end
 
-    if dates[3] ~= nil and annual == false then
+    if currentDates[3] ~= nil and annual == false then
       -- Use the given size and interval of the period if they are present.
       -- Otherwise figure out the size and interval of the period based on first 3 values.
-      local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
-      local diff2 = math.abs(dateToEpoch(dates[2]) - dateToEpoch(dates[3]))
+      local diff1 = math.abs(dateToEpoch(currentDates[1]) - dateToEpoch(currentDates[2]))
+      local diff2 = math.abs(dateToEpoch(currentDates[2]) - dateToEpoch(currentDates[3]))
       local size, unit
       if (diff1 == diff2) or (force_period ~= 'DETECT') then
         if (force_period ~= 'DETECT') then
@@ -520,16 +534,16 @@ local function calculatePeriods(dates, config)
         else
           size, unit = calcIntervalFromSeconds(diff1)
         end
-        findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+        findPeriodsAndBreaks(currentDates, size, unit, datesInPeriods, periods)
       else -- More complicated scenarios: when the first and second intervals are different
         local minInterval = diff1
         local minIntervalStartDate, minIntervalEndEpoch
-        for i = 2, #dates - 1 do
-          local currentInterval = math.abs(dateToEpoch(dates[i]) - dateToEpoch(dates[i + 1]))
+        for i = 2, #currentDates - 1 do
+          local currentInterval = math.abs(dateToEpoch(currentDates[i]) - dateToEpoch(currentDates[i + 1]))
           if currentInterval < minInterval then
             minInterval = currentInterval
-            minIntervalStartDate = dates[i]
-            minIntervalEndEpoch = dateToEpoch(dates[i + 1])
+            minIntervalStartDate = currentDates[i]
+            minIntervalEndEpoch = dateToEpoch(currentDates[i + 1])
           end
         end
         -- Check for monthly interval if it's at least 28 days
@@ -547,19 +561,19 @@ local function calculatePeriods(dates, config)
         else
           size, unit = calcIntervalFromSeconds(minInterval)
         end
-        findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods)
+        findPeriodsAndBreaks(currentDates, size, unit, datesInPeriods, periods)
       end
     else
       -- Leftover times are likely loners
       -- Determine if subdaily or not (assume daily if single)
       local unit = "day"
-      if dates[2] ~= nil then
-        local diff1 = math.abs(dateToEpoch(dates[1]) - dateToEpoch(dates[2]))
+      if currentDates[2] ~= nil then
+        local diff1 = math.abs(dateToEpoch(currentDates[1]) - dateToEpoch(currentDates[2]))
         if (diff1<86400) then
           unit = "second"
          end
       end
-      for _, date in ipairs(dates) do
+      for _, date in ipairs(currentDates) do
         if not datesInPeriods[date] then
           periods[#periods + 1] = {size=1, dates={date}, unit=unit}
         end
