@@ -9,7 +9,7 @@ RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-2.el9 && \
+	dnf install -y epel-release-9-5.el9 && \
     dnf install -y \
         lua-devel-5.4.4 \
         jansson-devel-2.14 \
@@ -33,7 +33,7 @@ RUN dnf -y update && \
         proj-devel-8.2.0 \
         geos-3.10.1 \
         geos-devel-3.10.1 \
-        python3-devel-3.9.16 \
+        python3-devel-3.9.18 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
@@ -143,7 +143,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
 
 # Remove unneeded packages
 RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-libs webkit2gtk3-jsc emacs-filesystem && \
-    dnf autoremove && \
+    dnf autoremove -y && \
     dnf clean all
 RUN pip uninstall -y pip
 RUN rm -rf /tmp/*
