@@ -496,7 +496,7 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[2], layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
-                .format(layer[0], layer[2], layer_res['periods'][0]))
+                .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
