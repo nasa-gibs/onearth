@@ -443,11 +443,13 @@ local function calculatePeriods(dates, config)
 
   -- Filter out any dates that occur before force_start or after force_end
   local currentDates
-  if force_start ~= 'DETECT' or force_end ~= 'DETECT' then
+  if (force_start ~= 'DETECT' or force_end ~= 'DETECT') and (force_start == 'DETECT' or force_end == 'DETECT') then
     currentDates = {}
+    local start_epoch = dateToEpoch(force_start)
+    local end_epoch = dateToEpoch(force_end)
     for i = 1, #dates do
-      if (force_start == 'DETECT' or (force_start ~= 'DETECT' and dateToEpoch(force_start) <= dateToEpoch(dates[i]))) and
-          (force_end == 'DETECT' or (force_end ~= 'DETECT' and dateToEpoch(force_end) >= dateToEpoch(dates[i]))) then
+      if (force_start == 'DETECT' or (force_start ~= 'DETECT' and start_epoch <= dateToEpoch(dates[i]))) and
+          (force_end == 'DETECT' or (force_end ~= 'DETECT' and end_epoch >= dateToEpoch(dates[i]))) then
         currentDates[#currentDates + 1] = dates[i]
       end
     end
