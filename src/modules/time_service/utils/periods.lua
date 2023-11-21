@@ -441,27 +441,28 @@ local function calculatePeriods(dates, config)
     force_end = dates[#dates]
   end
 
-  -- Filter out any dates that occur before force_start or after force_end
-  local start_idx = 1
-  local end_idx = #dates
-  if force_start ~= 'DETECT' then
-    local start_epoch = dateToEpoch(force_start)
-    while start_epoch > dateToEpoch(dates[start_idx]) do
-      start_idx = start_idx + 1
-    end
-  end
-  if force_end ~= 'DETECT' then
-    local end_epoch = dateToEpoch(force_end)
-    while end_epoch < dateToEpoch(dates[end_idx]) do
-      end_idx = end_idx - 1
-    end
-  end
-
   if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
   -- Skip DETECT if all forced values are provided
     local dateList = {force_start, force_end}
     periods[#periods + 1] = {size=string.match(force_period, "%d+"), dates=dateList, unit=getIntervalUnit(force_period)}
   else
+
+    -- Filter out any dates that occur before force_start or after force_end
+    local start_idx = 1
+    local end_idx = #dates
+    if force_start ~= 'DETECT' then
+      local start_epoch = dateToEpoch(force_start)
+      while start_epoch > dateToEpoch(dates[start_idx]) do
+        start_idx = start_idx + 1
+      end
+    end
+    if force_end ~= 'DETECT' then
+      local end_epoch = dateToEpoch(force_end)
+      while end_epoch < dateToEpoch(dates[end_idx]) do
+        end_idx = end_idx - 1
+      end
+    end
+
     -- Calculate periods based on dates list
     -- table.sort(dates, dateSort)
     -- Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration,.

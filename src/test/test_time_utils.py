@@ -630,6 +630,27 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_periods_config_force_all_nodates(self):
+        # Test adding layer with multiple dates
+        test_layers = [('Test_Force_All_No_Dates')]
+        db_keys = ['epsg4326']
+        config = '1900-01-01/2899-12-31/P1000Y'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                '1900-01-01/2899-12-31/P1000Y', layer_res['periods'][0],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'][0], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_periods_config_force_start(self):
         # Tests using force_start to forcibly select the first date
         test_layers = [('Test_ForceStart', '2019-01-01',
