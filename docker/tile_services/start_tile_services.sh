@@ -42,6 +42,7 @@ mkdir -p /etc/onearth/colormaps/v1.0/
 mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
+mkdir -p /etc/onearth/colormaps/txt/
 
 # Set up legends
 mkdir -p /etc/onearth/legends/
@@ -103,6 +104,7 @@ else
   # colormaps
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/txt' -b $S3_CONFIGS -p colormaps/txt >>/var/log/onearth/config.log 2>&1
 
   # legends
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/legends/' -b $S3_CONFIGS -p legends >>/var/log/onearth/config.log 2>&1
