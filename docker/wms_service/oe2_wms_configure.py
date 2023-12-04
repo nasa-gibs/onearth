@@ -349,7 +349,7 @@ for layer in layers:
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', ''),
                                                                   ('${style_info}', style_info),
-                                                                  ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
+                                                                  ('${data_xml}', 'DATA    \'{0}\''.format(data_file_uri)),
                                                                   ('${proj_params}', PROJ_PARAMS[layer_proj]),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style),
