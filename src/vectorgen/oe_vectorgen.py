@@ -230,6 +230,16 @@ if __name__ == '__main__':
             # default to GIBS naming convention
             output_name = '{$parameter_name}%Y%j_'
         output_format = get_dom_tag_value(dom, 'output_format').lower()
+        
+        # cloud-optimized shapefile - create spatial index with `shptree` and sort with `coshp`
+        try:
+            if get_dom_tag_value(dom, 'cloud_optimized_shapefile') == "true":
+                cloud_optimized_shapefile = True
+            else:
+                cloud_optimized_shapefile = False
+        except:
+            cloud_optimized_shapefile = False
+
         # EPSG code projection.
         try:
             target_epsg = 'EPSG:' + str(get_dom_tag_value(dom, 'target_epsg'))
@@ -446,6 +456,8 @@ if __name__ == '__main__':
     log_info_mssg(str().join(['config logfile_dir:             ', logfile_dir]))
     log_info_mssg(str().join(['config output_name:             ', output_name]))
     log_info_mssg(str().join(['config output_format:           ', output_format]))
+    if output_format == 'esri shapefile':
+        log_info_mssg(str().join(['config cloud_optimized_shapefile:    ', str(cloud_optimized_shapefile)]))
     if output_format == 'mvt-mrf':
         log_info_mssg(str().join(['config tile_layer_name:         ', tile_layer_name]))
         log_info_mssg(str().join(['config target_x:                ', str(target_x)]))
@@ -509,6 +521,27 @@ if __name__ == '__main__':
             for tile in alltiles:
                 geojson2shp(tile, out_basename, source_epsg, target_epsg, sigevent_url)
                 files = glob.glob(out_basename+"/*")
+                if cloud_optimized_shapefile:
+                    shp_name = os.path.splitext(files[0])[0]
+                    # Create spatial index file (.qix) with MapServer's shptree command
+                    shptree_command_list = ['shptree', shp_name + ".shp"]
+                    run_command(shptree_command_list, sigevent_url)
+                    # Add spatial index file to our list of files
+                    files = glob.glob(out_basename+"/*")
+                    # Use MapServer's coshp command to create a cloud-optimized shapefile by sorting the shapefile and spatial index
+                    coshp_command_list = ['coshp', shp_name, shp_name + "_optimized"]
+                    run_command(coshp_command_list, sigevent_url)
+                    # Remove the original non-cloud-optimized shapefile files
+                    for sfile in files:
+                        try:
+                            # Don't remove .prj because the coshp command does not create a new one.
+                            if not sfile.endswith(".prj"):
+                                os.remove(sfile)
+                        except OSError:
+                            print("Error deleting file {}".format(sfile))
+                    # Get a list of the cloud-optimized shapefile files
+                    files = glob.glob(out_basename+"/*")
+
                 for sfile in files:
                     title, ext = os.path.splitext(os.path.basename(sfile))
                     log_info_mssg(str().join(['Moving ', out_basename+"/"+title+ext, ' to ', out_filename+ext]))

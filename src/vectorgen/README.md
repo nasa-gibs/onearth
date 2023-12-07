@@ -55,6 +55,8 @@ Similar to with `mrfgen`, `oe_vectorgen` uses options specified in an XML file t
 
 **`<source_epsg>`** - Specify the EPSG code of the input projection. 
 
+**`<cloud_optimized_shapefile>` (shapefile only)** - When set to `true`, uses MapServer's [`shptree`](https://mapserver.org/utilities/shptree.html) command to create a spatial index file (`.qix`), then use MapServer's [`coshp`](https://mapserver.org/utilities/coshp.html) command to sort the shapefile and its `.qix` file to create a "cloud-optimized shapefile."
+
 **`<target_x>` (MVT only)** - Pixel width of the highest zoom level (i.e., the bottom of the pyramid). Note that vector layers don't have a concept of pixels -- we use them as a way to describe the dimensions of the tile matrices and match them up with raster layer tile matrices. For example, if you select a `target_x` of 2048 and `tile_size` of 256, the highest zoom level will be 8 tiles wide (2048/256).
 
 Please note that because the dimensions of the vector pyramid are arbitrary, this option is required and must be the exact dimension of the bottom of the pyramid. The easiest way to calculate this dimension is to multiply the desired tile pixel size by the width (in tiles) of the lowest level of the tile matrix set you wish to match up to.
