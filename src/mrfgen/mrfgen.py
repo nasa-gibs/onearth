@@ -180,9 +180,21 @@ def diff_resolution(tiles):
         tileInfo = json.loads(gdalinfo.stdout.read())
         """
         try:
-            outs, errs = gdalinfo.communicate(timeout=90)
+            outs, errs_warns = gdalinfo.communicate(timeout=90)
+            errs_warns = str(errs_warns, encoding='utf-8')
+            # Split up any errors and warnings, log them each appropriately
+            errs = []
+            warns = []
+            for message in errs_warns.split('\n'):
+                if len(message) > 0:
+                    if message.lower().startswith("error"):
+                        errs.append(message)
+                    else:
+                        warns.append(message)
             if len(errs) > 0:
-                log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+                log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+            if len(warns) > 0:
+                log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
             tileInfo = json.loads(outs)
 
             tile_res_x = float(tileInfo["geoTransform"][1])
@@ -231,9 +243,21 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     tileInfo = json.loads(gdalinfo.stdout.read())
     """
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         in_xmin = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
@@ -278,9 +302,21 @@ def get_image_epsg(tile):
     """
     epsg = None
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         wkt = tileInfo["coordinateSystem"]["wkt"]
@@ -324,9 +360,21 @@ def get_image_extents(tile):
         tileInfo = json.loads(gdalinfo.stdout.read())
     """
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
@@ -363,9 +411,21 @@ def has_color_table(tile):
     tileInfo = json.loads(gdalinfo.stdout.read())
     """
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         for band in tileInfo["bands"]:
@@ -1855,9 +1915,21 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             """
             has_palette = False
             try:
-                outs, errs = gdalinfo.communicate(timeout=90)
+                outs, errs_warns = gdalinfo.communicate(timeout=90)
+                errs_warns = str(errs_warns, encoding='utf-8')
+                # Split up any errors and warnings, log them each appropriately
+                errs = []
+                warns = []
+                for message in errs_warns.split('\n'):
+                    if len(message) > 0:
+                        if message.lower().startswith("error"):
+                            errs.append(message)
+                        else:
+                            warns.append(message)
                 if len(errs) > 0:
-                    log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+                    log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+                if len(warns) > 0:
+                    log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
                 tileInfo = json.loads(outs)           
                 for band in tileInfo["bands"]:
                     has_palette |= (band["colorInterpretation"] == "Palette")
