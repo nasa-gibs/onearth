@@ -681,10 +681,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         log_info_mssg("Skipping left_cut for granule because the resulting image would be < 1 pixel wide")
         tile_left = None
     else:
-        left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT',
-                                 '-ts', target_x, target_y,
-                                 '-te', str(Decimal(ulx)), str(Decimal(lry)), str(Decimal(antimeridian)), str(Decimal(uly)),
-                                 tile, tile_left]
+        left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
 
         log_the_command(left_cut_command_list)
         left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -705,9 +702,7 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
         tile_right = None
     else:
-        right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT',
-                                  '-ts', target_x, target_y,
-                                  '-te', str(Decimal(antimeridian)), str(Decimal(lry)), str(Decimal(new_lrx)), str(Decimal(uly)),
+        right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right,
                                   tile, tile_right]
         log_the_command(right_cut_command_list)
         right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -2605,7 +2600,7 @@ else: #don't bother calculating y
     if target_y == '':
         target_y=y_size
         log_info_mssg("Setting target_y from VRT to {0}".format(target_y))
-    elif float(target_y) != float(y_size):
+    elif target_y != y_size:
         log_sig_warn("Target y size ({0}) differs from raster y size ({1})".format(target_y, y_size), sigevent_url)
 
 
