@@ -632,17 +632,6 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         new_lrx = lrx
         # this is the output lrx for the right cut
         lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
-    cutline_template = """
-    {
-      "type": "Polygon",
-      "coordinates": [
-        $values
-      ]
-    }
-    """
-    cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
-    cutline_left = cutline_template.replace('$values',cutline_values.format(Decimal(ulx), Decimal(uly), Decimal(antimeridian), Decimal(lry)))
-    cutline_right = cutline_template.replace('$values',cutline_values.format(Decimal(antimeridian), Decimal(uly), Decimal(new_lrx), Decimal(lry)))
 
     # Create VRT of input tile
     gdalbuildvrt_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
