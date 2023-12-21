@@ -1854,6 +1854,81 @@ class TestMRFGeneration_defaultnocopy(unittest.TestCase):
         else:
             print("Leaving test results in : " + self.staging_area)
 
+class TestMRFGeneration_Angstrom_Exponent(unittest.TestCase):
+
+    def setUp(self):
+        testdata_path = os.path.join(os.getcwd(), 'mrfgen_files')
+        self.staging_area = os.path.join(os.getcwd(), 'mrfgen_test_data')
+        self.tmp_area = os.path.join(self.staging_area, 'tmp')
+        test_config = os.path.join(testdata_path, "mrfgen_test_config14.xml")
+
+        # Make empty dirs for mrfgen output
+        mrfgen_dirs = ('output_dir', 'working_dir', 'logfile_dir')
+        [make_dir_tree(os.path.join(self.staging_area, path)) for path in mrfgen_dirs]
+
+        # Copy empty output tile
+        shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
+
+        self.output_mrf = os.path.join(self.staging_area, "output_dir/AERDT_L2_VIIRS_NOAA202019108_.mrf")
+        self.output_ppg = os.path.join(self.staging_area, "output_dir/AERDT_L2_VIIRS_NOAA202019108_.ppg")
+        self.output_idx = os.path.join(self.staging_area, "output_dir/AERDT_L2_VIIRS_NOAA202019108_.idx")
+        self.output_img_png = os.path.join(self.staging_area, "output_dir/AERDT_L2_VIIRS_NOAA202019108_.png")
+        self.compare_img_png = os.path.join(testdata_path, "test_comp14.png")
+
+        # generate MRF
+        cmd = "mrfgen -c " + test_config
+        run_command(cmd, show_output=DEBUG)
+        run_command('mrf_read.py --input ' + self.output_mrf + ' --output ' + self.output_img_png + ' --tilematrix 0 --tilecol 0 --tilerow 0', show_output=DEBUG)
+
+    def test_generate_mrf(self):
+        # Check MRF generation succeeded
+        self.assertTrue(os.path.isfile(self.output_mrf), "MRF generation failed")
+
+        # Read MRF
+        dataset = gdal.Open(self.output_mrf)
+        driver = dataset.GetDriver()
+        if DEBUG:
+            print('Driver:', str(driver.LongName))
+        self.assertEqual(str(driver.LongName), "Meta Raster Format", "Driver is not Meta Raster Format")
+
+        # This part of the test previously looked for a triplet of files in dataset.GetFileList().
+        if DEBUG:
+            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
+        self.assertTrue(os.path.isfile(self.output_ppg), "MRF PPG generation failed")
+        self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
+
+        if DEBUG:
+            print('Projection:', str(dataset.GetProjection()))
+        self.assertEqual(str(dataset.GetProjection().replace('  ',' ')),'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]')
+
+        if DEBUG:
+            print('Size: ',dataset.RasterXSize,'x',dataset.RasterYSize, 'x',dataset.RasterCount)
+        self.assertEqual(dataset.RasterXSize, 40960, "Size does not match")
+        self.assertEqual(dataset.RasterYSize, 20480, "Size does not match")
+        self.assertEqual(dataset.RasterCount, 1, "Not a paletted image")
+
+        geotransform = dataset.GetGeoTransform()
+        if DEBUG:
+            print('Origin: (',geotransform[0], ',',geotransform[3],')')
+        self.assertEqual(geotransform[0], -180.0, "Origin does not match")
+        self.assertEqual(geotransform[3], 90.0, "Origin does not match")
+
+        band = dataset.GetRasterBand(1)
+        if DEBUG:
+            print('Overviews:', band.GetOverviewCount())
+        self.assertEqual(band.GetOverviewCount(), 7, "Overview count does not match")
+
+        if DEBUG:
+            print("Comparing: " + self.output_img_png + " to " + self.compare_img_png)
+        shutil.copy(self.output_img_png, "/results/test_comp14.png")
+        self.assertTrue(filecmp.cmp(self.output_img_png, self.compare_img_png), "PNG output image does not match")
+
+    def tearDown(self):
+        if not SAVE_RESULTS:
+            shutil.rmtree(self.staging_area)
+        else:
+            print("Leaving test results in : " + self.staging_area)
+
 
 class TestRGBA2Pal(unittest.TestCase):
 
@@ -1909,7 +1984,8 @@ if __name__ == '__main__':
         'rgba2pal': TestRGBA2Pal,
         'jpng': TestMRFGeneration_jpng,
         'zenjpeg': TestMRFGeneration_zenjpeg,
-        'defaultnocopy': TestMRFGeneration_defaultnocopy
+        'defaultnocopy': TestMRFGeneration_defaultnocopy,
+        'Angstrom_Exponent': TestMRFGeneration_Angstrom_Exponent
     }
     test_help_text = 'Specify a specific test to run. Available tests: {0}'.format(list(available_tests.keys()))
     parser = OptionParser()
