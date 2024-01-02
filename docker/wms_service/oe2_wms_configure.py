@@ -188,7 +188,8 @@ if args.shapefile_bucket != '':
     print('Using shapefile bucket ' + args.shapefile_bucket)
     shapefile_bucket = '/vsis3/' + args.shapefile_bucket
 else:
-    shapefile_bucket = ''
+    shapefile_bucket = '/onearth/shapefiles/'
+    print('Using shapefile directory ' + shapefile_bucket)
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 redirect_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['redirect_endpoint']))
