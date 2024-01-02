@@ -278,7 +278,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '-b',
     '--bucket',
-    default='gitc-deployment-mrf-archive',
+    default='gitc-deployment-shapefile-archive',
     dest='bucket',
     help='bucket name',
     action='store')
