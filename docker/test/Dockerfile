@@ -88,7 +88,7 @@ RUN luarocks install lpeg && luarocks install cqueues && luarocks install openss
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget https://downloads.apache.org/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
