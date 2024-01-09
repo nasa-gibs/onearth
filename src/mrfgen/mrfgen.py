@@ -1548,6 +1548,15 @@ else:
     except:
         mrf_maxsize = None
 
+    # Use brunsli JPEG compression, defaults to False
+    try:
+        if get_dom_tag_value(dom, 'mrf_brunsli') == "false":
+            use_brunsli = False
+        else:
+            use_brunsli = True
+    except:
+        use_brunsli = False
+
     # merge, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_merge') == "false":
@@ -1677,6 +1686,7 @@ log_info_mssg(str().join(['config quality_prec:            ', quality_prec]))
 log_info_mssg(str().join(['config mrf_nocopy:              ', str(nocopy)]))
 log_info_mssg(str().join(['config mrf_noaddo:              ', str(noaddo)]))
 log_info_mssg(str().join(['config mrf_merge:               ', str(merge)]))
+log_info_mssg(str().join(['config mrf_brunsli:             ', str(use_brunsli)]))
 log_info_mssg(str().join(['config mrf_parallel:            ', str(mrf_parallel)]))
 log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
 log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
@@ -2552,6 +2562,9 @@ if compress == "COMPRESS=LERC":
 if zlevels != '':
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('ZSIZE='+str(zlevels))
+if use_brunsli == False and compress == "COMPRESS=JPEG":
+    gdal_translate_command_list.append('-co')
+    gdal_translate_command_list.append('OPTIONS=JFIF:on')
 
 if nocopy == True:
     gdal_translate_command_list.append('-co')
