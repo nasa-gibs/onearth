@@ -239,7 +239,8 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     local abstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
-    local projInfo = assert(PROJECTIONS[targetEpsgCode or epsgCode], "Can't find projection " .. epsgCode)
+    local proj = assert(config.projection, "Can't find projection name in YAML!")
+    local projInfo = assert(PROJECTIONS[targetEpsgCode or proj], "Can't find projection " .. proj)
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
     local bands
     if mimeType == "application/vnd.mapbox-vector-tile" then
@@ -274,8 +275,7 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
         }),
         xml.new("Key"):text("${time}")}
     )
-
-    local matrices = tmsDefs[epsgCode][tmsName]
+    local matrices = tmsDefs[proj][tmsName]
     if targetEpsgCode and targetEpsgCode ~= epsgCode then
         _, matrices = getReprojectedTms(matrices, targetEpsgCode, tmsDefs)
     end
