@@ -7,7 +7,7 @@ source ./version.sh
 docker build \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/varnish_cache/Dockerfile \
-    -t nasagibs/varnish-cache:$ONEARTH_VERSION-$ONEARTH_RELEASE \
+    -t nasagibs/onearth-varnish-cache:$ONEARTH_VERSION-$ONEARTH_RELEASE \
     .
 
 # Build the onearth-tile-services image
