@@ -45,7 +45,7 @@ OnEarth Docker containers accept the following environment variables. Use the `-
     (e.g., http://gitc-test-imagery.s3.amazonaws.com)
 * REDIS_HOST: Redis endpoint URL
     (e.g., gitc.0001.use1.cache.amazonaws.com)
-* IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk with those found in the S3 URL
+* IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk at startup with those found in the S3 URL
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
 * HealthCheck: http://localhost/oe-status/Raster_Status/default/2004-08-01/16km/0/0/0.jpeg
@@ -60,6 +60,9 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 
 ### onearth-wms
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* SHAPEFILE_BUCKET: Public S3 bucket containing shapefiles. When not specified, OnEarth will be configured to attempt to read shapfiles from `/onearth/shapefiles/` for each WMS request.
+* SHAPEFILE_SYNC: `true/false` (defaults `false`) whether to sync shapefiles on local disk at `/onearth/shapefiles/` at startup with those found in the `SHAPEFILE_BUCKET` S3 URL
+* USE_LOCAL_SHAPEFILES: `true/false` (defaults `false`) whether to configure OnEarth to load shapefiles from `SHAPEFILE_BUCKET` (when `false`) or from `/onearth/shapefiles/` (when `true`) for WMS requests. Use of local files is generally much faster than reading from S3. Ignored when `SHAPEFILE_BUCKET` isn't specified.
 * ENDPOINT_REFRESH: Interval for refreshing the WMS endpoints in minutes
 * HealthCheck: http://localhost/wms/oe-status_reproject/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34
 

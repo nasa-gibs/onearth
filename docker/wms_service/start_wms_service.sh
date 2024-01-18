@@ -2,6 +2,8 @@
 ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
 GC_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$3
+SHAPEFILE_SYNC=${4:-false}
+USE_LOCAL_SHAPEFILES=${5:-false}
 
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
 
