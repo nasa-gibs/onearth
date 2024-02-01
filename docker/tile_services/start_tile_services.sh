@@ -106,6 +106,12 @@ else
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/txt' -b $S3_CONFIGS -p colormaps/txt >>/var/log/onearth/config.log 2>&1
 
+  # schemas
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/schemas' -b $S3_CONFIGS -p schemas >>/var/log/onearth/config.log 2>&1
+
+  # SLDs
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/slds' -b $S3_CONFIGS -p slds >>/var/log/onearth/config.log 2>&1
+
   # legends
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/legends/' -b $S3_CONFIGS -p legends >>/var/log/onearth/config.log 2>&1
   
