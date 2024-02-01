@@ -4,6 +4,7 @@ REDIS_HOST=${2:-127.0.0.1}
 IDX_SYNC=${3:-false}
 DEBUG_LOGGING=${4:-false}
 S3_CONFIGS=$5
+GENERATE_COLORMAP_HTML=${6:-false}
 
 echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
 
@@ -102,8 +103,11 @@ else
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
 
   # colormaps
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/index.html' -b $S3_CONFIGS -p colormaps/index.html >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0/output' -b $S3_CONFIGS -p colormaps/v1.0/output >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3/output' -b $S3_CONFIGS -p colormaps/v1.3/output >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/txt' -b $S3_CONFIGS -p colormaps/txt >>/var/log/onearth/config.log 2>&1
 
   # schemas
@@ -147,24 +151,26 @@ find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_U
 echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
 # Generate Colormap HTML
-ln -s /etc/onearth/colormaps /var/www/html/
-for f in /etc/onearth/colormaps/v1.0/*.xml
-do
-  echo "Generating HTML for $f"
-  base=$(basename $f)
-  html=${base/"xml"/"html"}
-  /usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
-done
+if [ "$GENERATE_COLORMAP_HTML" = true ]; then
+  ln -s /etc/onearth/colormaps /var/www/html/
+  for f in /etc/onearth/colormaps/v1.0/*.xml
+  do
+    echo "Generating HTML for $f"
+    base=$(basename $f)
+    html=${base/"xml"/"html"}
+    /usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
+  done
 
-for f in /etc/onearth/colormaps/v1.3/*.xml
-do
-  echo "Generating HTML for $f"
-  base=$(basename $f)
-  html=${base/"xml"/"html"}
-  /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
-done
+  for f in /etc/onearth/colormaps/v1.3/*.xml
+  do
+    echo "Generating HTML for $f"
+    base=$(basename $f)
+    html=${base/"xml"/"html"}
+    /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
+  done
 
-echo "[$(date)] Colormap HTML generation completed" >> /var/log/onearth/config.log
+  echo "[$(date)] Colormap HTML generation completed" >> /var/log/onearth/config.log
+fi
 
 # Link legends
 ln -s /etc/onearth/legends /var/www/html/

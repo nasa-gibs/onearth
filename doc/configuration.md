@@ -74,6 +74,7 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 * IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk at startup with those found in the S3 URL
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* GENERATE_COLORMAP_HTML: `true/false` (defaults `false`) whether to generate HTML versions of the XML colormaps and place them in `/etc/onearth/colormaps/v1.0/output` and `/etc/onearth/colormaps/v1.3/output`. Useful when these colormaps aren't already stored at `$S3_CONFIGS/colormaps/v1.0/output/` and `$S3_CONFIGS/colormaps/v1.3/output/`, respectively, as OnEarth will first attempt to sync them down from these locations.
 
 ### onearth-time-service
 * S3_URL: HTTP URL to the public S3 bucket containing MRFs
