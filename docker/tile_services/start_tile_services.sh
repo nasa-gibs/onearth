@@ -45,6 +45,12 @@ mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
 mkdir -p /etc/onearth/colormaps/txt/
 
+# Set up schemas
+mkdir -p /etc/onearth/schemas/
+
+# Set up SLDs
+mkdir -p /etc/onearth/slds/
+
 # Set up legends
 mkdir -p /etc/onearth/legends/
 
