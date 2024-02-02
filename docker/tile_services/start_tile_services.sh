@@ -150,9 +150,11 @@ find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_U
 
 echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
+# Create symbolic link to colormaps
+ln -s /etc/onearth/colormaps /var/www/html/
+
 # Generate Colormap HTML
 if [ "$GENERATE_COLORMAP_HTML" = true ]; then
-  ln -s /etc/onearth/colormaps /var/www/html/
   for f in /etc/onearth/colormaps/v1.0/*.xml
   do
     echo "Generating HTML for $f"
