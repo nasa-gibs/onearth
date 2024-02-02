@@ -180,6 +180,12 @@ if [ "$GENERATE_COLORMAP_HTML" = true ]; then
   echo "[$(date)] Colormap HTML generation completed" >> /var/log/onearth/config.log
 fi
 
+# Link schemas
+ln -s /etc/onearth/schemas /var/www/html/
+
+# Link SLDs
+ln -s /etc/onearth/slds /var/www/html/
+
 # Link legends
 ln -s /etc/onearth/legends /var/www/html/
 
