@@ -1,3 +1,5 @@
+# See https://www.varnish-software.com/developers/tutorials/example-vcl-template/ for more information
+
 vcl 4.1;
 
 import std;
@@ -102,9 +104,15 @@ sub vcl_hash {
 }
 
 sub vcl_backend_response {
-    if (bereq.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|ogg|ogm|opus|otf|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xml|xz|zip)(\?.*)?$") {
+
+	# GetCapabilities
+    if (bereq.url ~ "^[^?]*\.xml") {
+		unset beresp.http.Set-Cookie;
+        set beresp.ttl = 10m;
+	}
+	else if (bereq.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|ogg|ogm|opus|otf|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xz|zip)(\?.*)?$") {
         unset beresp.http.Set-Cookie;
-        set beresp.ttl = 1d;
+        set beresp.ttl = 10m;
     }
 
     if (beresp.http.Surrogate-Control ~ "ESI/1.0") {
@@ -112,5 +120,6 @@ sub vcl_backend_response {
         set beresp.do_esi = true;
     }
 
-    set beresp.grace = 6h;
+	# Serve expired cache content for up to an additional 30 seconds while a new request to OnEarth is being performed
+	set beresp.grace = 30s;
 }
