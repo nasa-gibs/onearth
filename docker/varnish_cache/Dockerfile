@@ -1,4 +1,5 @@
-FROM almalinux:9.2
+ARG ONEARTH_VERSION
+FROM nasagibs/onearth-deps:ONEARTH_VERSION
 FROM varnish
 
 COPY /docker/varnish_cache/default.vcl /etc/varnish/
