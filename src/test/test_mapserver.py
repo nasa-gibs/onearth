@@ -612,7 +612,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_wms_no_wmscgi(self):
         """
-        38. Tests requesting an image with a request that omits "wms.cgi".
+        37. Tests requesting an image with a request that omits "wms.cgi".
             The URL should be rewritten by a mod_rewrite rule via oe2_wms.conf to include "wms.cgi".
         """
         ref_hash = 'db56a57c1ce987bd0786b4e6884eb872'
@@ -625,7 +625,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_wms_getlegendgraphic_with_wmscgi(self):
         """
-        37. Tests requesting a legend using a GetLegendGraphic request that includes "wms.cgi".
+        38. Tests requesting a legend using a GetLegendGraphic request that includes "wms.cgi".
         """
         ref_hash = '3ae936d500bbf86b94281833e07a2d41'
         req_url = 'http://localhost/wms/test/wms.cgi?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=OrbitTracks_Aqua_Descending&format=image/png&STYLE=default'
@@ -637,7 +637,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_wms_getlegendgraphic_no_wmscgi(self):
         """
-        38. Tests requesting a legend using a GetLegendGraphic request that omits "wms.cgi".
+        39. Tests requesting a legend using a GetLegendGraphic request that omits "wms.cgi".
             The URL should be rewritten by a mod_rewrite rule via oe2_wms.conf to include "wms.cgi".
         """
         ref_hash = '3ae936d500bbf86b94281833e07a2d41'
@@ -650,7 +650,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_missing_shapefile(self):
         """
-        39. Test requesting a vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
+        40. Test requesting a vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
             This test ensures that the internal directory path doesn't get printed by the msShapefileOpen() error that occurs.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Layer_Missing_Shapefile&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
@@ -679,7 +679,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_zenjpeg_convert_jpeg(self):
         """
-        40. Test requesting a ZenJPEG layer JPEG
+        41. Test requesting a ZenJPEG layer JPEG
         """
         ref_hash = 'ebd89876fb7b45802717434f3c80f926'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
@@ -691,7 +691,7 @@ class TestMapserver(unittest.TestCase):
     
     def test_request_zenjpeg_convert_png(self):
         """
-        41. Test requesting a ZenJPEG layer PNG
+        42. Test requesting a ZenJPEG layer PNG
         """
         ref_hash = '154efc5e23fc1177c054e99bc9aa026f'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
@@ -703,7 +703,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_zenjpeg_convert_multilayer_png(self):
         """
-        42. Test requesting a ZenJPEG layer and another layer as a PNG
+        43. Test requesting a ZenJPEG layer and another layer as a PNG
         """
         ref_hash = '9662f74bf44df726abe0509ec52eabbd'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=false&LAYERS=test_static_jpg,test_zenjpeg&CRS=EPSG%3A4326&STYLES=&WIDTH=2048&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
@@ -715,7 +715,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_zenjpeg_source_jpeg(self):
         """
-        43. Test requesting a ZenJPEG source layer JPEG
+        44. Test requesting a ZenJPEG source layer JPEG
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true&LAYERS=test_zenjpeg_ZEN&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=1024&BBOX=-90,-180,90,180&TIME=2012-02-22'
         
@@ -743,7 +743,7 @@ class TestMapserver(unittest.TestCase):
 
     def test_request_invalid_getmap_format(self):
         """
-        44. Test a GetMap request using an invalid format.
+        45. Test a GetMap request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=cr2&TRANSPARENT=true&LAYERS=test_legacy_subdaily_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH=1536&HEIGHT=636&BBOX=-111.796875%2C-270%2C111.796875%2C270&TIME=2012-02-29T12:00:00Z'
         if DEBUG:
@@ -771,7 +771,7 @@ class TestMapserver(unittest.TestCase):
         
     def test_request_invalid_getfeature_format(self):
         """
-        45. Test a GetFeature request using an invalid format.
+        46. Test a GetFeature request using an invalid format.
         """
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=Terra_Orbit_Dsc_Dots&OUTPUTFORMAT=gojson'
         if DEBUG:
