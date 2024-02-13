@@ -605,10 +605,23 @@ class TestMapserver(unittest.TestCase):
         ref_hash = 'db56a57c1ce987bd0786b4e6884eb872'
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34'
         if DEBUG:
-            print('\nTesting: Request group layer')
+            print('\nTesting: Request /wms/status')
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, '/wms/status layers request result does not match expected. URL: ' + req_url)
+
+    def test_wms_no_wmscgi(self):
+        """
+        38. Tests requesting an image with a request that omits "wms.cgi".
+            The URL should be rewritten by a mod_rewrite rule via oe2_wms.conf to include "wms.cgi".
+        """
+        ref_hash = 'db56a57c1ce987bd0786b4e6884eb872'
+        req_url = 'http://localhost/wms/test/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=Raster_Status,Vector_Status&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34'
+        if DEBUG:
+            print('\nTesting: Perform WMS request using a URL that lacks \"wms.cgi\"')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'WMS request without \"wms.cgi\" result does not match expected. URL: ' + req_url)    
 
     def test_wms_getlegendgraphic_with_wmscgi(self):
         """
