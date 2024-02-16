@@ -5,23 +5,19 @@ vcl 4.1;
 import std;
 
 backend server1 {
-    .host = "onearth-tile-services";
-    .port = "80";
+    .host = "172.17.0.1";
+    .port = "8080";
     .max_connections = 100;
     .probe = {
-        .request =
-            "HEAD / HTTP/1.1"
-            "Host: localhost"
-            "Connection: close"
-            "User-Agent: Varnish Health Probe";
-        .interval  = 10s;
-        .timeout   = 10s;
+	    .url = "/oe-status/Raster_Status/default/2004-08-01/16km/0/0/0.jpeg";
+        .interval  = 1m;
+        .timeout   = 90s;
         .window    = 5;
         .threshold = 3;
     }
-    .connect_timeout        = 10s;
+    .connect_timeout        = 90s;
     .first_byte_timeout     = 90s;
-    .between_bytes_timeout  = 2s;
+    .between_bytes_timeout  = 30s;
 }
 
 acl purge {
