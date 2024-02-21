@@ -906,10 +906,6 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
     if should_lock:
         global lock
 
-    def data_name(mrf_name):
-        bname, ext = os.path.splitext(mrf_name)
-        return bname + os.extsep + get_extension(mrf_compression_type)
-
     for i, tile in enumerate(tiles):
         if should_lock:
             lock.down_read()
@@ -2295,6 +2291,10 @@ def get_extension(compression_type):
     else:
         return None
 
+def data_name(mrf_name):
+    bname, ext = os.path.splitext(mrf_name)
+    return bname + os.extsep + get_extension(mrf_compression_type)
+
 if mrf_compression_type in ['PNG', 'PPNG', 'EPNG']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ppg'])
@@ -2377,6 +2377,11 @@ elif len(mrf_list) == 1:
     
     # Clean up
     remove_file(all_tiles_filename)
+
+    if mrf_clean:
+        mrf_data_name = data_name(mrf)
+        log_info_mssg("running mrf_clean on data file {}".format(mrf_data_name))
+        clean_mrf(mrf_data_name)
 
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
