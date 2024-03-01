@@ -3,6 +3,7 @@ DEBUG_LOGGING=${1:-false}
 TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/Raster_Status/default/2004-08-01/16km/0/0/0.jpeg}
 GC_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$4
+SERVER_STATUS=${5:-false}
 
 echo "[$(date)] Starting reproject service" >> /var/log/onearth/config.log
 
@@ -69,12 +70,13 @@ if [ "$DEBUG_LOGGING" = true ]; then
 fi
 
 # Setup Apache extended server status
+if [ "$SERVER_STATUS" = true ]; then
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 LoadModule status_module modules/mod_status.so
 
 <Location /server-status>
    SetHandler server-status
-   Allow from all
+   Allow from all 
 </Location>
 
 # ExtendedStatus controls whether Apache will generate "full" status
@@ -88,6 +90,7 @@ ExtendedStatus On
       Options -Indexes
 </Location>
 EOS
+fi
 
 # Copy oe-status layers
 mkdir -p /etc/onearth/config/layers/oe-status/

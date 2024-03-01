@@ -93,7 +93,7 @@ RUN chown www-data /etc/pki/tls/private/localhost.key
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/tile_services
-CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $IDX_SYNC $DEBUG_LOGGING $S3_CONFIGS $GENERATE_COLORMAP_HTML
+CMD sh start_tile_services.sh $S3_URL $REDIS_HOST $IDX_SYNC $DEBUG_LOGGING $S3_CONFIGS $GENERATE_COLORMAP_HTML $SERVER_STATUS
 
 #interval:30s, timeout:30s, start-period:30s, retries:3
 HEALTHCHECK --start-period=30s \

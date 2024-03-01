@@ -4,6 +4,7 @@ GC_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$3
 SHAPEFILE_SYNC=${4:-false}
 USE_LOCAL_SHAPEFILES=${5:-false}
+SERVER_STATUS=${6:-false}
 
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
 
@@ -105,6 +106,7 @@ else
 fi
 
 # Setup Apache extended server status
+if [ "$SERVER_STATUS" = true ]; then
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 LoadModule status_module modules/mod_status.so
 
@@ -119,6 +121,7 @@ LoadModule status_module modules/mod_status.so
 #
 ExtendedStatus On
 EOS
+fi
 
 # Setup Apache with no-cache
 cat >> /etc/httpd/conf/httpd.conf <<EOS

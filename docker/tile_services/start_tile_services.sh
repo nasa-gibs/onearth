@@ -5,6 +5,7 @@ IDX_SYNC=${3:-false}
 DEBUG_LOGGING=${4:-false}
 S3_CONFIGS=$5
 GENERATE_COLORMAP_HTML=${6:-false}
+SERVER_STATUS=${7:-false}
 
 echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
 
@@ -245,6 +246,7 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
 
 # Setup Apache extended server status
+if [ "$SERVER_STATUS" = true ]; then
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 LoadModule status_module modules/mod_status.so
 
@@ -259,6 +261,7 @@ LoadModule status_module modules/mod_status.so
 #
 ExtendedStatus On
 EOS
+fi
 
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart

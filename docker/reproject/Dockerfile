@@ -74,7 +74,7 @@ RUN chown www-data /etc/pki/tls/private/localhost.key
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/reproject
-CMD sh start_reproject.sh $DEBUG_LOGGING $TILES_HEALTHCHECK $GC_HEALTHCHECK $S3_CONFIGS
+CMD sh start_reproject.sh $DEBUG_LOGGING $TILES_HEALTHCHECK $GC_HEALTHCHECK $S3_CONFIGS $SERVER_STATUS
 
 #interval:30s, timeout:30s, start-period:300s, retries:3
 HEALTHCHECK --start-period=60s \
