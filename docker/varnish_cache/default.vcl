@@ -107,9 +107,11 @@ sub vcl_backend_response {
 		# Keep the GetCapabiltiies documents in cache for 1 hour
         set beresp.ttl = 1h;
 	}
+    # Non-GC requests
 	else if (bereq.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|ogg|ogm|opus|otf|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xz|zip)(\?.*)?$") {
         unset beresp.http.Set-Cookie;
-        set beresp.ttl = 5m; # Non-GC requests
+        set beresp.uncacheable = true;
+        set beresp.ttl = 1d; 
     }
 
     if (beresp.http.Surrogate-Control ~ "ESI/1.0") {

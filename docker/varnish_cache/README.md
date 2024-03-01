@@ -4,4 +4,4 @@ This container is used to set up [Varnish Cache](https://varnish-cache.org/) in 
 
 ## [default.vcl](default.vcl)
 
-This configures the Varnish cache behavior for OnEarth. By default, GetCapabilities requests will be cached for 1 hour, while other requests will be cached for 5 minutes.
+This configures the Varnish cache behavior for OnEarth. By default, GetCapabilities requests will be cached for 1 hour, while other requests will not be cached.
