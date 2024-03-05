@@ -92,6 +92,12 @@ ExtendedStatus On
 EOS
 fi
 
+# Comment out welcome.conf
+sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
+
+# Disable fancy indexing
+sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
+
 # Copy oe-status layers
 mkdir -p /etc/onearth/config/layers/oe-status/
 cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/

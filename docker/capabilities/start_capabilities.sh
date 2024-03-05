@@ -96,6 +96,12 @@ ExtendedStatus On
 EOS
 fi
 
+# Comment out welcome.conf
+sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
+
+# Disable fancy indexing
+sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
+
 # Setup Apache to cache for 10 minutes
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 
