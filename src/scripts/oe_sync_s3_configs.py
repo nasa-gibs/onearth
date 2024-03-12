@@ -34,7 +34,7 @@ def keyMapper(acc, obj):
         acc = {'config': set([])}
 
     # works with yaml/xml/json/html configs or images (e.g., empty tiles)
-    ext = ['.yaml', '.xml', '.html', '.jpeg', '.jpg', '.png', '.svg', '.header', '.txt', '.sym', '.json']
+    ext = ['.yaml', '.xml', '.html', '.jpeg', '.jpg', '.png', '.svg', '.header', '.txt', '.sym', '.json', '.xsd']
     if filename.endswith(tuple(ext)):
         acc['config'].add(filename)
 
