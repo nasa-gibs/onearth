@@ -28,6 +28,22 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     ldconfig && \
     cd ..
 
+# Get brunsli files for GDAL
+WORKDIR /tmp
+RUN git clone --depth=1 https://github.com/google/brunsli.git && \
+    cd brunsli && \
+    git submodule update --init --recursive && \
+     # cmake -DCMAKE_BUILD_TYPE=Release \
+    #  -DCMAKE_INSTALL_PREFIX=/usr/local \
+    #  -DCMAKE_INSTALL_LIBDIR=lib -B out && \
+    # make && make install && ldconfig && \
+    cmake -DCMAKE_BUILD_TYPE=Release -B out && \
+    cmake --build out --config Release && \
+    cp -r c/include/brunsli /usr/local/include/brunsli && \
+    cd ..
+#cp brunsli/c/enc/* /usr/local/include && \
+#cp brunsli/c/dec/* /usr/local/include
+
 # Install GDAL
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
@@ -46,7 +62,9 @@ RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar
       -DGDAL_USE_ARROW=OFF \
       -DGDAL_USE_ARROWDATASET=OFF \
       -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
-      -DBRUNSLI_INCLUDE_DIR=src/brunsli/ \
+#      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
+#      -DBRUNSLI_ENC_LIB=/usr/local/lib/libbrunslienc-c.dylib \
+#      -DBRUNSLI_DEC_LIB=/usr/local/lib/libbrunslidec-c.dylib \
       -DGDAL_USE_BRUNSLI=ON \
       -DBUILD_PYTHON_BINDINGS:BOOL=ON \
       -DBUILD_JAVA_BINDINGS:BOOL=OFF \
