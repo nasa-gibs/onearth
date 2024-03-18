@@ -1,4 +1,4 @@
-FROM varnish
+FROM varnish:7.4.2
 
 COPY /docker/varnish_cache/default.vcl /etc/varnish/
 

@@ -3,7 +3,7 @@
 # This version of the Dockerfile packs commands together to minimize layers and
 # to minimize image size.
 
-FROM almalinux:9.2
+FROM almalinux:9.3
 
 # Install dependencies
 RUN dnf -y update && \
@@ -41,13 +41,13 @@ RUN wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd6
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.21.5.linux-amd64.tar.gz && \
-    tar xf go1.21.5.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && \
+    tar xf go1.22.1.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.28.tar.gz && \
-    tar xf v0.2.28.tar.gz && \
-    cd supercronic-0.2.28 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.29.tar.gz && \
+    tar xf v0.2.29.tar.gz && \
+    cd supercronic-0.2.29 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod vendor && \
     sh build.sh && \
