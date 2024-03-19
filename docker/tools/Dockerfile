@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM almalinux:9.2
+FROM almalinux:9.3
 
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
