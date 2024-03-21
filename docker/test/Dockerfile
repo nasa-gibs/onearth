@@ -29,6 +29,7 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     cd ..
 
 # Get brunsli files for GDAL
+ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
 RUN git clone --depth=1 https://github.com/google/brunsli.git && \
     cd brunsli && \
@@ -37,10 +38,19 @@ RUN git clone --depth=1 https://github.com/google/brunsli.git && \
     #  -DCMAKE_INSTALL_PREFIX=/usr/local \
     #  -DCMAKE_INSTALL_LIBDIR=lib -B out && \
     # make && make install && ldconfig && \
-    cmake -DCMAKE_BUILD_TYPE=Release -B out && \
+    #
+    cmake -DCMAKE_PREFIX_PATH=/usr/local/ -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -B out && \
     cmake --build out --config Release && \
-    cp -r c/include/brunsli /usr/local/include/brunsli && \
+    cd out && make && make install && \
+    export LD_LIBRARY_PATH=:/usr/local/lib && \
+    ldconfig && \
     cd ..
+    #RUN ldconfig -v
+    #
+    #cmake -DCMAKE_BUILD_TYPE=Release -B out && \
+    #cmake --build out --config Release && \
+    #cp -r c/include/brunsli /usr/local/include/brunsli && \
+    #cd ..
 #cp brunsli/c/enc/* /usr/local/include && \
 #cp brunsli/c/dec/* /usr/local/include
 
@@ -62,9 +72,12 @@ RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar
       -DGDAL_USE_ARROW=OFF \
       -DGDAL_USE_ARROWDATASET=OFF \
       -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
-#      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
-#      -DBRUNSLI_ENC_LIB=/usr/local/lib/libbrunslienc-c.dylib \
-#      -DBRUNSLI_DEC_LIB=/usr/local/lib/libbrunslidec-c.dylib \
+      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
+      #-DBRUNSLI_ENC_LIB=/usr/local/lib/libbrunslienc-c.dylib \
+      #-DBRUNSLI_DEC_LIB=/usr/local/lib/libbrunslidec-c.dylib \
+      #-DBRUNSLI_INCLUDE_DIR=/tmp/brunsli/c/include/brunsli/ \
+      #-DBRUNSLI_ENC_LIB=tmp/brunsli/out/artifacts/libbrunslienc-static.a \
+      #-DBRUNSLI_DEC_LIB=tmp/brunsli/out/artifacts/libbrunslidec-static.a \
       -DGDAL_USE_BRUNSLI=ON \
       -DBUILD_PYTHON_BINDINGS:BOOL=ON \
       -DBUILD_JAVA_BINDINGS:BOOL=OFF \
