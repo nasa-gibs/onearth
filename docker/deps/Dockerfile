@@ -49,6 +49,7 @@ RUN wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && \
     tar xf v0.2.29.tar.gz && \
     cd supercronic-0.2.29 && \
     sed -i 's/client_golang v1.15.0/client_golang v1.19.0/g' go.mod && \
+    sed -i 's/protobuf v1.30.0/protobuf v1.33.0/g' go.mod && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
