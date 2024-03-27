@@ -48,11 +48,20 @@ RUN wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.29.tar.gz && \
     tar xf v0.2.29.tar.gz && \
     cd supercronic-0.2.29 && \
+    sed -i 's/client_golang v1.15.0/client_golang v1.19.0/g' go.mod && \
     sed -i 's/386 arm arm64//g' build.sh && \
+    go mod tidy && \
     go mod vendor && \
     sh build.sh && \
     mv dist/supercronic-linux-amd64 /usr/local/bin/ && \
     ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic && \
+    cd /tmp/ 
+
+# Clean prometheus client_golang
+WORKDIR /root/go/pkg/mod/github.com/prometheus/
+RUN cd client_golang@v1.19.0 && \
+    go mod tidy && \
+    go clean -modcache && \
     cd /tmp/ && \
     rm -rf /tmp/* && \
     rm -rf /usr/local/go /usr/local/bin/go
