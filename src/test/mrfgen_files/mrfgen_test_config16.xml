@@ -13,16 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <mrfgen_configuration>
- <date_of_data>20210410</date_of_data>
+  <date_of_data>20210410</date_of_data>
  <time_of_data>000000</time_of_data>
- <parameter_name>GOES-East_B13_LL_v0_NRT_ZENJPEG</parameter_name>
+ <parameter_name>GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF</parameter_name>
  <mrf_name>{$parameter_name}%Y%j%H%M%S.mrf</mrf_name>
  <input_dir>mrfgen_files/jpng</input_dir>
  <output_dir>mrfgen_test_data/output_dir</output_dir>
  <working_dir>mrfgen_test_data/working_dir</working_dir>
  <mrf_empty_tile_filename>mrfgen_test_data/empty_tiles/Blank_RGB_512.jpg</mrf_empty_tile_filename>
  <mrf_blocksize>512</mrf_blocksize>
- <mrf_compression_type>ZEN</mrf_compression_type>
+ <mrf_compression_type>JPEG</mrf_compression_type>
  <overview_resampling>average</overview_resampling>
  <resize_resampling>average</resize_resampling>
  <target_x>20480</target_x>
@@ -34,5 +34,5 @@ limitations under the License.
  <mrf_merge>true</mrf_merge>
  <mrf_nocopy>true</mrf_nocopy>
  <mrf_noaddo>false</mrf_noaddo>
- <mrf_brunsli>true</mrf_brunsli>
+ <mrf_brunsli>false</mrf_brunsli>
 </mrfgen_configuration>
