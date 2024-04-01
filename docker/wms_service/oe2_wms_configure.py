@@ -188,7 +188,8 @@ if args.shapefile_bucket != '':
     print('Using shapefile bucket ' + args.shapefile_bucket)
     shapefile_bucket = '/vsis3/' + args.shapefile_bucket
 else:
-    shapefile_bucket = ''
+    shapefile_bucket = '/onearth/shapefiles/'
+    print('Using shapefile directory ' + shapefile_bucket)
 outfilename = Path(endpoint_config['mapserver']['mapfile_location'])
 header = Path(endpoint_config['mapserver']['mapfile_header'])
 redirect_endpoint = Path(strip_trailing_slash(endpoint_config['mapserver']['redirect_endpoint']))
@@ -349,7 +350,7 @@ for layer in layers:
                                                                   ('${wms_layer_group}', wms_layer_group),
                                                                   ('${dimension_info}', ''),
                                                                   ('${style_info}', style_info),
-                                                                  ('${data_xml}', 'CONNECTIONTYPE OGR\n        CONNECTION    \'{0}\''.format(data_file_uri)),
+                                                                  ('${data_xml}', 'DATA    \'{0}\''.format(data_file_uri)),
                                                                   ('${proj_params}', PROJ_PARAMS[layer_proj]),
                                                                   ('${validation_info}', validation_info),
                                                                   ('${class_style}', class_style),

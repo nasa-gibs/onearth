@@ -679,11 +679,11 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_periods_config_force_start_nodate(self):
         # Tests when there's no data for the forced start date (should still force the start date)
-        test_layers = [('Test_ForceStart', '2019-01-01',
+        test_layers = [('Test_ForceStart_NoDate', '2019-01-01',
                         '2017-01-01/2019-03-01/P1M'),
-                       ('Test_ForceStart', '2019-02-01',
+                       ('Test_ForceStart_NoDate', '2019-02-01',
                         '2017-01-01/2019-03-01/P1M'),
-                       ('Test_ForceStart', '2019-03-01',
+                       ('Test_ForceStart_NoDate', '2019-03-01',
                         '2017-01-01/2019-03-01/P1M')]
         db_keys = ['epsg4326']
         config = '2017-01-01/DETECT/P1M'
@@ -700,6 +700,37 @@ class TestTimeUtils(unittest.TestCase):
                 layer[2], layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
                 .format(layer[0], layer_res['periods'][0], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+    
+    def test_periods_config_force_start_nodate_after_force_start(self):
+        # Tests when there's no data for the forced start date (should still force the start date)
+        test_layers = [('Test_ForceStart_NoDate_After_ForceStart', '2019-01-01',
+                        '2017-01-01/2019-03-01/P1M'),
+                       ('Test_ForceStart_NoDate_After_ForceStart', '2019-02-01',
+                        '2017-01-01/2019-03-01/P1M'),
+                       ('Test_ForceStart_NoDate_After_ForceStart', '2019-03-01',
+                        '2017-01-01/2019-03-01/P1M')]
+        db_keys = ['epsg4326']
+        config = '2019-01-01/2019-03-01/P1M'
+        add_redis_config(test_layers, db_keys, config)
+        config = '2021-01-01/DETECT/P1M'
+        add_redis_config(test_layers, db_keys, config)
+        seed_redis_data(test_layers, db_keys=db_keys)
+
+        periods = ['2019-01-01/2019-03-01/P1M']
+
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
@@ -1474,7 +1505,7 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
-
+    
     @classmethod
     def tearDownClass(self):
         if not DEBUG:

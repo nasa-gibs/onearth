@@ -146,11 +146,12 @@ Each test script will output a JUnit XML results file. By default, these files a
 9. MVT MRF generation with overview filters
 10. Shapefile generation from single GeoJSON 
 11. Shapefile generation with differing `<target_epsg>` and `<source_epsg>`
-12. GeoJSON generation from single GeoJSON
-13. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
-14. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
-15. Shapefile generation from multiple shapefiles (not in use: commented out)
-16. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>` (not in use: commented out)
+12. Cloud-optimized shapefile generation using `<cloud_optimized_shapefile>`
+13. GeoJSON generation from single GeoJSON
+14. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
+15. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
+16. Shapefile generation from multiple shapefiles (not in use: commented out)
+17. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>` (not in use: commented out)
 
 
 

@@ -180,9 +180,21 @@ def diff_resolution(tiles):
         tileInfo = json.loads(gdalinfo.stdout.read())
         """
         try:
-            outs, errs = gdalinfo.communicate(timeout=90)
+            outs, errs_warns = gdalinfo.communicate(timeout=90)
+            errs_warns = str(errs_warns, encoding='utf-8')
+            # Split up any errors and warnings, log them each appropriately
+            errs = []
+            warns = []
+            for message in errs_warns.split('\n'):
+                if len(message) > 0:
+                    if message.lower().startswith("error"):
+                        errs.append(message)
+                    else:
+                        warns.append(message)
             if len(errs) > 0:
-                log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+                log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+            if len(warns) > 0:
+                log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
             tileInfo = json.loads(outs)
 
             tile_res_x = float(tileInfo["geoTransform"][1])
@@ -231,9 +243,21 @@ def is_global_image(tile, xmin, ymin, xmax, ymax):
     tileInfo = json.loads(gdalinfo.stdout.read())
     """
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         in_xmin = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
@@ -278,9 +302,21 @@ def get_image_epsg(tile):
     """
     epsg = None
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         wkt = tileInfo["coordinateSystem"]["wkt"]
@@ -324,9 +360,21 @@ def get_image_extents(tile):
         tileInfo = json.loads(gdalinfo.stdout.read())
     """
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         ulx = str(tileInfo["cornerCoordinates"]["upperLeft"][0])
@@ -363,9 +411,21 @@ def has_color_table(tile):
     tileInfo = json.loads(gdalinfo.stdout.read())
     """
     try:
-        outs, errs = gdalinfo.communicate(timeout=90)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
         if len(errs) > 0:
-            log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+            log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+        if len(warns) > 0:
+            log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
         tileInfo = json.loads(outs)
 
         for band in tileInfo["bands"]:
@@ -572,17 +632,6 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         new_lrx = lrx
         # this is the output lrx for the right cut
         lrx = str(Decimal(antimeridian)*-1 - (Decimal(antimeridian)-Decimal(lrx)))
-    cutline_template = """
-    {
-      "type": "Polygon",
-      "coordinates": [
-        $values
-      ]
-    }
-    """
-    cutline_values = "[[{0}, {3}], [{0}, {1}], [{2}, {1}], [{2}, {3}], [{0}, {3}]]"
-    cutline_left = cutline_template.replace('$values',cutline_values.format(Decimal(ulx), Decimal(uly), Decimal(antimeridian), Decimal(lry)))
-    cutline_right = cutline_template.replace('$values',cutline_values.format(Decimal(antimeridian), Decimal(uly), Decimal(new_lrx), Decimal(lry)))
 
     # Create VRT of input tile
     gdalbuildvrt_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-tr', xres, yres, tile, temp_tile]
@@ -621,7 +670,10 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         log_info_mssg("Skipping left_cut for granule because the resulting image would be < 1 pixel wide")
         tile_left = None
     else:
-        left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_left, tile, tile_left]
+        left_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT',
+                                 '-ts', target_x, target_y,
+                                 '-te', str(Decimal(ulx)), str(Decimal(lry)), str(Decimal(antimeridian)), str(Decimal(uly)),
+                                 tile, tile_left]
 
         log_the_command(left_cut_command_list)
         left_cut = subprocess.Popen(left_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -642,7 +694,9 @@ def split_across_antimeridian(tile, source_extents, antimeridian, xres, yres, wo
         log_info_mssg("Skipping right_cut for granule because the resulting image would be < 1 pixel wide")
         tile_right = None
     else:
-        right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT', '-crop_to_cutline', '-cutline', cutline_right,
+        right_cut_command_list = ['gdalwarp', '-overwrite', '-of', 'VRT',
+                                  '-ts', target_x, target_y,
+                                  '-te', str(Decimal(antimeridian)), str(Decimal(lry)), str(Decimal(new_lrx)), str(Decimal(uly)),
                                   tile, tile_right]
         log_the_command(right_cut_command_list)
         right_cut = subprocess.Popen(right_cut_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -851,10 +905,6 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
 
     if should_lock:
         global lock
-
-    def data_name(mrf_name):
-        bname, ext = os.path.splitext(mrf_name)
-        return bname + os.extsep + get_extension(mrf_compression_type)
 
     for i, tile in enumerate(tiles):
         if should_lock:
@@ -1865,9 +1915,21 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             """
             has_palette = False
             try:
-                outs, errs = gdalinfo.communicate(timeout=90)
+                outs, errs_warns = gdalinfo.communicate(timeout=90)
+                errs_warns = str(errs_warns, encoding='utf-8')
+                # Split up any errors and warnings, log them each appropriately
+                errs = []
+                warns = []
+                for message in errs_warns.split('\n'):
+                    if len(message) > 0:
+                        if message.lower().startswith("error"):
+                            errs.append(message)
+                        else:
+                            warns.append(message)
                 if len(errs) > 0:
-                    log_sig_err('gdalinfo errors: {0}'.format(errs), sigevent_url)
+                    log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+                if len(warns) > 0:
+                    log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
                 tileInfo = json.loads(outs)           
                 for band in tileInfo["bands"]:
                     has_palette |= (band["colorInterpretation"] == "Palette")
@@ -2239,6 +2301,10 @@ def get_extension(compression_type):
     else:
         return None
 
+def data_name(mrf_name):
+    bname, ext = os.path.splitext(mrf_name)
+    return bname + os.extsep + get_extension(mrf_compression_type)
+
 if mrf_compression_type in ['PNG', 'PPNG', 'EPNG']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ppg'])
@@ -2321,6 +2387,11 @@ elif len(mrf_list) == 1:
     
     # Clean up
     remove_file(all_tiles_filename)
+
+    if mrf_clean:
+        mrf_data_name = data_name(mrf)
+        log_info_mssg("running mrf_clean on data file {}".format(mrf_data_name))
+        clean_mrf(mrf_data_name)
 
     # Exit here since we don't need to build an MRF from scratch
     mssg=str().join(['MRF updated:  ', mrf])
@@ -2538,7 +2609,7 @@ else: #don't bother calculating y
     if target_y == '':
         target_y=y_size
         log_info_mssg("Setting target_y from VRT to {0}".format(target_y))
-    elif target_y != y_size:
+    elif float(target_y) != float(y_size):
         log_sig_warn("Target y size ({0}) differs from raster y size ({1})".format(target_y, y_size), sigevent_url)
 
 

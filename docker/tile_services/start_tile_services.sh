@@ -4,6 +4,8 @@ REDIS_HOST=${2:-127.0.0.1}
 IDX_SYNC=${3:-false}
 DEBUG_LOGGING=${4:-false}
 S3_CONFIGS=$5
+GENERATE_COLORMAP_HTML=${6:-false}
+SERVER_STATUS=${7:-false}
 
 echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
 
@@ -43,6 +45,12 @@ mkdir -p /etc/onearth/colormaps/v1.0/output
 mkdir -p /etc/onearth/colormaps/v1.3/
 mkdir -p /etc/onearth/colormaps/v1.3/output
 mkdir -p /etc/onearth/colormaps/txt/
+
+# Set up schemas
+mkdir -p /etc/onearth/schemas/
+
+# Set up SLDs
+mkdir -p /etc/onearth/slds/
 
 # Set up legends
 mkdir -p /etc/onearth/legends/
@@ -102,9 +110,18 @@ else
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/empty_tiles/' -b $S3_CONFIGS -p empty_tiles >>/var/log/onearth/config.log 2>&1
 
   # colormaps
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/index.html' -b $S3_CONFIGS -p colormaps/index.html >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0' -b $S3_CONFIGS -p colormaps/v1.0 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.0/output' -b $S3_CONFIGS -p colormaps/v1.0/output >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3' -b $S3_CONFIGS -p colormaps/v1.3 >>/var/log/onearth/config.log 2>&1
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/v1.3/output' -b $S3_CONFIGS -p colormaps/v1.3/output >>/var/log/onearth/config.log 2>&1
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/colormaps/txt' -b $S3_CONFIGS -p colormaps/txt >>/var/log/onearth/config.log 2>&1
+
+  # schemas
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/schemas' -b $S3_CONFIGS -p schemas >>/var/log/onearth/config.log 2>&1
+
+  # SLDs
+  python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/slds' -b $S3_CONFIGS -p slds >>/var/log/onearth/config.log 2>&1
 
   # legends
   python3 /usr/bin/oe_sync_s3_configs.py -d '/etc/onearth/legends/' -b $S3_CONFIGS -p legends >>/var/log/onearth/config.log 2>&1
@@ -140,25 +157,35 @@ find /etc/onearth/config/layers/ -type f -name "*.yaml" -exec sed -i -e 's@{S3_U
 
 echo "[$(date)] OnEarth configs copy/download completed" >> /var/log/onearth/config.log
 
-# Generate Colormap HTML
+# Create symbolic link to colormaps
 ln -s /etc/onearth/colormaps /var/www/html/
-for f in /etc/onearth/colormaps/v1.0/*.xml
-do
-  echo "Generating HTML for $f"
-  base=$(basename $f)
-  html=${base/"xml"/"html"}
-  /usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
-done
 
-for f in /etc/onearth/colormaps/v1.3/*.xml
-do
-  echo "Generating HTML for $f"
-  base=$(basename $f)
-  html=${base/"xml"/"html"}
-  /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
-done
+# Generate Colormap HTML
+if [ "$GENERATE_COLORMAP_HTML" = true ]; then
+  for f in /etc/onearth/colormaps/v1.0/*.xml
+  do
+    echo "Generating HTML for $f"
+    base=$(basename $f)
+    html=${base/"xml"/"html"}
+    /usr/bin/colorMaptoHTML_v1.0.py -c $f > /etc/onearth/colormaps/v1.0/output/$html
+  done
 
-echo "[$(date)] Colormap HTML generation completed" >> /var/log/onearth/config.log
+  for f in /etc/onearth/colormaps/v1.3/*.xml
+  do
+    echo "Generating HTML for $f"
+    base=$(basename $f)
+    html=${base/"xml"/"html"}
+    /usr/bin/colorMaptoHTML_v1.3.py -c $f > /etc/onearth/colormaps/v1.3/output/$html
+  done
+
+  echo "[$(date)] Colormap HTML generation completed" >> /var/log/onearth/config.log
+fi
+
+# Link schemas
+ln -s /etc/onearth/schemas /var/www/html/
+
+# Link SLDs
+ln -s /etc/onearth/slds /var/www/html/
 
 # Link legends
 ln -s /etc/onearth/legends /var/www/html/
@@ -219,6 +246,7 @@ fi
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
 
 # Setup Apache extended server status
+if [ "$SERVER_STATUS" = true ]; then
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 LoadModule status_module modules/mod_status.so
 
@@ -233,6 +261,13 @@ LoadModule status_module modules/mod_status.so
 #
 ExtendedStatus On
 EOS
+fi
+
+# Comment out welcome.conf
+sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
+
+# Disable fancy indexing
+sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
 
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k restart

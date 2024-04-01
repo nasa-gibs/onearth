@@ -90,6 +90,7 @@ class TestVectorgen(unittest.TestCase):
         self.shapefile_mult_shp_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_multiple_shp.xml')
         self.mrf_diff_proj_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_diff_proj.xml')
         self.reproject_test_config = os.path.join(self.test_data_path, 'vectorgen_test_reproject.xml')
+        self.shapefile_optimized_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_optimized_shapefile.xml')
 
     # Utility function that parses a vectorgen config XML and creates necessary dirs/copies necessary files
     def parse_vector_config(self, vector_config, artifact_path):
@@ -146,7 +147,10 @@ class TestVectorgen(unittest.TestCase):
         print("output_dir = " + output_dir)
 
         os.makedirs(artifact_path)
-        os.makedirs(output_dir)
+        try:
+            os.makedirs(output_dir)
+        except:
+            pass
         os.makedirs(working_dir)
 
         # Copy config to artifact path
@@ -655,9 +659,9 @@ class TestVectorgen(unittest.TestCase):
                                  "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
                                  .format(config['input_files'][0], output_file))
         except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+            self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
         except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
+            self.fail("Bad output shapefile {0}.".format(output_file))
 
     # Tests that shapefiles are generated correctly from GeoJSON input when the source EPSG differs from the target EPSG.
     # Alerts if the output shapefile has a different number of features from the input GeoJSON.
@@ -688,9 +692,44 @@ class TestVectorgen(unittest.TestCase):
                                  "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
                                  .format(config['input_files'][0], output_file))
         except IOError:
-            self.fail("Expected output geojson file {0} doesn't appear to have been created.".format(output_file))
+            self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
         except fiona.errors.FionaValueError:
-            self.fail("Bad output geojson file {0}.".format(output_file))
+            self.fail("Bad output shapefile {0}.".format(output_file))
+
+    # Tests that shapefiles are generated correctly from GeoJSON input while creating a spatial index (.qix) and using coshp to create a cloud-optimized shapefile
+    # Alerts if the output shapefile has a different number of features from the input GeoJSON.
+    def test_optimized_shapefile_generation(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_optimize')
+        config = self.parse_vector_config(self.shapefile_optimized_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson:
+                origin_num_features = len(list(geojson))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.shapefile_optimized_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], output_file))
+        except IOError:
+            self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output shapefile {0}.".format(output_file))
+        output_qix_file = os.path.join(config['output_dir'], config['prefix'] + '.qix')
+        self.assertTrue(os.path.isfile(output_qix_file), "Expected output spatial index file {0} doesn't appear to have been created".format(output_qix_file))
     
     # Tests the creation of a GeoJSON file from a single GeoJSON input. Alerts if number of features differs between input and output GeoJSON.
     def test_geojson_generation(self):

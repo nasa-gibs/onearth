@@ -2,6 +2,9 @@
 ENDPOINT_REFRESH=$1 # Interval for refreshing the WMS endpoints in minutes
 GC_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$3
+SHAPEFILE_SYNC=${4:-false}
+USE_LOCAL_SHAPEFILES=${5:-false}
+SERVER_STATUS=${6:-false}
 
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
 
@@ -103,6 +106,7 @@ else
 fi
 
 # Setup Apache extended server status
+if [ "$SERVER_STATUS" = true ]; then
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 LoadModule status_module modules/mod_status.so
 
@@ -117,6 +121,13 @@ LoadModule status_module modules/mod_status.so
 #
 ExtendedStatus On
 EOS
+fi
+
+# Comment out welcome.conf
+sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
+
+# Disable fancy indexing
+sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
 
 # Setup Apache with no-cache
 cat >> /etc/httpd/conf/httpd.conf <<EOS

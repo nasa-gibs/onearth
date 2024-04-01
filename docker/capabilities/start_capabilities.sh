@@ -3,6 +3,7 @@ S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
 DEBUG_LOGGING=${3:-false}
 S3_CONFIGS=$4
+SERVER_STATUS=${5:-false}
 
 echo "[$(date)] Starting capabilities service" >> /var/log/onearth/config.log
 
@@ -78,12 +79,13 @@ if [ "$DEBUG_LOGGING" = true ]; then
 fi
 
 # Setup Apache extended server status
+if [ "$SERVER_STATUS" = true ]; then
 cat >> /etc/httpd/conf/httpd.conf <<EOS
 LoadModule status_module modules/mod_status.so
 
 <Location /server-status>
    SetHandler server-status
-   Allow from all
+   Allow from all 
 </Location>
 
 # ExtendedStatus controls whether Apache will generate "full" status
@@ -92,6 +94,13 @@ LoadModule status_module modules/mod_status.so
 #
 ExtendedStatus On
 EOS
+fi
+
+# Comment out welcome.conf
+sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
+
+# Disable fancy indexing
+sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
 
 # Setup Apache to cache for 10 minutes
 cat >> /etc/httpd/conf/httpd.conf <<EOS

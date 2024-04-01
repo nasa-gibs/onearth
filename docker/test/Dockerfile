@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.7.5
+FROM nasagibs/onearth-deps:2.7.9
 
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
@@ -103,7 +103,7 @@ RUN luarocks install lpeg && luarocks install cqueues && luarocks install openss
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget https://downloads.apache.org/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
@@ -211,6 +211,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py && \
     install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py && \
     install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py && \
+    install -m 755 src/scripts/oe_sync_s3_shapefiles.py -D /usr/bin/oe_sync_s3_shapefiles.py && \
     install -m 755 docker/wms_service/oe2_wms_configure.py -D /usr/bin/oe2_wms_configure.py && \
     install -m 755 src/modules/time_service/utils/oe_periods_configure.py -D /usr/bin/oe_periods_configure.py
 

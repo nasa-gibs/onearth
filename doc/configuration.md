@@ -61,19 +61,23 @@ OnEarth Docker containers accept the following environment variables. Use the `-
     (e.g., gitc.0001.use1.cache.amazonaws.com)
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
 
 ### onearth-reproject
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
 
 ### onearth-tile-services
 * S3_URL: HTTP URL to the public S3 bucket containing MRFs
     (e.g., http://gitc-test-imagery.s3.amazonaws.com)
 * REDIS_HOST: Redis endpoint URL
     (e.g., gitc.0001.use1.cache.amazonaws.com)
-* IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk with those found in the S3 URL
+* IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk at startup with those found in the S3 URL
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* GENERATE_COLORMAP_HTML: `true/false` (defaults `false`) whether to generate HTML versions of the XML colormaps and place them in `/etc/onearth/colormaps/v1.0/output` and `/etc/onearth/colormaps/v1.3/output`. Useful when these colormaps aren't already stored at `$S3_CONFIGS/colormaps/v1.0/output/` and `$S3_CONFIGS/colormaps/v1.3/output/`, respectively, as OnEarth will first attempt to sync them down from these locations.
+* SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
 
 ### onearth-time-service
 * S3_URL: HTTP URL to the public S3 bucket containing MRFs
@@ -84,6 +88,10 @@ OnEarth Docker containers accept the following environment variables. Use the `-
 
 ### onearth-wms
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
+* SHAPEFILE_BUCKET: Public S3 bucket containing shapefiles. When not specified, OnEarth will be configured to attempt to read shapfiles from `/onearth/shapefiles/` for each WMS request.
+* SHAPEFILE_SYNC: `true/false` (defaults `false`) whether to sync shapefiles on local disk at `/onearth/shapefiles/` at startup with those found in the `SHAPEFILE_BUCKET` S3 URL
+* USE_LOCAL_SHAPEFILES: `true/false` (defaults `false`) whether to configure OnEarth to load shapefiles from `SHAPEFILE_BUCKET` (when `false`) or from `/onearth/shapefiles/` (when `true`) for WMS requests. Use of local files is generally much faster than reading from S3. Ignored when `SHAPEFILE_BUCKET` isn't specified.
+* SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
 
 ## Loading Configurations from S3
 

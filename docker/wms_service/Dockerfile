@@ -80,7 +80,7 @@ RUN luarocks install lpeg && \
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget --no-check-certificate https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+RUN wget https://downloads.apache.org/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
 RUN tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
@@ -119,6 +119,7 @@ RUN luarocks make onearth_wms_time-0.1-1.rockspec
 RUN cp /home/oe2/onearth/docker/wms_service/oe2_wms_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/docker/wms_service/template.map /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
+RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_shapefiles.py /usr/bin/
 
 # Set Apache configuration for optimized threading
 WORKDIR /home/oe2/onearth/docker
@@ -175,7 +176,7 @@ RUN chown www-data /etc/pki/tls/private/localhost.key
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS
+CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS $SHAPEFILE_SYNC $USE_LOCAL_SHAPEFILES $SERVER_STATUS
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \

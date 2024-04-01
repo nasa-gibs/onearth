@@ -454,12 +454,20 @@ local function calculatePeriods(dates, config)
       local start_epoch = dateToEpoch(force_start)
       while start_epoch > dateToEpoch(dates[start_idx]) do
         start_idx = start_idx + 1
+        if start_idx > #dates then
+          redis.call('ECHO', 'No dates available to detect for a forced start date of ' .. tostring(force_start))
+          return {}
+        end
       end
     end
     if force_end ~= 'DETECT' then
       local end_epoch = dateToEpoch(force_end)
       while end_epoch < dateToEpoch(dates[end_idx]) do
         end_idx = end_idx - 1
+        if end_idx < 1 then
+          redis.call('ECHO', 'No dates available to detect for a forced end date of ' .. tostring(force_end))
+          return {}
+        end
       end
     end
 
