@@ -9,8 +9,8 @@ backend server1 {
     .port = "8080";
     .max_connections = 100;
     .probe = {
-	    .url = "/oe-status/Raster_Status/default/2004-08-01/16km/0/0/0.jpeg";
-        .interval  = 1m;
+	    .url = "/wmts/epsg4326/best/gc/epsg4326_best_gc_service/gc_service?request=wmtsgetcapabilities";
+        .interval  = 10m;
         .timeout   = 90s;
         .window    = 5;
         .threshold = 3;
@@ -102,13 +102,11 @@ sub vcl_hash {
 sub vcl_backend_response {
 
 	# GetCapabilities
-    if (bereq.url ~ "^[^?]*\.xml") {
-		unset beresp.http.Set-Cookie;
-		# Keep the GetCapabiltiies documents in cache for 1 hour
-        set beresp.ttl = 1h;
-	}
+	unset beresp.http.Set-Cookie;
+	# Keep the GetCapabiltiies documents in cache for 1 hour
+    set beresp.ttl = 1h;
     # Non-GC requests
-	else if (bereq.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|ogg|ogm|opus|otf|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xz|zip|mvt)(\?.*)?$") {
+	if (bereq.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|ogg|ogm|opus|otf|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xz|zip|mvt)(\?.*)?$") {
         unset beresp.http.Set-Cookie;
         set beresp.uncacheable = true;
         set beresp.ttl = 1d; 
