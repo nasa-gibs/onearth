@@ -48,6 +48,7 @@ RUN luarocks make onearth_gc_gts-0.1-1.rockspec
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp ./capabilities/10-worker.conf /etc/httpd/conf.modules.d/ && \
+    cp ./capabilities/cache.conf /etc/httpd/conf.d/ && \
     cp cors.conf /etc/httpd/conf.d/
 
 # Install additional configuration tools
