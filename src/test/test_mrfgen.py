@@ -1792,23 +1792,14 @@ class TestMRFGeneration_brunsli_on(unittest.TestCase):
         shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
 
         self.output_mrf = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_ON2021100000000.mrf")
-        self.output_pjp = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_ON2021100000000.pjg")
+        self.output_pjg = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_ON2021100000000.pjg")
         self.output_idx = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_ON2021100000000.idx")
-        self.output_img_png = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_ON2021100000000.png")
         self.output_img_jpg = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_ON2021100000000.jpg")
-        # Use the same PNG as for ZenJPEG if needed:
-        #self.compare_img_png = os.path.join(testdata_path, "test_comp15.png")
         self.compare_img_jpg = os.path.join(testdata_path, "test_comp15.jpg")
-
-        # Leaving this as a sanity check, but not needed for brunsli which is
-        # JPEG
-        # generate extra png input just to make sure mrfgen supports that as well (will get overwritten)
-        run_command('gdal_translate -of PNG -co WORLDFILE=YES ' + testdata_path + '/jpng/GOES-East_B13_LL_v0_NRT_2021100_00:00.tiff ' + testdata_path + '/jpng/temp.png', show_output=DEBUG)
 
         # generate MRF
         cmd = "mrfgen -c " + test_config
         run_command(cmd, show_output=DEBUG)
-        run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf + ' ' + self.output_img_png, show_output=DEBUG)
         run_command('mrf_read.py --input ' + self.output_mrf + ' --output ' + self.output_img_jpg + ' --tilematrix 5 --tilecol 5 --tilerow 3', show_output=DEBUG)
 
     def test_generate_mrf(self):
@@ -1824,8 +1815,8 @@ class TestMRFGeneration_brunsli_on(unittest.TestCase):
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print('Files: {0}, {1}'.format(self.output_pjp, self.output_idx))
-        self.assertTrue(os.path.isfile(self.output_pjp), "MRF PJP generation failed")
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
+        self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
         if DEBUG:
@@ -1850,14 +1841,6 @@ class TestMRFGeneration_brunsli_on(unittest.TestCase):
         if DEBUG:
             print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 6, "Overview count does not match")
-
-        # Not necessary for brunsli, but leaving here if needed for any
-        # comparison later on
-        #if DEBUG:
-        #    print("Comparing: " + self.output_img_png + " to " +
-        #    self.compare_img_png)
-        #self.assertTrue(filecmp.cmp(self.output_img_png,
-        # self.compare_img_png), "PNG output image does not match")
 
         if DEBUG:
             print("Comparing: " + self.output_img_jpg + " to " + self.compare_img_jpg)
@@ -1885,23 +1868,14 @@ class TestMRFGeneration_brunsli_off(unittest.TestCase):
         shutil.copytree(os.path.join(testdata_path, 'empty_tiles'), os.path.join(self.staging_area, 'empty_tiles'))
 
         self.output_mrf = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF2021100000000.mrf")
-        self.output_pjp = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF2021100000000.pjg")
+        self.output_pjg = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF2021100000000.pjg")
         self.output_idx = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF2021100000000.idx")
-        self.output_img_png = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF2021100000000.png")
         self.output_img_jpg = os.path.join(self.staging_area, "output_dir/GOES-East_B13_LL_v0_NRT_BRUNSLI_OFF2021100000000.jpg")
-        # Use the same PNG as for ZenJPEG if needed:
-        #self.compare_img_png = os.path.join(testdata_path, "test_comp16.png")
         self.compare_img_jpg = os.path.join(testdata_path, "test_comp16.jpg")
-
-        # Leaving this as a sanity check, but not needed for brunsli which is
-        # JPEG
-        # generate extra png input just to make sure mrfgen supports that as well (will get overwritten)
-        run_command('gdal_translate -of PNG -co WORLDFILE=YES ' + testdata_path + '/jpng/GOES-East_B13_LL_v0_NRT_2021100_00:00.tiff ' + testdata_path + '/jpng/temp.png', show_output=DEBUG)
 
         # generate MRF
         cmd = "mrfgen -c " + test_config
         run_command(cmd, show_output=DEBUG)
-        run_command('gdal_translate -of PNG -outsize 1024 512 ' + self.output_mrf + ' ' + self.output_img_png, show_output=DEBUG)
         run_command('mrf_read.py --input ' + self.output_mrf + ' --output ' + self.output_img_jpg + ' --tilematrix 5 --tilecol 5 --tilerow 3', show_output=DEBUG)
 
     def test_generate_mrf(self):
@@ -1917,8 +1891,8 @@ class TestMRFGeneration_brunsli_off(unittest.TestCase):
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print('Files: {0}, {1}'.format(self.output_pjp, self.output_idx))
-        self.assertTrue(os.path.isfile(self.output_pjp), "MRF PJP generation failed")
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
+        self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
         if DEBUG:
@@ -1943,14 +1917,6 @@ class TestMRFGeneration_brunsli_off(unittest.TestCase):
         if DEBUG:
             print('Overviews:', band.GetOverviewCount())
         self.assertEqual(band.GetOverviewCount(), 6, "Overview count does not match")
-
-        # Not necessary for brunsli, but leaving here if needed for any
-        # comparison later on
-        #if DEBUG:
-        #    print("Comparing: " + self.output_img_png + " to " +
-        #    self.compare_img_png)
-        #self.assertTrue(filecmp.cmp(self.output_img_png,
-        # self.compare_img_png), "PNG output image does not match")
 
         if DEBUG:
             print("Comparing: " + self.output_img_jpg + " to " + self.compare_img_jpg)
