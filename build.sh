@@ -3,13 +3,6 @@
 # Set OnEarth version and release
 source ./version.sh
 
-# Build the varnish-cache image
-docker build \
-    --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
-    -f ./docker/varnish_cache/Dockerfile \
-    -t nasagibs/onearth-varnish-cache:$ONEARTH_VERSION-$ONEARTH_RELEASE \
-    .
-
 # Build the onearth-tile-services image
 docker build \
     --no-cache \
