@@ -58,7 +58,7 @@ EXP_INCLUDEDIR = \$(PREFIX)/include
 DEST = \$(PREFIX)/modules
 LABEL
 
-#ahtse_make mod_brunsli
+ahtse_make mod_brunsli
 #ahtse_make mod_receive
 ahtse_make libahtse
 

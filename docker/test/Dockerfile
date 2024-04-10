@@ -159,6 +159,10 @@ WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
 
+WORKDIR /home/oe2/onearth/src/modules/mod_brunsli/src/
+RUN cp /home/oe2/onearth/ci/Makefile.lcl .
+RUN make && make install
+
 # Install Lua module for time snapping
 WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
