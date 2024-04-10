@@ -83,7 +83,7 @@ cat >ahtse.conf <<END_LABEL
 # These are independent
 
 # Brunsli codec filter
-#LoadModule brunsli_module modules/mod_brunsli.so
+LoadModule brunsli_module modules/mod_brunsli.so
 # Receive filter
 #LoadModule receive_module modules/mod_receive.so
 # Send a file based on a URL regexp

@@ -28,6 +28,19 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     ldconfig && \
     cd ..
 
+# Get brunsli files for GDAL
+ENV LD_LIBRARY_PATH=:/usr/local/lib
+WORKDIR /tmp
+RUN git clone --depth=1 https://github.com/google/brunsli.git && \
+    cd brunsli && \
+    git submodule update --init --recursive && \
+    cmake -DCMAKE_PREFIX_PATH=/usr/local/ -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -B out && \
+    cmake --build out --config Release && \
+    cd out && make && make install && \
+    export LD_LIBRARY_PATH=:/usr/local/lib && \
+    ldconfig && \
+    cd ..
+
 # Install GDAL
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
@@ -46,6 +59,8 @@ RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar
       -DGDAL_USE_ARROW=OFF \
       -DGDAL_USE_ARROWDATASET=OFF \
       -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
+      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
+      -DGDAL_USE_BRUNSLI=ON \
       -DBUILD_PYTHON_BINDINGS:BOOL=ON \
       -DBUILD_JAVA_BINDINGS:BOOL=OFF \
       -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
