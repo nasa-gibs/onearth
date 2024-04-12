@@ -7,6 +7,17 @@ This script analyzes the list of dates for a given layer (`layer:layer_name:date
 
 The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4326:layer:layer_name`.
 
+It can also be run with the following optional positional arguments after the keyword:
+
+`{date_to_be_added} {start_datetime} {end_datetime} {keep_existing_periods}`
+
+- `date_to_be_added`: The script will add this date for the layer before recalculating the layer's periods if there's a change.
+- `start_datetime`: Only dates that take place after this value will be considered while calculating periods
+- `end_datetime`: Only dates that take place before this value will be considered while calculating periods
+- `keep_existing_periods`: Don't delete existing periods at `:periods` before adding the newly calculated periods. Note that this can lead to overlapping periods. Most useful when using `start_datetime` and `end_datetime`.
+
+Any of these arguments can be skipped by passing in `false`.
+
 ### Example Command Line Usage
 
 `redis-cli --eval periods.lua epsg4326:layer:layer_name`

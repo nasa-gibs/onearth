@@ -63,7 +63,7 @@ def redis_running():
         return False
 
 
-def seed_redis_data(layers, db_keys=None):
+def seed_redis_data(layers, db_keys=None, optional_args=None):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     db_keystring = ''
     if db_keys:
@@ -78,7 +78,10 @@ def seed_redis_data(layers, db_keys=None):
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
-    date_script(keys=['{0}layer:{1}'.format(db_keystring, layers[0][0])])
+    if optional_args is not None:
+        date_script(keys=['{0}layer:{1}'.format(db_keystring, layers[0][0])], args=optional_args)
+    else:
+        date_script(keys=['{0}layer:{1}'.format(db_keystring, layers[0][0])])
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -1472,6 +1475,76 @@ class TestTimeUtils(unittest.TestCase):
                 layer[2], layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
                 .format(layer[0], layer_res['periods'][0], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_variable_periods(self):
+        # Test periods for irregularly varying time periods, as well as the keep_existing_periods option
+        num_days = 5
+        num_times = 16
+        daily_adjustment = 20
+        date_start = datetime.datetime(2021, 1, 26, 10, 40, 0, 0)
+        date_end = datetime.datetime(2021, 1, 26, 21, 40, 0, 0)
+        # calculate the datetimes
+        date_lst = []
+        for i in range(num_days):
+            current_date_start = date_start + datetime.timedelta(days = i, minutes = i * daily_adjustment)
+            num_times -= 1
+            # interval increases and then decreases during the day
+            for y in range(num_times):
+                current_date_start += datetime.timedelta(minutes=abs(abs(num_times / 2 - y) - num_times / 2) * 2 + y)
+                date_lst += [str((current_date_start))]
+        # add the "T" between the date and the time
+        for i in range(len(date_lst)):
+            date_lst[i] = date_lst[i][:10] + 'T' + date_lst[i][11:]
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Variable_Periods', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        # Calculate periods for first desired day
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', '2021-01-27T11:00:00', '2021-01-27T14:09:00'])
+        # Calculate periods for second desired day and instruct periods.lua to not clear existing periods
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', '2021-01-29T11:40:00', '2021-01-29T13:58:00', "true"])
+        # Expected periods
+        periods = ['2021-01-27T11:00:00Z/2021-01-27T11:03:00Z/PT3M',
+                    '2021-01-27T11:09:00Z/2021-01-27T11:09:00Z/PT3M',
+                    '2021-01-27T11:18:00Z/2021-01-27T11:18:00Z/PT3M',
+                    '2021-01-27T11:30:00Z/2021-01-27T11:30:00Z/PT3M',
+                    '2021-01-27T11:45:00Z/2021-01-27T11:45:00Z/PT3M',
+                    '2021-01-27T12:03:00Z/2021-01-27T12:03:00Z/PT3M',
+                    '2021-01-27T12:24:00Z/2021-01-27T12:24:00Z/PT3M',
+                    '2021-01-27T12:44:00Z/2021-01-27T12:44:00Z/PT3M',
+                    '2021-01-27T13:03:00Z/2021-01-27T13:03:00Z/PT3M',
+                    '2021-01-27T13:21:00Z/2021-01-27T13:21:00Z/PT3M',
+                    '2021-01-27T13:38:00Z/2021-01-27T13:38:00Z/PT3M',
+                    '2021-01-27T13:54:00Z/2021-01-27T13:54:00Z/PT3M',
+                    '2021-01-27T14:09:00Z/2021-01-27T14:09:00Z/PT3M',
+                    '2021-01-29T11:40:00Z/2021-01-29T11:43:00Z/PT3M',
+                    '2021-01-29T11:49:00Z/2021-01-29T11:49:00Z/PT3M',
+                    '2021-01-29T11:58:00Z/2021-01-29T11:58:00Z/PT3M',
+                    '2021-01-29T12:10:00Z/2021-01-29T12:10:00Z/PT3M',
+                    '2021-01-29T12:25:00Z/2021-01-29T12:25:00Z/PT3M',
+                    '2021-01-29T12:43:00Z/2021-01-29T12:43:00Z/PT3M',
+                    '2021-01-29T13:00:00Z/2021-01-29T13:00:00Z/PT3M',
+                    '2021-01-29T13:16:00Z/2021-01-29T13:16:00Z/PT3M',
+                    '2021-01-29T13:31:00Z/2021-01-29T13:31:00Z/PT3M',
+                    '2021-01-29T13:45:00Z/2021-01-29T13:45:00Z/PT3M',
+                    '2021-01-29T13:58:00Z/2021-01-29T13:58:00Z/PT3M']
+
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
    

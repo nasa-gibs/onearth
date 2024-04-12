@@ -384,7 +384,7 @@ local function findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods, 
   end
 end
 
-local function calculatePeriods(dates, config)
+local function calculatePeriods(dates, config, start_date, end_date)
   -- Parse time configurations
   local configs = {}
   for w in tostring(config):gmatch("([^/]+)") do
@@ -441,31 +441,60 @@ local function calculatePeriods(dates, config)
     force_end = dates[#dates]
   end
 
+  -- If not using DETECT and we have start_date and/or end_date,
+  -- trim the time config's force_start and/or force_end to match start_date and/or end_date.
+  if start_date ~= nil and start_date ~= "false" then
+    local start_date_epoch = dateToEpoch(start_date)
+    if force_end ~= 'DETECT' and dateToEpoch(force_end) < start_date_epoch then
+      return {}
+    elseif force_start ~= 'DETECT' and start_date_epoch > dateToEpoch(force_start) then
+      force_start = start_date
+    end
+  end
+  if end_date ~= nil and end_date ~= "false" then
+    local end_date_epoch = dateToEpoch(end_date)
+    if force_start ~= 'DETECT' and dateToEpoch(force_start) > end_date_epoch then
+      return {}
+    elseif force_end ~= 'DETECT' and end_date_epoch < dateToEpoch(force_end) then
+      force_end = end_date
+    end
+  end
+
   if force_start ~= 'DETECT' and force_end ~= 'DETECT' and force_period ~= 'DETECT' then
   -- Skip DETECT if all forced values are provided
     local dateList = {force_start, force_end}
     periods[#periods + 1] = {size=string.match(force_period, "%d+"), dates=dateList, unit=getIntervalUnit(force_period)}
   else
-
-    -- Filter out any dates that occur before force_start or after force_end
+    -- Filter out any dates that occur before force_start or after force_end,
+    -- or fall outside of start_date and start_end
     local start_idx = 1
     local end_idx = #dates
-    if force_start ~= 'DETECT' then
-      local start_epoch = dateToEpoch(force_start)
+    if force_start ~= 'DETECT' or (start_date ~= nil and start_date ~= "false") then
+      local start_epoch
+      if force_start == 'DETECT' then
+        start_epoch = dateToEpoch(start_date)
+      else
+        start_epoch = dateToEpoch(force_start)
+      end
       while start_epoch > dateToEpoch(dates[start_idx]) do
         start_idx = start_idx + 1
         if start_idx > #dates then
-          redis.call('ECHO', 'No dates available to detect for a forced start date of ' .. tostring(force_start))
+          redis.call('ECHO', 'No dates available to detect for a forced start date of ' .. epochToDate(start_epoch))
           return {}
         end
       end
     end
-    if force_end ~= 'DETECT' then
-      local end_epoch = dateToEpoch(force_end)
+    if force_end ~= 'DETECT' or (end_date ~= nil and end_date ~= "false") then
+      local end_epoch
+      if force_end == 'DETECT' then
+        end_epoch = dateToEpoch(end_date)
+      else
+        end_epoch = dateToEpoch(force_end)
+      end
       while end_epoch < dateToEpoch(dates[end_idx]) do
         end_idx = end_idx - 1
         if end_idx < 1 then
-          redis.call('ECHO', 'No dates available to detect for a forced end date of ' .. tostring(force_end))
+          redis.call('ECHO', 'No dates available to detect for a forced end date of ' .. epochToDate(end_epoch))
           return {}
         end
       end
@@ -648,9 +677,10 @@ local function calculatePeriods(dates, config)
   return periodStrings
 end
 
--- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name , date_time
+-- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name , date_time , start_date , end_date , keep_existing_periods
 -- Routine called by Redis. Read all dates, create periods, and replace old period entries
 -- with new list.
+-- Use "false" in place of date_time, start_date, end_date, or keep_existing_periods to skip
 redis.replicate_commands()
 local dates = {}
 local configs = {}
@@ -659,6 +689,12 @@ local cursor = "0"
 local index = KEYS[1]:match("^.*():")
 local layerPrefix = KEYS[1]:sub(1,index) -- remove provided layers name
 local layer_keys = { KEYS[1] }
+local start_date = ARGV[2]
+local end_date = ARGV[3]
+local keep_existing_periods = false
+if ARGV[4] ~= nil and ARGV[4] ~= "false" then
+  keep_existing_periods = true
+end
 
 -- Copy the periods to the layers listed in copy_periods, if applicable.
 -- Relevant for ZenJPEG layers.
@@ -698,10 +734,10 @@ until cursor == "0"
 
 if next(configs) == nil then
   local config = redis.call("GET", KEYS[1] .. ":config")
-  local periodStrings = calculatePeriods(dates, config)
+  local periodStrings = calculatePeriods(dates, config, start_date, end_date)
   for _, key in ipairs(layer_keys) do
     if key ~= nil then
-      if redis.call("EXISTS", key .. ":periods") then
+      if redis.call("EXISTS", key .. ":periods") and not keep_existing_periods then
         redis.call("DEL", key .. ":periods")
       end
       for i, periodString in ipairs(periodStrings) do
@@ -711,13 +747,11 @@ if next(configs) == nil then
   end
 else
   for i, config in ipairs(configs) do
-    local periodStrings = calculatePeriods(dates, config)
+    local periodStrings = calculatePeriods(dates, config, start_date, end_date)
     for _, key in ipairs(layer_keys) do
       if key ~= nil then
-        if i == 1 then
-          if redis.call("EXISTS", key .. ":periods") then
-            redis.call("DEL", key .. ":periods")
-          end
+        if i == 1 and redis.call("EXISTS", key .. ":periods") and not keep_existing_periods then
+          redis.call("DEL", key .. ":periods")
         end
         for i, periodString in ipairs(periodStrings) do
           redis.call("SADD", key .. ":periods", periodString)
