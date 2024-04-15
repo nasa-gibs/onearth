@@ -49,7 +49,7 @@ pushd $HOME/src/modules
 #refresh $GITHUB/$ME/$THIS_PROJECT
 # Execute the updated scripts
 . $HOME/src/modules/$THIS_PROJECT/devtools.bash
-. $HOME/src/$THIS_PROJECT/gdal.bash
+#. $HOME/src/$THIS_PROJECT/gdal.bash
 . $HOME/src/modules/$THIS_PROJECT/ahtse.bash
 
 # To previous folder

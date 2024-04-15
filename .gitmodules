@@ -1,0 +1,3 @@
+[submodule "src/modules/mod_brunsli"]
+	path = src/modules/mod_brunsli
+	url = https://github.com/lucianpls/mod_brunsli.git
