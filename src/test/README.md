@@ -64,6 +64,9 @@ Each test script will output a JUnit XML results file. By default, these files a
 12. Test best layer to check filename, prefix, date
 13. Test snap with multiple key parameter (key1, key2, key3, etc)
 14. Test snapping to one of multiple periods
+15. Test requesting a static best layer
+16. Test that layers with many periods have their periods truncated to the latest 100 periods
+17. Test time snapping to a date that data exists for but is not included in the most recent 100 time periods
 
 
 ## Time Utilities Tests
