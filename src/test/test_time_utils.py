@@ -155,6 +155,8 @@ class TestTimeUtils(unittest.TestCase):
     def test_time_scrape_s3_keys(self):
         # Test scraping S3 keys
         test_layers = [('Test_Layer', '2017-01-04',
+                        '2017-01-01/2017-01-04/P1D'),
+                        ('Other_Test_Layer', '2017-01-04',
                         '2017-01-01/2017-01-04/P1D')]
 
         cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -b test-bucket 127.0.0.1"
@@ -173,6 +175,55 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[1], layer_res['default']))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
+
+    def test_time_scrape_s3_keys_layer_filter(self):
+        # Test scraping S3 keys and verify that keys are only scraped for the layer scheduled to be filtered on
+        test_layers = [('Test_Layer', '2016-01-01',
+                        '2016-01-01/2016-01-01/P1D'),
+                        ('Other_Test_Layer', '2017-01-04',
+                        '2017-01-01/2017-01-04/P1D')]
+        db_keys = ['epsg4326']
+        
+        redis_server = redis.StrictRedis(host='localhost', port=6379, db=0)
+        # make sure there are no leftover dates for this layer from other tests
+        for layer in test_layers:
+            redis_server.delete('epsg4326:layer:{0}:dates'.format(layer[0]))
+        # Add a date for Test_Layer that differs from the dates in test-bucket. This should survive oe_scrape_time.py filtering
+        redis_server.zadd('epsg4326:layer:{0}:dates'.format(test_layers[0][0]), {'2016-01-01':0})
+        # populate the periods
+
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        
+        # Have oe_scrape_time.py scrape time for only Other_Test_Layer. Test_Layer should remain unchanged
+        cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -l Other_Test_Layer -r -b test-bucket 127.0.0.1"
+        run_command(cmd, True)
+        
+        # Re-run periods.lua on Test_Layer to ensure that periods can still be generated (meaning the dates are still there)
+        with open('periods.lua', 'r') as f:
+            lua_script = f.read()
+            date_script = redis_server.register_script(lua_script)
+            date_script(keys=['epsg4326:layer:{0}'.format(test_layers[0][0])])
+
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[1], layer_res['default'],
+                'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
+                .format(layer[0], layer[1], layer_res['default']))
+            self.assertEqual(
+                [layer[2]], layer_res['periods'],
+                'Layer {0} has incorrect periods -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], [layer[2]]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
 
     def test_time_scrape_s3_inventory(self):
         # Test scraping S3 inventory file

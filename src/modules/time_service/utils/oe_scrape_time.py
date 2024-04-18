@@ -73,6 +73,42 @@ TEST_RESPONSE = {
         {'Key': 'epsg4326/Test_Layer/2017/Test_Layer-2017004000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
          'ETag': '"43"', 'Size': 5335951, 'StorageClass': 'STANDARD'
         },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017001000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"11"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017001000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"12"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017001000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"13"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017002000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"21"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017002000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"22"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017002000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"23"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017003000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"31"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017003000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"32"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017003000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"33"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017004000000.idx', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"41"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017004000000.mrf', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"42"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
+        {'Key': 'epsg4326/Other_Test_Layer/2017/Test_Layer-2017004000000.ppg', 'LastModified': datetime(2020, 3, 5, 3, 44, 38), 
+         'ETag': '"43"', 'Size': 5335951, 'StorageClass': 'STANDARD'
+        },
     ],
     'EncodingType': 'url',
     'ResponseMetadata': {
@@ -188,7 +224,7 @@ def updateDateService(redis_uri,
         bucket = bucket.split('/')[2].split('.')[0]
 
     # delete date keys
-    pattern = 'epsg????:layer:*:dates'
+    pattern = 'epsg????:layer:{}:dates'.format(layer_name if layer_name else '*')
     count, keys = r.scan(cursor=0, match=pattern)
     if(len(keys) > 0):
         resp = r.unlink(*keys)
@@ -258,7 +294,6 @@ def updateDateService(redis_uri,
             sorted_parsed_dates = list(
                 map(lambda date: datetime.strptime(date, '%Y%j%H%M%S'),
                     sorted(list(data['dates']))))
-
             scrape_semaphore.acquire()
             t = threading.Thread(target=updateRedis, args=(proj, layer, sorted_parsed_dates))
             t.start()
