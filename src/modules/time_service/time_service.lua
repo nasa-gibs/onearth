@@ -102,6 +102,22 @@ local function period_sort(first, second)
     return date_util(split("/", first)[1]) > date_util(split("/", second)[1])
 end
 
+-- Trim to the latest 100 periods
+local function periods_trim(layer_datetime_info)
+    for key, value in pairs(layer_datetime_info) do
+        if #value.periods > 100 then
+            print('Warning: ' .. #value.periods .. ' periods have been found for layer ' .. key .. '. Only the most recent 100 will be returned.')
+            table.sort(value.periods)
+            local truncated = {}
+            for i = #value.periods - 99, #value.periods do
+                truncated[#truncated+1] = value.periods[i]
+            end
+            layer_datetime_info[key].periods = truncated
+        end
+    end
+    return layer_datetime_info
+end
+
 -- Handlers to get layer period and default date information
 local function redis_get_all_layers (client, prefix_string)
     local layers = {}
@@ -215,7 +231,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         if not query_string or not layer_name then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(layer_handler(nil, uuid, lookup_keys, nil)))
+            local layer_datetime_info = layer_handler(nil, uuid, lookup_keys, nil)
+            return send_response(200, JSON:encode(periods_trim(layer_datetime_info)))
         end
 
         local request_date_string = get_query_param("datetime", query_string)
@@ -228,7 +245,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         if not request_date_string then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(layer_datetime_info))
+            return send_response(200, JSON:encode(periods_trim(layer_datetime_info)))
         end
 
         -- If it's a default request, return the default date and associated period

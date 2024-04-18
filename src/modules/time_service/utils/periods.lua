@@ -660,16 +660,6 @@ local function calculatePeriods(dates, config, start_date, end_date)
     end
   end
 
-  -- Truncate to the most recent 100 periods if there are more than 100 periods
-  if #periodStrings > 100 then
-    redis.call('ECHO', 'Warning: ' .. #periodStrings .. ' periods have been found. Only the most recent 100 will be returned.')
-    table.sort(periodStrings)
-    local truncated = {}
-    for i = #periodStrings - 99, #periodStrings do
-      truncated[#truncated+1] = periodStrings[i]
-    end
-    periodStrings = truncated
-  end
 
   --Not needed since values are stored in an unordered list in Redis
   --table.sort(periodStrings)

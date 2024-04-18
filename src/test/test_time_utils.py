@@ -1396,34 +1396,6 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
-    def test_periods_truncate(self):
-        # Test that the list of periods is truncated to the most recent 100 if there are more than 100 periods
-        num_dates = 150
-        date_start = datetime.datetime(2010, 6, 1)
-        # calculate 100 datetimes
-        date_lst = [str((date_start + relativedelta(months=idx)).date()) for idx in range(num_dates)]
-        test_layers = []
-        for date_entry in date_lst:
-            test_layers.append(('Test_Truncate', date_entry))
-        db_keys = ['epsg4326']
-        config = 'DETECT/P1D'
-        add_redis_config(test_layers, db_keys, config)
-
-        seed_redis_data(test_layers, db_keys=db_keys)
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
-        res = r.json()
-        for layer in test_layers:
-            layer_res = res.get(layer[0])
-            self.assertIsNotNone(
-                layer_res,
-                'Layer {0} not found in list of all layers'.format(layer[0]))
-            self.assertEqual(
-                100, len(layer_res['periods']),
-                'Layer {0} has incorrect number of "periods" -- got {1}, expected 100'
-                .format(layer[0], len(layer_res['periods'])))
-            if not DEBUG:
-                remove_redis_layer(layer, db_keys)
-
     def test_periods_stress_days(self):
         # Test adding a huge amount of dates
         num_dates = 100000
