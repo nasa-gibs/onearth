@@ -68,8 +68,9 @@ RUN cd client_golang@v1.19.0 && \
     rm -rf /usr/local/go /usr/local/bin/go
 
 # Download RPM source for Apache
-RUN yum install -y yum-utils-4.3.0 rpm-build-4.16.1.3 && \
-    yum clean all && \
+WORKDIR /tmp
+RUN dnf install -y yum-utils-4.3.0 rpm-build-4.16.1.3 && \
+    dnf clean all && \
     yumdownloader --source httpd-2.4.57-5.el9.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
     yum-builddep -y httpd-2.4.57-5.el9.x86_64
@@ -86,17 +87,17 @@ RUN pip install -r onearth/docker/deps/requirements.txt
 WORKDIR /tmp
 
 # Install APR patch
-RUN wget http://archive.apache.org/dist/apr/apr-1.7.0.tar.gz && \
-    tar xf apr-1.7.0.tar.gz && \
-    cd /tmp/apr-1.7.0 && \
+RUN wget http://archive.apache.org/dist/apr/apr-1.7.4.tar.gz && \
+    tar xf apr-1.7.4.tar.gz && \
+    cd /tmp/apr-1.7.4 && \
     patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch && \
-    ./configure --prefix=/usr/local/apr --with-ldap && \
+    ./configure --prefix=/usr/local/apr && \
     make && make install
 
 WORKDIR /tmp
-RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.1.tar.gz && \
-    tar xf apr-util-1.6.1.tar.gz && \
-    cd /tmp/apr-util-1.6.1 && \
+RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz && \
+    tar xf apr-util-1.6.3.tar.gz && \
+    cd /tmp/apr-util-1.6.3 && \
     ./configure --prefix=/usr/local/apr --with-apr=/usr/local/apr --with-ldap && \
     make && make install
     
@@ -116,7 +117,7 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     rpm -ivh /tmp/rpmbuild/RPMS/*/httpd*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_lua*.rpm && \
-    cd / && rm -rf /tmp/apr-1.7.0* /tmp/apr-util-1.6.1* /tmp/httpd-2.4.57* /tmp/rpmbuild*
+    cd / && rm -rf /tmp/apr-1.7.4* /tmp/apr-util-1.6.3* /tmp/httpd-2.4.57* /tmp/rpmbuild*
 
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .

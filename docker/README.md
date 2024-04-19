@@ -2,18 +2,17 @@
 
 ## Docker Setup
 
-OnEarth uses Docker images for its services. The main OnEarth Docker image
-contains WMTS/TWMS and GetCapabilities services and is configured with several
-test layers. It requires the Time Service, which is a separate Docker image,
-in order to support time dynamic layers. A WMS Service is also available as a
-separate Docker image.
+OnEarth uses Docker images for its services. The main OnEarth Docker image "tile-services"
+contains WMTS/TWMS tile services and is configured with several
+test layers. It requires "capabilities" and "time-services", which are separate Docker images in order to support time dynamic layers. Reprojection and WMS services are also available as separate Docker images.
 
 To build the Docker images and deploy the OnEarth stack,
 Update the `ONEARTH_VERSION` and `ONEARTH_RELEASE` variables in `version.sh`
 and source the file: `source version.sh`.
-Then run: `build.sh` and `run.sh` from the source root.
 
-Note that you may need to manually update the version numbers within the Dockerfiles.
+The "deps" Docker image OnEarth dependencies must first be built before the other Docker images. Run `./ci/build_deps_image.sh nasagibs/onearth-deps:$ONEARTH_VERSION` to build the image. It can take a while to build the first time, but rebuilds are not needed unless there is a version or dependency change.
+
+To build the OnEarth Docker images, run: `build.sh` and `run.sh` from the source root.
 
 Alternatively, you can run each Docker image individually by building the
 image: `docker build -t onearth .`, and then starting a container using
