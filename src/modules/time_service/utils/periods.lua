@@ -368,7 +368,7 @@ local function findPeriodsAndBreaks(dates, size, unit, datesInPeriods, periods, 
     for i = start_idx, end_idx do
       if not datesInPeriods[dates[i]] then
         dateList[#dateList + 1] = dates[i]
-        if (dates[i+1] == nil) or
+        if (dates[i+1] == nil) or (i+1 > end_idx) or 
             (calcEpochDiff(dates[i], size, interval) ~= dateToEpoch(dates[i+1])) then
           for _, dateEntry in ipairs(dateList) do
             datesInPeriods[dateEntry] = true
