@@ -67,6 +67,13 @@ Each test script will output a JUnit XML results file. By default, these files a
 15. Test requesting a static best layer
 16. Test that layers with many periods have their periods truncated to the latest 100 periods
 17. Test time snapping to a date that data exists for but is not included in the most recent 100 time periods
+18. Test requesting periods between start and end dates
+19. Test requesting periods after a start date
+20. Test requesting periods before an end date
+21. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for
+22. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
+23. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
+24. Test requesting periods for all layers between start and end dates
 
 
 ## Time Utilities Tests

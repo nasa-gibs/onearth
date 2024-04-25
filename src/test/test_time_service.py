@@ -120,7 +120,7 @@ class TestDateService(unittest.TestCase):
         # Tests that a blank inquiry to the date service returns all records.
         test_layers = [('test1_all_records', '2012-01-01',
                         '2012-01-01/2016-01-01/P1Y'),
-                       ('test2_all_records', '2015-02-01T12:00:00',
+                       ('test2_atell_records', '2015-02-01T12:00:00',
                         '2012-01-01T00:00:00/2016-01-01T23:59:59/PT1S')]
 
         seed_redis_data(test_layers)
@@ -526,14 +526,14 @@ class TestDateService(unittest.TestCase):
 
         for test_layer in test_layers:
             r = requests.get(self.date_service_url + 'layer={0}'.
-                             format(test_layer[0], test_layer[3]))
+                             format(test_layer[0]))
             res = r.json()
             returned_periods = res[test_layers[0][0]]['periods']
             if not DEBUG:
                 remove_redis_layer(test_layer)
             self.assertEqual(
                 len(returned_periods), 100,
-                'Error with truncating periods: {} periods were returned, when there should have only been 100'
+                'Error with truncating periods: {} periods were returned, when there should have been 100'
                 .format(len(returned_periods)))
             self.assertEqual(
                 returned_periods, periods[-100:],
@@ -564,7 +564,182 @@ class TestDateService(unittest.TestCase):
                 .format(test_layer[2], test_layer[3], returned_date,
                         test_layer[4]))
     
+    def test_periods_range(self):
+        # Test data
+        periods = ['2024-01-01/2024-01-07/P1D',
+                    '2024-01-11/2024-01-17/P1D']
+        start_date = '2024-01-03'
+        end_date = '2024-01-14'
+        expected_periods = ['2024-01-03/2024-01-07/P1D',
+                            '2024-01-11/2024-01-14/P1D']
+        test_layers = [('test_range', '2014-01-17',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
+                             format(test_layer[0], start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+        
+    def test_periods_range_start_only(self):
+        # Test data
+        periods = ['2024-01-01/2024-01-07/P1D',
+                    '2024-01-11/2024-01-17/P1D']
+        start_date = '2024-01-03'
+        expected_periods = ['2024-01-03/2024-01-07/P1D',
+                            '2024-01-11/2024-01-17/P1D']
+        test_layers = [('test_range_start_only', '2014-01-17',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}'.
+                             format(test_layer[0], start_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
 
+    def test_periods_range_end_only(self):
+        # Test data
+        periods = ['2024-01-01/2024-01-07/P1D',
+                    '2024-01-11/2024-01-17/P1D']
+        end_date = '2024-01-14'
+        expected_periods = ['2024-01-01/2024-01-07/P1D',
+                            '2024-01-11/2024-01-14/P1D']
+        test_layers = [('test_range_end_only', '2014-01-17',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_end={1}'.
+                             format(test_layer[0], end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+
+    def test_periods_range_snap(self):
+        # Test data
+        periods = ['2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D']
+        start_date = '2024-01-02'
+        end_date = '2024-01-14'
+        expected_periods = ['2024-01-03/2024-01-07/P2D',
+                            '2024-01-11/2024-01-13/P2D']
+        test_layers = [('test_range', '2024-01-17',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
+                             format(test_layer[0], start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+
+    def test_periods_range_snap_between_period_odd(self):
+        # Test data
+        periods = ['2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D',
+                    '2024-02-13/2024-02-19/P2D']
+        start_date = '2024-01-09'
+        end_date = '2024-02-03'
+        expected_periods = ['2024-01-11/2024-01-17/P2D']
+        test_layers = [('test_range_between_period_odd', '2024-02-19',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
+                             format(test_layer[0], start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+
+    def test_periods_range_snap_between_period_even(self):
+        # Test data
+        periods = ['2023-01-01/2023-01-07/P2D',
+                    '2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D',
+                    '2024-02-13/2024-02-19/P2D']
+        start_date = '2024-01-09'
+        end_date = '2024-02-03'
+        expected_periods = ['2024-01-11/2024-01-17/P2D']
+        test_layers = [('test_range_between_period_even', '2024-02-19',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
+                             format(test_layer[0], start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+
+    def test_periods_range_all_layers(self):
+        # Test data
+        layer_1_periods = ['2023-02-05/2023-02-09/P2D',
+                            '2024-01-01/2024-01-07/P2D',
+                            '2024-01-11/2024-01-17/P2D',
+                            '2024-02-13/2024-02-19/P2D',
+                            '2024-03-05/2024-04-07/P1D',
+                            '2024-04-12/2024-05-25/P1D']
+        layer_2_periods = ['2023-01-01/2024-04-01/P1M',
+                            '2024-04-05/2024-04-09/P2D',
+                            '2024-04-11/2024-04-17/P1D',
+                            '2024-05-13/2024-05-19/P2D',
+                            '2025-02-23/2025-07-12/P1D']
+        layer_3_periods = ['2023-01-01/2023-04-01/P1M',
+                            '2024-04-05/2024-04-09/P2D',
+                            '2024-05-03/2024-05-09/P1D',
+                            '2025-02-23/2025-07-12/P1D']                            
+        start_date = '2024-02-14'
+        end_date = '2024-05-16'
+        layer_1_expected_periods = ['2024-02-15/2024-02-19/P2D',
+                                    '2024-03-05/2024-04-07/P1D',
+                                    '2024-04-12/2024-05-16/P1D']
+        layer_2_expected_periods = ['2024-03-01/2024-04-01/P1M',
+                                    '2024-04-05/2024-04-09/P2D',
+                                    '2024-04-11/2024-04-17/P1D',
+                                    '2024-05-13/2024-05-15/P2D']
+        layer_3_expected_periods = ['2024-04-05/2024-04-09/P2D',
+                                    '2024-05-03/2024-05-09/P1D']
+        test_layers = [('test_range_layer_1', '2024-05-25',
+                        layer_1_periods, layer_1_expected_periods),
+                        ('test_range_layer_2', '2025-07-12',
+                        layer_2_periods, layer_2_expected_periods),
+                        ('test_range_layer_3', '2024-05-09',
+                        layer_3_periods, layer_3_expected_periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'periods_start={0}&periods_end={1}'.
+                             format(start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layer[0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, test_layer[3],
+                'Error with requesting periods within a range: for layer {0}, got {1}, expected {2}.'.format(test_layer[0], returned_periods, test_layer[3]))
 
     @classmethod
     def tearDownClass(self):
