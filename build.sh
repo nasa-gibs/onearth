@@ -3,8 +3,18 @@
 # Set OnEarth version and release
 source ./version.sh
 
+# Detect CPU architecture
+ARCH=$(uname -m)
+DOCKER_PLATFORM_OPTION=""
+
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+    DOCKER_PLATFORM_OPTION="--platform=linux/amd64"
+fi
+
+
 # Build the onearth-tile-services image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/tile_services/Dockerfile \
@@ -13,6 +23,7 @@ docker build \
 
 # Build the onearth-time-service image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/time_service/Dockerfile \
@@ -21,6 +32,7 @@ docker build \
 
 # Build the onearth-capabilities image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/capabilities/Dockerfile \
@@ -29,6 +41,7 @@ docker build \
 
 # Build the onearth-reproject image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/reproject/Dockerfile \
@@ -37,6 +50,7 @@ docker build \
 
 # Build the onearth-demo image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --no-cache \
     -f ./docker/demo/Dockerfile \
     -t nasagibs/onearth-demo:$ONEARTH_VERSION-$ONEARTH_RELEASE \
@@ -44,6 +58,7 @@ docker build \
 
 # Build the onearth-wms image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/wms_service/Dockerfile \
     -t nasagibs/onearth-wms:$ONEARTH_VERSION-$ONEARTH_RELEASE \
@@ -51,6 +66,7 @@ docker build \
 
 # Build the onearth-tools image
 docker build \
+    $DOCKER_PLATFORM_OPTION \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/tools/Dockerfile \
     -t nasagibs/onearth-tools:$ONEARTH_VERSION-$ONEARTH_RELEASE \

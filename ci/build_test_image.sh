@@ -10,6 +10,14 @@ if [ -z "$TAG" ]; then
   exit 1
 fi
 
+# Detect CPU architecture
+ARCH=$(uname -m)
+DOCKER_PLATFORM_OPTION=""
+
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+    DOCKER_PLATFORM_OPTION="--platform=linux/amd64"
+fi
+
 rm -rf Dockerfile
 
 #DOCKER_UID=$(id -u)
@@ -18,6 +26,7 @@ rm -rf Dockerfile
 cp ./docker/test/Dockerfile .
 
 docker build \
+  $DOCKER_PLATFORM_OPTION \
   --tag "$TAG" \
   ./
 
