@@ -149,15 +149,19 @@ local function period_sort(first, second)
     return date_util(split("/", first)[1]) > date_util(split("/", second)[1])
 end
 
--- Trim to the latest 100 periods
-local function periods_trim(layer_datetime_info)
+-- Trim to the specified number of periods
+local function periods_trim(layer_datetime_info, limit)
     for key, value in pairs(layer_datetime_info) do
-        if #value.periods > 100 then
-            print('Warning: ' .. #value.periods .. ' periods have been found for layer ' .. key .. '. Only the most recent 100 will be returned.')
-            table.sort(value.periods)
+        if #value.periods > math.abs(limit) then
             local truncated = {}
-            for i = #value.periods - 99, #value.periods do
-                truncated[#truncated+1] = value.periods[i]
+            if limit < 0 then
+                for i = #value.periods + limit + 1, #value.periods do
+                    truncated[#truncated+1] = value.periods[i]
+                end
+            else
+                for i = 1, limit do
+                    truncated[#truncated+1] = value.periods[i]
+                end
             end
             layer_datetime_info[key].periods = truncated
         end
@@ -167,7 +171,6 @@ end
 
 local function get_periods_in_range(periods, periods_start, periods_end)
     -- handle when we want periods between two dates
-    table.sort(periods)
     local start_snap_date, start_snap_period_idx, end_snap_date, end_snap_period_idx
     if periods_start then
         start_snap_date, start_snap_period_idx = time_snap(date_util(periods_start), periods, false)
@@ -225,11 +228,13 @@ local function redis_get_all_layers (client, prefix_string, periods_start, perio
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
             layers[layer_name].default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
             local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
+            table.sort(periods)
             if periods_start or periods_end then
                 layers[layer_name].periods = get_periods_in_range(periods, periods_start, periods_end)
             else
                 layers[layer_name].periods = periods
             end
+            layers[layer_name].periods_in_range = #layers[layer_name].periods
         end
     until cursor == "0"
     return layers
@@ -261,13 +266,15 @@ local function redis_handler (options)
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
                 local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                table.sort(periods)
                 if periods_start or periods_end then
                     periods = get_periods_in_range(periods, periods_start, periods_end)
                 end
                 if default and periods then
                     returnValue = {[layer_name] = {
                         default = default,
-                        periods = periods
+                        periods = periods,
+                        periods_in_range = #periods
                     }}
                 else
                     returnValue = {err_msg = "Invalid Layer"}
@@ -329,6 +336,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         local layer_name = query_string and get_query_param("layer", query_string) or nil
         local periods_start = query_string and get_query_param("periods_start", query_string) or nil
         local periods_end = query_string and get_query_param("periods_end", query_string) or nil
+        local limit = query_string and tonumber(get_query_param("limit", query_string)) or nil
         local lookup_keys = query_string and get_query_keys(query_string) or nil
 
         -- A blank query returns the entire list of layers and periods
@@ -336,7 +344,10 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             local layer_datetime_info = layer_handler(nil, uuid, lookup_keys, nil, periods_start, periods_end)
-            return send_response(200, JSON:encode(periods_trim(layer_datetime_info)))
+            if limit then
+                layer_datetime_info = periods_trim(layer_datetime_info, limit)
+            end
+            return send_response(200, JSON:encode(layer_datetime_info))
         end
 
         local request_date_string = get_query_param("datetime", query_string)
@@ -349,7 +360,10 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         if not request_date_string then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(periods_trim(layer_datetime_info)))
+            if limit then
+                layer_datetime_info = periods_trim(layer_datetime_info, limit)
+            end
+            return send_response(200, JSON:encode(layer_datetime_info))
         end
 
         -- If it's a default request, return the default date and associated period
@@ -394,7 +408,6 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             }
             return send_response(200, JSON:encode(out_msg))
         end
-        table.sort(layer_datetime_info[layer_name].periods)
 
         local snap_date, _ = time_snap(req_date, layer_datetime_info[layer_name].periods, true)
 

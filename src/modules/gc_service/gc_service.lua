@@ -114,7 +114,8 @@ local function getDateList(endpointConfig)
         if string.sub(dateServiceUri, -1) ~= "?" then
             dateServiceUri = dateServiceUri .. "?"
         end
-        dateServiceUri = dateServiceUri .. keyString
+        -- concat URI with keys and most recent 100-period limit
+        dateServiceUri = dateServiceUri .. keyString .. '&limit=-100'
     end
 
     local success, headers, stream = pcall(function ()

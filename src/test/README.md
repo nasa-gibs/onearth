@@ -65,16 +65,19 @@ Each test script will output a JUnit XML results file. By default, these files a
 13. Test snap with multiple key parameter (key1, key2, key3, etc)
 14. Test snapping to one of multiple periods
 15. Test requesting a static best layer
-16. Test that layers with many periods have their periods truncated to the latest 100 periods
-17. Test time snapping to a date that data exists for but is not included in the most recent 100 time periods
-18. Test requesting periods between start and end dates
-19. Test requesting periods after a start date
-20. Test requesting periods before an end date
-21. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for
-22. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
-23. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
-24. Test requesting periods for all layers between start and end dates
-
+16. Test the limit option to return the first *n* periods
+17. Test the limit option to return the last *n* periods
+18. Test the limit option to return the first *n* periods when *n* is larger than the number of periods
+19. Test the limit option to return the last *n* periods when *n* is larger than the number of periods
+20. Test requesting periods between start and end dates
+21. Test requesting periods after a start date
+22. Test requesting periods before an end date
+23. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for
+24. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
+25. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
+26. Test requesting periods for all layers between start and end dates
+27. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
+28. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
 
 ## Time Utilities Tests
 ***There are currently two sets of tests endpoint agonostic and endpoint specific, endpoint specific are marked with _dep(deprecated) at the end. ***
