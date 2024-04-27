@@ -1,8 +1,8 @@
---- a/SPECS/httpd.spec	2023-06-10 23:59:58.000000000 +0000
-+++ b/SPECS/httpd.spec	2023-06-11 03:15:49.242570878 +0000
-@@ -141,6 +141,9 @@
- # https://bugzilla.redhat.com/show_bug.cgi?id=2176209
- Patch210: httpd-2.4.53-CVE-2023-25690.patch
+--- a/SPECS/httpd.spec	2023-09-27 10:25:48.000000000 +0000
++++ b/SPECS/httpd.spec	2024-04-17 22:00:10.057192007 +0000
+@@ -122,6 +122,9 @@
+ # https://bugzilla.redhat.com/show_bug.cgi?id=...
+ # Patch200: ...
  
 +Patch900: mod_proxy_http.patch
 +Patch901: proxypass_nomain_flag.patch
@@ -10,13 +10,13 @@
  License: ASL 2.0
  BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
  BuildRequires: perl-interpreter, perl-generators, systemd-devel
-@@ -321,6 +324,9 @@
- %patch209 -p1 -b .CVE-2022-36760
- %patch210 -p1 -b .CVE-2023-25690
+@@ -290,6 +293,8 @@
+ %patch70 -p1 -b .duplicate-key
+ %patch71 -p1 -b .davenoent
  
 +%patch900 -p1
 +%patch901 -p1
-+
+ 
  # Patch in the vendor string
  sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
  sed -i 's/@RELEASE@/%{release}/' server/core.c
