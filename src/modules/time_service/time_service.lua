@@ -150,7 +150,7 @@ local function period_sort(first, second)
 end
 
 -- Trim to the specified number of periods
-local function periods_trim(layer_datetime_info, limit)
+local function apply_limit(layer_datetime_info, limit)
     for key, value in pairs(layer_datetime_info) do
         if #value.periods > math.abs(limit) then
             local truncated = {}
@@ -169,11 +169,11 @@ local function periods_trim(layer_datetime_info, limit)
     return layer_datetime_info
 end
 
-local function get_periods_in_range(periods, periods_start, periods_end)
-    -- handle when we want periods between two dates
+local function range_handler (default, all_periods, periods_start, periods_end)
+    -- handle when we want periods and default between two dates
     local start_snap_date, start_snap_period_idx, end_snap_date, end_snap_period_idx
     if periods_start then
-        start_snap_date, start_snap_period_idx = time_snap(date_util(periods_start), periods, false)
+        start_snap_date, start_snap_period_idx = time_snap(date_util(periods_start), all_periods, false)
         -- if the periods start date doesn't fall within a period, then we need to skip the period that was last examined
         if start_snap_date == nil then
             start_snap_period_idx = start_snap_period_idx + 1
@@ -182,37 +182,56 @@ local function get_periods_in_range(periods, periods_start, periods_end)
         start_snap_period_idx = 1
     end
     if periods_end then
-        end_snap_date, end_snap_period_idx = time_snap(date_util(periods_end), periods, true)
+        end_snap_date, end_snap_period_idx = time_snap(date_util(periods_end), all_periods, true)
     else
-        end_snap_period_idx = #periods
+        end_snap_period_idx = #all_periods
     end
-    
-    -- trim the list of periods so that the period in which we found the snap date starts with the snap date
+   
     local filtered_periods = {}
-    for i = start_snap_period_idx, end_snap_period_idx do
-        filtered_periods[#filtered_periods+1] = periods[i]
-    end
-    if start_snap_date then
-        local parsed_period = split("/", periods[start_snap_period_idx])
-        local start_snap_date_string
-        if start_snap_date:gethours() > 0 or start_snap_date:getminutes() > 0 or start_snap_date:getseconds() > 0 then
-            start_snap_date_string = start_snap_date:fmt(datetime_format)
-        else
-            start_snap_date_string = start_snap_date:fmt(date_format)
+    -- Ensure that there's data between periods_start and periods_end.
+    -- The start snap date taking place after end snap date would mean that there's no data within the bounds.
+    if not (start_snap_date and end_snap_date and start_snap_date > end_snap_date) then
+         -- trim the list of periods so that the period in which we found the snap date starts with the snap date
+        for i = start_snap_period_idx, end_snap_period_idx do
+            filtered_periods[#filtered_periods+1] = all_periods[i]
         end
-        filtered_periods[1] = start_snap_date_string .. "/" .. parsed_period[2] .. "/" .. parsed_period[3]
-    end
-    if end_snap_date then
-        local parsed_period = split("/", periods[end_snap_period_idx])
-        local end_snap_date_string
-        if end_snap_date:gethours() > 0 or end_snap_date:getminutes() > 0 or end_snap_date:getseconds() > 0 then
-            end_snap_date_string = end_snap_date:fmt(datetime_format)
-        else
-            end_snap_date_string = end_snap_date:fmt(date_format)
+        if start_snap_date then
+            local parsed_period = split("/", filtered_periods[1])
+            local start_snap_date_string
+            if start_snap_date:gethours() > 0 or start_snap_date:getminutes() > 0 or start_snap_date:getseconds() > 0 then
+                start_snap_date_string = start_snap_date:fmt(datetime_format)
+            else
+                start_snap_date_string = start_snap_date:fmt(date_format)
+            end
+            filtered_periods[1] = start_snap_date_string .. "/" .. parsed_period[2] .. "/" .. parsed_period[3]
         end
-        filtered_periods[#filtered_periods] = parsed_period[1] .. "/" .. end_snap_date_string .. "/" .. parsed_period[3]
+        if end_snap_date then
+            local parsed_period = split("/", filtered_periods[#filtered_periods])
+            local end_snap_date_string
+            if end_snap_date:gethours() > 0 or end_snap_date:getminutes() > 0 or end_snap_date:getseconds() > 0 then
+                end_snap_date_string = end_snap_date:fmt(datetime_format)
+            else
+                end_snap_date_string = end_snap_date:fmt(date_format)
+            end
+            filtered_periods[#filtered_periods] = parsed_period[1] .. "/" .. end_snap_date_string .. "/" .. parsed_period[3]
+        end
     end
-    return filtered_periods
+
+    -- Make sure default is within the final period range
+    if #filtered_periods > 0 then
+        local last_period = split("/", filtered_periods[#filtered_periods])[2]
+        if default and date_util(default) > date_util(last_period) then
+            default = last_period
+        else
+            local first_period = split("/", filtered_periods[1])[1]
+            if default and date_util(default) < date_util(first_period) then
+                default = first_period
+            end
+        end
+    else
+        default = ""
+    end
+    return default, filtered_periods
 end
 
 -- Handlers to get layer period and default date information
@@ -226,12 +245,13 @@ local function redis_get_all_layers (client, prefix_string, periods_start, perio
             local value_parts = split(":", value)
             local layer_name = value_parts[#value_parts - 1]
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
-            layers[layer_name].default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
+            local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
             local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
             table.sort(periods)
             if periods_start or periods_end then
-                layers[layer_name].periods = get_periods_in_range(periods, periods_start, periods_end)
+                layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end) 
             else
+                layers[layer_name].default = default
                 layers[layer_name].periods = periods
             end
             layers[layer_name].periods_in_range = #layers[layer_name].periods
@@ -268,7 +288,7 @@ local function redis_handler (options)
                 local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
                 table.sort(periods)
                 if periods_start or periods_end then
-                    periods = get_periods_in_range(periods, periods_start, periods_end)
+                    default, periods = range_handler(default, periods, periods_start, periods_end) 
                 end
                 if default and periods then
                     returnValue = {[layer_name] = {
@@ -345,7 +365,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             local layer_datetime_info = layer_handler(nil, uuid, lookup_keys, nil, periods_start, periods_end)
             if limit then
-                layer_datetime_info = periods_trim(layer_datetime_info, limit)
+                layer_datetime_info = apply_limit(layer_datetime_info, limit)
             end
             return send_response(200, JSON:encode(layer_datetime_info))
         end
@@ -361,15 +381,15 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             if limit then
-                layer_datetime_info = periods_trim(layer_datetime_info, limit)
+                layer_datetime_info = apply_limit(layer_datetime_info, limit)
             end
             return send_response(200, JSON:encode(layer_datetime_info))
         end
 
-        -- If it's a default request, return the default date and associated period
+        -- If it's a default request, return the default date, best layer name, and filename
         if string.lower(request_date_string) == "default" then
             local default_date = date_util(layer_datetime_info[layer_name].default)
-            local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, default_date:fmt(datetime_format), periods_start, periods_end)
+            local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, default_date:fmt(datetime_format))
             local out_msg = {
                 prefix = best_layer_name,
                 date = default_date:fmt(datetime_format),

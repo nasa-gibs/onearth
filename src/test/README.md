@@ -70,14 +70,19 @@ Each test script will output a JUnit XML results file. By default, these files a
 18. Test the limit option to return the first *n* periods when *n* is larger than the number of periods
 19. Test the limit option to return the last *n* periods when *n* is larger than the number of periods
 20. Test requesting periods between start and end dates
-21. Test requesting periods after a start date
-22. Test requesting periods before an end date
-23. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for
-24. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
-25. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
-26. Test requesting periods for all layers between start and end dates
-27. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
-28. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
+21. Test requesting periods between start and end dates when there is a single period
+22. Test requesting periods after a start date
+23. Test requesting periods before an end date
+24. Test requesting periods when there are no periods that fall between the start and end date range
+25. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for, causing the start and end dates to be snapped to the next closest time within the periods
+26. Test requesting periods between subdaily start and end dates when the start and end dates are within subdaily periods but do not correspond to dates that data would exist for, causing the start and end dates to be snapped to the next closest time within the periods
+27. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
+28. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
+29. Test requesting periods when the start and end dates fall within a period but there exists no valid dates between the start and end dates
+30. Test requesting periods for all layers between start and end dates
+31. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
+32. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
+33. Test a time snapping date request while specifying start and end dates
 
 ## Time Utilities Tests
 ***There are currently two sets of tests endpoint agonostic and endpoint specific, endpoint specific are marked with _dep(deprecated) at the end. ***
