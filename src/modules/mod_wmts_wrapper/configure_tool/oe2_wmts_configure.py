@@ -77,6 +77,11 @@ PROXY_MODULE_TEMPLATE = """<IfModule !proxy_module>
 </IfModule>
 """
 
+BRUNSLI_MODULE_TEMPLATE = """<IfModule !brunsli_module>
+    LoadModule brunsli_module modules/mod_brunsli.so
+</IfModule>
+"""
+
 DATE_SERVICE_TEMPLATE = """SSLProxyEngine on
 ProxyPass {local_date_service_uri} {date_service_uri}
 ProxyPassReverse {local_date_service_uri} {date_service_uri}
@@ -104,6 +109,7 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
         WMTSWrapperMimeType {mime_type}
         {cache_expiration_block}
         {lerc_handling_block}
+        {brunsli_handling_block}
 </Directory>
 
 {proxy_exemption_block}
@@ -177,12 +183,14 @@ MIME_TO_EXTENSION = {
     'image/tiff': '.tiff',
     'image/lerc': '.lerc',
     'application/x-protobuf;type=mapbox-vector': '.pbf',
-    'application/vnd.mapbox-vector-tile': '.mvt'
+    'application/vnd.mapbox-vector-tile': '.mvt',
+    'image/x-j': '.jpg'  # brunsli
 }
 
 MIME_TO_MRF_EXTENSION = {
     'image/png': '.ppg',
     'image/jpeg': '.pjg',
+    'image/x-j': '.pjg',  # brunsli
     'image/tiff': '.ptf',
     'image/lerc': '.lerc',
     'application/x-protobuf;type=mapbox-vector': '.pvt',
@@ -504,6 +512,16 @@ def make_layer_config(endpoint_config, layer):
     else:
         lerc_handling_block = ''
 
+    # brunsli handling block
+    if mimetype == 'image/x-j':
+        brunsli_handling_block = 'Header set Content-Type "image/x-j"\n'
+        brunsli_handling_block += ('        Header append Content-Encoding '
+                                  'deflate')
+        SetOutputFilter DBRUNSLI
+    else:
+        brunsli_handling_block = ''
+        SetOutputFilter CBRUNSLI
+
     config_file_path = Path(internal_endpoint, layer_id, "default",
                             tilematrixset, 'mod_mrf.config')
 
@@ -545,6 +563,7 @@ def make_layer_config(endpoint_config, layer):
          ('{tilematrixset}', tilematrixset),
          ('{cache_expiration_block}', cache_expiration_block),
          ('{lerc_handling_block}', lerc_handling_block),
+         ('{brunsli_handling_block}', brunsli_handling_block),
          ('{proxy_exemption_block}', proxy_exemption_block),
          ('{mrf_or_convert_configs}', mrf_or_convert_configs),
          ('{config_file_path}', config_file_path.as_posix()),
