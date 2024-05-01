@@ -149,17 +149,21 @@ local function period_sort(first, second)
     return date_util(split("/", first)[1]) > date_util(split("/", second)[1])
 end
 
--- Trim to the specified number of periods
-local function apply_limit(layer_datetime_info, limit)
+-- Trim to the specified number of periods and skip periods as needed
+local function apply_skip_limit(layer_datetime_info, skip, specified_limit)
+    local limit
     for key, value in pairs(layer_datetime_info) do
-        if #value.periods > math.abs(limit) then
+        limit = specified_limit and specified_limit or #value.periods
+        if skip >= #value.periods then
+            layer_datetime_info[key].periods = {}
+        elseif #value.periods > math.abs(limit) or (skip > 0 and #value.periods >= skip) then
             local truncated = {}
             if limit < 0 then
-                for i = #value.periods + limit + 1, #value.periods do
+                for i = #value.periods + limit + 1 - skip, #value.periods - skip do
                     truncated[#truncated+1] = value.periods[i]
                 end
             else
-                for i = 1, limit do
+                for i = 1 + skip, math.min(limit + skip, #value.periods) do
                     truncated[#truncated+1] = value.periods[i]
                 end
             end
@@ -357,6 +361,7 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         local periods_start = query_string and get_query_param("periods_start", query_string) or nil
         local periods_end = query_string and get_query_param("periods_end", query_string) or nil
         local limit = query_string and tonumber(get_query_param("limit", query_string)) or nil
+        local skip = query_string and tonumber(get_query_param("skip", query_string)) or 0
         local lookup_keys = query_string and get_query_keys(query_string) or nil
 
         -- A blank query returns the entire list of layers and periods
@@ -364,8 +369,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             local layer_datetime_info = layer_handler(nil, uuid, lookup_keys, nil, periods_start, periods_end)
-            if limit then
-                layer_datetime_info = apply_limit(layer_datetime_info, limit)
+            if limit or skip > 0 then
+                layer_datetime_info = apply_skip_limit(layer_datetime_info, skip, limit)
             end
             return send_response(200, JSON:encode(layer_datetime_info))
         end
@@ -380,8 +385,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         if not request_date_string then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            if limit then
-                layer_datetime_info = apply_limit(layer_datetime_info, limit)
+            if limit or skip > 0 then
+                layer_datetime_info = apply_skip_limit(layer_datetime_info, skip, limit)
             end
             return send_response(200, JSON:encode(layer_datetime_info))
         end

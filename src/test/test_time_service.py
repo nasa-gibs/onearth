@@ -523,7 +523,7 @@ class TestDateService(unittest.TestCase):
         for i in range(0,num_periods):
             periods += ['{0}-01-01/{0}-01-01/P1Y'.format(str(i + 2000))]
         
-        test_layers = [('test_end_limit', '2012-01-01',
+        test_layers = [('test_begin_limit', '2012-01-01',
                         periods, '2013-06-06',
                         '2013-01-01T00:00:00Z')]
         seed_redis_data(test_layers)
@@ -593,7 +593,7 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}'.
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}'.
                              format(test_layer[0], limit))
             res = r.json()
             returned_periods = res[test_layers[0][0]]['periods']
@@ -621,7 +621,7 @@ class TestDateService(unittest.TestCase):
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
-            r = requests.get(self.date_service_url + 'layer={0}'.
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}'.
                              format(test_layer[0], limit))
             res = r.json()
             returned_periods = res[test_layers[0][0]]['periods']
@@ -630,6 +630,186 @@ class TestDateService(unittest.TestCase):
             self.assertEqual(
                 returned_periods, periods,
                 'Error with requesting periods: got {0}, expected {1}.'.format(returned_periods, periods))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], len(periods),
+                'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(periods))
+            )
+
+    def test_periods_skip(self):
+        # Test data
+        periods = ['2023-01-01/2023-01-07/P2D',
+                    '2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D',
+                    '2024-02-13/2024-02-19/P2D',
+                    '2024-05-12/2024-05-29/P1D',
+                    '2024-06-23/2024-06-29/P1D',
+                    '2024-07-24/2024-08-12/P1D']
+        skip = 4
+        test_layers = [('test_periods_skip', '2024-08-12',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&skip={1}'.
+                             format(test_layer[0], skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, periods[skip:],
+                'Error with requesting periods: got {0}, expected {1}.'.format(returned_periods, periods[skip + 1:]))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], len(periods),
+                'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(periods))
+            )
+
+    def test_periods_skip_all(self):
+        # Test data
+        periods = ['2023-01-01/2023-01-07/P2D',
+                    '2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D',
+                    '2024-02-13/2024-02-19/P2D',
+                    '2024-05-12/2024-05-29/P1D',
+                    '2024-06-23/2024-06-29/P1D',
+                    '2024-07-24/2024-08-12/P1D']
+        skip = 20
+        test_layers = [('test_periods_skip_all', '2024-08-12',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&skip={1}'.
+                             format(test_layer[0], skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, [],
+                'Error with requesting periods: got {0}, expected {1}.'.format(returned_periods, []))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], len(periods),
+                'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(periods))
+            )
+
+    def test_periods_begin_limit_skip(self):
+        # Test data
+        limit = 100
+        skip = 50
+        num_periods = 1000
+        periods = []
+        for i in range(0,num_periods):
+            periods += ['{0}-01-01/{0}-01-01/P1Y'.format(str(i + 2000))]
+        
+        test_layers = [('test_begin_limit_skip', '2012-01-01',
+                        periods, '2013-06-06',
+                        '2013-01-01T00:00:00Z')]
+        seed_redis_data(test_layers)
+
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
+                             format(test_layer[0], limit, skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                len(returned_periods), abs(limit),
+                'Error with using the \'limit\' option with the \'skip\' option: {0} periods were returned, when there should have been {1}'
+                .format(len(returned_periods), abs(limit)))
+            self.assertEqual(
+                returned_periods, periods[skip:skip + limit],
+                'Error with using the \'limit\' option with the \'skip\' option: the periods in the returned list were not the periods between indices {0} and {1} in ascending order.'.format(skip, skip + limit, abs(limit)))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], num_periods,
+                'Error: the returned value for \'periods_in_range\' was {0} when it should have been {1}.'.format(res[test_layer[0]]['periods_in_range'], num_periods)
+            )
+
+    def test_periods_end_limit_skip(self):
+        # Test data
+        limit = -100
+        skip = 50
+        num_periods = 1000
+        periods = []
+        for i in range(0,num_periods):
+            periods += ['{0}-01-01/{0}-01-01/P1Y'.format(str(i + 2000))]
+        
+        test_layers = [('test_end_limit', '2012-01-01',
+                        periods, '2013-06-06',
+                        '2013-01-01T00:00:00Z')]
+        seed_redis_data(test_layers)
+
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
+                             format(test_layer[0], limit, skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                len(returned_periods), abs(limit),
+                'Error with using the \'limit\' option: {0} periods were returned, when there should have been {1}'
+                .format(len(returned_periods), abs(limit)))
+            self.assertEqual(
+                returned_periods, periods[limit - skip:-skip],
+                'Error with using the \'limit\' option: the periods in the returned list were not the periods between indices {0} and {1} in ascending order.'.format(len(periods) + limit - skip, len(periods) - skip))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], num_periods,
+                'Error: the returned value for \'periods_in_range\' was {0} when it should have been {1}.'.format(res[test_layer[0]]['periods_in_range'], num_periods)
+            )
+
+    def test_periods_larger_begin_limit_skip(self):
+        # Test data
+        periods = ['2023-01-01/2023-01-07/P2D',
+                    '2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D',
+                    '2024-02-13/2024-02-19/P2D',
+                    '2024-05-12/2024-05-29/P1D',
+                    '2024-06-23/2024-06-29/P1D',
+                    '2024-07-24/2024-08-12/P1D']
+        limit = 50
+        skip = 4
+        test_layers = [('test_larger_begin_limit_skip', '2024-08-12',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
+                             format(test_layer[0], limit, skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, periods[skip:],
+                'Error with requesting periods: got {0}, expected {1}.'.format(returned_periods, periods[skip + 1:]))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], len(periods),
+                'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(periods))
+            )
+
+    def test_periods_larger_end_limit_skip(self):
+        # Test data
+        periods = ['2023-01-01/2023-01-07/P2D',
+                    '2024-01-01/2024-01-07/P2D',
+                    '2024-01-11/2024-01-17/P2D',
+                    '2024-02-13/2024-02-19/P2D',
+                    '2024-05-12/2024-05-29/P1D',
+                    '2024-06-23/2024-06-29/P1D',
+                    '2024-07-24/2024-08-12/P1D']
+        limit = -50
+        skip = 4
+        test_layers = [('test_larger_end_limit_skip', '2024-08-12',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
+                             format(test_layer[0], limit, skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, periods[:len(periods) - skip],
+                'Error with requesting periods: got {0}, expected {1}.'.format(returned_periods, periods[:len(periods) - skip]))
             self.assertEqual(
                 res[test_layer[0]]['periods_in_range'], len(periods),
                 'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(periods))
@@ -1019,6 +1199,8 @@ class TestDateService(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
+        with open("/var/log/httpd/error_log") as f:
+            print("yeet", f.read())
         if not DEBUG:
             os.remove(self.test_config_dest_path)
             os.remove(self.test_lua_config_location)

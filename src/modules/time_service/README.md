@@ -29,6 +29,13 @@ for the specified layer.
 of periods returned to the specified amount. A positive number *n* will return
 the first *n* periods, and a negative *n* will return the last *n* periods.
 
+`{endpoint}?skip={number_of_periods}` or
+`/{endpoint}?layer={layer_name}&skip={number_of_periods}` -- skips a specified
+number of periods. When used with `limit`, the a `skip` of *s* and a limit of *n*
+would return periods of indices *s* + 1 through *s* + *n*. When a negative limit
+is specified, using `skip` will have its usual effect in the opposite direction,
+with the most recent *s* periods being skipped.
+
 `{endpoint}?periods_start=YYYY-MM-DD&periods_end=YYYY-MM-DD` or
 `{endpoint}?periods_start=YYYY-MM-DDThh:hh:ssZ&periods_end=YYYY-MM-DDThh:hh:ssZ`
 -- only returns periods that come after `periods_start` and before `periods_end`.
