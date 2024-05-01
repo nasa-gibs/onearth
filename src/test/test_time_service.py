@@ -1315,8 +1315,6 @@ class TestDateService(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        with open("/var/log/httpd/error_log") as f:
-            print("yeet", f.read())
         if not DEBUG:
             os.remove(self.test_config_dest_path)
             os.remove(self.test_lua_config_location)
