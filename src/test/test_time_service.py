@@ -1098,6 +1098,122 @@ class TestDateService(unittest.TestCase):
                 'Error: the returned value for \'default\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['default'], test_layer[3])
             )
 
+    def test_periods_begin_limit_all_layers(self):
+        # Test data
+        layer_1_periods = ['2023-02-05/2023-02-09/P2D',
+                            '2024-01-01/2024-01-07/P2D',
+                            '2024-01-11/2024-01-17/P2D',
+                            '2024-02-13/2024-02-19/P2D',
+                            '2024-03-05/2024-04-07/P1D',
+                            '2024-04-12/2024-05-25/P1D']
+        layer_2_periods = ['2023-01-01/2024-04-01/P1M',
+                            '2024-04-05/2024-04-09/P2D',
+                            '2024-04-11/2024-04-17/P1D',
+                            '2024-05-13/2024-05-19/P2D',
+                            '2025-02-23/2025-07-12/P1D']
+        layer_3_periods = ['2023-01-01/2023-04-01/P1M',
+                            '2024-04-05/2024-04-09/P2D',
+                            '2024-05-03/2024-05-09/P1D',
+                            '2025-02-23/2025-07-12/P1D']                            
+        limit = 2
+        layer_1_expected_periods = ['2023-02-05/2023-02-09/P2D',
+                                    '2024-01-01/2024-01-07/P2D']
+        layer_1_expected_default = '2024-05-25'
+        layer_2_expected_periods = ['2023-01-01/2024-04-01/P1M',
+                                    '2024-04-05/2024-04-09/P2D']
+        layer_2_expected_default = '2025-07-12'
+        layer_3_expected_periods = ['2023-01-01/2023-04-01/P1M',
+                                    '2024-04-05/2024-04-09/P2D']
+        layer_3_expected_default = '2025-07-12'
+        test_layers = [('test_begin_limit_layer_1', '2024-05-25',
+                        layer_1_periods, layer_1_expected_default,
+                        layer_1_expected_periods),
+                        ('test_begin_limit_layer_2', '2025-07-12',
+                        layer_2_periods, layer_2_expected_default,
+                         layer_2_expected_periods),
+                        ('test_begin_limit_layer_3', '2025-07-12',
+                        layer_3_periods, layer_3_expected_default,
+                        layer_3_expected_periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'limit={0}'.
+                             format(limit))
+            res = r.json()
+            returned_periods = res[test_layer[0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            print("returned_periods:", returned_periods)
+            print("test_layer[4]", test_layer[4])
+            self.assertEqual(
+                returned_periods, test_layer[4],
+                'Error with requesting periods within a range: for layer {0}, got {1}, expected {2}.'.format(test_layer[0], returned_periods, test_layer[4]))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], len(test_layer[2]),
+                'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(test_layer[2]))
+            )
+            self.assertEqual(
+                res[test_layer[0]]['default'], test_layer[3],
+                'Error: the returned value for \'default\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['default'], test_layer[3])
+            )
+
+    def test_periods_end_limit_all_layers(self):
+        # Test data
+        layer_1_periods = ['2023-02-05/2023-02-09/P2D',
+                            '2024-01-01/2024-01-07/P2D',
+                            '2024-01-11/2024-01-17/P2D',
+                            '2024-02-13/2024-02-19/P2D',
+                            '2024-03-05/2024-04-07/P1D',
+                            '2024-04-12/2024-05-25/P1D']
+        layer_2_periods = ['2023-01-01/2024-04-01/P1M',
+                            '2024-04-05/2024-04-09/P2D',
+                            '2024-04-11/2024-04-17/P1D',
+                            '2024-05-13/2024-05-19/P2D',
+                            '2025-02-23/2025-07-12/P1D']
+        layer_3_periods = ['2023-01-01/2023-04-01/P1M',
+                            '2024-04-05/2024-04-09/P2D',
+                            '2024-05-03/2024-05-09/P1D',
+                            '2025-02-23/2025-07-12/P1D']                            
+        limit = -2
+        layer_1_expected_periods = ['2024-03-05/2024-04-07/P1D',
+                                    '2024-04-12/2024-05-25/P1D']
+        layer_1_expected_default = '2024-05-25'
+        layer_2_expected_periods = ['2024-05-13/2024-05-19/P2D',
+                                    '2025-02-23/2025-07-12/P1D']
+        layer_2_expected_default = '2025-07-12'
+        layer_3_expected_periods = ['2024-05-03/2024-05-09/P1D',
+                                    '2025-02-23/2025-07-12/P1D']
+        layer_3_expected_default = '2025-07-12'
+        test_layers = [('test_end_limit_layer_1', '2024-05-25',
+                        layer_1_periods, layer_1_expected_default,
+                        layer_1_expected_periods),
+                        ('test_end_limit_layer_2', '2025-07-12',
+                        layer_2_periods, layer_2_expected_default,
+                         layer_2_expected_periods),
+                        ('test_end_limit_layer_3', '2025-07-12',
+                        layer_3_periods, layer_3_expected_default,
+                        layer_3_expected_periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'limit={0}'.
+                             format(limit))
+            res = r.json()
+            returned_periods = res[test_layer[0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            print("returned_periods:", returned_periods)
+            print("test_layer[4]", test_layer[4])
+            self.assertEqual(
+                returned_periods, test_layer[4],
+                'Error with requesting periods within a range: for layer {0}, got {1}, expected {2}.'.format(test_layer[0], returned_periods, test_layer[4]))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], len(test_layer[2]),
+                'Error: the returned value for \'periods_in_range\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['periods_in_range'], len(test_layer[2]))
+            )
+            self.assertEqual(
+                res[test_layer[0]]['default'], test_layer[3],
+                'Error: the returned value for \'default\' for layer {0} was {1} when it should have been {2}.'.format(test_layer[0], res[test_layer[0]]['default'], test_layer[3])
+            )
+
     def test_periods_range_begin_limit(self):
         # Test data
         periods = ['2023-01-01/2023-01-07/P2D',

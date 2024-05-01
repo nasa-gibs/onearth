@@ -86,6 +86,8 @@ Each test script will output a JUnit XML results file. By default, these files a
 34. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
 35. Test requesting periods when the start and end dates fall within a period but there exists no valid dates between the start and end dates
 36. Test requesting periods for all layers between start and end dates
+37. Test requesting periods for all layers while using the limit option to return the first *n* periods
+38. Test requesting periods for all layers while using the limit option to return the last *n* periods
 37. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
 38. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
 39. Test a time snapping date request while specifying start and end dates
