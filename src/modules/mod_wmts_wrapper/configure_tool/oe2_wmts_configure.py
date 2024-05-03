@@ -141,6 +141,11 @@ RewriteCond %{QUERY_STRING} request=getcapabilities [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=wmtsgetcapabilities [P,L]
 
 RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/(.*)$ [NC]
+RewriteCond %{QUERY_STRING} request=describedomains [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?%{QUERY_STRING} [P,L]
+
+RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/1.0.0/WMTSCapabilities.xml(.*)$ [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=wmtsgetcapabilities [P,L]
 """

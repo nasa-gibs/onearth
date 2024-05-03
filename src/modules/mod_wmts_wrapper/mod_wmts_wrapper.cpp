@@ -425,7 +425,7 @@ static int handleKvP(request_rec *r)
 
     const char *request = NULL;
     if ((param = apr_table_get(args_table, "REQUEST")) && strlen(param)) {
-        if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0 && apr_strnatcasecmp(param, "GetTileService") != 0) {
+        if (apr_strnatcasecmp(param, "GetCapabilities") != 0 && apr_strnatcasecmp(param, "GetTile") != 0 && apr_strnatcasecmp(param, "GetTileService") != 0 && apr_strnatcasecmp(param, "DescribeDomains") != 0) {
             wmts_errors[errors++] = wmts_make_error(501, "OperationNotSupported","REQUEST", "The request type is not supported");
         } else {
             request = param;
