@@ -120,6 +120,7 @@ local function time_snap (req_date, periods, snap_to_previous)
     
         if req_date == period_date then
             snap_date = req_date
+            snap_period_idx = mid
             break
         end
     
@@ -174,19 +175,31 @@ local function apply_skip_limit(layer_datetime_info, skip, specified_limit)
 end
 
 local function range_handler (default, all_periods, periods_start, periods_end)
+    
+    local periods_start_date = periods_start and date_util(periods_start) or nil
+    local periods_end_date = periods_end and date_util(periods_end) or nil
+    local first_period_start_date = #all_periods > 0 and date_util(split("/", all_periods[1])[1]) or nil
+    local last_period_end_date = #all_periods > 0 and date_util(split("/", all_periods[#all_periods])[2]) or nil
+    
+    -- first, check if there's any data in the range
+    if (periods_start_date and last_period_end_date and periods_start_date > last_period_end_date) or
+        (periods_end_date and first_period_start_date and periods_end_date < first_period_start_date) then
+        return "", {}
+    end
+
     -- handle when we want periods and default between two dates
     local start_snap_date, start_snap_period_idx, end_snap_date, end_snap_period_idx
-    if periods_start then
-        start_snap_date, start_snap_period_idx = time_snap(date_util(periods_start), all_periods, false)
+    if periods_start_date then
+        start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
         -- if the periods start date doesn't fall within a period, then we need to skip the period that was last examined
-        if start_snap_date == nil then
+        if start_snap_date == nil and #all_periods > 1 then
             start_snap_period_idx = start_snap_period_idx + 1
         end
     else
         start_snap_period_idx = 1
     end
     if periods_end then
-        end_snap_date, end_snap_period_idx = time_snap(date_util(periods_end), all_periods, true)
+        end_snap_date, end_snap_period_idx = time_snap(periods_end_date, all_periods, true)
     else
         end_snap_period_idx = #all_periods
     end
@@ -222,14 +235,14 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     end
 
     -- Make sure default is within the final period range
-    if #filtered_periods > 0 then
-        local last_period = split("/", filtered_periods[#filtered_periods])[2]
-        if default and date_util(default) > date_util(last_period) then
-            default = last_period
+    if #filtered_periods > 0 and default then
+        local last_filtered_period_end_date = split("/", filtered_periods[#filtered_periods])[2]
+        if date_util(default) > date_util(last_filtered_period_end_date) then
+            default = last_filtered_period_end_date
         else
-            local first_period = split("/", filtered_periods[1])[1]
-            if default and date_util(default) < date_util(first_period) then
-                default = first_period
+            local first_filtered_period_start_date = split("/", filtered_periods[1])[1]
+            if date_util(default) < date_util(first_filtered_period_start_date) then
+                default = first_filtered_period_start_date
             end
         end
     else
@@ -253,7 +266,7 @@ local function redis_get_all_layers (client, prefix_string, periods_start, perio
             local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
             table.sort(periods)
             if periods_start or periods_end then
-                layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end) 
+                layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end)
             else
                 layers[layer_name].default = default
                 layers[layer_name].periods = periods

@@ -837,6 +837,37 @@ class TestDateService(unittest.TestCase):
                 returned_periods, expected_periods,
                 'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
 
+    def test_periods_range_on_bounds(self):
+        # Test data
+        periods = ['2023-01-01/2023-12-01/P1D',
+                    '2024-01-01/2024-12-01/P1D',
+                    '2025-01-01/2025-12-01/P1D',
+                    '2026-01-01/2026-12-01/P1D',
+                    '2027-01-01/2027-12-01/P1D',
+                    '2028-01-01/2028-12-01/P1D',
+                    '2029-01-01/2029-12-01/P1D',
+                    '2030-01-01/2030-12-01/P1D',]
+        start_date = '2024-01-01'
+        end_date = '2028-01-01'
+        expected_periods = ['2024-01-01/2024-12-01/P1D',
+                            '2025-01-01/2025-12-01/P1D',
+                            '2026-01-01/2026-12-01/P1D',
+                            '2027-01-01/2027-12-01/P1D',
+                            '2028-01-01/2028-01-01/P1D']
+        test_layers = [('test_range_on_bounds', '2030-12-01',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
+                             format(test_layer[0], start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+
     def test_periods_range_single_period(self):
         # Test data
         periods = ['2024-01-01/2024-01-17/P1D']
@@ -844,6 +875,26 @@ class TestDateService(unittest.TestCase):
         end_date = '2024-01-14'
         expected_periods = ['2024-01-03/2024-01-14/P1D']
         test_layers = [('test_range_single_period', '2014-01-17',
+                        periods)]
+        seed_redis_data(test_layers)
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&periods_start={1}&periods_end={2}'.
+                             format(test_layer[0], start_date, end_date))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_periods, expected_periods,
+                'Error with requesting periods within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
+    
+    def test_periods_range_single_period_single_day(self):
+        # Test data
+        periods = ['2021-07-03/2021-07-03/P1D']
+        start_date = '2021-07-01'
+        end_date = '2021-07-14'
+        expected_periods = ['2021-07-03/2021-07-03/P1D']
+        test_layers = [('test_range_single_period_single_day', '2021-07-03',
                         periods)]
         seed_redis_data(test_layers)
         for test_layer in test_layers:
@@ -1315,6 +1366,8 @@ class TestDateService(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
+        with open("/var/log/httpd/error_log") as f:
+            print("yeet", f.read())
         if not DEBUG:
             os.remove(self.test_config_dest_path)
             os.remove(self.test_lua_config_location)

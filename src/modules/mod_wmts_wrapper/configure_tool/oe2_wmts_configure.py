@@ -148,6 +148,17 @@ RewriteRule ^(.*)$ {gc_service_uri}/gc_service?%{QUERY_STRING} [P,L]
 RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/1.0.0/WMTSCapabilities.xml(.*)$ [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=wmtsgetcapabilities [P,L]
+
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/1.0.0/([^/]+)/default/([^/]+)/([^/]+)/([^/]+)--([^/]+).xml$ [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=describedomains&layer=%1&tilematrixset=%2&bbox=%3&time=%4/%5 [P,L]
+
+RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/1.0.0/([^/]+)/default/([^/]+)/([^/]+)/--([^/]+).xml$ [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=describedomains&layer=%1&tilematrixset=%2&bbox=%3&time=/%4 [P,L]
+
+RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/1.0.0/([^/]+)/default/([^/]+)/([^/]+)/([^/]+)(?<!--)(?:-{2})?.xml$ [NC]
+RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=describedomains&layer=%1&tilematrixset=%2&bbox=%3&time=%4 [P,L]
+
 """
 
 TWMS_GC_SERVICE_TEMPLATE = """# Redirects for TWMS GC/GTS service
