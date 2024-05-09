@@ -981,7 +981,7 @@ local function makeDD(endpointConfig, query_string)
 
         local spaceDomainNode = xml.elem("SpaceDomain", {
             xml.new("BoundingBox",
-                { CRS=bbox["crs"],
+                { crs=bbox["crs"],
                 miny=bbox["lowerCorner"][2],
                 minx=bbox["lowerCorner"][1],
                 maxx=bbox["upperCorner"][1],
