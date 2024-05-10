@@ -162,6 +162,33 @@ TEST_LAYERS = {
             '2012-01-01/2016-01-01/P1Y',
             '2016-01-01T12:00:00/2018-01-01T12:00:00/PT1S'
         ]
+    },
+    'test_3': {
+        'layer_id':
+        'AMSR2_Snow_Water_Equivalent_many_periods',
+        'layer_title':
+        'AMSR2 Snow Water Equivalent tileset',
+        'layer_name':
+        'Snow Water Equivalent (AMSR2, GCOM-W1)',
+        'projection':
+        'EPSG:4326',
+        'tilematrixset':
+        '2km',
+        'mime_type':
+        'image/jpeg',
+        'static':
+        'false',
+        'abstract':
+        'AMSR2 Snow Water Equivalent abstract',
+        'metadata': [
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}',
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.0/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}',
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.2","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.2/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}',
+            '{"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.3","xlink:href": "https://gibs.earthdata.nasa.gov/colormaps/v1.3/AMSR2_Snow_Water_Equivalent.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}'
+        ],
+        'default':
+        '2012-01-01',
+        'periods': ['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(2000, 2250)]
     }
 }
 
@@ -3453,14 +3480,13 @@ class TestDateService(unittest.TestCase):
             .format('100', min_scale_denom_elems[0].text, url))
 
     def test_describe_domains_xml(self):
-        # Check that <Layer> block for a dynamic layer is being generated
-        # correctly
+        # Check that the Describe Domains document is being generated correctly
 
         apache_config = self.set_up_gc_service('test_describe_domains_xml',
                                                'EPSG:4326')
 
         # Create and write layer config
-        layer = TEST_LAYERS['test_2']
+        layer = TEST_LAYERS['test_3']
         layer_config_path = self.write_config_for_test_layer(layer)
 
         redis_info = None
@@ -3513,8 +3539,147 @@ class TestDateService(unittest.TestCase):
             '<Identifier> element incorrect, expected {}, found {}. Url: {}'.format(
                 "time", id_elems[0].text, url))
 
-        expected_periods = [period for period in layer['periods']]
-        expected_periods.sort()
+        expected_periods = ','.join(layer['periods'])
+
+        time_domain_elems = dim_domain_elem.findall(
+            'Domain')
+        self.assertNotEqual(
+            len(time_domain_elems), 0,
+            '<Domain> not found in generated DD file. Url: {}'.format(url))
+        self.assertEqual(
+            len(time_domain_elems), 1,
+            'Incorrect number of <Domain> elements found -- should only be 1. Url: {}'
+            .format(url))
+        self.assertEqual(
+            time_domain_elems[0].text, expected_periods,
+            '<Domain> element incorrect, expected {}, found {}. Url: {}'.format(
+                expected_periods, time_domain_elems[0].text, url))
+
+        size_elems = dim_domain_elem.findall(
+            'Size')
+        self.assertNotEqual(
+            len(size_elems), 0,
+            '<Size> not found in generated DD file. Url: {}'.format(url))
+        self.assertEqual(
+            len(size_elems), 1,
+            'Incorrect number of <Size> elements found -- should only be 1. Url: {}'
+            .format(url))
+        self.assertEqual(
+            size_elems[0].text, "250",
+            '<Size> element incorrect, expected {}, found {}. Url: {}'.format(
+                "250", size_elems[0].text, url))
+
+        space_domains_elems = gc_dom.findall(
+            'SpaceDomain')
+        self.assertNotEqual(
+            len(space_domains_elems), 0,
+            '<SpaceDomain> not found in generated GC file. Url: {}'.
+            format(url))
+        self.assertEqual(
+            len(space_domains_elems), 1,
+            'Incorrect number of <SpaceDomain> elements found - should only be 1. Url: {}'
+            .format(url))
+
+        bbox_elems = space_domains_elems[0].findall(
+            'BoundingBox')
+        expected = 'urn:ogc:def:crs:OGC:2:84'
+        found = bbox_elems[0].get("crs")
+        self.assertEqual(
+            found, expected,
+            'Incorrect crs attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+            .format(expected, found, url))
+
+        expected = '-180'
+        found = bbox_elems[0].get("minx")
+        self.assertEqual(
+            found, expected,
+            'Incorrect minx attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+            .format(expected, found, url))
+
+        expected = '180'
+        found = bbox_elems[0].get("maxx")
+        self.assertEqual(
+            found, expected,
+            'Incorrect maxx attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+            .format(expected, found, url))
+
+        expected = '-90'
+        found = bbox_elems[0].get("miny")
+        self.assertEqual(
+            found, expected,
+            'Incorrect miny attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+            .format(expected, found, url))
+
+        expected = '90'
+        found = bbox_elems[0].get("maxy")
+        self.assertEqual(
+            found, expected,
+            'Incorrect maxy attribute for <BoundingBox>. Expected {}, found {}. Url: {}'
+            .format(expected, found, url))
+
+    def test_describe_domains_periods_range_xml(self):
+        # Check that Describe Domains document for a layer is being generated correctly when a range is used
+
+        apache_config = self.set_up_gc_service('test_describe_domains_periods_range_xml',
+                                               'EPSG:4326')
+
+        # Create and write layer config
+        layer = TEST_LAYERS['test_3']
+        layer_config_path = self.write_config_for_test_layer(layer)
+
+        redis_info = None
+        if layer.get('static') == 'false':
+            redis_info = [
+                layer['layer_id'], layer['default'], layer['periods']
+            ]
+            seed_redis_data([redis_info])
+
+        # Download DD file
+        url = apache_config['endpoint'] + '?request=describedomains&layer={0}&tilematrixset={1}&time=2015-02-12/2031-03-25'.format(layer['layer_id'], layer['tilematrixset'])
+        r = requests.get(url)
+
+        if not START_SERVER:
+            os.remove(layer_config_path)
+            if redis_info:
+                remove_redis_layer(redis_info)
+
+        self.assertEqual(
+            r.status_code, 200,
+            'Error downloading DescribeDomains file from url: {}.'.format(url))
+
+        # Parse the XML and verify the root element and its namespaces are
+        # correct
+        try:
+            gc_dom = etree.fromstring(r.text.encode())
+        except etree.XMLSyntaxError as e:
+            self.fail(
+                'Response for url: {} is not valid xml. Error: {}'.format(
+                    url, e))
+
+        # Get and test XML for this layer
+        dim_domain_elems = gc_dom.findall('{*}DimensionDomain')
+        self.assertNotEqual(
+            len(dim_domain_elems), 0,
+            'DimensionDomain not found in generated DD file. Url: {}'.format(url))
+        dim_domain_elem = dim_domain_elems[0]
+
+        id_elems = dim_domain_elem.findall(
+            '{http://www.opengis.net/ows/1.1}Identifier')
+        self.assertNotEqual(
+            len(id_elems), 0,
+            '<Identifier> not found in generated DD file. Url: {}'.format(url))
+        self.assertEqual(
+            len(id_elems), 1,
+            'Incorrect number of <Identifier> elements found -- should only be 1. Url: {}'
+            .format(url))
+        self.assertEqual(
+            id_elems[0].text, "time",
+            '<Identifier> element incorrect, expected {}, found {}. Url: {}'.format(
+                "time", id_elems[0].text, url))
+
+        expected_periods = ["2015-02-12/2015-12-01/P1D"]
+        expected_periods.extend(['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(2016, 2031)])
+        expected_periods.append('2031-01-01/2031-03-25/P1D')
         expected_periods = ','.join(expected_periods)
 
         time_domain_elems = dim_domain_elem.findall(
@@ -3541,9 +3706,9 @@ class TestDateService(unittest.TestCase):
             'Incorrect number of <Size> elements found -- should only be 1. Url: {}'
             .format(url))
         self.assertEqual(
-            size_elems[0].text, "2",
+            size_elems[0].text, "17",
             '<Size> element incorrect, expected {}, found {}. Url: {}'.format(
-                "1", size_elems[0].text, url))
+                "17", size_elems[0].text, url))
 
         space_domains_elems = gc_dom.findall(
             'SpaceDomain')
