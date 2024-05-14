@@ -11,7 +11,7 @@ RUN dnf install -y \
         geos-3.10.1 \
         fribidi-devel-1.0.10 \
         cairo-devel-1.17.4 \
-        cmake-3.20.2 \
+        cmake-3.26.5 \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \

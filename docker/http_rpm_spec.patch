@@ -1,8 +1,8 @@
---- a/SPECS/httpd.spec	2023-09-27 10:25:48.000000000 +0000
-+++ b/SPECS/httpd.spec	2024-04-17 22:00:10.057192007 +0000
-@@ -122,6 +122,9 @@
- # https://bugzilla.redhat.com/show_bug.cgi?id=...
- # Patch200: ...
+--- a/SPECS/httpd.spec	2024-05-13 16:49:50
++++ b/SPECS/httpd.spec	2024-05-13 16:52:07
+@@ -130,6 +130,9 @@
+ Patch200: httpd-2.4.57-CVE-2023-31122.patch
+ 
  
 +Patch900: mod_proxy_http.patch
 +Patch901: proxypass_nomain_flag.patch
@@ -10,13 +10,24 @@
  License: ASL 2.0
  BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
  BuildRequires: perl-interpreter, perl-generators, systemd-devel
-@@ -290,6 +293,8 @@
- %patch70 -p1 -b .duplicate-key
- %patch71 -p1 -b .davenoent
+\ No newline at end of file
+@@ -303,6 +306,9 @@
+ 
+ %patch200 -p1 -b .CVE-2023-31122
  
 +%patch900 -p1
 +%patch901 -p1
- 
++
  # Patch in the vendor string
  sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
  sed -i 's/@RELEASE@/%{release}/' server/core.c
+\ No newline at end of file
+@@ -553,7 +559,6 @@
+ ln -s ../../pixmaps/system-noindex-logo.png \
+         $RPM_BUILD_ROOT%{contentdir}/icons/system_noindex_logo.png
+ 
+-
+ # symlinks for /etc/httpd
+ rmdir $RPM_BUILD_ROOT/etc/httpd/{state,run}
+ ln -s ../..%{_localstatedir}/log/httpd $RPM_BUILD_ROOT/etc/httpd/logs
+\ No newline at end of file

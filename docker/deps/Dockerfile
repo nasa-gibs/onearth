@@ -36,13 +36,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64.tar.gz -O - |\
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && \
-    tar xf go1.22.1.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz && \
+    tar xf go1.22.3.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.29.tar.gz && \
@@ -71,9 +71,9 @@ RUN cd client_golang@v1.19.0 && \
 WORKDIR /tmp
 RUN dnf install -y yum-utils-4.3.0 rpm-build-4.16.1.3 && \
     dnf clean all && \
-    yumdownloader --source httpd-2.4.57-5.el9.x86_64 && \
+    yumdownloader --source httpd-2.4.57-8.el9.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.57-5.el9.x86_64
+    yum-builddep -y httpd-2.4.57-8.el9.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
