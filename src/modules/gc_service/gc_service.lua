@@ -300,6 +300,23 @@ local function stripDecodeBytesFormat(inputString)
     return inputString
 end
 
+local function makeExceptionReport(exceptionCode, exceptionText, locator, dom)
+    if not dom then
+        dom = xml.new("ExceptionReport", { ["xmlns:ows"] = "http://www.opengis.net/ows/1.1",
+                                     ["xmlns:xsi"] =  "http://www.w3.org/2001/XMLSchema-instance",
+                                     ["xsi:schemaLocation"] = "http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd",
+                                     ["version"] = "1.1.0",
+                                     ["xml:lang"] = "en" } )
+    end
+    local exceptionNode = xml.elem("Exception", {
+        ["exceptionCode"] = exceptionCode,
+        ["locator"] = locator,
+        xml.elem("ExceptionText", exceptionText)
+    })
+    dom:add_direct_child(exceptionNode)
+    return dom
+end
+
 -- GetTileService functions
 
 local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgCode)
@@ -944,13 +961,19 @@ local function makeTWMSGC(endpointConfig)
 end
 
 local function makeDD(endpointConfig, query_string)
+    local xml_header = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>'
     local layer = get_query_param("layer", query_string)
+    local errorDom
     if not layer then 
-        return 'No LAYER parameter specified for DescribeDomains'
+        errorDom = makeExceptionReport("MissingParameterValue", "Missing LAYER parameter", "LAYER", errorDom)
     end
     local tilematrixset = get_query_param("tilematrixset", query_string)
     if not tilematrixset then
-        return "Missing TILEMATRIXSET parameter"
+        errorDom = makeExceptionReport("MissingParameterValue", "Missing TILEMATRIXSET parameter", "TILEMATRIXSET", errorDom)
+    end
+
+    if errorDom then
+        return xml_header .. xml.tostring(errorDom)
     end
     
     local domains = get_query_param("domains", query_string)
@@ -996,7 +1019,7 @@ local function makeDD(endpointConfig, query_string)
         local dateList = nil
         local periods_start
         local periods_end
-        if time_query then
+        if time_query and time_query:lower() ~= "all" then
             local times = split('/', time_query)
             if #times == 1 then
                 -- When there's just one time specified, use it as a periods end bound if the time query starts with a '/'.
@@ -1021,7 +1044,7 @@ local function makeDD(endpointConfig, query_string)
         })
         dom:add_direct_child(timeDomainNode)
     end
-    return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' .. xml.tostring(dom)
+    return xml_header .. xml.tostring(dom)
 end
 
 local function generateFromEndpointConfig()

@@ -120,7 +120,7 @@ class TestDateService(unittest.TestCase):
         # Tests that a blank inquiry to the date service returns all records.
         test_layers = [('test1_all_records', '2012-01-01',
                         '2012-01-01/2016-01-01/P1Y'),
-                       ('test2_atell_records', '2015-02-01T12:00:00',
+                       ('test2_all_records', '2015-02-01T12:00:00',
                         '2012-01-01T00:00:00/2016-01-01T23:59:59/PT1S')]
 
         seed_redis_data(test_layers)
