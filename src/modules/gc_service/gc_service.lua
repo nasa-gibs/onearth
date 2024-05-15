@@ -770,10 +770,12 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
         local template_domains_bbox_all = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/{TimeStart}.xml"
         local template_domains_time_end = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/--{TimeEnd}.xml"
         local template_domains_time_start_end = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/{TimeStart}--{TimeEnd}.xml"
+        local template_domains_time_all = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{BBOX}/all.xml"
         layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains}))
         layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_bbox_all}))
         layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_end}))
         layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_start_end}))
+        layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_all}))
     end
     layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
     layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
@@ -970,12 +972,6 @@ local function makeDD(endpointConfig, query_string)
     if not layer then 
         errorDom = makeExceptionReport("MissingParameterValue", "Missing LAYER parameter", "LAYER", errorDom)
     end
-    local tilematrixset = get_query_param("tilematrixset", query_string)
-    if not tilematrixset then
-        errorDom = makeExceptionReport("MissingParameterValue", "Missing TILEMATRIXSET parameter", "TILEMATRIXSET", errorDom)
-    end
-
-    
     
     local domains = get_query_param("domains", query_string)
     if not domains then
