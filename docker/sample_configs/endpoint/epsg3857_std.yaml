@@ -1,5 +1,5 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
-time_service_keys: ["epsg3857", "std"]
+time_service_keys: ["epsg3857"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg3857/std/gc"
 exclude_layers:
   - 'Reference_Labels'
