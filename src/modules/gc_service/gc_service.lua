@@ -40,6 +40,9 @@ local PROJECTIONS = {
     }
 }
 
+local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
+local datetime_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
+
 -- Utility functions
 
 local function split(sep, str)
@@ -972,9 +975,7 @@ local function makeDD(endpointConfig, query_string)
         errorDom = makeExceptionReport("MissingParameterValue", "Missing TILEMATRIXSET parameter", "TILEMATRIXSET", errorDom)
     end
 
-    if errorDom then
-        return xml_header .. xml.tostring(errorDom)
-    end
+    
     
     local domains = get_query_param("domains", query_string)
     if not domains then
@@ -1033,6 +1034,15 @@ local function makeDD(endpointConfig, query_string)
                 periods_start = times[1]
                 periods_end = times[2]
             end
+            if (periods_start and not string.match(periods_start, date_template) and not string.match(periods_start, datetime_template)) or
+                (periods_end and not string.match(periods_end, date_template) and not string.match(periods_end, datetime_template)) then
+                errorDom = makeExceptionReport("InvalidParameterValue",
+                        "Invalid TIME parameter: time range must follow format of START_DATE/END_DATE, or be 'ALL'. START_DATE and END_DATE must have format of YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ",
+                        "TIME", errorDom)
+            end
+        end
+        if errorDom then
+            return xml_header .. xml.tostring(errorDom)
         end
         dateList = getDateList(endpointConfig, layer, periods_start, periods_end, nil)
         local periodsList = dateList and dateList[layer]["periods"] or {}
@@ -1043,6 +1053,8 @@ local function makeDD(endpointConfig, query_string)
             xml.elem("Size", "" .. size)
         })
         dom:add_direct_child(timeDomainNode)
+    elseif errorDom then
+        return xml_header .. xml.tostring(errorDom)
     end
     return xml_header .. xml.tostring(dom)
 end
