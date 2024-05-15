@@ -103,6 +103,7 @@ LAYER_APACHE_CONFIG_TEMPLATE = """<Directory {internal_endpoint}/{layer_id}>
         WMTSWrapperLayerAlias {alias}
         WMTSWrapperMimeType {mime_type}
         {cache_expiration_block}
+        {lerc_handling_block}
 </Directory>
 
 {proxy_exemption_block}
@@ -479,6 +480,13 @@ def make_layer_config(endpoint_config, layer):
         cache_expiration_block += '        Header Always Set Cache-Control "max-age=0, no-store, no-cache, must-revalidate"\n'
         cache_expiration_block += '        Header Always Unset ETag\n'
         cache_expiration_block += '        FileETag None'
+    
+    # add lerc handling block    
+    if mimetype == 'image/lerc':
+        lerc_handling_block = 'Header set Content-Type "image/lerc"\n'
+        lerc_handling_block += '        Header append Content-Encoding deflate'
+    else:
+        lerc_handling_block = ''
 
     config_file_path = Path(internal_endpoint, layer_id, "default",
                             tilematrixset, 'mod_mrf.config')
@@ -520,6 +528,7 @@ def make_layer_config(endpoint_config, layer):
          ('{year_dir}', 'On' if year_dir else 'Off'), ('{alias}', alias),
          ('{tilematrixset}', tilematrixset),
          ('{cache_expiration_block}', cache_expiration_block),
+         ('{lerc_handling_block}', lerc_handling_block),
          ('{proxy_exemption_block}', proxy_exemption_block),
          ('{mrf_or_convert_configs}', mrf_or_convert_configs),
          ('{config_file_path}', config_file_path.as_posix()),
