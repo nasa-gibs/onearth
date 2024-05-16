@@ -1378,8 +1378,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 7,
-            'Incorrect number of < ResourceURL > elements found - should only be 7. Url: {}'
+            len(resource_url_elems), 8,
+            'Incorrect number of < ResourceURL > elements found - should only be 8. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -1827,8 +1827,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 7,
-            'Incorrect number of < ResourceURL > elements found - should be 7. Url: {}'
+            len(resource_url_elems), 8,
+            'Incorrect number of < ResourceURL > elements found - should be 8. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
@@ -2225,8 +2225,8 @@ class TestDateService(unittest.TestCase):
             '<ResourceURL> not found in generated GC file <Layer> element. Url: {}'
             .format(url))
         self.assertEqual(
-            len(resource_url_elems), 7,
-            'Incorrect number of < ResourceURL > elements found - should only be 7. Url: {}'
+            len(resource_url_elems), 8,
+            'Incorrect number of < ResourceURL > elements found - should only be 8. Url: {}'
             .format(url))
 
         expected = layer['mime_type']
