@@ -759,13 +759,19 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     if string.sub(baseUriGC, -1) ~= "/" then
         baseUriGC = baseUriGC .. "/" 
     end
+    
     -- tiles
     local template_static = baseUriGC .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     local template_default = baseUriGC .. layerId .. "/" .. "default" .. "/default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
-    local template_time = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     if not static then
+        local template_time = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
         layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_time}))
-        -- describedomains
+    end
+    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
+    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
+    
+    -- describedomains
+    if not static then
         local template_domains = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{BBOX}/{TimeStart}.xml"
         local template_domains_bbox_all = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/{TimeStart}.xml"
         local template_domains_time_end = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/--{TimeEnd}.xml"
@@ -777,8 +783,6 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
         layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_start_end}))
         layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_all}))
     end
-    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
-    layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
     return layerElem
 end
 
