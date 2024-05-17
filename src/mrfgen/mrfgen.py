@@ -1623,6 +1623,14 @@ else:
             strict_palette = True
     except:
         strict_palette = False
+    # strict_png_convert, defaults to False
+    try:
+        if get_dom_tag_value(dom, 'mrf_strict_png_convert') == "false":
+            strict_png_convert = False
+        else:
+            strict_png_convert = True
+    except:
+        strict_png_convert = False
     # overwrite_colormap, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_overwrite_colormap') == "false":
@@ -1742,6 +1750,7 @@ log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
 log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
 log_info_mssg(str().join(['config mrf_maxsize:             ', str(mrf_maxsize)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
+log_info_mssg(str().join(['config mrf_strict_png_convert:  ', str(strict_png_convert)]))
 log_info_mssg(str().join(['config mrf_overwrite_colormap:  ', str(overwrite_colormap)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -2003,11 +2012,15 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 if RgbPngToPalPng.returncode != None:
                     if  0 < RgbPngToPalPng.returncode < 255:
                         mssg = "RgbPngToPalPng: " + str(RgbPngToPalPng.returncode) + " colors in image not found in color table"
-                        log_sig_warn(mssg, sigevent_url)
-                    if RgbPngToPalPng.returncode == 255:
+                        if strict_png_convert:
+                            log_sig_err(mssg, sigevent_url, count_err=False)
+                            errors += RgbPngToPalPng.returncode
+                        else:
+                            log_sig_warn(mssg, sigevent_url)
+                    elif RgbPngToPalPng.returncode == 255:
                         mssg = str(RgbPngToPalPng.stderr.readlines()[-1])
                         log_sig_err("RgbPngToPalPng: " + mssg, sigevent_url, count_err=False)
-                    errors += RgbPngToPalPng.returncode
+                        errors += RgbPngToPalPng.returncode
 
                 if os.path.isfile(output_tile):
                     mssg = output_tile + " created"

@@ -123,6 +123,7 @@ These parameters are available but not used in the example above nor necessarily
 * mrf_parallel: (true/false) run mrf_insert calls in parallel to improve performance. See num_cores.
 * num_cores: (int) number of cores to use with mrf_parallel. Recommended is 2-4, depending on number of input files.
 * mrf_strict_palette: (true/false) Validate that the colors in input files match the MRF colormap. A warning is sent if there are mismatches. Defaults to "false".
+* mrf_strict_png_convert: (true/false) When true, an error will be returned if the RGBApng2Palpng tool finds colors in the image that aren't part of the color table. When false, MRFGen will only log a warning when this happens. Defaults to "false".
 * mrf_overwrite_colormap: (true/false) Overwrite the image palette using the GIBS colormap file specified with the "colormap" option. Defaults to "false".
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
