@@ -1623,14 +1623,6 @@ else:
             strict_palette = True
     except:
         strict_palette = False
-    # strict_png_convert, defaults to False
-    try:
-        if get_dom_tag_value(dom, 'mrf_strict_png_convert') == "false":
-            strict_png_convert = False
-        else:
-            strict_png_convert = True
-    except:
-        strict_png_convert = False
     # overwrite_colormap, defaults to False
     try:
         if get_dom_tag_value(dom, 'mrf_overwrite_colormap') == "false":
@@ -1750,7 +1742,6 @@ log_info_mssg(str().join(['config mrf_cores:               ', str(mrf_cores)]))
 log_info_mssg(str().join(['config mrf_clean:               ', str(mrf_clean)]))
 log_info_mssg(str().join(['config mrf_maxsize:             ', str(mrf_maxsize)]))
 log_info_mssg(str().join(['config mrf_strict_palette:      ', str(strict_palette)]))
-log_info_mssg(str().join(['config mrf_strict_png_convert:  ', str(strict_png_convert)]))
 log_info_mssg(str().join(['config mrf_overwrite_colormap:  ', str(overwrite_colormap)]))
 log_info_mssg(str().join(['config mrf_z_levels:            ', zlevels]))
 log_info_mssg(str().join(['config mrf_z_key:               ', zkey]))
@@ -2012,7 +2003,7 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 if RgbPngToPalPng.returncode != None:
                     if  0 < RgbPngToPalPng.returncode < 255:
                         mssg = "RgbPngToPalPng: " + str(RgbPngToPalPng.returncode) + " colors in image not found in color table"
-                        if strict_png_convert:
+                        if strict_palette:
                             log_sig_err(mssg, sigevent_url, count_err=False)
                             errors += RgbPngToPalPng.returncode
                         else:
@@ -2060,25 +2051,29 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             else:
                 log_info_mssg("Paletted image found for PPNG output, no palettization required")
 
-            # ONEARTH-348 - Validate the palette, but don't do anything about it yet
-            # For now, we won't enforce any issues, but will log issues validating imagery
-            if strict_palette:
-                oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
+            # ONEARTH-348 - Validate the palette
+            oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
 
-                # Log the oe_validate_palette.py command.
-                log_the_command(oe_validate_palette_command_list)
+            # Log the oe_validate_palette.py command.
+            log_the_command(oe_validate_palette_command_list)
 
-                # Execute oe_validate_palette.py
-                try:
-                    oeValidatePalette = subprocess.Popen(oe_validate_palette_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    oeValidatePalette.wait()
+            # Execute oe_validate_palette.py
+            try:
+                oeValidatePalette = subprocess.Popen(oe_validate_palette_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                oeValidatePalette.wait()
 
-                    if oeValidatePalette.returncode != None:
-                        if  oeValidatePalette.returncode != 0:
-                            mssg = "oe_validate_palette.py: Mismatching palette entries between the image and colormap; Resulting image may be invalid"
+                if oeValidatePalette.returncode != None:
+                    if  oeValidatePalette.returncode != 0:
+                        mssg = "oe_validate_palette.py: Mismatching palette entries between the image and colormap; Resulting image may be invalid"
+                        if strict_palette:
+                            log_sig_err(mssg, sigevent_url)
+                        else:
                             log_sig_warn(mssg, sigevent_url)
 
-                except OSError:
+            except OSError:
+                if strict_palette:
+                    log_sig_err("Error executing oe_validate_palette.py", sigevent_url)
+                else:
                     log_sig_warn("Error executing oe_validate_palette.py", sigevent_url)
 
 
