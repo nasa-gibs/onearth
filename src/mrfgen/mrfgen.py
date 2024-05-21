@@ -2065,7 +2065,8 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 val_pal_out, val_pal_err = oeValidatePalette.communicate()
                 if oeValidatePalette.returncode != None:
                     if  oeValidatePalette.returncode != 0:
-                        mssg = "oe_validate_palette.py: stdout: {0}Mismatching palette entries between the image and colormap; Resulting image may be invalid".format(val_pal_out.decode('utf-8'))
+                        mssg = "oe_validate_palette.py:\nstdout: {0}\n{1}Mismatching palette entries between the image and colormap; Resulting image may be invalid".format(
+                            val_pal_out.decode('utf-8'), "stderr: " + val_pal_err.decode('utf-8') + "\n" if val_pal_err.decode('utf-8') != "" else "")
                         if strict_palette:
                             log_sig_err(mssg, sigevent_url, count_err=has_palette)
                         else:
