@@ -45,7 +45,7 @@ RUN git clone --depth=1 https://github.com/google/brunsli.git && \
     cd ..
 
 WORKDIR /home/oe2/onearth/src/modules/mod_brunsli/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
 WORKDIR /home/oe2
