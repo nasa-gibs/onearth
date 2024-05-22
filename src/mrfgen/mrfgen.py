@@ -2003,11 +2003,15 @@ if mrf_compression_type == 'PPNG' and colormap != '':
                 if RgbPngToPalPng.returncode != None:
                     if  0 < RgbPngToPalPng.returncode < 255:
                         mssg = "RgbPngToPalPng: " + str(RgbPngToPalPng.returncode) + " colors in image not found in color table"
-                        log_sig_warn(mssg, sigevent_url)
-                    if RgbPngToPalPng.returncode == 255:
+                        if strict_palette:
+                            log_sig_err(mssg, sigevent_url, count_err=False)
+                            errors += RgbPngToPalPng.returncode
+                        else:
+                            log_sig_warn(mssg, sigevent_url)
+                    elif RgbPngToPalPng.returncode == 255:
                         mssg = str(RgbPngToPalPng.stderr.readlines()[-1])
                         log_sig_err("RgbPngToPalPng: " + mssg, sigevent_url, count_err=False)
-                    errors += RgbPngToPalPng.returncode
+                        errors += RgbPngToPalPng.returncode
 
                 if os.path.isfile(output_tile):
                     mssg = output_tile + " created"
@@ -2047,25 +2051,31 @@ if mrf_compression_type == 'PPNG' and colormap != '':
             else:
                 log_info_mssg("Paletted image found for PPNG output, no palettization required")
 
-            # ONEARTH-348 - Validate the palette, but don't do anything about it yet
-            # For now, we won't enforce any issues, but will log issues validating imagery
-            if strict_palette:
-                oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
+            # ONEARTH-348 - Validate the palette
+            oe_validate_palette_command_list=[script_dir + 'oe_validate_palette.py', '-v', '-c', colormap, '-i', alltiles[i]]
 
-                # Log the oe_validate_palette.py command.
-                log_the_command(oe_validate_palette_command_list)
+            # Log the oe_validate_palette.py command.
+            log_the_command(oe_validate_palette_command_list)
 
-                # Execute oe_validate_palette.py
-                try:
-                    oeValidatePalette = subprocess.Popen(oe_validate_palette_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    oeValidatePalette.wait()
+            # Execute oe_validate_palette.py
+            try:
+                oeValidatePalette = subprocess.Popen(oe_validate_palette_command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                oeValidatePalette.wait()
 
-                    if oeValidatePalette.returncode != None:
-                        if  oeValidatePalette.returncode != 0:
-                            mssg = "oe_validate_palette.py: Mismatching palette entries between the image and colormap; Resulting image may be invalid"
+                val_pal_out, val_pal_err = oeValidatePalette.communicate()
+                if oeValidatePalette.returncode != None:
+                    if  oeValidatePalette.returncode != 0:
+                        mssg = "oe_validate_palette.py:\nstdout: {0}\n{1}Mismatching palette entries between the image and colormap; Resulting image may be invalid".format(
+                            val_pal_out.decode('utf-8'), "stderr: " + val_pal_err.decode('utf-8') + "\n" if val_pal_err.decode('utf-8') != "" else "")
+                        if strict_palette:
+                            log_sig_err(mssg, sigevent_url, count_err=has_palette)
+                        else:
                             log_sig_warn(mssg, sigevent_url)
 
-                except OSError:
+            except OSError:
+                if strict_palette:
+                    log_sig_err("Error executing oe_validate_palette.py", sigevent_url)
+                else:
                     log_sig_warn("Error executing oe_validate_palette.py", sigevent_url)
 
 

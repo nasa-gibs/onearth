@@ -122,7 +122,7 @@ These parameters are available but not used in the example above nor necessarily
 * mrf_clean: (true/false) run mrf_clean.py script on generated mrf file to reduce file size
 * mrf_parallel: (true/false) run mrf_insert calls in parallel to improve performance. See num_cores.
 * num_cores: (int) number of cores to use with mrf_parallel. Recommended is 2-4, depending on number of input files.
-* mrf_strict_palette: (true/false) Validate that the colors in input files match the MRF colormap. A warning is sent if there are mismatches. Defaults to "false".
+* mrf_strict_palette: (true/false) Validate that the colors in input files match the MRF colormap. An error is sent if there are mismatches. Defaults to "false".
 * mrf_overwrite_colormap: (true/false) Overwrite the image palette using the GIBS colormap file specified with the "colormap" option. Defaults to "false".
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
