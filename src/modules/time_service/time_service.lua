@@ -10,6 +10,7 @@ local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
 local datetime_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
 local datetime_filename_format = "%Y%j%H%M%S"
 local datetime_format = "%Y-%m-%dT%H:%M:%SZ"
+local date_format = "%Y-%m-%d"
 
 
 -- Utility functions
@@ -62,26 +63,35 @@ local function add_interval (date, interval_length, interval_size)
     end
 end
 
-local function find_snap_date_for_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size)
+local function find_snap_date_for_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
     local interval_in_sec = interval_size == "S" and interval_length
         or interval_size == "MM" and interval_length * 60
         or interval_size == "H" and interval_length * 60 * 60
         or interval_size == "D" and interval_length * 60 * 60 * 24
         or nil
     local date_diff = date_util.diff(req_date, start_date)
-    local closest_interval_date = start_date:addseconds(math.floor(date_diff:spanseconds() / interval_in_sec) * interval_in_sec)
+    local closest_interval_date
+    if snap_to_previous then
+        closest_interval_date = start_date:addseconds(math.floor(date_diff:spanseconds() / interval_in_sec) * interval_in_sec)
+    else
+        closest_interval_date = start_date:addseconds(math.ceil(date_diff:spanseconds() / interval_in_sec) * interval_in_sec)
+    end
     if closest_interval_date <= end_date then
         return closest_interval_date
     end
 end
 
 
-local function find_snap_date_for_non_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size)
+local function find_snap_date_for_non_fixed_time_interval (start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
     local previous_interval_date = start_date
     while true do
         local check_date = add_interval(previous_interval_date:copy(), interval_length, interval_size)
         if check_date > req_date then -- Found snap date
-            return previous_interval_date
+            if snap_to_previous then
+                return previous_interval_date
+            elseif check_date <= end_date then 
+                return check_date
+            end
         end
         if check_date > end_date then -- Snap date isn't in this period
             break
@@ -90,27 +100,73 @@ local function find_snap_date_for_non_fixed_time_interval (start_date, req_date,
     end
 end
 
-local function get_snap_date (start_date, req_date, end_date, interval_length, interval_size)
+local function get_snap_date (start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
     if interval_size == "H" or interval_size == "MM" or interval_size == "S" or interval_size == "D" then
-        return find_snap_date_for_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size)
+        return find_snap_date_for_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
     else
-        return find_snap_date_for_non_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size)
+        return find_snap_date_for_non_fixed_time_interval(start_date, req_date, end_date, interval_length, interval_size, snap_to_previous)
     end
+end
+
+local function time_snap (req_date, periods, snap_to_previous)
+    -- binary search for find snap date in periods
+    local snap_date
+    local snap_period_idx = 1
+    local left, right, mid = 1, #periods, 0
+    while left <= right do
+        mid = left + math.floor( ( right - left ) / 2 )
+        local parsed_period = split("/", periods[mid])
+        local period_date = date_util(parsed_period[1])
+    
+        if req_date == period_date then
+            snap_date = req_date
+            snap_period_idx = mid
+            break
+        end
+    
+        local end_date
+        if parsed_period[2] then -- this is a period, so look at both dates
+            if req_date > period_date then
+                local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
+                local interval_size = string.match(parsed_period[3], "%a+$")
+                if string.sub(parsed_period[3], 1, 2) == "PT" and interval_size == "M" then
+                    interval_size = "MM"
+                end
+                snap_date = get_snap_date(period_date:copy(), req_date, date_util(parsed_period[2]), interval_length, interval_size, snap_to_previous)
+                snap_period_idx = mid
+            end
+        end
+    
+        if req_date < period_date then
+            right = mid - 1
+        else
+            left = mid + 1
+        end
+    end
+    return snap_date, snap_period_idx
 end
 
 local function period_sort(first, second)
     return date_util(split("/", first)[1]) > date_util(split("/", second)[1])
 end
 
--- Trim to the latest 100 periods
-local function periods_trim(layer_datetime_info)
+-- Trim to the specified number of periods and skip periods as needed
+local function apply_skip_limit(layer_datetime_info, skip, specified_limit)
+    local limit
     for key, value in pairs(layer_datetime_info) do
-        if #value.periods > 100 then
-            print('Warning: ' .. #value.periods .. ' periods have been found for layer ' .. key .. '. Only the most recent 100 will be returned.')
-            table.sort(value.periods)
+        limit = specified_limit and specified_limit or #value.periods
+        if skip >= #value.periods then
+            layer_datetime_info[key].periods = {}
+        elseif #value.periods > math.abs(limit) or (skip > 0 and #value.periods >= skip) then
             local truncated = {}
-            for i = #value.periods - 99, #value.periods do
-                truncated[#truncated+1] = value.periods[i]
+            if limit < 0 then
+                for i = #value.periods + limit + 1 - skip, #value.periods - skip do
+                    truncated[#truncated+1] = value.periods[i]
+                end
+            else
+                for i = 1 + skip, math.min(limit + skip, #value.periods) do
+                    truncated[#truncated+1] = value.periods[i]
+                end
             end
             layer_datetime_info[key].periods = truncated
         end
@@ -118,8 +174,85 @@ local function periods_trim(layer_datetime_info)
     return layer_datetime_info
 end
 
+local function range_handler (default, all_periods, periods_start, periods_end)
+    
+    local periods_start_date = periods_start and date_util(periods_start) or nil
+    local periods_end_date = periods_end and date_util(periods_end) or nil
+    local first_period_start_date = #all_periods > 0 and date_util(split("/", all_periods[1])[1]) or nil
+    local last_period_end_date = #all_periods > 0 and date_util(split("/", all_periods[#all_periods])[2]) or nil
+    
+    -- first, check if there's any data in the range
+    if (periods_start_date and last_period_end_date and periods_start_date > last_period_end_date) or
+        (periods_end_date and first_period_start_date and periods_end_date < first_period_start_date) then
+        return "", {}
+    end
+
+    -- handle when we want periods and default between two dates
+    local start_snap_date, start_snap_period_idx, end_snap_date, end_snap_period_idx
+    if periods_start_date then
+        start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
+        -- if the periods start date doesn't fall within a period, then we need to skip the period that was last examined
+        if start_snap_date == nil and #all_periods > 1 then
+            start_snap_period_idx = start_snap_period_idx + 1
+        end
+    else
+        start_snap_period_idx = 1
+    end
+    if periods_end then
+        end_snap_date, end_snap_period_idx = time_snap(periods_end_date, all_periods, true)
+    else
+        end_snap_period_idx = #all_periods
+    end
+   
+    local filtered_periods = {}
+    -- Ensure that there's data between periods_start and periods_end.
+    -- The start snap date taking place after end snap date would mean that there's no data within the bounds.
+    if not (start_snap_date and end_snap_date and start_snap_date > end_snap_date) then
+         -- trim the list of periods so that the period in which we found the snap date starts with the snap date
+        for i = start_snap_period_idx, end_snap_period_idx do
+            filtered_periods[#filtered_periods+1] = all_periods[i]
+        end
+        if start_snap_date then
+            local parsed_period = split("/", filtered_periods[1])
+            local start_snap_date_string
+            if start_snap_date:gethours() > 0 or start_snap_date:getminutes() > 0 or start_snap_date:getseconds() > 0 then
+                start_snap_date_string = start_snap_date:fmt(datetime_format)
+            else
+                start_snap_date_string = start_snap_date:fmt(date_format)
+            end
+            filtered_periods[1] = start_snap_date_string .. "/" .. parsed_period[2] .. "/" .. parsed_period[3]
+        end
+        if end_snap_date then
+            local parsed_period = split("/", filtered_periods[#filtered_periods])
+            local end_snap_date_string
+            if end_snap_date:gethours() > 0 or end_snap_date:getminutes() > 0 or end_snap_date:getseconds() > 0 then
+                end_snap_date_string = end_snap_date:fmt(datetime_format)
+            else
+                end_snap_date_string = end_snap_date:fmt(date_format)
+            end
+            filtered_periods[#filtered_periods] = parsed_period[1] .. "/" .. end_snap_date_string .. "/" .. parsed_period[3]
+        end
+    end
+
+    -- Make sure default is within the final period range
+    if #filtered_periods > 0 and default then
+        local last_filtered_period_end_date = split("/", filtered_periods[#filtered_periods])[2]
+        if date_util(default) > date_util(last_filtered_period_end_date) then
+            default = last_filtered_period_end_date
+        else
+            local first_filtered_period_start_date = split("/", filtered_periods[1])[1]
+            if date_util(default) < date_util(first_filtered_period_start_date) then
+                default = first_filtered_period_start_date
+            end
+        end
+    else
+        default = ""
+    end
+    return default, filtered_periods
+end
+
 -- Handlers to get layer period and default date information
-local function redis_get_all_layers (client, prefix_string)
+local function redis_get_all_layers (client, prefix_string, periods_start, periods_end)
     local layers = {}
     local cursor = "0"
     local results
@@ -129,8 +262,16 @@ local function redis_get_all_layers (client, prefix_string)
             local value_parts = split(":", value)
             local layer_name = value_parts[#value_parts - 1]
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
-            layers[layer_name].default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-            layers[layer_name].periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
+            local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
+            local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
+            table.sort(periods)
+            if periods_start or periods_end then
+                layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end)
+            else
+                layers[layer_name].default = default
+                layers[layer_name].periods = periods
+            end
+            layers[layer_name].periods_in_range = #layers[layer_name].periods
         end
     until cursor == "0"
     return layers
@@ -142,7 +283,7 @@ local function redis_handler (options)
     closeFunc = function()
         client:quit()
     end
-    return function (layer_name, uuid, lookup_keys, snap_date_string)
+    return function (layer_name, uuid, lookup_keys, snap_date_string, periods_start, periods_end)
         local returnValue
         local start_db_request = socket.gettime() * 1000 * 1000
         local prefix_string = ""
@@ -162,18 +303,24 @@ local function redis_handler (options)
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
                 local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
-                if default and periods then
-                    returnValue = {[layer_name] = {
-                        default = default,
-                        periods = periods
-                    }}
-                else
-                    returnValue = {err_msg = "Invalid Layer"}
+                returnValue = {err_msg = "Invalid Layer"}
+                if periods then
+                    table.sort(periods)
+                    if periods_start or periods_end then
+                        default, periods = range_handler(default, periods, periods_start, periods_end) 
+                    end
+                    if default and periods then
+                        returnValue = {[layer_name] = {
+                            default = default,
+                            periods = periods,
+                            periods_in_range = #periods
+                        }}
+                    end
                 end
             end
         else
             -- If no layer name specified, dump all data
-            returnValue = redis_get_all_layers(client, prefix_string)
+            returnValue = redis_get_all_layers(client, prefix_string, periods_start, periods_end)
         end
         -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
         print(string.format("step=time_database_request duration=%d uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_db_request + 0.5), uuid))
@@ -225,18 +372,25 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         local uuid = headers["UUID"] or "none"
         local start_timestamp = socket.gettime() * 1000 * 1000
         local layer_name = query_string and get_query_param("layer", query_string) or nil
+        local periods_start = query_string and get_query_param("periods_start", query_string) or nil
+        local periods_end = query_string and get_query_param("periods_end", query_string) or nil
+        local limit = query_string and tonumber(get_query_param("limit", query_string)) or nil
+        local skip = query_string and tonumber(get_query_param("skip", query_string)) or 0
         local lookup_keys = query_string and get_query_keys(query_string) or nil
 
         -- A blank query returns the entire list of layers and periods
         if not query_string or not layer_name then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            local layer_datetime_info = layer_handler(nil, uuid, lookup_keys, nil)
-            return send_response(200, JSON:encode(periods_trim(layer_datetime_info)))
+            local layer_datetime_info = layer_handler(nil, uuid, lookup_keys, nil, periods_start, periods_end)
+            if limit or skip > 0 then
+                layer_datetime_info = apply_skip_limit(layer_datetime_info, skip, limit)
+            end
+            return send_response(200, JSON:encode(layer_datetime_info))
         end
 
         local request_date_string = get_query_param("datetime", query_string)
-        local layer_datetime_info = layer_handler(layer_name, uuid, lookup_keys, nil)
+        local layer_datetime_info = layer_handler(layer_name, uuid, lookup_keys, nil, periods_start, periods_end)
         if layer_datetime_info.err_msg then
             return send_response(200, JSON:encode(layer_datetime_info))
         end
@@ -245,10 +399,13 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         if not request_date_string then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(periods_trim(layer_datetime_info)))
+            if limit or skip > 0 then
+                layer_datetime_info = apply_skip_limit(layer_datetime_info, skip, limit)
+            end
+            return send_response(200, JSON:encode(layer_datetime_info))
         end
 
-        -- If it's a default request, return the default date and associated period
+        -- If it's a default request, return the default date, best layer name, and filename
         if string.lower(request_date_string) == "default" then
             local default_date = date_util(layer_datetime_info[layer_name].default)
             local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, default_date:fmt(datetime_format))
@@ -290,38 +447,8 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
             }
             return send_response(200, JSON:encode(out_msg))
         end
-        table.sort(layer_datetime_info[layer_name].periods)
-        -- binary search for find snap date in periods
-        local left, right, mid = 1, #layer_datetime_info[layer_name].periods, 0
-        while left <= right do
-            mid = left + math.floor( ( right - left ) / 2 )
-            local parsed_period = split("/", layer_datetime_info[layer_name].periods[mid])
-            local start_date = date_util(parsed_period[1])
-        
-            if req_date == start_date then
-                snap_date = req_date
-                break
-            end
-        
-            local end_date
-            if parsed_period[2] then -- this is a period, so look at both dates
-                end_date = date_util(parsed_period[2])
-                if req_date > start_date then
-                    local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
-                    local interval_size = string.match(parsed_period[3], "%a+$")
-                    if string.sub(parsed_period[3], 1, 2) == "PT" and interval_size == "M" then
-                        interval_size = "MM"
-                    end
-                    snap_date = get_snap_date(start_date:copy(), req_date, end_date, interval_length, interval_size)
-                end
-            end
-        
-            if req_date < start_date then
-                right = mid - 1
-            else
-                left = mid + 1
-            end
-        end
+
+        local snap_date, _ = time_snap(req_date, layer_datetime_info[layer_name].periods, true)
 
         -- Return snap date and error if none is found
         if snap_date then

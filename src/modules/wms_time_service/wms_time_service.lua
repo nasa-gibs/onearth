@@ -161,6 +161,9 @@ function onearth_wms_time_service.handler(endpointConfig)
         end
 
         if time_string then
+            -- Remove any URL encoding
+            time_string = string.gsub(time_string, "%%(%x%x)",
+                function(h) return string.char(tonumber(h,16)) end)
             if time_string ~= "default" then
                 local start_time, end_time
                 if string.find(time_string, '^(.+)/(.+)/.*$') then

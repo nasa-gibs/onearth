@@ -1,5 +1,5 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
-time_service_keys: ["epsg4326", "best"]
+time_service_keys: ["epsg4326"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg4326/best/gc"
 exclude_layers:
   - 'Reference_Labels'

@@ -1,5 +1,5 @@
 time_service_uri: "http://onearth-time-service/time_service/time"
-time_service_keys: ["epsg3031", "nrt"]
+time_service_keys: ["epsg3031"]
 gc_service_uri: "http://onearth-capabilities/wmts/epsg3031/nrt/gc"
 exclude_layers:
   - 'Reference_Labels'

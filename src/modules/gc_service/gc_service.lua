@@ -40,6 +40,9 @@ local PROJECTIONS = {
     }
 }
 
+local date_template = "%d%d%d%d%-%d%d?%-%d%d?$"
+local datetime_template = "%d%d%d%d%-%d%d?%-%d%d?T%d%d?:%d%d?:%d%d?Z$"
+
 -- Utility functions
 
 local function split(sep, str)
@@ -102,36 +105,122 @@ local function getExtensionFromMimeType(mimeType)
     end
 end
 
-local function getDateList(endpointConfig)
+local function merge_time_service_results(t1, t2)
+    for k1,v1 in pairs(t2) do
+        for k2,v2 in pairs(v1) do
+            if type(v2) == "table" then -- append periods
+                for i = 1, #v2 do
+                    t1[k1][k2][#t1[k1][k2] + 1] = v2[i]
+                end
+            else
+                t1[k1][k2] = v2
+            end
+        end
+    end
+    return t1
+end
+
+local function getDateList(endpointConfig, layer, periods_start, periods_end, limit)
     local dateServiceUri = endpointConfig["time_service_uri"]
     local dateServiceKeys = endpointConfig["time_service_keys"]
-    if dateServiceKeys then
-        local formattedKeys = {}
-        for idx, value in ipairs(dateServiceKeys) do
-            formattedKeys[#formattedKeys + 1] = "key" .. tostring(idx) .. "=" .. value
-        end
-        local keyString = join(formattedKeys, "&")
-        if string.sub(dateServiceUri, -1) ~= "?" then
-            dateServiceUri = dateServiceUri .. "?"
-        end
-        dateServiceUri = dateServiceUri .. keyString
-    end
 
-    local success, headers, stream = pcall(function ()
-        return assert(request.new_from_uri(dateServiceUri):go(300))
-    end)
-    if not success then
-       print("Error: " .. headers .. " -- Skipping periods for this layer")
-       return {}
+    if string.sub(dateServiceUri, -1) ~= "?" then
+        dateServiceUri = dateServiceUri .. "?"
     end
     
-    local body = assert(stream:get_body_as_string())
-    if headers:get ":status" ~= "200" then
-        print("Error contacting date service: " .. body)
-        return nil
+    -- assemble the base request URI
+    local base_query_options = {}
+    if dateServiceKeys then
+        for idx, value in ipairs(dateServiceKeys) do
+            base_query_options[#base_query_options + 1] = "key" .. tostring(idx) .. "=" .. value
+        end
     end
-    local dateList = JSON:decode(body)
-    return dateList or {}
+    if layer then
+        base_query_options[#base_query_options + 1] = "layer=" .. layer
+    end
+    if periods_start then
+        base_query_options[#base_query_options + 1] = 'periods_start=' .. periods_start
+    end
+    if periods_end then
+        base_query_options[#base_query_options + 1] = 'periods_end=' .. periods_end
+    end
+
+    -- Requests for more than 100 periods will be broken up into multiple requests to the time service.
+    -- If limit wasn't specified, then we will continue performing requests until all periods have been obtained
+    local left_to_req = limit and math.abs(limit) or nil
+    local sign
+    if limit and limit > 0 or not limit then
+        sign = 1
+    else
+        sign = -1
+    end
+    local max_req_amt = 100
+    local dateList = nil
+    local skip = 0
+    while not left_to_req or left_to_req > 0 do
+        local requestUri = dateServiceUri
+        local current_query_options = {}
+        for k, v in pairs(base_query_options) do
+            current_query_options[k] = v
+        end
+        
+        -- assemble the URI for this particular request
+        if left_to_req then
+            local req_amt = math.min(left_to_req, max_req_amt)
+            current_query_options[#current_query_options + 1] = 'limit=' .. tostring(sign * req_amt)
+            current_query_options[#current_query_options + 1] = 'skip=' .. tostring(skip)
+        else
+            current_query_options[#current_query_options + 1] = 'limit=' .. tostring(max_req_amt)
+        end
+
+        local queryString = join(current_query_options, "&")
+        requestUri = requestUri .. queryString
+        
+        -- perform the request
+        local success, headers, stream = pcall(function ()
+            return assert(request.new_from_uri(requestUri):go(300))
+        end)
+        if not success then
+            print("Error: " .. headers .. " -- Skipping periods for this layer")
+            return {}
+        end
+        
+        local body = assert(stream:get_body_as_string())
+        if headers:get ":status" ~= "200" then
+            print("Error contacting date service: " .. body)
+            return nil
+        end
+
+        -- decode the request and merge with the results of any previous requests
+        local reqDateList = JSON:decode(body)
+        if not dateList then
+            dateList = reqDateList
+        else
+            if sign > 0 then
+                dateList = merge_time_service_results(dateList, reqDateList)
+            else
+                dateList = merge_time_service_results(reqDateList, dateList)
+            end
+        end
+
+        -- after the first request, determine how many more requests we need to perform
+        if not left_to_req or skip == 0 then
+            local max_to_req = 0
+            for _, v in pairs(dateList) do
+                max_to_req = math.max(max_to_req, tonumber(v["periods_in_range"]))
+            end
+            -- when a limit isn't specified, we'll request the maximum amount of periods
+            if not left_to_req then
+                left_to_req = max_to_req
+            -- when a limit is specified, we'll ensure that the limit is no greater than the maximum amount of periods
+            elseif skip == 0 then
+                left_to_req = math.min(max_to_req, left_to_req)
+            end
+        end
+        left_to_req = left_to_req - max_req_amt
+        skip = skip + max_req_amt
+    end
+    return dateList
 end
 
 local function getTmsDefs(tmsXml)
@@ -212,6 +301,23 @@ local function stripDecodeBytesFormat(inputString)
         return b_removed
     end
     return inputString
+end
+
+local function makeExceptionReport(exceptionCode, exceptionText, locator, dom)
+    if not dom then
+        dom = xml.new("ExceptionReport", { ["xmlns:ows"] = "http://www.opengis.net/ows/1.1",
+                                     ["xmlns:xsi"] =  "http://www.w3.org/2001/XMLSchema-instance",
+                                     ["xsi:schemaLocation"] = "http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd",
+                                     ["version"] = "1.1.0",
+                                     ["xml:lang"] = "en" } )
+    end
+    local exceptionNode = xml.elem("Exception", {
+        ["exceptionCode"] = exceptionCode,
+        ["locator"] = locator,
+        xml.elem("ExceptionText", exceptionText)
+    })
+    dom:add_direct_child(exceptionNode)
+    return dom
 end
 
 -- GetTileService functions
@@ -648,26 +754,42 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     -- Build <Format>
     layerElem:add_child(xml.new("Format"):text(mimeType))
 
-    -- Build the ResourceURL element
+    -- Build the ResourceURL elements
     local timeString = not static and "/{Time}" or ""
     if string.sub(baseUriGC, -1) ~= "/" then
         baseUriGC = baseUriGC .. "/" 
     end
+    
+    -- tiles
     local template_static = baseUriGC .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     local template_default = baseUriGC .. layerId .. "/" .. "default" .. "/default" .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
-    local template_time = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
     if not static then
+        local template_time = baseUriGC .. layerId .. "/" .. "default" .. timeString .. "/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}" .. getExtensionFromMimeType(mimeType)
         layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_time}))
     end
     layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_static}))
     layerElem:add_child(xml.new("ResourceURL", {format=mimeType, resourceType="tile", template=template_default}))
-
+    
+    -- describedomains
+    if not static then
+        local template_domains = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{BBOX}/{TimeStart}.xml"
+        local template_domains_bbox_all = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/{TimeStart}.xml"
+        local template_domains_time_end = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/--{TimeEnd}.xml"
+        local template_domains_time_start_end = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/all/{TimeStart}--{TimeEnd}.xml"
+        local template_domains_time_all = baseUriGC .. "1.0.0" .. "/" .. layerId .. "/" .. "default" .. "/{TileMatrixSet}/{BBOX}/all.xml"
+        layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains}))
+        layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_bbox_all}))
+        layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_end}))
+        layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_start_end}))
+        layerElem:add_child(xml.new("ResourceURL", {format="text/xml", resourceType="Domains", template=template_domains_time_all}))
+    end
     return layerElem
 end
 
 local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, twms)
     local tmsDefs = getTmsDefs(tmsXml)
-    local dateList = getDateList(endpointConfig)
+    local periods_limit = -100 -- most recent 100 periods
+    local dateList = getDateList(endpointConfig, nil, nil, nil, periods_limit)
     local tmsLimitsDefs
     if tmsLimitsXml then 
         tmsLimitsDefs = getTmsLimitsDefs(tmsLimitsXml)
@@ -847,6 +969,96 @@ local function makeTWMSGC(endpointConfig)
     return doctype .. xml.tostring(dom)
 end
 
+local function makeDD(endpointConfig, query_string)
+    local xml_header = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>'
+    local layer = get_query_param("layer", query_string)
+    local errorDom
+    if not layer then 
+        errorDom = makeExceptionReport("MissingParameterValue", "Missing LAYER parameter", "LAYER", errorDom)
+    end
+    
+    local domains = get_query_param("domains", query_string)
+    if not domains then
+        domains = "bbox,time"
+    end
+
+    local dom = xml.new("Domains", { ["xmlns:ows"] = "http://www.opengis.net/ows/1.1" } )
+
+    -- get bbox
+    if domains:find("bbox") then
+        local epsgCode = assert(endpointConfig["epsg_code"], "Can't find epsg_code in endpoint config!")
+        if string.match(epsgCode:lower(), "^%d") then
+            epsgCode = "EPSG:" .. epsgCode
+        end
+
+        local targetEpsgCode = endpointConfig["reproject"] and endpointConfig["reproject"]["target_epsg_code"] or endpointConfig["target_epsg_code"]
+        if targetEpsgCode then
+            if targetEpsgCode and string.match(targetEpsgCode:lower(), "^%d") then
+                targetEpsgCode = "EPSG:" .. targetEpsgCode
+            end
+        else
+            targetEpsgCode = epsgCode
+        end
+        
+        local projection = PROJECTIONS[targetEpsgCode or epsgCode]
+        local bbox = projection["bbox"] or projection["bbox84"]
+
+        local spaceDomainNode = xml.elem("SpaceDomain", {
+            xml.new("BoundingBox",
+                { crs=bbox["crs"],
+                miny=bbox["lowerCorner"][2],
+                minx=bbox["lowerCorner"][1],
+                maxx=bbox["upperCorner"][1],
+                maxy=bbox["upperCorner"][2]})
+        })
+        dom:add_direct_child(spaceDomainNode)
+    end
+
+    -- get periods
+    if domains:find("time") then
+        local time_query = get_query_param("time", query_string)
+        local dateList = nil
+        local periods_start
+        local periods_end
+        if time_query and time_query:lower() ~= "all" then
+            local times = split('/', time_query)
+            if #times == 1 then
+                -- When there's just one time specified, use it as a periods end bound if the time query starts with a '/'.
+                -- Otherwise, assume it to be a periods start bound.
+                if time_query:sub(1, 1) == '/' then
+                    periods_end = times[1]
+                else
+                    periods_start = times[1]
+                end
+            elseif #times > 1 then
+                periods_start = times[1]
+                periods_end = times[2]
+            end
+            if (periods_start and not string.match(periods_start, date_template) and not string.match(periods_start, datetime_template)) or
+                (periods_end and not string.match(periods_end, date_template) and not string.match(periods_end, datetime_template)) then
+                errorDom = makeExceptionReport("InvalidParameterValue",
+                        "Invalid TIME parameter: time range must follow format of START_DATE/END_DATE, or be 'ALL'. START_DATE and END_DATE must have format of YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ",
+                        "TIME", errorDom)
+            end
+        end
+        if errorDom then
+            return xml_header .. xml.tostring(errorDom)
+        end
+        dateList = getDateList(endpointConfig, layer, periods_start, periods_end, nil)
+        local periodsList = dateList and dateList[layer]["periods"] or {}
+        local size = dateList and dateList[layer]["periods_in_range"] or "0"
+        local timeDomainNode = xml.elem("DimensionDomain", {
+            xml.elem("ows:Identifier", "time"),
+            xml.elem("Domain", join(periodsList, ",")),
+            xml.elem("Size", "" .. size)
+        })
+        dom:add_direct_child(timeDomainNode)
+    elseif errorDom then
+        return xml_header .. xml.tostring(errorDom)
+    end
+    return xml_header .. xml.tostring(dom)
+end
+
 local function generateFromEndpointConfig()
     -- Load endpoint config
     assert(arg[1], "Must specifiy an endpoint config file!")
@@ -876,8 +1088,10 @@ function onearth_gc_service.handler(endpointConfig)
             response = makeTWMSGC(endpointConfig)
         elseif req == "gettileservice" then
             response = makeGTS(endpointConfig)
+        elseif req == "describedomains" then
+            response = makeDD(endpointConfig, query_string)
         else
-            response = "Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService"
+            response = "Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService, DescribeDomains"
         end
         return sendResponse(200, response)
     end
