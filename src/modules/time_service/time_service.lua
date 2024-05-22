@@ -303,6 +303,7 @@ local function redis_handler (options)
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
                 local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                returnValue = {err_msg = "Invalid Layer"}
                 if periods then
                     table.sort(periods)
                     if periods_start or periods_end then
@@ -315,8 +316,6 @@ local function redis_handler (options)
                             periods_in_range = #periods
                         }}
                     end
-                else
-                    returnValue = {err_msg = "Invalid Layer"}
                 end
             end
         else
