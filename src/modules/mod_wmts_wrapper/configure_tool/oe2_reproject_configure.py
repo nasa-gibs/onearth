@@ -390,8 +390,8 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, replace_wi
         layer_xml.findtext('{*}Identifier'),
         'source_url_template':
         format_source_url(
-            layer_xml.findall('{*}ResourceURL')[-1].attrib.get('template'),
-            source_tms), # Assume last ResourceURL would be the one containing {Time}
+            layer_xml.findall('{*}ResourceURL[@resourceType="tile"]')[-1].attrib.get('template'),
+            source_tms), # Assume last tile ResourceURL would be the one containing {Time}
         'mimetype':
         layer_xml.find('{*}ResourceURL').attrib.get('format'),
         'time_enabled':

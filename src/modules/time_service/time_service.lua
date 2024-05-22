@@ -303,16 +303,18 @@ local function redis_handler (options)
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
                 local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
-                table.sort(periods)
-                if periods_start or periods_end then
-                    default, periods = range_handler(default, periods, periods_start, periods_end) 
-                end
-                if default and periods then
-                    returnValue = {[layer_name] = {
-                        default = default,
-                        periods = periods,
-                        periods_in_range = #periods
-                    }}
+                if periods then
+                    table.sort(periods)
+                    if periods_start or periods_end then
+                        default, periods = range_handler(default, periods, periods_start, periods_end) 
+                    end
+                    if default and periods then
+                        returnValue = {[layer_name] = {
+                            default = default,
+                            periods = periods,
+                            periods_in_range = #periods
+                        }}
+                    end
                 else
                     returnValue = {err_msg = "Invalid Layer"}
                 end
