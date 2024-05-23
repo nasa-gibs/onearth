@@ -721,7 +721,7 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
 
     -- Build the <Dimension> element for time (if necessary)
     -- Note that we omit this if for some reason we don't have dates from the date service.
-    if not static and dateInfo then
+    if not static and dateInfo and periods and defaultDate and #periods > 0 then
         local dimensionNode = xml.elem("Dimension", {
             xml.new("ows:Identifier"):text("Time"),
             xml.new("ows:UOM"):text("ISO8601"),
