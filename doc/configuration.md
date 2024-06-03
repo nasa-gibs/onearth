@@ -274,7 +274,7 @@ best_config: lists the various layers and their priority(higher score, higher pr
 
 On the config of each of actual layers that make up the best layer, there will be a: 
 best_layer: which points to the virtual best layer(the presenese of this config will generate a best_layer key in redis). 
-The presense of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
+The presence of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
 ```
 ### Optional for Time Service
 ```

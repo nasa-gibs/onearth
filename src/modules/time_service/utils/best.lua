@@ -1,6 +1,11 @@
 redis.replicate_commands()
--- REDIS SYNTAX == EVAL {script} layer_prefix:layer_name , date_time
+-- REDIS SYNTAX == EVAL {script} layer_prefix:source_layer_name , date_time
 -- Routine called by Redis. If best_layer exists, script will update :best key
+
+-- Alternate syntax for regenerating :best and :dates keys for a best layer:
+-- EVAL {script} layer_prefix:best_layer_name
+-- This will clear existing :best and :dates keys for the best layer and regenerate them
+-- based on the :dates keys the layers specified by layer_prefix:best_layer_name:best_config.
 
 local index = KEYS[1]:match("^.*():")
 local layerPrefix = KEYS[1]:sub(1,index) -- remove provided layers name
@@ -46,6 +51,20 @@ for _, name in ipairs(layerNames) do
       redis.call("HDEL", best_key .. ":best", ARGV[1] .. "Z") -- :best dates have a Z
       redis.call("ZREM", best_key .. ":dates", ARGV[1])
       redis.call("ECHO","*** Warn: Deleted or not configured, removing Best LAYER: " .. best_key .. " DATE: " .. ARGV[1])
+    end
+  else -- recalculate :best and :dates keys for best layer based on the :dates keys of the layers listed in :best_config
+    redis.call("DEL", KEYS[1] .. ":best")
+    redis.call("DEL", KEYS[1] .. ":dates")
+    local source_layers = redis.call("ZRANGE", KEYS[1] .. ":best_config", 0, -1)
+    if source_layers then
+      for _, source_layer in pairs(source_layers) do
+        local source_layer_key = layerPrefix .. source_layer
+        local dates = redis.call("ZRANGE", source_layer_key .. ":dates", 0, -1)
+        for _, date in pairs(dates) do
+          redis.call("HMSET", KEYS[1] .. ":best", date, source_layer)
+          redis.call("ZADD", KEYS[1] .. ":dates", 0, date)
+        end
+      end
     end
   end
 end

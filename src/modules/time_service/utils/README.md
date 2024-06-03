@@ -24,9 +24,17 @@ Any of these arguments can be skipped by passing in `false`.
 
 ## `best.lua` -- Best layer generator script
 
-This script will check if the layer provided is part of a best layer, by checking to see if layer has best_layer key in redis. If one exist, best.lua it will retrieve the best layers' best_config:. The best_config will contain all the real layers that make up the virtual best layer, along with the prority of each layer. Best.lua will check from highest priority to lowest with the date provided. This first layer with a valid date will the best layer and will be added to the the best layer :best HMSET. This :best HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist. This date will also be added to the best layers dates for periods generation.   
+This script will check if the layer provided is part of a best layer, by checking to see if layer has `best_layer` key in redis. If one exist, best.lua it will retrieve the best layers' `best_config:`. The `best_config` will contain all the real layers that make up the virtual best layer, along with the prority of each layer. Best.lua will check from highest priority to lowest with the date provided. This first layer with a valid date will the best layer and will be added to the the best layer :best HMSET. This :best HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist. This date will also be added to the best layers dates for periods generation.   
 
-best.lua is used by ingest, oe-redis-update, and oe_scrape_time. 
+Execution syntax:
+
+```EVAL best.lua layer_prefix:source_layer_name date_time```
+
+This script can also be used to regenerate the `:best` and `:dates` keys for a best layer. To do this, run the script while giving it only the name of the best layer without a date time:
+
+```EVAL best.lua layer_prefix:best_layer_name```
+
+best.lua is used by ingest, oe-redis-update, and oe_scrape_time.
 
 ## `oe_periods_configure.py` -- Custom time configuration loader
 
