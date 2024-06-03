@@ -248,34 +248,43 @@ source_mrf:
   year_dir: "true/false" whether this layer contains a year subdirectory"
 ```
 ### Optional for WMTS/TWMS
+
+#### ZENJPEG
+Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer.
+
 ```
-Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. 
 convert_mrf: 
-  convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT .jpeg) of the source zenjpeg. 
+  convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT .jpeg) of the source zenjpeg.
+```
   
   This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. convert_mrf must also be listed in the layer's "best" configuration file.
 
+```
 copy_periods:
   - layer_id
   - layer_id
-  
+```
   List the layer_id's of any layers that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, copy_periods option should be included in the source layer's layer configuration and should include the layer_id of the converted layer and the layer_id of the "best" layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_periods listing both the converted layer_id and the "best" layer_id:
-
+```
   copy_periods:
     - GOES-East_ABI_GeoColor_v0_NRT
     - GOES-East_ABI_GeoColor
-
-hidden: true
-  A layer config with "hidden: true" will result in its layer being excluded from the WMTS and TWMS GetCapabilities documents. Consequently, the layer will also be excluded from WMS GetCapabilities and will not be available for use in WMS at all. WMTS requests for the layer will still work, however. For ZenJPEG, the source layer config should have this option enabled so that the source layer is not advertised, as users should only be using the converted layer.
-
-A best layer is made up of one virtual layer(best layer). The one best layer is mapped to many actual layers. The source layers for each of a best layer's dates are determined by checking availability of source layers for the given date in order of priority. See [src/modules/time_service/utils/](../src/modules/time_service/utils/README.md) for more information.
-On the config for the best layer there will be a:
-best_config: lists the various layers and their priority (higher score, higher priority). The presence of this config will generate a best_configs key in redis.
-
-On the config of each of actual layers that make up the best layer, there will be a: 
-best_layer: points to the virtual best layer. The presence of this config will generate a best_layer key in redis. 
-The presence of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
 ```
+```
+hidden: true
+```
+A layer config with "hidden: true" will result in its layer being excluded from the WMTS and TWMS GetCapabilities documents. Consequently, the layer will also be excluded from WMS GetCapabilities and will not be available for use in WMS at all. WMTS requests for the layer will still work, however. For ZenJPEG, the source layer config should have this option enabled so that the source layer is not advertised, as users should only be using the converted layer.
+
+#### Best Layers
+
+A best layer is made up of one virtual layer (best layer). The one best layer is mapped to many actual layers. The source layers for each of a best layer's dates are determined by checking availability of source layers for the given date in order of priority. See [src/modules/time_service/utils/](../src/modules/time_service/utils/README.md) for more information.
+
+On the config for the best layer there will be a:
+- `best_config:` lists the various layers and their priority (higher score, higher priority). The presence of this config will generate a best_configs key in redis.
+
+On the config of each of actual layers that make up the best layer, there will be a:
+ - `best_layer:` points to the virtual best layer. The presence of this config will generate a best_layer key in redis. The presence of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
+
 ### Optional for Time Service
 ```
 time_config: Custom time period configuration for layer
