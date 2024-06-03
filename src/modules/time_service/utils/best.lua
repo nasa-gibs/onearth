@@ -52,11 +52,11 @@ for _, name in ipairs(layerNames) do
       redis.call("ZREM", best_key .. ":dates", ARGV[1])
       redis.call("ECHO","*** Warn: Deleted or not configured, removing Best LAYER: " .. best_key .. " DATE: " .. ARGV[1])
     end
-  else -- recalculate :best and :dates keys for best layer based on the :dates keys of the layers listed in :best_config
-    redis.call("DEL", KEYS[1] .. ":best")
-    redis.call("DEL", KEYS[1] .. ":dates")
+  elseif not ARGV[1] then -- recalculate :best and :dates keys for best layer based on the :dates keys of the layers listed in :best_config
     local source_layers = redis.call("ZRANGE", KEYS[1] .. ":best_config", 0, -1)
     if source_layers then
+      redis.call("DEL", KEYS[1] .. ":best")
+      redis.call("DEL", KEYS[1] .. ":dates")
       for _, source_layer in pairs(source_layers) do
         local source_layer_key = layerPrefix .. source_layer
         local dates = redis.call("ZRANGE", source_layer_key .. ":dates", 0, -1)
