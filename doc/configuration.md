@@ -268,12 +268,12 @@ copy_periods:
 hidden: true
   A layer config with "hidden: true" will result in its layer being excluded from the WMTS and TWMS GetCapabilities documents. Consequently, the layer will also be excluded from WMS GetCapabilities and will not be available for use in WMS at all. WMTS requests for the layer will still work, however. For ZenJPEG, the source layer config should have this option enabled so that the source layer is not advertised, as users should only be using the converted layer.
 
-A best layer is made up of one virtual layer(best layer). The one best layer is mapped to many actual layers. 
+A best layer is made up of one virtual layer(best layer). The one best layer is mapped to many actual layers. The source layers for each of a best layer's dates are determined by checking availability of source layers for the given date in order of priority. See [src/modules/time_service/utils/](../src/modules/time_service/utils/README.md) for more information.
 On the config for the best layer there will be a:
-best_config: lists the various layers and their priority(higher score, higher priority). 
+best_config: lists the various layers and their priority (higher score, higher priority). The presence of this config will generate a best_configs key in redis.
 
 On the config of each of actual layers that make up the best layer, there will be a: 
-best_layer: which points to the virtual best layer(the presenese of this config will generate a best_layer key in redis). 
+best_layer: points to the virtual best layer. The presence of this config will generate a best_layer key in redis. 
 The presence of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
 ```
 ### Optional for Time Service
