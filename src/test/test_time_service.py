@@ -1089,6 +1089,14 @@ class TestDateService(unittest.TestCase):
                 returned_periods, expected_periods,
                 'Error with requesting periods where there is no data within a range: got {0}, expected {1}.'.format(returned_periods, expected_periods))
 
+    def test_periods_no_data(self):
+        expected_message = {'err_msg': 'Invalid Layer'}
+        r = requests.get(self.date_service_url + 'layer=nonexistent_layer')
+        res = r.json()
+        self.assertEqual(
+            res, expected_message,
+            'Error with requesting periods where there is no data: got {0}, expected {1}.'.format(res, expected_message))
+
     def test_periods_range_all_layers(self):
         # Test data
         layer_1_periods = ['2023-02-05/2023-02-09/P2D',

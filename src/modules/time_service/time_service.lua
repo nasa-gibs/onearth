@@ -264,14 +264,16 @@ local function redis_get_all_layers (client, prefix_string, periods_start, perio
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
             local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
             local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
-            table.sort(periods)
-            if periods_start or periods_end then
-                layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end)
-            else
-                layers[layer_name].default = default
-                layers[layer_name].periods = periods
+            if periods then
+                table.sort(periods)
+                if periods_start or periods_end then
+                    layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end)
+                else
+                    layers[layer_name].default = default
+                    layers[layer_name].periods = periods
+                end
+                layers[layer_name].periods_in_range = #layers[layer_name].periods
             end
-            layers[layer_name].periods_in_range = #layers[layer_name].periods
         end
     until cursor == "0"
     return layers

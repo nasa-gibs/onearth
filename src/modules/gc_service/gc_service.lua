@@ -193,6 +193,9 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
 
         -- decode the request and merge with the results of any previous requests
         local reqDateList = JSON:decode(body)
+        if reqDateList["err_msg"] == "Invalid Layer" then
+            return {}
+        end
         if not dateList then
             dateList = reqDateList
         else
@@ -1045,8 +1048,8 @@ local function makeDD(endpointConfig, query_string)
             return xml_header .. xml.tostring(errorDom)
         end
         dateList = getDateList(endpointConfig, layer, periods_start, periods_end, nil)
-        local periodsList = dateList and dateList[layer]["periods"] or {}
-        local size = dateList and dateList[layer]["periods_in_range"] or "0"
+        local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
+        local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"
         local timeDomainNode = xml.elem("DimensionDomain", {
             xml.elem("ows:Identifier", "time"),
             xml.elem("Domain", join(periodsList, ",")),
