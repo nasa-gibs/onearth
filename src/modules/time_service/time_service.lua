@@ -263,9 +263,8 @@ local function redis_get_all_layers (client, prefix_string, periods_start, perio
             local layer_name = value_parts[#value_parts - 1]
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
             local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-            local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
+            local periods = client:zrange(prefix_string .. "layer:" .. layer_name .. ":periods", 0, -1)
             if periods then
-                table.sort(periods)
                 if periods_start or periods_end then
                     layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end)
                 else
@@ -304,10 +303,9 @@ local function redis_handler (options)
                 end
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-                local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                local periods = client:zrange(prefix_string .. "layer:" .. layer_name .. ":periods", 0, -1)
                 returnValue = {err_msg = "Invalid Layer"}
                 if periods then
-                    table.sort(periods)
                     if periods_start or periods_end then
                         default, periods = range_handler(default, periods, periods_start, periods_end) 
                     end

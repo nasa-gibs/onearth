@@ -270,8 +270,8 @@ def seed_redis_data(layers, db_keys=None, calc_periods=False):
         for layer in layers:
             r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
             for period in layer[2]:
-                r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                    period)    
+                r.zadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                    {period: 0})    
     else:
         for layer in layers:
             r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})

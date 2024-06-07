@@ -1099,8 +1099,8 @@ def seed_redis_data(layers, db_keys=None):
         r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
         periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
         for period in periods:
-            r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                   period)
+            r.zadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                    {period: 0})
 
 
 def seed_redis_best_data(layers, filename, db_keys=None):

@@ -731,7 +731,7 @@ if next(configs) == nil then
         redis.call("DEL", key .. ":periods")
       end
       for i, periodString in ipairs(periodStrings) do
-        redis.call("SADD", key .. ":periods", periodString)
+        redis.call("ZADD", key .. ":periods", 0, periodString)
       end
     end
   end
@@ -744,7 +744,7 @@ else
           redis.call("DEL", key .. ":periods")
         end
         for i, periodString in ipairs(periodStrings) do
-          redis.call("SADD", key .. ":periods", periodString)
+          redis.call("ZADD", key .. ":periods", 0, periodString)
         end
       end
     end

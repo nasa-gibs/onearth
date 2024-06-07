@@ -14,15 +14,15 @@ OK
 localhost:6379> MGET epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:default
  
 # Add periods for a layer
-localhost:6379> SADD epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods "2000-01-01/2012-09-01/P1D"
+localhost:6379> ZADD epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods 0 "2000-01-01/2012-09-01/P1D"
 (integer) 1
-localhost:6379> SADD epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods "2012-09-03/2018-12-31/P1D"
+localhost:6379> ZADD epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods 0 "2012-09-03/2018-12-31/P1D"
 (integer) 1
  
 # Retrieve periods for a layer
-localhost:6379> SMEMBERS epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods
-1) "2012-09-03/2018-12-31/P1D"
-2) "2000-01-01/2012-09-01/P1D"
+localhost:6379> ZRANGE epsg4326:layer:MODIS_Aqua_CorrectedReflectance_Bands721:periods 0 -1
+1) "2000-01-01/2012-09-01/P1D"
+2) "2012-09-03/2018-12-31/P1D"
  
 localhost:6379> exit
  
@@ -53,7 +53,7 @@ cd onearth/src/modules/time_service/utils/
 3) "2012-09-12T00:00:00"
  
 # View periods
-/usr/bin/redis-cli -h $REDIS_HOST SMEMBERS epsg4326:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods
+/usr/bin/redis-cli -h $REDIS_HOST ZRANGE epsg4326:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods 0 -1
 1) "2012-09-10/2012-09-12/P1D"
  
 # View default date
@@ -85,7 +85,7 @@ cd onearth/src/modules/time_service/utils/
 (integer) 1
  
 # Delete period
-/usr/bin/redis-cli -h $REDIS_HOST SREM epsg4326:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods "2012-09-10/2012-09-12/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST ZREM epsg4326:layer:SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending:periods "2012-09-10/2012-09-12/P1D"
 (integer) 1
  
 # Delete default date
