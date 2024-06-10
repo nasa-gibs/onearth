@@ -119,7 +119,7 @@ For testing, here's a fast way to set up a Redis database for testing.
 
 1. Enter the Redis CLI: `redis-cli`
 2. Add a default date: `SET layer:test_layer:default "2015-06-01"`
-3. Add some periods: `SADD layer:test_layer:periods "2012-01-01/2013-01-01/P1M" "2005-06-01/2005-12-01/P10D"`
+3. Add some periods: `ZADD layer:test_layer:periods 0 "2012-01-01/2013-01-01/P1M" 0 "2005-06-01/2005-12-01/P10D"`
 
 #### Creating levels for projection, endpoint, etc.
 
