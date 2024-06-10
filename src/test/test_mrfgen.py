@@ -2072,7 +2072,6 @@ class TestMRFGeneration_Angstrom_Exponent(unittest.TestCase):
 
         if DEBUG:
             print("Comparing: " + self.output_img_png + " to " + self.compare_img_png)
-        shutil.copy(self.output_img_png, "/results/test_comp14.png")
         self.assertTrue(filecmp.cmp(self.output_img_png, self.compare_img_png), "PNG output image does not match")
 
     def tearDown(self):
