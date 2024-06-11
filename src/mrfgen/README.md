@@ -124,6 +124,7 @@ These parameters are available but not used in the example above nor necessarily
 * num_cores: (int) number of cores to use with mrf_parallel. Recommended is 2-4, depending on number of input files.
 * mrf_strict_palette: (true/false) Validate that the colors in input files match the MRF colormap. An error is sent if there are mismatches. Defaults to "false".
 * mrf_overwrite_colormap: (true/false) Overwrite the image palette using the GIBS colormap file specified with the "colormap" option. Defaults to "false".
+* background: (black/white/transparent) Forces background color of an image to be black, white, or transparent. Defaults to nothing to avoid extra processing.
 
 Let's modify the previous sample configuration to reproject the imagery into Web Mercator (EPSG:3857), generate a larger output size, and utilize a colormap:
 

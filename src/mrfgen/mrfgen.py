@@ -95,6 +95,10 @@ import datetime
 from contextlib import contextmanager  # used to build context pool
 import functools
 import random
+import numpy as np
+import rasterio
+from PIL import Image
+
 
 versionNumber = os.environ.get('ONEARTH_VERSION')
 oe_utils.basename = None
@@ -1655,6 +1659,10 @@ else:
             source_url = "NONE"
         else:
             source_url = ''
+    try:
+        background = get_dom_tag_value(dom, 'background')
+    except:
+        background = ''
     # Close file.
     config_file.close()
 
@@ -1893,6 +1901,57 @@ if mrf_compression_type.lower() in ['jpeg', 'jpg', 'zen']:
         goodtiles.append(tile)
 
     alltiles = goodtiles
+
+# Force background color if specified for JPEG or TIFF
+if background in ['black', 'white', 'transparent'] and mrf_compression_type.lower() in ['jpeg', 'jpg', 'tiff', 'tif']:
+    for i, tile in enumerate(alltiles):
+        log_info_mssg("Using " + background + " background for " + tile)
+        temp_tile = None
+        tile_path = os.path.dirname(tile)
+        tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
+    
+        with rasterio.open(tile) as src:
+            # Read the image data
+            img_data = src.read()
+            img_meta = src.meta
+            
+            # Convert the image data to a PIL image
+            # Assuming the image has 4 bands (RGBA)
+            img = Image.fromarray(img_data.transpose(1, 2, 0), mode='RGBA')
+
+            # Create a new background image
+            if background == 'white':
+                bg = Image.new('RGBA', img.size, (255, 255, 255, 255))
+            elif background == 'transparent':
+                bg = Image.new('RGBA', img.size, (0, 0, 0, 0))
+            else:
+                bg = Image.new('RGBA', img.size, (0, 0, 0, 255))
+
+            # Composite the input image onto the black background
+            composite = Image.alpha_composite(bg, img)
+
+            # Convert the composite image back to a numpy array
+            composite_data = np.array(composite).transpose(2, 0, 1)
+
+            # We no longer need the 4th band
+            if background != 'transparent':
+                composite_data = composite_data[:3, :, :]
+                bands = 3
+            else:
+                bands = 4
+
+            # Update the metadata to reflect the changes (if necessary)
+            img_meta.update({
+                'count': bands
+            })
+
+            # Write the result to a new file
+            temp_tile = working_dir+tile_basename+'_bg'+tile_extension.lower()
+            log_info_mssg("Creating temp file " + temp_tile)
+            with rasterio.open(temp_tile, 'w', **img_meta) as dst:
+                dst.write(composite_data)
+
+        alltiles[i] = temp_tile
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
 if mrf_compression_type == 'PPNG' and colormap != '':
@@ -2855,6 +2914,10 @@ for tilename in (alltiles):
             if '_zen.' in tilename:
                 for zen_file in glob.iglob(os.path.splitext(tilename)[0]+'*'):
                     remove_file(zen_file)
+        # remove background tiles
+        if background != '':
+            if '_bg.' in tilename:
+                remove_file(tilename)
 
 # Send to log.
 mssg=str().join(['MRF created:  ', out_filename])

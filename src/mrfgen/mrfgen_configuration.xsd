@@ -57,6 +57,7 @@ limitations under the License.
         <xs:element ref="email_server" minOccurs="0"/>
         <xs:element ref="email_recipient" minOccurs="0"/>
         <xs:element ref="email_sender" minOccurs="0"/>
+        <xs:element ref="background" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -173,4 +174,13 @@ limitations under the License.
   <xs:element name="email_server" type="xs:string" nillable="true"/>
   <xs:element name="email_recipient" type="xs:string" nillable="true"/>
   <xs:element name="email_sender" type="xs:string" nillable="true"/>
+  <xs:element name="background">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="black"/>
+        <xs:enumeration value="white"/>
+        <xs:enumeration value="transparent"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
 </xs:schema>

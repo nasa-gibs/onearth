@@ -20,3 +20,4 @@ unittest-xml-reporting==3.2.0 # https://pypi.org/project/unittest-xml-reporting/
 urllib3==1.26.18       # https://pypi.org/project/urllib3/
 pyaml==21.10.1         # https://pypi.org/project/pyaml/
 boto3==1.34.22         # https://pypi.org/project/boto3/
+rasterio==1.3.10	   # https://pypi.org/project/rasterio/
