@@ -515,12 +515,10 @@ def make_layer_config(endpoint_config, layer):
     # brunsli handling block
     if mimetype == 'image/x-j':
         brunsli_handling_block = 'Header set Content-Type "image/x-j"\n'
-        brunsli_handling_block += ('        Header append Content-Encoding '
-                                  'deflate')
-        SetOutputFilter DBRUNSLI
+        brunsli_handling_block += '        Header append Content-Encoding deflate\n'
+        brunsli_handling_block += '        SetOutputFilter DBRUNSLI'
     else:
         brunsli_handling_block = ''
-        SetOutputFilter CBRUNSLI
 
     config_file_path = Path(internal_endpoint, layer_id, "default",
                             tilematrixset, 'mod_mrf.config')
