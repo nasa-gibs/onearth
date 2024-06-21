@@ -58,6 +58,19 @@ RUN wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz && \
     ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic && \
     cd /tmp/ 
 
+# Install brunsli (for use with mod_brunsli)
+ENV LD_LIBRARY_PATH=:/usr/local/lib
+WORKDIR /tmp
+RUN git clone --depth=1 https://github.com/google/brunsli.git && \
+    cd brunsli && \
+    git submodule update --init --recursive && \
+    cmake -DCMAKE_PREFIX_PATH=/usr/local/ -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -B out && \
+    cmake --build out --config Release && \
+    cd out && make && make install && \
+    export LD_LIBRARY_PATH=:/usr/local/lib && \
+    ldconfig && \
+    cd ..
+
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
 RUN cd client_golang@v1.19.0 && \
