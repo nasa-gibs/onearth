@@ -31,10 +31,6 @@ WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
-WORKDIR /home/oe2/onearth/src/modules/mod_brunsli/src/
-RUN cp /home/oe2/onearth/docker/Makefile.lcl .
-RUN make && make install
-
 WORKDIR /home/oe2
 RUN git clone https://github.com/lucianpls/libahtse.git
 WORKDIR /home/oe2/libahtse
