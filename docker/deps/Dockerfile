@@ -56,7 +56,7 @@ RUN wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz && \
     sh build.sh && \
     mv dist/supercronic-linux-amd64 /usr/local/bin/ && \
     ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic && \
-    cd /tmp/ 
+    cd /tmp/
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/

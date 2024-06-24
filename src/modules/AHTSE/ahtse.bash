@@ -58,7 +58,7 @@ EXP_INCLUDEDIR = \$(PREFIX)/include
 DEST = \$(PREFIX)/modules
 LABEL
 
-#ahtse_make mod_brunsli
+ahtse_make mod_brunsli
 #ahtse_make mod_receive
 ahtse_make libahtse
 
@@ -83,7 +83,7 @@ cat >ahtse.conf <<END_LABEL
 # These are independent
 
 # Brunsli codec filter
-#LoadModule brunsli_module modules/mod_brunsli.so
+LoadModule brunsli_module modules/mod_brunsli.so
 # Receive filter
 #LoadModule receive_module modules/mod_receive.so
 # Send a file based on a URL regexp

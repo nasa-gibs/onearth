@@ -43,6 +43,10 @@ BASE_APACHE_TEMPLATE = """<IfModule !mrf_module>
     LoadModule retile_module modules/mod_retile.so
 </IfModule>
 
+<IfModule !brunsli_module>
+    LoadModule brunsli_module modules/mod_brunsli.so
+</IfModule>
+
 <IfModule !wmts_wrapper_module>
     LoadModule wmts_wrapper_module modules/mod_wmts_wrapper.so
 </IfModule>
@@ -247,6 +251,8 @@ class TestModWmtsWrapper(unittest.TestCase):
         self.setup_mrf_reproject_date()
         self.setup_zenjpeg_source_mrf_date_yeardir()
         self.setup_zenjpeg_convert_mrf_date_yeardir()
+        self.setup_brunsli_source_mrf_date_yeardir()
+        # self.setup_brunsli_convert_mrf_date_yeardir()
 
         restart_apache()
 
@@ -725,6 +731,105 @@ class TestModWmtsWrapper(unittest.TestCase):
         redis_data = [
             ('test_zenjpeg_convert_mrf_date_yeardir', '2012-02-22',
              '2012-02-22/2012-02-22/P1D'),
+        ]
+        seed_redis_data(redis_data)
+        self.redis_layers.append(redis_data)
+
+    @classmethod
+    def setup_brunsli_source_mrf_date_yeardir(self):
+        # Configure mod_mrf setup
+        size_x = 20480
+        size_y = 10240
+        tile_size = 512
+        # Should this be brn?? With a separate directory?
+        image_type = "jpeg"
+        tilematrixset = '2km'
+        year = '2021'  # Line up with date string at end of file name
+
+        config_prefix = 'test_brunsli_source_mrf_date_yeardir'
+
+        # Add Apache config for base imagery layer to be served by mod_mrf
+        layer_path = '{}/default/{}'.format(config_prefix, tilematrixset)
+        self.mrf_brunsli_source_endpoint_path_date_yeardir = os.path.join(
+            self.endpoint_path, layer_path)
+        self.mrf_url_date = '{}/{}/{}'.format(
+            base_url, self.endpoint_prefix_mrf, config_prefix)
+        apache_config = bulk_replace(
+            MOD_MRF_DATE_APACHE_TEMPLATE,
+            [('{config_path}',
+              self.mrf_brunsli_source_endpoint_path_date_yeardir),
+             ('{config_file_path}',
+              os.path.join(self.mrf_brunsli_source_endpoint_path_date_yeardir,
+                           config_prefix + '.config')),
+             ('{alias}', self.endpoint_prefix_mrf),
+             ('{endpoint_path}', self.endpoint_path),
+             ('{layer_name}', config_prefix),
+             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'On')])
+
+        self.mod_mrf_brunsli_source_apache_config_path_date_yeardir = (
+            os.path.join(
+            apache_conf_dir, config_prefix + '.conf'))
+        with open(self.mod_mrf_brunsli_source_apache_config_path_date_yeardir,
+                  'w+') as f:
+            f.write(apache_config)
+
+        # Copy test imagery
+        test_imagery_path = os.path.join(os.getcwd(),
+                                         'mod_wmts_wrapper_test_data')
+        make_dir_tree(
+            self.mrf_brunsli_source_endpoint_path_date_yeardir,
+            ignore_existing=True)
+
+        date = '2021100000000'
+        yeardir = os.path.join(
+            self.mrf_brunsli_source_endpoint_path_date_yeardir,
+            date[:4])
+
+        make_dir_tree(yeardir, ignore_existing=True)
+
+        date_idx_path = os.path.join(yeardir,
+                                     config_prefix + '-' + date + '.idx')
+        date_data_path = os.path.join(yeardir,
+                                      config_prefix + '-' + date + '.pjg')
+        # Does it need to be this?
+        # date_data_path = os.path.join(yeardir,
+        #                             config_prefix + '-' + date + '.brn')
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                         config_prefix + '-' + date + '.idx'),
+            date_idx_path)
+        shutil.copy(
+            os.path.join(test_imagery_path,
+                         config_prefix + '-' + date + '.pjg'),
+            date_data_path)
+
+        idx_path = os.path.join(
+            self.mrf_brunsli_source_endpoint_path_date_yeardir,
+            '${YYYY}/${filename}.idx')
+        data_path = os.path.join(
+            self.mrf_brunsli_source_endpoint_path_date_yeardir,
+            '${YYYY}/${filename}.pjg')
+
+        # Build layer config
+        data_config = 'DataFile ' + data_path
+        mod_mrf_config = bulk_replace(
+            MOD_MRF_CONFIG_TEMPLATE,
+            [('{size_x}', size_x), ('{size_y}', size_y),
+             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
+             ('{idx_path}', idx_path), ('{data_config}', data_config),
+             ('{skipped_levels}', '0' if size_x == size_y else '1')])
+
+        mod_mrf_config_path = os.path.join(
+            self.mrf_brunsli_source_endpoint_path_date_yeardir,
+            config_prefix + '.config')
+
+        with open(mod_mrf_config_path, 'w+') as f:
+            f.write(mod_mrf_config)
+
+        redis_data = [
+            ('test_brunsli_source_mrf_date_yeardir', '2021-04-10',
+             '2021-04-10/2021-04-10/P1D'),
         ]
         seed_redis_data(redis_data)
         self.redis_layers.append(redis_data)
