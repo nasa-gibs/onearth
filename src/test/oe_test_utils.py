@@ -1089,7 +1089,7 @@ def redis_running():
         return False
 
 
-def seed_redis_data(layers, db_keys=None):
+def seed_redis_data(layers, db_keys=None, zset=True):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     db_keystring = ''
     if db_keys:
@@ -1099,8 +1099,12 @@ def seed_redis_data(layers, db_keys=None):
         r.set('{0}layer:{1}:default'.format(db_keystring, layer[0]), layer[1])
         periods = [layer[2]] if not isinstance(layer[2], list) else layer[2]
         for period in periods:
-            r.zadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
-                    {period: 0})
+            if zset:
+                r.zadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                        {period: 0})
+            else:
+                r.sadd('{0}layer:{1}:periods'.format(db_keystring, layer[0]),
+                   period)
 
 
 def seed_redis_best_data(layers, filename, db_keys=None):

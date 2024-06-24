@@ -1645,6 +1645,37 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
+
+    def test_keep_existing_periods_unsorted_set(self):
+        # Test adding to an existing periods key that uses an unsorted set
+        test_layers = [('Test_Keep_Existing_Periods_Unsorted_Set', '2019-01-15',
+                        ['2017-01-01/2018-01-01/P1D', '2019-01-15/2019-01-15/P1D'])]
+
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+
+        # manually add periods as unsorted set
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        db_keystring = ''
+        r.sadd('{0}:layer:{1}:periods'.format(db_keys[0], test_layers[0][0]),
+                   '2017-01-01/2018-01-01/P1D')
+
+        # run periods.lua with keep_existing_periods
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', 'false', 'false', 'true'])
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer[2], layer_res['periods']))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
     
     @classmethod
     def tearDownClass(self):

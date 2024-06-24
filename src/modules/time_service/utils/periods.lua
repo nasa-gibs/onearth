@@ -730,8 +730,14 @@ if next(configs) == nil then
       if redis.call("EXISTS", key .. ":periods") and not keep_existing_periods then
         redis.call("DEL", key .. ":periods")
       end
-      for i, periodString in ipairs(periodStrings) do
-        redis.call("ZADD", key .. ":periods", 0, periodString)
+      if keep_existing_periods and redis.call("TYPE", key .. ":periods")["ok"] == "set" then
+        for i, periodString in ipairs(periodStrings) do  
+          redis.call("SADD", key .. ":periods", periodString)
+        end
+      else
+        for i, periodString in ipairs(periodStrings) do  
+          redis.call("ZADD", key .. ":periods", 0, periodString)
+        end
       end
     end
   end
@@ -743,8 +749,14 @@ else
         if i == 1 and redis.call("EXISTS", key .. ":periods") and not keep_existing_periods then
           redis.call("DEL", key .. ":periods")
         end
-        for i, periodString in ipairs(periodStrings) do
-          redis.call("ZADD", key .. ":periods", 0, periodString)
+        if keep_existing_periods and redis.call("TYPE", key .. ":periods")["ok"] == "set" then
+          for i, periodString in ipairs(periodStrings) do  
+            redis.call("SADD", key .. ":periods", periodString)
+          end
+        else
+          for i, periodString in ipairs(periodStrings) do  
+            redis.call("ZADD", key .. ":periods", 0, periodString)
+          end
         end
       end
     end

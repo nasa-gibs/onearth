@@ -18,6 +18,8 @@ It can also be run with the following optional positional arguments after the ke
 
 Any of these arguments can be skipped by passing in `false`.
 
+Although OnEarth still supports the `:periods` key being represented by an unsorted `set` in redis, this script will set the periods key to be a sorted `zset` by default when regenerating the `:periods` key. It can, however, correctly handle adding to existing unsorted `set` `:periods` keys using `keep_existing_periods`.
+
 ### Example Command Line Usage
 
 `redis-cli --eval periods.lua epsg4326:layer:layer_name`
