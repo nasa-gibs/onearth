@@ -39,6 +39,10 @@ WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_png/src/
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
+WORKDIR /home/oe2/onearth/src/modules/mod_brunsli/src/
+RUN cp /home/oe2/onearth/ci/Makefile.lcl .
+RUN make && make install
+
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_wmts_configure.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/

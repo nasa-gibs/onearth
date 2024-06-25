@@ -28,6 +28,7 @@ RUN dnf -y update && \
         cronie-1.5.7 \
         logrotate-3.18.0 \
         python3-devel-3.9.18 \
+        cmake-3.26.5 \
         parallel && \
     dnf clean all
 
@@ -36,13 +37,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64.tar.gz -O - |\
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz && \
-    tar xf go1.22.3.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz && \
+    tar xf go1.22.4.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.29.tar.gz && \
@@ -55,8 +56,7 @@ RUN wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz && \
     go mod vendor && \
     sh build.sh && \
     mv dist/supercronic-linux-amd64 /usr/local/bin/ && \
-    ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic && \
-    cd /tmp/
+    ln -s /usr/local/bin/supercronic-linux-amd64 /usr/local/bin/supercronic
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
@@ -66,6 +66,18 @@ RUN cd client_golang@v1.19.0 && \
     cd /tmp/ && \
     rm -rf /tmp/* && \
     rm -rf /usr/local/go /usr/local/bin/go
+
+# Install brunsli dependency
+WORKDIR /tmp
+RUN git clone --depth=1 https://github.com/google/brunsli.git && \
+    cd brunsli && \
+    git submodule update --init --recursive && \
+    cmake -DCMAKE_PREFIX_PATH=/usr/local/ -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -B out && \
+    cmake --build out --config Release && \
+    cd out && make && make install && \
+    export LD_LIBRARY_PATH=:/usr/local/lib && \
+    ldconfig && \
+    cd /tmp/ && rm -rf /tmp/brunsli
 
 # Download RPM source for Apache
 WORKDIR /tmp
@@ -119,6 +131,7 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_lua*.rpm && \
     cd / && rm -rf /tmp/apr-1.7.4* /tmp/apr-util-1.6.3* /tmp/httpd-2.4.57* /tmp/rpmbuild*
 
+# Install mod_receive
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
@@ -126,8 +139,12 @@ RUN make && make install
 # Generate SSL certs for bootstrap to complete
 RUN /usr/libexec/httpd-ssl-gencerts
 
+# Install AHTSE dependencies
 WORKDIR /home/oe2/onearth/src/modules/AHTSE/
 RUN bash bootstrap.bash
+
+RUN dnf remove -y cmake && \
+    dnf clean all
 
 WORKDIR /home/oe2
 RUN rm -rf ./onearth /tmp/*

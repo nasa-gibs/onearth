@@ -39,7 +39,8 @@ RUN git clone --depth=1 https://github.com/google/brunsli.git && \
     cd out && make && make install && \
     export LD_LIBRARY_PATH=:/usr/local/lib && \
     ldconfig && \
-    cd ..
+    cd /tmp/ && rm -rf /tmp/*
+RUN ldconfig -v
 
 # Install GDAL
 ENV LD_LIBRARY_PATH=:/usr/local/lib
