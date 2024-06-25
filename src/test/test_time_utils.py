@@ -27,7 +27,7 @@ import time
 import redis
 import requests
 import shutil
-from oe_test_utils import restart_apache, make_dir_tree, mrfgen_run_command as run_command
+from oe_test_utils import restart_apache, make_dir_tree, mrfgen_run_command as run_command, seed_redis_data as seed_redis_data_oe_utils
 import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -1676,6 +1676,118 @@ class TestTimeUtils(unittest.TestCase):
                 .format(layer[0], layer[2], layer_res['periods']))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
+
+    def test_oe_periods_key_converter_zset(self):
+        # Test oe_periods_key_converter.py converting to sorted set
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        test_layers = [
+            ('test1_key_convert_zset', '2021-01-01', ['2020-01-01/2021-01-01/P1D']),
+            ('test2_key_convert_zset', '2099-12-01', ['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(2000,3000)]),
+            ('test3_key_convert_zset', '2021-05-01', ['2020-01-01/2021-01-01/P1D',
+                                                    '2021-02-01/2021-03-01/P1D',
+                                                    '2021-04-01/2021-05-01/P1D'])
+        ]
+        # Add first two layers to redis using unsorted set
+        seed_redis_data_oe_utils(test_layers[:2], zset=False)
+        # Add last layer to redis using sorted set
+        seed_redis_data_oe_utils(test_layers[2:], zset=True)
+
+        # Run the command
+        convert_cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_key_converter.py -r {0} -t zset".format('localhost')
+        run_command(convert_cmd)
+
+        # Ensure that all the periods were converted correctly
+        req = requests.get(self.date_service_url)
+        res = req.json()
+        for layer in test_layers:
+            self.assertEqual(r.type("layer:{}:periods".format(layer[0])), b'zset')
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers after running command {1}'.format(layer[0], convert_cmd))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "periods" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer)
+
+
+    def test_oe_periods_key_converter_set(self):
+        # Test oe_periods_key_converter.py converting to unsorted set
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        test_layers = [
+            ('test1_key_convert_set', '2021-01-01', ['2020-01-01/2021-01-01/P1D']),
+            ('test2_key_convert_set', '2099-12-01', ['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(2000,3000)]),
+            ('test3_key_convert_set', '2021-05-01', ['2020-01-01/2021-01-01/P1D',
+                                                    '2021-02-01/2021-03-01/P1D',
+                                                    '2021-04-01/2021-05-01/P1D'])
+        ]
+        # Add first two layers to redis using unsorted set
+        seed_redis_data_oe_utils(test_layers[:2], zset=True)
+        # Add last layer to redis using sorted set
+        seed_redis_data_oe_utils(test_layers[2:], zset=False)
+        
+        # Test running the command
+        convert_cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_key_converter.py -r {0} -t set".format('localhost')
+        run_command(convert_cmd)
+
+        # Ensure that all the periods were converted correctly
+        req = requests.get(self.date_service_url)
+        res = req.json()
+        for layer in test_layers:
+            self.assertEqual(r.type("layer:{}:periods".format(layer[0])), b'set')
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers after running command {1}'.format(layer[0], convert_cmd))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "periods" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer)
+
+
+    def test_oe_periods_key_converter_filter(self):
+        # Test oe_periods_key_converter.py converting to unsorted set
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        test_layers = [
+            ('test1_key_convert_filter', '2021-01-01', ['2020-01-01/2021-01-01/P1D']),
+            ('test2_key_convert_filter', '2099-12-01', ['{0}-01-01/{0}-12-01/P1D'.format(year) for year in range(2000,3000)]),
+            ('test3_key_convert_filter', '2021-05-01', ['2020-01-01/2021-01-01/P1D',
+                                                        '2021-02-01/2021-03-01/P1D',
+                                                        '2021-04-01/2021-05-01/P1D'])
+        ]
+        # Add first two layers to redis using unsorted set
+        seed_redis_data_oe_utils(test_layers, zset=False)
+        
+        filtered_layer = test_layers[1][0]
+
+        # Run the command
+        convert_cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_periods_key_converter.py -r {0} -t zset -l {1}".format('localhost', filtered_layer)
+        run_command(convert_cmd)
+
+        # Ensure that only the filtered period was converted
+        req = requests.get(self.date_service_url)
+        res = req.json()
+        for layer in test_layers:
+            # Only
+            if layer[0] == filtered_layer:
+                self.assertEqual(r.type("layer:{}:periods".format(layer[0])), b'zset')
+            else:
+                self.assertEqual(r.type("layer:{}:periods".format(layer[0])), b'set')
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers after running command {1}'.format(layer[0], convert_cmd))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "periods" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer)
+
     
     @classmethod
     def tearDownClass(self):
