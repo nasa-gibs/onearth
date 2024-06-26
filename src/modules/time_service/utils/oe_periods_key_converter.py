@@ -42,8 +42,7 @@ def convert_keys(redis_uri, redis_port, dest_type, layer_filter, verbose):
                 for period in r.sscan_iter(key):
                     r.zadd(key_temp, {period: 0})
                 # Replace the existing unsorted set :periods key with the new zset key and delete the temp key
-                r.copy(key_temp, key, replace=True)
-                r.delete(key_temp)
+                r.rename(key_temp, key)
                 converted += 1
     
     # Convert sorted sets to unsorted sets
@@ -60,8 +59,7 @@ def convert_keys(redis_uri, redis_port, dest_type, layer_filter, verbose):
                 for period in r.zscan_iter(key):
                     r.sadd(key_temp, period[0])
                 # Replace the existing sorted zset :periods key with the new set key and delete the temp key
-                r.copy(key_temp, key, replace=True)
-                r.delete(key_temp)
+                r.rename(key_temp, key)
                 converted += 1
     
     else:
