@@ -469,8 +469,7 @@ abstract: test_brunsli_jpg abstract
 best_layer: test_brunsli_jpg
 layer_id: test_brunsli_jpg
 layer_name: test_brunsli_jpg tileset
-layer_title: b'Air Mass (ABI, GOES-East)'
-metadata: []
+layer_title: test_brunsli
 mime_type: image/x-j
 projection: EPSG:4326
 source_mrf:
@@ -483,10 +482,9 @@ source_mrf:
   size_y: 10240
   tile_size_x: 512
   tile_size_y: 512
-  year_dir: true
-static: false
+  year_dir: false
+static: true
 tilematrixset: 2km
-tilematrixset_limits_id: goes-east-2km
 ```
 
 See [docker/sample_configs/layers](../docker/sample_configs/layers) for more samples.

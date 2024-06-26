@@ -282,6 +282,19 @@
         </MetadataURL>
     </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>test_brunsli_jpg</Name>
+        <Title>test_brunsli_jpg</Title>
+        <SRS>EPSG:4326</SRS>
+        <SRS>EPSG:3857</SRS>
+        <LatLonBoundingBox minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
+        <BoundingBox SRS="EPSG:4326"
+                    minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=test_brunsli_jpg"/>
+        </MetadataURL>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
         <Name>test_legacy_subdaily_jpg</Name>
         <Title>test_legacy_subdaily_jpg</Title>
         <SRS>EPSG:4326</SRS>
