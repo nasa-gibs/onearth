@@ -285,6 +285,14 @@ On the config for the best layer there will be a:
 On the config of each of actual layers that make up the best layer, there will be a:
  - `best_layer:` points to the virtual best layer. The presence of this config will generate a best_layer key in redis. The presence of a best_layer key tells ingest and and oe-redis-update that this layer is a used by a best layer, and to call best.lua to update the virtual layer. Sample configs are show below.
 
+#### BRUNSLI
+
+Brunsli, a JPEG repacking library, is being used to decrease file size (~22%) of 
+JPEG layers. The mod_brunsli APACHE filter is used to convert 
+detected brunsli-compressed JPEG layers back to .jpg format. Brunsli can be 
+toggled on and off via the 'use_brunsli' flag in mrfgen.py. A sample 
+configuration layer configuration is included at the end of the file. 
+
 ### Optional for Time Service
 ```
 time_config: Custom time period configuration for layer
@@ -453,6 +461,32 @@ tilematrixset_limits_id: goes-east-1km
 time_config:
 - DETECT/PT10M
 wms_layer_group: /Geostationary
+```
+
+Sample brunsli layer configuration:
+```
+abstract: test_brunsli_jpg abstract
+best_layer: test_brunsli_jpg
+layer_id: test_brunsli_jpg
+layer_name: test_brunsli_jpg tileset
+layer_title: b'Air Mass (ABI, GOES-East)'
+metadata: []
+mime_type: image/x-j
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
+  idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: true
+static: false
+tilematrixset: 2km
+tilematrixset_limits_id: goes-east-2km
 ```
 
 See [docker/sample_configs/layers](../docker/sample_configs/layers) for more samples.
