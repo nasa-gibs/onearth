@@ -97,6 +97,9 @@ local function getExtensionFromMimeType(mimeType)
     if mimeType == "image/lerc" then
         return ".lerc"
     end
+    if mimeType == "image/x-j" then
+        return ".jpeg"
+    end
     if mimeType == "application/x-protobuf;type=mapbox-vector" then
         return ".pbf"
     end
