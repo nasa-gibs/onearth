@@ -78,10 +78,14 @@ def seed_redis_data(layers, db_keys=None, optional_args=None):
     with open('periods.lua', 'r') as f:
         lua_script = f.read()
     date_script = r.register_script(lua_script)
-    if optional_args is not None:
-        date_script(keys=['{0}layer:{1}'.format(db_keystring, layers[0][0])], args=optional_args)
-    else:
-        date_script(keys=['{0}layer:{1}'.format(db_keystring, layers[0][0])])
+    seen_layers = []
+    for layer in layers:
+        if layer[0] not in seen_layers:
+            seen_layers.append(layer[0])
+            if optional_args is not None:
+                date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])], args=optional_args)
+            else:
+                date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])])
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -1648,24 +1652,34 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_keep_existing_periods_unsorted_set(self):
         # Test adding to an existing periods key that uses an unsorted set
-        test_layers = [('Test_Keep_Existing_Periods_Unsorted_Set', '2019-01-15',
-                        ['2017-01-01/2018-01-01/P1D', '2019-01-15/2019-01-15/P1D'])]
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        # "Existing" periods for each layer
+        existing_test_layers = [('Test_Keep_Existing_Periods_Unsorted_Set', '2018-01-01',
+                        ['2017-01-01/2018-01-01/P1D']),
+                        ('Test_Keep_Existing_Periods_Sorted_Set', '2018-01-01',
+                        ['2017-01-01/2018-01-01/P1D'])]
 
         db_keys = ['epsg4326']
         config = 'DETECT/P1D'
-        add_redis_config(test_layers, db_keys, config)
+        add_redis_config(existing_test_layers, db_keys, config)
 
-        # manually add periods as unsorted set
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        db_keystring = ''
-        r.sadd('{0}:layer:{1}:periods'.format(db_keys[0], test_layers[0][0]),
-                   '2017-01-01/2018-01-01/P1D')
+        # manually add periods as an unsorted set without periods.lua
+        seed_redis_data_oe_utils(existing_test_layers[:1], db_keys=db_keys, zset=False)
+        # manually add periods as a sorted set without periods.lua
+        seed_redis_data_oe_utils(existing_test_layers[1:], db_keys=db_keys, zset=True)
+        
+        # New periods for each layer
+        test_layers = [('Test_Keep_Existing_Periods_Unsorted_Set', '2019-01-15',
+                        ['2017-01-01/2018-01-01/P1D', '2019-01-15/2019-01-15/P1D'], b'set'),
+                        ('Test_Keep_Existing_Periods_Sorted_Set', '2019-01-15',
+                        ['2017-01-01/2018-01-01/P1D', '2019-01-15/2019-01-15/P1D'], b'zset')]
 
         # run periods.lua with keep_existing_periods
         seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', 'false', 'false', 'true'])
-        r = requests.get(self.date_service_url + 'key1=epsg4326')
-        res = r.json()
+        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = req.json()
         for layer in test_layers:
+            self.assertEqual(r.type("epsg4326:layer:{}:periods".format(layer[0])), layer[3])
             layer_res = res.get(layer[0])
             self.assertIsNotNone(
                 layer_res,
@@ -1673,7 +1687,7 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[2], layer_res['periods'],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
-                .format(layer[0], layer[2], layer_res['periods']))
+                .format(layer[0], layer_res['periods'], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
