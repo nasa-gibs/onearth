@@ -303,11 +303,14 @@ local function redis_handler (options)
         end
         if layer_name then
             if snap_date_string then
-                local best_layer_name = client:hget(prefix_string .. "layer:" .. layer_name .. ":best", snap_date_string)
-                if best_layer_name then
+                local best_key = prefix_string .. "layer:" .. layer_name .. ":best"
+                local best_layer_name = client:hget(best_key, snap_date_string)
+                if best_layer_name then -- The query is a best layer and we find a source layer for the date
                     returnValue = best_layer_name
-                else
+                elseif not client:exists(best_key) then -- The query is for a source layer
                     returnValue = layer_name
+                else -- The query is for a best layer and we do not find a source layer for the date
+                    returnValue = {err_msg = "No data for date"}
                 end
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
@@ -467,26 +470,30 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         local snap_date, _ = time_snap(req_date, layer_datetime_info[layer_name].periods, true)
 
         -- Return snap date and error if none is found
+        local out_msg
         if snap_date then
             local snap_date_string = snap_date:fmt(datetime_format)
 
             -- Use "best" layer name if exists, otherwise just use layer_name
             local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, snap_date_string)
-            local out_msg = {
-                prefix = best_layer_name,
-                date = snap_date_string,
-                filename = filename_handler(best_layer_name, snap_date)}
-            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
-            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(out_msg))
+            if best_layer_name['err_msg'] then -- The query is for a best layer that has no source layer for that date
+                out_msg = {
+                    err_msg = "Date out of range"
+                }
+            else
+                out_msg = {
+                    prefix = best_layer_name,
+                    date = snap_date_string,
+                    filename = filename_handler(best_layer_name, snap_date)}
+            end
         else
-            local out_msg = {
+            out_msg = {
                 err_msg = "Date out of range"
             }
-            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
-            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(out_msg))
         end
+        -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+        print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
+        return send_response(200, JSON:encode(out_msg))
     end
 end
 return onearthTimeService

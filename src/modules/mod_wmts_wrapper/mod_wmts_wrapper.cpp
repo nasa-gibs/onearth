@@ -822,17 +822,22 @@ static int pre_hook(request_rec *r)
                     if (cfg->year_dir)
                         out_cfg->idx.name = (char *)find_and_replace_string(r->pool, "${YYYY}", out_cfg->idx.name, year);
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_onearth_handle, mrf_config_idx_name=%s", out_cfg->idx.name);
-                    ap_set_module_config(r->request_config, mrf_module, out_cfg);
-                    // Add to response header
-                    if (filename) {
-                        const char *actual_layer_name = get_actual_layername_from_filename(r->pool, filename);
-                        apr_table_set(r->notes, "Layer-Identifier-Actual", actual_layer_name);
-                    }
-                    if (datetime_str) {
-                        apr_table_set(r->notes, "Layer-Time-Request", datetime_str);
-                    }
-                    if (date_string) {
-                        apr_table_set(r->notes, "Layer-Time-Actual", date_string);
+                    // Check that idx exists
+                    if ( access( out_cfg->idx.name, F_OK ) != -1 ) {
+                        ap_set_module_config(r->request_config, mrf_module, out_cfg);
+                        // Add to response header
+                        if (filename) {
+                            const char *actual_layer_name = get_actual_layername_from_filename(r->pool, filename);
+                            apr_table_set(r->notes, "Layer-Identifier-Actual", actual_layer_name);
+                        }
+                        if (datetime_str) {
+                            apr_table_set(r->notes, "Layer-Time-Request", datetime_str);
+                        }
+                        if (date_string) {
+                            apr_table_set(r->notes, "Layer-Time-Actual", date_string);
+                        }
+                    } else {
+                        wmts_errors[errors++] = wmts_make_error(400, "InvalidParameterValue", "TIME", "The requested TIME does not exist for this layer");
                     }
                 }
             } else {
