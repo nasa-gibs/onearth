@@ -303,14 +303,11 @@ local function redis_handler (options)
         end
         if layer_name then
             if snap_date_string then
-                local best_key = prefix_string .. "layer:" .. layer_name .. ":best"
-                local best_layer_name = client:hget(best_key, snap_date_string)
-                if best_layer_name then -- The query is a best layer and we find a source layer for the date
+                local best_layer_name = client:hget(prefix_string .. "layer:" .. layer_name .. ":best", snap_date_string)
+                if best_layer_name then
                     returnValue = best_layer_name
-                elseif not client:exists(best_key) then -- The query is for a source layer
+                else
                     returnValue = layer_name
-                else -- The query is for a best layer and we do not find a source layer for the date
-                    returnValue = {err_msg = "No data for date"}
                 end
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
@@ -476,16 +473,10 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
 
             -- Use "best" layer name if exists, otherwise just use layer_name
             local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, snap_date_string)
-            if best_layer_name['err_msg'] then -- The query is for a best layer that has no source layer for that date
-                out_msg = {
-                    err_msg = "Date out of range"
-                }
-            else
-                out_msg = {
-                    prefix = best_layer_name,
-                    date = snap_date_string,
-                    filename = filename_handler(best_layer_name, snap_date)}
-            end
+            out_msg = {
+                prefix = best_layer_name,
+                date = snap_date_string,
+                filename = filename_handler(best_layer_name, snap_date)}
         else
             out_msg = {
                 err_msg = "Date out of range"
