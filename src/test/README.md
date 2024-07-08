@@ -169,21 +169,23 @@ Each test script will output a JUnit XML results file. By default, these files a
 ## vectorgen Tests:
 1. MVT MRF generation from single shapefile
 2. MVT MRF generation from single GeoJSON
-3. MVT MRF generation from multiple shapefiles
-4. MVT MRF generation from multiple GeoJSON
-5. MVT MRF generation with specified overview levels
-6. MVT MRF generation with specified feature reduce rate
-7. MVT MRF generation with specified cluster reduce rate
-8. MVT MRF generation with feature filters
-9. MVT MRF generation with overview filters
-10. Shapefile generation from single GeoJSON 
-11. Shapefile generation with differing `<target_epsg>` and `<source_epsg>`
-12. Cloud-optimized shapefile generation using `<cloud_optimized_shapefile>`
-13. GeoJSON generation from single GeoJSON
-14. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
-15. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
-16. Shapefile generation from multiple shapefiles (not in use: commented out)
-17. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>` (not in use: commented out)
+3. MVT MRF generation from single GeoJSON with polygon features
+4. MVT MRF generation from multiple shapefiles
+5. MVT MRF generation from multiple GeoJSON
+6. MVT MRF generation with specified overview levels
+7. MVT MRF generation with specified feature reduce rate
+8. MVT MRF generation with specified cluster reduce rate
+9. MVT MRF generation with feature filters
+10. MVT MRF generation with overview filters
+11. Shapefile generation from single GeoJSON 
+12. Shapefile generation from single GeoJSON with polygon features
+13. Shapefile generation with differing `<target_epsg>` and `<source_epsg>`
+14. Cloud-optimized shapefile generation using `<cloud_optimized_shapefile>`
+15. GeoJSON generation from single GeoJSON
+16. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
+17. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
+18. Shapefile generation from multiple shapefiles (not in use: commented out)
+19. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>` (not in use: commented out)
 
 
 

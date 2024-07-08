@@ -75,6 +75,7 @@ class TestVectorgen(unittest.TestCase):
         # Set config files for individual tests
         self.mrf_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf.xml')
         self.mrf_from_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_from_geojson.xml')
+        self.mrf_from_polygon_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_from_polygon_geojson.xml')
         self.mrf_multiple_shp_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_multiple_shp.xml')
         self.mrf_multiple_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_multiple_geojson.xml')
         self.mrf_overview_levels_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_overview_levels.xml')
@@ -83,6 +84,7 @@ class TestVectorgen(unittest.TestCase):
         self.mrf_feature_filters_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_feature_filters.xml')
         self.mrf_overview_filters_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_mvt_mrf_overview_filters.xml')
         self.shapefile_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile.xml')
+        self.shapefile_polygons_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_polygons.xml')
         self.shapefile_diff_proj_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_diff_proj.xml')
         self.geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_geojson.xml')
         self.shapefile_mult_geojson_test_config = os.path.join(self.test_data_path, 'vectorgen_test_create_shapefile_multiple_geojson.xml')
@@ -253,6 +255,49 @@ class TestVectorgen(unittest.TestCase):
         prevdir = os.getcwd()
         os.chdir(test_artifact_path)
         cmd = 'oe_vectorgen -c ' + self.mrf_from_geojson_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Get index of first, second-to-last, and last tile in MRF
+        with open(os.path.join(config['output_dir'], config['prefix'] + '.idx'), 'rb') as idx:
+            first_byte = idx.read(16)
+            idx.seek(-32, 2)
+            penultimate_byte = idx.read(16)
+            last_byte = idx.read(16)
+        top_tile_feature_count = 0
+        for byte in (first_byte, penultimate_byte, last_byte):
+            tile_buffer = io.BytesIO()
+            offset = struct.unpack('>q', byte[0:8])[0]
+            size = struct.unpack('>q', byte[8:16])[0]
+            with open(os.path.join(config['output_dir'], config['prefix'] + '.pvt'), 'rb') as pvt:
+                pvt.seek(offset)
+                tile_buffer.write(pvt.read(size))
+            tile_buffer.seek(0)
+            # Check to see if extracted files are valid zip files and valid MVT tiles
+            try:
+                unzipped_tile = gzip.GzipFile(fileobj=tile_buffer)
+                tile_data = unzipped_tile.read()
+            except IOError:
+                self.fail("Invalid tile found in MRF -- can't be unzipped.")
+            try:
+                tile = mapbox_vector_tile.decode(tile_data)
+            except:
+                self.fail("Can't decode MVT tile -- bad protobuffer or wrong MVT structure")
+            # Check the top 2 tiles to see if they have any features (they should)
+            if byte != first_byte:
+                top_tile_feature_count += len(tile[list(tile.keys())[0]]['features'])
+        self.assertTrue(top_tile_feature_count, "Top two files contain no features -- MRF likely was not created correctly.")
+
+    # Tests that tiles from the MRF are valid gzipped MVT tiles when the source is a geojson with polygons. Alerts if the overview tiles contain no features.
+    def test_MVT_MRF_generation_from_polygon_geojson(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'mvt_mrf_from_polygon_geojson')
+        config = self.parse_vector_config(self.mrf_from_polygon_geojson_test_config, test_artifact_path)
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.mrf_from_polygon_geojson_test_config
         run_command(cmd, ignore_warnings=True)
         os.chdir(prevdir)
 
@@ -648,6 +693,37 @@ class TestVectorgen(unittest.TestCase):
         prevdir = os.getcwd()
         os.chdir(test_artifact_path)
         cmd = 'oe_vectorgen -c ' + self.shapefile_test_config
+        run_command(cmd, ignore_warnings=True)
+        os.chdir(prevdir)
+
+        # Check the output
+        output_file = os.path.join(config['output_dir'], config['prefix'] + '.shp')
+        try:
+            with fiona.open(output_file) as shapefile:
+                self.assertEqual(origin_num_features, len(list(shapefile)),
+                                 "Feature count between input GeoJSON {0} and output shapefile {1} differs. There is a problem with the conversion process."
+                                 .format(config['input_files'][0], output_file))
+        except IOError:
+            self.fail("Expected output shapefile {0} doesn't appear to have been created.".format(output_file))
+        except fiona.errors.FionaValueError:
+            self.fail("Bad output shapefile {0}.".format(output_file))
+
+    def test_shapefile_generation_polygons(self):
+        # Process config file
+        test_artifact_path = os.path.join(self.main_artifact_path, 'shapefiles_polygons')
+        config = self.parse_vector_config(self.shapefile_polygons_test_config, test_artifact_path)
+
+        # Open input shapefile and get stats
+        try:
+            with fiona.open(config['input_files'][0]) as geojson:
+                origin_num_features = len(list(geojson))
+        except fiona.errors.FionaValueError:
+            self.fail("Can't open input geojson {0}. Make sure it's valid.".format(config['input_files'][0]))
+        
+        # Run vectorgen
+        prevdir = os.getcwd()
+        os.chdir(test_artifact_path)
+        cmd = 'oe_vectorgen -c ' + self.shapefile_polygons_test_config
         run_command(cmd, ignore_warnings=True)
         os.chdir(prevdir)
 
