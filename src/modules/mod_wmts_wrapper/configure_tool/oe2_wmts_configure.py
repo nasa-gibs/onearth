@@ -175,7 +175,7 @@ MIME_TO_EXTENSION = {
     'image/png': '.png',
     'image/jpeg': '.jpg',
     'image/tiff': '.tiff',
-    'image/lerc': '.lerc',
+    'image/lerc': '.lrc',
     'application/x-protobuf;type=mapbox-vector': '.pbf',
     'application/vnd.mapbox-vector-tile': '.mvt'
 }

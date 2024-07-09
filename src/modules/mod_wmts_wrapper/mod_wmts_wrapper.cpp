@@ -176,7 +176,7 @@ int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
     }
 
     if (apr_strnatcasecmp(cfg->mime_type, "image/lerc") == 0) {
-        return (apr_strnatcasecmp(".lerc", extension) == 0);
+        return (apr_strnatcasecmp(".lrc", extension) == 0);
     }
     return NULL;
 }
@@ -461,7 +461,7 @@ static int handleKvP(request_rec *r)
             } else if (apr_strnatcasecmp(param, "image/tiff") == 0) {
                 format = ".tiff";
             } else if (apr_strnatcasecmp(param, "image/lerc") == 0) {
-                format = ".lerc";
+                format = ".lrc";
             } else if (apr_strnatcasecmp(param, "application/vnd.mapbox-vector-tile") == 0) {
                 format = ".mvt";
             } else {
