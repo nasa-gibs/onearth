@@ -1536,7 +1536,7 @@ else:
     try:
         quality_prec = get_dom_tag_value(dom, 'quality_prec')
     except:
-        if mrf_compression_type.lower() == 'lrc':
+        if mrf_compression_type.lower() in ['lrc', 'lerc']:
             quality_prec = '0.001' # default to standard floating point precision if LERC
         else:
             quality_prec = '80' # default to 80 quality for everything else
@@ -1782,7 +1782,7 @@ else:
 
     # Verify that the empty tile image format is either PNG or JPEG.
     mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
-    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff' and mrf_empty_tile_what != 'lrc':
+    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff' and mrf_empty_tile_what != 'lrc' and mrf_empty_tile_what != 'lerc':
         mssg='Empty tile image format must be either png, jpeg, tiff, or lrc (lerc).'
         log_sig_exit('ERROR', mssg, sigevent_url)
 
@@ -2365,7 +2365,7 @@ def get_extension(compression_type):
         return "pjg"
     elif compression_type in ['TIF', 'TIFF']:
         return "ptf"
-    elif compression_type == 'LERC':
+    elif compression_type in ['LRC', 'LERC']:
         return "lrc"
     else:
         return None
@@ -2386,7 +2386,7 @@ elif mrf_compression_type in ['JPG', 'JPEG', 'ZEN']:
 elif mrf_compression_type in ['TIF', 'TIFF']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.ptf'])
-elif mrf_compression_type == 'LERC':
+elif mrf_compression_type in ['LRC', 'LERC']:
     # Output filename.
     out_filename=str().join([output_dir, basename, '.lrc'])
 else:
@@ -2613,7 +2613,7 @@ elif mrf_compression_type == 'ZEN':
     compress=str('COMPRESS=JPEG')
 elif mrf_compression_type == 'TIFF' or mrf_compression_type == 'TIF':
     compress=str('COMPRESS=TIF')
-elif mrf_compression_type == 'LERC':
+elif mrf_compression_type == 'LERC' or mrf_compression_type == 'LRC':
     compress=str('COMPRESS=LERC')
 else:
     mssg='Unrecognized compression type for MRF.'
