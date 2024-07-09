@@ -184,7 +184,7 @@ MIME_TO_MRF_EXTENSION = {
     'image/png': '.ppg',
     'image/jpeg': '.pjg',
     'image/tiff': '.ptf',
-    'image/lerc': '.lerc',
+    'image/lerc': '.lrc',
     'application/x-protobuf;type=mapbox-vector': '.pvt',
     'application/vnd.mapbox-vector-tile': '.pvt'
 }
