@@ -1536,7 +1536,7 @@ else:
     try:
         quality_prec = get_dom_tag_value(dom, 'quality_prec')
     except:
-        if mrf_compression_type.lower() == 'lerc':
+        if mrf_compression_type.lower() == 'lrc':
             quality_prec = '0.001' # default to standard floating point precision if LERC
         else:
             quality_prec = '80' # default to 80 quality for everything else
@@ -1782,8 +1782,8 @@ else:
 
     # Verify that the empty tile image format is either PNG or JPEG.
     mrf_empty_tile_what=imghdr.what(mrf_empty_tile_filename)
-    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff' and mrf_empty_tile_what != 'lerc':
-        mssg='Empty tile image format must be either png, jpeg, tiff, or lerc.'
+    if mrf_empty_tile_what != 'png' and mrf_empty_tile_what != 'jpeg' and mrf_empty_tile_what != 'tiff' and mrf_empty_tile_what != 'lrc':
+        mssg='Empty tile image format must be either png, jpeg, tiff, or lrc (lerc).'
         log_sig_exit('ERROR', mssg, sigevent_url)
 
     # Verify that the empty tile matches MRF compression type.
