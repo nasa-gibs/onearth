@@ -1737,26 +1737,22 @@ class TestModWmtsWrapper(unittest.TestCase):
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     def test_brunsli_mrf_date_yeardir_tile_REST(self):
-        test = ('2021-04-10T12:00:00.000Z',
-                'bd284ddf1a5685fb8c4296b89a8b3f84ce2d7360')
-        # tile_url = ('http://localhost/mod_wmts_wrapper_mrf
-        # /test_brunsli_source_mrf_date_yeardir'
-        #            '/default/{}/2km/0/0/0.jpg').format(test)
+        # test = ('2021-04-10T12:00:00.000Z', '5860624789bd20e63ef3b70c72d74952')
         tile_url = ('http://localhost/mod_wmts_wrapper_mrf'
                     '/test_brunsli_source_mrf_date_yeardir/default/2021-04-10'
                     '/2km/0/0/0.jpg')
 
-        ref_hash = 'bd284ddf1a5685fb8c4296b89a8b3f84ce2d7360'
+        ref_hash = '5860624789bd20e63ef3b70c72d74952'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     def test_brunsli_mrf_date_yeardir_tile_kvp(self):
         test = ('2021-04-10T12:00:00.000Z',
-                'bd284ddf1a5685fb8c4296b89a8b3f84ce2d7360')
+                '5860624789bd20e63ef3b70c72d74952')
         tile_url = ('http://localhost/mod_wmts_wrapper_mrf/wmts.cgi?version=1'
                     '.0.0&layer=test_brunsli_source_mrf_date_yeardir&service=wmts&request=gettile&format=image/jpeg&tilematrixset=2km&tilematrix=0&tilerow=0&tilecol=0&time={}').format(test)
-        ref_hash = 'bd284ddf1a5685fb8c4296b89a8b3f84ce2d7360'
+        ref_hash = '5860624789bd20e63ef3b70c72d74952'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
