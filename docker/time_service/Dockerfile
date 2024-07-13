@@ -36,7 +36,8 @@ RUN luarocks make onearth_time_service-0.1-2.rockspec
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
-    cp cors.conf /etc/httpd/conf.d/
+    cp cors.conf /etc/httpd/conf.d/ && \
+    cp ./time_service/cache.conf /etc/httpd/conf.d/
 WORKDIR /home/oe2/onearth/docker/time_service
 
 # Install layer configuration tools
