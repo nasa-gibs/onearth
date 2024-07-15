@@ -2,9 +2,8 @@
 import argparse
 import dataclasses
 import re
-from typing import List, Optional, TypeVar
+from typing import List, Optional
 from xml.dom import minidom
-T = TypeVar("T")
 
 
 class XmlParseError(Exception):
@@ -112,6 +111,8 @@ def parseColorMapElement(
     :param outUnits: The unit of the output colormap, if specified.
     :return: A str containing the parsed colormap entries in GDAL txt format.
     '''
+    # TO DO: Consider reading the title attribute from the element and using that to decide outUnits.
+
     cmapEntryNodes: List[minidom.Element] = colorMapElement.getElementsByTagName("ColorMapEntry")
     if len(cmapEntryNodes) == 0:
         raise XmlParseError(f"No elements called \"ColorMapEntry\" were found in the document.")
