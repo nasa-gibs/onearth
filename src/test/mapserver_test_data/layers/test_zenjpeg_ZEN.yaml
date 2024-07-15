@@ -17,7 +17,7 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   year_dir: true
-copy_periods:
+copy_dates:
  - test_zenjpeg
 static: false
 hidden: true

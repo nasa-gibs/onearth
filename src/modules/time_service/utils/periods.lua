@@ -686,23 +686,22 @@ if ARGV[4] ~= nil and ARGV[4] ~= "false" then
   keep_existing_periods = true
 end
 
--- Copy the periods to the layers listed in copy_periods, if applicable.
+-- Copy the new date and periods to the layer specified by copy_dates, if applicable.
 -- Relevant for ZenJPEG layers.
-repeat
-  local scan = redis.call("SSCAN", KEYS[1] .. ":copy_periods", cursor)
-  for _, value in ipairs(scan[2]) do
-    table.insert(layer_keys, layerPrefix .. value)
-  end
-  cursor = scan[1]
-until cursor == "0"
+local copy_layer = redis.call("GET", KEYS[1] .. ":copy_dates")
+if copy_layer then
+  table.insert(layer_keys, layerPrefix .. copy_layer)
+end
 
 -- GITC mod: Add new date and only update if there was a change
 if ARGV[1] ~= nil and ARGV[1] ~= "false" then
   local result = 0
   if ARGV[1]:match("(%d+)-(%d+)-(%d+)") then
-    result = redis.call("ZADD", KEYS[1] .. ":dates", 0, ARGV[1])
-    if KEYS[2] == "true" then
-      result = redis.call("ZADD", KEYS[1] .. ":expiration", 0, ARGV[1])
+    for _, key in ipairs(layer_keys) do
+      result = redis.call("ZADD", key .. ":dates", 0, ARGV[1])
+      if KEYS[2] == "true" then
+        result = redis.call("ZADD", key .. ":expiration", 0, ARGV[1])
+      end
     end
   end
   if result == 0 then
