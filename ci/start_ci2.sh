@@ -100,6 +100,12 @@ sleep 2
 /usr/bin/redis-cli  -n 0 DEL layer:snap_test_year_boundary
 /usr/bin/redis-cli  -n 0 SET layer:snap_test_year_boundary:default "2000-09-03"
 /usr/bin/redis-cli  -n 0 ZADD layer:snap_test_year_boundary:periods 0 "2000-09-03/2000-09-03/P144D"
+/usr/bin/redis-cli  -n 0 DEL layer:GRUMP_Settlements_v1.01_STD
+/usr/bin/redis-cli  -n 0 SET layer:GRUMP_Settlements_v1.01_STD:default "2899-12-31"
+/usr/bin/redis-cli  -n 0 ZADD layer:GRUMP_Settlements_v1.01_STD:periods 0 "1900-01-01/2899-12-31/P1000Y"
+/usr/bin/redis-cli  -n 0 DEL layer:GRUMP_Settlements
+/usr/bin/redis-cli  -n 0 SET layer:GRUMP_Settlements:default "2899-12-31"
+/usr/bin/redis-cli  -n 0 ZADD layer:GRUMP_Settlements:periods 0 "1900-01-01/2899-12-31/P1000Y"
 # Load oe-status data
 /usr/bin/redis-cli -n 0 DEL layer:Raster_Status
 /usr/bin/redis-cli -n 0 SET layer:Raster_Status:default "2004-08-01"

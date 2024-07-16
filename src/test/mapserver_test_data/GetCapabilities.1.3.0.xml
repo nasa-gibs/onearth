@@ -282,6 +282,46 @@
           <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=Raster_Status"/>
         </MetadataURL>
     </Layer>
+    <Layer>
+      <Name>Settlements</Name>
+      <Title>Settlements</Title>
+      <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>GRUMP_Settlements</Name>
+        <Title>Settlements (Global Rural-Urban Mapping Project, Best Available)</Title>
+        <CRS>EPSG:4326</CRS>
+        <CRS>EPSG:3857</CRS>
+        <EX_GeographicBoundingBox>
+            <westBoundLongitude>-180.000000</westBoundLongitude>
+            <eastBoundLongitude>180.000000</eastBoundLongitude>
+            <southBoundLatitude>-90.000000</southBoundLatitude>
+            <northBoundLatitude>90.000000</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="EPSG:4326"
+                    minx="-90.000000" miny="-180.000000" maxx="90.000000" maxy="180.000000" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=GRUMP_Settlements"/>
+        </MetadataURL>
+      </Layer>
+    </Layer>
+    <Layer queryable="0" opaque="0" cascaded="0">
+        <Name>GRUMP_Settlements_v1.01_STD</Name>
+        <Title>Settlements (Global Rural-Urban Mapping Project, v1.01, Standard)</Title>
+        <CRS>EPSG:4326</CRS>
+        <CRS>EPSG:3857</CRS>
+        <EX_GeographicBoundingBox>
+            <westBoundLongitude>-180.000000</westBoundLongitude>
+            <eastBoundLongitude>180.000000</eastBoundLongitude>
+            <southBoundLatitude>-90.000000</southBoundLatitude>
+            <northBoundLatitude>90.000000</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="EPSG:4326"
+                    minx="-90.000000" miny="-180.000000" maxx="90.000000" maxy="180.000000" />
+        <MetadataURL type="TC211">
+          <Format>text/xml</Format>
+          <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wms/epsg4326/?request=GetMetadata&amp;layer=GRUMP_Settlements_v1.01_STD"/>
+        </MetadataURL>
+    </Layer>
     <Layer queryable="0" opaque="0" cascaded="0">
         <Name>snap_test_3a</Name>
         <Title>snap_test_3a</Title>

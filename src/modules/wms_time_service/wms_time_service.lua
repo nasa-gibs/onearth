@@ -206,13 +206,19 @@ function onearth_wms_time_service.handler(endpointConfig)
 
                     if time_service_output["date"] and time_service_output["prefix"] then
                         local year = string.sub(time_service_output["date"], 0, 4)
+                        -- 1900 and 2899 are special years for static best layers
+                        if year ~= "1900" and year ~= "2899" then
+                            year = year .. "%2F"
+                        else
+                            year = ""
+                        end
 
-                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year .. "%2F"
+                        layers_url = layers_url .. "&" .. layer .. "_PREFIX=" .. time_service_output["prefix"] .. "%2F" .. year
 
                         if string.find(layer, "OrbitTracks") then
                             -- Add Lines and Points layer PREFIXES also
-                            layers_url = layers_url .. "&" .. layer .. "_Lines_PREFIX=" .. time_service_output["prefix"] .. '_Lines' .. "%2F" .. year .. "%2F"
-                            layers_url = layers_url .. "&" .. layer .. "_Points_PREFIX=" .. time_service_output["prefix"] .. '_Points' .. "%2F" .. year .. "%2F"
+                            layers_url = layers_url .. "&" .. layer .. "_Lines_PREFIX=" .. time_service_output["prefix"] .. '_Lines' .. "%2F" .. year
+                            layers_url = layers_url .. "&" .. layer .. "_Points_PREFIX=" .. time_service_output["prefix"] .. '_Points' .. "%2F" .. year
                         end
                     end
 

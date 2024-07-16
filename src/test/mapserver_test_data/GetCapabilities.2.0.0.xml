@@ -306,6 +306,32 @@
       </ows:WGS84BoundingBox>
       <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=Vector_Status"/>
     </FeatureType>
+    <FeatureType>
+      <Name>ms:GRUMP_Settlements</Name>
+      <Title>GRUMP_Settlements</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+      </OutputFormats>
+      <!--WARNING: Optional WGS84BoundingBox could not be established for this layer.  Consider setting the EXTENT in the LAYER object, or wfs_extent metadata. Also check that your data exists in the DATA statement-->
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=GRUMP_Settlements"/>
+    </FeatureType>
+    <FeatureType>
+      <Name>ms:GRUMP_Settlements_v1.01_STD</Name>
+      <Title>GRUMP_Settlements_v1.01_STD</Title>
+      <DefaultCRS>urn:ogc:def:crs:EPSG::4326</DefaultCRS>
+      <OutputFormats>
+        <Format>application/gml+xml; version=3.2</Format>
+        <Format>text/xml; subtype=gml/3.2.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/2.1.2</Format>
+      </OutputFormats>
+      <!--WARNING: Optional WGS84BoundingBox could not be established for this layer.  Consider setting the EXTENT in the LAYER object, or wfs_extent metadata. Also check that your data exists in the DATA statement-->
+      <MetadataURL xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv?request=GetMetadata&amp;layer=GRUMP_Settlements_v1.01_STD"/>
+    </FeatureType>
   </FeatureTypeList>
   <fes:Filter_Capabilities>
     <fes:Conformance>
