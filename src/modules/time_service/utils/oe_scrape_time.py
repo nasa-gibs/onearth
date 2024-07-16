@@ -130,7 +130,7 @@ def keyMapper(acc, obj):
     year = keyElems[2]
     day = len(keyElems) == 4 and keyElems[3] or None
     filename = keyElems[-1]
-    if Path(filename).suffix not in ['.ppg', '.pjg', '.ptf', '.pvt', '.lerc']:
+    if Path(filename).suffix not in ['.ppg', '.pjg', '.ptf', '.pvt', '.lerc', '.lrc']:
         # ignore non-MRF data files
         return acc
 
