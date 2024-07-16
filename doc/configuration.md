@@ -260,15 +260,11 @@ convert_mrf:
   This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. convert_mrf must also be listed in the layer's "best" configuration file.
 
 ```
-copy_periods:
-  - layer_id
-  - layer_id
+copy_dates: layer_id
 ```
-  List the layer_id's of any layers that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, copy_periods option should be included in the source layer's layer configuration and should include the layer_id of the converted layer and the layer_id of the "best" layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_periods listing both the converted layer_id and the "best" layer_id:
+  The layer_id of a layers that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, the copy_dates option should be included in the source layer's layer configuration and should include the layer_id of the converted layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_dates:
 ```
-  copy_periods:
-    - GOES-East_ABI_GeoColor_v0_NRT
-    - GOES-East_ABI_GeoColor
+  copy_dates: GOES-East_ABI_GeoColor_v0_NRT
 ```
 ```
 hidden: true
@@ -384,9 +380,7 @@ source_mrf:
   year_dir: true
 static: false
 hidden: true
-copy_periods: 
-- GOES-East_ABI_GeoColor_v0_NRT
-- GOES-East_ABI_GeoColor
+copy_dates: GOES-East_ABI_GeoColor_v0_NRT
 tilematrixset: 1km
 tilematrixset_limits_id: goes-east-1km
 time_config:
