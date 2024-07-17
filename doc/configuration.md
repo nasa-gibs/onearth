@@ -262,7 +262,7 @@ convert_mrf:
 ```
 copy_dates: layer_id
 ```
-  The layer_id of a layers that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, the copy_dates option should be included in the source layer's layer configuration and should include the layer_id of the converted layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_dates:
+  The layer_id of a layer that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, the copy_dates option should be included in the source layer's layer configuration and should include the layer_id of the converted layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_dates:
 ```
   copy_dates: GOES-East_ABI_GeoColor_v0_NRT
 ```
