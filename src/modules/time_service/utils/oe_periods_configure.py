@@ -89,6 +89,7 @@ def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=Fal
 
         # add copy_dates to redis if this is a convert layer
         if 'copy_dates' in layer_config['config'].keys():
+            copy_destination = layer_config['config']['copy_dates']
             key_copy_dates = key + ':copy_dates'
             key_copy_dates_wm = key_copy_dates.replace('epsg4326', 'epsg3857')
 
