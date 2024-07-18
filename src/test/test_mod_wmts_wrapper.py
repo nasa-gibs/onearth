@@ -249,9 +249,9 @@ class TestModWmtsWrapper(unittest.TestCase):
         self.setup_mrf_date_yeardir()
         self.setup_mrf_reproject_nodate()
         self.setup_mrf_reproject_date()
+        self.setup_brunsli_source_mrf_date_yeardir()
         self.setup_zenjpeg_source_mrf_date_yeardir()
         self.setup_zenjpeg_convert_mrf_date_yeardir()
-        self.setup_brunsli_source_mrf_date_yeardir()
         restart_apache()
 
     @classmethod
@@ -751,6 +751,8 @@ class TestModWmtsWrapper(unittest.TestCase):
             self.endpoint_path, layer_path)
         self.mrf_url_date = '{}/{}/{}'.format(
             base_url, self.endpoint_prefix_mrf, config_prefix)
+        brunsli_handling_block = '\nHeader set Content-Type "image/jpeg"\n'
+        brunsli_handling_block += '        SetOutputFilter DBRUNSLI\n'
         apache_config = bulk_replace(
             MOD_MRF_DATE_APACHE_TEMPLATE,
             [('{config_path}',
@@ -761,7 +763,7 @@ class TestModWmtsWrapper(unittest.TestCase):
              ('{alias}', self.endpoint_prefix_mrf),
              ('{endpoint_path}', self.endpoint_path),
              ('{layer_name}', config_prefix),
-             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'On')])
+             ('{tilematrixset}', tilematrixset), ('{year_dir}', 'On' + brunsli_handling_block)])
 
         self.mod_mrf_brunsli_source_apache_config_path_date_yeardir = (
             os.path.join(
@@ -1737,25 +1739,26 @@ class TestModWmtsWrapper(unittest.TestCase):
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     def test_brunsli_mrf_date_yeardir_tile_REST(self):
-        # test = ('2021-04-10T12:00:00.000Z', '5860624789bd20e63ef3b70c72d74952')
         tile_url = ('http://localhost/mod_wmts_wrapper_mrf'
                     '/test_brunsli_source_mrf_date_yeardir/default/2021-04-10'
                     '/2km/0/0/0.jpg')
 
-        ref_hash = '5860624789bd20e63ef3b70c72d74952'
+        ref_hash = 'd2208e6494ef76b1ad36a58fb5339717'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
+        # check_tile_request_save(tile_url, ref_hash,
+        #                        "my_test_image_wmts_rest.jpg")
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     def test_brunsli_mrf_date_yeardir_tile_kvp(self):
-        test = ('2021-04-10T12:00:00.000Z',
-                '5860624789bd20e63ef3b70c72d74952')
-        tile_url = ('http://localhost/mod_wmts_wrapper_mrf/wmts.cgi?version=1'
-                    '.0.0&layer=test_brunsli_source_mrf_date_yeardir&service=wmts&request=gettile&format=image/jpeg&tilematrixset=2km&tilematrix=0&tilerow=0&tilecol=0&time={}').format(test)
-        ref_hash = '5860624789bd20e63ef3b70c72d74952'
+        test = ('2021-04-10T00:00:00.000Z', 'd2208e6494ef76b1ad36a58fb5339717')
+        tile_url = ('http://localhost/mod_wmts_wrapper_mrf/wmts.cgi?version=1.0.0&layer=test_brunsli_source_mrf_date_yeardir&service=wmts&request=gettile&format=image/jpeg&tilematrixset=2km&tilematrix=0&tilerow=0&tilecol=0&time={}').format(test[0])
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
-        self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
+        # ref_hash = 'd2208e6494ef76b1ad36a58fb5339717'
+        # check_tile_request_save(tile_url, ref_hash,
+        #                        "my_test_image_wmts_kvp.jpg")
+        self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
 
     @classmethod
     def tearDownClass(self):
@@ -1767,6 +1770,9 @@ class TestModWmtsWrapper(unittest.TestCase):
         os.remove(self.mod_reproj_apache_config_path_nodate)
         os.remove(self.date_service_apache_path)
         os.remove(self.base_apache_path)
+        os.remove(self.mod_mrf_brunsli_source_apache_config_path_date_yeardir)
+        os.remove(self.mod_mrf_zenjpeg_source_apache_config_path_date_yeardir)
+        os.remove(self.mod_mrf_zenjpeg_convert_apache_config_path_date_yeardir)
 
         for layer in self.redis_layers:
             remove_redis_layer(layer)
