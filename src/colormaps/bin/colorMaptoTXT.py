@@ -10,42 +10,35 @@ class XmlParseError(Exception):
     pass
 
 
-def converEntryValue(
+def convertEntryValue(
         entryValue: str,
-        sourceUnits: str,
-        outUnits: str) -> str:
+        scale: Optional[float],
+        offset: Optional[float]) -> str:
     '''
-    Using the units specified for this ColorMap, convert to the expected unit for the output colormap.
-    Currently only handles % -> decimal and °C <-> K.
+    Using a given scaleFactor and offset, convert the entryValue from its original value in the
+    colormap XML to the value that will be used in the text colormap.
 
     :param entryValue: A string containing a value that can be converted to a float.
-    :param sourceUnits: A string containing the unit parsed from the ColorMap tag.
-    :param outUnits: The assumed output unit, or one explicitly specified via an input argument.
+    :param scale: An optional float specifying the scale factor to multiply by the cmap values.
+    :param offset: An optional float specifying an amount to add to the cmap values.
+    :param offset: The assumed output unit, or one explicitly specified via an input argument.
     '''
-    convertedValue: str = entryValue
-    
-    if sourceUnits == "%":
-        # If the unit is %, convert the integer entryValue to a decimal.
-        convertedValue = f"{float(entryValue) / 100.0:.2f}"
-    elif sourceUnits == "°C" and outUnits == "K":
-        convertedValue = f"{float(entryValue) + 273.15:.2f}"
-    elif sourceUnits == "K" and (outUnits == "°C" or outUnits == "C" or outUnits == "degC"):
-        convertedValue = f"{float(entryValue) - 273.15:.2f}"
-    
-    return convertedValue
+    optionalScale: float = scale or 1.0
+    optionalOffset: float = offset or 0.0
+    return str(optionalScale * float(entryValue) + optionalOffset)
 
 def parseColorMapEntryElement(
         cmapEntryElement: minidom.Element,
-        sourceUnits: Optional[str],
-        outUnits: Optional[str]) -> str:
+        scale: Optional[float],
+        offset: Optional[float]) -> str:
     '''
     Parse a <ColorMapEntry> tag.
     TO DO: What are we supposed to with label attributes for Classification type colormaps?
 
     :param colorMapElement: A minidom.Element called "ColorMapEntry" that contains the required
     attributes "rgb" and "transparent" at a minimum.
-    :param sourceUnits: The unit of the sourceValue/value attributes of the ColorMapEntry tag.
-    :outUnits: The unit of the output colormap, if specified.
+    :param scale: An optional float specifying the scale factor to multiply by the cmap values.
+    :param offset: An optional float specifying an amount to add to the cmap values.
     :return: A single line str containing the parsed colormap entry in GDAL txt format.
     '''
     # Throw KeyError if any of these required attributes are not found in the <ColorMapEntry>
@@ -77,18 +70,20 @@ def parseColorMapEntryElement(
         # Where either number in the range can be a float, int, or +/-INF.
         lineValue: str = entryValue.strip("[]()").split(",")[0]
 
-        # Handle units
-        if sourceUnits is not None:
-            lineValue = converEntryValue(lineValue, sourceUnits, outUnits)
-
         # Handle INF: If the lower bound is -INF, use a value of -9999. This does not seem
         # robust, but is based off of the example outputs in layer-configs.
         if lineValue.upper() == "-INF":
-            # Note possible bug: if the other entries are floating point, this value may need .00 appended
             lineValue = "-9999"
         elif lineValue.upper() == "INF":
             # Technically this branch should never be reached, since the lower bound is always used.
             lineValue = "9999"
+        else:
+            # Handle units, idempotent if both scale and offset are None.
+            # Note that INF has to be handled first because this function casts to float.
+            lineValue = convertEntryValue(lineValue, scale, offset)
+
+        # Always represent floating point values with two decimal places. Causes -9999 to become -9999.00
+        lineValue = f"{float(lineValue):.2f}"
         
     lineRgb: str = entryRgb.replace(",", " ")
 
@@ -100,46 +95,58 @@ def parseColorMapEntryElement(
 
 def parseColorMapElement(
         colorMapElement: minidom.Element,
-        sourceUnits: Optional[str] = None,
-        outUnits: Optional[str] = None) -> str:
+        scale: Optional[float],
+        offset: Optional[float]) -> str:
     '''
     Parse a <ColorMap> tag.
 
     :param colorMapElement: A minidom.Element called "ColorMap" that contains <ColorMapEntry>
     tags as children (may not be direct children).
-    :param sourceUnits: The unit of the sourceValue/value attributes of the ColorMapEntry tags.
-    :param outUnits: The unit of the output colormap, if specified.
+    :param scale: An optional float specifying the scale factor to multiply by the cmap values.
+    :param offset: An optional float specifying an amount to add to the cmap values.
     :return: A str containing the parsed colormap entries in GDAL txt format.
     '''
-    # TO DO: Consider reading the title attribute from the element and using that to decide outUnits.
-
     cmapEntryNodes: List[minidom.Element] = colorMapElement.getElementsByTagName("ColorMapEntry")
     if len(cmapEntryNodes) == 0:
         raise XmlParseError(f"No elements called \"ColorMapEntry\" were found in the document.")
 
     cmapStr: str = ""
     for entryNode in cmapEntryNodes:
-        cmapStr += parseColorMapEntryElement(entryNode, sourceUnits, outUnits)
+        cmapStr += parseColorMapEntryElement(
+            entryNode,
+            scale,
+            offset
+        )
 
     return cmapStr
 
 
 def parseColorMapDoc(
         colormapFile: str,
-        outUnits: Optional[str]) -> str:
+        scale: Optional[str],
+        offset: Optional[str]) -> str:
     '''
     Parses input colormap XML document (a string referencing a filepath) using the xml.dom.minidom
     module and converts it to a text format. The text format has the following specification:
     [sourceValue] [red] [green] [blue] [<optional> alpha]
 
-    TO DO: How should multiple ColorMaps in the same file actually be handled? The No Data
+    NOTE: How should multiple ColorMaps in the same file actually be handled? The No Data
     ColorMap and a single other ColorMap are fine for this format, but the spec allows for
     multiple ColorMaps to exist in the same document. Currently the code appends them together.
 
     :param colormap_file: A string filepath to the colormap XML document input.
-    :param outUnits: An optional string specifying the units to use in the output colormap.
+    :param scale: An optional float specifying the scale factor to multiply by the cmap values.
+    :param offset: An optional float specifying an amount to add to the cmap values.
     :return: A string containing the parsed colormap information.
     '''
+    # Input sanitization
+    try:
+        parsedScale = float(scale) if scale is not None else None
+        parsedOffset = float(offset) if offset is not None else None
+    except ValueError as e:
+        print(f"Provided input parameters are invalid, scale: {scale}, offset: {offset}")
+        raise e
+
     doc: minidom.Document = minidom.parse(colormapFile)
     
     # Retrieve all <ColorMap> tags from the document, if none are found report a helpful error
@@ -153,15 +160,12 @@ def parseColorMapDoc(
     docStr: str = ""
     for cmapNode in colorMapNodes:
         # Units may or may not be present for any given ColorMap tag.
-        unitsAttr: Optional[minidom.Attr] = cmapNode.attributes.get("units")
-        if unitsAttr is None:
-            colorMapLines: str = parseColorMapElement(cmapNode)
-        else:
-            colorMapLines: str = parseColorMapElement(
-                cmapNode,
-                sourceUnits=unitsAttr.value,
-                outUnits=outUnits
-            )
+        #unitsAttr: Optional[minidom.Attr] = cmapNode.attributes.get("units")
+        colorMapLines: str = parseColorMapElement(
+            cmapNode,
+            parsedScale,
+            parsedOffset
+        )
 
         # Use this janky heuristic to decide if the parsed colormap was the nodata one.
         # The title attribute of the ColorMap tag also gives this information.
@@ -172,7 +176,9 @@ def parseColorMapDoc(
             docStr += colorMapLines
 
     # Remove trailing newline from final entry
-    return docStr.strip()
+    #return docStr.strip()
+    # Just kidding, don't strip trailing newline
+    return docStr
 
 
 def colorMapToTxt(
@@ -183,7 +189,7 @@ def colorMapToTxt(
     :param args: An argparse namespace containing the arguments from the CLI.
     :return: None, a .txt file representing the colormap information is created as a side effect.
     '''
-    colorMapText: str = parseColorMapDoc(args.c, args.u)
+    colorMapText: str = parseColorMapDoc(args.c, args.scale, args.offset)
     if args.o is None:
         print(colorMapText)
     else:
@@ -209,12 +215,16 @@ def cli() -> None:
         help="Path to colormap file to be converted."
     )
     parser.add_argument(
-        "-u",
-        metavar="unit",
-        help="Optionally specify the unit to use in the output colormap." + \
-             " C, K, °C, or degC are supported values. This is helpful" + \
-             " if you want to ensure that e.g., a Temperature Anomaly" + \
-             "colormap is in Celsius or a Temperature colormap is in K."
+        "--scale",
+        help="Optionally specify the scale factor for the output colormap." + \
+             " This can sometimes be found in the CMR variable metadata. For example," + \
+             " a colormap with percent units might need --scale 0.01 to appear correct."
+    )
+    parser.add_argument(
+        "--offset",
+        help="Optionally specify the offset for the output colormap." + \
+             " This can sometimes be found in the CMR variable metadata. For example," + \
+             " a colormap in units of degC might need --scale 273.15 to convert to Kelvin."
     )
     parser.add_argument(
         "-o",
