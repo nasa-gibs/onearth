@@ -1,6 +1,6 @@
 protobuf==4.21.12   # https://pypi.org/project/protobuf/
 wheel==0.40.0       # https://pypi.org/project/wheel/
-Fiona==1.9.4.post1  # https://pypi.org/project/Fiona/
+Fiona==1.10b2       # https://pypi.org/project/Fiona/
 formencode==2.0.1   # https://pypi.org/project/FormEncode/
 lxml==4.9.2         # https://pypi.org/project/lxml/
 mapbox-vector-tile==2.0.1     # https://pypi.org/project/mapbox-vector-tile/
