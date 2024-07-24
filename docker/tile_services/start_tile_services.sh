@@ -234,16 +234,16 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	# Add time metadata to Redis for sample data
   /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
   /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
-  /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:date_test:periods 0 "2015-01-01/2017-01-01/P1Y"
   /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
   /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
-  /usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
+  /usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:date_test_year_dir:periods 0 "2015-01-01/2017-01-01/P1Y"
 fi
 
 # Add Raster_Status time metadata to Redis for status
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:Raster_Status
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:Raster_Status:default "2004-08-01"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:Raster_Status:periods 0 "2004-08-01/2004-08-01/P1M"
 
 # Setup Apache extended server status
 if [ "$SERVER_STATUS" = true ]; then

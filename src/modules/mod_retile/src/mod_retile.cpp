@@ -358,7 +358,7 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
         ap_filter_t *rf = ap_add_output_filter("Receive", &rctx, rr, rr->connection);
 
         int rr_status = ap_run_sub_req(rr); // This returns http status, aka 404, 200
-        //int http_status = rr->status; // This is usually 200, is it ever 404?
+        int http_status = rr->status; // This is usually 200 or 404, such as when there's no data for a date
         ap_remove_output_filter(rf);
         // Capture the tag before nuking the subrequest
 
@@ -396,40 +396,41 @@ static apr_status_t retrieve_source(request_rec* r, work& info, void** buffer, i
                 return rr_status;
             continue; // Ignore not found errors, assume empty (zero)
         }
-
-        apr_uint64_t etag;
-        int empty_flag = 0;
-        if (nullptr != ETagIn) {
-            etag = base32decode(ETagIn, &empty_flag);
-            if (empty_flag) continue; // Ignore empty input tiles
-        }
-        else { // Input came without an ETag, make one up
-            etag = rctx.size; // Start with the input tile size
-            // And pick some data out of the input buffer, towards the end
-            if (rctx.size > 50) {
-                char *tptr = rctx.buffer + rctx.size - 24; // Temporary pointer
-                tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
-                etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
-                tptr = rctx.buffer + rctx.size - 35; // Temporary pointer
-                tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
-                etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
+        if (http_status != HTTP_NOT_FOUND) {
+            apr_uint64_t etag;
+            int empty_flag = 0;
+            if (nullptr != ETagIn) {
+                etag = base32decode(ETagIn, &empty_flag);
+                if (empty_flag) continue; // Ignore empty input tiles
             }
-        }
-        // Build up the outgoing ETag
-        etag_out = (etag_out << 8) | (0xff & (etag_out >> 56)); // Rotate existing tag
-        etag_out ^= etag; // And combine it with the incoming tile etag
+            else { // Input came without an ETag, make one up
+                etag = rctx.size; // Start with the input tile size
+                // And pick some data out of the input buffer, towards the end
+                if (rctx.size > 50) {
+                    char *tptr = rctx.buffer + rctx.size - 24; // Temporary pointer
+                    tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
+                    etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
+                    tptr = rctx.buffer + rctx.size - 35; // Temporary pointer
+                    tptr -= reinterpret_cast<apr_uint64_t>(tptr) % 8; // Make it 8 byte aligned
+                    etag ^= *reinterpret_cast<apr_uint64_t*>(tptr);
+                }
+            }
+            // Build up the outgoing ETag
+            etag_out = (etag_out << 8) | (0xff & (etag_out >> 56)); // Rotate existing tag
+            etag_out ^= etag; // And combine it with the incoming tile etag
 
-        storage_manager src = { rctx.buffer, rctx.size };
+            storage_manager src = { rctx.buffer, rctx.size };
 
-        const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
-        info.c->raster.format = params.raster.format;
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=CODEC format=%d", params.raster.format);
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin mrf_request, mrf_sub_url=%s size=%d", sub_uri,src.size);
-        if (error_message) { // Something went wrong
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
-            return HTTP_NOT_FOUND;
+            const char* error_message = stride_decode(params, src, b, ct, palette, trans, num_trans);
+            info.c->raster.format = params.raster.format;
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=CODEC format=%d", params.raster.format);
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin mrf_request, mrf_sub_url=%s size=%d", sub_uri,src.size);
+            if (error_message) { // Something went wrong
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s decode from :%s", error_message, sub_uri);
+                return HTTP_NOT_FOUND;
+            }
+            count++; // count the valid tiles
         }
-        count++; // count the valid tiles
     }
     
     ap_remove_output_filter(rf);

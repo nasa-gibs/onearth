@@ -51,49 +51,52 @@ Each test script will output a JUnit XML results file. By default, these files a
 --------
 ## Time Service Tests
 1. Tests that a request to timeservice without parameters will return all records
-2. Test time snap for P1Y layer (year)
-3. Test time snap for P7D layer (week)
-4. Test time snap for P1M layer (month)
-5. Test time snap for PT2H layer (hour)
-6. Test time snap for PT6M layer (minute)
-7. Test time snap for PT6M layer (second)
-8. Test invalid layer error
-9. Test invalid date error 
-10. Test out of range error for periods
-11. Test snap with single key parameter (key1)
-12. Test best layer to check filename, prefix, date
-13. Test snap with multiple key parameter (key1, key2, key3, etc)
-14. Test snapping to one of multiple periods
-15. Test requesting a static best layer
-16. Test the limit option to return the first *n* periods
-17. Test the limit option to return the last *n* periods
-18. Test the limit option to return the first *n* periods when *n* is larger than the number of periods
-19. Test the limit option to return the last *n* periods when *n* is larger than the number of periods
-20. Test the skip option to return periods after the first *s* periods
-21. Test that no periods are returned when the skip option is set to a number greater than the number of periods
-22. Test using the skip option together with a begin limit
-23. Test using the skip option with an end limit to skip the last *s* periods
-24. Test using the skip and limit options to return the *n* periods after *s* when *n* is larger than the number of periods
-25. Test using the skip and limit options to return the last *n* periods after *s* when *n* is larger than the number of periods
-26. Test requesting periods between start and end dates
-27. Test requesting periods between start and end dates when the start and end dates fall on the start and end bounds of existing periods, respectively.
-28. Test requesting periods between start and end dates when there is a single period
-29. Test requesting periods when there is a single period spanning a single day and the requested start date occurs before that day.
-29. Test requesting periods after a start date
-30. Test requesting periods before an end date
-31. Test requesting periods when there are no periods that fall between the start and end date range
-32. Test requesting periods when there are no periods at all for a layer
-33. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for, causing the start and end dates to be snapped to the next closest time within the periods
-34. Test requesting periods between subdaily start and end dates when the start and end dates are within subdaily periods but do not correspond to dates that data would exist for, causing the start and end dates to be snapped to the next closest time within the periods
-35. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
-36. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
-37. Test requesting periods when the start and end dates fall within a period but there exists no valid dates between the start and end dates
-38. Test requesting periods for all layers between start and end dates
-39. Test requesting periods for all layers while using the limit option to return the first *n* periods
-40. Test requesting periods for all layers while using the limit option to return the last *n* periods
-41. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
-42. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
-43. Test a time snapping date request while specifying start and end dates
+2. Tests that a request to timeservice without parameters will return all records when there are records that use an unsorted set for the :periods key
+3. Test time snap for P1Y layer (year)
+4. Test time snap for P7D layer (week)
+5. Test time snap for P1M layer (month)
+6. Test time snap for PT2H layer (hour)
+7. Test time snap for PT6M layer (minute)
+8. Test time snap for PT6M layer (second)
+9. Test invalid layer error
+10. Test invalid date error 
+11. Test out of range error for periods
+12. Test snap with single key parameter (key1)
+13. Test best layer to check filename, prefix, date
+14. Test snap with multiple key parameter (key1, key2, key3, etc)
+15. Test snapping to one of multiple periods
+16. Test snapping to one of multiple periods when an unsorted set is used for the :periods key
+17. Test requesting a static best layer
+18. Test the limit option to return the first *n* periods
+19. Test the limit option to return the last *n* periods
+20. Test the limit option to return the first *n* periods when *n* is larger than the number of periods
+21. Test the limit option to return the last *n* periods when *n* is larger than the number of periods
+22. Test the skip option to return periods after the first *s* periods
+23. Test that no periods are returned when the skip option is set to a number greater than the number of periods
+24. Test using the skip option together with a begin limit
+25. Test using the skip option together with a begin limit when an unsorted set is used for the :periods key
+26. Test using the skip option with an end limit to skip the last *s* periods
+27. Test using the skip and limit options to return the *n* periods after *s* when *n* is larger than the number of priods
+28. Test using the skip and limit options to return the last *n* periods after *s* when *n* is larger than the number of periods
+29. Test requesting periods between start and end dates
+30. Test requesting periods between start and end dates when the start and end dates fall on the start and end bounds of existing periods, respectively.
+31. Test requesting periods between start and end dates when there is a single period
+32. Test requesting periods when there is a single period spanning a single day and the requested start date occurs before that day.
+33. Test requesting periods after a start date
+34. Test requesting periods before an end date
+35. Test requesting periods when there are no periods that fall between the start and end date range
+36. Test requesting periods when there are no periods at all for a layer
+37. Test requesting periods between start and end dates when the start and end dates are within periods but do not correspond to dates that data would exist for, causing the start and end dates to be snapped to the next closest time within the periods
+38. Test requesting periods between subdaily start and end dates when the start and end dates are within subdaily periods but do not correspond to dates that data would exist for, causing the start and end dates to be snapped to the next closest time within the periods
+39. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an odd number of periods
+40. Test requesting periods between start and end dates when the start and end dates are not within any periods and there is an even number of periods
+41. Test requesting periods when the start and end dates fall within a period but there exists no valid dates between the start and end dates
+42. Test requesting periods for all layers between start and end dates
+43. Test requesting periods for all layers while using the limit option to return the first *n* periods
+44. Test requesting periods for all layers while using the limit option to return the last *n* periods
+45. Test requesting periods between start and end dates while using the limit option to return the first *n* periods
+46. Test requesting periods between start and end dates while using the limit option to return the last *n* periods
+47. Test a time snapping date request while specifying start and end dates
 
 ## Time Utilities Tests
 ***There are currently two sets of tests endpoint agonostic and endpoint specific, endpoint specific are marked with _dep(deprecated) at the end. ***
@@ -166,21 +169,23 @@ Each test script will output a JUnit XML results file. By default, these files a
 ## vectorgen Tests:
 1. MVT MRF generation from single shapefile
 2. MVT MRF generation from single GeoJSON
-3. MVT MRF generation from multiple shapefiles
-4. MVT MRF generation from multiple GeoJSON
-5. MVT MRF generation with specified overview levels
-6. MVT MRF generation with specified feature reduce rate
-7. MVT MRF generation with specified cluster reduce rate
-8. MVT MRF generation with feature filters
-9. MVT MRF generation with overview filters
-10. Shapefile generation from single GeoJSON 
-11. Shapefile generation with differing `<target_epsg>` and `<source_epsg>`
-12. Cloud-optimized shapefile generation using `<cloud_optimized_shapefile>`
-13. GeoJSON generation from single GeoJSON
-14. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
-15. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
-16. Shapefile generation from multiple shapefiles (not in use: commented out)
-17. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>` (not in use: commented out)
+3. MVT MRF generation from single GeoJSON with polygon features
+4. MVT MRF generation from multiple shapefiles
+5. MVT MRF generation from multiple GeoJSON
+6. MVT MRF generation with specified overview levels
+7. MVT MRF generation with specified feature reduce rate
+8. MVT MRF generation with specified cluster reduce rate
+9. MVT MRF generation with feature filters
+10. MVT MRF generation with overview filters
+11. Shapefile generation from single GeoJSON 
+12. Shapefile generation from single GeoJSON with polygon features
+13. Shapefile generation with differing `<target_epsg>` and `<source_epsg>`
+14. Cloud-optimized shapefile generation using `<cloud_optimized_shapefile>`
+15. GeoJSON generation from single GeoJSON
+16. Shapefile generation from multiple GeoJSON using `<input_files>` (not in use: commented out)
+17. Shapefile generation from multiple GeoJSON using `<input_dir>` (not in use: commented out)
+18. Shapefile generation from multiple shapefiles (not in use: commented out)
+19. MVT MRF generation with differing `<target_epsg>` and `<source_epsg>` (not in use: commented out)
 
 
 

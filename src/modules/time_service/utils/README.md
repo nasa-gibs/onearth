@@ -18,6 +18,8 @@ It can also be run with the following optional positional arguments after the ke
 
 Any of these arguments can be skipped by passing in `false`.
 
+Although OnEarth still supports the `:periods` key being represented by an unsorted `set` in redis, this script will set the periods key to be a sorted `zset` by default when regenerating the `:periods` key. It can, however, correctly handle adding to existing unsorted `set` `:periods` keys using `keep_existing_periods`.
+
 ### Example Command Line Usage
 
 `redis-cli --eval periods.lua epsg4326:layer:layer_name`
@@ -88,3 +90,21 @@ The script accepts the following options:
 - `-t` indicates a tag (srt, best) to be used in tagging the dates.
 - `-i` indicates whether to use s3 inventory CSV logs for time scrapping.
 - `REDIS_URI` (argument)
+
+
+## `oe_periods_key_converter.py` -- Redis `:periods` key set type converter tool
+
+This tool converts the `:periods` key for layers between the unsorted `set` type and the sorted `zset` type. OnEarth supports both types, but the sorted `zset` results in more efficient time service requests since the periods do not need to be sorted when each request takes place.
+
+### Python Dependencies
+
+- `redis-py`
+
+This script accepts the following options:
+
+- `-h, --help`: Shows help message and exits.
+- `-t DEST_TYPE, --destination_type DEST_TYPE`: Type that the `:periods` keys should be converted to. Must be `zset` or `set`. Default is `zset`.
+- `-l LAYER_FILTER, --layer_filter LAYER_FILTER`: Unix style pattern to filter layer names.
+- `-p PORT, --port PORT`: indicates the port of the Redis time service database. Default is `6379`.
+- `-r REDIS_URI, --redis_uri REDIS_URI`: URI for the Redis database
+- `-v, --verbose`: Print out detailed log messages

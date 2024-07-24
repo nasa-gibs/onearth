@@ -46,11 +46,11 @@ RUN wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz && \
     tar xf go1.22.4.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.29.tar.gz && \
-    tar xf v0.2.29.tar.gz && \
-    cd supercronic-0.2.29 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.30.tar.gz && \
+    tar xf v0.2.30.tar.gz && \
+    cd supercronic-0.2.30 && \
     sed -i 's/client_golang v1.15.0/client_golang v1.19.0/g' go.mod && \
-    sed -i 's/protobuf v1.30.0/protobuf v1.33.0/g' go.mod && \
+    sed -i 's/protobuf v1.33.0/protobuf v1.34.2/g' go.mod && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
@@ -60,7 +60,7 @@ RUN wget https://go.dev/dl/go1.22.4.linux-amd64.tar.gz && \
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
-RUN cd client_golang@v1.19.0 && \
+RUN cd client_golang@v1.19.1 && \
     go mod tidy && \
     go clean -modcache && \
     cd /tmp/ && \

@@ -181,7 +181,7 @@ MIME_TO_EXTENSION = {
     'image/png': '.png',
     'image/jpeg': '.jpg',
     'image/tiff': '.tiff',
-    'image/lerc': '.lerc',
+    'image/lerc': '.lrc',
     'application/x-protobuf;type=mapbox-vector': '.pbf',
     'application/vnd.mapbox-vector-tile': '.mvt',
     'image/x-j': '.jpg'  # brunsli
@@ -192,7 +192,7 @@ MIME_TO_MRF_EXTENSION = {
     'image/jpeg': '.pjg',
     'image/x-j': '.pjg',  # brunsli
     'image/tiff': '.ptf',
-    'image/lerc': '.lerc',
+    'image/lerc': '.lrc',
     'application/x-protobuf;type=mapbox-vector': '.pvt',
     'application/vnd.mapbox-vector-tile': '.pvt'
 }

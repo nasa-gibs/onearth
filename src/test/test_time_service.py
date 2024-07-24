@@ -139,6 +139,29 @@ class TestDateService(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer)
 
+    def test_get_all_records_unsorted_set(self):
+        # Tests that a blank inquiry to the date service returns all records when an unsorted set is used for :periods key
+        test_layers = [('test1_all_records_unsorted_set', '2012-01-01',
+                        '2012-01-01/2016-01-01/P1Y'),
+                       ('test2_all_records_unsorted_set', '2015-02-01T12:00:00',
+                        '2012-01-01T00:00:00/2016-01-01T23:59:59/PT1S')]
+
+        seed_redis_data(test_layers, zset=False)
+
+        r = requests.get(self.date_service_url)
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[1], layer_res['default'],
+                'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
+                .format(layer[0], layer[1], layer_res['default']))
+            if not DEBUG:
+                remove_redis_layer(layer)
+
     def test_year_snap(self):
         test_layers = [('test1_year_snap', '2012-01-01',
                         '2012-01-01/2016-01-01/P1Y', '2013-06-06',
@@ -486,6 +509,33 @@ class TestDateService(unittest.TestCase):
                 'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
                 .format(test_layer[2], test_layer[3], returned_date,
                         test_layer[4]))
+
+    def test_multiple_periods_unsorted_set(self):
+        test_layers = [
+            ('test1_multiple_snap_unsorted_set', '2000-12-01', [
+                '2000-07-03/2000-07-03/P1M', '2000-01-01/2000-06-01/P1M',
+                '2000-08-01/2000-12-01/P1M'
+            ], '2000-08-01', '2000-08-01T00:00:00Z'),
+            ('test2_multiple_snap_unsorted_set', '2012-01-01',
+             ['2001-01-01/2001-12-27/P8D', '2002-01-01/2002-12-27/P8D'],
+             '2002-01-01', '2002-01-01T00:00:00Z'),
+        ]
+
+        seed_redis_data(test_layers, zset=False)
+
+        # Test data
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&datetime={1}'.
+                             format(test_layer[0], test_layer[3]))
+            res = r.json()
+            returned_date = res['date']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                returned_date, test_layer[4],
+                'Error with date snapping: for period {0}, date {1} was requested and date {2} was returned. Should be {3}'
+                .format(test_layer[2], test_layer[3], returned_date,
+                        test_layer[4]))
             
     def test_static_best(self):
         test_layers = [
@@ -704,6 +754,39 @@ class TestDateService(unittest.TestCase):
                         periods, '2013-06-06',
                         '2013-01-01T00:00:00Z')]
         seed_redis_data(test_layers)
+
+        for test_layer in test_layers:
+            r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.
+                             format(test_layer[0], limit, skip))
+            res = r.json()
+            returned_periods = res[test_layers[0][0]]['periods']
+            if not DEBUG:
+                remove_redis_layer(test_layer)
+            self.assertEqual(
+                len(returned_periods), abs(limit),
+                'Error with using the \'limit\' option with the \'skip\' option: {0} periods were returned, when there should have been {1}'
+                .format(len(returned_periods), abs(limit)))
+            self.assertEqual(
+                returned_periods, periods[skip:skip + limit],
+                'Error with using the \'limit\' option with the \'skip\' option: the periods in the returned list were not the periods between indices {0} and {1} in ascending order.'.format(skip, skip + limit, abs(limit)))
+            self.assertEqual(
+                res[test_layer[0]]['periods_in_range'], num_periods,
+                'Error: the returned value for \'periods_in_range\' was {0} when it should have been {1}.'.format(res[test_layer[0]]['periods_in_range'], num_periods)
+            )
+
+    def test_periods_begin_limit_skip_unsorted_set(self):
+        # Test data
+        limit = 100
+        skip = 50
+        num_periods = 1000
+        periods = []
+        for i in range(0,num_periods):
+            periods += ['{0}-01-01/{0}-01-01/P1Y'.format(str(i + 2000))]
+        
+        test_layers = [('test_begin_limit_skip_unsorted_set', '2012-01-01',
+                        periods, '2013-06-06',
+                        '2013-01-01T00:00:00Z')]
+        seed_redis_data(test_layers, zset=False)
 
         for test_layer in test_layers:
             r = requests.get(self.date_service_url + 'layer={0}&limit={1}&skip={2}'.

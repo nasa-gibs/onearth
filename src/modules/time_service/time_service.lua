@@ -263,9 +263,16 @@ local function redis_get_all_layers (client, prefix_string, periods_start, perio
             local layer_name = value_parts[#value_parts - 1]
             layers[layer_name] = not layers[layer_name] and {} or layers[layer_name]
             local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-            local periods = client:sort(prefix_string .. "layer:" .. layer_name .. ":periods", {sort = 'asc', alpha = true})
+            local periods
+            if client:type(prefix_string .. "layer:" .. layer_name .. ":periods") == "zset" then
+                periods = client:zrange(prefix_string .. "layer:" .. layer_name .. ":periods", 0, -1)
+            else
+                periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                if periods then
+                    table.sort(periods)
+                end
+            end
             if periods then
-                table.sort(periods)
                 if periods_start or periods_end then
                     layers[layer_name].default, layers[layer_name].periods = range_handler(default, periods, periods_start, periods_end)
                 else
@@ -304,10 +311,17 @@ local function redis_handler (options)
                 end
             else
                 local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-                local periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                local periods
+                if client:type(prefix_string .. "layer:" .. layer_name .. ":periods") == "zset" then
+                    periods = client:zrange(prefix_string .. "layer:" .. layer_name .. ":periods", 0, -1)
+                else
+                    periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
+                    if periods then
+                        table.sort(periods)
+                    end
+                end
                 returnValue = {err_msg = "Invalid Layer"}
                 if periods then
-                    table.sort(periods)
                     if periods_start or periods_end then
                         default, periods = range_handler(default, periods, periods_start, periods_end) 
                     end
@@ -453,26 +467,24 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         local snap_date, _ = time_snap(req_date, layer_datetime_info[layer_name].periods, true)
 
         -- Return snap date and error if none is found
+        local out_msg
         if snap_date then
             local snap_date_string = snap_date:fmt(datetime_format)
 
             -- Use "best" layer name if exists, otherwise just use layer_name
             local best_layer_name = layer_handler(layer_name, uuid, lookup_keys, snap_date_string)
-            local out_msg = {
+            out_msg = {
                 prefix = best_layer_name,
                 date = snap_date_string,
                 filename = filename_handler(best_layer_name, snap_date)}
-            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
-            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(out_msg))
         else
-            local out_msg = {
+            out_msg = {
                 err_msg = "Date out of range"
             }
-            -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
-            print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
-            return send_response(200, JSON:encode(out_msg))
         end
+        -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
+        print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
+        return send_response(200, JSON:encode(out_msg))
     end
 end
 return onearthTimeService

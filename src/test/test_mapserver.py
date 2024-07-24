@@ -22,13 +22,14 @@ import unittest2 as unittest
 import random
 import xmlrunner
 import xml.dom.minidom
-from shutil import rmtree
+from shutil import rmtree, copy
 from optparse import OptionParser
 import urllib.request, urllib.error
 import datetime
 import json
 import html
 from xml.etree import cElementTree as ElementTree
+from pathlib import Path
 
 from oe_test_utils import check_tile_request, restart_apache, check_response_code, test_snap_request, file_text_replace, make_dir_tree, run_command, get_url, XmlDictConfig, check_dicts, check_wmts_error
 
@@ -665,6 +666,7 @@ class TestMapserver(unittest.TestCase):
         41. Test requesting a vector layer for which the shapefile pointed to by the path in the mapfile doesn't exist.
             This test ensures that the internal directory path doesn't get printed by the msShapefileOpen() error that occurs.
         """
+        
         req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=Layer_Missing_Shapefile&CRS=EPSG%3A4326&STYLES=&WIDTH=1024&HEIGHT=512&BBOX=-180,-90,180,90&TIME=default'
         if DEBUG:
             print('\nTesting: Missing Shapefile')
@@ -827,6 +829,27 @@ class TestMapserver(unittest.TestCase):
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'Brunsli layer does not match what\'s '
                                       'expected. URL: ' + req_url)
+
+    def test_wms_static_best_shapefile(self):
+        """
+        49. Tests that we can request a static "best" layer from standard shapefile.
+        Make sure it reads from a static dummy shapefile without a year directory.
+        """
+        dest_dir = Path('/onearth/shapefiles/epsg4326/GRUMP_Settlements/')
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        # Copy Vector Status for dummy data - we just need to check that MapServer reads from the expected location
+        for file_path in Path('/home/oe2/onearth/src/test/mapserver_test_data/test_imagery/Vector_Status/2021/').iterdir():
+            if file_path.is_file():
+                copy(file_path, dest_dir / file_path.name.replace('Vector_Status-2021184000000', 'GRUMP_Settlements'))
+
+        ref_hash = '8847f751293d470c3dd84937251d8233'
+        req_url = 'http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/jpeg&TRANSPARENT=true&LAYERS=GRUMP_Settlements&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX=-20037508.34,-20037508.34,20037508.34,20037508.34'
+        if DEBUG:
+            print('\nTesting: Request static best shapefile')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'static best shapefile layer request result does not match expected. URL: ' + req_url)
+        rmtree(dest_dir)
 
     # TEARDOWN
 
