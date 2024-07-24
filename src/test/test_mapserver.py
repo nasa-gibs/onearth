@@ -817,11 +817,11 @@ class TestMapserver(unittest.TestCase):
         """
         # For test data at src/test/mapserver_test_data/test_imagery
         # /test_brunsli_jpg/test_brunsli_jpg.{idx,mrf,pjg} :
-        ref_hash = '5860624789bd20e63ef3b70c72d74952'
+        ref_hash = '78b65dff2f131313abf8b9abc3d1c04e'
         req_url = ('http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3'
                    '.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true'
                    '&LAYERS=test_brunsli_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH'
-                   '=1024&HEIGHT=1024&BBOX=-90,-180,90,180')  # -180,-90,180,90?
+                   '=1024&HEIGHT=512&BBOX=-90,-180,90,180')  # -180,-90,180,90?
         if DEBUG:
             print('\nTesting: Request brunsli-compressed JPEG layer as a '
                   'JPEG via WMS')
