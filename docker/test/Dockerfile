@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.8.2
+FROM nasagibs/onearth-deps:2.8.3
 
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
@@ -25,19 +25,6 @@ RUN tar xzf spatialindex-src-1.8.5.tar.gz
 RUN cd /tmp/spatialindex-src-1.8.5 && \
     ./configure --libdir=/usr/lib64 && \
     make && make install && \
-    ldconfig && \
-    cd ..
-
-# Get brunsli files for GDAL
-ENV LD_LIBRARY_PATH=:/usr/local/lib
-WORKDIR /tmp
-RUN git clone --depth=1 https://github.com/google/brunsli.git && \
-    cd brunsli && \
-    git submodule update --init --recursive && \
-    cmake -DCMAKE_PREFIX_PATH=/usr/local/ -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -B out && \
-    cmake --build out --config Release && \
-    cd out && make && make install && \
-    export LD_LIBRARY_PATH=:/usr/local/lib && \
     ldconfig && \
     cd ..
 
@@ -159,6 +146,10 @@ WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
 RUN cp /home/oe2/onearth/ci/Makefile.lcl .
 RUN make && make install
 
+WORKDIR /home/oe2/onearth/src/modules/mod_brunsli/src/
+RUN cp /home/oe2/onearth/ci/Makefile.lcl .
+RUN make && make install
+
 # Install Lua module for time snapping
 WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
 RUN luarocks make rockspec/redis-lua-2.0.5-0.rockspec
@@ -235,7 +226,7 @@ RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf &&
 RUN cp /home/oe2/onearth/docker/00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp /home/oe2/onearth/docker/10-worker.conf /etc/httpd/conf.modules.d/
 
-ENV ONEARTH_VERSION=2.8.2
+ENV ONEARTH_VERSION=2.8.3
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

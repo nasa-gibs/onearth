@@ -1,0 +1,20 @@
+abstract: test_brunsli_jpg abstract
+best_layer: test_brunsli_jpg
+layer_id: test_brunsli_jpg
+layer_name: test_brunsli_jpg tileset
+layer_title: test_brunsli
+mime_type: image/x-j
+projection: EPSG:4326
+source_mrf:
+  bands: 3
+  bbox: -180,-90,180,90
+  data_file_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_brunsli_jpg/test_brunsli_jpg.pjg
+  empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
+  idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_brunsli_jpg/test_brunsli_jpg.idx
+  size_x: 20480
+  size_y: 10240
+  tile_size_x: 512
+  tile_size_y: 512
+  year_dir: false
+static: true
+tilematrixset: 2km

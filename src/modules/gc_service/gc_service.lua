@@ -351,6 +351,9 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local proj = assert(config.projection, "Can't find projection name in YAML!")
     local projInfo = assert(PROJECTIONS[targetEpsgCode or proj], "Can't find projection " .. proj)
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
+    if mimeType == 'image/x-j' then
+        mimeType = 'image/jpeg'
+    end
     local bands
     if mimeType == "application/vnd.mapbox-vector-tile" then
         bands = "1"
@@ -619,6 +622,9 @@ local function makeGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgCode,
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
     -- local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
+    if mimeType == 'image/x-j' then
+        mimeType = 'image/jpeg'
+    end
     local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
     local proj = assert(config.projection, "Can't find projection name in YAML!") 
     local static = true

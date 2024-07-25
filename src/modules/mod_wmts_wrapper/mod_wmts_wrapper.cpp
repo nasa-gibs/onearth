@@ -176,8 +176,13 @@ int check_valid_extension(wmts_wrapper_conf *dconf, const char *extension)
     }
 
     if (apr_strnatcasecmp(cfg->mime_type, "image/lerc") == 0) {
-        return (apr_strnatcasecmp(".lerc", extension) == 0);
+        return (apr_strnatcasecmp(".lerc", extension) == 0 || apr_strnatcasecmp(".lrc", extension) == 0);
     }
+
+    if (apr_strnatcasecmp(cfg->mime_type, "image/x-j") == 0) {
+        return (apr_strnatcasecmp(".jpg", extension) == 0 || apr_strnatcasecmp(".jpeg", extension) == 0);
+    }
+
     return NULL;
 }
 

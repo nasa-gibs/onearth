@@ -811,9 +811,28 @@ class TestMapserver(unittest.TestCase):
         self.assertTrue(decodedResponse == expectedResponse,
                         'The response for performing a GetFeature request with an invalid format does not match what\'s expected. Received reponse:\n{}'.format(decodedResponse))
 
+    def test_request_brunsli_jpeg(self):
+        """
+        48. Test requesting a brunsli layer JPEG
+        """
+        # For test data at src/test/mapserver_test_data/test_imagery
+        # /test_brunsli_jpg/test_brunsli_jpg.{idx,mrf,pjg} :
+        ref_hash = '78b65dff2f131313abf8b9abc3d1c04e'
+        req_url = ('http://localhost/wms/test/wms.cgi?SERVICE=WMS&VERSION=1.3'
+                   '.0&REQUEST=GetMap&FORMAT=image%2Fjpeg&TRANSPARENT=true'
+                   '&LAYERS=test_brunsli_jpg&CRS=EPSG%3A4326&STYLES=&WIDTH'
+                   '=1024&HEIGHT=512&BBOX=-90,-180,90,180')  # -180,-90,180,90?
+        if DEBUG:
+            print('\nTesting: Request brunsli-compressed JPEG layer as a '
+                  'JPEG via WMS')
+            print('URL: ' + req_url)
+        check_result = check_tile_request(req_url, ref_hash)
+        self.assertTrue(check_result, 'Brunsli layer does not match what\'s '
+                                      'expected. URL: ' + req_url)
+
     def test_wms_static_best_shapefile(self):
         """
-        48. Tests that we can request a static "best" layer from standard shapefile.
+        49. Tests that we can request a static "best" layer from standard shapefile.
         Make sure it reads from a static dummy shapefile without a year directory.
         """
         dest_dir = Path('/onearth/shapefiles/epsg4326/GRUMP_Settlements/')
@@ -830,7 +849,7 @@ class TestMapserver(unittest.TestCase):
             print('URL: ' + req_url)
         check_result = check_tile_request(req_url, ref_hash)
         self.assertTrue(check_result, 'static best shapefile layer request result does not match expected. URL: ' + req_url)
-        # rmtree(dest_dir)
+        rmtree(dest_dir)
 
     # TEARDOWN
 
