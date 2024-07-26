@@ -4,12 +4,21 @@ from typing import List, Optional, Tuple
 from xml.dom import minidom
 
 # This is not -sys.float_info.min, but it works for this application.
-FLOAT_LOW_BOUND = "-100000000000000000000000000000000000000000000000000000000000000000000000000000"
-FLOAT_HIGH_BOUND = "100000000000000000000000000000000000000000000000000000000000000000000000000000"
+FLOAT_LOW_BOUND: str = "-100000000000000000000000000000000000000000000000000000000000000000000000000000"
+FLOAT_HIGH_BOUND: str = "100000000000000000000000000000000000000000000000000000000000000000000000000000"
+CMAP_FLOAT_PREC: int = 2
+CMAP_SCI_PREC: int = 4
 
 class XmlParseError(Exception):
     pass
 
+def getSciPrec(v: str) -> str:
+    return f"{float(v):.{CMAP_SCI_PREC}e}"
+
+def isValid(v: str) -> bool:
+        return v != "nv" and \
+            v != FLOAT_LOW_BOUND and v != getSciPrec(FLOAT_LOW_BOUND) and \
+            v != FLOAT_HIGH_BOUND and v != getSciPrec(FLOAT_HIGH_BOUND)
 
 def convertEntryValue(
         entryValue: str,
@@ -36,7 +45,8 @@ def parseColorMapEntryElement(
         scale: Optional[float],
         offset: Optional[float]) -> str:
     '''
-    Parse a <ColorMapEntry> tag.
+    Parse a <ColorMapEntry> tag. This function has become very messy due to needing to handle
+    various edge cases in string parsing caused by handling decimal precision.
 
     :param colorMapElement: A minidom.Element called "ColorMapEntry" that contains the required
     attributes "rgb" and "transparent" at a minimum.
@@ -72,23 +82,36 @@ def parseColorMapEntryElement(
         # Take the lower bound of the range from the value string. Value is formatted like this:
         # [0.00,0.15) or [1] or [0,+INF]
         # Where either number in the range can be a float, int, or +/-INF.
-        lineValue: str = entryValue.strip("[]()").split(",")[0]
+        lineValueSplit: str = entryValue.strip("[]()").split(",")
+        lineValueOrig: str = lineValueSplit[0]
+        lineValueUpper: str = ""
+        if len(lineValueSplit) > 1:
+            lineValueUpper: str = entryValue.strip("[]()").split(",")[1]
 
-        # Handle INF: If the lower bound is -INF, use a value of -9999. This does not seem
-        # robust, but is based off of the example outputs in layer-configs.
-        if lineValue.upper() == "-INF":
+        # Handle INF: If the lower bound is -INF, use a value of FLOAT_LOW_BOUND.
+        if lineValueOrig.upper() == "-INF":
             #lineValue = "-9999"
-            lineValue = FLOAT_LOW_BOUND
-        elif lineValue.upper() == "INF":
+            lineValue: str = FLOAT_LOW_BOUND 
+            if "e" in lineValueUpper.lower():
+                # Convert FLOAT_LOW_BOUND to scientific notation if using scientific notation
+                print("Hello")
+                lineValue = getSciPrec(FLOAT_LOW_BOUND)
+        elif lineValueOrig.upper() == "INF":
             # Technically this branch should never be reached, since the lower bound is always used.
-            lineValue = FLOAT_HIGH_BOUND
+            lineValue: str = FLOAT_HIGH_BOUND
+            if "e" in lineValueUpper.lower():
+                lineValue = getSciPrec(FLOAT_HIGH_BOUND)
         else:
             # Handle units, idempotent if both scale and offset are None.
-            # Note that INF has to be handled first because this function casts to float.
-            lineValue = convertEntryValue(lineValue, scale, offset)
+            lineValue: str = convertEntryValue(lineValueOrig, scale, offset)
 
-            # Always represent floating point values with two decimal places, unless -INF
-            lineValue = f"{float(lineValue):.2f}"
+            # Always represent floating point values with two decimal places if normal notation,
+            # 4 decimal places if scientific notation. Another edge case is that small decimal
+            # numbers should be represented in scientific notation.
+            if "e" in lineValueOrig.lower() or (float(lineValue) < 10**-CMAP_FLOAT_PREC and float(lineValue) > 0.0):
+                lineValue = getSciPrec(lineValue)
+            elif isValid(lineValue):
+                lineValue = f"{float(lineValue):.{CMAP_FLOAT_PREC}f}"
         
     lineRgb: str = entryRgb.replace(",", " ")
 
@@ -96,6 +119,39 @@ def parseColorMapEntryElement(
     lineTransparent: str = " 0" if entryTransparent else ""
 
     return f"{lineValue} {lineRgb}{lineTransparent}\n"
+
+
+def doFloorMode(
+       colorMapStr: str) -> str:
+    colorMapLines: List[str] = colorMapStr.splitlines()
+    lineVals: List[str] = [line.split()[0] for line in colorMapLines]
+    lineRgbs: List[str] = [" ".join(line.split()[1:]) for line in colorMapLines]
+    
+    if len(colorMapLines) == 1:
+        return colorMapStr
+    
+    newColorMapLines: List[str] = list()
+    
+    ndxPrev: int = -1
+    for ndx, line in enumerate(colorMapLines):
+        newColorMapLines.append(line)
+        val: str = lineVals[ndx]
+        rgb: str = lineRgbs[ndx]
+        ndxNext: int = ndx + 1
+
+        if isValid(val) and ndxNext < len(colorMapLines):
+            if "e" in val.lower():
+                _, exponent = val.split("e")
+                # Add a value 1 digit of precision below the current represented precision
+                floorExp: int = int(exponent) - (CMAP_SCI_PREC + 1)
+                floorVal: str = f"{(float(val) + 10**floorExp):.{CMAP_SCI_PREC + 1}e}"
+            else:
+                # Add a value 1 digit of precision below the current represented precision, so
+                # 0.001 for the default representation.
+                floorVal: str = f"{(float(val) + 10**-(CMAP_FLOAT_PREC + 1)):.{CMAP_FLOAT_PREC + 1}f}"
+            newColorMapLines.append(f"{floorVal} {lineRgbs[ndxNext]}")
+    
+    return "\n".join(newColorMapLines)
 
 
 def parseColorMapElement(
@@ -120,29 +176,19 @@ def parseColorMapElement(
     if len(cmapEntryNodes) == 0:
         raise XmlParseError(f"No elements called \"ColorMapEntry\" were found in the document.")
 
-    #minValue, maxValue = findMinMaxValues(cmapEntryNodes)
-
     cmapStr: str = ""
-    cmapLinePrev: str = ""
     for entryNode in cmapEntryNodes:
         cmapLine: str = parseColorMapEntryElement(
             entryNode,
             scale,
             offset
         )
-
-        # If using the "round to the floor" mode, use a small offset + the previous line's value as the "floor"
-        # the next colormap quantization value. The R, G, B at this level has to come from the most recently
-        # parsed line.
-        if round and cmapLinePrev != "":
-            cmapLinePrevVal: str = cmapLinePrev.split()[0]
-            cmapLineRgb: str = " ".join(cmapLine.split()[1:])
-            # Do not add a "floor" line for colormap lines that are no data or -INF
-            if cmapLinePrevVal != "nv" and cmapLinePrevVal != FLOAT_LOW_BOUND:
-                cmapLineFloor = f"{(float(cmapLinePrevVal) + 0.001):.3f} {cmapLineRgb}\n"
-                cmapStr += cmapLineFloor
         cmapStr += cmapLine
-        cmapLinePrev = cmapLine
+    
+    # Instead of adding in the floor quantization levels while reading the nodes, insert them in
+    # afterwards because it requires knowing the precision of the data a priori.
+    if round:
+        cmapStr: str = doFloorMode(cmapStr)
 
     return cmapStr
 
@@ -223,6 +269,13 @@ def colorMapToTxt(
 
     :returns: None, the colormap information is printed to stdout or saved to a plain-text file as a side effect.
     '''
+    if args.precision is not None:
+        # Override the global variables used to represent floating point precision in quantization levels.
+        global CMAP_FLOAT_PREC
+        global CMAP_SCI_PREC
+        CMAP_FLOAT_PREC = int(args.precision)
+        CMAP_SCI_PREC = int(args.precision)
+
     colorMapText: str = parseColorMapDoc(args.c, args.scale, args.offset, args.round)
     if args.o is None:
         print(colorMapText)
@@ -273,6 +326,13 @@ def cli() -> None:
         action="store_true",
         help="Create the colormap with a \"round to the floor\" mode, where the same color value " + \
              "is used across an entire quantization level, with no interpolation."
+    )
+    parser.add_argument(
+        "-p",
+        "--precision",
+        type=int,
+        help="Digits of decimal precision to use for quantization levels in the colormap." + \
+            " Default is 2 (e.g., 99.00) for normal values and 4 (e.g., 1.3750e-05) for scientific notation values."
     )
     args: argparse.Namespace = parser.parse_args()
     colorMapToTxt(args)

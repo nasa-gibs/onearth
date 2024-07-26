@@ -83,6 +83,30 @@ Example execution:
 ./SLDtoColorMap.py -s path/to/sld.xml -l DATA_LAYER_NAME -r RGBA -u K
 ```
 
+## colorMaptoTXT.py
+
+The colorMaptoTXT.py script converts an OnEarth XML Colormap to the GDAL text-based colormap format. A reference for the usage of this type of colormap can be found here: [https://gdal.org/programs/gdaldem.html#color-relief](https://gdal.org/programs/gdaldem.html#color-relief). GDAL colormaps support a "round to the floor value" mode which is supported by this script via the `--round` command line argument. 
+
+Note that `gdaldem` assumes that the input granule has already been unscaled and converted to the intended data type when applying the colormap via the `gdaldem color_relief` mode. Typically this is done by the data provider (such as PODAAC); however, if you are manually processing a netCDF or other type of scaled granule you will need to add the `-unscale -ot <intended_data_type>` options when using `gdal_translate`.
+
+```
+usage: colorMaptoTXT.py [-h] -c colormap [--scale SCALE] [--offset OFFSET] [-o outfile] [--round] [-p PRECISION]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c colormap           Path to colormap file to be converted.
+  --scale SCALE         Optionally specify the scale factor for the output colormap. This can sometimes be found in the CMR variable metadata. For example, a colormap with percent units might need --scale 0.01 to appear correct.
+  --offset OFFSET       Optionally specify the offset for the output colormap. This can sometimes be found in the CMR variable metadata. For example, a colormap in units of degC might need --scale 273.15 to convert to Kelvin.
+  -o outfile            Output filename to use for the text file colormap. If unused, the colormap will be printed to stdout.
+  --round               Create the colormap with a "round to the floor" mode, where the same color value is used across an entire quantization level, with no interpolation.
+  -p PRECISION, --precision PRECISION
+                        Digits of decimal precision to use for quantization levels in the colormap. Default is 2 (e.g., 99.00) for normal values and 4 (e.g., 1.3750e-05) for scientific notation values.
+```
+
+Example execution:
+```Shell
+./colorMaptoTXT.py -c path/to/colormap.xml -o path/to/output_colormap.txt
+```
 
 ## Contact
 
