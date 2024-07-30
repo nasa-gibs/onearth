@@ -81,7 +81,7 @@ RUN chown www-data /etc/pki/tls/private/localhost.key
 # Change user
 USER www-data
 
-CMD sh start_time_service.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $FORCE_TIME_SCRAPE $S3_CONFIGS
+CMD sh start_time_service.sh $S3_URL $REDIS_HOST $REDIS_HOST_READER $DEBUG_LOGGING $FORCE_TIME_SCRAPE $S3_CONFIGS
 
 #interval:30s, timeout:30s, start-period:30s, retries:3
 HEALTHCHECK --start-period=30s \

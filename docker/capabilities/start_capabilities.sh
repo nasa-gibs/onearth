@@ -1,9 +1,10 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
-DEBUG_LOGGING=${3:-false}
-S3_CONFIGS=$4
-SERVER_STATUS=${5:-false}
+REDIS_HOST_READER=${3:-$REDIS_HOST}
+DEBUG_LOGGING=${4:-false}
+S3_CONFIGS=$5
+SERVER_STATUS=${6:-false}
 
 echo "[$(date)] Starting capabilities service" >> /var/log/onearth/config.log
 

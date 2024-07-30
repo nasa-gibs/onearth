@@ -1,9 +1,10 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
-DEBUG_LOGGING=${3:-false}
-FORCE_TIME_SCRAPE=${4:-false}
-S3_CONFIGS=$5
+REDIS_HOST_READER=${3:-$REDIS_HOST}
+DEBUG_LOGGING=${4:-false}
+FORCE_TIME_SCRAPE=${5:-false}
+S3_CONFIGS=$6
 
 echo "[$(date)] Starting time service" >> /var/log/onearth/config.log
 
@@ -68,10 +69,10 @@ if [ "$REDIS_HOST" = "127.0.0.1" ]; then
 	# Load test data
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test:default "2015-01-01"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:date_test:periods 0 "2015-01-01/2017-01-01/P1Y"
+	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test:periods "2015-01-01/2017-01-01/P1Y"
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:date_test_year_dir
 	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:date_test_year_dir:default "2015-01-01"
-	/usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:date_test_year_dir:periods 0 "2015-01-01/2017-01-01/P1Y"
+	/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:date_test_year_dir:periods "2015-01-01/2017-01-01/P1Y"
 
 	# Load custom time period configurations in parallel
   ls /etc/onearth/config/endpoint/epsg{3031,3413,4326}*.yaml | parallel -j 4 python3 /usr/bin/oe_periods_configure.py -e "{}" -r $REDIS_HOST -g >> /var/log/onearth/config.log 2>&1
@@ -83,16 +84,16 @@ fi
 
 # Load time periods by scraping S3 bucket, if requested
 if [ "$FORCE_TIME_SCRAPE" = true ]; then
-	python3 /usr/bin/oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
+	python3 oe_scrape_time.py -r -b $S3_URL $REDIS_HOST >> /var/log/onearth/config.log 2>&1
 fi
 
 # Load oe-status data
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:Raster_Status
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:Raster_Status:default "2004-08-01"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:Raster_Status:periods 0 "2004-08-01/2004-08-01/P1M"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Raster_Status:periods "2004-08-01/2004-08-01/P1M"
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 DEL layer:Vector_Status
 /usr/bin/redis-cli -h $REDIS_HOST -n 0 SET layer:Vector_Status:default "2021-07-03"
-/usr/bin/redis-cli -h $REDIS_HOST -n 0 ZADD layer:Vector_Status:periods 0 "2021-07-03/2021-07-03/P1D"
+/usr/bin/redis-cli -h $REDIS_HOST -n 0 SADD layer:Vector_Status:periods "2021-07-03/2021-07-03/P1D"
 
 echo "[$(date)] Time service configuration completed" >> /var/log/onearth/config.log
 

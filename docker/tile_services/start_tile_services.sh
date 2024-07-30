@@ -1,11 +1,12 @@
 #!/bin/sh
 S3_URL=${1:-http://gitc-test-imagery.s3.amazonaws.com}
 REDIS_HOST=${2:-127.0.0.1}
-IDX_SYNC=${3:-false}
-DEBUG_LOGGING=${4:-false}
-S3_CONFIGS=$5
-GENERATE_COLORMAP_HTML=${6:-false}
-SERVER_STATUS=${7:-false}
+REDIS_HOST_READER=${3:-$REDIS_HOST}
+IDX_SYNC=${4:-false}
+DEBUG_LOGGING=${5:-false}
+S3_CONFIGS=$6
+GENERATE_COLORMAP_HTML=${7:-false}
+SERVER_STATUS=${8:-false}
 
 echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
 

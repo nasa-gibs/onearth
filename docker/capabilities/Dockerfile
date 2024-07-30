@@ -89,7 +89,7 @@ RUN chown www-data /etc/pki/tls/private/localhost.key
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/capabilities
-CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $DEBUG_LOGGING $S3_CONFIGS $SERVER_STATUS
+CMD sh start_capabilities.sh $S3_URL $REDIS_HOST $REDIS_HOST_READER $DEBUG_LOGGING $S3_CONFIGS $SERVER_STATUS
 RUN cp -R /home/oe2/onearth/src/demo /var/www/html/
 
 #interval:30s, timeout:30s, start-period:30s, retries:3
