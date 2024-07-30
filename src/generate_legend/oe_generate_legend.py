@@ -633,9 +633,9 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 if stroke_color:
                     fig_text.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
 
-        else: # default vertical orientation
-            left = ((1.00/lc) * legend_count) - (0.73/lc)
-            width = 0.15/lc
+        else:  # default vertical orientation
+            left = ((1.108 / lc) * legend_count) - (0.73 / lc)
+            width = 0.15 / lc
                         
             # use legend for classifications
             if colormap.style == "classification":
@@ -703,7 +703,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                 cb.solids.set_edgecolor("face")
                         
                 for tick in cb.ax.yaxis.get_ticklabels():
-                    tick.set_fontsize(10)
+                    tick.set_fontsize(7.5)  # originally 10
                     tick.set_color(label_color)
                     if stroke_color:
                         tick.set_path_effects([path_effects.Stroke(linewidth=1, foreground=stroke_color), path_effects.Normal()])
@@ -813,7 +813,7 @@ def generate_legend(colormaps, output, output_format, orientation, label_color, 
                     textcoords='offset points', 
                     color='black', 
                     ha='center', 
-                    fontsize=10,
+                    fontsize=7,  # originally 10
                     gid='tooltip',
                     bbox=dict(boxstyle='round,pad=.3', fc=(1,1,.9,1), ec=(.1,.1,.1), lw=1, zorder=1),
                     )
