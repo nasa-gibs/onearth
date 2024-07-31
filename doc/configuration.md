@@ -59,6 +59,8 @@ OnEarth Docker containers accept the following environment variables. Use the `-
     (e.g., http://gitc-test-imagery.s3.amazonaws.com)
 * REDIS_HOST: Redis endpoint URL
     (e.g., gitc.0001.use1.cache.amazonaws.com)
+* REDIS_HOST_READER: Redis endpoint URL to read from. Defaults to the value of REDIS_HOST.
+    (e.g., gitc-ro.0001.use1.cache.amazonaws.com)
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
 * SERVER_STATUS: `true/false` (defaults `false`) whether to enable the [mod_status](https://httpd.apache.org/docs/2.4/mod/mod_status.html) Apache server status page for this service (/server-status)
@@ -73,6 +75,8 @@ OnEarth Docker containers accept the following environment variables. Use the `-
     (e.g., http://gitc-test-imagery.s3.amazonaws.com)
 * REDIS_HOST: Redis endpoint URL
     (e.g., gitc.0001.use1.cache.amazonaws.com)
+* REDIS_HOST_READER: Redis endpoint URL to read from. Defaults to the value of REDIS_HOST.
+    (e.g., gitc-ro.0001.use1.cache.amazonaws.com)
 * IDX_SYNC: `true/false` (defaults `false`) whether to sync IDX files on local disk at startup with those found in the S3 URL
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 * S3_CONFIGS: S3 bucket name used for configuration files (e.g., gitc-onearth-configs)
@@ -84,6 +88,8 @@ OnEarth Docker containers accept the following environment variables. Use the `-
     (e.g., http://gitc-test-imagery.s3.amazonaws.com)
 * REDIS_HOST: Redis endpoint URL
     (e.g., gitc.0001.use1.cache.amazonaws.com)
+* REDIS_HOST_READER: Redis endpoint URL to read from. Defaults to the value of REDIS_HOST.
+    (e.g., gitc-ro.0001.use1.cache.amazonaws.com)
 * DEBUG_LOGGING: `true/false` (defaults `false`) whether to use DEBUG level logging for Apache HTTPD
 
 ### onearth-wms
