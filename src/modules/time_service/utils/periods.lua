@@ -723,40 +723,47 @@ repeat
 until cursor == "0"
 
 if next(configs) == nil then
-  local config = redis.call("GET", KEYS[1] .. ":config")
+  configs = { redis.call("GET", KEYS[1] .. ":config") }
+end
+
+local calculated_periods = {}
+for i, config in ipairs(configs) do
   local periodStrings = calculatePeriods(dates, config, start_date, end_date)
-  for _, key in ipairs(layer_keys) do
-    if key ~= nil then
+  calculated_periods = concat(calculated_periods, periodStrings)
+end
+
+for _, key in ipairs(layer_keys) do
+  if key ~= nil then
+    local is_set = redis.call("TYPE", key .. ":periods")["ok"] == "set"
+    -- Situations where we'll need to add all calculated periods to the periods key
+    if keep_existing_periods or is_set then
       if redis.call("EXISTS", key .. ":periods") and not keep_existing_periods then
         redis.call("DEL", key .. ":periods")
       end
-      if keep_existing_periods and redis.call("TYPE", key .. ":periods")["ok"] == "set" then
-        for i, periodString in ipairs(periodStrings) do  
+      -- Add everything as an unsorted set only when the periods key is already
+      -- an unsorted set and we're keeping all the existing periods
+      if keep_existing_periods and is_set then
+        for _, periodString in ipairs(calculated_periods) do  
           redis.call("SADD", key .. ":periods", periodString)
         end
       else
-        for i, periodString in ipairs(periodStrings) do  
+        for _, periodString in ipairs(calculated_periods) do  
           redis.call("ZADD", key .. ":periods", 0, periodString)
         end
       end
-    end
-  end
-else
-  for i, config in ipairs(configs) do
-    local periodStrings = calculatePeriods(dates, config, start_date, end_date)
-    for _, key in ipairs(layer_keys) do
-      if key ~= nil then
-        if i == 1 and redis.call("EXISTS", key .. ":periods") and not keep_existing_periods then
-          redis.call("DEL", key .. ":periods")
+    else
+    -- Otherwise, only do the minimum modifications necessary to Redis
+      local existing_periods = redis.call("zrange", key .. ":periods", 0 , -1)
+      -- Add any calculated periods that aren't already in the :periods key
+      for _, periodString in ipairs(calculated_periods) do
+        if not existing_periods[periodString] then
+          redis.call("ZADD", key .. ":periods", 0, periodString)
         end
-        if keep_existing_periods and redis.call("TYPE", key .. ":periods")["ok"] == "set" then
-          for i, periodString in ipairs(periodStrings) do  
-            redis.call("SADD", key .. ":periods", periodString)
-          end
-        else
-          for i, periodString in ipairs(periodStrings) do  
-            redis.call("ZADD", key .. ":periods", 0, periodString)
-          end
+      end
+      -- Remove any existing periods that did not reappear after recalculation
+      for _, existing_period in ipairs(existing_periods) do
+        if not calculated_periods[existing_period] then
+          redis.call("ZREM", key .. ":periods", existing_period)
         end
       end
     end
