@@ -1691,6 +1691,44 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_update_existing_periods(self):
+        # Test adding to an existing periods key that uses an unsorted set
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        # "Existing" periods for each layer
+        existing_test_layers = [('Test_Update_Existing_Periods', '2019-01-01',
+                        ['2018-01-01/2018-01-01/P1D', '2019-01-01/2019-01-01/P1D'])]
+
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1D'
+        add_redis_config(existing_test_layers, db_keys, config)
+
+        # manually add periods as an unsorted set without periods.lua
+        seed_redis_data_oe_utils(existing_test_layers, db_keys=db_keys)
+        
+        # New periods for each layer
+        test_layers = [('Test_Update_Existing_Periods', '2019-01-01',
+                        ['2019-01-01/2019-01-01/P1D', '2019-01-15/2019-01-16/P1D']),
+                        ('Test_Update_Existing_Periods', '2019-01-15',
+                        ['2019-01-01/2019-01-01/P1D', '2019-01-15/2019-01-16/P1D']),
+                        ('Test_Update_Existing_Periods', '2019-01-16',
+                        ['2019-01-01/2019-01-01/P1D', '2019-01-15/2019-01-16/P1D'])]
+
+        # run periods.lua again
+        seed_redis_data(test_layers, db_keys=db_keys)
+        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = req.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_oe_periods_key_converter_zset(self):
         # Test oe_periods_key_converter.py converting to sorted set
         r = redis.StrictRedis(host='localhost', port=6379, db=0)

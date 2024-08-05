@@ -242,6 +242,12 @@ local function dateAtFixedInterval(baseEpoch, intervalInSec, dateList)
   return false
 end
 
+local function toSet(input_table)
+  local set = {}
+  for _, item in ipairs(input_table) do set[item] = true end
+  return set
+end
+
 local function itemInList(item, list)
   for i, v in ipairs(list) do
     if v == item then
@@ -753,7 +759,7 @@ for _, key in ipairs(layer_keys) do
       end
     else
     -- Otherwise, only do the minimum modifications necessary to Redis
-      local existing_periods = redis.call("zrange", key .. ":periods", 0 , -1)
+      local existing_periods = toSet(redis.call("zrange", key .. ":periods", 0 , -1))
       -- Add any calculated periods that aren't already in the :periods key
       for _, periodString in ipairs(calculated_periods) do
         if not existing_periods[periodString] then
@@ -761,8 +767,9 @@ for _, key in ipairs(layer_keys) do
         end
       end
       -- Remove any existing periods that did not reappear after recalculation
-      for _, existing_period in ipairs(existing_periods) do
-        if not calculated_periods[existing_period] then
+      local calculated_periods_set = toSet(calculated_periods)
+      for existing_period, _ in pairs(existing_periods) do
+        if not calculated_periods_set[existing_period] then
           redis.call("ZREM", key .. ":periods", existing_period)
         end
       end
