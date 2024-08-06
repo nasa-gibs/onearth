@@ -192,8 +192,8 @@ function onearth_wms_time_service.handler(endpointConfig)
             if not format then
                 return sendResponse(200, 'No FORMAT parameter specified')
             end
-            if format ~= "image%2Fpng" and format ~= "image/png" and format ~= "image%2Fjpeg" and format ~= "image/jpeg" then
-                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be image/png or image/jpeg for GetMap requests.")
+            if format ~= "image%2Fpng" and format ~= "image/png" and format ~= "image%2Fjpeg" and format ~= "image/jpeg" and format ~= "image/tiff" and format ~= "image%2Ftiff" then
+                return sendErrorResponse("InvalidParameterValue", "FORMAT", "Invalid format parameter \"" .. format .. "\", must be image/png, image/jpeg, or image/tiff for GetMap requests.")
             end
             local layers_string = get_query_param("layers", query_string)
             local layers_url = ""
