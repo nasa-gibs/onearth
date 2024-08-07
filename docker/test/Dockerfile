@@ -114,7 +114,7 @@ WORKDIR /home/oe2/onearth
 COPY requirements.txt .
 
 # Install pip dependencies
-RUN pip install --upgrade pip
+RUN pip install pip==24.2
 RUN pip install -r requirements.txt
 
 RUN rm -rf /tmp/*
@@ -174,7 +174,7 @@ WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
 # pip updates
-RUN python3 -m pip install --user --upgrade cython
+RUN python3 -m pip install --user cython==3.0.11 
 RUN python3 setup.py build_ext --inplace
 RUN python3 -m pip install Shapely==2.0.1 moto[server]==4.2.7 werkzeug==3.0.1
 

@@ -112,7 +112,6 @@ WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
 # Install pip dependencies
-RUN pip install --upgrade pip
 RUN pip install -r onearth/docker/deps/requirements.txt
 RUN pip install -r onearth/requirements.txt
 
@@ -125,7 +124,7 @@ WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
 # pip updates
-RUN python3 -m pip install --user --upgrade cython
+RUN python3 -m pip install --user cython==3.0.11 
 RUN python3 setup.py build_ext --inplace
 RUN python3 -m pip install Shapely==2.0.1
 

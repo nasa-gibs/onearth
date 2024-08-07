@@ -102,7 +102,7 @@ RUN rm -rf /tmp/*
 COPY ./ /home/oe2/onearth/
 WORKDIR /home/oe2/onearth
 # Install pip dependencies
-RUN pip install --upgrade pip
+RUN pip install pip==24.2
 RUN pip install -r requirements.txt
 
 # Install Apache modules
