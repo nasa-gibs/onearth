@@ -176,7 +176,7 @@ RUN chown www-data /etc/pki/tls/private/localhost.key
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh $ENDPOINT_REFRESH $GC_HEALTHCHECK $S3_CONFIGS $SHAPEFILE_SYNC $USE_LOCAL_SHAPEFILES $SERVER_STATUS
+CMD sh start_wms_service.sh "$ENDPOINT_REFRESH" "$GC_HEALTHCHECK" "$S3_CONFIGS" "$SHAPEFILE_SYNC" "$USE_LOCAL_SHAPEFILES" "$SERVER_STATUS"
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
