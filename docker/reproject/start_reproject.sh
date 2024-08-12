@@ -114,8 +114,8 @@ sleep 2
 # Wait for GC and Tile services to be ready
 time_out=600
 echo "[$(date)] Begin checking $GC_HEALTHCHECK and $TILES_HEALTHCHECK endpoints...">>/var/log/onearth/config.log 2>&1;
-while [[ "$(curl -s -m 10 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
-         "$(curl -s -m 60 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
+while [[ "$(curl -k -s -m 10 -o /dev/null -w ''%{http_code}'' "$TILES_HEALTHCHECK")" != "200" || 
+         "$(curl -k -s -m 60 -o /dev/null -w ''%{http_code}'' "$GC_HEALTHCHECK")" != "200" ]]; do 
   if [[ $time_out -le 0 ]]; then
     echo "[$(date)] ERROR: Timed out waiting for endpoint $GC_HEALTHCHECK or $TILES_HEALTHCHECK">>/var/log/onearth/config.log 2>&1;
     /usr/sbin/httpd stop; cat /var/log/onearth/config.log; exit 1;
