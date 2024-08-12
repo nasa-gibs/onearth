@@ -49,6 +49,8 @@ import png
 from io import BytesIO
 import time
 
+
+LOCAL_ADDR = 'http://172.17.0.1'
 EARTH_RADIUS = 6378137.0
 
 MIME_TO_EXTENSION = {
@@ -306,7 +308,7 @@ def format_source_url(source_url, reproj_tms):
 
 def make_proxy_config(proxy_path, replace_with_local):
     return bulk_replace(PROXY_TEMPLATE,
-                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(replace_with_local), 'http://172.17.0.1') if replace_with_local else proxy_path['remote_path']),
+                        [('{remote_endpoint}', proxy_path['remote_path'].replace(str(replace_with_local), LOCAL_ADDR) if replace_with_local else proxy_path['remote_path']),
                          ('{local_endpoint}', proxy_path['local_path'])])
 
 
@@ -320,12 +322,12 @@ def format_source_uri_for_proxy(uri, proxy_paths):
 def get_layer_bands(identifier, mimetype, sample_tile_url):
     if mimetype == 'image/png':
         print('Checking for palette for PNG layer via ' + sample_tile_url)
-        r = requests.get(sample_tile_url)
+        r = requests.get(sample_tile_url, verify=False)
         if r.status_code != 200:
             if "Invalid time format" in r.text:  # Try taking out TIME if server doesn't like the request
                 sample_tile_url = sample_tile_url.replace(
                     'default/default', 'default')
-                r = requests.get(sample_tile_url)
+                r = requests.get(sample_tile_url, verify=False)
                 if r.status_code != 200:
                     mssg = 'Can\'t get sample PNG tile from URL: ' + sample_tile_url
                     print(mssg)
@@ -382,7 +384,7 @@ def parse_layer_gc_xml(target_proj, source_tms_defs, target_tms_defs, replace_wi
             layer_xml.find('{*}ResourceURL').attrib.get('template'),
             source_tms).replace('${date}', 'default') + '/0/0/0.png'
     if replace_with_local:
-        sample_tile_url = sample_tile_url.replace(replace_with_local, 'http://172.17.0.1')
+        sample_tile_url = sample_tile_url.replace(replace_with_local, LOCAL_ADDR)
 
     bands = get_layer_bands(identifier, mimetype, sample_tile_url)
     return {
@@ -440,7 +442,7 @@ def get_gc_xml(source_gc_uri):
     retries = 10
     duration = 30 # in seconds
     try:
-        r = requests.get(source_gc_uri)
+        r = requests.get(source_gc_uri, verify=False)
         if r.status_code != 200:
             print(f"Can't get source GetCapabilities file: {source_gc_uri}")
             sys.exit()
@@ -449,7 +451,7 @@ def get_gc_xml(source_gc_uri):
             time.sleep(duration)
             attempt = attempt + 1
             try:
-                r = requests.get(source_gc_uri)
+                r = requests.get(source_gc_uri, verify=False)
                 if r.status_code == 200:
                     break
             except:
@@ -634,6 +636,11 @@ def get_layer_configs(endpoint_config):
         ]
 
 
+def set_local_addr(local_addr):
+    global LOCAL_ADDR
+    LOCAL_ADDR = local_addr
+
+
 def build_configs(endpoint_config):
     # Check endpoint configs for necessary stuff
     try:
@@ -642,12 +649,14 @@ def build_configs(endpoint_config):
         endpoint_config['time_service_uri']
     except KeyError as err:
         print(f"Endpoint config is missing required config element {err}")
-    
+
     # Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
     replace_with_local = None
     if endpoint_config['reproject']['replace_with_local']:
         replace_with_local = endpoint_config['reproject']['replace_with_local']
-        source_gc_uri = source_gc_uri.replace(replace_with_local, 'http://172.17.0.1')
+        if 'https:' in replace_with_local:
+            set_local_addr('https://172.17.0.1')
+        source_gc_uri = source_gc_uri.replace(replace_with_local, LOCAL_ADDR)
     else:
         print(
             '\nNo "replace_with_local" configured.'
