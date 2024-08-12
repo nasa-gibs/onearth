@@ -274,6 +274,7 @@ sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s
 if [ "$USE_SSL" = true ]; then
   cp /home/oe2/onearth/certs/* /etc/pki/tls/private/
   sed -i -e 's/SSLPassPhraseDialog/#SSLPassPhraseDialog/g' /etc/httpd/conf.d/ssl.conf
+  sed -i -e 's/ServerName localhost/ServerName '"$SERVER_NAME"'/g' /etc/httpd/conf.d/oe2_ssl.conf
 else
   rm -f /etc/httpd/conf.d/oe2_ssl.conf
 fi

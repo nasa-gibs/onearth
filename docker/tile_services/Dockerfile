@@ -106,7 +106,7 @@ RUN echo '#!/bin/sh' >> /usr/bin/pass.sh && \
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/tile_services
-CMD sh start_tile_services.sh "$S3_URL" "$REDIS_HOST" "$REDIS_HOST_READER" "$IDX_SYNC" "$DEBUG_LOGGING" "$S3_CONFIGS" "$GENERATE_COLORMAP_HTML" "$SERVER_STATUS" "$USE_SSL"
+CMD sh start_tile_services.sh "$S3_URL" "$REDIS_HOST" "$REDIS_HOST_READER" "$IDX_SYNC" "$DEBUG_LOGGING" "$S3_CONFIGS" "$GENERATE_COLORMAP_HTML" "$SERVER_STATUS" "$USE_SSL" "$SERVER_NAME"
 
 #interval:30s, timeout:30s, start-period:30s, retries:3
 HEALTHCHECK --start-period=30s \

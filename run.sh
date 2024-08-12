@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# SSL option
+# SSL options
 USE_SSL=${1:-false}
+SERVER_NAME=${2:-localhost}
 
 # Set OnEarth version and release
 source ./version.sh
@@ -22,7 +23,7 @@ docker run -d --rm --name onearth-time-service $DOCKER_PLATFORM_OPTION --hostnam
 
 # Run onearth-tile-services using port 443 for https
 docker run -d --rm --name onearth-tile-services $DOCKER_PLATFORM_OPTION --hostname onearth-tile-services --net oe2 -p 443:443 \
-    -v $(pwd)/certs:/home/oe2/onearth/certs -e USE_SSL=$USE_SSL \
+    -v $(pwd)/certs:/home/oe2/onearth/certs -e USE_SSL=$USE_SSL -e SERVER_NAME=$SERVER_NAME \
     nasagibs/onearth-tile-services:$ONEARTH_VERSION-$ONEARTH_RELEASE
 
 # Run onearth-capabilities using port 8081 for httpd
@@ -36,7 +37,7 @@ docker run -d --rm --name onearth-reproject $DOCKER_PLATFORM_OPTION --hostname o
 
 # Run onearth-wms using port 8443 for https
 docker run -d --rm --name onearth-wms $DOCKER_PLATFORM_OPTION --hostname onearth-wms --net oe2 -p 8443:443 \
-    -v $(pwd)/certs:/home/oe2/onearth/certs -e USE_SSL=$USE_SSL \
+    -v $(pwd)/certs:/home/oe2/onearth/certs -e USE_SSL=$USE_SSL -e SERVER_NAME=$SERVER_NAME \
     nasagibs/onearth-wms:$ONEARTH_VERSION-$ONEARTH_RELEASE
 
 # Run onearth-demo using port 80 for httpd

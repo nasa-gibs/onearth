@@ -184,7 +184,7 @@ RUN echo '#!/bin/sh' >> /usr/bin/pass.sh && \
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/wms_service
-CMD sh start_wms_service.sh "$ENDPOINT_REFRESH" "$GC_HEALTHCHECK" "$S3_CONFIGS" "$SHAPEFILE_SYNC" "$USE_LOCAL_SHAPEFILES" "$SERVER_STATUS" "$USE_SSL"
+CMD sh start_wms_service.sh "$ENDPOINT_REFRESH" "$GC_HEALTHCHECK" "$S3_CONFIGS" "$SHAPEFILE_SYNC" "$USE_LOCAL_SHAPEFILES" "$SERVER_STATUS" "$USE_SSL" "$SERVER_NAME"
 
 #interval:30s, timeout:30s, start-period:60s, retries:3
 HEALTHCHECK --start-period=60s \
