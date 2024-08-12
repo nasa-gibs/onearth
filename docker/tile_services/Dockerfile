@@ -60,7 +60,8 @@ COPY ./docker/tile_services/oe2_ancillary.conf /etc/httpd/conf.d/
 WORKDIR /home/oe2/onearth/docker
 RUN cp 00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp 10-worker.conf /etc/httpd/conf.modules.d/ && \
-    cp cors.conf /etc/httpd/conf.d/
+    cp cors.conf /etc/httpd/conf.d/ && \
+    cp oe2_ssl.conf /etc/httpd/conf.d/
     
 # Create OnEarth config log
 RUN mkdir /var/log/onearth && touch /var/log/onearth/config.log && chmod 777 /var/log/onearth/config.log
@@ -89,15 +90,23 @@ RUN dnf remove -y kernel-headers kernel-debug-devel python3-devel polkit polkit-
     dnf clean all
 RUN pip uninstall -y pip
 
-# Generate SSL certs
+# SSL certs
+WORKDIR /home/oe2/onearth/
 RUN /usr/libexec/httpd-ssl-gencerts
-RUN chown www-data /etc/pki/tls/private/localhost.key
+RUN touch /etc/pki/tls/private/onearth.crt && \
+    touch /etc/pki/tls/private/onearth.key && \
+    touch /etc/pki/tls/private/onearth.pass
+RUN chown www-data:www-data /etc/pki/tls/private/* && chmod 755 /etc/pki/tls/private/*
+# Prepare pass phrase process
+RUN echo '#!/bin/sh' >> /usr/bin/pass.sh && \
+	echo 'cat /etc/pki/tls/private/onearth.pass' >> /usr/bin/pass.sh && \
+    chmod +x /usr/bin/pass.sh
 
 # Change user
 USER www-data
 
 WORKDIR /home/oe2/onearth/docker/tile_services
-CMD sh start_tile_services.sh "$S3_URL" "$REDIS_HOST" "$REDIS_HOST_READER" "$IDX_SYNC" "$DEBUG_LOGGING" "$S3_CONFIGS" "$GENERATE_COLORMAP_HTML" "$SERVER_STATUS"
+CMD sh start_tile_services.sh "$S3_URL" "$REDIS_HOST" "$REDIS_HOST_READER" "$IDX_SYNC" "$DEBUG_LOGGING" "$S3_CONFIGS" "$GENERATE_COLORMAP_HTML" "$SERVER_STATUS" "$USE_SSL"
 
 #interval:30s, timeout:30s, start-period:30s, retries:3
 HEALTHCHECK --start-period=30s \

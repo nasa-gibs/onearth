@@ -5,6 +5,7 @@ S3_CONFIGS=$3
 SHAPEFILE_SYNC=${4:-false}
 USE_LOCAL_SHAPEFILES=${5:-false}
 SERVER_STATUS=${6:-false}
+USE_SSL=${7:-false}
 
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
 
@@ -145,8 +146,15 @@ EOS
 # Build wms_time service endpoints in parallel
 grep -l 'mapserver:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 lua /home/oe2/onearth/src/modules/wms_time_service/make_wms_time_endpoint.lua >>/var/log/onearth/config.log 2>&1
 
+if [ "$USE_SSL" = true ]; then
+  cp /home/oe2/onearth/certs/* /etc/pki/tls/private/
+  sed -i -e 's/SSLPassPhraseDialog/#SSLPassPhraseDialog/g' /etc/httpd/conf.d/ssl.conf
+else
+  rm -f /etc/httpd/conf.d/oe2_ssl.conf
+fi
+
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
-/usr/sbin/httpd -k restart
+/usr/sbin/httpd -k start
 sleep 2
 
 # Run logrotate hourly

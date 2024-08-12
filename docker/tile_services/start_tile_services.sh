@@ -7,6 +7,7 @@ DEBUG_LOGGING=${5:-false}
 S3_CONFIGS=$6
 GENERATE_COLORMAP_HTML=${7:-false}
 SERVER_STATUS=${8:-false}
+USE_SSL=${9:-false}
 
 echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
 
@@ -270,8 +271,15 @@ sed -i -e 's/^\([^#].*\)/# \1/g' /etc/httpd/conf.d/welcome.conf
 # Disable fancy indexing
 sed -i -e '/^Alias \/icons\/ "\/usr\/share\/httpd\/icons\/"$/,/^<\/Directory>$/s/^/#/' /etc/httpd/conf.d/autoindex.conf
 
+if [ "$USE_SSL" = true ]; then
+  cp /home/oe2/onearth/certs/* /etc/pki/tls/private/
+  sed -i -e 's/SSLPassPhraseDialog/#SSLPassPhraseDialog/g' /etc/httpd/conf.d/ssl.conf
+else
+  rm -f /etc/httpd/conf.d/oe2_ssl.conf
+fi
+
 echo "[$(date)] Restarting Apache server" >> /var/log/onearth/config.log
-/usr/sbin/httpd -k restart
+/usr/sbin/httpd -k start
 sleep 2
 
 # Run logrotate hourly

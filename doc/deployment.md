@@ -8,7 +8,8 @@ To build the Docker images the OnEarth stack, execute:
 `build.sh` from the source root.
 
 To run all of the OnEarth Docker containers, execute:
-`run.sh` from the source root.
+`run.sh` from the source root. If SSL is desired for production environments, execute: `run.sh "true"`
+
 
 ## Container Startup Process
 

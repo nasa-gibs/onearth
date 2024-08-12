@@ -12,3 +12,4 @@ build
 /src/test/test_*_results.xml
 /src/test/mrfgen_files/jpng/temp*
 /tmp/
+/certs/
