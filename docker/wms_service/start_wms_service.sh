@@ -6,6 +6,7 @@ SHAPEFILE_SYNC=${4:-false}
 USE_LOCAL_SHAPEFILES=${5:-false}
 SERVER_STATUS=${6:-false}
 USE_SSL=${7:-false}
+SERVER_NAME=${8:-localhost}
 
 echo "[$(date)] Starting wms service" >> /var/log/onearth/config.log
 

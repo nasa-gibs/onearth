@@ -8,6 +8,7 @@ S3_CONFIGS=$6
 GENERATE_COLORMAP_HTML=${7:-false}
 SERVER_STATUS=${8:-false}
 USE_SSL=${9:-false}
+SERVER_NAME=${10:-localhost}
 
 echo "[$(date)] Starting tile service" >> /var/log/onearth/config.log
 
