@@ -4,6 +4,8 @@ TILES_HEALTHCHECK=${2:-http://172.17.0.1/oe-status/Raster_Status/default/2004-08
 GC_HEALTHCHECK=${3:-http://172.17.0.1/oe-status/1.0.0/WMTSCapabilities.xml}
 S3_CONFIGS=$4
 SERVER_STATUS=${5:-false}
+USE_SSL=${6:-false}
+SERVER_NAME=${7:-localhost}
 
 echo "[$(date)] Starting reproject service" >> /var/log/onearth/config.log
 
@@ -105,10 +107,16 @@ cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 # Now configure oe-status and start apache for reproject health checks
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
-python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
+if [ "$USE_SSL" = true ]; then
+  sed -i -e 's@http://localhost@https://'"$SERVER_NAME"'@g' /etc/onearth/config/endpoint/oe-status_reproject.yaml
+  python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml && \
+  sed -i -e 's@http://localhost@https://'"$SERVER_NAME"'@g' /etc/httpd/conf.d/oe-status_reproject.conf
+else
+  python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
+fi
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
-/usr/sbin/httpd -k restart
+/usr/sbin/httpd -k start
 sleep 2
 
 # Wait for GC and Tile services to be ready
