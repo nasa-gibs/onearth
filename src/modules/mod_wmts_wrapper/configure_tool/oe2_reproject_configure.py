@@ -655,7 +655,7 @@ def build_configs(endpoint_config):
     if endpoint_config['reproject']['replace_with_local']:
         replace_with_local = endpoint_config['reproject']['replace_with_local']
         if 'https:' in replace_with_local:
-            set_local_addr('https://172.17.0.1')
+            set_local_addr(LOCAL_ADDR.replace('http:', 'https:'))
         source_gc_uri = source_gc_uri.replace(replace_with_local, LOCAL_ADDR)
     else:
         print(
@@ -869,9 +869,17 @@ if __name__ == '__main__':
         '--tms_defs',
         type=str,
         help='TileMatrixSets definition XML file')
+    parser.add_argument(
+        '-l',
+        '--local_addr',
+        default='http://172.17.0.1',
+        type=str,
+        help='Local address for tile services')
     args = parser.parse_args()
 
     endpoint_config = yaml.safe_load(Path(args.endpoint_config).read_text())
     if args.tms_defs:
         endpoint_config['tms_defs_file'] = args.tms_defs
+    if args.local_addr:
+        set_local_addr(args.local_addr)
     build_configs(endpoint_config)

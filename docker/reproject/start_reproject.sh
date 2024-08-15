@@ -108,9 +108,7 @@ cp ../oe-status/layers/*.yaml /etc/onearth/config/layers/oe-status/
 cp ../oe-status/endpoint/oe-status_reproject.yaml /etc/onearth/config/endpoint/
 mkdir -p $(yq eval ".twms_service.internal_endpoint" /etc/onearth/config/endpoint/oe-status_reproject.yaml)
 if [ "$USE_SSL" = true ]; then
-  sed -i -e 's@http://localhost@https://'"$SERVER_NAME"'@g' /etc/onearth/config/endpoint/oe-status_reproject.yaml
-  python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml && \
-  sed -i -e 's@http://localhost@https://'"$SERVER_NAME"'@g' /etc/httpd/conf.d/oe-status_reproject.conf
+  python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml -l "https://$SERVER_NAME" >>/var/log/onearth/config.log 2>&1
 else
   python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 fi
@@ -150,7 +148,11 @@ for f in $(grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml); do
 done
 
 # Run endpoint configuration in parallel
-grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 python3 /usr/bin/oe2_reproject_configure.py {} >>/var/log/onearth/config.log 2>&1
+if [ "$USE_SSL" = true ]; then
+  grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 python3 /usr/bin/oe2_reproject_configure.py {} -l "https://$SERVER_NAME" >>/var/log/onearth/config.log 2>&1
+else
+  grep -l 'reproject:' /etc/onearth/config/endpoint/*.yaml | parallel -j 4 python3 /usr/bin/oe2_reproject_configure.py {} >>/var/log/onearth/config.log 2>&1
+fi
 
 echo "[$(date)] Completed reproject configuration" >> /var/log/onearth/config.log
 

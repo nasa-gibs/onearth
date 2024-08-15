@@ -17,7 +17,7 @@ used.
 
 ## Requirements
 
-- Python 3.6
+- Python >=3.6
 - OnEarth 2 modules (`mod_wmts_wrapper, mod_mrf, mod_receive, mod_twms`)
   compiled and installed.
 - `mod_proxy` installed.
@@ -201,7 +201,7 @@ reproject imagery.
 
 ## Requirements
 
-- Python 3.6
+- Python >=3.6
 - OnEarth 2 modules (`mod_wmts_wrapper, mod_reproject, mod_receive, mod_twms`)
   compiled and installed.
 - `mod_proxy` installed.
@@ -223,6 +223,7 @@ This tool requires configuration files to work:
 
 - endpoint config -- contains information about how the WMTS and TWMS endpoints
   should be set up in Apache.
+- local_addr -- local address for tile services (required for SSL) default: "http://172.17.0.1" (Docker host)
 
 Note that Apache must be restarted for new configurations to take effect. This
 command may need to be run as `sudo` depending on the permission settings for
@@ -293,7 +294,7 @@ command line parameter.
 reprojected to. Note that this projection must have Tile Matrix Sets configured
 in the Tile Matrix Set definition file.
 - `source_gc_uri` (required) -- If a reproject endpoint, this is the URI of the source WMTS GetCapabilities endpoint.
-- `replace_with_local` (optional) -- Replace matching host names with local Docker host IP 172.17.0.1 so that connections stay local
+- `replace_with_local` (optional) -- Replace matching host names with local Docker host IP 172.17.0.1 (or custom server name, if different) so that connections stay local
 
 **wmts_service options**
 
