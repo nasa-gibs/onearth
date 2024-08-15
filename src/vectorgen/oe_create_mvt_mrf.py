@@ -440,6 +440,7 @@ def rtree_index_generator(features, filter_list, feature_id, create_feature_id):
         try:
             if len(filter_list) == 0 or passes_filters(feature, filter_list):
                 if create_feature_id:
+                    feature['properties'] = dict(feature['properties'])
                     if feature_id in feature['properties']:
                         raise ValueError("Unique ID Property (" + feature_id + " already exists; Cannot create")
 

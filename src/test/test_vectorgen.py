@@ -634,6 +634,7 @@ class TestVectorgen(unittest.TestCase):
             if byte != first_byte:
                 tile_num_features = len(tile[list(tile.keys())[0]]['features'])
                 top_tile_feature_count += tile_num_features
+                self.assertTrue('UID' in tile[list(tile.keys())[0]]['features'][0]['properties'].keys(), "Generated MVT is missing the 'UID' feature_id attribute.")
             # Make sure the feature filter worked correctly
             for layer in tile:
                 for feature in tile[layer]['features']:
