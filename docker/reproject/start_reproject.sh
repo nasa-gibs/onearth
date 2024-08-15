@@ -114,6 +114,7 @@ if [ "$USE_SSL" = true ]; then
 else
   python3 /usr/bin/oe2_reproject_configure.py /etc/onearth/config/endpoint/oe-status_reproject.yaml >>/var/log/onearth/config.log 2>&1
 fi
+rm /etc/onearth/config/endpoint/oe-status_reproject.yaml
 
 echo "[$(date)] Starting Apache server" >> /var/log/onearth/config.log
 /usr/sbin/httpd -k start
