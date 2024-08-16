@@ -257,29 +257,37 @@ def updateDateService(redis_uri,
     scrape_threads    = []
     scrape_semaphore  = threading.BoundedSemaphore(10)
 
-    def updateRedis(proj, layer, sorted_parsed_dates):
+    def updateRedis(proj, s3_layer, sorted_parsed_dates):
         try:
-            print(f'Configuring layer: {layer}')
+            layers_to_update = [s3_layer]
+            copy_layer=r.get(f'{proj}:layer:{s3_layer}:copy_dates')
+            if copy_layer is not None:
+                copy_layer=copy_layer.decode("utf-8")
+                layers_to_update.append(copy_layer)
+            for layer in layers_to_update:
+                print(f'Configuring layer: {layer}')
+                if layer == copy_layer:
+                    print(f'Copying dates from {s3_layer}')
 
-            for date in sorted_parsed_dates:
-                r.zadd(f'{proj}:layer:{layer}:dates', {date.isoformat(): 0})
-                best_script(keys=[f'{proj}:layer:{layer}'], args=[date.isoformat()])
+                for date in sorted_parsed_dates:
+                    r.zadd(f'{proj}:layer:{layer}:dates', {date.isoformat(): 0})
+                    best_script(keys=[f'{proj}:layer:{layer}'], args=[date.isoformat()])
+                    if reproject and str(proj) == 'epsg4326':
+                        r.zadd(f'epsg3857:layer:{layer}:dates', {date.isoformat(): 0})
+                        best_script(keys=[f'epsg3857:layer:{layer}'], args=[date.isoformat()])
+
+                date_script(keys=[f'{proj}:layer:{layer}'])
                 if reproject and str(proj) == 'epsg4326':
-                    r.zadd(f'epsg3857:layer:{layer}:dates', {date.isoformat(): 0})
-                    best_script(keys=[f'epsg3857:layer:{layer}'], args=[date.isoformat()])
+                    date_script(keys=[f'epsg3857:layer:{layer}'])
 
-            date_script(keys=[f'{proj}:layer:{layer}'])
-            if reproject and str(proj) == 'epsg4326':
-                date_script(keys=[f'epsg3857:layer:{layer}'])
-
-            # check for best layer
-            bestLayer=r.get(f'{proj}:layer:{layer}:best_layer')
-            print("Best Layer: ", bestLayer)
-            if bestLayer is not None:
-                bestLayer=bestLayer.decode("utf-8")
-                date_script(keys=[f'{proj}:layer:{bestLayer}'])
-                if reproject and str(proj) == 'epsg4326':
-                    date_script(keys=[f'epsg3857:layer:{bestLayer}'])
+                # check for best layer
+                bestLayer=r.get(f'{proj}:layer:{layer}:best_layer')
+                print("Best Layer: ", bestLayer)
+                if bestLayer is not None:
+                    bestLayer=bestLayer.decode("utf-8")
+                    date_script(keys=[f'{proj}:layer:{bestLayer}'])
+                    if reproject and str(proj) == 'epsg4326':
+                        date_script(keys=[f'epsg3857:layer:{bestLayer}'])
 
         finally:
             scrape_semaphore.release()

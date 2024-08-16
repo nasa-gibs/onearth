@@ -1619,18 +1619,16 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
    
-    def test_copy_periods(self):
-        # Test copy_periods
+    def test_copy_dates(self):
+        # Test copy_dates
         r = redis.StrictRedis(host='localhost', port=6379, db=0)
-        copy_destinations = ['Copy_Destination_1', 'Copy_Destination_2']
-        for dest in copy_destinations:
-            r.sadd('epsg4326:layer:Test_CopyPeriods:copy_periods', dest)
+        r.set('epsg4326:layer:Test_CopyDates:copy_dates', 'Copy_Destination_1')
 
-        test_layers = [('Test_CopyPeriods', '2018-12-01',
+        test_layers = [('Test_CopyDates', '2018-12-01',
                         '2018-12-01/2020-12-01/P1M'),
-                       ('Test_CopyPeriods', '2019-01-01',
+                       ('Test_CopyDates', '2019-01-01',
                         '2018-12-01/2020-12-01/P1M'),
-                       ('Test_CopyPeriods', '2019-02-01',
+                       ('Test_CopyDates', '2019-02-01',
                         '2018-12-01/2020-12-01/P1M')]
         db_keys = ['epsg4326']
         config = 'DETECT/2020-12-01/P1M'
@@ -1638,11 +1636,11 @@ class TestTimeUtils(unittest.TestCase):
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
-        for layer in copy_destinations + ['Test_CopyPeriods']:
+        for layer in ['Copy_Destination_1', 'Test_CopyDates']:
             layer_res = res.get(layer)
             self.assertIsNotNone(
                 layer_res,
-                'Layer {0} not found in list of all layers'.format(layer[0]))
+                'Layer {0} not found in list of all layers'.format(layer))
             self.assertEqual(
                 '2018-12-01/2020-12-01/P1M', layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
