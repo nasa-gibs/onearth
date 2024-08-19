@@ -69,7 +69,7 @@ ahtse_make libahtse
 # ahtse_make mod_fillin
 # ahtse_make mod_retile
 # ahtse_make mod_pngmod
-ahtse_make mod_convert
+# ahtse_make mod_convert
 # ahtse_make mod_ecache
 
 #Deploy
