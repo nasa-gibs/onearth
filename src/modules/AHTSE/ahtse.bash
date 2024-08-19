@@ -112,7 +112,7 @@ LoadFile modules/libahtse.so
 #LoadModule pngmod_module modules/mod_pngmod.so
 
 # # Tile data conversions
-LoadModule convert_module modules/mod_convert.so
+# LoadModule convert_module modules/mod_convert.so
 END_LABEL
 
 cp ahtse.conf /etc/httpd/conf.modules.d/
