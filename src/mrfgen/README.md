@@ -28,8 +28,8 @@ Manual install (example using `conda`)
 
    To use mrfgen as a command without specifying path (`mrfgen.py -c ...`),
    copy it to a location in your PATH.
-   ```Shell
-   cp src/mrfgen <installation location>
+   ```
+   ./install.py /usr/local/bin
    ```
 
 ## Usage
