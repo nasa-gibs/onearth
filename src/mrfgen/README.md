@@ -4,15 +4,27 @@ This tool is used to help automate the generation of MRF files. It takes in a li
 
 ## Installation
 
-Yum install
+Yum install (e.g. Red Hat Enterprise Linux)
 ```Shell
 sudo yum -y install onearth-mrfgen-*.x86_64.rpm
 ```
 
-Manual install
-```Shell
-cp src/mrfgen <installation location>
-```
+Manual install (example using `conda`)
+1. From this directory, create and activate environment
+   ```
+   conda env create -f environment.yml
+   conda activate mrfgen
+   ```
+
+2. Build the C (Cython) extension
+   ```
+   python setup.py build_ext --inplace
+   ```
+
+3. Copy to installation location (optional)
+   ```Shell
+   cp src/mrfgen <installation location>
+   ```
 
 ## Usage
 
