@@ -21,9 +21,11 @@ for p in HERE.glob("*.so"):
 if __name__ == "__main__":
     import argparse
     import shutil
+    import sys
 
     parser = argparse.ArgumentParser()
     parser.add_argument("DIR", type=Path)
+    parser.add_argument("-b", "--update-shebang", action="store_true")
     args = parser.parse_args()
 
     dst_dir = args.DIR
@@ -31,7 +33,19 @@ if __name__ == "__main__":
         print("error: install_dir must be an existing directory")
         raise SystemExit(2)
 
+    py = Path(sys.executable)
+
     for src in TO_COPY:
         dst = dst_dir / src.name
         shutil.copy2(src, dst)
         print(f"copied {src} to {dst_dir}")
+
+        if args.update_shebang and dst.suffix == ".py":
+            # Update shebang to use current python interpreter
+            with open(dst, "r+") as f:
+                lines = f.readlines()
+                if lines[0].startswith("#!"):
+                    lines[0] = f"#!{py}\n"
+                    f.seek(0)
+                    f.writelines(lines)
+                    print(f"updated shebang in {dst} to use {py}")
