@@ -56,7 +56,7 @@ import xml.dom.minidom
 import re
 from oe_utils import sigevent, log_sig_exit, log_sig_err, log_sig_warn, log_info_mssg, log_info_mssg_with_timestamp, log_the_command, check_abs_path
 
-versionNumber = os.environ.get('ONEARTH_VERSION')
+versionNumber = os.environ.get('ONEARTH_VERSION', '?')
 colormap_filename = None
     
 class ColorEntry:
