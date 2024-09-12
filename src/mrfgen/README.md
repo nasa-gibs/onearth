@@ -21,7 +21,8 @@ Manual install (example using `conda`)
    python setup.py build_ext --inplace
    ```
    After this, you can use mrfgen and the other tools with their full or relative path
-   (e.g., from this directory, `./mrfgen.py -c ...`),
+   (e.g., from this directory, `./mrfgen.py -c ...`,
+   or `/full/path/to/mrfgen.py -c ...`),
    provided the Conda environment is active.
 
 3. Copy to installation location (optional)
