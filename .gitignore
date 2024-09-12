@@ -15,6 +15,8 @@ build
 /src/test/results/
 /src/test/test_*_results.xml
 /src/test/mrfgen_files/jpng/temp*
+/src/mrfgen/RgbToPalLib.c
+/src/mrfgen/RgbToPalLib.*.so
 /tmp/
 .vscode/*
 *.pyc
