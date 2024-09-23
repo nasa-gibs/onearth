@@ -21,7 +21,7 @@ RUN dnf -y update && \
         libcurl-devel-7.76.1 \
         libjpeg-turbo-devel-2.0.90 \
         libxml2-devel-2.9.13 \
-        mod_ssl-2.4.57 \
+        mod_ssl-2.4.57-11.el9_4.1 \
         openssl-devel-3.0.7 \
         luarocks-3.9.2 \
         redis-6.2.7 \
@@ -116,6 +116,7 @@ RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz && \
 WORKDIR /tmp/rpmbuild/SPECS
 RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g' httpd.spec && \
     sed -i 's:--with-apr-util=%{_prefix}:--with-apr-util=/usr/local/apr/bin/apu-1-config:g' httpd.spec && \
+    sed -i 's/{?dist}.1/{?dist}_4.1/g' httpd.spec && \
     HOME="/tmp" rpmbuild -bp httpd.spec && \
     ls /home/oe2/onearth && \
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
