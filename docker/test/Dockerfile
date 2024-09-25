@@ -98,11 +98,11 @@ RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.1.tar.gz && \
-    tar xf mapserver-8.0.1.tar.gz
-WORKDIR /tmp/mapserver-8.0.1
+RUN wget http://download.osgeo.org/mapserver/mapserver-8.2.2.tar.gz && \
+    tar xf mapserver-8.2.2.tar.gz
+WORKDIR /tmp/mapserver-8.2.2
 RUN mkdir build
-WORKDIR /tmp/mapserver-8.0.1/build
+WORKDIR /tmp/mapserver-8.2.2/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
