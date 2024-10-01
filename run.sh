@@ -5,7 +5,7 @@ USE_SSL=${1:-false}
 SERVER_NAME=${2:-localhost}
 
 # Set OnEarth version and release
-source ./version.sh
+. ./version.sh
 
 # Detect CPU architecture
 ARCH=$(uname -m)
