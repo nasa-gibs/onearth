@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set OnEarth version and release
-source ./version.sh
+. ./version.sh
 
 # Detect CPU architecture
 ARCH=$(uname -m)
