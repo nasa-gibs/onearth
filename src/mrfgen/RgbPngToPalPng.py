@@ -83,7 +83,7 @@ for opt, arg in opts:
             sys.exit(-1)
     elif opt == '-o':
         palPng = arg
-        print('Output pelette PNG image: ' + palPng)
+        print('Output palette PNG image: ' + palPng)
     elif opt == '-f':
         fillValue = arg 
         if int(fillValue) < 0 or int(fillValue) > 255:
