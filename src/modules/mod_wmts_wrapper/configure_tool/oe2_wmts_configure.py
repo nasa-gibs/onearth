@@ -537,7 +537,7 @@ def make_layer_config(endpoint_config, layer):
             internal_endpoint_all = os.path.join(internal_path_split[0], "all")
             convert_file_path = Path(internal_endpoint_all, layer_id, "default",
                                     tilematrixset, 'mod_convert.config')
-            src_mrf_file_path = Path(internal_endpoint_all, convert_src_name, "default",
+            src_mrf_file_path = Path(internal_endpoint_all, layer_id, "default",
                                 tilematrixset, 'mod_mrf.config')
             convert_external_endpoint = os.path.join(os.path.split(external_endpoint)[0], "all")
         else:
@@ -548,7 +548,7 @@ def make_layer_config(endpoint_config, layer):
             convert_external_endpoint = external_endpoint
         mrf_or_convert_configs = (
             f'Convert_RegExp {external_endpoint}/{alias}/\n'
-            f'        Convert_Source {convert_external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format}\n'
+            f'        Convert_Source {convert_external_endpoint}/${{layer_src}}_ZEN/default/${{date}}/{tilematrixset}/ {format}\n'
             f'        Convert_ConfigurationFiles {src_mrf_file_path} {convert_file_path}')
     else:
         mrf_or_convert_configs = (

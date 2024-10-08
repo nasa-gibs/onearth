@@ -253,11 +253,11 @@ source_mrf:
 ### Optional for WMTS/TWMS
 
 #### ZENJPEG
-Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer.
+Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. The name of the source ZENJPEG layer should be the same as that of the converted layer but end with `_ZEN`.
 
 ```
 convert_mrf: 
-  convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT .jpeg) of the source zenjpeg.
+  convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT_ZEN .jpeg) of the source zenjpeg.
 ```
   
   This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. convert_mrf must also be listed in the layer's "best" configuration file.

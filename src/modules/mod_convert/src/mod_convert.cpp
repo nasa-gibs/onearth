@@ -15,6 +15,7 @@
 #include <apr_strings.h>
 #include <png.h>
 #include <receive_context.h>
+#include <jansson.h>
 
 NS_AHTSE_USE
 NS_ICD_USE
@@ -53,7 +54,28 @@ struct convert_conf {
     int indirect;
 };
 
+typedef struct {
+    const char *role;
+    int time;
+    ap_regex_t *date_regexp;
+    const char *mime_type;
+    const char *time_lookup_uri;
+    int year_dir;
+    const char *layer_alias;
+    apr_array_header_t *date_service_keys;
+    const char *base_path;
+    const char *gc_uri;
+} wmts_wrapper_conf;
+
+module AP_MODULE_DECLARE_DATA wmts_wrapper_module;
+
 using namespace std;
+
+// If the condition is met, sends the message to the error log and returns HTTP INTERNAL ERROR
+#define SERR_IF(X, msg) if (X) { \
+    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, msg);\
+    return HTTP_INTERNAL_SERVER_ERROR; \
+}
 
 // Converstion of src from TFrom to TTo, as required by the configuration
 template<typename TFrom, typename TTo> static void 
@@ -175,6 +197,90 @@ static const char *find_and_replace_string(apr_pool_t *p, const char *search_str
     return source_str;
 }
 
+static const char *get_actual_layername_from_filename(apr_pool_t *p,  const char *filename) {
+
+    int i, len = strlen(filename);
+    char *actual_layer_name = (char *)apr_pcalloc(p, MAX_STRING_LEN);
+
+    for (i = len - 1; i >= 0; i--) {
+        if (filename[i] == '-')	{		// Use the last '-' to find date in filename
+            break;
+        }
+    }
+
+    if (i != -1) {
+        strncpy(actual_layer_name, filename, i);    // Exclude date in actual layername
+    } else {
+        strncpy(actual_layer_name, filename, len);  // No date in filename, so just use full filename
+    }
+
+    return actual_layer_name;
+}
+
+static int get_source_layername_from_date_service(request_rec *r, wmts_wrapper_conf *cfg, const char *layer_name, const char *datetime_str, char **prefix, char **filename, char **date_string) {
+    // Rewrite URI to exclude date and put the date in the notes for the redirect.
+    ap_filter_rec_t *receive_filter = ap_get_output_filter_handle("Receive");
+    SERR_IF(!receive_filter, "Mod_convert needs mod_receive to be available to make time queries");
+
+    // Allocate buffer for JSON response
+    receive_ctx rctx;
+    rctx.maxsize = 1024*1024;
+    rctx.buffer = (char *)apr_palloc(r->pool, rctx.maxsize);
+    rctx.size = 0;
+
+    const char* time_request_uri = apr_psprintf(r->pool, "%s?layer=%s&datetime=%s", cfg->time_lookup_uri, layer_name, datetime_str);
+    if (cfg->date_service_keys)
+    {
+        int i;
+        for (i=0; i<cfg->date_service_keys->nelts; i++) {
+            const char *value = (const char *)APR_ARRAY_IDX(cfg->date_service_keys, i, const char *);
+            time_request_uri = apr_psprintf(r->pool, "%s&key%d=%s", time_request_uri, i+1, value);
+        }
+    }
+
+    request_rec *rr = ap_sub_req_lookup_uri(time_request_uri, r, NULL);
+    ap_filter_t *rf = ap_add_output_filter_handle(receive_filter, &rctx, rr, rr->connection); 
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin date request, filterName=%s", r->output_filters->frec->name);
+
+    // LOGGING
+    const char *uuid = apr_table_get(r->headers_in, "UUID") 
+        ? apr_table_get(r->headers_in, "UUID") 
+        : apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_request_source_layername, timestamp=%ld, uuid=%s",
+        apr_time_now(), uuid);
+    apr_table_set(rr->headers_out, "UUID", uuid);
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_send_to_date_service, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
+
+    int rr_status = ap_run_sub_req(rr);
+    ap_remove_output_filter(rf);
+    if (rr_status != APR_SUCCESS) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Source layername lookup failed for %s", time_request_uri);
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_send_to_date_service, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=end_return_to_convert, timestamp=%ld, uuid=%s",
+      apr_time_now(), uuid);
+
+    json_error_t *error = (json_error_t *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    json_t *root = json_loadb(rctx.buffer, rctx.size, 0, error);
+
+    // If we get an error message from the date service, kick back a 404.
+    char *err_msg = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    if (json_unpack(root, "{s:s}", "err_msg", &err_msg) == 0) {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Date service error: %s", err_msg);
+        return HTTP_NOT_FOUND;
+    }
+
+    json_unpack(root, "{s:s, s:s, s:s}", "prefix", prefix, "date", date_string, "filename", filename);
+
+    ap_destroy_sub_req(rr);
+    return APR_SUCCESS;
+}
+
 static int handler(request_rec *r)
 {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Start convert");
@@ -246,6 +352,19 @@ static int handler(request_rec *r)
         USER_AGENT : apr_pstrcat(r->pool, USER_AGENT ", ", user_agent, NULL);
     char* sub_uri = tile_url(r->pool, cfg->source, tile, cfg->suffix);
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "Before replace %s", sub_uri);
+
+    // Need to perform the time service request here to find out what the layer_src should be.
+    apr_array_pop(tokens); // Discard TMS name
+    apr_array_pop(tokens); // Discard style name
+    char *layer_name = *(char **)apr_array_pop(tokens);
+    char *prefix = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    char *filename = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    char *date_string = (char *)apr_pcalloc(r->pool, MAX_STRING_LEN);
+    wmts_wrapper_conf *wmts_cfg = (wmts_wrapper_conf *)ap_get_module_config(r->per_dir_config, &wmts_wrapper_module);
+    int status = get_source_layername_from_date_service(r, wmts_cfg, layer_name, datetime_str, &prefix, &filename, &date_string);
+    if (status != APR_SUCCESS) return status;
+    const char *actual_layer_name = get_actual_layername_from_filename(r->pool, filename);
+    sub_uri = (char *)find_and_replace_string(r->pool, "${layer_src}", sub_uri, actual_layer_name);
     sub_uri = (char *)find_and_replace_string(r->pool, "${date}", sub_uri, datetime_str);
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "After replace %s", sub_uri);
 
