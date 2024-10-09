@@ -1,8 +1,8 @@
-abstract: GOES-East_ABI_Air_Mass_v0_NRT_convert abstract
-best_layer: GOES-East_ABI_Air_Mass_v0_NRT_convert
-layer_id: GOES-East_ABI_Air_Mass_v0_NRT_convert
-layer_name: GOES-East ABI Air Mass v0 NRT convert tileset
-layer_title: b'Air Mass (ABI, GOES-East-Convert)'
+abstract: GOES-East_ABI_Air_Mass_v0_NRT abstract
+best_layer: GOES-East_ABI_Air_Mass_v0_NRT
+layer_id: GOES-East_ABI_Air_Mass_v0_NRT
+layer_name: GOES-East ABI Air Mass v0 NRT tileset
+layer_title: b'Air Mass (ABI, GOES-East)'
 metadata: []
 mime_type: image/png
 projection: EPSG:4326
@@ -18,7 +18,7 @@ source_mrf:
   tile_size_y: 512
   year_dir: true
 convert_mrf: 
-  convert_source: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPG .jpeg
+  convert_source: .jpeg
 static: false
 tilematrixset: 2km
 tilematrixset_limits_id: goes-east-2km
