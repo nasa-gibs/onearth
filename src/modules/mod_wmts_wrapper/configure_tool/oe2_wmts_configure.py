@@ -528,7 +528,6 @@ def make_layer_config(endpoint_config, layer):
 
     mrf_or_convert_configs = ''
     if convert_src:
-        convert_src_name , format = convert_src.split(" ")
         
         # Best layers need to use "all" for the endpoints because the source files for mod_convert aren't at the best endpoint.
         # They'd be in NRT or STD, as well as "all"
@@ -543,12 +542,12 @@ def make_layer_config(endpoint_config, layer):
         else:
             convert_file_path = Path(internal_endpoint, layer_id, "default",
                                     tilematrixset, 'mod_convert.config')
-            src_mrf_file_path = Path(internal_endpoint, convert_src_name, "default",
+            src_mrf_file_path = Path(internal_endpoint, layer_id, "default",
                                 tilematrixset, 'mod_mrf.config')
             convert_external_endpoint = external_endpoint
         mrf_or_convert_configs = (
             f'Convert_RegExp {external_endpoint}/{alias}/\n'
-            f'        Convert_Source {convert_external_endpoint}/${{layer_src}}_ZENJPG/default/${{date}}/{tilematrixset}/ {format}\n'
+            f'        Convert_Source {convert_external_endpoint}/${{layer_src}}_ZENJPG/default/${{date}}/{tilematrixset}/ {convert_src}\n'
             f'        Convert_ConfigurationFiles {src_mrf_file_path} {convert_file_path}')
     else:
         mrf_or_convert_configs = (

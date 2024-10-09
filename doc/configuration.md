@@ -257,10 +257,10 @@ Currently mod_convert need two layers to be setup. One will serve the source ZEN
 
 ```
 convert_mrf: 
-  convert_source: layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPG .jpeg) of the source zenjpeg.
+  convert_source: format to convert from. For ZenJPEG, this will be .jpeg
 ```
-  
-  This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. convert_mrf must also be listed in the layer's "best" configuration file.
+
+  convert_mrf must also be listed in the layer's "best" configuration file.
 
 ```
 hidden: true
@@ -419,7 +419,7 @@ source_mrf:
   tile_size_y: 512
   year_dir: true
 convert_mrf: 
-  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG .jpeg
+  convert_source: .jpeg
 static: false
 tilematrixset: 1km
 tilematrixset_limits_id: goes-east-1km
@@ -451,7 +451,7 @@ source_mrf:
   year_dir: true
 static: false
 convert_mrf: 
-  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG .jpeg
+  convert_source: .jpeg
 tilematrixset: 1km
 tilematrixset_limits_id: goes-east-1km
 time_config:
