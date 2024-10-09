@@ -253,26 +253,25 @@ source_mrf:
 ### Optional for WMTS/TWMS
 
 #### ZENJPEG
-Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. The name of the source ZENJPEG layer should be the same as that of the converted layer but end with `_ZEN`.
+Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. The name of the source ZENJPEG layer must be the same as that of the converted layer but end with `_ZENJPG`.
 
 ```
 convert_mrf: 
-  convert_source: "layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT_ZEN .jpeg) of the source zenjpeg.
+  convert_source: layer_id and format (ie: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPG .jpeg) of the source zenjpeg.
 ```
   
   This layer_id (convert_src_name) and format is used to generate the Convert_Source {external_endpoint}/{convert_src_name}/default/${{date}}/{tilematrixset}/ {format} for mod_convert configs. convert_mrf must also be listed in the layer's "best" configuration file.
 
 ```
-copy_dates: layer_id
-```
-  The layer_id of a layer that this layer's time information should be copied to. This is specifically needed for the source layer of ZENJPEG layers, as neither the converted layer nor the best layer will have time period infomation otherwise. For ZENJPEG, the copy_dates option should be included in the source layer's layer configuration and should include the layer_id of the converted layer. For example, a layer config for GOES-East_ABI_GeoColor_v0_NRT_ZEN would have the following copy_dates:
-```
-  copy_dates: GOES-East_ABI_GeoColor_v0_NRT
-```
-```
 hidden: true
 ```
 A layer config with "hidden: true" will result in its layer being excluded from the WMTS and TWMS GetCapabilities documents. Consequently, the layer will also be excluded from WMS GetCapabilities and will not be available for use in WMS at all. WMTS requests for the layer will still work, however. For ZenJPEG, the source layer config should have this option enabled so that the source layer is not advertised, as users should only be using the converted layer.
+
+```
+copy_dates: layer_id
+```
+  The layer_id of a layer that this layer's time information should be copied to. This is configured by default for ZenJPEG layers, and thus does not need to be explicitly configured in their layer configurations.
+
 
 #### Best Layers
 
@@ -371,9 +370,9 @@ source_mrf:
 
 Sample ZENJPEG source layer configuration:
 ```
-abstract: GOES-East_ABI_GeoColor_v0_NRT_ZEN abstract
-layer_id: GOES-East_ABI_GeoColor_v0_NRT_ZEN
-layer_name: GOES-East ABI GeoColor v0 NRT ZEN tileset
+abstract: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG abstract
+layer_id: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG
+layer_name: GOES-East ABI GeoColor v0 NRT ZENJPG tileset
 layer_title: Geo Color (v0, Near Real-Time, ABI, GOES-East, ZEN)
 metadata: []
 mime_type: image/jpeg
@@ -420,7 +419,7 @@ source_mrf:
   tile_size_y: 512
   year_dir: true
 convert_mrf: 
-  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZEN .jpeg
+  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG .jpeg
 static: false
 tilematrixset: 1km
 tilematrixset_limits_id: goes-east-1km
@@ -452,7 +451,7 @@ source_mrf:
   year_dir: true
 static: false
 convert_mrf: 
-  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZEN .jpeg
+  convert_source: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG .jpeg
 tilematrixset: 1km
 tilematrixset_limits_id: goes-east-1km
 time_config:

@@ -1,7 +1,7 @@
-abstract: test_zenjpeg_ZEN abstract
-best_layer: test_zenjpeg_ZEN
-layer_id: test_zenjpeg_ZEN
-layer_name: test_zenjpeg_ZEN tileset
+abstract: test_zenjpeg_ZENJPG abstract
+best_layer: test_zenjpeg_ZENJPG
+layer_id: test_zenjpeg_ZENJPG
+layer_name: test_zenjpeg_ZENJPG tileset
 layer_title: b'Air Mass (ABI, GOES-East, ZEN)'
 metadata: []
 mime_type: image/jpeg
@@ -17,8 +17,6 @@ source_mrf:
   tile_size_x: 512
   tile_size_y: 512
   year_dir: true
-copy_dates:
- - test_zenjpeg
 static: false
 hidden: true
 tilematrixset: 2km

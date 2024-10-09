@@ -548,7 +548,7 @@ def make_layer_config(endpoint_config, layer):
             convert_external_endpoint = external_endpoint
         mrf_or_convert_configs = (
             f'Convert_RegExp {external_endpoint}/{alias}/\n'
-            f'        Convert_Source {convert_external_endpoint}/${{layer_src}}_ZEN/default/${{date}}/{tilematrixset}/ {format}\n'
+            f'        Convert_Source {convert_external_endpoint}/${{layer_src}}_ZENJPG/default/${{date}}/{tilematrixset}/ {format}\n'
             f'        Convert_ConfigurationFiles {src_mrf_file_path} {convert_file_path}')
     else:
         mrf_or_convert_configs = (
