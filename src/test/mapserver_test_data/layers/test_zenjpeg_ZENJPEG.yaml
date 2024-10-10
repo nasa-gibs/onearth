@@ -1,8 +1,8 @@
-abstract: test_zenjpeg_ZENJPG abstract
-best_layer: test_zenjpeg_ZENJPG
-layer_id: test_zenjpeg_ZENJPG
-layer_name: test_zenjpeg_ZENJPG tileset
-layer_title: b'Air Mass (ABI, GOES-East, ZEN)'
+abstract: test_zenjpeg_ZENJPEG abstract
+best_layer: test_zenjpeg_ZENJPEG
+layer_id: test_zenjpeg_ZENJPEG
+layer_name: test_zenjpeg_ZENJPEG tileset
+layer_title: b'Air Mass (ABI, GOES-East, ZENJPEG)'
 metadata: []
 mime_type: image/jpeg
 projection: EPSG:4326

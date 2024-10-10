@@ -556,7 +556,7 @@ class TestModWmtsWrapper(unittest.TestCase):
         tilematrixset = '2km'
         year = '2012'
 
-        config_prefix = 'test_zenjpeg_convert_mrf_date_yeardir_ZENJPG'
+        config_prefix = 'test_zenjpeg_convert_mrf_date_yeardir_ZENJPEG'
 
         # Add Apache config for base imagery layer to be served by mod_mrf
         layer_path = '{}/default/{}'.format(config_prefix, tilematrixset)
@@ -627,7 +627,7 @@ class TestModWmtsWrapper(unittest.TestCase):
             f.write(mod_mrf_config)
 
         redis_data = [
-            ('test_zenjpeg_convert_mrf_date_yeardir_ZENJPG', '2012-02-22',
+            ('test_zenjpeg_convert_mrf_date_yeardir_ZENJPEG', '2012-02-22',
              '2012-02-22/2012-02-22/P1D'),
         ]
         seed_redis_data(redis_data)
@@ -656,10 +656,10 @@ class TestModWmtsWrapper(unittest.TestCase):
             [('{config_path}', self.mrf_zenjpeg_convert_endpoint_path_date_yeardir),
              ('{config_files_paths}',
               os.path.join(self.mrf_zenjpeg_source_endpoint_path_date_yeardir,
-                           'test_zenjpeg_convert_mrf_date_yeardir_ZENJPG' + '.config') + " " \
+                           'test_zenjpeg_convert_mrf_date_yeardir_ZENJPEG' + '.config') + " " \
                             + os.path.join(self.mrf_zenjpeg_convert_endpoint_path_date_yeardir,
                            'test_zenjpeg_convert_mrf_date_yeardir' + '_mod_convert.config')),
-             ('{convert_source}', '/mod_wmts_wrapper_mrf/${layer_src}_ZENJPG/default/${date}/2km/ .jpeg'),
+             ('{convert_source}', '/mod_wmts_wrapper_mrf/${layer_src}_ZENJPEG/default/${date}/2km/ .jpeg'),
              ('{alias}', self.endpoint_prefix_mrf),
              ('{endpoint_path}', self.endpoint_path),
              ('{layer_name}', config_prefix),
@@ -1727,7 +1727,7 @@ class TestModWmtsWrapper(unittest.TestCase):
             self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
             
     def test_zenjpeg_source_mrf_date_yeardir_tile(self):
-        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_convert_mrf_date_yeardir_ZENJPG/default/2012-02-22/2km/0/0/0.jpg'
+        tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_convert_mrf_date_yeardir_ZENJPEG/default/2012-02-22/2km/0/0/0.jpg'
 
         ref_hash = 'c6d8c3f38079ef866fb0b681b486296e'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(

@@ -253,7 +253,7 @@ source_mrf:
 ### Optional for WMTS/TWMS
 
 #### ZENJPEG
-Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. The name of the source ZENJPEG layer must be the same as that of the converted layer but end with `_ZENJPG`.
+Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. The name of the source ZENJPEG layer must be the same as that of the converted layer but end with `_ZENJPEG`.
 
 ```
 convert_mrf: 
@@ -370,9 +370,9 @@ source_mrf:
 
 Sample ZENJPEG source layer configuration:
 ```
-abstract: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG abstract
-layer_id: GOES-East_ABI_GeoColor_v0_NRT_ZENJPG
-layer_name: GOES-East ABI GeoColor v0 NRT ZENJPG tileset
+abstract: GOES-East_ABI_GeoColor_v0_NRT_ZENJPEG abstract
+layer_id: GOES-East_ABI_GeoColor_v0_NRT_ZENJPEG
+layer_name: GOES-East ABI GeoColor v0 NRT ZENJPEG tileset
 layer_title: Geo Color (v0, Near Real-Time, ABI, GOES-East, ZEN)
 metadata: []
 mime_type: image/jpeg

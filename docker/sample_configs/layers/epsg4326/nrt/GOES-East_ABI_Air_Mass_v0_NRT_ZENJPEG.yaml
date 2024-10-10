@@ -1,8 +1,8 @@
-abstract: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPG abstract
-best_layer: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPG
-layer_id: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPG
-layer_name: GOES-East ABI Air Mass v0 NRT ZENJPG tileset
-layer_title: b'Air Mass (ABI, GOES-East, ZENJPG)'
+abstract: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPEG abstract
+best_layer: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPEG
+layer_id: GOES-East_ABI_Air_Mass_v0_NRT_ZENJPEG
+layer_name: GOES-East ABI Air Mass v0 NRT ZENJPEG tileset
+layer_title: b'Air Mass (ABI, GOES-East, ZENJPEG)'
 metadata: []
 mime_type: image/jpeg
 projection: EPSG:4326

@@ -87,14 +87,14 @@ def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=Fal
         print(f'Adding time period configuration from {config_path}')
         key = proj + ':layer:' + str(layer_config['config']['layer_id'])
 
-        # add copy_dates to redis if specified in the config or if it's a ZENJPG layer
+        # add copy_dates to redis if specified in the config or if it's a ZENJPEG layer
         copy_destination = None
         key_copy_dates = key + ':copy_dates'
         key_copy_dates_wm = key_copy_dates.replace('epsg4326', 'epsg3857')
         if 'copy_dates' in layer_config['config'].keys():
             copy_destination = layer_config['config']['copy_dates']
-        elif '_ZENJPG' in layer_config['config']['layer_id']:
-            copy_destination = layer_config['config']['layer_id'].replace('_ZENJPG', '')
+        elif '_ZENJPEG' in layer_config['config']['layer_id']:
+            copy_destination = layer_config['config']['layer_id'].replace('_ZENJPEG', '')
         
         if copy_destination:
             # clear out existing copy_dates key for layer
