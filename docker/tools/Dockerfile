@@ -1,6 +1,7 @@
 # This Dockerfile must be run from source root
 FROM almalinux:9.3
 
+ARG MRF_VERSION=2.5.0
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
 
@@ -94,7 +95,7 @@ RUN ldconfig -v
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Install mrf_apps
-RUN git clone https://github.com/nasa-gibs/mrf.git && \
+RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
     curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
     cd mrf/mrf_apps/ && \
     echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
