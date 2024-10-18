@@ -33,4 +33,5 @@ limitations under the License.
  <target_extents>-180,-90,180,90</target_extents>
  <mrf_merge>true</mrf_merge>
  <mrf_nocopy>true</mrf_nocopy>
+ <mrf_noaddo>true</mrf_noaddo>
 </mrfgen_configuration>

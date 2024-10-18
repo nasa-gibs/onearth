@@ -903,7 +903,10 @@ def run_mrf_insert(tiles, mrf, insert_method, resize_resampling, target_x, targe
     if target_y == '':
         target_y = float(int(target_x)/2)
     log_info_mssg("Inserting new tiles into " + mrf)
-    mrf_insert_command_list = ['mrf_insert', '-r', insert_method]
+    mrf_insert_command_list = ['mrf_insert']
+    if insert_method != '':
+        mrf_insert_command_list.append('-r')
+        mrf_insert_command_list.append(insert_method)
 
     should_lock = mp_safe
 
@@ -1292,6 +1295,114 @@ def create_vrt(basename, empty_tile, epsg, xmin, ymin, xmax, ymax):
     return empty_vrt_filename
 
 
+def run_gdaladdo(overview_resampling, mrf_filename, overview_levels, zlevels):
+    """
+    Runs gdaladdo on mrf
+    Arguments:
+        overview_resampling -- The resampling method for generating overviews
+        mrf_filename -- The MRF filename
+        overview_levels -- A list of integral overview levels to build
+        zlevels -- The number of zlevels included in the MRF
+    """
+
+    idx_filename = mrf_filename.replace('.mrf', '.idx')
+    compare_time = time.strftime('%Y%m%d.%H%M%S', time.localtime())
+    old_stats = os.stat(idx_filename)
+
+    # Get largest x,y dimension of MRF, usually x.
+    try:
+        # Open file.
+        mrf_file = open(mrf_filename, 'r+')
+    except IOError:
+        mssg = str().join(['Cannot read:  ', mrf_filename])
+        log_sig_exit('ERROR', mssg, sigevent_url)
+    else:
+        try:
+            dom = xml.dom.minidom.parse(mrf_file)
+        except:
+            mssg = str().join(['Cannot parse:  ', mrf_filename])
+            log_sig_exit('ERROR', mssg, sigevent_url)
+        # Raster
+        size_elements = dom.getElementsByTagName('Size')
+        sizeX = size_elements[0].getAttribute('x')  # width
+        sizeY = size_elements[0].getAttribute('y')  # height
+        # Send to log.
+        log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
+
+        # Add mp_safe to Raster if using z levels
+        if zlevels != '':
+            mrf_file.seek(0)
+            lines = mrf_file.readlines()
+            for idx in range(0, len(lines)):
+                if '<Raster>' in str(lines[idx]):
+                    lines[idx] = str(lines[idx]).replace('<Raster>', '<Raster mp_safe="on">')
+                    log_info_mssg("Set MRF mp_safe on")
+            mrf_file.seek(0)
+            mrf_file.truncate()
+            mrf_file.writelines(lines)
+
+        # Close file.
+        mrf_file.close()
+        # Get largest dimension, usually X.
+        actual_size = max([float(sizeX), float(sizeY)])
+
+    # Create the gdaladdo command.
+    gdaladdo_command_list = ['gdaladdo', '-r', overview_resampling, str(mrf_filename)]
+    # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
+    if overview_levels == '':
+        overview = 2
+        gdaladdo_command_list.append(str(overview))
+        exp = 2
+        while (overview*int(mrf_blocksize)) < actual_size:
+            overview = 2**exp
+            exp = exp+1
+            gdaladdo_command_list.append(str(overview))
+    else:
+        for overview in overview_levels:
+            gdaladdo_command_list.append(str(overview))
+    # Log the gdaladdo command.
+    log_the_command(gdaladdo_command_list)
+    # Capture stderr.
+    gdaladdo_stderr_filename = str().join([working_dir, basename,
+                                          '_gdaladdo_stderr.txt'])
+    # Open stderr file for write.
+    gdaladdo_stderr_file = open(gdaladdo_stderr_filename, 'w')
+
+    # Execute gdaladdo.
+    gdaladdo_process = subprocess.Popen(gdaladdo_command_list,
+                                        stdout=subprocess.PIPE,
+                                        stderr=gdaladdo_stderr_file)
+    out, err = gdaladdo_process.communicate()
+    log_info_mssg(out)
+    if gdaladdo_process.returncode != 0:
+        log_sig_err("gdaladdo return code {0}".format(gdaladdo_process.returncode), sigevent_url)
+
+    # Close stderr file.
+    gdaladdo_stderr_file.close()
+
+    # Update previous cycle time only if gdaladdo was successful.
+    addf = get_modification_time(idx_filename)
+    new_stats = os.stat(idx_filename)
+
+    # Check for gdaladdo success by checking time stamp and file size.
+    if gdaladdo_process.returncode == -11:
+        log_sig_exit('ERROR', 'Unsuccessful:  gdaladdo   Segmentation fault', 
+                     sigevent_url)
+    elif (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
+        remove_file(gdaladdo_stderr_filename)
+    else:
+        log_info_mssg(str().join(['addf = ',str(addf)]))
+        log_info_mssg(str().join(['compare_time = ',str(compare_time)]))
+        log_info_mssg('addf should be >= compare_time')
+        log_info_mssg(str().join(['new_stats.st_size = ',
+                                 str(new_stats.st_size)]))
+        log_info_mssg(str().join(['old_stats.st_size = ',
+                                 str(old_stats.st_size)]))
+        log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
+        mssg = str().join(['Unsuccessful:  gdaladdo   Errors: ', str(err)])
+        log_sig_exit('ERROR', mssg, sigevent_url)
+
+
 # call oe_utils' log_sig_err and keep track of errors if count_err is True
 def log_sig_err(mssg, sigevent_url, count_err=True):
     global errors
@@ -1512,7 +1623,7 @@ else:
         overview_resampling = get_dom_tag_value(dom, 'overview_resampling')
     except:
         overview_resampling = 'nearest'
-        # gdalwarp resampling method for resizing
+    # gdalwarp resampling method for resizing
     try:
         resize_resampling = get_dom_tag_value(dom, 'resize_resampling')
         if resize_resampling == "none":
@@ -1562,12 +1673,12 @@ else:
         nocopy = None
     # noaddo
     try:
-        if get_dom_tag_value(dom, 'mrf_noaddo') == "false":
-            noaddo = False
-        else:
+        if get_dom_tag_value(dom, 'mrf_noaddo') == "true":
             noaddo = True
+        else:
+            noaddo = False
     except:
-        noaddo = None
+        noaddo = False
 
     # mrf_cores (max number of cpu cores to run on if mrf_parallel is set, defaults to 4
     try:
@@ -2311,11 +2422,6 @@ if nocopy is None:
             nocopy = True
     log_info_mssg("Setting MRF nocopy to " + str(nocopy))
 
-# determine if noaddo should be used if not set
-if noaddo is None:
-    # nocopy implies mrf_insert is used, which already builds overviews
-    noaddo = nocopy
-
 # Write all tiles list to a file on disk.
 all_tiles_filename=str().join([working_dir, basename, '_all_tiles.txt'])
 try:
@@ -2404,7 +2510,11 @@ remove_file(vrt_filename)
 
 # Check if this is an MRF insert update, if not then regenerate a new MRF
 mrf_list = []
-if overview_resampling[:4].lower() == 'near' or overview_resampling.lower() == 'nnb':
+if overview_resampling.lower() == 'none' or overview_resampling == '':
+    # set to blank or none if we don't want to build overviews
+    overview_resampling = ''
+    insert_method = ''
+elif overview_resampling[:4].lower() == 'near' or overview_resampling.lower() == 'nnb':
     insert_method = 'NNb'
 else:
     insert_method = 'Avg'
@@ -2456,6 +2566,9 @@ elif len(mrf_list) == 1:
     
     # Clean up
     remove_file(all_tiles_filename)
+
+    if not noaddo and overview_resampling != '':
+        run_gdaladdo(overview_resampling, mrf, overview_levels, zlevels)
 
     if mrf_clean:
         mrf_data_name = data_name(mrf)
@@ -2709,7 +2822,7 @@ if use_brunsli == False and compress == "COMPRESS=JPEG":
 if nocopy == True:
     gdal_translate_command_list.append('-co')
     gdal_translate_command_list.append('NOCOPY=true')
-    if noaddo or len(alltiles) <= 1: # use UNIFORM_SCALE if empty MRF, single input, or noaddo
+    if (noaddo or len(alltiles) <= 1) and overview_resampling != '': # use UNIFORM_SCALE if empty MRF, single input, or noaddo and overview resampling specified
         gdal_translate_command_list.append('-co')
         gdal_translate_command_list.append('UNIFORM_SCALE='+str(int(overview)))
         
@@ -2749,45 +2862,6 @@ if len(mrf_output) == 0:
                      gdal_translate_stderr_filename])
     log_sig_exit('ERROR', mssg, sigevent_url)
 
-# Get largest x,y dimension of MRF, usually x.
-try:
-    # Open file.
-    mrf_file=open(mrf_filename, 'r+')
-except IOError:
-    mssg=str().join(['Cannot read:  ', mrf_filename])
-    log_sig_exit('ERROR', mssg, sigevent_url)
-else:
-    try:
-        dom=xml.dom.minidom.parse(mrf_file)
-    except:
-        mssg=str().join(['Cannot parse:  ', mrf_filename])
-        log_sig_exit('ERROR', mssg, sigevent_url)
-    # Raster
-    size_elements=dom.getElementsByTagName('Size')
-    sizeX=size_elements[0].getAttribute('x') #width
-    sizeY=size_elements[0].getAttribute('y') #height
-    sizeC=size_elements[0].getAttribute('c') #bands
-    sizeZ=size_elements[0].getAttribute('z') #bands
-    # Send to log.
-    log_info_mssg(str().join(['size of MRF:  ', sizeX, ' x ', sizeY]))
-
-    # Add mp_safe to Raster if using z levels
-    if zlevels != '':
-        mrf_file.seek(0)
-        lines = mrf_file.readlines()
-        for idx in range(0, len(lines)):
-            if '<Raster>' in str(lines[idx]):
-                lines[idx] = str(lines[idx]).replace('<Raster>','<Raster mp_safe="on">')
-                log_info_mssg("Set MRF mp_safe on")
-        mrf_file.seek(0)
-        mrf_file.truncate()
-        mrf_file.writelines(lines)
-
-    # Close file.
-    mrf_file.close()
-    # Get largest dimension, usually X.
-    actual_size = max([float(sizeX), float(sizeY)])
-
 # Insert if there are input tiles to process
 if len(alltiles) > 0 and nocopy==True:
     if mrf_parallel:
@@ -2800,68 +2874,12 @@ if len(alltiles) > 0 and nocopy==True:
 
 # Create pyramid only if idx (MRF index file) was successfully created.
 idxf=get_modification_time(idx_filename)
-compare_time=time.strftime('%Y%m%d.%H%M%S', time.localtime())
-old_stats=os.stat(idx_filename)
 if idxf >= vrtf:
     remove_file(gdal_translate_stderr_filename)
 
-    # Run gdaladdo if noaddo==False or if we have no overviews
-    if (not noaddo) or (overview_levels == '' or int(overview_levels[0]) == 0):
-        # Create the gdaladdo command.
-        gdaladdo_command_list=['gdaladdo', '-r', overview_resampling,
-                               str(gdal_mrf_filename)]
-        # Build out the list of gdaladdo pyramid levels (a.k.a. overviews).
-        if overview_levels == '':
-            overview=2
-            gdaladdo_command_list.append(str(overview))
-            exp=2
-            while (overview*int(mrf_blocksize)) < actual_size:
-                overview=2**exp
-                exp=exp+1
-                gdaladdo_command_list.append(str(overview))
-        else:
-            for overview in overview_levels:
-                gdaladdo_command_list.append(str(overview))
-        # Log the gdaladdo command.
-        log_the_command(gdaladdo_command_list)
-        # Capture stderr.
-        gdaladdo_stderr_filename=str().join([working_dir, basename,
-                                             '_gdaladdo_stderr.txt'])
-        # Open stderr file for write.
-        gdaladdo_stderr_file=open(gdaladdo_stderr_filename, 'w')
-
-        #-------------------------------------------------------------------
-        # Execute gdaladdo.
-        gdaladdo_process = subprocess.Popen(gdaladdo_command_list, stdout=subprocess.PIPE, stderr=gdaladdo_stderr_file)
-        out, err = gdaladdo_process.communicate()
-        log_info_mssg(out)
-        if gdaladdo_process.returncode != 0:
-            log_sig_err("gdaladdo return code {0}".format(gdaladdo_process.returncode), sigevent_url)
-        #-------------------------------------------------------------------
-
-        # Close stderr file.
-        gdaladdo_stderr_file.close()
-
-        # Update previous cycle time only if gdaladdo was successful.
-        addf=get_modification_time(idx_filename)
-        new_stats=os.stat(idx_filename)
-
-        # Check for gdaladdo success by checking time stamp and file size.
-        if gdaladdo_process.returncode == -11:
-            log_sig_exit('ERROR', 'Unsuccessful:  gdaladdo   Segmentation fault', sigevent_url)
-        elif (addf >= compare_time) or (new_stats.st_size >= old_stats.st_size):
-            remove_file(gdaladdo_stderr_filename)
-        else:
-            log_info_mssg(str().join(['addf = ',str(addf)]))
-            log_info_mssg(str().join(['compare_time = ',str(compare_time)]))
-            log_info_mssg('addf should be >= compare_time')
-            log_info_mssg(str().join(['new_stats.st_size = ',
-                                      str(new_stats.st_size)]))
-            log_info_mssg(str().join(['old_stats.st_size = ',
-                                      str(old_stats.st_size)]))
-            log_info_mssg('new_stats.st_size should be >= old_stats.st_size')
-            mssg=str().join(['Unsuccessful:  gdaladdo   Errors: ', str(err)])
-            log_sig_exit('ERROR', mssg, sigevent_url)
+    # Run gdaladdo if overview_resampling is set
+    if not noaddo and overview_resampling != '':
+        run_gdaladdo(overview_resampling, mrf_filename, overview_levels, zlevels)
 else:
     log_info_mssg(str().join(['idxf = ',str(idxf)]))
     log_info_mssg(str().join(['vrtf = ',str(vrtf)]))

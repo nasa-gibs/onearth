@@ -98,7 +98,7 @@ These parameters are available but not used in the example above nor necessarily
 
 * vrtnodata: The value to be used as "NoData" in the VRT (which propagates to the MRF). mrfgen builds uses a VRT of input tiles to generate the MRF. The rules for vrtnodata as the same as [gdalbuildvrt](http://www.gdal.org/gdalbuildvrt.html).
 * overview_levels: The overview levels used in the MRF. This is the same as the "levels" used in [gdaladdo](http://www.gdal.org/gdaladdo.html). By default, mrfgen calculates the levels based on the output size of the MRF using powers of 2 (e.g., ```<overview_levels>2 4 8</overview_levels>```).
-* overview_resampling: The resampling method to be used during overview building. Valid values are: nearest, average, gauss, cubic, average_mp, average_magphase, mode, avg.
+* overview_resampling: The resampling method to be used during overview building. Valid values are: nearest, average, gauss, cubic, average_mp, average_magphase, mode, avg, nnb, none.
 * reprojection_resampling: The resampling method to be used with [gdalwarp](http://www.gdal.org/gdalwarp.html). This is used is ```<target_epsg>``` is specified.
 * resize_resampling: If input imagery are different sizes, this option forces the input to be resized using [gdalwarp](http://www.gdal.org/gdalwarp.html) resampling methods. Use "none" if not desired.
 * target_epsg: The EPSG code of the target projection. Providing this option will force the imagery to be reprojected.
@@ -118,7 +118,7 @@ These parameters are available but not used in the example above nor necessarily
 * email_recipient: The recipient address(es) for email notifications. Use semi-colon ";" to separate recipients.
 * email_sender: The sender address for email notifications.
 * mrf_merge: (true/false) Whether overlapping input images should be merged on a last-in basis when performing inserts. Defaults to "false" for faster performance.
-* mrf_noaddo: (true/false) Don't run gdaladdo if UNIFORM_SCALE has been set. Defaults to "false".
+* mrf_noaddo: (true/false) Don't run gdaladdo if UNIFORM_SCALE has been set or using mrf_insert. Set overview_resampling to "none" to avoid building overviews completely. Defaults to "false".
 * mrf_clean: (true/false) run mrf_clean.py script on generated mrf file to reduce file size
 * mrf_parallel: (true/false) run mrf_insert calls in parallel to improve performance. See num_cores.
 * num_cores: (int) number of cores to use with mrf_parallel. Recommended is 2-4, depending on number of input files.

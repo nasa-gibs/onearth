@@ -31,4 +31,5 @@ limitations under the License.
  <colormap>mrfgen_files/colormaps/MODIS_VIIRS_Angstrom_Exponent.xml</colormap>
  <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
  <mrf_merge>false</mrf_merge>
+ <mrf_noaddo>true</mrf_noaddo>
 </mrfgen_configuration>

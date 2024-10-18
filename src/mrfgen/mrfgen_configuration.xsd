@@ -112,6 +112,7 @@ limitations under the License.
         <xs:enumeration value="mode"/>
         <xs:enumeration value="avg"/>
         <xs:enumeration value="nnb"/>
+        <xs:enumeration value="none"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:element>
