@@ -87,29 +87,23 @@ def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=Fal
         print(f'Adding time period configuration from {config_path}')
         key = proj + ':layer:' + str(layer_config['config']['layer_id'])
 
-        # add copy_periods to redis if present
-        if 'copy_periods' in layer_config['config'].keys():
-            # check whether we have a single string or list of values
-            if isinstance(layer_config['config']['copy_periods'], str):
-                copy_periods = [layer_config['config']['copy_periods']]
-            else:
-                copy_periods = layer_config['config']['copy_periods']
-            
-            key_copy_periods = key + ':copy_periods'
-            key_copy_periods_wm = key_copy_periods.replace('epsg4326', 'epsg3857')
+        # add copy_dates to redis if this is a convert layer
+        if 'copy_dates' in layer_config['config'].keys():
+            copy_destination = layer_config['config']['copy_dates']
+            key_copy_dates = key + ':copy_dates'
+            key_copy_dates_wm = key_copy_dates.replace('epsg4326', 'epsg3857')
 
-            # clear out existing copy_periods key for layer
-            r.delete(key_copy_periods)
+            # clear out existing copy_dates key for layer
+            r.delete(key_copy_dates)
             if 'epsg4326' in key:
                 # delete key for reproject as well
-                r.delete(key_copy_periods_wm)
-            for copy_destination in copy_periods:
-                print('Adding ' + copy_destination + ' to ' + key_copy_periods)
-                r.sadd(key_copy_periods, copy_destination)
-                # duplicate copy_periods for epsg3857 for reproject
-                if 'epsg4326' in key:
-                    print('Adding ' + copy_destination + ' to ' + key_copy_periods_wm)
-                    r.sadd(key_copy_periods_wm, copy_destination)
+                r.delete(key_copy_dates_wm)
+            print('Adding ' + copy_destination + ' to ' + key_copy_dates)
+            r.set(key_copy_dates, copy_destination)
+            # duplicate copy_dates for epsg3857 for reproject
+            if 'epsg4326' in key:
+                print('Adding ' + copy_destination + ' to ' + key_copy_dates_wm)
+                r.set(key_copy_dates_wm, copy_destination)
 
 
         if 'time_config' in layer_config['config'].keys():

@@ -27,6 +27,10 @@ WORKDIR /home/oe2/onearth/src/modules/mod_wmts_wrapper
 RUN cp /home/oe2/onearth/docker/Makefile.lcl .
 RUN make && make install
 
+WORKDIR /home/oe2/onearth/src/modules/mod_convert/src/
+RUN cp /home/oe2/onearth/docker/Makefile.lcl .
+RUN make && make install
+
 # Install layer configuration tools
 RUN cp /home/oe2/onearth/src/modules/mod_wmts_wrapper/configure_tool/oe2_reproject_configure.py /usr/bin/
 

@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM nasagibs/onearth-deps:2.8.3
+FROM nasagibs/onearth-deps:2.8.4
 
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
@@ -77,32 +77,32 @@ RUN git clone https://github.com/nasa-gibs/mrf.git && \
 WORKDIR /tmp
 RUN git clone https://github.com/tiye/json-lua.git
 WORKDIR /tmp/json-lua/
-RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
-RUN luarocks make json-lua-0.1-4.rockspec
+RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec && \
+    luarocks make json-lua-0.1-4.rockspec
 
 WORKDIR /tmp
 RUN git clone https://github.com/lunarmodules/luafilesystem.git
 WORKDIR /tmp/luafilesystem/
-RUN luarocks make luafilesystem-scm-1.rockspec
-RUN cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
+RUN luarocks make luafilesystem-scm-1.rockspec && \
+    cp lfs.so /usr/lib64/lua/5.4/posix && cp lfs.so /usr/lib64/lua/5.4/
 
 RUN luarocks install lpeg && luarocks install cqueues && luarocks install openssl
 
 # FastCGI module
 WORKDIR /tmp
-RUN wget https://downloads.apache.org/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
-RUN tar xf mod_fcgid-2.3.9.tar.gz
+RUN wget https://downloads.apache.org/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz && \
+    tar xf mod_fcgid-2.3.9.tar.gz
 WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
 RUN make && make install
 
 # Mapserver
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/mapserver/mapserver-8.0.1.tar.gz
-RUN tar xf mapserver-8.0.1.tar.gz
-WORKDIR /tmp/mapserver-8.0.1
+RUN wget http://download.osgeo.org/mapserver/mapserver-8.2.2.tar.gz && \
+    tar xf mapserver-8.2.2.tar.gz
+WORKDIR /tmp/mapserver-8.2.2
 RUN mkdir build
-WORKDIR /tmp/mapserver-8.0.1/build
+WORKDIR /tmp/mapserver-8.2.2/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_POSTGIS=0 -DWITH_GIF=0 -DWITH_KML=1 -DWITH_PROTOBUFC=0 ../
 RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
@@ -123,32 +123,36 @@ COPY . .
 
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_mrf/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_retile/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_twms/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_wmts_wrapper
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_sfim/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
 
 WORKDIR /home/oe2/onearth/src/modules/mod_brunsli/src/
-RUN cp /home/oe2/onearth/ci/Makefile.lcl .
-RUN make && make install
+RUN cp /home/oe2/onearth/ci/Makefile.lcl . && \
+    make && make install
+
+WORKDIR /home/oe2/onearth/src/modules/mod_convert/src/
+RUN cp /home/oe2/onearth/docker/Makefile.lcl . && \
+    make && make install
 
 # Install Lua module for time snapping
 WORKDIR /home/oe2/onearth/src/modules/time_service/redis-lua
@@ -226,7 +230,7 @@ RUN perl -pi -e "s/LogLevel warn/LogLevel debug/g" /etc/httpd/conf/httpd.conf &&
 RUN cp /home/oe2/onearth/docker/00-mpm.conf /etc/httpd/conf.modules.d/ && \
     cp /home/oe2/onearth/docker/10-worker.conf /etc/httpd/conf.modules.d/
 
-ENV ONEARTH_VERSION=2.8.3
+ENV ONEARTH_VERSION=2.8.4
 
 # Generate SSL certs
 RUN /usr/libexec/httpd-ssl-gencerts

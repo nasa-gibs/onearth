@@ -47,6 +47,10 @@ BASE_APACHE_TEMPLATE = """<IfModule !mrf_module>
     LoadModule brunsli_module modules/mod_brunsli.so
 </IfModule>
 
+<IfModule !convert_module>
+        LoadModule convert_module modules/mod_convert.so
+</IfModule>
+
 <IfModule !wmts_wrapper_module>
     LoadModule wmts_wrapper_module modules/mod_wmts_wrapper.so
 </IfModule>

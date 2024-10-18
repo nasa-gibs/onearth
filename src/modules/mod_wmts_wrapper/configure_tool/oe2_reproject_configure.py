@@ -119,6 +119,10 @@ MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
     LoadModule proxy_module modules/mod_proxy.so
 </IfModule>
 
+<IfModule !convert_module>
+        LoadModule convert_module modules/mod_convert.so
+</IfModule>
+
 {twms_block}
 <Directory {internal_endpoint}>
         WMTSWrapperRole root

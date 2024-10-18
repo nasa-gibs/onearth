@@ -60,6 +60,10 @@ MAIN_APACHE_CONFIG_TEMPLATE = """{gc_service_block}
     LoadModule receive_module modules/mod_receive.so
 </IfModule>
 
+<IfModule !convert_module>
+        LoadModule convert_module modules/mod_convert.so
+</IfModule>
+
 <Directory {internal_endpoint}>
     WMTSWrapperRole root
 </Directory>
