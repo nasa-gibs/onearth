@@ -4,15 +4,34 @@ This tool is used to help automate the generation of MRF files. It takes in a li
 
 ## Installation
 
-Yum install
+Yum install (e.g. Red Hat Enterprise Linux)
 ```Shell
 sudo yum -y install onearth-mrfgen-*.x86_64.rpm
 ```
 
-Manual install
-```Shell
-cp src/mrfgen <installation location>
-```
+Manual install (example using `conda`)
+1. From this directory, create and activate environment
+   ```
+   conda env create -f environment.yml
+   conda activate mrfgen
+   ```
+
+2. Build the C (Cython) extension for `RgbPngToPalPng.py`
+   ```
+   python setup.py build_ext --inplace
+   ```
+   After this, you can use mrfgen and the other tools with their full or relative path
+   (e.g., from this directory, `./mrfgen.py -c ...`,
+   or `/full/path/to/mrfgen.py -c ...`),
+   provided the Conda environment is active.
+
+3. Copy to installation location (optional)
+
+   To use mrfgen as a command without specifying path (`mrfgen.py -c ...`),
+   copy it to a location in your PATH.
+   ```
+   ./install.py $HOME/bin --update-shebang
+   ```
 
 ## Usage
 
