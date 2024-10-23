@@ -17,7 +17,7 @@
       <ContactOrganization>GIBS User Support</ContactOrganization>
     </ContactPersonPrimary>
       <ContactPosition>GIBS User Support</ContactPosition>
-  <ContactElectronicMailAddress>support@earthdata.nasa.gov</ContactElectronicMailAddress>
+  <ContactElectronicMailAddress>earthdata-support@nasa.gov</ContactElectronicMailAddress>
   </ContactInformation>
   <LayerLimit>5</LayerLimit>
   <MaxWidth>20000</MaxWidth>

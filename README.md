@@ -59,4 +59,4 @@ These containers are available at: https://hub.docker.com/u/nasagibs
 ## Contact
 
 Contact us by sending an email to
-[support@earthdata.nasa.gov](mailto:support@earthdata.nasa.gov)
+[earthdata-support@nasa.gov](mailto:earthdata-support@nasa.gov)

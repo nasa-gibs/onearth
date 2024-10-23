@@ -55,4 +55,4 @@ oe_generate_empty_tile.py --colormap https://gibs.earthdata.nasa.gov/colormaps/v
 ## Contact
 
 Contact us by sending an email to
-[support@earthdata.nasa.gov](mailto:support@earthdata.nasa.gov)
+[earthdata-support@nasa.gov](mailto:earthdata-support@nasa.gov)

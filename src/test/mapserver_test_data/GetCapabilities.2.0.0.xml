@@ -38,7 +38,7 @@
           <!--WARNING: Optional metadata "ows_postcode" was missing for ows:PostalCode-->
           <ows:Country/>
           <!--WARNING: Optional metadata "ows_country" was missing for ows:Country-->
-          <ows:ElectronicMailAddress>support@earthdata.nasa.gov</ows:ElectronicMailAddress>
+          <ows:ElectronicMailAddress>earthdata-support@nasa.gov</ows:ElectronicMailAddress>
         </ows:Address>
         <ows:OnlineResource xlink:type="simple" xlink:href="http://gibs.earthdata.nasa.gov/wfs/mapserv"/>
         <ows:HoursOfService/>
