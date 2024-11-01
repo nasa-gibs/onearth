@@ -1,6 +1,6 @@
 /var/log/httpd/*log {
     hourly
-    rotate 3
+    rotate 1
     maxage 1
     missingok
     sharedscripts

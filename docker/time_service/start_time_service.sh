@@ -121,6 +121,9 @@ echo "0 * * * * /etc/cron.hourly/logrotate" >> /etc/crontab
 # Start cron
 supercronic -debug /etc/crontab > /var/log/cron_jobs.log 2>&1 &
 
+# Run htcacheclean daemon
+htcacheclean -d 90 -l 512M -p /tmp/
+
 # Tail the logs
 exec tail -qFn 10000 \
   /var/log/cron_jobs.log \
