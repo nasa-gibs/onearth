@@ -2120,7 +2120,7 @@ class TestMRFGeneration_background(unittest.TestCase):
 
         # This part of the test previously looked for a triplet of files in dataset.GetFileList().
         if DEBUG:
-            print('Files: {0}, {1}'.format(self.output_ppg, self.output_idx))
+            print('Files: {0}, {1}'.format(self.output_pjg, self.output_idx))
         self.assertTrue(os.path.isfile(self.output_pjg), "MRF PJG generation failed")
         self.assertTrue(os.path.isfile(self.output_idx), "MRF IDX generation failed")
 
