@@ -50,6 +50,7 @@ import os
 import sys
 import time
 import socket
+import json
 import subprocess
 import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
@@ -139,22 +140,41 @@ def read_color_table(image, sigevent_url):
     """
     log_info_mssg("Checking for color table in " + image)
     colortable = []
-    idx = 0
     has_color_table = False
-    gdalinfo_command_list=['gdalinfo', image]
-    gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    for line in [l.decode("utf-8") for l in gdalinfo.stdout.readlines()]:
-        if has_color_table and (" " + str(idx) + ":") in line:
-            rgb = line.replace(str(idx) + ":", "").strip().split(",")
-            if len(rgb) < 4:
-                rgb[3] = "255" # default if alpha not define
-            colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], rgb[3])
-            colortable.append(colorEntry)
-            idx+=1
-        if "Color Table" in line:
+
+    gdalinfo_command_list=['gdalinfo', '-json', image]
+    try:
+        gdalinfo = subprocess.Popen(gdalinfo_command_list,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        outs, errs_warns = gdalinfo.communicate(timeout=90)
+        errs_warns = str(errs_warns, encoding='utf-8')
+        # Split up any errors and warnings, log them each appropriately
+        errs = []
+        warns = []
+        for message in errs_warns.split('\n'):
+            if len(message) > 0:
+                if message.lower().startswith("error"):
+                    errs.append(message)
+                else:
+                    warns.append(message)
+            if len(errs) > 0:
+                log_sig_err('gdalinfo errors: {0}'.format('\n'.join(errs)), sigevent_url)
+            if len(warns) > 0:
+                log_sig_warn('gdalinfo warnings: {0}'.format('\n'.join(warns)), sigevent_url)
+        imgInfo = json.loads(outs)
+        if len(imgInfo['bands']) > 0 and 'colorTable' in imgInfo['bands'][0]:
             has_color_table = True
-    if has_color_table == False:
-        log_sig_exit("Error", "No color table found in " + image, sigevent_url)
+            idx = 0
+            for entry in imgInfo['bands'][0]['colorTable']['entries']:
+                 if len(entry) < 4:
+                     entry[3] = "255" # default if alpha not define
+                 colorEntry = ColorEntry(idx, entry[0], entry[1], entry[2], entry[3])
+                 colortable.append(colorEntry)
+                 idx+=1
+        if has_color_table == False:
+            log_sig_exit("Error", "No color table found in " + image, sigevent_url)
+    except subprocess.TimeoutExpired:
+            gdalinfo.kill()
+            log_sig_err('gdalinfo timed out', sigevent_url)
     return colortable
     
 #-------------------------------------------------------------------------------   
