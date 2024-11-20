@@ -122,64 +122,6 @@ oe_utils.basename = None
 errors = 0
 
 
-def run_gdalinfo(image, timeout=90, json_fmt=True):
-    """
-    Runs the gdalinfo command with the provided command list, handles outputs, errors, and warnings,
-    and returns the parsed JSON output. This could probably be extended to other commands
-
-    Argument:
-        image -- A string specifying the image to perform gdalinfo on
-        timeout -- timeout to wait for the process to complete, default is 90 sec.
-        json_fmt -- get gdalinfo metadata in JSON format, default is true
-
-    Returns:
-        Parsed JSON output (dict) from gdalinfo if successful, None if failed. If json_fmt
-        is False, returns a string with the raw gdalinfo output.
-    """
-    if json_fmt:
-        command_list = ["gdalinfo", "-json", image]
-    else:
-        command_list = ["gdalinfo", image]
-    log_the_command(command_list)
-    gdalinfo = subprocess.Popen(
-        command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    try:
-        outs, errs_warns = gdalinfo.communicate(timeout=timeout)
-        errs_warns = errs_warns.decode("utf-8")
-    except subprocess.TimeoutExpired:
-        gdalinfo.kill()
-        # Properly handles the killed process so that it does not become a zombie/defunct
-        outs, errs_warns = gdalinfo.communicate()
-        log_sig_err("gdalinfo timed out", sigevent_url)
-        return None
-
-    # Split up any errors and warnings, log them each appropriately
-    errs = []
-    warns = []
-    for message in errs_warns.strip().split("\n"):
-        if message:
-            if message.lower().startswith("error"):
-                errs.append(message)
-            else:
-                warns.append(message)
-    if errs:
-        log_sig_err("gdalinfo errors: {0}".format("\n".join(errs)), sigevent_url)
-    if warns:
-        log_sig_warn("gdalinfo warnings: {0}".format("\n".join(warns)), sigevent_url)
-
-    if json_fmt:
-        try:
-            tile_info = json.loads(outs)
-        except json.JSONDecodeError as e:
-            log_sig_err("Failed to parse gdalinfo output: {0}".format(e), sigevent_url)
-            return None
-    else:
-        # split the stdout into lines to match the format of gdalinfo.stdout.readlines()
-        tile_info = outs.splitlines(keepends=True)
-    return tile_info
-
-
 def lookupEmptyTile(empty_tile):
     """
     Lookup predefined empty tiles form config file
@@ -252,7 +194,7 @@ def diff_resolution(tiles):
     log_info_mssg("Checking for different resolutions in tiles")
     res = None
     for tile in tiles:
-        tile_info = run_gdalinfo(tile)
+        tile_info = oe_utils.run_gdalinfo(tile, sigevent_url)
         if tile_info is None:
             # error is logged inside the run_gdalinfo function, no need to log here
             continue
@@ -331,7 +273,7 @@ def get_image_epsg(tile):
     log_info_mssg("Getting image epsg")
     epsg = None
 
-    tile_info = run_gdalinfo(tile)
+    tile_info = oe_utils.run_gdalinfo(tile, sigevent_url)
 
     wkt = ""
     try:
@@ -364,7 +306,7 @@ def get_image_extents(tile):
     """
     log_info_mssg("Getting image extents")
 
-    tile_info = run_gdalinfo(tile)
+    tile_info = oe_utils.run_gdalinfo(tile, sigevent_url)
     if tile_info is None:
         # Will sys.exit the script
         log_sig_exit(
@@ -397,7 +339,7 @@ def has_color_table(tile):
     log_info_mssg("Checking for color table in " + tile)
     _has_color_table = False
 
-    tile_info = run_gdalinfo(tile)
+    tile_info = oe_utils.run_gdalinfo(tile, sigevent_url)
     if tile_info is None:
         log_info_mssg("No color table found")
         return False
@@ -426,7 +368,7 @@ def has_palette(tile):
     log_info_mssg("Checking for palettes in " + tile)
     _has_palette = False
 
-    tile_info = run_gdalinfo(tile)
+    tile_info = oe_utils.run_gdalinfo(tile, sigevent_url)
     if tile_info is None:
         return False
 
@@ -2903,7 +2845,7 @@ if mrf_compression_type == "EPNG":
         if tile.lower().endswith((".tif", ".tiff")):
             # NOTE: Did not convert to JSON parsing because of a lack of test data
             # Get Scale and Offset from gdalinfo
-            gdalinfo_out = run_gdalinfo(tile, json_fmt=False)
+            gdalinfo_out = oe_utils.run_gdalinfo(tile, sigevent_url, json_fmt=False)
             if "Color Table" in "".join(gdalinfo_out):
                 log_sig_warn("{0} contains a palette".format(tile), sigevent_url)
                 mrf_compression_type = "PPNG"
@@ -2919,7 +2861,7 @@ if mrf_compression_type == "EPNG":
                 pack(tile, encoded_tile, False, True, None, None, scale_offset, False)
                 tile = encoded_tile
                 # Re-run gdalinfo to get new metadata after encoding the tile
-                gdalinfo_out = run_gdalinfo(tile, json_fmt=False)
+                gdalinfo_out = oe_utils.run_gdalinfo(tile, sigevent_url, json_fmt=False)
             log_info_mssg("Reading scale and offset from bands")
             for line in gdalinfo_out:
                 if "Offset:" in str(line) and "Scale:" in str(line):

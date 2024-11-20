@@ -49,6 +49,7 @@ import xml.dom.minidom
 import smtplib
 from email.mime.text import MIMEText
 from mimetypes import guess_type
+import json
 import __main__ as main
 
 basename = None
@@ -424,6 +425,65 @@ def run_command(cmd, sigevent_url):
             raise Exception(error.strip())
     if returncode != 0:
         log_sig_err("{0} return code {1}".format(cmd, returncode))
+
+
+def run_gdalinfo(image, sigevent_url, timeout=90, json_fmt=True):
+    """
+    Runs the gdalinfo command with the provided command list, handles outputs, errors, and warnings,
+    and returns the parsed JSON output. This could probably be extended to other commands
+
+    Argument:
+        image -- A string specifying the image to perform gdalinfo on
+        sigevent_url -- url to add to the log file
+        timeout -- timeout to wait for the process to complete, default is 90 sec.
+        json_fmt -- get gdalinfo metadata in JSON format, default is true
+
+    Returns:
+        Parsed JSON output (dict) from gdalinfo if successful, None if failed. If json_fmt
+        is False, returns a string with the raw gdalinfo output.
+    """
+    if json_fmt:
+        command_list = ["gdalinfo", "-json", image]
+    else:
+        command_list = ["gdalinfo", image]
+    log_the_command(command_list)
+    gdalinfo = subprocess.Popen(
+        command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    try:
+        outs, errs_warns = gdalinfo.communicate(timeout=timeout)
+        errs_warns = errs_warns.decode("utf-8")
+    except subprocess.TimeoutExpired:
+        gdalinfo.kill()
+        # Properly handles the killed process so that it does not become a zombie/defunct
+        outs, errs_warns = gdalinfo.communicate()
+        log_sig_err("gdalinfo timed out", sigevent_url)
+        return None
+
+    # Split up any errors and warnings, log them each appropriately
+    errs = []
+    warns = []
+    for message in errs_warns.strip().split("\n"):
+        if message:
+            if message.lower().startswith("error"):
+                errs.append(message)
+            else:
+                warns.append(message)
+    if errs:
+        log_sig_err("gdalinfo errors: {0}".format("\n".join(errs)), sigevent_url)
+    if warns:
+        log_sig_warn("gdalinfo warnings: {0}".format("\n".join(warns)), sigevent_url)
+
+    if json_fmt:
+        try:
+            tile_info = json.loads(outs)
+        except json.JSONDecodeError as e:
+            log_sig_err("Failed to parse gdalinfo output: {0}".format(e), sigevent_url)
+            return None
+    else:
+        # split the stdout into lines to match the format of gdalinfo.stdout.readlines()
+        tile_info = outs.splitlines(keepends=True)
+    return tile_info
 
 def get_environment(environmentConfig, email_meta):
     """
