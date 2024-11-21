@@ -1,6 +1,6 @@
 # This Dockerfile must be run from source root
 
-FROM almalinux:9.3
+FROM almalinux:9.5
 
 # Upgrade all existing packages
 RUN yum -y update && yum clean all
