@@ -50,6 +50,7 @@ import os
 import sys
 import time
 import socket
+import json
 import subprocess
 import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
@@ -165,30 +166,24 @@ def read_color_table(image, sigevent_url):
     """
     log_info_mssg("Checking for color table in " + image)
     colortable = []
-    idx = 0
     has_color_table = False
+
     # GITC-6569: Factoring out old gdalinfo invocation, but using string mode instead of JSON mode
     # to preserve the rest of the logic in this section of the code. This merits further cleanup
     # as the string parsing here is messy and error-prone. iat = image attribute table
-    iat = list(
-        map(
-            lambda l: l.decode("utf-8"),
-            run_gdalinfo(image, sigevent_url, json_fmt=False),
-        )
-    )
-
-    for line in iat:
-        if has_color_table and (" " + str(idx) + ":") in line:
-            rgb = line.replace(str(idx) + ":", "").strip().split(",")
-            if len(rgb) < 4:
-                rgb[3] = "255"  # default if alpha not define
-            colorEntry = ColorEntry(idx, rgb[0], rgb[1], rgb[2], rgb[3])
+    imgInfo = run_gdalinfo(image, sigevent_url)
+    if imgInfo is not None and len(imgInfo['bands']) > 0 and 'colorTable' in imgInfo['bands'][0]:
+        has_color_table = True
+        idx = 0
+        for entry in imgInfo['bands'][0]['colorTable']['entries']:
+            if len(entry) < 4:
+                entry[3] = "255" # default if alpha not define
+            colorEntry = ColorEntry(idx, entry[0], entry[1], entry[2], entry[3])
             colortable.append(colorEntry)
-            idx += 1
-        if "Color Table" in line:
-            has_color_table = True
+            idx+=1
     if has_color_table == False:
-        log_sig_exit("ERROR", "No color table found in " + image, sigevent_url)
+        log_sig_exit("Error", "No color table found in " + image, sigevent_url)
+    
     return colortable
 
 
