@@ -1,19 +1,17 @@
---- a/SPECS/httpd.spec	2024-05-13 16:49:50
-+++ b/SPECS/httpd.spec	2024-05-13 16:52:07
-@@ -130,6 +130,9 @@
- Patch200: httpd-2.4.57-CVE-2023-31122.patch
- 
+--- a/SPECS/httpd.spec	2024-11-21 21:22:32.427194003 +0000
++++ b/SPECS/httpd.spec	2024-11-21 21:26:12.736046008 +0000
+@@ -103,6 +103,8 @@
+ # https://bugzilla.redhat.com/show_bug.cgi?id=
+ # Patch200: httpd-2.4.X-CVE-XXXX-YYYYY.patch
  
 +Patch900: mod_proxy_http.patch
 +Patch901: proxypass_nomain_flag.patch
-+
+ 
  License: ASL 2.0
  BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
- BuildRequires: perl-interpreter, perl-generators, systemd-devel
-\ No newline at end of file
-@@ -303,6 +306,9 @@
- 
- %patch200 -p1 -b .CVE-2023-31122
+@@ -259,6 +261,9 @@
+ %patch101 -p1 -b .full-release
+ %patch102 -p1 -b .r1919325
  
 +%patch900 -p1
 +%patch901 -p1
@@ -21,13 +19,3 @@
  # Patch in the vendor string
  sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
  sed -i 's/@RELEASE@/%{release}/' server/core.c
-\ No newline at end of file
-@@ -553,7 +559,6 @@
- ln -s ../../pixmaps/system-noindex-logo.png \
-         $RPM_BUILD_ROOT%{contentdir}/icons/system_noindex_logo.png
- 
--
- # symlinks for /etc/httpd
- rmdir $RPM_BUILD_ROOT/etc/httpd/{state,run}
- ln -s ../..%{_localstatedir}/log/httpd $RPM_BUILD_ROOT/etc/httpd/logs
-\ No newline at end of file

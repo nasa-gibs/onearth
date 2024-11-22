@@ -38,13 +38,13 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64.tar.gz -O - |\
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.5/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.23.2.linux-amd64.tar.gz && \
-    tar xf go1.23.2.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz && \
+    tar xf go1.23.3.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.33.tar.gz && \
@@ -97,9 +97,9 @@ RUN pip install -r onearth/docker/deps/requirements.txt
 WORKDIR /tmp
 
 # Install APR patch
-RUN wget http://archive.apache.org/dist/apr/apr-1.7.4.tar.gz && \
-    tar xf apr-1.7.4.tar.gz && \
-    cd /tmp/apr-1.7.4 && \
+RUN wget http://archive.apache.org/dist/apr/apr-1.7.5.tar.gz && \
+    tar xf apr-1.7.5.tar.gz && \
+    cd /tmp/apr-1.7.5 && \
     patch  -p2 < /home/oe2/onearth/src/modules/mod_mrf/apr_FOPEN_RANDOM.patch && \
     ./configure --prefix=/usr/local/apr && \
     make && make install
@@ -110,7 +110,7 @@ RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz && \
     cd /tmp/apr-util-1.6.3 && \
     ./configure --prefix=/usr/local/apr --with-apr=/usr/local/apr --with-ldap && \
     make && make install
-    
+
 # Configure the mod_proxy patch, rebuild the RPM and install it
 WORKDIR /tmp/rpmbuild/SPECS
 RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g' httpd.spec && \
@@ -119,7 +119,7 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     ls /home/oe2/onearth && \
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
     cp /home/oe2/onearth/docker/proxypass_nomain_flag.patch /tmp/rpmbuild/SOURCES && \
-    patch -p2 <  /home/oe2/onearth/docker/http_rpm_spec.patch && \
+    patch -p2 < /home/oe2/onearth/docker/http_rpm_spec.patch && \
     HOME="/tmp" rpmbuild -ba httpd.spec && \
     yum -y remove httpd httpd-devel httpd-tools && \
     yum -y install system-logos-httpd /etc/mime.types sscg && \
