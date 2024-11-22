@@ -1,5 +1,5 @@
 # This Dockerfile must be run from source root
-FROM almalinux:9.3
+FROM almalinux:9.5
 
 ARG MRF_VERSION=3.0.1
 ARG GDAL_VERSION=3.6.4
