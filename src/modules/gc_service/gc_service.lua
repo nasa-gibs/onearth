@@ -405,9 +405,11 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
         local resy = math.ceil((bbox["upperCorner"][2] - bbox["lowerCorner"][2]) / (matrix["matrixHeight"] * heightRatio))
         local xmax = tonumber(matrix["topLeft"][1]) + resx
         local ymax = tonumber(matrix["topLeft"][2]) - resy
-        local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=${time}&width=${width}&height=${height}&bbox=${bbox}"
+        local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=&time=${time}&width=${width}&height=${height}&bbox=${bbox}"
         local bboxOut = {}
-        for _, param in ipairs({tonumber(matrix["topLeft"][1]), ymax, xmax, tonumber(matrix["topLeft"][2])}) do
+        --for _, param in ipairs({tonumber(matrix["topLeft"][1]), ymax, xmax, tonumber(matrix["topLeft"][2])}) do
+        -- *****Fix leading zeroes issue by applying 'tostring' on 'tonumber'?
+        for _, param in ipairs({tostring(tonumber(matrix["topLeft"][1])), ymax, xmax, tostring(tonumber(matrix["topLeft"][2]))}) do
             -- Old version of OE rounded zeroes
             if param < 1 and param > -1 then
                 table.insert(bboxOut, 0)
@@ -426,7 +428,8 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
                 :gsub("${bbox}", join(bboxOut, ","))
             end
         local outString = static and make_uri(false) or make_uri(true) .. "\n" .. make_uri(false)
-        outString = "<![CDATA[" .. outString .. "]]>"
+        -- *****Removing the CDATA from the formatting:
+        -- outString = "<![CDATA[" .. outString .. "]]>"
         tiledGroupNode:add_child(xml.new("TilePattern"):text(outString))
     end
     return tiledGroupNode
