@@ -591,8 +591,20 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "step=begin_send_to_date_service, timestamp=%ld, uuid=%s",
       apr_time_now(), uuid);
 
-    int rr_status = ap_run_sub_req(rr);
-    ap_remove_output_filter(rf);
+    // Prepare to attempt the time lookup several times in case the time service is too busy
+    int max_tries = 2;
+    int tries;
+    int rr_status;
+    for (tries=0; tries<max_tries; tries++) {
+        rr_status = ap_run_sub_req(rr);
+        ap_remove_output_filter(rf);
+        if (rr_status == APR_SUCCESS) {
+            if (tries > 0) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Time lookup success after %d retries", tries);
+            }
+            break;
+        }
+    }
     if (rr_status != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, rr_status, r, "Time lookup failed for %s", time_request_uri);
         return HTTP_INTERNAL_SERVER_ERROR;
