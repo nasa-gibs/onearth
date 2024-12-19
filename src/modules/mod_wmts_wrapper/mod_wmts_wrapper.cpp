@@ -593,9 +593,8 @@ static int get_filename_and_date_from_date_service(request_rec *r, wmts_wrapper_
 
     // Prepare to attempt the time lookup several times in case the time service is too busy
     int max_tries = 2;
-    int tries;
     int rr_status;
-    for (tries=0; tries<max_tries; tries++) {
+    for (int tries=0; tries < max_tries; tries++) {
         rr_status = ap_run_sub_req(rr);
         ap_remove_output_filter(rf);
         if (rr_status == APR_SUCCESS) {
