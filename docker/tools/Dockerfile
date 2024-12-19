@@ -4,6 +4,8 @@ FROM almalinux:9.5
 ARG MRF_VERSION=3.0.1
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
+ARG GIBS_GDAL_RELEASE=1
+ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 # Install dependencies
 RUN dnf -y update && \
@@ -53,8 +55,8 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
 # Install GDAL
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-1.el9.x86_64.rpm && \
-    rpm -i gibs-gdal-${GDAL_VERSION}-1.el9.x86_64.rpm && \
+RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
     rm -rf /tmp/*
 
 # Install mrf_apps

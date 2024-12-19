@@ -4,6 +4,8 @@ FROM nasagibs/onearth-deps:2.8.7
 ARG MRF_VERSION=3.0.1
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
+ARG GIBS_GDAL_RELEASE=1
+ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 # Install dependencies
 RUN dnf install -y \
@@ -32,34 +34,9 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
 # Install GDAL
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
-    tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
-    cd gdal-${GDAL_VERSION}/ && \
-    mkdir build && \
-    cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_PREFIX_PATH=/usr/local/ \
-      -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-      -DCMAKE_INSTALL_LIBDIR=lib \
-      -DBUILD_SHARED_LIBS=ON \
-      -DBUILD_TESTING=OFF \
-      -DGDAL_USE_PARQUET=OFF \
-      -DGDAL_USE_ARROW=OFF \
-      -DGDAL_USE_ARROWDATASET=OFF \
-      -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
-      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
-      -DGDAL_USE_BRUNSLI=ON \
-      -DBUILD_PYTHON_BINDINGS:BOOL=ON \
-      -DBUILD_JAVA_BINDINGS:BOOL=OFF \
-      -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
-      .. && \
-    cmake --build . && \
-    cmake --build . --config Release --target install && \
-    export LD_LIBRARY_PATH=:/usr/local/lib && \
-    ldconfig && \
-    cd /tmp/ && rm -rf /tmp/*
-RUN ldconfig -v
-RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
+RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+    rm -rf /tmp/*
 
 # Install mrf_apps
 RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
