@@ -286,10 +286,13 @@ for layer in layers:
 
             wm_layer_config = get_layer_config(Path(layer_config["config"]["web_mercator_config_path"]))    
             web_mercator = False
-            wms_extent = wm_layer_config["config"]["source_mrf"]["bbox"]
+            try:
+                wms_extent = wm_layer_config["config"]["source_mrf"]["bbox"]
+            except KeyError:
+                wms_extent = '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
             wms_srs    = wm_layer_config["config"]["projection"]
             layer_proj = wms_srs.lower()
-            bounds = wm_layer_config["config"]["source_mrf"]["bbox"].split(",")
+            bounds = wms_extent.split(",")
             tms = wm_layer_config["config"]["tilematrixset"]
         else:
             wms_extent = "-180 -90 180 90"

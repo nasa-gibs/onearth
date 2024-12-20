@@ -241,16 +241,48 @@ source_mrf:
   size_x: "Base resolution of source MRF in pixels (x dimension)"
   size_y: "Base resolution of source MRF in pixels (y dimension)"
   bands: "Number of bands in source image file"
-  tile_size_x: "Tile size in pixels (x dimension)"
-  tile_size_y: "Tile size in pixels (y dimension)"
   idx_path: "Directory path to the IDX file. This can be relative to the root of where all the IDX files are stored."
   data_file_uri: "Base URI to the data file, relative from the root of the S3 bucket. (e.g. http://gibs_s3_bucket/epsg4326/MODIS­_Aqua­_Layer_ID/)"
   static: "Boolean, whether or not this layer includes a TIME dimension"
-  bbox: "The geographic bounding box of the layer"
   empty_tile: "The empty tile to use for the layer"
   year_dir: "true/false" whether this layer contains a year subdirectory"
 ```
 ### Optional for WMTS/TWMS
+
+The following `source_mrf` parameters will be determined based on the value of `projection` if not specified:
+
+```
+source_mrf:
+  tile_size_x: "Tile size in pixels (x dimension)"
+  tile_size_y: "Tile size in pixels (y dimension)"
+  bbox: "The geographic bounding box of the layer"
+```
+
+Default values for each projection:
+
+`"EPSG:4326"`:
+```
+source_mrf:
+  tile_size_x: 512
+  tile_size_y: 512
+  bbox: '-180,-90,180,90'
+```
+
+`"EPSG:3857"`:
+```
+source_mrf:
+  tile_size_x: 256
+  tile_size_y: 256
+  bbox: '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+```
+
+`"EPSG:3413"` and `"EPSG:3031"`:
+```
+source_mrf:
+  tile_size_x: 512
+  tile_size_y: 512
+  bbox: '-4194304,-4194304,4194304,4194304'
+```
 
 #### ZENJPEG
 Currently mod_convert need two layers to be setup. One will serve the source ZENJPEGS similar to a normal jpeg, while the second will convert the ZENJPEG. The second will have the following an extra config pointing to the first layer. The name of the source ZENJPEG layer must be the same as that of the converted layer but end with `_ZENJPEG`.

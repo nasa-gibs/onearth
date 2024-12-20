@@ -260,6 +260,23 @@ def format_source_uri_for_proxy(uri, proxy_paths):
             return uri.replace(proxy_path['remote_path'],
                                proxy_path['local_path'])
 
+def get_bbox_from_epsg(epsg):
+    bbox = None
+    if epsg == 'EPSG:4326':
+        bbox = '-180,-90,180,90'
+    elif epsg == 'EPSG:3857':
+        bbox = '-20037508.34278925,-20037508.34278925,20037508.34278925,20037508.34278925'
+    elif epsg == 'EPSG:3413' or epsg == 'EPSG:3031':
+        bbox = '-4194304,-4194304,4194304,4194304'
+    return bbox
+
+def get_tile_size_from_epsg(epsg):
+    tile_size = None
+    if epsg in ['EPSG:4326', 'EPSG:3413', 'EPSG:3031']:
+        tile_size = 512
+    elif epsg == 'EPSG:3857':
+        tile_size = 256
+    return tile_size
 
 # Main configuration functions
 
@@ -411,8 +428,22 @@ def make_layer_config(endpoint_config, layer):
             cache_expiration = None
         size_x = layer_config['source_mrf']['size_x']
         size_y = layer_config['source_mrf']['size_y']
-        tile_size_x = layer_config['source_mrf']['tile_size_x']
-        tile_size_y = layer_config['source_mrf']['tile_size_y']
+        try:
+            tile_size_x = layer_config['source_mrf']['tile_size_x']
+        except KeyError:
+            tile_size_x = get_tile_size_from_epsg(projection)
+            if tile_size_x is None:
+                print(
+                    f'\n{layer_config_filename}: Cannot determine tile_size_x for projection {projection}, please specify the correct tile_size_x'
+                )
+        try:
+            tile_size_y = layer_config['source_mrf']['tile_size_y']
+        except KeyError:
+            tile_size_y = get_tile_size_from_epsg(projection)
+            if tile_size_y is None:
+                print(
+                    f'\n{layer_config_filename}: Cannot determine tile_size_y for projection {projection}, please specify the correct tile_size_y'
+                )
         bands = layer_config['source_mrf']['bands'] if layer_config['source_mrf']['bands'] is not None else 1
         idx_path = layer_config['source_mrf']['idx_path']
         mimetype = layer_config['mime_type']
@@ -657,9 +688,11 @@ def make_layer_config(endpoint_config, layer):
         try:
             bbox = layer_config['source_mrf']['bbox']
         except KeyError as err:
-            print(
-                f'\n{layer_config_filename} is missing required config element {err}'
-            )
+            bbox = get_bbox_from_epsg(projection)
+            if bbox is None:
+                print(
+                    f'\n{layer_config_filename}: Cannot determine bbox for projection {projection}, please specify the correct bbox'
+                )
 
         source_path = '/'.join(
             (external_endpoint, layer_id,
