@@ -235,6 +235,14 @@ layer_name: "layer name for GTS"
 abstract: "GTS abstract"
 ```
 
+### Optional for GetCapabilities/GetTileService
+
+```
+abstract: "GTS abstract"
+```
+
+`abstract` will default to `{layerId} abstract` if not specified.
+
 ### Required for WMTS/TWMS
 ```
 source_mrf: 
