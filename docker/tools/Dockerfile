@@ -8,6 +8,7 @@ ENV GDAL_VERSION=$GDAL_VERSION
 # Install dependencies
 RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
+    dnf install -y 'dnf-command(config-manager)' && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
 	dnf install -y epel-release-9-5.el9 && \
@@ -34,7 +35,7 @@ RUN dnf -y update && \
         proj-devel-8.2.0 \
         geos-3.10.1 \
         geos-devel-3.10.1 \
-        python3-devel-3.9.18 \
+        python3-devel-3.9.19 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
