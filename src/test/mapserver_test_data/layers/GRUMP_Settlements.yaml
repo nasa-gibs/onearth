@@ -21,7 +21,7 @@ shapefile_configs:
 source_mrf:
   bands: null
   bbox: -180,-90,180,90
-  data_file_path: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
+  data_file_uri: "/home/oe2/onearth/src/test/mapserver_test_data/test_imagery"
   idx_path: /onearth/idx/epsg4326
   size_x: 163840
   size_y: 81920

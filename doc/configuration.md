@@ -250,7 +250,7 @@ source_mrf:
   size_y: "Base resolution of source MRF in pixels (y dimension)"
   bands: "Number of bands in source image file"
   idx_path: "Directory path to the IDX file. This can be relative to the root of where all the IDX files are stored."
-  data_file_uri: "Base URI to the data file, relative from the root of the S3 bucket. (e.g. http://gibs_s3_bucket/epsg4326/MODIS­_Aqua­_Layer_ID/)"
+  data_file_uri: "Base URI to the data file, relative from the root of the S3 bucket (e.g. http://gibs_s3_bucket/epsg4326/MODIS­_Aqua­_Layer_ID/). Can also be a local path to the data file."
   static: "Boolean, whether or not this layer includes a TIME dimension"
   empty_tile: "The empty tile to use for the layer"
   year_dir: "true/false" whether this layer contains a year subdirectory"
@@ -511,7 +511,7 @@ projection: EPSG:4326
 source_mrf:
   bands: 3
   bbox: -180,-90,180,90
-  data_file_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
+  data_file_uri: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
   empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
   idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery
   size_x: 20480

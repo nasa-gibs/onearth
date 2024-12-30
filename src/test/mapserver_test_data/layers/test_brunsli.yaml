@@ -8,7 +8,7 @@ projection: EPSG:4326
 source_mrf:
   bands: 3
   bbox: -180,-90,180,90
-  data_file_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_brunsli_jpg/test_brunsli_jpg.pjg
+  data_file_uri: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_brunsli_jpg/test_brunsli_jpg.pjg
   empty_tile: /etc/onearth/empty_tiles/Blank_RGB_512.jpg
   idx_path: /home/oe2/onearth/src/test/mapserver_test_data/test_imagery/test_brunsli_jpg/test_brunsli_jpg.idx
   size_x: 20480

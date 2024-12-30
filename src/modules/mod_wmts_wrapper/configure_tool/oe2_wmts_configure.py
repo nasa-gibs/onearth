@@ -476,6 +476,10 @@ def make_layer_config(endpoint_config, layer):
 
     data_file_path = layer_config['source_mrf'].get('data_file_path', None)
     data_file_uri = layer_config['source_mrf'].get('data_file_uri', None)
+    # Check if data_file_uri is actually a local path
+    if not any(x in data_file_uri for x in ['http://', 'https://', '{S3_URL}', '{SHAPEFILE_BUCKET}']):
+        data_file_path = data_file_uri
+        data_file_uri = None
     if not data_file_path and not data_file_uri:
         print(
             f'\nWARNING: No "data_file_path" or "data_file_uri" configured in layer configuration: {layer_config_path}'
