@@ -38,6 +38,8 @@ RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GD
     rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
     rm -rf /tmp/*
 
+RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
+
 # Install mrf_apps
 RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
     curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
