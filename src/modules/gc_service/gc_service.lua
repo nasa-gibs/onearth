@@ -347,10 +347,13 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerName = assert(config.layer_name, "Can't find 'layer_name' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
-    local abstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
     local proj = assert(config.projection, "Can't find projection name in YAML!")
     local projInfo = assert(PROJECTIONS[targetEpsgCode or proj], "Can't find projection " .. proj)
     local mimeType = assert(config.mime_type, "Can't find MIME type in YAML!")
+    local abstract = config.abstract
+    if abstract == nil then
+        abstract = layerId .. " abstract"
+    end
     if mimeType == 'image/x-j' then
         mimeType = 'image/jpeg'
     end
@@ -555,9 +558,13 @@ local function makeTWMSGCLayer(filename, tmsDefs, tmsLimitsDefs, dateList, epsgC
     -- Look for the required data in the YAML config file, and throw errors if we can't find it
     local layerId = assert(config.layer_id, "Can't find 'layer_id' in YAML!")
     local layerTitle = assert(config.layer_title, "Can't find 'layer_title' in YAML!")
-    local layerAbstract = assert(config.abstract, "Can't find 'abstract' in YAML!")
     local proj = assert(config.projection, "Can't find projection name in YAML!")
     -- local tmsName = assert(config.tilematrixset, "Can't find TileMatrixSet name in YAML!")
+
+    local layerAbstract = config.abstract
+    if layerAbstract == nil then
+        layerAbstract = layerId .. " abstract"
+    end
 
     -- Maintain backward compatibility with layer titles that include unicode xB5
     if string.find(layerTitle, "\\xB5") then

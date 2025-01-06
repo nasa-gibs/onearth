@@ -25,6 +25,6 @@ source_mrf:
   tile_size_y: 512
   bands:
   idx_path: "/onearth/idx/epsg4326"
-  data_file_path: "/onearth/shapefiles/oe-status"
+  data_file_uri: "/onearth/shapefiles/oe-status"
   bbox: -180,-90,180,90
 wms_layer_group: "/Vector_Status"
