@@ -196,7 +196,6 @@ class TestTimeUtils(unittest.TestCase):
         db_keys = ['epsg4326']
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
-        print("hyeet res", res)
         for layer in test_layers:
             layer_res = res.get(layer[0])
             self.assertIsNotNone(
