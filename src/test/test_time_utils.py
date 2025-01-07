@@ -180,6 +180,35 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_time_scrape_local_keys(self):
+        # Test scraping S3 keys
+        test_layers = [('test_layer1', '2016-01-01',
+                        ['2015-01-01/2015-01-01/P1D',
+                         '2015-10-01/2015-10-01/P1D',
+                         '2016-01-01/2016-01-01/P1D']),
+                        ('test_layer3', '2015-01-02',
+                        '2015-01-01/2015-01-02/P1D')]
+        
+        time_scrape_dir = "/home/oe2/onearth/src/test/time_scrape_test_data"
+        
+        cmd = f"python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -r -s {time_scrape_dir} 127.0.0.1"
+        run_command(cmd, True)
+        db_keys = ['epsg4326']
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        print("hyeet res", res)
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[1], layer_res['default'],
+                'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
+                .format(layer[0], layer[1], layer_res['default']))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_time_scrape_s3_keys_layer_filter(self):
         # Test scraping S3 keys and verify that keys are only scraped for the layer scheduled to be filtered on
         test_layers = [('Test_Layer', '2016-01-01',

@@ -64,7 +64,7 @@ The script accepts the following options:
 
 ## `oe_scrape_time.py` -- Database regeneration tool
 
-This tool will first check whether the s3_inventory option has been flagged. If the -i flag is present, the tool will search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will parse the most recent CSV file to generate time service entries for each layer. If no S3 Inventory data exists or the -i flag isn't declared. The tool scrapes the bucket containing MRF imagery and generates time service entries for each layer.
+This tool will first check whether the s3_inventory option has been flagged. If the -i flag is present, the tool will search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will parse the most recent CSV file to generate time service entries for each layer. If no S3 Inventory data exists or the -i flag isn't declared. The tool scrapes the bucket containing MRF imagery and generates time service entries for each layer. It also supports scraping times from a local directory in place of an S3 bucket.
 
 ### S3 Inventory
 
@@ -86,7 +86,7 @@ The script accepts the following options:
 - `-b` indicates the bucket to be scraped.
 - `-c` indicates whether to skip scraping for times if the database already exists. This is determined by a custom "created" key in Redis. 
 - `-p` indicates the port of the Redis time service database. Default is `6379`.
-- `-s` indicates the uri of the S3 service. Useful when you're using a localstack configuration for testing instead of an actual AWS S3 bucket.
+- `-s` indicates the uri of the S3 service (useful when you're using a localstack configuration for testing instead of an actual AWS S3 bucket), or a path to a local directory to use instead of an S3 bucket.
 - `-t` indicates a tag (srt, best) to be used in tagging the dates.
 - `-i` indicates whether to use s3 inventory CSV logs for time scrapping.
 - `REDIS_URI` (argument)

@@ -191,11 +191,19 @@ def getAllKeys(conn, bucket):
             break
     return keys
 
+def getAllFiles(root_path):
+    keys = []
+    for path, _, files in os.walk(root_path):
+        for name in files:
+            # the key should start with the "epsg????" directory rather than the root path
+            new_key = os.path.join(path, name).removeprefix(root_path).removeprefix('/')
+            keys.append(new_key)
+    return keys
 
 def updateDateService(redis_uri,
                       redis_port,
                       bucket,
-                      s3_uri=None,
+                      uri=None,
                       layer_name=None,
                       reproject=False,
                       check_exists=False,
@@ -209,16 +217,20 @@ def updateDateService(redis_uri,
     elif check_exists:
         print(f'Data already exists - skipping time scrape')
         return
-
+    
+    # Determine if we should be using a local path to a directory instead of a bucket
+    local_path = False
+    if uri is not None and not any(x in uri for x in ['http://', 'https://']):
+        local_path = True
     # Use mock S3 if test
-    if bucket == 'test-bucket':
+    elif bucket == 'test-bucket':
         s3 = botocore.session.get_session().create_client('s3')
         stubber = Stubber(s3)
         stubber.add_response('list_objects_v2', TEST_RESPONSE)
         stubber.activate()
     else:
         session = boto3.session.Session()
-        s3 = session.client(service_name='s3', endpoint_url=s3_uri)
+        s3 = session.client(service_name='s3', endpoint_url=uri)
 
     if bucket.startswith('http'):
         bucket = bucket.split('/')[2].split('.')[0]
@@ -235,7 +247,9 @@ def updateDateService(redis_uri,
             resp = r.unlink(*keys)
             print(f'{resp} of {len(keys)} keys unlinked {keys}')
 
-    if s3_inventory:
+    if local_path:
+        objects = reduce(keyMapper, getAllFiles(uri), {})
+    elif s3_inventory:
         invenKeys = invenGetAllKeys(s3, bucket)
         if(invenKeys):
             objects = reduce(keyMapper, invenKeys, {})
@@ -347,10 +361,10 @@ parser.add_argument(
     help='URI for the Redis database')
 parser.add_argument(
     '-s',
-    '--s3_uri',
-    dest='s3_uri',
+    '--uri',
+    dest='uri',
     action='store',
-    help='S3 URI -- for use with localstack testing')
+    help='S3 URI (for use with localstack testing), or path to local directory to scrape from')
 parser.add_argument(
     '-l',
     '--layer',
@@ -385,7 +399,7 @@ updateDateService(
     args.redis_uri[0],
     args.port,
     args.bucket,
-    s3_uri=args.s3_uri,
+    uri=args.uri,
     layer_name=args.layer,
     reproject=args.reproject,
     check_exists=args.check_exists,
