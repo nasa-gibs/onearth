@@ -4,13 +4,10 @@ FROM almalinux:9.5
 ARG MRF_VERSION=3.0.1
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
-ARG GIBS_GDAL_RELEASE=1
-ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 # Install dependencies
 RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
-    dnf install -y 'dnf-command(config-manager)' && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
 	dnf install -y epel-release-9-5.el9 && \
@@ -37,7 +34,7 @@ RUN dnf -y update && \
         proj-devel-8.2.0 \
         geos-3.10.1 \
         geos-devel-3.10.1 \
-        python3-devel-3.9.19 \
+        python3-devel-3.9.18 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
@@ -52,15 +49,12 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
     cd .. && \
     rm -rf /tmp/*
 
-
-# Install GDAL
+# Install GDAL with Brunsli support
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
-    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-1.el9.x86_64.rpm && \
+    rpm -i gibs-gdal-${GDAL_VERSION}-1.el9.x86_64.rpm && \
     rm -rf /tmp/*
-
-RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Install mrf_apps
 RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
