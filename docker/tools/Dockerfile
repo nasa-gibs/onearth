@@ -51,7 +51,7 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
 
 # Install GDAL with Brunsli support
 ENV LD_LIBRARY_PATH=:/usr/local/lib
-WORKDIR /tmp
+WORKDIR  /tmp
 RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-1.el9.x86_64.rpm && \
     rpm -i gibs-gdal-${GDAL_VERSION}-1.el9.x86_64.rpm && \
     rm -rf /tmp/*
