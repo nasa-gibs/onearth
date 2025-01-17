@@ -5,7 +5,8 @@ projection: "EPSG:4326"
 tilematrixset: "250m"
 mime_type: "image/jpeg"
 static: false
-abstract: "MODIS_Aqua_SurfaceReflectance_Bands121_v6_STD abstract"
+abstract: "MODIS_Aqua_SurfaceReflectance_Bands121 abstract"
+best_layer: "MODIS_Aqua_SurfaceReflectance_Bands121"
 metadata:
   - {}
 source_mrf:

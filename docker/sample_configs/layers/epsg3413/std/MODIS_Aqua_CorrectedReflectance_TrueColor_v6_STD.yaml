@@ -6,6 +6,7 @@ tilematrixset: "250m"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_CorrectedReflectance_TrueColor abstract"
+best_layer: "MODIS_Aqua_CorrectedReflectance_TrueColor"
 metadata:
   - {}
 source_mrf:

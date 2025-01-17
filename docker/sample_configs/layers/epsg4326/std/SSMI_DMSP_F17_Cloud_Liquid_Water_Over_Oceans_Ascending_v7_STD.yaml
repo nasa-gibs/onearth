@@ -6,6 +6,7 @@ tilematrixset: "2km"
 mime_type: "image/png"
 static: false
 abstract: "SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending_v7_STD abstract"
+best_layer: "SSMI_DMSP_F17_Cloud_Liquid_Water_Over_Oceans_Ascending"
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "{base_uri_meta}/colormaps/v1.3/SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "{base_uri_meta}/colormaps/v1.0/SSMI_Cloud_Liquid_Water_Over_Oceans_Ascending.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}

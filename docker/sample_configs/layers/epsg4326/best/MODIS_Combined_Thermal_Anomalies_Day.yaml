@@ -6,6 +6,10 @@ tilematrixset: "1km"
 mime_type: "application/vnd.mapbox-vector-tile"
 static: false
 abstract: "MODIS_Combined_Thermal_Anomalies_Day abstract"
+best_config:
+  1: MODIS_Combined_Thermal_Anomalies_Day_v6_NRT
+  2: MODIS_Combined_Thermal_Anomalies_Day_v61_NRT
+  3: MODIS_Combined_Thermal_Anomalies_Day_v6_STD
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/mapbox-gl-style/1.0", "xlink:href": "{base_uri_meta}/vector-styles/v1.0/FIRMS_MODIS_Thermal_Anomalies.json", "xlink:title": "Mapbox GL Layer Styles"}

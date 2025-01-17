@@ -6,6 +6,11 @@ tilematrixset: "1km"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_Brightness_Temp_Band31_Day abstract"
+best_config:
+  1: "MODIS_Aqua_Brightness_Temp_Band31_Day_v5_NRT"
+  2: "MODIS_Aqua_Brightness_Temp_Band31_Day_v5_STD"
+  3: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_NRT"
+  4: "MODIS_Aqua_Brightness_Temp_Band31_Day_v6_STD"
 metadata:
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap", "xlink:href": "{base_uri_meta}/colormaps/v1.3/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}
   - {"xlink:type": "simple", "xlink:role": "http://earthdata.nasa.gov/gibs/metadata-type/colormap/1.0", "xlink:href": "{base_uri_meta}/colormaps/v1.0/MODIS_Aqua_Brightness_Temp_Band31_Day.xml", "xlink:title": "GIBS Color Map: Data - RGB Mapping"}

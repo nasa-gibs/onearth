@@ -6,6 +6,7 @@ tilematrixset: "250m"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_Data_No_Data abstract"
+best_layer: "MODIS_Aqua_Data_No_Data"
 metadata:
   - {}
 source_mrf:

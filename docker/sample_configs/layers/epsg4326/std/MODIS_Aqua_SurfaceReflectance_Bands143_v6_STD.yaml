@@ -6,6 +6,7 @@ tilematrixset: "500m"
 mime_type: "image/jpeg"
 static: false
 abstract: "MODIS_Aqua_SurfaceReflectance_Bands143 abstract"
+best_layer: "MODIS_Aqua_SurfaceReflectance_Bands143"
 metadata:
   - {}
 source_mrf:
