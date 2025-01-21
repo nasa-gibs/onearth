@@ -57,6 +57,7 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
 
 
 # Install GDAL
+RUN pip install --force-reinstall numpy
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
 RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
