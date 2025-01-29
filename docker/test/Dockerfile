@@ -177,6 +177,7 @@ RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 RUN python3 -m pip install --user cython==3.0.11 
 RUN python3 setup.py build_ext --inplace
 #RUN python3 -m pip install Shapely==2.0.1 moto[server]==4.2.7 werkzeug==3.0.1
+RUN python3 -m pip install moto[server]==4.2.7 werkzeug==3.0.1
 
 # Install OnEarth utilties, etc.
 WORKDIR /home/oe2/onearth/
