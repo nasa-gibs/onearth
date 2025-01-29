@@ -1,5 +1,4 @@
 # This Dockerfile must be run from source root
-#FROM nasagibs/onearth-depss:2.8.7-2
 FROM nasagibs/onearth-deps:2.8.7
 
 ARG MRF_VERSION=3.0.1
@@ -8,42 +7,22 @@ ENV GDAL_VERSION=$GDAL_VERSION
 ARG GIBS_GDAL_RELEASE=1
 ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
-RUN dnf -y update && \
-    dnf install -y dnf-plugins-core && \
-    dnf groupinstall -y "Development Tools" && \
-    dnf install -y 'dnf-command(config-manager)' && \
-    dnf clean all && \
-    dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-5.el9 && \
-    dnf install -y \
+# Install dependencies
+RUN dnf install -y \
         rpm-build \
-        rpmdevtools \
-        lua-devel-5.4.4 \
-        jansson-devel-2.14 \
-        libpng-devel-1.6.37 \
-        pcre-devel-8.44 \
-        wget-1.21.1 \
-        libyaml-devel-0.2.5 \
-        libcurl-devel-7.76.1 \
-        libjpeg-turbo-devel-2.0.90 \
-        libxml2-devel-2.9.13 \
-        luarocks-3.9.2 \
-        redis-6.2.7 \
-        cronie-1.5.7 \
-        logrotate-3.18.0 \
-        fribidi-devel-1.0.10 \
-        cairo-devel-1.17.4 \
-        cmake-3.26.5 \
-        harfbuzz-devel-2.7.4 \
-        fcgi-devel-2.4.0 \
+        rpmdevtools-9.5 \
         proj-8.2.0 \
         proj-devel-8.2.0 \
         geos-3.10.1 \
+        fribidi-devel-1.0.10 \
+        cairo-devel-1.17.4 \
+        cmake-3.26.5 \
+        geos-3.10.1 \
         geos-devel-3.10.1 \
-        python3-devel-3.9.19 \
+        harfbuzz-devel-2.7.4 \
+        fcgi-devel-2.4.0 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
-
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
 WORKDIR /tmp
@@ -176,7 +155,7 @@ RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 # pip updates
 RUN python3 -m pip install --user cython==3.0.11 
 RUN python3 setup.py build_ext --inplace
-#RUN python3 -m pip install Shapely==2.0.1 moto[server]==4.2.7 werkzeug==3.0.1
+#Removed Shapely as it is already installed
 RUN python3 -m pip install moto[server]==4.2.7 werkzeug==3.0.1
 
 # Install OnEarth utilties, etc.
