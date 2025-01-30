@@ -54,7 +54,6 @@ WORKDIR /home/oe2/onearth
 COPY requirements.txt .
 
 # Install pip dependencies
-#RUN pip install pip==25.0
 RUN pip install -r requirements.txt
 
 # Install GDAL
