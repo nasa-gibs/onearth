@@ -54,11 +54,11 @@ WORKDIR /home/oe2/onearth
 COPY requirements.txt .
 
 # Install pip dependencies
-RUN pip install pip==25.0
+#RUN pip install pip==25.0
 RUN pip install -r requirements.txt
 
 # Install GDAL
-RUN pip install --force-reinstall numpy
+#RUN pip install --force-reinstall numpy
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
 RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
