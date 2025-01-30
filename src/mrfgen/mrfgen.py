@@ -2467,58 +2467,78 @@ if mrf_compression_type.lower() in ["jpeg", "jpg", "zen"]:
     alltiles = goodtiles
 
 # Force background color if specified for JPEG or TIFF
-if background in ["black", "white", "transparent"] and mrf_compression_type.lower() in [
+if mrf_compression_type.lower() in [
     "jpeg",
     "jpg",
     "tiff",
     "tif",
 ]:
     for i, tile in enumerate(alltiles):
-        log_info_mssg("Using " + background + " background for " + tile)
         temp_tile = None
         tile_path = os.path.dirname(tile)
         tile_basename, tile_extension = os.path.splitext(os.path.basename(tile))
+        if background in ["black", "white", "transparent"]:
+            log_info_mssg("Using " + background + " background for " + tile)
+            with rasterio.open(tile) as src:
+                # Read the image data
+                img_data = src.read()
+                img_meta = src.meta
 
-        with rasterio.open(tile) as src:
-            # Read the image data
-            img_data = src.read()
-            img_meta = src.meta
+                # Convert the image data to a PIL image
+                # Assuming the image has 4 bands (RGBA)
+                img = Image.fromarray(img_data.transpose(1, 2, 0), mode="RGBA")
 
-            # Convert the image data to a PIL image
-            # Assuming the image has 4 bands (RGBA)
-            img = Image.fromarray(img_data.transpose(1, 2, 0), mode="RGBA")
+                # Create a new background image
+                if background == "white":
+                    bg = Image.new("RGBA", img.size, (255, 255, 255, 255))
+                elif background == "transparent":
+                    bg = Image.new("RGBA", img.size, (0, 0, 0, 0))
+                else:
+                    bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
 
-            # Create a new background image
-            if background == "white":
-                bg = Image.new("RGBA", img.size, (255, 255, 255, 255))
-            elif background == "transparent":
-                bg = Image.new("RGBA", img.size, (0, 0, 0, 0))
-            else:
-                bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
+                # Composite the input image onto the black background
+                composite = Image.alpha_composite(bg, img)
 
-            # Composite the input image onto the black background
-            composite = Image.alpha_composite(bg, img)
+                # Convert the composite image back to a numpy array
+                composite_data = np.array(composite).transpose(2, 0, 1)
 
-            # Convert the composite image back to a numpy array
-            composite_data = np.array(composite).transpose(2, 0, 1)
+                # We no longer need the 4th band
+                if background != "transparent":
+                    composite_data = composite_data[:3, :, :]
+                    bands = 3
+                else:
+                    bands = 4
 
-            # We no longer need the 4th band
-            if background != "transparent":
-                composite_data = composite_data[:3, :, :]
+                # Update the metadata to reflect the changes (if necessary)
+                img_meta.update({"count": bands})
+
+                # Write the result to a new file
+                temp_tile = working_dir + tile_basename + "_bg" + tile_extension.lower()
+                log_info_mssg("Creating temp file " + temp_tile)
+                with rasterio.open(temp_tile, "w", **img_meta) as dst:
+                    dst.write(composite_data)
+                log_info_mssg("just wrote the temp file")
+        
+        # If we have a TIFF being converted to JPG, ensure that there are only 3 bands so that we don't end up with a CMYK JPG
+        elif tile_extension.lower() in [".tif", ".tiff"] and mrf_compression_type.lower() in ["jpg", "jpeg"]:
+            log_info_mssg("Ensuring that " + tile + " only has 3 bands")
+            with rasterio.open(tile) as src:
+                # Read the image data
+                img_data = src.read()
+                img_meta = src.meta
+                # Make sure that there are only 3 bands
+                img_data = img_data[:3, :, :]
                 bands = 3
-            else:
-                bands = 4
-
-            # Update the metadata to reflect the changes (if necessary)
-            img_meta.update({"count": bands})
-
-            # Write the result to a new file
-            temp_tile = working_dir + tile_basename + "_bg" + tile_extension.lower()
-            log_info_mssg("Creating temp file " + temp_tile)
-            with rasterio.open(temp_tile, "w", **img_meta) as dst:
-                dst.write(composite_data)
-
-        alltiles[i] = temp_tile
+                # Update the metadata to reflect the changes (if necessary)
+                img_meta.update({"count": bands})
+                # Write the result to a new file
+                temp_tile = working_dir + tile_basename + "_3b" + tile_extension.lower()
+                log_info_mssg("Creating temp file " + temp_tile)
+                with rasterio.open(temp_tile, "w", **img_meta) as dst:
+                    dst.write(img_data)
+        
+        if temp_tile is not None:
+            alltiles[i] = temp_tile
 
 # Convert RGBA PNGs to indexed paletted PNGs if requested
 if mrf_compression_type == "PPNG" and colormap != "":
