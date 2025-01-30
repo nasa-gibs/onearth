@@ -11,6 +11,7 @@ pyparsing==3.0.9
 pypng==0.20220715.0
 python-dateutil==2.8.1
 redis==5.0.0
+requests==2.32.2
 Rtree==1.0.1
 setuptools==70.0.0
 unittest2==1.1.0
