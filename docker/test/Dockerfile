@@ -47,7 +47,6 @@ WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
 RUN make && make install
 
-
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2/onearth
 WORKDIR /home/oe2/onearth
@@ -55,6 +54,16 @@ COPY requirements.txt .
 
 # Install pip dependencies
 RUN pip install -r requirements.txt
+
+# libspatialindex
+WORKDIR /tmp
+RUN wget https://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+RUN tar xzf spatialindex-src-1.8.5.tar.gz
+RUN cd /tmp/spatialindex-src-1.8.5 && \
+    ./configure --libdir=/usr/lib64 && \
+    make && make install && \
+    ldconfig && \
+    cd ..
 
 # Install GDAL
 #RUN pip install --force-reinstall numpy
