@@ -67,6 +67,7 @@ docker build \
 # Build the onearth-tools image
 docker build \
     $DOCKER_PLATFORM_OPTION \
+    --no-cache \
     --build-arg ONEARTH_VERSION=$ONEARTH_VERSION \
     -f ./docker/tools/Dockerfile \
     -t nasagibs/onearth-tools:$ONEARTH_VERSION-$ONEARTH_RELEASE \
