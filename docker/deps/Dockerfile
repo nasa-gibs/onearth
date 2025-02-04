@@ -11,7 +11,7 @@ RUN dnf -y update && \
     dnf install -y 'dnf-command(config-manager)' && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-5.el9 && \
+	dnf install -y epel-release-9-9.el9 && \
     dnf install -y \
         lua-devel-5.4.4 \
         jansson-devel-2.14 \
@@ -25,7 +25,7 @@ RUN dnf -y update && \
         mod_ssl-2.4.62 \
         openssl-devel-3.2.2 \
         luarocks-3.9.2 \
-        redis-6.2.7 \
+        redis-6.2.17 \
         cronie-1.5.7 \
         logrotate-3.18.0 \
         python3-devel-3.9.19 \
@@ -38,7 +38,7 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.5/yq_linux_amd64.tar.gz -O - |\
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Install supercronic
