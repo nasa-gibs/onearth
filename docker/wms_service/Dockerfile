@@ -8,8 +8,6 @@ ARG GIBS_GDAL_RELEASE=1
 ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 RUN dnf install -y \
-        rpm-build \
-        rpmdevtools-9.5 \
         proj-8.2.0 \
         proj-devel-8.2.0 \
         geos-3.10.1 \
