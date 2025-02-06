@@ -4,6 +4,8 @@ FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 ARG MRF_VERSION=3.0.1
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
+ARG GIBS_GDAL_RELEASE=1
+ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 RUN dnf install -y \
         proj-8.2.0 \
@@ -12,60 +14,19 @@ RUN dnf install -y \
         fribidi-devel-1.0.10 \
         cairo-devel-1.17.4 \
         cmake-3.26.5 \
+        geos-3.10.1 \
         geos-devel-3.10.1 \
         harfbuzz-devel-2.7.4 \
         fcgi-devel-2.4.0 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
-# Install GDAL
-ENV LD_LIBRARY_PATH=:/usr/local/lib
-WORKDIR /tmp
-RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz && \
-    tar zxvf gdal-${GDAL_VERSION}.tar.gz && \
-    cd gdal-${GDAL_VERSION}/ && \
-    mkdir build && \
-    cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_PREFIX_PATH=/usr/local/ \
-      -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-      -DCMAKE_INSTALL_LIBDIR=lib \
-      -DBUILD_SHARED_LIBS=ON \
-      -DBUILD_TESTING=OFF \
-      -DGDAL_USE_PARQUET=OFF \
-      -DGDAL_USE_ARROW=OFF \
-      -DGDAL_USE_ARROWDATASET=OFF \
-      -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
-      -DBUILD_PYTHON_BINDINGS:BOOL=ON \
-      -DBUILD_JAVA_BINDINGS:BOOL=OFF \
-      -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
-      .. && \
-    cmake --build . && \
-    cmake --build . --config Release --target install && \
-    export LD_LIBRARY_PATH=:/usr/local/lib && \
-    ldconfig && \
-    cd /tmp/ && rm -rf /tmp/*
-RUN ldconfig -v
-RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
-
-# Install mrf_apps
-RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
-    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
-    cd mrf/mrf_apps/ && \
-    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
-    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
-    sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
-    make && make install && \
-    ldconfig && \
-    cp *.py /usr/bin/ && \
-    cd /tmp/ && \
-    rm -rf /tmp/*
-
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
+WORKDIR /tmp
 RUN git clone https://github.com/tiye/json-lua.git
 WORKDIR /tmp/json-lua/
-RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec
-RUN luarocks make json-lua-0.1-4.rockspec
+RUN sed -i 's/git:/https:/' json-lua-0.1-4.rockspec && \
+  luarocks make json-lua-0.1-4.rockspec
 
 # Install lua dependencies
 WORKDIR /tmp
@@ -87,6 +48,36 @@ WORKDIR /tmp/mod_fcgid-2.3.9
 RUN APXS=/usr/bin/apxs ./configure.apxs
 RUN make && make install
 
+
+COPY ./ /home/oe2/onearth/
+WORKDIR /home/oe2/onearth
+# Install pip dependencies
+RUN pip install pip==24.2
+RUN pip install -r requirements.txt
+
+# Install GDAL
+#RUN pip install --force-reinstall numpy
+ENV LD_LIBRARY_PATH=:/usr/local/lib
+WORKDIR /tmp
+RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+    rm -rf /tmp/*
+
+RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
+
+# Install mrf_apps
+RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mrf.git && \
+    curl "https://raw.githubusercontent.com/OSGeo/gdal/v${GDAL_VERSION}/frmts/mrf/marfa.h" -o /usr/local/include/marfa.h && \
+    cd mrf/mrf_apps/ && \
+    echo $'PREFIX=/usr/local\nGDAL_ROOT=/usr/local/include/' >> Makefile.lcl && \
+    sed -i 's/mrf_insert jxl/mrf_insert/g' Makefile && \
+    sed -i 's/papszOptions) override/papszOptions)/g' /usr/local/include/marfa.h && \
+    make && make install && \
+    ldconfig && \
+    cp *.py /usr/bin/ && \
+    cd /tmp/ && \
+    rm -rf /tmp/*
+
 # Mapserver
 WORKDIR /tmp
 RUN wget http://download.osgeo.org/mapserver/mapserver-8.2.2.tar.gz
@@ -99,12 +90,6 @@ RUN make && make install
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/mapserver.conf
 RUN ldconfig -v
 RUN rm -rf /tmp/*
-
-COPY ./ /home/oe2/onearth/
-WORKDIR /home/oe2/onearth
-# Install pip dependencies
-RUN pip install pip==24.2
-RUN pip install -r requirements.txt
 
 # Install Apache modules
 WORKDIR /home/oe2/onearth/src/modules/mod_ahtse_lua/src/

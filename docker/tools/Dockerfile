@@ -17,7 +17,6 @@ RUN dnf -y update && \
 	dnf install -y epel-release-9-5.el9 && \
     dnf install -y \
         rpm-build \
-        rpmdevtools \
         lua-devel-5.4.4 \
         jansson-devel-2.14 \
         libpng-devel-1.6.37 \
@@ -57,7 +56,7 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
 
 
 # Install GDAL
-RUN pip install --force-reinstall numpy
+RUN pip install --force-reinstall numpy-1.25.2
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
 RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
