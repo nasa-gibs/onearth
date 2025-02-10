@@ -10,33 +10,33 @@ RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-5.el9 && \
+    dnf install -y epel-release-9-5.el9 && \
     dnf install -y \
-        lua-devel-5.4.4 \
-        jansson-devel-2.14 \
-        libpng-devel-1.6.37 \
-        pcre-devel-8.44 \
-        wget-1.21.1 \
-        libyaml-devel-0.2.5 \
-        libcurl-devel-7.76.1 \
-        libjpeg-turbo-devel-2.0.90 \
-        libxml2-devel-2.9.13 \
-        luarocks-3.9.2 \
-        redis-6.2.7 \
-        cronie-1.5.7 \
-        logrotate-3.18.0 \
-        fribidi-devel-1.0.10 \
-        cairo-devel-1.17.4 \
-        cmake-3.26.5 \
-        harfbuzz-devel-2.7.4 \
-        fcgi-devel-2.4.0 \
-        proj-8.2.0 \
-        proj-devel-8.2.0 \
-        geos-3.10.1 \
-        geos-devel-3.10.1 \
-        python3-devel-3.9.18 \
-        protobuf-c-devel-1.3.3 && \
-	dnf clean all
+    lua-devel-5.4.4 \
+    jansson-devel-2.14 \
+    libpng-devel-1.6.37 \
+    pcre-devel-8.44 \
+    wget-1.21.1 \
+    libyaml-devel-0.2.5 \
+    libcurl-devel-7.76.1 \
+    libjpeg-turbo-devel-2.0.90 \
+    libxml2-devel-2.9.13 \
+    luarocks-3.9.2 \
+    redis-6.2.7 \
+    cronie-1.5.7 \
+    logrotate-3.18.0 \
+    fribidi-devel-1.0.10 \
+    cairo-devel-1.17.4 \
+    cmake-3.26.5 \
+    harfbuzz-devel-2.7.4 \
+    fcgi-devel-2.4.0 \
+    proj-8.2.0 \
+    proj-devel-8.2.0 \
+    geos-3.10.1 \
+    geos-devel-3.10.1 \
+    python3-devel-3.9.18 \
+    protobuf-c-devel-1.3.3 && \
+    dnf clean all
 
 # libspatialindex
 WORKDIR /tmp
@@ -71,21 +71,21 @@ RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar
     mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_PREFIX_PATH=/usr/local/ \
-      -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-      -DCMAKE_INSTALL_LIBDIR=lib \
-      -DBUILD_SHARED_LIBS=ON \
-      -DBUILD_TESTING=OFF \
-      -DGDAL_USE_PARQUET=OFF \
-      -DGDAL_USE_ARROW=OFF \
-      -DGDAL_USE_ARROWDATASET=OFF \
-      -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
-      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
-      -DGDAL_USE_BRUNSLI=ON \
-      -DBUILD_PYTHON_BINDINGS:BOOL=ON \
-      -DBUILD_JAVA_BINDINGS:BOOL=OFF \
-      -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
-      .. && \
+    -DCMAKE_PREFIX_PATH=/usr/local/ \
+    -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DGDAL_USE_PARQUET=OFF \
+    -DGDAL_USE_ARROW=OFF \
+    -DGDAL_USE_ARROWDATASET=OFF \
+    -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
+    -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
+    -DGDAL_USE_BRUNSLI=ON \
+    -DBUILD_PYTHON_BINDINGS:BOOL=ON \
+    -DBUILD_JAVA_BINDINGS:BOOL=OFF \
+    -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
+    .. && \
     cmake --build . && \
     cmake --build . --config Release --target install && \
     export LD_LIBRARY_PATH=:/usr/local/lib && \
@@ -152,6 +152,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/colormaps/bin/SLDtoColorMap.py -D /usr/bin/SLDtoColorMap.py && \
     install -m 755 src/vectorgen/oe_vectorgen.py -D /usr/bin/oe_vectorgen && \
     install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py && \
+    install -m 755 src/vectorgen/oe_json_to_uvtile.py -D /usr/bin/oe_json_to_uvtile && \
     install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py && \
     install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py && \
     install -m 755 src/scripts/oe_sync_s3_shapefiles.py -D /usr/bin/oe_sync_s3_shapefiles.py && \

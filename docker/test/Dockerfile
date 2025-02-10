@@ -7,17 +7,17 @@ ENV GDAL_VERSION=$GDAL_VERSION
 
 # Install dependencies
 RUN dnf install -y \
-        proj-8.2.0 \
-        proj-devel-8.2.0 \
-        geos-3.10.1 \
-        fribidi-devel-1.0.10 \
-        cairo-devel-1.17.4 \
-        cmake-3.26.5 \
-        geos-devel-3.10.1 \
-        harfbuzz-devel-2.7.4 \
-        fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 && \
-	dnf clean all
+    proj-8.2.0 \
+    proj-devel-8.2.0 \
+    geos-3.10.1 \
+    fribidi-devel-1.0.10 \
+    cairo-devel-1.17.4 \
+    cmake-3.26.5 \
+    geos-devel-3.10.1 \
+    harfbuzz-devel-2.7.4 \
+    fcgi-devel-2.4.0 \
+    protobuf-c-devel-1.3.3 && \
+    dnf clean all
 
 # libspatialindex
 WORKDIR /tmp
@@ -38,21 +38,21 @@ RUN wget http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar
     mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_PREFIX_PATH=/usr/local/ \
-      -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-      -DCMAKE_INSTALL_LIBDIR=lib \
-      -DBUILD_SHARED_LIBS=ON \
-      -DBUILD_TESTING=OFF \
-      -DGDAL_USE_PARQUET=OFF \
-      -DGDAL_USE_ARROW=OFF \
-      -DGDAL_USE_ARROWDATASET=OFF \
-      -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
-      -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
-      -DGDAL_USE_BRUNSLI=ON \
-      -DBUILD_PYTHON_BINDINGS:BOOL=ON \
-      -DBUILD_JAVA_BINDINGS:BOOL=OFF \
-      -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
-      .. && \
+    -DCMAKE_PREFIX_PATH=/usr/local/ \
+    -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DGDAL_USE_PARQUET=OFF \
+    -DGDAL_USE_ARROW=OFF \
+    -DGDAL_USE_ARROWDATASET=OFF \
+    -DGDAL_ENABLE_HDF5_GLOBAL_LOCK:BOOL=ON \
+    -DBRUNSLI_INCLUDE_DIR=/usr/local/include/brunsli \
+    -DGDAL_USE_BRUNSLI=ON \
+    -DBUILD_PYTHON_BINDINGS:BOOL=ON \
+    -DBUILD_JAVA_BINDINGS:BOOL=OFF \
+    -DBUILD_CSHARP_BINDINGS:BOOL=OFF \
+    .. && \
     cmake --build . && \
     cmake --build . --config Release --target install && \
     export LD_LIBRARY_PATH=:/usr/local/lib && \
@@ -206,6 +206,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/colormaps/bin/SLDtoColorMap.py -D /usr/bin/SLDtoColorMap.py && \
     install -m 755 src/vectorgen/oe_vectorgen.py -D /usr/bin/oe_vectorgen && \
     install -m 755 src/vectorgen/oe_create_mvt_mrf.py -D /usr/bin/oe_create_mvt_mrf.py && \
+    install -m 755 src/vectorgen/oe_json_to_uvtile.py -D /usr/bin/oe_json_to_uvtile && \
     install -m 755 src/scripts/oe_sync_s3_idx.py -D /usr/bin/oe_sync_s3_idx.py && \
     install -m 755 src/scripts/oe_sync_s3_configs.py -D /usr/bin/oe_sync_s3_configs.py && \
     install -m 755 src/scripts/oe_sync_s3_shapefiles.py -D /usr/bin/oe_sync_s3_shapefiles.py && \
