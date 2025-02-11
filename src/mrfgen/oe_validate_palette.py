@@ -225,7 +225,7 @@ parser.add_option(
     action="store_true",
     dest="match_index",
     default=False,
-    help="Do not check for matching index location",
+    help="Check for matching index location",
 )
 parser.add_option(
     "-s",

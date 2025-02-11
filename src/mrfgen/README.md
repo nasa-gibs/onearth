@@ -294,7 +294,7 @@ Options:
                         Fill value for colormaps. Default: "0,0,0,0"
   -i INPUT_FILENAME, --input=INPUT_FILENAME
                         Full path of input image
-  -n, --no_index        Do not check for matching index location
+  -m, --match_index     Check for matching index location
   -s, --send_email      Send email notification for errors and warnings.
   --email_server=EMAIL_SERVER
                         The server where email is sent from (overrides

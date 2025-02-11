@@ -229,12 +229,12 @@ Tests legends in horizontal and vertical formats as PNGs and SVGs using various 
 
 ## `oe_validate_palette.py` Tests:
 
-1. Validating a colormap with a corresponding image that matches the colormap
-2. Validating a colormap with a corresponding image that matches the colormap using the `--no_index` option
+1. Validating a colormap with a corresponding image that matches the colormap using the `--match_index` option
+2. Validating a colormap with a corresponding image that matches the colormap
 3. Validating a colormap with a corresponding image that matches the colormap using the `--ignore_colors` option
 4. Validating a colormap with a corresponding image that matches the colormap using the `--fill_value` option
-5. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap
-6. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--no_index` option
+5. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--match_index` option
+6. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap
 7. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--ignore_colors` option
 8. Correctly failing to validate a colormap with a non-corresponding image that doesn't match the colormap using the `--fill_value` option
 
