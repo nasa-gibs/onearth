@@ -186,12 +186,11 @@ def read_color_table(image, sigevent_url):
     
     return colortable
 
-
 # -------------------------------------------------------------------------------
 
 print("oe_validate_palette.py v" + versionNumber)
 
-usageText = "oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --no_index --ignore_colors --verbose"
+usageText = "oe_validate_palette.py --colormap [colormap.xml] --input [input.png] --match_index --ignore_colors --verbose"
 
 # Define command line options and args.
 parser = OptionParser(usage=usageText, version=versionNumber)
@@ -221,10 +220,10 @@ parser.add_option(
     help="Full path of input image",
 )
 parser.add_option(
-    "-n",
-    "--no_index",
+    "-m",
+    "--match_index",
     action="store_true",
-    dest="no_index",
+    dest="match_index",
     default=False,
     help="Do not check for matching index location",
 )
@@ -284,7 +283,6 @@ parser.add_option(
     dest="ignore_colors",
     help='List of RGBA color values to ignore in image palette separated by "|"',
 )
-
 # Read command line args
 (options, args) = parser.parse_args()
 
@@ -303,7 +301,7 @@ else:
     input_filename = options.input_filename
 
 # do not compare index location values
-no_index = options.no_index
+no_index = not options.match_index
 
 # print verbose log messages
 verbose = options.verbose
