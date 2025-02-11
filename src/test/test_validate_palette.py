@@ -73,12 +73,13 @@ def run_failure_validation_test(cmd_lst, colormap_path, img_path, expected_out):
 class TestValidatePalette(unittest.TestCase):
     
     # Tests oe_validate_palette.py using a colormap with the corresponding image that matches the colormap.
+    # Uses the `-m` (`--match_index`) option.
     # Passes if the validation is successful.
     def test_validate_correct_palette(self):
         colormap_path = os.path.join(os.getcwd(), "mrfgen_files/colormaps/AIRS_Temperature.xml")
         img_path = os.path.join(os.getcwd(), "mrfgen_files/AIRS/AIRS_L2_SST_A_LL_v6_NRT_2019344.png")
         fail_str = ""
-        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path]
+        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-m']
         try:
             subprocess.check_output(cmd_lst)
         except subprocess.CalledProcessError as val_pal_except:
@@ -89,13 +90,12 @@ class TestValidatePalette(unittest.TestCase):
         self.assertTrue(fail_str == "", fail_str)
 
     # Tests oe_validate_palette.py using a colormap with the corresponding image that matches the colormap.
-    # Uses the `-n` (`--no_index`) option.
     # Passes if the validation is successful.
     def test_validate_correct_palette_no_index(self):
         colormap_path = os.path.join(os.getcwd(), "mrfgen_files/colormaps/AIRS_Temperature.xml")
         img_path = os.path.join(os.getcwd(), "mrfgen_files/AIRS/AIRS_L2_SST_A_LL_v6_NRT_2019344.png")
         fail_str = ""
-        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-n']
+        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path]
         try:
             subprocess.check_output(cmd_lst)
         except subprocess.CalledProcessError as val_pal_except:
@@ -142,6 +142,7 @@ class TestValidatePalette(unittest.TestCase):
         self.assertTrue(fail_str == "", fail_str)
 
     # Tests oe_validate_palette.py using a colormap with an image that doesn't match the colormap.
+    # Uses the `-m` (`--match_index`) option.
     # Passes if the validation fails and correct failure details are given.
     def test_validate_incorrect_palette(self):
         colormap_path = os.path.join(os.getcwd(), "mrfgen_files/colormaps/AIRS_Temperature.xml")
@@ -153,12 +154,11 @@ class TestValidatePalette(unittest.TestCase):
             "Missing palette entries": 231,
             "Extra palette entries": 0
         }
-        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path]
+        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-m']
         fail_str = run_failure_validation_test(cmd_lst, colormap_path, img_path, expected_out)
         self.assertTrue(fail_str == "", fail_str)
     
     # Tests oe_validate_palette.py using a colormap with an image that doesn't match the colormap.
-    # Uses the `-n` (`--no_index`) option.
     # Passes if the validation fails and correct failure details are given.
     def test_validate_incorrect_palette_no_index(self):
         colormap_path = os.path.join(os.getcwd(), "mrfgen_files/colormaps/AIRS_Temperature.xml")
@@ -169,7 +169,7 @@ class TestValidatePalette(unittest.TestCase):
             "Missing palette entries": 253,
             "Extra palette entries": 21
         }
-        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-n']
+        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path]
         fail_str = run_failure_validation_test(cmd_lst, colormap_path, img_path, expected_out)
         self.assertTrue(fail_str == "", fail_str)
     
@@ -187,7 +187,7 @@ class TestValidatePalette(unittest.TestCase):
             "Missing palette entries": 231,
             "Extra palette entries": 0
         }
-        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-x', ignored_colors]
+        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-x', ignored_colors, '-m']
         fail_str = run_failure_validation_test(cmd_lst, colormap_path, img_path, expected_out)
         self.assertTrue(fail_str == "", fail_str)
 
@@ -205,7 +205,7 @@ class TestValidatePalette(unittest.TestCase):
             "Missing palette entries": 0,
             "Extra palette entries": 3
         }
-        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-f', fill_val]
+        cmd_lst = [SCRIPT_PATH, '-c', colormap_path, '-i', img_path, '-f', fill_val, '-m']
         fail_str = run_failure_validation_test(cmd_lst, colormap_path, img_path, expected_out)
         self.assertTrue(fail_str == "", fail_str)
         
