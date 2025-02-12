@@ -400,12 +400,12 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     targetEpsgCode = targetEpsgCode or epsgCode
 
     for _, matrix in ipairs(matrices) do
-        local widthInPx = math.ceil(2 * math.pi * EARTH_RADIUS / (matrix["scaleDenominator"] * 0.28E-3))
+        local widthInPx = 2 * math.pi * EARTH_RADIUS / (matrix["scaleDenominator"] * 0.28E-3)
         local heightInPx = targetEpsgCode == "EPSG:4326" and widthInPx / 2 or widthInPx
         local widthRatio = widthInPx / (matrix["tileWidth"] * matrix["matrixWidth"])
         local heightRatio = heightInPx / (matrix["tileHeight"] * matrix["matrixHeight"])
-        local resx = math.ceil((bbox["upperCorner"][1] - bbox["lowerCorner"][1]) / (matrix["matrixWidth"] * widthRatio))
-        local resy = math.ceil((bbox["upperCorner"][2] - bbox["lowerCorner"][2]) / (matrix["matrixHeight"] * heightRatio))
+        local resx = (bbox["upperCorner"][1] - bbox["lowerCorner"][1]) / (matrix["matrixWidth"] * widthRatio)
+        local resy = (bbox["upperCorner"][2] - bbox["lowerCorner"][2]) / (matrix["matrixHeight"] * heightRatio)
         local xmax = tonumber(matrix["topLeft"][1]) + resx
         local ymax = tonumber(matrix["topLeft"][2]) - resy
         local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=${time}&width=${width}&height=${height}&bbox=${bbox}"
