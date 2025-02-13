@@ -334,7 +334,6 @@ def make_tile_pattern(layer, epsg_code, bbox, matrix):
 
     outString = make_uri(
         False) if layer['static'] else make_uri(True) + "\n" + make_uri(False)
-    outString = "<![CDATA[" + outString + "]]>"
     return outString
 
 
