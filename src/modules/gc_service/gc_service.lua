@@ -408,11 +408,9 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
         local resy = (bbox["upperCorner"][2] - bbox["lowerCorner"][2]) / (matrix["matrixHeight"] * heightRatio)
         local xmax = tonumber(matrix["topLeft"][1]) + resx
         local ymax = tonumber(matrix["topLeft"][2]) - resy
-        local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=&time=${time}&width=${width}&height=${height}&bbox=${bbox}"
+        local template = "request=GetMap&layers=${layer}&srs=${epsg_code}&format=${mime_type}&styles=${time}&width=${width}&height=${height}&bbox=${bbox}"
         local bboxOut = {}
-        --for _, param in ipairs({tonumber(matrix["topLeft"][1]), ymax, xmax, tonumber(matrix["topLeft"][2])}) do
-        -- *****Fix leading zeroes issue by applying 'tostring' on 'tonumber'?
-        for _, param in ipairs({tostring(tonumber(matrix["topLeft"][1])), ymax, xmax, tostring(tonumber(matrix["topLeft"][2]))}) do
+        for _, param in ipairs({tonumber(matrix["topLeft"][1]), ymax, xmax, tonumber(matrix["topLeft"][2])}) do
             -- Old version of OE rounded zeroes
             if param < 1 and param > -1 then
                 table.insert(bboxOut, 0)
@@ -421,7 +419,7 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
             end
         end
         local make_uri = function(hasTime)
-            local time = hasTime and "${time}" or ""
+            local time = hasTime and "&time=${time}" or ""
             return string.gsub(template, "${layer}", layerId)
                 :gsub("${epsg_code}", targetEpsgCode)
                 :gsub("${mime_type}", mimeType)
