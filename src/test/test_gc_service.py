@@ -300,9 +300,7 @@ def bulk_replace(source_str, replace_list):
 
 
 def make_tile_pattern(layer, epsg_code, bbox, matrix):
-    widthInPx = math.ceil(
-        2 * math.pi * EARTH_RADIUS /
-        (float(matrix.findtext("{*}ScaleDenominator")) * 0.28E-3))
+    widthInPx = 2 * math.pi * EARTH_RADIUS / (float(matrix.findtext("{*}ScaleDenominator")) * 0.28E-3)
     heightInPx = widthInPx / 2 if epsg_code == "EPSG:4326" else widthInPx
     matrix_width = int(matrix.findtext('{*}MatrixWidth'))
     matrix_height = int(matrix.findtext('{*}MatrixHeight'))
@@ -310,17 +308,15 @@ def make_tile_pattern(layer, epsg_code, bbox, matrix):
     tile_height = int(matrix.findtext('{*}TileHeight'))
     widthRatio = widthInPx / (tile_width * matrix_width)
     heightRatio = heightInPx / (tile_height * matrix_height)
-    resx = math.ceil((bbox['upperCorner'][0] - bbox['lowerCorner'][0]) /
-                     (matrix_width * widthRatio))
-    resy = math.ceil((bbox["upperCorner"][1] - bbox["lowerCorner"][1]) /
-                     (matrix_height * heightRatio))
+    resx = (bbox['upperCorner'][0] - bbox['lowerCorner'][0]) / (matrix_width * widthRatio)
+    resy = (bbox["upperCorner"][1] - bbox["lowerCorner"][1]) / (matrix_height * heightRatio)
     top_left = list(map(float, matrix.findtext('{*}TopLeftCorner').split(' ')))
     xmax = top_left[0] + resx
     ymax = top_left[1] - resy
     template = "request=GetMap&layers={layer}&srs={epsg_code}&format={mime_type}&styles={time}&width={width}&height={height}&bbox={bbox}"
 
     def make_uri(hasTime):
-        time = "{time}" if hasTime else ""
+        time = "&time={time}" if hasTime else ""
         bbox_str = ",".join(
             map(lambda x: '0' if x < 1 and x > -1 else '{0:.6f}'.format(x),
                 map(float, [top_left[0], ymax, xmax, top_left[1]])))
