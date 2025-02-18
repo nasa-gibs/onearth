@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import os
 from PIL import Image
+import rasterio
 import shutil
 import subprocess
 import unittest
@@ -15,7 +16,7 @@ def run_script(*args):
     result = subprocess.run(
         [
             "python3",
-            "/Users/jryan/gibs_repos/onearth/src/vectorgen/oe_json_to_uvtile.py",
+            "/usr/bin/oe_json_to_uvtile",
             *args,
         ],
         capture_output=True,
@@ -146,6 +147,78 @@ class TestOscar(unittest.TestCase):
         self.assertLess(
             error, 0.01, f"test image is too different from reference, MSE: {error}"
         )
+
+    def test_resolution_override(self):
+        """Test using the --resolution option."""
+        artifact_path = os.path.join(
+            self.main_artifact_path, "oscar_currents_final_uv_20200101_res_override.png"
+        )
+        # You can pick any resolution override you like; 1.0 is often easy to see if it changes.
+        # This test primarily ensures that the script runs without error using --resolution
+        oscar_result = run_script(
+            self.oscar_input,
+            "-o",
+            artifact_path,
+            "--resolution",
+            "1.0",
+        )
+        self.assertEqual(
+            oscar_result.returncode,
+            0,
+            f"command retcode = {oscar_result.returncode}: {oscar_result.stderr}",
+        )
+        self.assertTrue(
+            os.path.exists(artifact_path),
+            f"output file not found: {artifact_path}",
+        )
+
+    def test_tiff_format(self):
+        """Test generating a TIFF (32-bit float) by using --format tiff."""
+        artifact_path = os.path.join(
+            self.main_artifact_path,
+            "oscar_currents_final_uv_20200101_float.tif",
+        )
+        oscar_result = run_script(
+            self.oscar_input,
+            "-o",
+            artifact_path,
+            "--format",
+            "tiff",
+        )
+        self.assertEqual(
+            oscar_result.returncode,
+            0,
+            f"command retcode = {oscar_result.returncode}: {oscar_result.stderr}",
+        )
+        self.assertTrue(
+            os.path.exists(artifact_path),
+            f"output TIFF file not found: {artifact_path}",
+        )
+        # Load the TIFF and see if it has a float dtype
+        # Pillow does not support this type of floating point tiff
+        with rasterio.open(artifact_path) as img:
+            float_array = img.read(1)
+        self.assertIn(
+            float_array.dtype,
+            ("float", "float32", "float64"),
+            f"Expected a float dtype for TIFF, got {float_array.dtype}",
+        )
+
+    def test_invalid_format(self):
+        """Test passing an invalid --format to ensure it fails."""
+        # This should fail with returncode=2 and show usage or an error message
+        oscar_result = run_script(
+            self.oscar_input,
+            "--format",
+            "abc123",  # invalid
+        )
+        self.assertEqual(
+            oscar_result.returncode,
+            2,
+            f"command retcode = {oscar_result.returncode}, expected 2 for invalid format",
+        )
+        self.assertIn("error", oscar_result.stderr.lower())
+        self.assertIn("usage", oscar_result.stderr.lower())
 
 
 if __name__ == "__main__":

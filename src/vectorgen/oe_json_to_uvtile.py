@@ -279,7 +279,7 @@ def save_geotiff(
     gdal.UseExceptions()
     driver = gdal.GetDriverByName("GTiff")
     # Create(output, x_size, y_size, bands, datatype)
-    dataset = driver.Create(output_path, width, height, 2, gdal.GDT_Float32)
+    dataset = driver.Create(str(output_path), width, height, 2, gdal.GDT_Float32)
     if not dataset:
         raise RuntimeError(
             f"GDAL initialization failed: could not create {output_path}"
