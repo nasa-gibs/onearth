@@ -28,6 +28,7 @@ import botocore.session
 from botocore.stub import Stubber
 import os
 import threading
+from periods import calculate_layer_periods
 
 TEST_RESPONSE = {
     'IsTruncated': False,
@@ -258,11 +259,6 @@ def updateDateService(redis_uri,
     else:
         objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
-    with open(os.path.dirname(os.path.realpath(__file__)) + '/periods.lua',
-              'r') as f:
-        lua_script = f.read()
-    date_script = r.register_script(lua_script)
-
     with open(os.path.dirname(os.path.realpath(__file__)) + '/best.lua',
               'r') as f:
         lua_script2 = f.read()
@@ -290,18 +286,18 @@ def updateDateService(redis_uri,
                         r.zadd(f'epsg3857:layer:{layer}:dates', {date.isoformat(): 0})
                         best_script(keys=[f'epsg3857:layer:{layer}'], args=[date.isoformat()])
 
-                date_script(keys=[f'{proj}:layer:{layer}'])
+                calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'{proj}:layer:{layer}')
                 if reproject and str(proj) == 'epsg4326':
-                    date_script(keys=[f'epsg3857:layer:{layer}'])
+                    calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'epsg3857:layer:{layer}')
 
                 # check for best layer
                 bestLayer=r.get(f'{proj}:layer:{layer}:best_layer')
                 print("Best Layer: ", bestLayer)
                 if bestLayer is not None:
                     bestLayer=bestLayer.decode("utf-8")
-                    date_script(keys=[f'{proj}:layer:{bestLayer}'])
+                    calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'{proj}:layer:{bestLayer}')
                     if reproject and str(proj) == 'epsg4326':
-                        date_script(keys=[f'epsg3857:layer:{bestLayer}'])
+                        calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'epsg3857:layer:{bestLayer}')
 
         finally:
             scrape_semaphore.release()
