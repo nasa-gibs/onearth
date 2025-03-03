@@ -1543,7 +1543,6 @@ class TestTimeUtils(unittest.TestCase):
         num_times = 16
         daily_adjustment = 20
         date_start = datetime.datetime(2021, 1, 26, 10, 40, 0, 0)
-        date_end = datetime.datetime(2021, 1, 26, 21, 40, 0, 0)
         # calculate the datetimes
         date_lst = []
         for i in range(num_days):
@@ -1745,6 +1744,33 @@ class TestTimeUtils(unittest.TestCase):
 
         # run periods.py again
         seed_redis_data(test_layers, db_keys=db_keys)
+        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = req.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_add_new_date(self):
+        # Test ingesting a new date using periods.py
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        # "Existing" periods for each layer
+        test_layers = [('Test_Add_New_Date', '2018-01-01',
+                        ['2018-01-01/2018-01-02/P1D'])]
+
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+
+        # run periods.py with keep_existing_periods
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-d 2018-01-02')
         req = requests.get(self.date_service_url + 'key1=epsg4326')
         res = req.json()
         for layer in test_layers:

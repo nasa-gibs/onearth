@@ -197,10 +197,6 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
         # Calculate periods based on dates list
         # Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration
         dates_in_periods = []
-
-        # TODO (maybe): Check for year matches
-        
-        # TODO (maybe): If there are only 2 dates, see if they're in the same period
         
         if len(trimmed_dates) > 1:
             # Use the given size and interval of the period if they are present.
@@ -297,10 +293,10 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
     # Add the new date to the list of dates for each key (if applicable)
     if new_datetime:
         for key in layer_keys:
-            result = r.zadd(f'{key}:dates', {new_datetime, 0})
+            result = r.zadd(f'{key}:dates', {new_datetime: 0})
             # Add the date to the expiration key (if applicable)
             if expiration:
-                result = r.zadd(f'{key}:expiration', {new_datetime, 0})
+                result = r.zadd(f'{key}:expiration', {new_datetime: 0})
             if result == 0:
                 if DEBUG:
                     print(f'{key}:dates already has {new_datetime}, no changes will be made')
@@ -372,7 +368,6 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
         default_date = calculated_periods[-1].split('/')[1]
 
     # If there are no periods, then use the last config time
-    # TODO: is this really necessary?
     else:
         # Find the last time config that doesn't have 'DETECT'
         last_config = None
@@ -394,9 +389,6 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
         print('Warning: no default date could be determined.')
 
 
-            
-    
-                
 
 # Main routine to be run in CLI mode
 if __name__ == '__main__':
