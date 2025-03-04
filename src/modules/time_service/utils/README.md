@@ -1,28 +1,47 @@
 # OnEarth Date Configurator Tools
 
-## `periods.lua` -- Lua period generator script
+## `periods.py` -- Period generator script
 
 This script analyzes the list of dates for a given layer (`layer:layer_name:dates`) and generates a corresponding list of periods
-(`layer:layer_name:periods`). It's intended to be run as a script within the Lua database itself.
+(`layer:layer_name:periods`).
 
-The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4326:layer:layer_name`.
+### Python Dependencies
 
-It can also be run with the following optional positional arguments after the keyword:
+- `dateutil`
+- `redis-py`
 
-`{date_to_be_added} {start_datetime} {end_datetime} {keep_existing_periods}`
+### Usage
 
-- `date_to_be_added`: The script will add this date for the layer before recalculating the layer's periods if there's a change.
-- `start_datetime`: Only dates that take place after this value will be considered while calculating periods
-- `end_datetime`: Only dates that take place before this value will be considered while calculating periods
-- `keep_existing_periods`: Don't delete existing periods at `:periods` before adding the newly calculated periods. Note that this can lead to overlapping periods. Most useful when using `start_datetime` and `end_datetime`.
+```
+usage: periods.py [-h] [-d NEW_DATETIME] [-x EXPIRATION] [-s START_DATE] [-e END_DATE] [-k] [-f] [-p PORT] [-r REDIS_URI] [-v] layer_key
 
-Any of these arguments can be skipped by passing in `false`.
+positional arguments:
+  layer_key             layer_prefix:layer_name that periods should be calculated for
+
+options:
+  -h, --help            show this help message and exit
+  -d NEW_DATETIME, --datetime NEW_DATETIME
+                        New datetime that is to be added to the periods for this layer
+  -x EXPIRATION, --expiration EXPIRATION
+                        Add the new date to the layer_key:expiration redis key
+  -s START_DATE, --start_date START_DATE
+                        Only dates that take place after this value will be considered while calculating periods
+  -e END_DATE, --end_date END_DATE
+                        Only dates that take place before this value will be considered while calculating periods
+  -k, --keep_existing_periods
+                        Don't delete existing periods at :periods before adding the newly calculated periods. Note that this can lead to
+                        overlapping periods. Most useful when using --start_datetime and --end_datetime.
+  -f, --find_smallest_interval
+                        Force the script to calculate the interval for each period based on the smallest interval between any two dates. For
+                        performance reasons, the script would otherwise only do this if the intervals between the first and second dates and
+                        second and third dates differ.
+  -p PORT, --port PORT  redis port for database
+  -r REDIS_URI, --redis_uri REDIS_URI
+                        URI for the Redis database
+  -v, --verbose         Print additional log messages
+  ```
 
 Although OnEarth still supports the `:periods` key being represented by an unsorted `set` in redis, this script will set the periods key to be a sorted `zset` by default when regenerating the `:periods` key. It can, however, correctly handle adding to existing unsorted `set` `:periods` keys using `keep_existing_periods`.
-
-### Example Command Line Usage
-
-`redis-cli --eval periods.lua epsg4326:layer:layer_name`
 
 ## `best.lua` -- Best layer generator script
 
