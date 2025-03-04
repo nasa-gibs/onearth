@@ -1785,6 +1785,42 @@ class TestTimeUtils(unittest.TestCase):
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
+    def test_find_smallest_interval(self):
+        # Test using the --find_smallest_interval option for when the first three dates
+        # have larger intervals than the rest of the dates.
+        date_start = datetime.datetime(2022, 6, 27, 0, 0, 0)
+        # Add several 1-day long intervals
+        date_lst = [str((date_start + datetime.timedelta(days=idx))).replace(' ', ':') for idx in range(3)]
+        # Add 10-minute intervals
+        date_lst = date_lst + [str((date_start + datetime.timedelta(days=4, minutes=10*idx))).replace(' ', ':') for idx in range(10)]
+        print("woot", date_lst)
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Find_Smallest_Interval', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        # If we were to run this without the `-f` option, we'd get P1D periods instead of PT10M
+        periods = ['2022-06-27:00:00:00Z/2022-06-27:00:00:00Z/PT10M',
+                    '2022-06-28:00:00:00Z/2022-06-28:00:00:00Z/PT10M',
+                    '2022-06-29:00:00:00Z/2022-06-29:00:00:00Z/PT10M',
+                    '2022-07-01:00:00:00Z/2022-07-01:01:30:00Z/PT10M']
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-f')
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
     def test_oe_periods_key_converter_zset(self):
         # Test oe_periods_key_converter.py converting to sorted set
         r = redis.StrictRedis(host='localhost', port=6379, db=0)

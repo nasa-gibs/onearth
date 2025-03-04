@@ -17,10 +17,9 @@ This script calculates periods and calls periods.lua to update redis
 """
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import dateutil.relativedelta
-import dateutil
+import dateutil.relativedelta as rd
 import redis
 import sys
 import re
@@ -38,69 +37,70 @@ def get_rd_from_interval(period_interval):
     prefix = match.group(1)
     count = int(match.group(2))
     interval = match.group(3)
-    rd = None
+    rel_delta = None
     if interval == 'Y':
-        rd = dateutil.relativedelta.relativedelta(years=count)
+        rel_delta = rd.relativedelta(years=count)
     elif interval == 'M' and prefix != 'PT':
-        rd = dateutil.relativedelta.relativedelta(months=count)
+        rel_delta = rd.relativedelta(months=count)
     elif interval == 'D':
-        rd = dateutil.relativedelta.relativedelta(days=count)
+        rel_delta = rd.relativedelta(days=count)
     elif interval == 'H':
-        rd = dateutil.relativedelta.relativedelta(hours=count)
+        rel_delta = rd.relativedelta(hours=count)
     elif interval == 'MM':
-        rd = dateutil.relativedelta.relativedelta(minutes=count)
+        rel_delta = rd.relativedelta(minutes=count)
     elif interval == 'S':
-        rd = dateutil.relativedelta.relativedelta(seconds=count)
+        rel_delta = rd.relativedelta(seconds=count)
     else:
         print(f'Error: invalid interval encountered in {period_interval}, must be Y, M, D, H, MM, or S')
-        sys.exit()
-    return rd
+        sys.exit(1)
+    return rel_delta
 
 # Returns an ISO 8601 duration from a dateutil.relativedelta
-def get_duration_from_rd(rd):
+def get_duration_from_rd(rel_delta):
     duration = 'P'
-    if rd.years != 0:
-        duration += str(abs(rd.years)) + 'Y'
-    if rd.months != 0:
-        duration += str(abs(rd.months)) + 'M'
-    if rd.days != 0:
-        duration += str(abs(rd.days)) + 'D'
-    if rd.hours != 0:
+    if rel_delta.years != 0:
+        duration += str(rel_delta.years) + 'Y'
+    if rel_delta.months != 0:
+        duration += str(rel_delta.months) + 'M'
+    if rel_delta.days != 0:
+        duration += str(rel_delta.days) + 'D'
+    if rel_delta.hours != 0:
         if 'T' not in duration:
             duration += 'T'
-        duration += str(abs(rd.hours)) + 'H'
-    if rd.minutes != 0:
+        duration += str(rel_delta.hours) + 'H'
+    if rel_delta.minutes != 0:
         if 'T' not in duration:
             duration += 'T'
-        duration += str(abs(rd.minutes)) + 'MM'
-    if rd.seconds != 0:
+        duration += str(rel_delta.minutes) + 'MM'
+    if rel_delta.seconds != 0:
         if 'T' not in duration:
             duration += 'T'
-        duration += str(abs(rd.seconds)) + 'S'
+        duration += str(rel_delta.seconds) + 'S'
     return duration
 
-def find_periods_and_breaks(dates, interval, dates_in_periods):
+def find_periods_and_breaks(dates, interval):
     new_periods = []
-    date_list = []
     duration = get_duration_from_rd(interval)
     size = re.search(r'(\d+)', duration).group(1)
     unit = re.search(r'\d+(\D+)', duration).group(1)
-    for date in dates:
-        if date not in dates_in_periods:
-            dates_in_periods.append(date)
-            if len(date_list) == 0 or datetime.fromisoformat(date_list[-1]) + interval == datetime.fromisoformat(date):
-                date_list.append(date)
-            else:
-                new_periods.append({'dates': date_list,
-                                    'size': size,
-                                    'unit': unit})
-                date_list = [date]
-    new_periods.append({'dates': date_list,
+    start_date = dates[0]
+    prev_date = start_date
+    for date in dates[1:]:
+        if datetime.fromisoformat(prev_date) + interval != datetime.fromisoformat(date):
+            new_periods.append({'start': start_date,
+                                'end': prev_date,
+                                'size': size,
+                                'unit': unit})
+            start_date = date
+        prev_date = date
+    new_periods.append({'start': start_date,
+                        'end': prev_date,
                         'size': size,
                         'unit': unit})
-    return new_periods, dates_in_periods
+    return new_periods
 
-def calculate_periods_from_config(dates, config, start_date, end_date):
+# Returns the period strings for a given time config
+def calculate_periods_from_config(dates, config, start_date, end_date, find_smallest_interval = False):
     # Parse time configurations
     config_parts = config.split('/')
     force_start = 'DETECT'
@@ -120,9 +120,11 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
     if 'false' not in config_parts[0]:
         force_start = config_parts[0]
     
-    print("force_start=" + force_start)
-    print("force_end=" + force_end)
-    print("force_period=" + force_period)
+    if DEBUG:
+        print("config:", config)
+        print("force_start=" + force_start)
+        print("force_end=" + force_end)
+        print("force_period=" + force_period)
 
     # Don't return any periods if using DETECT or LATEST and no dates are available
     if len(dates) == 0:
@@ -135,8 +137,8 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
     
     # Translate LATEST into actual dates
     if force_start.startswith('LATEST'):
-        rd = get_rd_from_interval(force_start)
-        force_start = (datetime.fromisoformat(dates[-1]) - rd).isoformat()
+        rel_delta = get_rd_from_interval(force_start)
+        force_start = (datetime.fromisoformat(dates[-1]) - rel_delta).isoformat()
 
     if force_end == 'LATEST':
         force_end = dates[-1]
@@ -159,10 +161,10 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
 
     # Skip DETECT if all values are forced
     if force_start != 'DETECT' and force_end != 'DETECT' and force_period != 'DETECT':
-        datelist = [force_start, force_end]
         size = re.search(r'(\d+)', force_period).group(1)
         unit = re.search(r'\d+(\D+)', force_period).group(1)
-        periods.append({'dates': datelist,
+        periods.append({'start': force_start,
+                        'end': force_end,
                         'size': size,
                         'unit': unit})
     # Detect periods
@@ -195,32 +197,37 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
         trimmed_dates = dates[start_idx:end_idx + 1]
         
         # Calculate periods based on dates list
-        # Since a date can only be in one period, we keep track of all dates we've matched to periods so we can avoid them during iteration
-        dates_in_periods = []
         
         if len(trimmed_dates) > 1:
             # Use the given size and interval of the period if they are present.
             if force_period != 'DETECT':
                 interval = get_rd_from_interval(force_period)
-                
-            # Otherwise figure out the size and interval of the period based on the smallest interval between two dates
             else:
-                min_interval = datetime.fromisoformat(trimmed_dates[1]) - datetime.fromisoformat(trimmed_dates[0])
-                min_interval_start_date = trimmed_dates[0]
-                min_interval_end_date = trimmed_dates[1]
-                for i in range(len(trimmed_dates) - 1):
-                    current_interval  = datetime.fromisoformat(trimmed_dates[i + 1]) - datetime.fromisoformat(trimmed_dates[i])
-                    if current_interval < min_interval:
-                        min_interval = current_interval
-                        min_interval_start_date = trimmed_dates[i]
-                        min_interval_end_date = trimmed_dates[i + 1]
+                # Use the interval between the first and second dates if that equals the interval between the second and third dates
+                # This is how periods.lua would determine the interval.
+                # Faster for layers with many dates, but may not be the best choice if the beginning intervals are different from the rest.
+                first_relative_interval = rd.relativedelta(datetime.fromisoformat(trimmed_dates[1]), datetime.fromisoformat(trimmed_dates[0]))
+                if not find_smallest_interval and len(trimmed_dates) > 2 and first_relative_interval == rd.relativedelta(datetime.fromisoformat(trimmed_dates[2]), datetime.fromisoformat(trimmed_dates[1])):
+                    interval = first_relative_interval
+                    
+                # Otherwise figure out the size and interval of the period based on the smallest interval between two dates
+                else:
+                    min_interval = datetime.fromisoformat(trimmed_dates[1]) - datetime.fromisoformat(trimmed_dates[0])
+                    min_interval_start_date = trimmed_dates[0]
+                    min_interval_end_date = trimmed_dates[1]
+                    for i in range(len(trimmed_dates) - 1):
+                        current_interval  = datetime.fromisoformat(trimmed_dates[i + 1]) - datetime.fromisoformat(trimmed_dates[i])
+                        if current_interval < min_interval:
+                            min_interval = current_interval
+                            min_interval_start_date = trimmed_dates[i]
+                            min_interval_end_date = trimmed_dates[i + 1]
                 
-                interval = dateutil.relativedelta.relativedelta(datetime.fromisoformat(min_interval_end_date), datetime.fromisoformat(min_interval_start_date))
-            new_periods, dates_in_periods = find_periods_and_breaks(trimmed_dates, interval, dates_in_periods)
+                    interval = rd.relativedelta(datetime.fromisoformat(min_interval_end_date), datetime.fromisoformat(min_interval_start_date))
+            new_periods = find_periods_and_breaks(trimmed_dates, interval)
             periods.extend(new_periods)
         
         # Single date in this period
-        elif len(trimmed_dates) == 1 and trimmed_dates[0] not in dates_in_periods:
+        elif len(trimmed_dates) == 1 and trimmed_dates[0]:
             # Default to P1D
             if force_period == 'DETECT':
                 size = 1
@@ -228,7 +235,8 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
             else:
                 size = re.search(r'(\d+)', force_period).group(1)
                 unit = re.search(r'\d+(\D+)', force_period).group(1)
-            periods.append({'dates': [trimmed_dates[0]],
+            periods.append({'start': trimmed_dates[0],
+                            'end': trimmed_dates[0],
                             'size': size,
                             'unit': unit})
         
@@ -238,12 +246,12 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
             if force_start != 'DETECT':
                 if force_period.startswith('PT') and len(force_start) < 11:
                     force_start = force_start + 'T00:00:00'
-                periods[0]['dates'][0] = force_start
+                periods[0]['start'] = force_start
             
             if force_end != 'DETECT':
                 if force_period.startswith('PT') and len(force_end) < 11:
                     force_end = force_end + 'T00:00:00'
-                periods[-1]['dates'][-1] = force_end
+                periods[-1]['end'] = force_end
 
     # Create formatted list
     period_strings = []
@@ -254,15 +262,17 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
             unit = re.search(r'\d+(\D+)', force_period).group(1)
             period_dict['size'] = size
             period_dict['unit'] = unit
+        period_str = f'{period_dict['start']}Z/{period_dict['end']}Z/PT{period_dict["size"]}{period_dict["unit"]}'
         # Include time
         if period_dict['unit'] in ['H', 'MM', 'S']:
-            period_str = f'{period_dict["dates"][0]}Z/{period_dict["dates"][-1]}Z/PT{period_dict["size"]}{period_dict["unit"]}'
             # represent minutes with a single 'M'
             period_str = period_str.replace('MM', 'M')
         # Just dates
         else:
-            period_str = f'{period_dict["dates"][0]}/{period_dict["dates"][-1]}/P{period_dict["size"]}{period_dict["unit"]}'
             period_str = period_str.replace('T00:00:00', '')
+            # 'PT' and 'Z' are only used when the interval is subdaily
+            period_str = period_str.replace('PT', 'P')
+            period_str = period_str.replace('Z', '')
         period_strings.append(period_str)
 
         if DEBUG:
@@ -271,9 +281,9 @@ def calculate_periods_from_config(dates, config, start_date, end_date):
     return period_strings                
     
 
-def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None, expiration=False, start_date=None, end_date=None, keep_existing_periods=False, debug=False):
-    if debug:
-        print(f'Calculating time periods for {layer_key}')
+def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None, expiration=False, start_date=None, end_date=None, keep_existing_periods=False, find_smallest_interval=False, debug=False):
+    print(f'Calculating time periods for {layer_key}')
+    DEBUG = debug
     r = redis.Redis(host=redis_uri, port=redis_port)
 
     # Keep track of the layers that we should update
@@ -318,7 +328,7 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
     # Calculate the periods for each time config
     calculated_periods = []
     for config in configs:
-        new_periods = calculate_periods_from_config(dates, config, start_date, end_date)
+        new_periods = calculate_periods_from_config(dates, config, start_date, end_date, find_smallest_interval)
         calculated_periods = calculated_periods + new_periods
 
     for key in layer_keys:
@@ -387,7 +397,8 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
             r.set(f'{key}:default', default_date)
     else:
         print('Warning: no default date could be determined.')
-
+    
+    print('Periods added to', layer_key)
 
 
 # Main routine to be run in CLI mode
@@ -421,6 +432,11 @@ if __name__ == '__main__':
                         action='store_true',
                         default=False,
                         help='Don\'t delete existing periods at :periods before adding the newly calculated periods. Note that this can lead to overlapping periods. Most useful when using --start_datetime and --end_datetime.')
+    parser.add_argument('-f', '--find_smallest_interval',
+                        dest='find_smallest_interval',
+                        action='store_true',
+                        default=False,
+                        help='Force the script to calculate the interval for each period based on the smallest interval between any two dates. For performance reasons, the script would otherwise only do this if the intervals between the first and second dates and second and third dates differ.')
     parser.add_argument('-p', '--port',
                         dest='port',
                         action='store',
@@ -438,15 +454,14 @@ if __name__ == '__main__':
                         help='Print additional log messages')
     args = parser.parse_args()
 
-    DEBUG = args.debug
-
     calculate_layer_periods(args.port,
-                      args.redis_uri,
-                      args.layer_key,
-                      args.new_datetime,
-                      args.expiration,
-                      args.start_date,
-                      args.end_date,
-                      args.keep_existing_periods,
-                      args.debug
-                      )
+                            args.redis_uri,
+                            args.layer_key,
+                            args.new_datetime,
+                            args.expiration,
+                            args.start_date,
+                            args.end_date,
+                            args.keep_existing_periods,
+                            args.find_smallest_interval,
+                            args.debug
+                        )
