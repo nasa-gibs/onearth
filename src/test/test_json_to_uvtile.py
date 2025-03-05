@@ -6,10 +6,9 @@ from PIL import Image
 import rasterio
 import shutil
 import subprocess
+import sys
 import unittest
-
-SAVE_RESULT = False
-
+import xmlrunner
 
 def run_script(*args):
     """Run oe_json_to_uvtile script"""
@@ -80,7 +79,7 @@ class TestOscar(unittest.TestCase):
             "test_geojson",
             "oscar_currents_final_uv_20200101_compress.json",
         )
-        if cls.tests_passed:
+        if cls.tests_passed and not SAVE_RESULTS:
             if os.path.exists(cls.oscar_input):
                 subprocess.run(["gzip", "-9", cls.oscar_input])
             shutil.rmtree(cls.main_artifact_path)
@@ -222,4 +221,14 @@ class TestOscar(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # Parse options before running tests
+    parser = argparse.ArgumentParser()
+    xml_fname = "test_json_to_uvtile_results.xml"
+    parser.add_argument("--output", metavar="FILE", default=xml_fname,
+                      help=f"Specify XML output file (default is {xml_fname})")
+    parser.add_argument("--save-results", action="store_true", help="Save test artifacts in staging area")
+    args, unittest_args = parser.parse_known_args()
+
+    SAVE_RESULTS = args.save_results
+    with open(xml_fname, "wb") as f:
+        unittest.main(argv=[sys.argv[0]] + unittest_args, testRunner=xmlrunner.XMLTestRunner(output=f))
