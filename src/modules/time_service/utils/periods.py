@@ -18,7 +18,6 @@ This script calculates periods and calls periods.lua to update redis
 
 import argparse
 from datetime import datetime
-
 import dateutil.relativedelta as rd
 import redis
 import sys
@@ -262,7 +261,7 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
             unit = re.search(r'\d+(\D+)', force_period).group(1)
             period_dict['size'] = size
             period_dict['unit'] = unit
-        period_str = f'{period_dict['start']}Z/{period_dict['end']}Z/PT{period_dict["size"]}{period_dict["unit"]}'
+        period_str = f'{period_dict["start"]}Z/{period_dict["end"]}Z/PT{period_dict["size"]}{period_dict["unit"]}'
         # Include time
         if period_dict['unit'] in ['H', 'MM', 'S']:
             # represent minutes with a single 'M'
