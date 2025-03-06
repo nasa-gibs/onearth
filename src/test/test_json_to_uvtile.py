@@ -230,5 +230,5 @@ if __name__ == "__main__":
     args, unittest_args = parser.parse_known_args()
 
     SAVE_RESULTS = args.save_results
-    with open(xml_fname, "wb") as f:
+    with open(args.output, "wb") as f:
         unittest.main(argv=[sys.argv[0]] + unittest_args, testRunner=xmlrunner.XMLTestRunner(output=f))
