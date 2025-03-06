@@ -224,9 +224,9 @@ if __name__ == "__main__":
     # Parse options before running tests
     parser = argparse.ArgumentParser()
     xml_fname = "test_json_to_uvtile_results.xml"
-    parser.add_argument("--output", metavar="FILE", default=xml_fname,
+    parser.add_argument("-o", "--output", metavar="FILE", default=xml_fname,
                       help=f"Specify XML output file (default is {xml_fname})")
-    parser.add_argument("--save-results", action="store_true", help="Save test artifacts in staging area")
+    parser.add_argument("-s", "--save-results", action="store_true", help="Save test artifacts in staging area")
     args, unittest_args = parser.parse_known_args()
 
     SAVE_RESULTS = args.save_results
