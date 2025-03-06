@@ -127,3 +127,26 @@ This script accepts the following options:
 - `-p PORT, --port PORT`: indicates the port of the Redis time service database. Default is `6379`.
 - `-r REDIS_URI, --redis_uri REDIS_URI`: URI for the Redis database
 - `-v, --verbose`: Print out detailed log messages
+
+
+## `periods.lua` -- Lua period generator script (deprecated)
+
+_It is recommended to use periods.py instead of periods.lua. periods.lua will be removed in a future version of OnEarth._
+
+This script analyzes the list of dates for a given layer (`layer:layer_name:dates`) and generates a corresponding list of periods
+(`layer:layer_name:periods`). It's intended to be run as a script within the Lua database itself.
+
+The script takes a single keyword, which is the entire layer prefix, i.e. `epsg4326:layer:layer_name`.
+
+It can also be run with the following optional positional arguments after the keyword:
+
+`{date_to_be_added} {start_datetime} {end_datetime} {keep_existing_periods}`
+
+- `date_to_be_added`: The script will add this date for the layer before recalculating the layer's periods if there's a change.
+- `start_datetime`: Only dates that take place after this value will be considered while calculating periods
+- `end_datetime`: Only dates that take place before this value will be considered while calculating periods
+- `keep_existing_periods`: Don't delete existing periods at `:periods` before adding the newly calculated periods. Note that this can lead to overlapping periods. Most useful when using `start_datetime` and `end_datetime`.
+
+Any of these arguments can be skipped by passing in `false`.
+
+Although OnEarth still supports the `:periods` key being represented by an unsorted `set` in redis, this script will set the periods key to be a sorted `zset` by default when regenerating the `:periods` key. It can, however, correctly handle adding to existing unsorted `set` `:periods` keys using `keep_existing_periods`.
