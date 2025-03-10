@@ -32,7 +32,7 @@ def get_zadd_dict(periods):
 
 # Returns a dateutil.relativedelta determined from a given period interval
 def get_rd_from_interval(period_interval):
-    match = re.search(r'(-|P|PT)(\d+)(\D)', period_interval)
+    match = re.search(r'(-|P|PT)(\d+)(\D+)', period_interval)
     prefix = match.group(1)
     count = int(match.group(2))
     interval = match.group(3)
@@ -262,16 +262,18 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
             period_dict['size'] = size
             period_dict['unit'] = unit
         period_str = f'{period_dict["start"]}Z/{period_dict["end"]}Z/PT{period_dict["size"]}{period_dict["unit"]}'
-        # Include time
+        # Subdaily intervals
         if period_dict['unit'] in ['H', 'MM', 'S']:
             # represent minutes with a single 'M'
             period_str = period_str.replace('MM', 'M')
-        # Just dates
+        # Whole date intervals
         else:
             period_str = period_str.replace('T00:00:00', '')
-            # 'PT' and 'Z' are only used when the interval is subdaily
+            # 'PT' is only used when the interval is subdaily
             period_str = period_str.replace('PT', 'P')
-            period_str = period_str.replace('Z', '')
+            # Remove 'Z' if we don't have times associated with the dates
+            if 'T' not in period_str:
+                period_str = period_str.replace('Z', '')
         period_strings.append(period_str)
 
         if DEBUG:
@@ -374,7 +376,7 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
     default_date = None
     # Use most recent date of the most recent period
     if len(calculated_periods) > 0:
-        default_date = calculated_periods[-1].split('/')[1]
+        default_date = sorted(calculated_periods)[-1].split('/')[1]
 
     # If there are no periods, then use the last config time
     else:
