@@ -123,3 +123,75 @@ Here is a sample set of feature filters:
   4. `le` - A `le` test will pass if the value of the metadata property with the given `name` is less than or equal to the given `value`. (Values are converted to floats for comparison)
   5. `gt` - A `gt` test will pass if the value of the metadata property with the given `name` is greater than the given `value`. (Values are converted to floats for comparison)
   6. `ge` - A `ge` test will pass if the value of the metadata property with the given `name` is greater than or equal to the given `value`. (Values are converted to floats for comparison)
+
+# oe_json_to_uvtile
+
+To support the creation of vector flow visualizations in Worldview, the `oe_json_to_uvtile` can be used as a pre-processing step to create PNG or GeoTIFF mosaics from GeoJSON wind/ocean vector data. Currently, the script is primarily intended to support OSCAR data, but ASCAT support may be added later. The UV Tile mosaics can then be ingested into mrfgen to create MRFs that could be used in a special type of raster layer. Worldview will need to implement a new type of layer leveraging the new Flow feature of OpenLayers to properly display this raster layer as a vector flow visualization. 
+
+### oe_json_to_uvtile syntax
+
+`oe_json_to_uvtile.py [-h] [-o FILE] [--resolution RESOLUTION] [--format {png,tiff,tif}] FILE`
+
+```
+Convert GeoJSON UV direction vectors to PNG or TIFF images for WebGL shaders
+
+positional arguments:
+  FILE                  Path to input GeoJSON file containing UV direction vectors
+
+options:
+  -h, --help            show this help message and exit
+  -o FILE, --output FILE
+                        Path to save output tile. Default is same location/filename as input with png/tif extension
+  --resolution RESOLUTION
+                        Override the auto-detected grid resolution (in degrees)
+  --format {png,tiff,tif}
+                        Output format: 'png' for 8-bit quantized or 'tiff'/'tif' for 32-bit float (default: png)
+```
+
+### Example usage
+
+Within an `onearth_test` or `onearth_tools` container:
+```bash
+oe_json_to_uvtile oscar_currents_final_uv_20200101.json -o /mrfgen/data/oscar_currents_uv_20200101_1440x720.png
+```
+
+`oscar_currents_final_uv_20200101.json` is a GeoJSON file produced by HyBIG representing regularly gridded uv components of ocean currents at a global extent. The default resolution of this data 0.25 degrees and will be inferred from the data. In general, you can override the resolution with the `--resolution` option, for example `--resolution 1` would result in a 1 degree/pixel resolution. Downscaling is not supported, so the specified resolution override may not exceed the inferred resolution of the data itself.
+
+### Processing with MRFgen
+
+When outputting a PNG, the data must be converted to GeoTIFF first. From our previous example, we need to run this command:
+```bash
+gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr -180 90 180 -90 /mrfgen/data/oscar_currents_uv_20200101_1440x720.png /mrfgen/data/oscar_currents_uv_20200101_1440x720.tiff
+```
+
+Our mrfgen config would like this:
+```xml
+<?xml version="1.0"?>
+<mrfgen_configuration>
+  <parameter_name>OSCAR_UV_v1</parameter_name>
+  <date_of_data>20200102</date_of_data>
+  <input_files>
+    <file>/mrfgen/data/oscar_currents_uv_20200102_1440x720.tiff</file>
+  </input_files>
+  <output_dir>/mrfgen/output</output_dir>
+  <working_dir>/mrfgen/work</working_dir>
+  <logfile_dir>/mrfgen/log</logfile_dir>
+  <mrf_compression_type>PNG</mrf_compression_type>
+  <mrf_name>OSCAR_UV_v1-20200102000000.mrf</mrf_name>
+  <source_epsg>4326</source_epsg>
+  <target_epsg>4326</target_epsg>
+  <extents>-180,-90,180,90</extents>
+  <target_extents>-180,-90,180,90</target_extents>
+  <!--As with other types of MRFs, the output size is determined by the nearest number of whole tiles to fit the input data-->
+  <target_x>1536</target_x>
+  <target_y>1024</target_y>
+  <mrf_blocksize>512</mrf_blocksize>
+  <overview_levels>2 4 8 16 32 64 128 256 512</overview_levels>
+  <overview_resampling>nnb</overview_resampling>
+  <resize_resampling>average</resize_resampling>
+  <mrf_empty_tile_filename>/mrfgen/empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
+  <vrtnodata>0</vrtnodata>
+  <mrf_nocopy>true</mrf_nocopy>
+  <mrf_merge>false</mrf_merge>
+</mrfgen_configuration>
+```
