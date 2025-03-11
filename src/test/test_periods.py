@@ -102,7 +102,7 @@ class TestPeriods(unittest.TestCase):
 
     def test_forced_period_with_start_end(self):
         # Test forced start, end, and period values
-        dates = ["2024-01-01", "2024-01-05", "2024-01-10"]
+        dates = ["2023-01-01", "2024-01-05", "2024-01-12"]
         config = "2024-01-01/2024-01-10/P5D"
         expected = ["2024-01-01/2024-01-10/P5D"]
         self.assertEqual(calculate_periods_from_config(dates, config, None, None), expected)
@@ -114,7 +114,7 @@ class TestPeriods(unittest.TestCase):
         expected = ["2023-12-01/2024-03-01/P1M"]  # Expecting 3 months back from last date
         self.assertEqual(calculate_periods_from_config(dates, config, None, None), expected)
 
-    def test_period_with_time_intervals(self):
+    def test_period_with_subdaily_intervals(self):
         # Test periods with subdaily intervals
         dates = ["2024-01-01T00:00:00", "2024-01-01T06:00:00", "2024-01-01T12:00:00"]
         config = "DETECT"
@@ -160,7 +160,7 @@ class TestPeriods(unittest.TestCase):
         self.assertEqual(calculate_periods_from_config(dates, config, None, end_date), expected)
 
     def test_detect_with_minute_intervals(self):
-        # Test detection of sub-minute intervals
+        # Test detection of minute intervals
         dates = ["2024-01-01T00:00:00", "2024-01-01T00:30:00", "2024-01-01T01:00:00"]
         config = "DETECT"
         expected = ["2024-01-01T00:00:00Z/2024-01-01T01:00:00Z/PT30M"]
@@ -187,7 +187,32 @@ class TestPeriods(unittest.TestCase):
         )
 
     # --- Tests for calculate_layer_periods ---
-    
+
+    def test_calculate_layer_periods_multiple_configs(self):
+        # Test using multiple time configs.
+        layer_key = "test_layer"
+        dates = {"2024-03-10T12:00:00": 0,
+                 "2024-03-10T13:00:00": 0,
+                 "2024-03-10T14:00:00": 0,
+                 "2024-03-10T15:00:00": 0,
+                 "2024-03-10T19:00:00": 0}
+        
+        configs = ["DETECT/2024-03-10T14:00:00", "2025-01-01T09:00:00/2025-01-01T10:00:00/PT1H"]
+
+        for config in configs:
+            self.redis_client.sadd(layer_key + ":config", config)
+        
+        expected_periods = [b'2024-03-10T12:00:00Z/2024-03-10T14:00:00Z/PT1H', b'2025-01-01T09:00:00Z/2025-01-01T10:00:00Z/PT1H']
+        expected_default = "2025-01-01T10:00:00Z"
+
+        self.redis_client.zadd(layer_key + ":dates", dates)
+        calculate_layer_periods(self.port, self.host, layer_key)
+
+        periods = self.redis_client.zrange(layer_key + ":periods", 0, -1)
+        default = self.redis_client.get(layer_key + ":default").decode('utf-8')
+        self.assertEqual(periods, expected_periods)
+        self.assertEqual(default, expected_default, "Returned default date {0} does not match expected default date {1}".format(default, expected_default))
+
     def test_calculate_layer_periods_keep_existing_periods(self):
         # Test basic functionality with simple periods.
         layer_key = "test_layer"
@@ -226,30 +251,6 @@ class TestPeriods(unittest.TestCase):
         self.assertEqual(periods, expected_periods, "Returned periods {0} does not match expected periods {1}".format(periods, expected_periods))
         self.assertEqual(default, new_date + "Z", "Returned default date {0} does not match expected default date {1}".format(default, new_date + 'Z'))
 
-    def test_calculate_layer_periods_multiple_configs(self):
-        # Test using multiple time configs.
-        layer_key = "test_layer"
-        dates = {"2024-03-10T12:00:00": 0,
-                 "2024-03-10T13:00:00": 0,
-                 "2024-03-10T14:00:00": 0,
-                 "2024-03-10T15:00:00": 0,
-                 "2024-03-10T19:00:00": 0}
-        
-        configs = ["DETECT/2024-03-10T14:00:00", "2025-01-01T09:00:00/2025-01-01T10:00:00/PT1H"]
-
-        for config in configs:
-            self.redis_client.sadd(layer_key + ":config", config)
-        
-        expected_periods = [b'2024-03-10T12:00:00Z/2024-03-10T14:00:00Z/PT1H', b'2025-01-01T09:00:00Z/2025-01-01T10:00:00Z/PT1H']
-        expected_default = "2025-01-01T10:00:00Z"
-
-        self.redis_client.zadd(layer_key + ":dates", dates)
-        calculate_layer_periods(self.port, self.host, layer_key)
-
-        periods = self.redis_client.zrange(layer_key + ":periods", 0, -1)
-        default = self.redis_client.get(layer_key + ":default").decode('utf-8')
-        self.assertEqual(periods, expected_periods)
-        self.assertEqual(default, expected_default, "Returned default date {0} does not match expected default date {1}".format(default, expected_default))
 
 
 
