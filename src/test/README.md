@@ -14,8 +14,9 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mod_twms.py` -- tests the mod_twms module
 * `test_mod_wmts_wrapper.py` -- tests the mod_wmts_wrapper module
 * `test_mrfgen.py` -- tests mrfgen
-* `test_sync_s3.py` -- tests `oe_sync_s3_configs.py` and `oe_sync_s3_idx.py`
+* `test_periods.py` -- tests `periods.py`
 * `test_rgb_to_pal.py` -- tests RGB PNG to palette PNG
+* `test_sync_s3.py` -- tests `oe_sync_s3_configs.py` and `oe_sync_s3_idx.py`
 * `test_time_service.py` -- tests the OnEarth Time Service
 * `test_time_utils.py` -- tests time configuration utilities
 * `test_twmsbox_wmts_convert.py` -- tests ancillary WMTS/TWMS helper scripts (`twmsbox2wmts.py` and `wmts2twmsbox.py`)
@@ -114,6 +115,24 @@ Each test script will output a JUnit XML results file. By default, these files a
 12. Test period generation config 2017-01-01/DETECT/PT1M (forced start/forced subdaily period)
 13. Test period generation config DETECT/2020-12-01/P1M (forced end/forced monthly period)
 
+## Periods.py Unit Tests
+1. Test `get_zadd_dict`
+2. Test `get_rd_from_interval`
+3. Test `get_duration_from_rd`
+4. Test `find_periods_and_breaks`
+5. Test `calculate_periods_from_config` using a time config of `DETECT`
+6. Test `calculate_periods_from_config` using a forced time config
+7. Test `calculate_periods_from_config` using a time config with `LATEST`
+8. Test `calculate_periods_from_config` with subdaily intervals between datetimes
+9. Test `calculate_periods_from_config` when there are no dates
+10. Test `calculate_periods_from_config` with a single date
+11. Test `calculate_periods_from_config` with irregular intervals between dates
+12. Test `calculate_periods_from_config` while using the `start_date` option
+13. Test `calculate_periods_from_config` while using the `end_date` option
+14. Test `calculate_periods_from_config` with detecting minute intervals
+15. Test `calculate_periods_from_config` with the `find_smallest_interval` option
+16. Test `calculate_layer_periods` while using multiple time configs
+17. Test `calculate_layer_periods` while using the `keep_existing_periods` option
 
 ## mrfgen Tests:
 1. Global geographic PNG-MRF
