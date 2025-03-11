@@ -100,20 +100,63 @@ Each test script will output a JUnit XML results file. By default, these files a
 47. Test a time snapping date request while specifying start and end dates
 
 ## Time Utilities Tests
-***There are currently two sets of tests endpoint agonostic and endpoint specific, endpoint specific are marked with _dep(deprecated) at the end. ***
+***Contains functional tests for oe_scrape_time.py, oe_periods_configure.py, periods.py, and oe_periods_key_converter.py. For periods.py unit tests, see test_periods.py***
 1. Time scrape S3 keys
-2. Time scrape S3 inventory
-3. Test period generation with single date
-4. Test period generation with subdaily
-5. Test period generation with multiday
-6. Test period generation with monthly
-7. Test period generation config DETECT everything
-8. Test period generation config DETECT/DETECT (start/end)
-9. Test period generation config DETECT/DETECT/P5D (start/end/forced-period)
-10. Test period generation config DETECT/P10D (all times/forced-period)
-11. Test period generation config 2017-01-01/2020-12-01/P8D (all forced)
-12. Test period generation config 2017-01-01/DETECT/PT1M (forced start/forced subdaily period)
-13. Test period generation config DETECT/2020-12-01/P1M (forced end/forced monthly period)
+2. Time scrape local keys
+3. Time scrape S3 keys using a layer filter
+4. Time scrape S3 inventory
+5. Configure a time config from a layer config
+6. Configure time configs for layers matching a pattern
+7. Configure a `best_config` key
+8. Config a `best_layer` key
+9. Test period generation with single date
+10. Test period generation with two dates
+11. Test generation of multiple periods with a single config
+12. Test period generation with subdaily
+13. Test period generation with multiday
+14. Test period generation with monthly
+15. Test period generation with 2 monthly dates using DETECT
+16. Test period generation with 3 monthly dates using DETECT
+17. Test period generation config DETECT everything
+18. Test period generation config DETECT/DETECT (start/end)
+19. Test period generation config DETECT/DETECT/P5D (start/end/forced-period)
+20. Test period generation config DETECT/P10D (all times/forced-period)
+21. Test period generation config 2017-01-01/2020-12-01/P8D (all forced)
+22. Test period generation with an all-forced config when no dates are available
+23. Test period generation with a forced start config
+24. Test period generation with a forced start config when the forced start date doesn't exist
+25. Test period generation with a forced start config when there's no data after the forced start date
+26. Test period generation with a forced end date
+27. Test period generation config LATEST-15D/LATEST/P1D
+28. Test period generation config LATEST-30D/DETECT/P1D
+29. Test period generation config DETECT/LATEST/P1D
+30. Test period generation using multiple time configs
+31. Test period generation using multiple subdaily configs
+32. Test period generation config LATEST-90D/LATEST/PT10M when there are no dates
+33. Test period generation with multiple configs with subdaily times with forced periods
+34. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is P1D
+35. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is P4D
+35. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is P8D
+36. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is P16D
+37. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is P1M
+38. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is P3M
+39. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is PT1S
+40. Test period generation when there's a gap between the earliest date and the rest of the dates and the config is DETECT and the expected interval is PT10M
+41. Test period generation with multiple forced configs followed by a detected end date config for P8D
+42. Test period generation with a forced start config when there are gaps in dates that are skipped due to the forced start
+43. Test period generation with a DETECT config when there are 100,000 daily dates
+44. Test period generation with a DETECT config when there are 10,000 monthly dates
+45. Test period generation for irregularly varying time periods using periods.py's `keep_existing_periods` option
+46. Test period generation using periods.py's `start_date`, `end_date`, and `keep_existing_periods` options
+47. Test period generation for a layer that has a `copy_dates` key
+48. Test period generation for a layer that already has periods stored as an unsorted `set` using `keep_existing_periods`
+49. Test period generation for a layer that already has periods stored as an unsorted `set`
+50. Test period generation for a layer that already has periods
+51. Test ingesting a new date using periods.py
+52. Test period generation using periods.py's `find_smallest_interval` option
+53. Test converting `periods` keys from an unsorted `set` to a sorted `zset`
+54. Test converting `periods` keys from a sorted `zset` to an unsorted `set`
+55. Test converting a single layer's `periods` key from a sorted `zset` to an unsorted `set` using oe_periods_key_converter.py's layer filter option
 
 ## Periods.py Unit Tests
 1. Test `get_zadd_dict`

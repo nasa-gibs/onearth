@@ -180,7 +180,7 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_time_scrape_local_keys(self):
-        # Test scraping S3 keys
+        # Test scraping local keys
         test_layers = [('test_layer1', '2016-01-01',
                         ['2015-01-01/2015-01-01/P1D',
                          '2015-10-01/2015-10-01/P1D',
@@ -825,7 +825,7 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_periods_config_force_end(self):
-        # Test adding layer with multiple dates
+        # Test when we have a forced end date
         test_layers = [('Test_ForceEnd', '2018-12-01',
                         '2018-12-01/2020-12-01/P1M'),
                        ('Test_ForceEnd', '2019-01-01',
