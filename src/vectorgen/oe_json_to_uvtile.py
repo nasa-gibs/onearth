@@ -41,6 +41,8 @@ import numpy.typing as npt
 from osgeo import gdal, osr
 from pathlib import Path
 from PIL import Image
+from scipy.interpolate import griddata
+from scipy.spatial import cKDTree
 from typing import Tuple, List, Dict, Union, Optional
 
 logger = logging.getLogger(__name__)
@@ -145,7 +147,7 @@ def create_grid(
     Dict[str, Union[int, float]],
 ]:
     """
-    Create a regular grid from input points.
+    Create a regular grid from input points with interpolation for custom resolutions.
 
     Arguments:
         points (list[tuple[float...]]) -- List of (lon, lat, u, v) tuples
@@ -158,59 +160,176 @@ def create_grid(
         - value_ranges (Dict) -- Dictionary with min/max values for u and v
         - grid_info (Dict) -- Dictionary with grid dimensions and resolution
     """
-    # Auto-detect or use provided resolution
+    # Get input data values
+    input_lons = np.array([p[0] for p in points])
+    input_lats = np.array([p[1] for p in points])
+    input_u = np.array([p[2] for p in points], dtype=np.float32)
+    input_v = np.array([p[3] for p in points], dtype=np.float32)
+    u_min: np.float32 = input_u.min()
+    u_max: np.float32 = input_u.max()
+    v_min: np.float32 = input_v.min()
+    v_max: np.float32 = input_v.max()
+    
+    # Auto-detect input resolution or use provided resolution
+    input_lon_res, input_lat_res = detect_resolution(points)
+
+    # When using IDW, set the threshold for setting an ouput grid point to
+    # nodata as 1.1x the input grid resolution
+    max_distance = 1.1 * max(input_lon_res, input_lat_res)
+    
     if resolution is None:
-        lon_res, lat_res = detect_resolution(points)
+        lon_res, lat_res = input_lon_res, input_lat_res
     else:
         lon_res = lat_res = resolution
         logger.info(f"Using provided resolution: {resolution}°")
-
-    # Create regular grid
+    
+    # Create output grid
     grid_lons = np.arange(-180, 180, lon_res)
     grid_lats = np.arange(90, -90, -lat_res)
     width = len(grid_lons)
     height = len(grid_lats)
-
-    # Get min/max values
-    all_u_values = np.array([p[2] for p in points], dtype=np.float32)
-    all_v_values = np.array([p[3] for p in points], dtype=np.float32)
-    u_min: np.float32 = all_u_values.min()
-    u_max: np.float32 = all_u_values.max()
-    v_min: np.float32 = all_v_values.min()
-    v_max: np.float32 = all_v_values.max()
-
-    # Initialize grids with NaN to distinguish unmapped points
+    
+    # Initialize grids with NaN to identify unmapped points
     grid_u = np.full((height, width), np.nan, dtype=np.float32)
     grid_v = np.full((height, width), np.nan, dtype=np.float32)
+    
+    # Check if resolutions are very close (exact match case)
+    use_exact_match = (abs(lon_res - input_lon_res) < 1e-6 and 
+                      abs(lat_res - input_lat_res) < 1e-6)
+    
+    if use_exact_match:
+        # If resolutions match, use direct mapping which is faster for simple cases
+        # logger.info("Using exact matching for grid points (resolutions match)")
+        # Create lookup dictionaries for grid indices
+        lon_index = {round(lon, 6): i for i, lon in enumerate(grid_lons)}
+        lat_index = {round(lat, 6): i for i, lat in enumerate(grid_lats)}
+        
+        # Fill grid points
+        points_mapped = 0
+        for lon, lat, u_val, v_val in points:
+            lon_key = round(lon, 6)
+            lat_key = round(lat, 6)
+            if lon_key in lon_index and lat_key in lat_index:
+                x = lon_index[lon_key]
+                y = lat_index[lat_key]
+                grid_u[y, x] = u_val
+                grid_v[y, x] = v_val
+                points_mapped += 1
+        
+        logger.info(f"Mapped {points_mapped} out of {len(points)} points to grid")
+    else:
+        # If resolutions differ, use Inverse Distance Weighted interpolation
+        logger.info(f"Input resolution ({input_lon_res:.6f}°, {input_lat_res:.6f}°) differs from output resolution ({lon_res:.6f}°, {lat_res:.6f}°)")
+        logger.info("Using Inverse Distance Weighted interpolation")
+        
+        # Create 2D coordinate arrays for the output grid
+        lon_grid, lat_grid = np.meshgrid(grid_lons, grid_lats)
+        
+        # Combine input coordinates
+        input_coords = np.column_stack((input_lons, input_lats))
+        
+        # Create KD-Tree for faster nearest neighbor lookup
+        logger.info("Building KD-Tree for interpolation")
+        tree = cKDTree(input_coords)
+        
+        # Flatten the output grid coordinates for vectorized processing
+        output_coords = np.column_stack((lon_grid.flatten(), lat_grid.flatten()))
+        
+        # Find 4 nearest points using KD-Tree (much faster than brute force)
+        logger.info(f"Finding nearest neighbors for {len(output_coords)} output points")
+        distances, indices = tree.query(output_coords, k=4)
 
-    # Create lookup dictionaries for grid indices
-    lon_index = {round(lon, 6): i for i, lon in enumerate(grid_lons)}
-    lat_index = {round(lat, 6): i for i, lat in enumerate(grid_lats)}
-
-    # Fill grid points
-    points_mapped = 0
-    for lon, lat, u_val, v_val in points:
-        lon_key = round(lon, 6)
-        lat_key = round(lat, 6)
-        if lon_key in lon_index and lat_key in lat_index:
-            x = lon_index[lon_key]
-            y = lat_index[lat_key]
-            grid_u[y, x] = u_val
-            grid_v[y, x] = v_val
-            points_mapped += 1
-
-    logger.info(f"Mapped {points_mapped} out of {len(points)} points to grid")
-
+        # Create a mask for points that are within the max_distance
+        valid_mask = np.any(distances <= max_distance, axis=1)
+        logger.info(f"Found {np.sum(valid_mask)}/{len(valid_mask)} grid points within threshold")
+        
+        # Only process points within max_distance
+        valid_output_coords = output_coords[valid_mask]
+        valid_indices = np.arange(len(output_coords))[valid_mask]
+        
+        if len(valid_output_coords) > 0:
+            # Find 4 nearest points for IDW interpolation (only for valid points)
+            distances, indices = tree.query(valid_output_coords, k=4)
+            
+            # Handle edge case where distances might be zero
+            # Add small epsilon to avoid division by zero
+            distances = np.maximum(distances, 1e-10)
+            
+            # Calculate IDW weights
+            weights = 1.0 / distances
+            weights_sum = np.sum(weights, axis=1, keepdims=True)
+            normalized_weights = weights / weights_sum
+            
+            # Apply weights to the values
+            u_values = np.sum(input_u[indices] * normalized_weights, axis=1)
+            v_values = np.sum(input_v[indices] * normalized_weights, axis=1)
+            
+            # Map interpolated values back to their original positions in the flattened grid
+            flat_grid_u = np.full(height * width, np.nan)
+            flat_grid_v = np.full(height * width, np.nan)
+            
+            flat_grid_u[valid_indices] = u_values
+            flat_grid_v[valid_indices] = v_values
+            
+            # Reshape back to grid
+            grid_u = flat_grid_u.reshape(height, width).astype(np.float32)
+            grid_v = flat_grid_v.reshape(height, width).astype(np.float32)
+        else:
+            logger.warning("No valid points found within max_distance threshold")
+        
+        logger.info("Interpolation complete")
+    
     value_ranges = {"u_min": u_min, "u_max": u_max, "v_min": v_min, "v_max": v_max}
-
+    
     grid_info = {
         "width": width,
         "height": height,
         "lon_res": lon_res,
         "lat_res": lat_res,
     }
-
+    
     return grid_u, grid_v, value_ranges, grid_info
+
+
+def create_world_file(
+    output_path: Path, 
+    grid_info: Dict[str, Union[float, int]]
+) -> None:
+    """
+    Create a world file for geospatial referencing of the image.
+    
+    Arguments:
+        output_path (Path) -- Path to the output image file
+        grid_info (Dict[str, Union[float, int]]) -- Dictionary with grid dimensions and resolution
+    """
+    # Determine world file extension
+    base_ext = output_path.suffix.lower()
+    world_ext = {
+        '.png': '.pgw',
+        '.tif': '.tfw',
+        '.tiff': '.tfw',
+    }.get(base_ext, '.wld')
+    
+    world_file_path = output_path.with_suffix(world_ext)
+    
+    # Calculate world file parameters
+    pixel_width = 360.0 / grid_info["width"]      # X size of a pixel
+    pixel_height = -180.0 / grid_info["height"]   # Y size of a pixel (negative)
+    x_rotation = 0.0
+    y_rotation = 0.0
+    top_left_x = -180.0 + (pixel_width / 2)       # X coordinate of center of top-left pixel
+    top_left_y = 90.0 + (pixel_height / 2)        # Y coordinate of center of top-left pixel
+    
+    # Write world file
+    with open(world_file_path, 'w') as f:
+        f.write(f"{pixel_width:.10f}\n")
+        f.write(f"{x_rotation:.10f}\n")
+        f.write(f"{y_rotation:.10f}\n")
+        f.write(f"{pixel_height:.10f}\n")
+        f.write(f"{top_left_x:.10f}\n")
+        f.write(f"{top_left_y:.10f}\n")
+    
+    logger.info(f"Created world file: {world_file_path}")
 
 
 def save_png(
@@ -254,6 +373,9 @@ def save_png(
             img_data[x, y] = (r, g, b, a)
 
     img.save(output_path, optimize=True, compress_level=9)
+
+    # The world file is required for MRF generation.
+    create_world_file(output_path, grid_info)
 
     return img
 
@@ -310,6 +432,19 @@ def save_geotiff(
     # Write the arrays
     band1 = dataset.GetRasterBand(1)  # U component
     band2 = dataset.GetRasterBand(2)  # V component
+
+    band1.SetColorInterpretation(gdal.GCI_RedBand)  # Or another appropriate type
+    band2.SetColorInterpretation(gdal.GCI_GreenBand)
+
+    band1.SetDescription("U component")
+    band2.SetDescription("V component")
+
+    dataset.SetMetadataItem("BANDS_SEMANTIC", "VECTOR_COMPONENT")
+    dataset.SetMetadataItem("BAND_1_SEMANTIC", "VECTOR_COMPONENT_U")
+    dataset.SetMetadataItem("BAND_2_SEMANTIC", "VECTOR_COMPONENT_V")
+
+    band1.SetMetadataItem("UNITS", "m/s")
+    band2.SetMetadataItem("UNITS", "m/s")
 
     # Use -9999.0 as a nodata value for floats. May need refinement.
     grid_u = np.nan_to_num(grid_u, nan=-9999.0)

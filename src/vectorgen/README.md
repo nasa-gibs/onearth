@@ -155,23 +155,20 @@ Within an `onearth_test` or `onearth_tools` container:
 oe_json_to_uvtile oscar_currents_final_uv_20200101.json -o /mrfgen/data/oscar_currents_uv_20200101_1440x720.png
 ```
 
-`oscar_currents_final_uv_20200101.json` is a GeoJSON file produced by HyBIG representing regularly gridded uv components of ocean currents at a global extent. The default resolution of this data 0.25 degrees and will be inferred from the data. In general, you can override the resolution with the `--resolution` option, for example `--resolution 1` would result in a 1 degree/pixel resolution. Downscaling is not supported, so the specified resolution override may not exceed the inferred resolution of the data itself.
+`oscar_currents_final_uv_20200101.json` is a GeoJSON file produced by HyBIG representing regularly gridded uv components of ocean currents at a global extent. The default resolution of this data 0.25 degrees and will be inferred from the data. In general, you can override the resolution with the `--resolution` option, for example `--resolution 1` would result in a 1 degree/pixel resolution. One handy resolution is `--resolution 0.351625` as it produces an output image of resolution 1024x512, exactly 2 tiles wide by 1 tile tall. Downscaling is not supported, so the specified resolution override may not exceed the inferred resolution of the data itself.
 
 ### Processing with MRFgen
 
-When outputting a PNG, the data must be converted to GeoTIFF first. From our previous example, we need to run this command:
-```bash
-gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr -180 90 180 -90 /mrfgen/data/oscar_currents_uv_20200101_1440x720.png /mrfgen/data/oscar_currents_uv_20200101_1440x720.tiff
-```
+MRFs should be created from the PNG output mode of `oe_json_to_uvtile`. These PNGs have an ancillary `.pgw` world file associated with them that will be created in the same location as the PNG itself.
 
-Our mrfgen config would like this:
+Our mrfgen config would like this (the pgw will be picked up automatically):
 ```xml
 <?xml version="1.0"?>
 <mrfgen_configuration>
   <parameter_name>OSCAR_UV_v1</parameter_name>
   <date_of_data>20200102</date_of_data>
   <input_files>
-    <file>/mrfgen/data/oscar_currents_uv_20200102_1440x720.tiff</file>
+    <file>/mrfgen/data/oscar_currents_uv_20200102_1440x720.png</file>
   </input_files>
   <output_dir>/mrfgen/output</output_dir>
   <working_dir>/mrfgen/work</working_dir>
@@ -195,3 +192,5 @@ Our mrfgen config would like this:
   <mrf_merge>false</mrf_merge>
 </mrfgen_configuration>
 ```
+
+ Note that the GeoTIFF output is currently experimental and while there is nothing wrong with the GeoTIFFs produced by `oe_json_to_uvtile`, they are not able to be processed by mrfgen at this time, likely due to a code change that would need to occur in mrfgen. 
