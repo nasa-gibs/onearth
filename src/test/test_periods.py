@@ -25,8 +25,9 @@ from optparse import OptionParser
 from subprocess import Popen
 import time
 import redis
-import shutil
 from dateutil import relativedelta as rd
+import shutil
+
 shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.py", os.getcwd() + '/periods.py')
 from periods import get_zadd_dict, get_rd_from_interval, get_duration_from_rd, find_periods_and_breaks, calculate_periods_from_config, calculate_layer_periods
 
