@@ -45,12 +45,12 @@ def get_rd_from_interval(period_interval):
         rel_delta = rd.relativedelta(days=count)
     elif interval == 'H':
         rel_delta = rd.relativedelta(hours=count)
-    elif interval == 'MM':
+    elif interval == 'M':
         rel_delta = rd.relativedelta(minutes=count)
     elif interval == 'S':
         rel_delta = rd.relativedelta(seconds=count)
     else:
-        print(f'Error: invalid interval encountered in {period_interval}, must be Y, M, D, H, MM, or S')
+        print(f'Error: invalid interval encountered in {period_interval}, must be Y, M, D, H, or S')
         sys.exit(1)
     return rel_delta
 
@@ -70,7 +70,7 @@ def get_duration_from_rd(rel_delta):
     if rel_delta.minutes != 0:
         if 'T' not in duration:
             duration += 'T'
-        duration += str(rel_delta.minutes) + 'MM'
+        duration += str(rel_delta.minutes) + 'M'
     if rel_delta.seconds != 0:
         if 'T' not in duration:
             duration += 'T'
@@ -80,22 +80,18 @@ def get_duration_from_rd(rel_delta):
 def find_periods_and_breaks(dates, interval):
     new_periods = []
     duration = get_duration_from_rd(interval)
-    size = re.search(r'(\d+)', duration).group(1)
-    unit = re.search(r'\d+(\D+)', duration).group(1)
     start_date = dates[0]
     prev_date = start_date
     for date in dates[1:]:
         if datetime.fromisoformat(prev_date) + interval != datetime.fromisoformat(date):
             new_periods.append({'start': start_date,
                                 'end': prev_date,
-                                'size': size,
-                                'unit': unit})
+                                'duration': duration})
             start_date = date
         prev_date = date
     new_periods.append({'start': start_date,
                         'end': prev_date,
-                        'size': size,
-                        'unit': unit})
+                        'duration': duration})
     return new_periods
 
 # Returns the period strings for a given time config
@@ -113,9 +109,6 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
             force_period = config_parts[1]
         else:
             force_end = config_parts[1]
-    # If we're using minutes, make sure we have MM instead of M to avoid confusion with months
-    if 'PT' in force_period and force_period.endswith('M') and 'MM' not in force_period:
-        force_period = force_period + 'M'
     if 'false' not in config_parts[0]:
         force_start = config_parts[0]
     
@@ -160,12 +153,9 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
 
     # Skip DETECT if all values are forced
     if force_start != 'DETECT' and force_end != 'DETECT' and force_period != 'DETECT':
-        size = re.search(r'(\d+)', force_period).group(1)
-        unit = re.search(r'\d+(\D+)', force_period).group(1)
         periods.append({'start': force_start,
                         'end': force_end,
-                        'size': size,
-                        'unit': unit})
+                        'duration': force_period})
     # Detect periods
     else:
         # Filter out any dates that occur before force_start or after force_end,
@@ -229,15 +219,12 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
         elif len(trimmed_dates) == 1 and trimmed_dates[0]:
             # Default to P1D
             if force_period == 'DETECT':
-                size = 1
-                unit = 'D'
+                duration = 'P1D'
             else:
-                size = re.search(r'(\d+)', force_period).group(1)
-                unit = re.search(r'\d+(\D+)', force_period).group(1)
+                duration = force_period
             periods.append({'start': trimmed_dates[0],
                             'end': trimmed_dates[0],
-                            'size': size,
-                            'unit': unit})
+                            'duration': duration})
         
         # Replace the first date of the first period and/or last date of
         # the last period with forced values as appropriate
@@ -257,17 +244,10 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
     for period_dict in periods:
         period_str = ''
         if force_period != 'DETECT':
-            size = re.search(r'(\d+)', force_period).group(1)
-            unit = re.search(r'\d+(\D+)', force_period).group(1)
-            period_dict['size'] = size
-            period_dict['unit'] = unit
-        period_str = f'{period_dict["start"]}Z/{period_dict["end"]}Z/PT{period_dict["size"]}{period_dict["unit"]}'
-        # Subdaily intervals
-        if period_dict['unit'] in ['H', 'MM', 'S']:
-            # represent minutes with a single 'M'
-            period_str = period_str.replace('MM', 'M')
+            period_dict['duration'] = force_period
+        period_str = f'{period_dict["start"]}Z/{period_dict["end"]}Z/{period_dict["duration"]}'
         # Whole date intervals
-        else:
+        if 'T' not in period_dict['duration']:
             period_str = period_str.replace('T00:00:00', '')
             # 'PT' is only used when the interval is subdaily
             period_str = period_str.replace('PT', 'P')

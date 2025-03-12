@@ -70,7 +70,7 @@ class TestPeriods(unittest.TestCase):
         self.assertEqual(get_rd_from_interval("P2M"), rd.relativedelta(months=2))
         self.assertEqual(get_rd_from_interval("P3D"), rd.relativedelta(days=3))
         self.assertEqual(get_rd_from_interval("PT4H"), rd.relativedelta(hours=4))
-        self.assertEqual(get_rd_from_interval("PT5MM"), rd.relativedelta(minutes=5))
+        self.assertEqual(get_rd_from_interval("PT5M"), rd.relativedelta(minutes=5))
         self.assertEqual(get_rd_from_interval("PT6S"), rd.relativedelta(seconds=6))
     
     # Test get_duration_from_rd
@@ -79,7 +79,7 @@ class TestPeriods(unittest.TestCase):
         self.assertEqual(get_duration_from_rd(rd.relativedelta(months=2)), "P2M")
         self.assertEqual(get_duration_from_rd(rd.relativedelta(days=3)), "P3D")
         self.assertEqual(get_duration_from_rd(rd.relativedelta(hours=4)), "PT4H")
-        self.assertEqual(get_duration_from_rd(rd.relativedelta(minutes=5)), "PT5MM")
+        self.assertEqual(get_duration_from_rd(rd.relativedelta(minutes=5)), "PT5M")
         self.assertEqual(get_duration_from_rd(rd.relativedelta(seconds=6)), "PT6S")
     
     # Test find_periods_and_breaks
@@ -87,8 +87,8 @@ class TestPeriods(unittest.TestCase):
         dates = ["2023-01-01", "2023-01-02", "2023-01-04"]
         interval = rd.relativedelta(days=1)
         expected = [
-            {'start': '2023-01-01', 'end': '2023-01-02', 'size': '1', 'unit': 'D'},
-            {'start': '2023-01-04', 'end': '2023-01-04', 'size': '1', 'unit': 'D'}
+            {'start': '2023-01-01', 'end': '2023-01-02', 'duration': 'P1D'},
+            {'start': '2023-01-04', 'end': '2023-01-04', 'duration': 'P1D'}
         ]
         self.assertEqual(find_periods_and_breaks(dates, interval), expected)
 
@@ -187,6 +187,42 @@ class TestPeriods(unittest.TestCase):
             expected_smallest_interval
         )
 
+    def test_irregular_times_PT6M(self):
+        # Ensure periods generation works when we have subdaily irregular intervals but a forced period of PT6M
+        dates = [
+            "2025-01-01T12:54:42",
+            "2025-01-01T13:01:22",
+            "2025-01-01T13:08:00",
+            "2025-01-01T13:28:10",
+            "2025-01-01T13:34:50",
+            "2025-01-01T13:41:30",
+            "2025-01-01T13:48:08",
+            "2025-01-01T13:54:45",
+            "2025-01-01T14:01:22",
+            "2025-01-01T14:08:18",
+            "2025-01-01T14:14:58",
+            "2025-01-01T14:21:38",
+            "2025-01-01T14:28:16",
+        ]
+        config = "DETECT/DETECT/PT6M"
+        expected = [
+            "2025-01-01T12:54:42Z/2025-01-01T12:54:42Z/PT6M",
+            "2025-01-01T13:01:22Z/2025-01-01T13:01:22Z/PT6M",
+            "2025-01-01T13:08:00Z/2025-01-01T13:08:00Z/PT6M",
+            "2025-01-01T13:28:10Z/2025-01-01T13:28:10Z/PT6M",
+            "2025-01-01T13:34:50Z/2025-01-01T13:34:50Z/PT6M",
+            "2025-01-01T13:41:30Z/2025-01-01T13:41:30Z/PT6M",
+            "2025-01-01T13:48:08Z/2025-01-01T13:48:08Z/PT6M",
+            "2025-01-01T13:54:45Z/2025-01-01T13:54:45Z/PT6M",
+            "2025-01-01T14:01:22Z/2025-01-01T14:01:22Z/PT6M",
+            "2025-01-01T14:08:18Z/2025-01-01T14:08:18Z/PT6M",
+            "2025-01-01T14:14:58Z/2025-01-01T14:14:58Z/PT6M",
+            "2025-01-01T14:21:38Z/2025-01-01T14:21:38Z/PT6M",
+            "2025-01-01T14:28:16Z/2025-01-01T14:28:16Z/PT6M",
+        ]
+        periods = calculate_periods_from_config(dates, config, None, None)
+        self.assertEqual(periods, expected, "Returned periods {0} does not match expected periods {1}".format(periods, expected))
+
     # --- Tests for calculate_layer_periods ---
 
     def test_calculate_layer_periods_multiple_configs(self):
@@ -251,8 +287,6 @@ class TestPeriods(unittest.TestCase):
         default = self.redis_client.get(layer_key + ":default").decode('utf-8')
         self.assertEqual(periods, expected_periods, "Returned periods {0} does not match expected periods {1}".format(periods, expected_periods))
         self.assertEqual(default, new_date + "Z", "Returned default date {0} does not match expected default date {1}".format(default, new_date + 'Z'))
-
-
 
 
     @classmethod

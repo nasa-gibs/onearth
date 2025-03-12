@@ -174,8 +174,9 @@ Each test script will output a JUnit XML results file. By default, these files a
 13. Test `calculate_periods_from_config` while using the `end_date` option
 14. Test `calculate_periods_from_config` with detecting minute intervals
 15. Test `calculate_periods_from_config` with the `find_smallest_interval` option
-16. Test `calculate_layer_periods` while using multiple time configs
-17. Test `calculate_layer_periods` while using the `keep_existing_periods` option
+16. Test `calculate_periods_from_config` with subdaily times with irregular intervals and a config of `DETECT/DETECT/PT6M`
+17. Test `calculate_layer_periods` while using multiple time configs
+18. Test `calculate_layer_periods` while using the `keep_existing_periods` option
 
 ## mrfgen Tests:
 1. Global geographic PNG-MRF
