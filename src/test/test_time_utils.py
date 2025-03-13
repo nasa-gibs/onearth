@@ -19,7 +19,7 @@
 
 import os
 import sys
-import unittest2 as unittest
+import unittest
 import xmlrunner
 from optparse import OptionParser
 from subprocess import Popen, PIPE
@@ -63,29 +63,24 @@ def redis_running():
         return False
 
 
-def seed_redis_data(layers, db_keys=None, optional_args=None):
+def seed_redis_data(layers, db_keys=None, optional_args=''):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     db_keystring = ''
     if db_keys:
         for key in db_keys:
             db_keystring += key + ':'
 
-    # Don't require there to be dates added to a layer in order to run periods.lua
+    # Don't require there to be dates added to a layer in order to run periods.py
     if len(layers[0]) > 1:
         for layer in layers:
             r.zadd('{0}layer:{1}:dates'.format(db_keystring, layer[0]), {layer[1]:0})
 
-    with open('periods.lua', 'r') as f:
-        lua_script = f.read()
-    date_script = r.register_script(lua_script)
     seen_layers = []
     for layer in layers:
         if layer[0] not in seen_layers:
             seen_layers.append(layer[0])
-            if optional_args is not None:
-                date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])], args=optional_args)
-            else:
-                date_script(keys=['{0}layer:{1}'.format(db_keystring, layer[0])])
+            cmd = f'python3 periods.py {db_keystring}layer:{layer[0]} -r localhost -p 6379 {optional_args}'
+            run_command(cmd=cmd, show_output=True)
 
 
 def remove_redis_layer(layer, db_keys=None):
@@ -105,7 +100,11 @@ def add_redis_config(layers, db_keys, config):
     if db_keys:
         for key in db_keys:
             db_keystring += key + ':'
-    r.sadd('{0}layer:{1}:config'.format(db_keystring, layers[0][0]), config)
+    seen_layers = []
+    for layer in layers:
+        if layer[0] not in seen_layers:
+            seen_layers.append(layer[0])
+            r.sadd('{0}layer:{1}:config'.format(db_keystring, layer[0]), config)
 
 
 class TestTimeUtils(unittest.TestCase):
@@ -154,7 +153,7 @@ class TestTimeUtils(unittest.TestCase):
 
         restart_apache()
 
-        shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.lua", os.getcwd() + '/periods.lua')
+        shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.py", os.getcwd() + '/periods.py')
 
     def test_time_scrape_s3_keys(self):
         # Test scraping S3 keys
@@ -176,12 +175,12 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[1], layer_res['default'],
                 'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
-                .format(layer[0], layer[1], layer_res['default']))
+                .format(layer[0], layer_res['default'], layer[1]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
     def test_time_scrape_local_keys(self):
-        # Test scraping S3 keys
+        # Test scraping local keys
         test_layers = [('test_layer1', '2016-01-01',
                         ['2015-01-01/2015-01-01/P1D',
                          '2015-10-01/2015-10-01/P1D',
@@ -204,7 +203,7 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[1], layer_res['default'],
                 'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
-                .format(layer[0], layer[1], layer_res['default']))
+                .format(layer[0], layer_res['default'], layer[1]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
@@ -231,11 +230,10 @@ class TestTimeUtils(unittest.TestCase):
         cmd = "python3 /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py -l Other_Test_Layer -r -b test-bucket 127.0.0.1"
         run_command(cmd, True)
         
-        # Re-run periods.lua on Test_Layer to ensure that periods can still be generated (meaning the dates are still there)
-        with open('periods.lua', 'r') as f:
-            lua_script = f.read()
-            date_script = redis_server.register_script(lua_script)
-            date_script(keys=['epsg4326:layer:{0}'.format(test_layers[0][0])])
+        # Re-run periods.py on Test_Layer to ensure that periods can still be generated (meaning the dates are still there)
+        cmd = f'python3 periods.py epsg4326:layer:{test_layers[0][0]} -r localhost -p 6379'
+        run_command(cmd=cmd, show_output=True)
+
 
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
@@ -248,7 +246,7 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[1], layer_res['default'],
                 'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
-                .format(layer[0], layer[1], layer_res['default']))
+                .format(layer[0], layer_res['default'], layer[1]))
             self.assertEqual(
                 [layer[2]], layer_res['periods'],
                 'Layer {0} has incorrect periods -- got {1}, expected {2}'
@@ -261,7 +259,7 @@ class TestTimeUtils(unittest.TestCase):
         # Test scraping S3 inventory file
         test_layers = [('MODIS_Aqua_CorrectedReflectance_TrueColor', '2017-01-15',
                         ['2017-01-01/2017-01-15/P1D']),
-                       ('MODIS_Aqua_Aerosol', '2017-01-15',
+                       ('MODIS_Aqua_Aerosol', '2017-01-15T00:00:00Z',
                        ['2017-01-01T00:00:00Z/2017-01-01T00:00:11Z/PT11S',
                        '2017-01-02T00:00:00Z/2017-01-02T00:00:00Z/PT11S',
                        '2017-01-03T00:00:00Z/2017-01-03T00:00:00Z/PT11S',
@@ -415,7 +413,7 @@ class TestTimeUtils(unittest.TestCase):
             self.assertEqual(
                 layer[2], layer_res['periods'][0],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
-                .format(layer[0], layer[2], layer_res['periods'][0]))
+                .format(layer[0], layer_res['periods'][0], layer[2]))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
@@ -460,25 +458,31 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_periods_subdaily(self):
         # Test subdaily period
-        test_layers = [('Test_Subdaily', '2020-01-01T00:00:00Z',
+        test_layers = [('Test_Subdaily', '2020-01-01T00:00:00',
+                        '2020-01-01T00:00:00Z/2020-01-01T00:00:01Z/PT1S'),
+                        ('Test_Subdaily', '2020-01-01T00:00:01',
                         '2020-01-01T00:00:00Z/2020-01-01T00:00:01Z/PT1S')]
 
         db_keys = ['epsg4326']
         seed_redis_data(test_layers, db_keys=db_keys)
         r = requests.get(self.date_service_url + 'key1=epsg4326')
         res = r.json()
-        for layer in test_layers:
-            layer_res = res.get(layer[0])
-            self.assertIsNotNone(
-                layer_res,
-                'Layer {0} not found in list of all layers'.format(layer[0]))
-            self.assertEqual(
-                layer[1], layer_res['default'],
-                'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
-                .format(layer[0], layer[1], layer_res['default']))
 
-            if not DEBUG:
-                remove_redis_layer(layer, db_keys)
+        layer_res = res.get(test_layers[0][0])
+        self.assertIsNotNone(
+            layer_res,
+            'Layer {0} not found in list of all layers'.format(test_layers[0][0]))
+        self.assertEqual(
+            test_layers[1][1] + 'Z', layer_res['default'],
+            'Layer {0} has incorrect "default" value -- got {1}, expected {2}'
+            .format(test_layers[0][0], layer_res['default'], test_layers[1][1]))
+        self.assertEqual(
+            [test_layers[1][2]], layer_res['periods'],
+            'Layer {0} has incorrect "periods" value -- got {1}, expected {2}'
+            .format(test_layers[0], layer_res['periods'], [test_layers[1][2]]))
+
+        if not DEBUG:
+            remove_redis_layer(test_layers, db_keys)
 
     def test_periods_multiday(self):
         # Test adding layer with multiple dates
@@ -821,7 +825,7 @@ class TestTimeUtils(unittest.TestCase):
                 remove_redis_layer(layer, db_keys)
 
     def test_periods_config_force_end(self):
-        # Test adding layer with multiple dates
+        # Test when we have a forced end date
         test_layers = [('Test_ForceEnd', '2018-12-01',
                         '2018-12-01/2020-12-01/P1M'),
                        ('Test_ForceEnd', '2019-01-01',
@@ -1539,7 +1543,6 @@ class TestTimeUtils(unittest.TestCase):
         num_times = 16
         daily_adjustment = 20
         date_start = datetime.datetime(2021, 1, 26, 10, 40, 0, 0)
-        date_end = datetime.datetime(2021, 1, 26, 21, 40, 0, 0)
         # calculate the datetimes
         date_lst = []
         for i in range(num_days):
@@ -1560,9 +1563,9 @@ class TestTimeUtils(unittest.TestCase):
         add_redis_config(test_layers, db_keys, config)
 
         # Calculate periods for first desired day
-        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', '2021-01-27T11:00:00', '2021-01-27T14:09:00'])
-        # Calculate periods for second desired day and instruct periods.lua to not clear existing periods
-        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', '2021-01-29T11:40:00', '2021-01-29T13:58:00', "true"])
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-s 2021-01-27T11:00:00 -e 2021-01-27T14:09:00')
+        # Calculate periods for second desired day and instruct periods.py to not clear existing periods
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-s 2021-01-29T11:40:00 -e 2021-01-29T13:58:00 -k')
         # Expected periods
         periods = ['2021-01-27T11:00:00Z/2021-01-27T11:03:00Z/PT3M',
                     '2021-01-27T11:09:00Z/2021-01-27T11:09:00Z/PT3M',
@@ -1623,11 +1626,11 @@ class TestTimeUtils(unittest.TestCase):
         add_redis_config(test_layers, db_keys, config)
 
         # Calculate first period
-        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', '2021-01-05T00:00:00', '2021-01-08T00:00:00'])
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-s 2021-01-05T00:00:00 -e 2021-01-08T00:00:00')
         # Calculate another period without specifying start date
-        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', 'false', '2021-01-03T00:00:00', "true"])
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-e 2021-01-03T00:00:00 -k')
         # Calculate last period without specifying end date
-        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', '2021-01-09', 'false', "true"])
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-s 2021-01-09 -k')
         # Expected periods
         periods = ['2021-01-01/2021-01-03/P1D',
                     '2021-01-05/2021-01-08/P1D',
@@ -1689,9 +1692,9 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P1D'
         add_redis_config(existing_test_layers, db_keys, config)
 
-        # manually add periods as an unsorted set without periods.lua
+        # manually add periods as an unsorted set without periods.py
         seed_redis_data_oe_utils(existing_test_layers[:1], db_keys=db_keys, zset=False)
-        # manually add periods as a sorted set without periods.lua
+        # manually add periods as a sorted set without periods.py
         seed_redis_data_oe_utils(existing_test_layers[1:], db_keys=db_keys, zset=True)
         
         # New periods for each layer
@@ -1700,8 +1703,8 @@ class TestTimeUtils(unittest.TestCase):
                         ('Test_Keep_Existing_Periods_Sorted_Set', '2019-01-15',
                         ['2017-01-01/2018-01-01/P1D', '2019-01-15/2019-01-15/P1D'], b'zset')]
 
-        # run periods.lua with keep_existing_periods
-        seed_redis_data(test_layers, db_keys=db_keys, optional_args=['false', 'false', 'false', 'true'])
+        # run periods.py with keep_existing_periods
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-k')
         req = requests.get(self.date_service_url + 'key1=epsg4326')
         res = req.json()
         for layer in test_layers:
@@ -1728,7 +1731,7 @@ class TestTimeUtils(unittest.TestCase):
         config = 'DETECT/P1D'
         add_redis_config(existing_test_layers, db_keys, config)
 
-        # manually add periods as an unsorted set without periods.lua
+        # manually add periods as an unsorted set without periods.py
         seed_redis_data_oe_utils(existing_test_layers, db_keys=db_keys)
         
         # New periods for each layer
@@ -1739,7 +1742,7 @@ class TestTimeUtils(unittest.TestCase):
                         ('Test_Update_Existing_Periods', '2019-01-16',
                         ['2019-01-01/2019-01-01/P1D', '2019-01-15/2019-01-16/P1D'])]
 
-        # run periods.lua again
+        # run periods.py again
         seed_redis_data(test_layers, db_keys=db_keys)
         req = requests.get(self.date_service_url + 'key1=epsg4326')
         res = req.json()
@@ -1752,6 +1755,69 @@ class TestTimeUtils(unittest.TestCase):
                 layer[2], layer_res['periods'],
                 'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
                 .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_add_new_date(self):
+        # Test ingesting a new date using periods.py
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        # "Existing" periods for each layer
+        test_layers = [('Test_Add_New_Date', '2018-01-01',
+                        ['2018-01-01/2018-01-02/P1D'])]
+
+        db_keys = ['epsg4326']
+        config = 'DETECT/P1D'
+        add_redis_config(test_layers, db_keys, config)
+
+        # run periods.py with keep_existing_periods
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-d 2018-01-02')
+        req = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = req.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                layer[2], layer_res['periods'],
+                'Layer {0} has incorrect "period" value -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], layer[2]))
+            if not DEBUG:
+                remove_redis_layer(layer, db_keys)
+
+    def test_find_smallest_interval(self):
+        # Test using the --find_smallest_interval option for when the first three dates
+        # have larger intervals than the rest of the dates.
+        date_start = datetime.datetime(2022, 6, 27, 0, 0, 0)
+        # Add several 1-day long intervals
+        date_lst = [str((date_start + datetime.timedelta(days=idx))).replace(' ', ':') for idx in range(3)]
+        # Add 10-minute intervals
+        date_lst = date_lst + [str((date_start + datetime.timedelta(days=4, minutes=10*idx))).replace(' ', ':') for idx in range(10)]
+        print("woot", date_lst)
+        test_layers = []
+        for date_entry in date_lst:
+            test_layers.append(('Test_Find_Smallest_Interval', date_entry))
+        db_keys = ['epsg4326']
+        config = 'DETECT'
+        add_redis_config(test_layers, db_keys, config)
+
+        # If we were to run this without the `-f` option, we'd get P1D periods instead of PT10M
+        periods = ['2022-06-27:00:00:00Z/2022-06-27:00:00:00Z/PT10M',
+                    '2022-06-28:00:00:00Z/2022-06-28:00:00:00Z/PT10M',
+                    '2022-06-29:00:00:00Z/2022-06-29:00:00:00Z/PT10M',
+                    '2022-07-01:00:00:00Z/2022-07-01:01:30:00Z/PT10M']
+        seed_redis_data(test_layers, db_keys=db_keys, optional_args='-f')
+        r = requests.get(self.date_service_url + 'key1=epsg4326')
+        res = r.json()
+        for layer in test_layers:
+            layer_res = res.get(layer[0])
+            self.assertIsNotNone(
+                layer_res,
+                'Layer {0} not found in list of all layers'.format(layer[0]))
+            self.assertEqual(
+                periods, layer_res['periods'],
+                'Layer {0} has incorrect "periods" -- got {1}, expected {2}'
+                .format(layer[0], layer_res['periods'], periods))
             if not DEBUG:
                 remove_redis_layer(layer, db_keys)
 
@@ -1872,7 +1938,7 @@ class TestTimeUtils(unittest.TestCase):
         if not DEBUG:
             os.remove(self.test_config_dest_path)
             os.remove(self.test_lua_config_location)
-            os.remove(os.getcwd() + '/periods.lua')
+            os.remove(os.getcwd() + '/periods.py')
 
 
 if __name__ == '__main__':

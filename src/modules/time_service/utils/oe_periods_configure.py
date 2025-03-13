@@ -24,6 +24,7 @@ import redis
 import os
 import glob
 from pathlib import Path
+from periods import calculate_layer_periods
 
 
 # Utility functions
@@ -73,10 +74,6 @@ def get_layer_configs(endpoint_config, layer_filter='*'):
 
 def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=False):
     r = redis.Redis(host=redis_uri, port=redis_port)
-    with open(os.path.dirname(os.path.realpath(__file__)) + '/periods.lua',
-              'r') as f:
-        lua_script = f.read()
-    date_script = r.register_script(lua_script)
     
     if 'projection' in layer_configs[0]['config'].keys():
             proj = str(layer_configs[0]['config']['projection']). \
@@ -137,12 +134,12 @@ def load_time_configs(layer_configs, redis_uri, redis_port, generate_periods=Fal
             # refresh time periods in redis
             if generate_periods:
                 print('Generating periods for ' + key)
-                date_script(keys=[key])
+                calculate_layer_periods(redis_uri=redis_uri, redis_port=redis_port, layer_key=key)
                 # generate periods for reproject as well
                 if 'epsg4326' in key:
                     key_wm = key.replace('epsg4326', 'epsg3857')
                     print('Generating periods for ' + key_wm)
-                    date_script(keys=[key_wm])
+                    calculate_layer_periods(redis_uri=redis_uri, redis_port=redis_port, layer_key=key_wm)
 
             # static best layers need at least a single date value
             if 'static' in layer_config['config'].keys() and 'best_config' in layer_config['config'].keys():
