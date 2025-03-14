@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    image: alpine
+    volumes:
+        - ../version.sh:/version.sh
+        - ./entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/sh", "entrypoint.sh" ]
+    command: ["sh", "-c", "printenv && echo ${DOCKER_PLATFORM}"]
+    env_file:
+      - .env
+    networks:
+      - oe2
+
+networks:
+  oe2:
+    driver: bridge
+    
