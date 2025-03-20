@@ -7,10 +7,11 @@ redis.replicate_commands()
 -- This will clear existing :best and :dates keys for the best layer and regenerate them
 -- based on the :dates keys the layers specified by layer_prefix:best_layer_name:best_config.
 
+local index = KEYS[1]:match("^.*():")
+local layerPrefix = KEYS[1]:sub(1,index) -- remove provided layers name
+
 if redis.call("EXISTS", KEYS[1] .. ":best_layer") == 1 and ARGV[1] ~= nil then
   local best_layer = redis.call("GET", KEYS[1] .. ":best_layer")
-  local index = KEYS[1]:match("^.*():")
-  local layerPrefix = KEYS[1]:sub(1,index) -- remove provided layers name
   local best_key = layerPrefix .. best_layer -- concat best_layer to layer prefix
   -- if no best_config exists, then add this config as the only best_config
   if redis.call("EXISTS", KEYS[1] .. ":best_config") ~= 1 then
