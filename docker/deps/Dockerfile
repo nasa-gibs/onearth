@@ -92,7 +92,8 @@ WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
 # Install pip dependencies
-RUN pip install -r onearth/docker/deps/requirements.txt
+COPY docker/deps/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
 WORKDIR /tmp
 
