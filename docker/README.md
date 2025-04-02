@@ -10,9 +10,14 @@ To build the Docker images and deploy the OnEarth stack,
 Update the `ONEARTH_VERSION` and `ONEARTH_RELEASE` variables in `version.sh`
 and source the file: `source version.sh`.
 
+To build the OnEarth Docker images, `cd docker` and run `docker compose up`
+You can override certain environment variables by running: `USE_SSL=false SERVER_NAME=different_server docker compose up`
+You can also choose to build the OnEarth tools image with `docker compose --profile enable-tools up`
+
+If you would rather use scripts, you can follow this approach: 
 The "deps" Docker image OnEarth dependencies must first be built before the other Docker images. Run `./ci/build_deps_image.sh nasagibs/onearth-deps:$ONEARTH_VERSION` to build the image. It can take a while to build the first time, but rebuilds are not needed unless there is a version or dependency change.
 
-To build the OnEarth Docker images, run: `build.sh` and `run.sh` from the source root.
+Run: `build.sh` and `run.sh` from the source root.
 
 Alternatively, you can run each Docker image individually by building the
 image: `docker build -t onearth .`, and then starting a container using
