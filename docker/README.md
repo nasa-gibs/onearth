@@ -8,13 +8,15 @@ test layers. It requires "capabilities" and "time-services", which are separate 
 
 To build the Docker images and deploy the OnEarth stack,
 Update the `ONEARTH_VERSION` and `ONEARTH_RELEASE` variables in `version.sh`
-and source the file: `source version.sh`.
+and source the file: `source docker/set_env_vars_docker_compose.sh`.
 
 To build the OnEarth Docker images, `cd docker` and run `docker compose up -d` 
-You can override certain environment variables by running: `USE_SSL=false SERVER_NAME=different_server docker compose up`
-You can also choose to build the OnEarth tools image with `docker compose --profile enable-tools up`
+You can override certain environment variables by running: `USE_SSL=false SERVER_NAME=different_server docker compose up -d`
+You can also choose to build the OnEarth tools image with `docker compose --profile enable-tools up -d`
 
 If you would rather use scripts, you can follow this approach: 
+Update the `ONEARTH_VERSION` and `ONEARTH_RELEASE` variables in `version.sh`
+and source the file: `source version.sh`.
 The "deps" Docker image OnEarth dependencies must first be built before the other Docker images. Run `./ci/build_deps_image.sh nasagibs/onearth-deps:$ONEARTH_VERSION` to build the image. It can take a while to build the first time, but rebuilds are not needed unless there is a version or dependency change.
 
 Run: `build.sh` and `run.sh` from the source root.
