@@ -37,8 +37,8 @@ RUN dnf -y update && \
         fcgi-devel-2.4.0 \
         proj-8.2.0 \
         proj-devel-8.2.0 \
-        geos-3.10.1 \
-        geos-devel-3.10.1 \
+        geos-3.13.1 \
+        geos-devel-3.13.1 \
         python3-devel-3.9.19 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
