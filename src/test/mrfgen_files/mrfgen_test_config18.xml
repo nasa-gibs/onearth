@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<mrfgen_configuration>
+ <date_of_data>20250212</date_of_data>
+ <parameter_name>OPERA_L3_DSWX-S1_LL_v1_STD</parameter_name>
+ <input_files><file>mrfgen_files/opera_antimeridian/OPERA_L3_DSWx-S1_T01LAC_20250212T174046Z_20250214T045358Z_S1A_30_v1.0_B01_WTR.vrt</file></input_files>
+ <output_dir>mrfgen_test_data/output_dir</output_dir>
+ <working_dir>mrfgen_test_data/working_dir</working_dir>
+ <mrf_empty_tile_filename>mrfgen_files/empty_tiles/Blank_RGBA_512.png</mrf_empty_tile_filename>
+ <mrf_blocksize>512</mrf_blocksize>
+ <mrf_compression_type>PPNG</mrf_compression_type>
+ <overview_resampling>nnb</overview_resampling>
+ <target_x>5120</target_x>
+ <target_y>2560</target_y>
+ <source_epsg>4326</source_epsg>
+ <extents>-180,-90,180,90</extents>
+ <colormap>/mrfgen_files/opera_antimeridian/OPERA_Dynamic_Surface_Water_Extent.xml</colormap>
+ <mrf_name>{$parameter_name}%Y%j_.mrf</mrf_name>
+ <mrf_noaddo>true</mrf_noaddo>
+ <mrf_merge>false</mrf_merge>
+</mrfgen_configuration>
