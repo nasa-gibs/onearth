@@ -1211,7 +1211,7 @@ def run_mrf_insert(
                     target_extents,
                     target_epsg,
                     nodata,
-                    True,
+                    merge,
                     working_dir,
                 )
             else:
