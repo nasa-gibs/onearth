@@ -51,7 +51,7 @@ RUN make && make install
 COPY ./ /home/oe2/onearth/
 WORKDIR /home/oe2/onearth
 # Install pip dependencies
-RUN pip install pip==24.2
+RUN pip install pip==25.0.1
 RUN pip install -r requirements.txt
 
 # Install GDAL
