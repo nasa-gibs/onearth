@@ -22,13 +22,13 @@ RUN dnf -y update && \
         libcurl-devel-7.76.1 \
         libjpeg-turbo-devel-2.0.90 \
         libxml2-devel-2.9.13 \
-        mod_ssl-2.4.62 \
+        mod_ssl-2.4.62-1.el9_5.2 \
         openssl-devel-3.2.2 \
         luarocks-3.9.2 \
         redis-6.2.17 \
         cronie-1.5.7 \
         logrotate-3.18.0 \
-        python3-devel-3.9.19 \
+        python3-devel-3.9.21 \
         cmake-3.26.5 \
         parallel && \
     dnf clean all
@@ -82,9 +82,9 @@ RUN git clone --depth=1 https://github.com/google/brunsli.git && \
 WORKDIR /tmp
 RUN dnf install -y yum-utils-4.3.0 rpm-build-4.16.1.3 && \
     dnf clean all && \
-    yumdownloader --source httpd-2.4.62-1.el9.x86_64 && \
+    yumdownloader --source httpd-2.4.62-1.el9_5.2.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.62-1.el9.x86_64
+    yum-builddep -y httpd-2.4.62-1.el9_5.2.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -92,8 +92,7 @@ WORKDIR /home/oe2
 COPY ./ /home/oe2/onearth/
 
 # Install pip dependencies
-COPY docker/deps/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install -r onearth/docker/deps/requirements.txt
 
 WORKDIR /tmp
 
@@ -116,6 +115,7 @@ RUN wget http://archive.apache.org/dist/apr/apr-util-1.6.3.tar.gz && \
 WORKDIR /tmp/rpmbuild/SPECS
 RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g' httpd.spec && \
     sed -i 's:--with-apr-util=%{_prefix}:--with-apr-util=/usr/local/apr/bin/apu-1-config:g' httpd.spec && \
+    sed -i '/xmlto man/d' httpd.spec && \
     HOME="/tmp" rpmbuild -bp httpd.spec && \
     ls /home/oe2/onearth && \
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \

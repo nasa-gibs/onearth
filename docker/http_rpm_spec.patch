@@ -1,6 +1,6 @@
---- a/SPECS/httpd.spec	2024-11-21 21:22:32.427194003 +0000
-+++ b/SPECS/httpd.spec	2024-11-21 21:26:12.736046008 +0000
-@@ -103,6 +103,8 @@
+--- a/SPECS/httpd.spec	2025-04-25 01:03:55.369155001 +0000
++++ b/SPECS/httpd.spec	2025-04-25 00:58:07.159783007 +0000
+@@ -107,6 +107,8 @@
  # https://bugzilla.redhat.com/show_bug.cgi?id=
  # Patch200: httpd-2.4.X-CVE-XXXX-YYYYY.patch
  
@@ -9,9 +9,9 @@
  
  License: ASL 2.0
  BuildRequires: gcc, autoconf, pkgconfig, findutils, xmlto
-@@ -259,6 +261,9 @@
- %patch101 -p1 -b .full-release
- %patch102 -p1 -b .r1919325
+@@ -265,6 +267,9 @@
+ %patch103 -p0 -b .engine-fallback
+ %patch104 -p1 -b .r1921299
  
 +%patch900 -p1
 +%patch901 -p1
@@ -19,3 +19,35 @@
  # Patch in the vendor string
  sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
  sed -i 's/@RELEASE@/%{release}/' server/core.c
+@@ -542,14 +547,6 @@
+ install -m 644 -p $RPM_SOURCE_DIR/httpd.logrotate \
+         $RPM_BUILD_ROOT/etc/logrotate.d/httpd
+ 
+-# Install man pages
+-install -d $RPM_BUILD_ROOT%{_mandir}/man8 $RPM_BUILD_ROOT%{_mandir}/man5
+-install -m 644 -p httpd.service.8 httpd-init.service.8 httpd.socket.8 \
+-        httpd@.service.8 htcacheclean.service.8 apachectl.8 \
+-        $RPM_BUILD_ROOT%{_mandir}/man8
+-install -m 644 -p httpd.conf.5 \
+-        $RPM_BUILD_ROOT%{_mandir}/man5
+-
+ # fix man page paths
+ sed -e "s|/usr/local/apache2/conf/httpd.conf|/etc/httpd/conf/httpd.conf|" \
+     -e "s|/usr/local/apache2/conf/mime.types|/etc/mime.types|" \
+@@ -668,8 +665,6 @@
+ 
+ %files
+ %{_mandir}/man8/*
+-%{_mandir}/man5/*
+-%exclude %{_mandir}/man8/httpd-init.*
+ 
+ %config(noreplace) %{_sysconfdir}/httpd/conf.modules.d/00-brotli.conf
+ %config(noreplace) %{_sysconfdir}/httpd/conf.modules.d/00-systemd.conf
+@@ -790,7 +785,6 @@
+ %{_libexecdir}/httpd-ssl-pass-dialog
+ %{_libexecdir}/httpd-ssl-gencerts
+ %{_unitdir}/httpd.socket.d/10-listen443.conf
+-%{_mandir}/man8/httpd-init.*
+ 
+ %files -n mod_proxy_html
+ %{_libdir}/httpd/modules/mod_proxy_html.so
