@@ -38,6 +38,7 @@
     <GetMap>
       <Format>image/png</Format>
       <Format>image/jpeg</Format>
+      <Format>image/lerc</Format>
       <Format>application/vnd.google-earth.kml.xml</Format>
       <Format>application/vnd.google-earth.kmz</Format>
       <Format>image/png; mode=8bit</Format>
@@ -57,6 +58,7 @@
     <sld:GetLegendGraphic>
       <Format>image/png</Format>
       <Format>image/jpeg</Format>
+      <Format>image/lerc</Format>
       <Format>image/png; mode=8bit</Format>
       <Format>image/vnd.jpeg-png</Format>
       <Format>image/vnd.jpeg-png8</Format>
