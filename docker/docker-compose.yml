@@ -1,6 +1,5 @@
 services:
   onearth-deps:
-    container_name: onearth-deps
     platform: ${DOCKER_PLATFORM_OPTION}
     build:
       context: ../
@@ -10,7 +9,8 @@ services:
         - ${ONEARTH_DEPS_TAG} 
     networks:
       - oe2
-    restart: always
+    deploy:
+      replicas: 0
   onearth-time-service:
     container_name: onearth-time-service
     hostname: onearth-time-service
@@ -18,7 +18,8 @@ services:
     ports: 
       - 6379:6379
     depends_on:
-      - onearth-deps
+      onearth-deps:
+        condition: service_completed_successfully
     build:
       args: 
         ONEARTH_VERSION: $ONEARTH_VERSION
@@ -37,7 +38,8 @@ services:
     ports:
       - 443:443
     depends_on:
-      - onearth-deps
+      onearth-deps:
+        condition: service_completed_successfully
     build:
       args: 
         ONEARTH_VERSION: $ONEARTH_VERSION
@@ -61,7 +63,8 @@ services:
     ports: 
       - 8081:80
     depends_on:
-      - onearth-deps
+      onearth-deps:
+        condition: service_completed_successfully
     build:
       args: 
         ONEARTH_VERSION: $ONEARTH_VERSION
@@ -80,6 +83,8 @@ services:
     ports: 
       - 8082:80
     depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
       onearth-time-service:
         condition: service_healthy
       onearth-tile-services:
@@ -104,6 +109,8 @@ services:
     ports: 
       - 8443:443
     depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
       onearth-time-service:
         condition: service_healthy
       onearth-tile-services:
@@ -133,6 +140,8 @@ services:
     ports:
       - 80:80
     depends_on:
+      onearth-deps:
+        condition: service_completed_successfully
       onearth-time-service:
         condition: service_healthy
       onearth-tile-services:
@@ -154,7 +163,8 @@ services:
     container_name: onearth-tools
     platform: ${DOCKER_PLATFORM_OPTION}
     depends_on:
-      - onearth-deps
+      onearth-deps:
+        condition: service_completed_successfully
     build:
       args: 
         ONEARTH_VERSION: $ONEARTH_VERSION
@@ -172,4 +182,3 @@ services:
 networks:
   oe2:
     driver: bridge
-    
