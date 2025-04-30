@@ -178,6 +178,8 @@ services:
     restart: always
     profiles:
       - enable-tools
+    deploy:
+      replicas: $START_ONEARTH_TOOLS_CONTAINER
 
 networks:
   oe2:
