@@ -288,6 +288,7 @@ end
 
 local function redis_handler (options)
     local redis = require 'redis'
+    --TBD: Handle connection error
     local client = redis.connect(options.host, options.port or 6379)
     closeFunc = function()
         client:quit()
@@ -303,25 +304,61 @@ local function redis_handler (options)
         end
         if layer_name then
             if snap_date_string then
-                local best_layer_name = client:hget(prefix_string .. "layer:" .. layer_name .. ":best", snap_date_string)
-                if best_layer_name then
+                local ok_hget, best_layer_name = pcall(client.hget, client, prefix_string .. "layer:" .. layer_name .. ":best", snap_date_string)
+                -- Handle Redis Error
+                if not ok_hget then
+                    print("ERROR querying Redis hget: " .. tostring(best_layer_name))
+                    return send_response(503, JSON:encode({err_msg="Time database error"}))
+                end
+                if best_layer_name then 
                     returnValue = best_layer_name
-                else
+                else 
                     returnValue = layer_name
                 end
             else
-                local default = client:get(prefix_string .. "layer:" .. layer_name .. ":default")
-                local periods
-                if client:type(prefix_string .. "layer:" .. layer_name .. ":periods") == "zset" then
-                    periods = client:zrange(prefix_string .. "layer:" .. layer_name .. ":periods", 0, -1)
-                else
-                    periods = client:smembers(prefix_string .. "layer:" .. layer_name .. ":periods")
-                    if periods then
-                        table.sort(periods)
-                    end
+                local ok_get, default_val = pcall(client.get, client, prefix_string .. "layer:" .. layer_name .. ":default")
+                if not ok_get then
+                    print("ERROR querying Redis get: " .. tostring(default_val)) -- default_val is the error here
+                    return send_response(503, JSON:encode({err_msg="Time database error"}))
                 end
-                returnValue = {err_msg = "Invalid Layer"}
-                if periods then
+                -- default is set to actual value or nil if not found
+                local default = default_val
+
+                local periods
+                local ok, result = pcall(client.type, client, prefix_string .. "layer:" .. layer_name .. ":periods")
+                if not ok then
+                    -- Log the error: result contains error message
+                    print("ERROR querying Redis type: " .. tostring(result))
+                    -- Return a 5xx error or specific JSON error indicating Redis issue
+                    return send_response(503, JSON:encode({err_msg="Time database error"}))
+                end
+
+                local key_type = result
+                if key_type == "zset" then
+                    ok, result = pcall(client.zrange, client, prefix_string .. "layer:" .. layer_name .. ":periods", 0, -1)
+                    if not ok then
+                        print("ERROR querying Redis zrange: " .. tostring(result))
+                        return send_response(503, JSON:encode({err_msg="Time database error"}))
+                    end
+                    periods = result
+                elseif key_type == "set" then
+                    --  wrap smembers in pcall
+                    ok, result = pcall(client.smembers, client, prefix_string .. "layer:" .. layer_name .. ":periods")
+                    if not ok then
+                        print("ERROR querying Redis smembers: " .. tostring(result))
+                        return send_response(503, JSON:encode({err_msg="Time database error"}))
+                    end
+                    periods = result
+                else
+                    periods = nil -- Key doesn't exist or wrong type
+                end
+
+                 -- Handle Case of Data is legitimately missing 
+                if not periods or #periods == 0 then
+                    returnValue = {err_msg = "Invalid Layer"}
+                else
+                    -- process periods
+                    table.sort(periods)
                     if periods_start or periods_end then
                         default, periods = range_handler(default, periods, periods_start, periods_end) 
                     end
@@ -332,10 +369,11 @@ local function redis_handler (options)
                             periods_in_range = #periods
                         }}
                     end
-                end
+                end -- process periods
             end
         else
             -- If no layer name specified, dump all data
+            -- note: consider wrapping redis query calls in pcall
             returnValue = redis_get_all_layers(client, prefix_string, periods_start, periods_end)
         end
         -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
