@@ -43,8 +43,8 @@ RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.2/yq_linux_amd6
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz && \
-    tar xf go1.23.4.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
+    tar xf go1.24.2.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
     wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.33.tar.gz && \
