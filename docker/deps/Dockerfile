@@ -38,7 +38,7 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64.tar.gz -O - |\
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.2/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Install supercronic
