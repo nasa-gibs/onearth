@@ -488,8 +488,8 @@ static int handler(request_rec *r)
 
         message = lerc_encode(out_params, raw, dst);
         SERVER_ERR_IF(message != nullptr, r, "%s from %s", message, r->uri);
-        out_mime = "raster/lerc";
-        // out_mime = "image/lerc";
+        // out_mime = "raster/lerc";
+        out_mime = "image/lerc";
         break;
     }
     default:
