@@ -345,6 +345,8 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
             sample_png_read_info = sample_png.read()[3]
         except png.FormatError as err:
             print(err)
+            if mimetype == 'image/lerc' or mimetype == 'raster/lerc':
+                return '1'
             return '3'  # default to 3 bands if not PNG
         try:
             if sample_png.palette():
@@ -368,6 +370,8 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                     print(identifier + ' is RGB')
         return str(bands)
     else:
+        if mimetype == 'image/lerc' or mimetype == 'raster/lerc':
+            return '1'
         return '3'  # default to 3 bands if not PNG
 
 
