@@ -57,8 +57,8 @@ IMG_T getFMT(const char *name) {
         return IMG_PNG;
     if (s == "raster/lerc")
         return IMG_LERC;
-    if (s == "image/lerc")
-        return IMG_LERC;
+    // if (s == "image/lerc")
+    //     return IMG_LERC;
     return IMG_UNKNOWN;
 }
 
