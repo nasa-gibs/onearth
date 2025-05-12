@@ -222,10 +222,11 @@ class TestModTwms(unittest.TestCase):
         make_dir_tree(layer_config_path, ignore_existing=True)
         src_path = '{}/{}/test_mrf_nodate/default/16km'.format(
             base_url, self.endpoint_prefix_mrf)
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         layer_config = bulk_replace(
             LAYER_MOD_TWMS_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{bbox}', '-180.0,-90.0,180.0,90.0'),
              ('{source_postfix}', '.' + image_type),
@@ -258,10 +259,11 @@ class TestModTwms(unittest.TestCase):
         make_dir_tree(layer_config_path, ignore_existing=True)
         src_path = '{}/{}/test_mrf_date/default/{}/16km'.format(
             base_url, self.endpoint_prefix_mrf, '${date}')
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         layer_config = bulk_replace(
             LAYER_MOD_TWMS_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{bbox}', '-180.0,-90.0,180.0,90.0'),
              ('{source_postfix}', '.' + image_type),
@@ -361,10 +363,11 @@ class TestModTwms(unittest.TestCase):
 
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -432,10 +435,11 @@ class TestModTwms(unittest.TestCase):
                                  '${filename}.pjg')
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])

@@ -166,10 +166,11 @@ class TestModMrf(unittest.TestCase):
         data_config = 'DataFile ' + os.path.join(
             self.test_mod_mrf_config_dest_path, test_name + '.pjg')
 
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])

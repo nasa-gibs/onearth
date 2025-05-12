@@ -236,11 +236,7 @@ for layer in layers:
     bounds = get_map_bounds([upper_left_x, lower_right_y, lower_right_x, upper_left_y], epsg_code, scale_denominator, tile_width, matrix_width, matrix_height)
 
     resource_url = layer.findall('{*}ResourceURL')[0] # get first if multiple found
-    bands_count = 3 
-    if resource_url.get('format') == 'image/png':
-        bands_count = 4
-    elif resource_url.get('format') == 'image/lerc':
-        bands_count = 1 
+    bands_count = {'image/png': 4, 'image/lerc': 1, 'image/lrc': 1}.get(resource_url.get('format'), 3)
     template_string = resource_url.get('template')
     # Replace matching host names with local Docker host IP http://172.17.0.1 so that connections stay local
     if endpoint_config['mapserver'].get('replace_with_local'):

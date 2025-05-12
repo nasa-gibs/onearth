@@ -349,10 +349,11 @@ class TestModWmtsWrapper(unittest.TestCase):
 
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -420,10 +421,11 @@ class TestModWmtsWrapper(unittest.TestCase):
                                  '${filename}.pjg')
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -524,10 +526,11 @@ class TestModWmtsWrapper(unittest.TestCase):
 
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -612,10 +615,11 @@ class TestModWmtsWrapper(unittest.TestCase):
 
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -694,10 +698,11 @@ class TestModWmtsWrapper(unittest.TestCase):
 
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -716,10 +721,11 @@ class TestModWmtsWrapper(unittest.TestCase):
             os.path.join(test_imagery_path,
                             empty_tile),
             empty_tile_path)
+        bands = {'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_convert_config = bulk_replace(
             MOD_CONVERT_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{skipped_levels}', '0' if size_x == size_y else '1'),
              ('{empty_tile}', os.path.join(empty_tile_path, empty_tile))])
@@ -812,10 +818,11 @@ class TestModWmtsWrapper(unittest.TestCase):
 
         # Build layer config
         data_config = 'DataFile ' + data_path
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -886,11 +893,12 @@ class TestModWmtsWrapper(unittest.TestCase):
         shutil.copy(
             os.path.join(test_imagery_path, config_prefix + '.pjg'), data_path)
 
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         # Build layer config
         mod_reproj_src_config = bulk_replace(
             MOD_REPROJECT_SRC_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{skipped_levels}', '0' if size_x == size_y else '1'),
              ('{projection}', 'EPSG:4326'),
@@ -905,10 +913,11 @@ class TestModWmtsWrapper(unittest.TestCase):
         reproj_size_x = 2048
         reproj_size_y = 2048
         reproj_tile_size = 256
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_reproj_dest_config = bulk_replace(
             MOD_REPROJECT_DEST_CONFIG_TEMPLATE,
             [('{size_x}', reproj_size_x), ('{size_y}', reproj_size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', reproj_tile_size),
              ('{tile_size_y}', reproj_tile_size),
              ('{skipped_levels}', '0' if size_x == size_y else '1'),
@@ -976,11 +985,12 @@ class TestModWmtsWrapper(unittest.TestCase):
         shutil.copy(
             os.path.join(test_imagery_path, config_prefix + '.pjg'), data_path)
 
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         # Build layer config
         mod_reproj_src_config = bulk_replace(
             MOD_REPROJECT_SRC_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{skipped_levels}', '0' if size_x == size_y else '1'),
              ('{projection}', 'EPSG:4326'),
@@ -995,10 +1005,11 @@ class TestModWmtsWrapper(unittest.TestCase):
         reproj_size_x = 2048
         reproj_size_y = 2048
         reproj_tile_size = 256
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_reproj_dest_config = bulk_replace(
             MOD_REPROJECT_DEST_CONFIG_TEMPLATE,
             [('{size_x}', reproj_size_x), ('{size_y}', reproj_size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', reproj_tile_size),
              ('{tile_size_y}', reproj_tile_size),
              ('{skipped_levels}',

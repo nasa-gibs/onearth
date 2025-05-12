@@ -345,7 +345,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
             sample_png_read_info = sample_png.read()[3]
         except png.FormatError as err:
             print(err)
-            if mimetype == 'image/lerc' or mimetype == 'raster/lerc':
+            if mimetype == 'image/lerc' or mimetype == 'image/lrc':
                 return '1'
             return '3'  # default to 3 bands if not PNG
         try:
@@ -370,7 +370,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                     print(identifier + ' is RGB')
         return str(bands)
     else:
-        if mimetype == 'image/lerc':
+        if mimetype == 'image/lerc' or mimetype == 'image/lrc':
             return '1'
         return '3'  # default to 3 bands if not PNG
 
@@ -516,7 +516,7 @@ def make_apache_layer_config(endpoint_config, layer_config):
 def make_mod_reproject_configs(endpoint_config, layer_config):
     format = f'Format {layer_config["mimetype"]}' if layer_config["mimetype"].startswith('image') else ''
 
-    bands = '1' if format == "image/lerc" else '3'
+    bands = {'image/lerc': 1, 'image/lrc': 1}.get(format, 3)
     src_config = bulk_replace(
         MOD_REPROJECT_SOURCE_TEMPLATE,
         [('{size_x}', str(layer_config['src_size_x'])),
@@ -534,7 +534,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
         MOD_REPROJECT_REPRO_TEMPLATE,
         [('{size_x}', str(layer_config['reproj_size_x'])),
          ('{size_y}', str(layer_config['reproj_size_y'])),
-         ('{bands}', str(layer_config.get('bands', '3'))),
+         ('{bands}', str(layer_config.get('bands', bands))),
          ('{tile_size_x}', str(layer_config['reproj_tile_size_x'])),
          ('{tile_size_y}', str(layer_config['reproj_tile_size_y'])),
          ('{projection}', str(layer_config['reproj_projection'])),
@@ -578,7 +578,7 @@ def make_mod_reproject_configs(endpoint_config, layer_config):
             LAYER_MOD_TWMS_CONFIG_TEMPLATE,
             [('{size_x}', str(layer_config['reproj_size_x'])),
              ('{size_y}', str(layer_config['reproj_size_y'])),
-             ('{bands}', str(layer_config.get('bands', '3'))),
+             ('{bands}', str(layer_config.get('bands', bands))),
              ('{tile_size_x}', str(layer_config['reproj_tile_size_x'])),
              ('{tile_size_y}', str(layer_config['reproj_tile_size_y'])),
              ('{skipped_levels}',

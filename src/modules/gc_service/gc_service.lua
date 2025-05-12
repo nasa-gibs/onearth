@@ -360,7 +360,7 @@ local function makeTiledGroupFromConfig(filename, tmsDefs, epsgCode, targetEpsgC
     local bands
     if mimeType == "application/vnd.mapbox-vector-tile" then
         bands = "1"
-    elseif mimeType == "image/lerc" then 
+    elseif mimeType == "image/lerc" or mimeType == "image/lrc" then 
         bands = "1"
     else
         bands = mimeType == "image/png" and "4" or "3"

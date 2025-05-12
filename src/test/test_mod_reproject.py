@@ -292,10 +292,11 @@ class TestModReproject(unittest.TestCase):
 
         data_config = 'DataFile ' + data_path
 
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_mrf_config = bulk_replace(
             MOD_MRF_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{idx_path}', idx_path), ('{data_config}', data_config),
              ('{skipped_levels}', '0' if size_x == size_y else '1')])
@@ -313,12 +314,12 @@ class TestModReproject(unittest.TestCase):
         shutil.copy(
             os.path.join(test_imagery_path,
                          self.src_config_file_prefix + '.pjg'), data_path)
-
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         # Now configure the reproject stuff.
         mod_reproject_src_config = bulk_replace(
             MOD_REPROJECT_SRC_CONFIG_TEMPLATE,
             [('{size_x}', size_x), ('{size_y}', size_y),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', tile_size), ('{tile_size_y}', tile_size),
              ('{skipped_levels}', '1'), ('{projection}', 'EPSG:4326'),
              ('{bbox}', '-180.0,-90.0,180.0,90.0')])
@@ -328,10 +329,11 @@ class TestModReproject(unittest.TestCase):
 
         reprojected_size = 2048
         reprojected_tile_size = 256
+        bands = {'png': 4, 'lerc': 1, 'lrc': 1}.get(image_type, 3)
         mod_reproject_dest_config = bulk_replace(
             MOD_REPROJECT_DEST_CONFIG_TEMPLATE,
             [('{size_x}', reprojected_size), ('{size_y}', reprojected_size),
-             ('{bands}', 4 if image_type == 'png' else 3),
+             ('{bands}', bands),
              ('{tile_size_x}', reprojected_tile_size),
              ('{tile_size_y}', reprojected_tile_size),
              ('{skipped_levels}', '0'), ('{projection}', 'EPSG:3857'),
