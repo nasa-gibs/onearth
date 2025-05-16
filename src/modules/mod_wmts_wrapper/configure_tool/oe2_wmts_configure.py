@@ -169,6 +169,19 @@ RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=describedomains&layer=%1&
 RewriteCond %{REQUEST_FILENAME} ^{external_endpoint}/1.0.0/([^/]+)/default/([^/]+)/([^/]+)/([^/]+)(?<!--)(?:-{2})?.xml$ [NC]
 RewriteRule ^(.*)$ {gc_service_uri}/gc_service?request=describedomains&layer=%1&tilematrixset=%2&bbox=%3&time=%4 [P,L]
 
+RewriteEngine on
+#Intercept and handle 404, 500(server-side error)502-504(file temporary unavailable) errors related to Capabilities
+#Condition 1: Match KVP request URI (ends with wmts.cgi)
+RewriteCond %{REQUEST_URI} ^{external_endpoint}/wmts\.cgi$ [NC]
+#Condition 2: Match query string for GetCapabilities
+RewriteCond %{QUERY_STRING} request=GetCapabilities [NC]
+#Condition 3: Match error status
+RewriteCond %{ENV:REDIRECT_STATUS} ^(404|500|502|503|504)$
+# Specify new URL to which request should be written.
+# P: mod_proxy rewrite. L: Last Rule
+# Use global s3 endpoint a client-provided URI of the requested resource
+RewriteRule ^(.*)$ https://%{ENV:S3_CONFIGS}.s3.amazonaws.com/capabilities/WMTS_GetCapabilities_{prefix}.xml [P,L]
+
 """
 
 TWMS_GC_SERVICE_TEMPLATE = """# Redirects for TWMS GC/GTS service
@@ -311,11 +324,14 @@ def make_apache_config(endpoint_config, layer_configs):
         gc_service_uri = endpoint_config.get('gc_service').get(
             'external_endpoint')
 
+    prefix = endpoint_config['wmts_service']['config_prefix']
+
     if gc_service_uri:
         gc_service_block = bulk_replace(
             GC_SERVICE_TEMPLATE, [('{internal_endpoint}', internal_endpoint),
                                   ('{gc_service_uri}', gc_service_uri),
-                                  ('{external_endpoint}', external_endpoint)])
+                                  ('{external_endpoint}', external_endpoint),
+                                  ('{prefix}', prefix)])
     else:
         gc_service_block = ''
         print(
