@@ -200,6 +200,10 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
             dateList = reqDateList
         else
             if sign > 0 then
+                local errorDom
+                return makeExceptionReport("InvalidParameterValue",
+                "date lists are: "..dateList.." end time is "..reqDateList.."",
+                "TIME", errorDom)
                 dateList = merge_time_service_results(dateList, reqDateList)
             else
                 dateList = merge_time_service_results(reqDateList, dateList)
@@ -989,8 +993,6 @@ local function makeTWMSGC(endpointConfig)
 end
 
 local function makeDD(endpointConfig, query_string)
-    print("graceal in the makeDD function")
-    print(query_string)
     local xml_header = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>'
     local layer = get_query_param("layer", query_string)
     local errorDom
@@ -1002,8 +1004,6 @@ local function makeDD(endpointConfig, query_string)
     if not domains then
         domains = "bbox,time"
     end
-    print("graceal1 domains is")
-    print(domains)
 
     local dom = xml.new("Domains", { ["xmlns:ows"] = "http://www.opengis.net/ows/1.1" } )
 
@@ -1040,13 +1040,10 @@ local function makeDD(endpointConfig, query_string)
     -- get periods
     if domains:find("time") then
         local time_query = get_query_param("time", query_string)
-        print("graceal1 timequery is")
-        print(time_query)
         local dateList = nil
         local periods_start
         local periods_end
         if time_query and time_query:lower() ~= "all" then
-            print("graceal1 in the if statement")
             local times = split('/', time_query)
             if #times == 1 then
                 -- When there's just one time specified, use it as a periods end bound if the time query starts with a '/'.
@@ -1067,13 +1064,14 @@ local function makeDD(endpointConfig, query_string)
                         "TIME", errorDom)
             end
         end
-        errorDom = makeExceptionReport("InvalidParameterValue",
-                        "Start time is: "..periods_start.." end time is "..periods_end.."",
-                        "TIME", errorDom)
+        -- errorDom = makeExceptionReport("InvalidParameterValue",
+        --                 "Start time is: "..periods_start.." end time is "..periods_end.."",
+        --                 "TIME", errorDom)
         if errorDom then
             return xml_header .. xml.tostring(errorDom)
         end
         dateList = getDateList(endpointConfig, layer, periods_start, periods_end, nil)
+        return xml_header .. xml.tostring(dateList)
         local periodsList = dateList and dateList[layer] and dateList[layer]["periods"] or {}
         local size = dateList and dateList[layer] and dateList[layer]["periods_in_range"] or "0"
         local timeDomainNode = xml.elem("DimensionDomain", {
@@ -1118,7 +1116,6 @@ function onearth_gc_service.handler(endpointConfig)
         elseif req == "gettileservice" then
             response = makeGTS(endpointConfig)
         elseif req == "describedomains" then
-            print("graceal in describe domains usecase ")
             response = makeDD(endpointConfig, query_string)
         else
             response = "Unrecognized REQUEST parameter: '" .. req .. "'. Request must be one of: WMTSGetCapabilities, TWMSGetCapabilities, GetTileService, DescribeDomains"
