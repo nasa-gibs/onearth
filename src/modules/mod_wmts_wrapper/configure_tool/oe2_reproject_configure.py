@@ -368,7 +368,7 @@ def get_layer_bands(identifier, mimetype, sample_tile_url):
                     print(identifier + ' is RGB')
         return str(bands)
     else:
-        if mimetype == 'image/lerc' or mimetype == 'image/lrc':
+        if mimetype == 'image/lerc':
             return '1'
         return '3'  # default to 3 bands if not PNG
 
@@ -514,7 +514,7 @@ def make_apache_layer_config(endpoint_config, layer_config):
 def make_mod_reproject_configs(endpoint_config, layer_config):
     format = f'Format {layer_config["mimetype"]}' if layer_config["mimetype"].startswith('image') else ''
 
-    bands = {'image/lerc': 1, 'image/lrc': 1}.get(format, 3)
+    bands = 1 if format=="image/lerc" else 3
     src_config = bulk_replace(
         MOD_REPROJECT_SOURCE_TEMPLATE,
         [('{size_x}', str(layer_config['src_size_x'])),
