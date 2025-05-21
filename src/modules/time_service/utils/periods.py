@@ -19,7 +19,7 @@ This script calculates periods and calls periods.lua to update redis
 import argparse
 from datetime import datetime
 import dateutil.relativedelta as rd
-import redis
+from oe_redis_utl import create_redis_client
 import sys
 import re
 
@@ -262,16 +262,16 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
     return period_strings                
     
 
-def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None, expiration=False, start_date=None, end_date=None, keep_existing_periods=False, find_smallest_interval=False, debug=False):
+def calculate_layer_periods(redis_cli, layer_key, new_datetime=None, expiration=False, start_date=None, end_date=None, keep_existing_periods=False, find_smallest_interval=False, debug=False):
     print(f'Calculating time periods for {layer_key}')
     DEBUG = debug
-    r = redis.Redis(host=redis_uri, port=redis_port)
+    redis_cli = redis.RedisCluster(host=redis_uri, port=redis_port)
 
     # Keep track of the layers that we should update
     layer_keys = [layer_key]
 
     # We will also be applying any changes we make to a layer specified by :copy_layer
-    copy_layer = r.get(f'{layer_key}:copy_dates')
+    copy_layer = redis_cli.get(f'{layer_key}:copy_dates')
     if copy_layer:
         # Use the same prefix as the main layer
         prefix_match = re.match(r'(.*):', layer_key)
@@ -284,17 +284,17 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
     # Add the new date to the list of dates for each key (if applicable)
     if new_datetime:
         for key in layer_keys:
-            result = r.zadd(f'{key}:dates', {new_datetime: 0})
+            result = redis_cli.zadd(f'{key}:dates', {new_datetime: 0})
             # Add the date to the expiration key (if applicable)
             if expiration:
-                result = r.zadd(f'{key}:expiration', {new_datetime: 0})
+                result = redis_cli.zadd(f'{key}:expiration', {new_datetime: 0})
             if result == 0:
                 if DEBUG:
                     print(f'{key}:dates already has {new_datetime}, no changes will be made')
                 return
     
     # Get all dates for the layer
-    dates_bytes = r.zrange(f'{layer_key}:dates', 0, -1)
+    dates_bytes = redis_cli.zrange(f'{layer_key}:dates', 0, -1)
     # convert to strings
     dates = [date_byte.decode('utf-8') for date_byte in dates_bytes]
 
@@ -313,24 +313,24 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
         calculated_periods = calculated_periods + new_periods
 
     for key in layer_keys:
-        is_set = r.type(f'{key}:periods') == b'set'
+        is_set = redis_cli.type(f'{key}:periods') == b'set'
         
         # Situations where we'll need to add all calculated periods to the periods key
         if keep_existing_periods or is_set:
-            if r.exists(f'{key}:periods') == 1 and not keep_existing_periods:
-                r.delete(f'{key}:periods')
+            if redis_cli.exists(f'{key}:periods') == 1 and not keep_existing_periods:
+                redis_cli.delete(f'{key}:periods')
             
             if len(calculated_periods) > 0:
                 # Add everything as an unsorted set only when the periods key is already
                 # an unsorted set and we're keeping all the existing periods
                 if keep_existing_periods and is_set:
-                    r.sadd(f'{key}:periods', *calculated_periods)
+                    redis_cli.sadd(f'{key}:periods', *calculated_periods)
                 else:
-                    r.zadd(f'{key}:periods', get_zadd_dict(calculated_periods))
+                    redis_cli.zadd(f'{key}:periods', get_zadd_dict(calculated_periods))
 
         # Otherwise, only do the minimum modifications necessary to Redis
         else:
-            existing_periods_bytes = r.zrange(f'{key}:periods', 0, -1)
+            existing_periods_bytes = redis_cli.zrange(f'{key}:periods', 0, -1)
             existing_periods = [period_bytes.decode('utf-8') for period_bytes in existing_periods_bytes]
             
             # Determine which calculated periods aren't already in redis
@@ -347,9 +347,9 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
 
             # Update redis
             if len(periods_to_add) > 0:
-                r.zadd(f'{key}:periods', get_zadd_dict(periods_to_add))
+                redis_cli.zadd(f'{key}:periods', get_zadd_dict(periods_to_add))
             if len(periods_to_remove) > 0:
-                r.zrem(f'{key}:periods', *periods_to_remove)
+                redis_cli.zrem(f'{key}:periods', *periods_to_remove)
 
     
     # Update :default key
@@ -375,7 +375,7 @@ def calculate_layer_periods(redis_port, redis_uri, layer_key, new_datetime=None,
         if len(calculated_periods) > 0 and 'PT' not in calculated_periods[-1]:
             default_date = re.sub(r'T00:00:00Z?', '', default_date)
         for key in layer_keys:
-            r.set(f'{key}:default', default_date)
+            redis_cli.set(f'{key}:default', default_date)
     else:
         print('Warning: no default date could be determined.')
     
@@ -435,8 +435,9 @@ if __name__ == '__main__':
                         help='Print additional log messages')
     args = parser.parse_args()
 
-    calculate_layer_periods(args.port,
-                            args.redis_uri,
+    redis_cli = create_redis_client(host=args.redis_uri, port=args.redis_port, debug=args.debug)
+
+    calculate_layer_periods(redis_cli,
                             args.layer_key,
                             args.new_datetime,
                             args.expiration,
