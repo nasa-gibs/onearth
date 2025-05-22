@@ -120,6 +120,23 @@ local function merge_time_service_results(t1, t2)
     return t1
 end
 
+local function makeExceptionReport(exceptionCode, exceptionText, locator, dom)
+    if not dom then
+        dom = xml.new("ExceptionReport", { ["xmlns:ows"] = "http://www.opengis.net/ows/1.1",
+                                     ["xmlns:xsi"] =  "http://www.w3.org/2001/XMLSchema-instance",
+                                     ["xsi:schemaLocation"] = "http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd",
+                                     ["version"] = "1.1.0",
+                                     ["xml:lang"] = "en" } )
+    end
+    local exceptionNode = xml.elem("Exception", {
+        ["exceptionCode"] = exceptionCode,
+        ["locator"] = locator,
+        xml.elem("ExceptionText", exceptionText)
+    })
+    dom:add_direct_child(exceptionNode)
+    return dom
+end
+
 local function getDateList(endpointConfig, layer, periods_start, periods_end, limit)
     local dateServiceUri = endpointConfig["time_service_uri"]
     local dateServiceKeys = endpointConfig["time_service_keys"]
@@ -200,10 +217,10 @@ local function getDateList(endpointConfig, layer, periods_start, periods_end, li
             dateList = reqDateList
         else
             if sign > 0 then
-                local errorDom
-                return makeExceptionReport("InvalidParameterValue",
-                "date lists are: "..dateList.." end time is "..reqDateList.."",
-                "TIME", errorDom)
+                -- local errorDom
+                -- return makeExceptionReport("InvalidParameterValue",
+                -- "date lists are: "..dateList.." end time is "..reqDateList.."",
+                -- "TIME", errorDom)
                 dateList = merge_time_service_results(dateList, reqDateList)
             else
                 dateList = merge_time_service_results(reqDateList, dateList)
@@ -308,23 +325,6 @@ local function stripDecodeBytesFormat(inputString)
         return b_removed
     end
     return inputString
-end
-
-local function makeExceptionReport(exceptionCode, exceptionText, locator, dom)
-    if not dom then
-        dom = xml.new("ExceptionReport", { ["xmlns:ows"] = "http://www.opengis.net/ows/1.1",
-                                     ["xmlns:xsi"] =  "http://www.w3.org/2001/XMLSchema-instance",
-                                     ["xsi:schemaLocation"] = "http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd",
-                                     ["version"] = "1.1.0",
-                                     ["xml:lang"] = "en" } )
-    end
-    local exceptionNode = xml.elem("Exception", {
-        ["exceptionCode"] = exceptionCode,
-        ["locator"] = locator,
-        xml.elem("ExceptionText", exceptionText)
-    })
-    dom:add_direct_child(exceptionNode)
-    return dom
 end
 
 -- GetTileService functions
