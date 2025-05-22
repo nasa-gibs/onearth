@@ -14,7 +14,7 @@ if redis.call("EXISTS", KEYS[1] .. ":best_layer") == 1 and ARGV[1] ~= nil then
   local best_layer = redis.call("GET", KEYS[1] .. ":best_layer")
   local best_key = layerPrefix .. best_layer -- concat best_layer to layer prefix
   -- if no best_config exists, then add this config as the only best_config
-  if redis.call("EXISTS", KEYS[1] .. ":best_config") ~= 1 then
+  if redis.call("EXISTS", best_key .. ":best_config") ~= 1 then
     redis.call("ZADD", best_key .. ":best_config", 0, KEYS[1]:sub(index +1,-1))
   end
   local layers = redis.call("ZREVRANGE", best_key .. ":best_config", 0, -1) -- get layers in reverse, higher score have priority 
