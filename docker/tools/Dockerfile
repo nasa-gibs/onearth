@@ -14,7 +14,7 @@ RUN dnf -y update && \
     dnf install -y 'dnf-command(config-manager)' && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-5.el9 && \
+	dnf install -y epel-release-9-9.el9 && \
     dnf install -y \
         rpm-build \
         lua-devel-5.4.4 \
@@ -27,7 +27,7 @@ RUN dnf -y update && \
         libjpeg-turbo-devel-2.0.90 \
         libxml2-devel-2.9.13 \
         luarocks-3.9.2 \
-        redis-6.2.7 \
+        redis-6.2.18 \
         cronie-1.5.7 \
         logrotate-3.18.0 \
         fribidi-devel-1.0.10 \
@@ -39,7 +39,7 @@ RUN dnf -y update && \
         proj-devel-8.2.0 \
         geos-3.13.1 \
         geos-devel-3.13.1 \
-        python3-devel-3.9.19 \
+        python3-devel-3.9.21 \
         protobuf-c-devel-1.3.3 && \
 	dnf clean all
 
