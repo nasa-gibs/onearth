@@ -265,7 +265,6 @@ def calculate_periods_from_config(dates, config, start_date, end_date, find_smal
 def calculate_layer_periods(redis_cli, layer_key, new_datetime=None, expiration=False, start_date=None, end_date=None, keep_existing_periods=False, find_smallest_interval=False, debug=False):
     print(f'Calculating time periods for {layer_key}')
     DEBUG = debug
-    redis_cli = redis.RedisCluster(host=redis_uri, port=redis_port)
 
     # Keep track of the layers that we should update
     layer_keys = [layer_key]
@@ -299,7 +298,7 @@ def calculate_layer_periods(redis_cli, layer_key, new_datetime=None, expiration=
     dates = [date_byte.decode('utf-8') for date_byte in dates_bytes]
 
     # Get all time configurations for the layer
-    configs_bytes = sorted(r.smembers(f'{layer_key}:config'))
+    configs_bytes = sorted(redis_cli.smembers(f'{layer_key}:config'))
     configs = [config_byte.decode('utf-8') for config_byte in configs_bytes]
 
     # Default to DETECT if no time configurations are found

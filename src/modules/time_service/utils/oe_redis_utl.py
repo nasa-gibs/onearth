@@ -15,9 +15,7 @@
 import redis
 import logging
 
-
-
-def create_redis_client(host, port, debug=False):
+def create_redis_client(host, port=6379, debug=False):
   logging.basicConfig(level= logging.DEBUG if debug else logging.INFO,
                     format='%(levelname)s - %(message)s')
   logger = logging.getLogger(__name__)
