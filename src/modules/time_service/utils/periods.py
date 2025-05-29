@@ -434,7 +434,7 @@ if __name__ == '__main__':
                         help='Print additional log messages')
     args = parser.parse_args()
 
-    redis_cli = create_redis_client(host=args.redis_uri, port=args.redis_port, debug=args.debug)
+    redis_cli = create_redis_client(host=args.redis_uri, port=args.port, debug=args.debug)
 
     calculate_layer_periods(redis_cli,
                             args.layer_key,
