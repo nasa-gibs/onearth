@@ -29,6 +29,15 @@ def calculate_layer_best(redis_cli, layer_key, new_datetime, debug=False):
     Calculate the best layer based on the provided layer_key and new_datetime.
     If new_datetime is provided, it will update the best layer for that date.
     If new_datetime is None, it will recalculate the best layer based on the existing dates.
+    Args:
+        redis_cli (redis.Redis or redis.RedisCluster): Redis client instance.
+        layer_key (str): The key for the layer in the format 'layer_prefix:layer_name'.
+        new_datetime (str or None): The new datetime to be added as a best key for this layer.
+        debug (bool): If True, set logging level to DEBUG, otherwise INFO.
+    Returns:
+        None
+    Raises:
+        redis.exceptions.RedisError: If there is an error with the Redis operations.
     """
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
     logger.info('Creating besting linking for %s', layer_key)
