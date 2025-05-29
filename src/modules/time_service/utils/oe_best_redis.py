@@ -25,55 +25,63 @@ logger = logging.getLogger(__name__)
 # This will clear existing :best and :dates keys for the best layer and regenerate them
 # based on the :dates keys the layers specified by layer_prefix:best_layer_name:best_config.
 def calculate_layer_best(redis_cli, layer_key, new_datetime, debug=False):
-  logger.setLevel(logging.DEBUG if debug else logging.INFO)
-  logger.info(f'Creating besting linking for {layer_key}')
+    """
+    Calculate the best layer based on the provided layer_key and new_datetime.
+    If new_datetime is provided, it will update the best layer for that date.
+    If new_datetime is None, it will recalculate the best layer based on the existing dates.
+    """
+    logger.setLevel(logging.DEBUG if debug else logging.INFO)
+    logger.info('Creating besting linking for %s', layer_key)
 
-  prefix_match = re.match(r'(.*):', layer_key)
-  layer_prefix = prefix_match.group(1)
+    prefix_match = re.match(r'(.*):', layer_key)
+    layer_prefix = prefix_match.group(1)
 
-  if redis_cli.exists(f'{layer_key}:best_layer') and new_datetime is not None:
-    best_layer = redis_cli.get(f'{layer_key}:best_layer').decode('utf-8')
-    best_key = f'{layer_prefix}:{best_layer}'
+    if redis_cli.exists(f'{layer_key}:best_layer') and new_datetime is not None:
+        best_layer = redis_cli.get(f'{layer_key}:best_layer').decode('utf-8')
+        best_key = f'{layer_prefix}:{best_layer}'
 
-    # If no best_config exists, then add this config as the only best_config
-    if not redis_cli.exists(f'{best_key}:best_config'):
-      redis_cli.zadd(f'{best_key}:best_config', {layer_key.split(':')[-1]: 0})
-    
-    # Get layers in reverse, higher score have priority 
-    layers = redis_cli.zrevrange(f'{best_key}:best_config', 0, -1)
-    logger.info(f'Checking layers for {best_key}:best_config is {layers}')
-    found = False
-    
-    #Loops through best_config layers, checks if date exist
-    for layer in layers:
-      logger.info(f'Checking ZSCORE for {layer_prefix}:{layer.decode("utf-8")}:dates for {new_datetime}')
-      score = redis_cli.zscore(f'{layer_prefix}:{layer.decode("utf-8")}:dates', new_datetime)
-      if score is not None:
-        # Update :best hset with date and best layer
-        redis_cli.hmset(f'{best_key}:best', {f'{new_datetime}Z': layer.decode('utf-8')})
-        # Add date to best_layer:dates zset
-        redis_cli.zadd(f'{best_key}:dates', {new_datetime: 0})
-        found = True
-        break
+        # If no best_config exists, then add this config as the only best_config
+        if not redis_cli.exists(f'{best_key}:best_config'):
+            redis_cli.zadd(f'{best_key}:best_config', {layer_key.split(':')[-1]: 0})
 
-    #if the date is not found within layers of best_config key or the key was deleted
-    if not found:
-      redis_cli.hdel(f'{best_key}:best', f'{new_datetime}Z') # best dates have a Z
-      redis_cli.zrem(f'{best_key}:dates', new_datetime)
-      logger.warning(f'Deleted or not configured, removing Best LAYER: {best_key} DATE: {new_datetime}')
+        # Get layers in reverse, higher score have priority 
+        layers = redis_cli.zrevrange(f'{best_key}:best_config', 0, -1)
+        logger.info('Checking layers for %s:best_config is %s', best_key, layers)
+        found = False
 
-  # if not best_layer, then recalculate :best and :dates keys for best layer based on the :dates keys of the layers listed in :best_config
-  elif new_datetime is None:
-    source_layers = redis_cli.zrange(f'{layer_key}:best_config', 0, -1)
-    if source_layers:
-      redis_cli.delete(f'{layer_key}::best')
-      redis_cli.delete(f'{layer_key}:dates')
-      for source_layer in source_layers:
-        source_layer_key = f'{layer_prefix}:{source_layer.decode("utf-8")}'
-        dates = redis_cli.zrange(f'{source_layer_key}:dates', 0, -1)
-        for date in dates:
-          redis_cli.hmset(f'{layer_key}:best', {date, source_layer.decode('utf-8')})
-          redis_cli.zadd(f'{layer_key}:dates', {new_datetime: 0})
+        #Loops through best_config layers, checks if date exist
+        for layer in layers:
+            logger.info('Checking ZSCORE for %s:%s:dates for %s', layer_prefix,
+                         layer.decode('utf-8'), new_datetime)
+            score = redis_cli.zscore(f'{layer_prefix}:{layer.decode("utf-8")}:dates', new_datetime)
+            if score is not None:
+                # Update :best hset with date and best layer
+                redis_cli.hmset(f'{best_key}:best', {f'{new_datetime}Z': layer.decode('utf-8')})
+                # Add date to best_layer:dates zset
+                redis_cli.zadd(f'{best_key}:dates', {new_datetime: 0})
+                found = True
+                break
+
+        # if the date is not found within layers of best_config key or the key was deleted
+        if not found:
+            redis_cli.hdel(f'{best_key}:best', f'{new_datetime}Z') # best dates have a Z
+            redis_cli.zrem(f'{best_key}:dates', new_datetime)
+            logger.warning('Deleted or not configured, removing Best LAYER: %s DATE: %s',
+                           best_key, new_datetime)
+
+    # if not best_layer, then recalculate :best and :dates keys for best layer based on 
+    # the :dates keys of the layers listed in :best_config
+    elif new_datetime is None:
+        source_layers = redis_cli.zrange(f'{layer_key}:best_config', 0, -1)
+        if source_layers:
+            redis_cli.delete(f'{layer_key}::best')
+            redis_cli.delete(f'{layer_key}:dates')
+            for source_layer in source_layers:
+                source_layer_key = f'{layer_prefix}:{source_layer.decode("utf-8")}'
+                dates = redis_cli.zrange(f'{source_layer_key}:dates', 0, -1)
+                for date in dates:
+                    redis_cli.hmset(f'{layer_key}:best', {date, source_layer.decode('utf-8')})
+                    redis_cli.zadd(f'{layer_key}:dates', {new_datetime: 0})
 
 
 # Main routine to be run in CLI mode
@@ -103,11 +111,12 @@ if __name__ == '__main__':
                         help='Print additional log messages')
     args = parser.parse_args()
 
-    redis_cli = create_redis_client(host=args.redis_uri, port=args.redis_port, debug=args.debug)
+    client = create_redis_client(host=args.redis_uri, port=args.redis_port, debug=args.debug)
 
-    calculate_layer_best(redis_cli,
+    calculate_layer_best(client,
                             args.layer_key,
                             args.new_datetime,
                             args.debug
                         )
-    if redis_cli: redis_cli.close()
+    if client:
+        client.close()
