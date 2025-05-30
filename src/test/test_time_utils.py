@@ -153,6 +153,7 @@ class TestTimeUtils(unittest.TestCase):
 
         restart_apache()
 
+        shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py", os.getcwd() + '/oe_redis_utl.py')
         shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.py", os.getcwd() + '/periods.py')
 
     def test_time_scrape_s3_keys(self):

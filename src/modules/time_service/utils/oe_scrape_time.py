@@ -29,6 +29,7 @@ from botocore.stub import Stubber
 import os
 import threading
 from periods import calculate_layer_periods
+from oe_redis_utl import create_redis_client
 
 TEST_RESPONSE = {
     'IsTruncated': False,
@@ -209,7 +210,7 @@ def updateDateService(redis_uri,
                       reproject=False,
                       check_exists=False,
                       s3_inventory=False):
-    r = redis.Redis(host=redis_uri, port=redis_port)
+    r = create_redis_client(host=redis_uri, port=redis_port)
     created = r.mget('created')[0]
     if created is None:
         created_time = datetime.now().timestamp()
@@ -286,18 +287,18 @@ def updateDateService(redis_uri,
                         r.zadd(f'epsg3857:layer:{layer}:dates', {date.isoformat(): 0})
                         best_script(keys=[f'epsg3857:layer:{layer}'], args=[date.isoformat()])
 
-                calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'{proj}:layer:{layer}')
+                calculate_layer_periods(redis_cli=r, layer_key=f'{proj}:layer:{layer}')
                 if reproject and str(proj) == 'epsg4326':
-                    calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'epsg3857:layer:{layer}')
+                    calculate_layer_periods(redis_cli=r, layer_key=f'epsg3857:layer:{layer}')
 
                 # check for best layer
                 bestLayer=r.get(f'{proj}:layer:{layer}:best_layer')
                 print("Best Layer: ", bestLayer)
                 if bestLayer is not None:
                     bestLayer=bestLayer.decode("utf-8")
-                    calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'{proj}:layer:{bestLayer}')
+                    calculate_layer_periods(redis_cli=r, layer_key=f'{proj}:layer:{bestLayer}')
                     if reproject and str(proj) == 'epsg4326':
-                        calculate_layer_periods(redis_port=redis_port, redis_uri=redis_uri, layer_key=f'epsg3857:layer:{bestLayer}')
+                        calculate_layer_periods(redis_cli=r, layer_key=f'epsg3857:layer:{bestLayer}')
 
         finally:
             scrape_semaphore.release()

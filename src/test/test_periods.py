@@ -28,6 +28,7 @@ import redis
 from dateutil import relativedelta as rd
 import shutil
 
+shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py", os.getcwd() + '/oe_redis_utl.py')
 shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.py", os.getcwd() + '/periods.py')
 from periods import get_zadd_dict, get_rd_from_interval, get_duration_from_rd, find_periods_and_breaks, calculate_periods_from_config, calculate_layer_periods
 
@@ -243,7 +244,7 @@ class TestPeriods(unittest.TestCase):
         expected_default = "2025-01-01T10:00:00Z"
 
         self.redis_client.zadd(layer_key + ":dates", dates)
-        calculate_layer_periods(self.port, self.host, layer_key)
+        calculate_layer_periods(self.redis_client, layer_key)
 
         periods = self.redis_client.zrange(layer_key + ":periods", 0, -1)
         default = self.redis_client.get(layer_key + ":default").decode('utf-8')
@@ -264,7 +265,7 @@ class TestPeriods(unittest.TestCase):
         expected_periods = [b'2025-03-10T12:00:00Z/2025-03-10T14:00:00Z/PT1H', b'2025-03-10T18:00:00Z/2025-03-10T20:00:00Z/PT1H']
 
         self.redis_client.zadd(layer_key + ":dates", dates)
-        calculate_layer_periods(self.port, self.host, layer_key, new_date)
+        calculate_layer_periods(self.redis_client, layer_key, new_date)
 
         periods = self.redis_client.zrange(layer_key + ":periods", 0, -1)
         default = self.redis_client.get(layer_key + ":default").decode('utf-8')
@@ -278,7 +279,7 @@ class TestPeriods(unittest.TestCase):
         
         # Re-run periods.py with a new date
         new_date = "2025-03-10T23:00:00"
-        calculate_layer_periods(self.port, self.host, layer_key, new_date, keep_existing_periods=True)
+        calculate_layer_periods(self.redis_client, layer_key, new_date, keep_existing_periods=True)
         
         # We expect to keep the previously existing periods despite a change in the underlying dates
         expected_periods.append(b'2025-03-10T23:00:00Z/2025-03-10T23:00:00Z/P1D')
