@@ -70,6 +70,11 @@ RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GD
     rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
     rm -rf /tmp/*
 
+# Fix outdated packaging installed in this environment. It does not support the "strip_trailing_zero" argument in
+# canonicalize_version, which was causing GDAL build error
+RUN dnf remove -y python3-packaging || echo "python3-packaging was not found or removal failed, attempting to continue."
+RUN pip install --force-reinstall 'packaging>=25.0'
+
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
 
 # Install mrf_apps
