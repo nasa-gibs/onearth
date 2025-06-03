@@ -138,45 +138,47 @@ local function makeExceptionReport(exceptionCode, exceptionText, locator, dom)
 end
 
 local function testingFunction(endpointConfig, layer, periods_start, periods_end, limit)
-    local errorDom
-    return makeExceptionReport("InvalidParameterValue", "At the end of function", "TIME", errorDom)
-    -- local dateServiceUri = endpointConfig["time_service_uri"]
-    -- local dateServiceKeys = endpointConfig["time_service_keys"]
+    local dateServiceUri = endpointConfig["time_service_uri"]
+    local dateServiceKeys = endpointConfig["time_service_keys"]
 
-    -- if string.sub(dateServiceUri, -1) ~= "?" then
-    --     dateServiceUri = dateServiceUri .. "?"
-    -- end
+    if string.sub(dateServiceUri, -1) ~= "?" then
+        dateServiceUri = dateServiceUri .. "?"
+    end
     
-    -- -- assemble the base request URI
-    -- local base_query_options = {}
-    -- if dateServiceKeys then
-    --     for idx, value in ipairs(dateServiceKeys) do
-    --         base_query_options[#base_query_options + 1] = "key" .. tostring(idx) .. "=" .. value
-    --     end
-    -- end
-    -- if layer then
-    --     base_query_options[#base_query_options + 1] = "layer=" .. layer
-    -- end
-    -- if periods_start then
-    --     base_query_options[#base_query_options + 1] = 'periods_start=' .. periods_start
-    -- end
-    -- if periods_end then
-    --     base_query_options[#base_query_options + 1] = 'periods_end=' .. periods_end
-    -- end
+    -- assemble the base request URI
+    local base_query_options = {}
+    if dateServiceKeys then
+        for idx, value in ipairs(dateServiceKeys) do
+            base_query_options[#base_query_options + 1] = "key" .. tostring(idx) .. "=" .. value
+        end
+    end
+    if layer then
+        base_query_options[#base_query_options + 1] = "layer=" .. layer
+    end
+    if periods_start then
+        base_query_options[#base_query_options + 1] = 'periods_start=' .. periods_start
+    end
+    if periods_end then
+        base_query_options[#base_query_options + 1] = 'periods_end=' .. periods_end
+    end
 
-    -- -- Requests for more than 100 periods will be broken up into multiple requests to the time service.
-    -- -- If limit wasn't specified, then we will continue performing requests until all periods have been obtained
-    -- local left_to_req = limit and math.abs(limit) or nil
-    -- local sign
-    -- if limit and limit > 0 or not limit then
-    --     sign = 1
-    -- else
-    --     sign = -1
-    -- end
-    -- local max_req_amt = 100
-    -- local dateList = nil
-    -- local skip = 0
-    -- while not left_to_req or left_to_req > 0 do
+    -- Requests for more than 100 periods will be broken up into multiple requests to the time service.
+    -- If limit wasn't specified, then we will continue performing requests until all periods have been obtained
+    local left_to_req = limit and math.abs(limit) or nil
+    local sign
+    if limit and limit > 0 or not limit then
+        sign = 1
+    else
+        sign = -1
+    end
+    local max_req_amt = 100
+    local dateList = nil
+    local skip = 0
+    
+    while not left_to_req or left_to_req > 0 do
+        local errorDom
+        return makeExceptionReport("InvalidParameterValue", "in the loop", "TIME", errorDom)
+    end
     --     local requestUri = dateServiceUri
     --     local current_query_options = {}
     --     for k, v in pairs(base_query_options) do
