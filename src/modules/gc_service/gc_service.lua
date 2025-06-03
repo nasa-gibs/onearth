@@ -138,110 +138,110 @@ local function makeExceptionReport(exceptionCode, exceptionText, locator, dom)
 end
 
 local function testingFunction(endpointConfig, layer, periods_start, periods_end, limit)
-    local dateServiceUri = endpointConfig["time_service_uri"]
-    local dateServiceKeys = endpointConfig["time_service_keys"]
-
-    if string.sub(dateServiceUri, -1) ~= "?" then
-        dateServiceUri = dateServiceUri .. "?"
-    end
-    
-    -- assemble the base request URI
-    local base_query_options = {}
-    if dateServiceKeys then
-        for idx, value in ipairs(dateServiceKeys) do
-            base_query_options[#base_query_options + 1] = "key" .. tostring(idx) .. "=" .. value
-        end
-    end
-    if layer then
-        base_query_options[#base_query_options + 1] = "layer=" .. layer
-    end
-    if periods_start then
-        base_query_options[#base_query_options + 1] = 'periods_start=' .. periods_start
-    end
-    if periods_end then
-        base_query_options[#base_query_options + 1] = 'periods_end=' .. periods_end
-    end
-
-    -- Requests for more than 100 periods will be broken up into multiple requests to the time service.
-    -- If limit wasn't specified, then we will continue performing requests until all periods have been obtained
-    local left_to_req = limit and math.abs(limit) or nil
-    local sign
-    if limit and limit > 0 or not limit then
-        sign = 1
-    else
-        sign = -1
-    end
-    local max_req_amt = 100
-    local dateList = nil
-    local skip = 0
-    while not left_to_req or left_to_req > 0 do
-        local requestUri = dateServiceUri
-        local current_query_options = {}
-        for k, v in pairs(base_query_options) do
-            current_query_options[k] = v
-        end
-        
-        -- assemble the URI for this particular request
-        if left_to_req then
-            local req_amt = math.min(left_to_req, max_req_amt)
-            current_query_options[#current_query_options + 1] = 'limit=' .. tostring(sign * req_amt)
-            current_query_options[#current_query_options + 1] = 'skip=' .. tostring(skip)
-        else
-            current_query_options[#current_query_options + 1] = 'limit=' .. tostring(max_req_amt)
-        end
-
-        local queryString = join(current_query_options, "&")
-        requestUri = requestUri .. queryString
-        
-        -- perform the request
-        local success, headers, stream = pcall(function ()
-            return assert(request.new_from_uri(requestUri):go(300))
-        end)
-        if not success then
-            print("Error: " .. headers .. " -- Skipping periods for this layer")
-            return {}
-        end
-        
-        local body = assert(stream:get_body_as_string())
-        if headers:get ":status" ~= "200" then
-            print("Error contacting date service: " .. body)
-            return nil
-        end
-
-        -- decode the request and merge with the results of any previous requests
-        local reqDateList = JSON:decode(body)
-        if reqDateList["err_msg"] == "Invalid Layer" then
-            return {}
-        end
-        if not dateList then
-            dateList = reqDateList
-        else
-            if sign > 0 then
-                dateList = merge_time_service_results(dateList, reqDateList)
-            else
-                dateList = merge_time_service_results(reqDateList, dateList)
-            end
-        end
-
-        -- after the first request, determine how many more requests we need to perform
-        if not left_to_req or skip == 0 then
-            local max_to_req = 0
-            for _, v in pairs(dateList) do
-                max_to_req = math.max(max_to_req, tonumber(v["periods_in_range"]))
-            end
-            -- when a limit isn't specified, we'll request the maximum amount of periods
-            if not left_to_req then
-                left_to_req = max_to_req
-            -- when a limit is specified, we'll ensure that the limit is no greater than the maximum amount of periods
-            elseif skip == 0 then
-                left_to_req = math.min(max_to_req, left_to_req)
-            end
-        end
-        left_to_req = left_to_req - max_req_amt
-        skip = skip + max_req_amt
-    end
     local errorDom
     return makeExceptionReport("InvalidParameterValue", "At the end of function", "TIME", errorDom)
+    -- local dateServiceUri = endpointConfig["time_service_uri"]
+    -- local dateServiceKeys = endpointConfig["time_service_keys"]
+
+    -- if string.sub(dateServiceUri, -1) ~= "?" then
+    --     dateServiceUri = dateServiceUri .. "?"
+    -- end
+    
+    -- -- assemble the base request URI
+    -- local base_query_options = {}
+    -- if dateServiceKeys then
+    --     for idx, value in ipairs(dateServiceKeys) do
+    --         base_query_options[#base_query_options + 1] = "key" .. tostring(idx) .. "=" .. value
+    --     end
+    -- end
+    -- if layer then
+    --     base_query_options[#base_query_options + 1] = "layer=" .. layer
+    -- end
+    -- if periods_start then
+    --     base_query_options[#base_query_options + 1] = 'periods_start=' .. periods_start
+    -- end
+    -- if periods_end then
+    --     base_query_options[#base_query_options + 1] = 'periods_end=' .. periods_end
+    -- end
+
+    -- -- Requests for more than 100 periods will be broken up into multiple requests to the time service.
+    -- -- If limit wasn't specified, then we will continue performing requests until all periods have been obtained
+    -- local left_to_req = limit and math.abs(limit) or nil
+    -- local sign
+    -- if limit and limit > 0 or not limit then
+    --     sign = 1
+    -- else
+    --     sign = -1
+    -- end
+    -- local max_req_amt = 100
+    -- local dateList = nil
+    -- local skip = 0
+    -- while not left_to_req or left_to_req > 0 do
+    --     local requestUri = dateServiceUri
+    --     local current_query_options = {}
+    --     for k, v in pairs(base_query_options) do
+    --         current_query_options[k] = v
+    --     end
+        
+    --     -- assemble the URI for this particular request
+    --     if left_to_req then
+    --         local req_amt = math.min(left_to_req, max_req_amt)
+    --         current_query_options[#current_query_options + 1] = 'limit=' .. tostring(sign * req_amt)
+    --         current_query_options[#current_query_options + 1] = 'skip=' .. tostring(skip)
+    --     else
+    --         current_query_options[#current_query_options + 1] = 'limit=' .. tostring(max_req_amt)
+    --     end
+
+    --     local queryString = join(current_query_options, "&")
+    --     requestUri = requestUri .. queryString
+        
+    --     -- perform the request
+    --     local success, headers, stream = pcall(function ()
+    --         return assert(request.new_from_uri(requestUri):go(300))
+    --     end)
+    --     if not success then
+    --         print("Error: " .. headers .. " -- Skipping periods for this layer")
+    --         return {}
+    --     end
+        
+    --     local body = assert(stream:get_body_as_string())
+    --     if headers:get ":status" ~= "200" then
+    --         print("Error contacting date service: " .. body)
+    --         return nil
+    --     end
+
+    --     -- decode the request and merge with the results of any previous requests
+    --     local reqDateList = JSON:decode(body)
+    --     if reqDateList["err_msg"] == "Invalid Layer" then
+    --         return {}
+    --     end
+    --     if not dateList then
+    --         dateList = reqDateList
+    --     else
+    --         if sign > 0 then
+    --             dateList = merge_time_service_results(dateList, reqDateList)
+    --         else
+    --             dateList = merge_time_service_results(reqDateList, dateList)
+    --         end
+    --     end
+
+    --     -- after the first request, determine how many more requests we need to perform
+    --     if not left_to_req or skip == 0 then
+    --         local max_to_req = 0
+    --         for _, v in pairs(dateList) do
+    --             max_to_req = math.max(max_to_req, tonumber(v["periods_in_range"]))
+    --         end
+    --         -- when a limit isn't specified, we'll request the maximum amount of periods
+    --         if not left_to_req then
+    --             left_to_req = max_to_req
+    --         -- when a limit is specified, we'll ensure that the limit is no greater than the maximum amount of periods
+    --         elseif skip == 0 then
+    --             left_to_req = math.min(max_to_req, left_to_req)
+    --         end
+    --     end
+    --     left_to_req = left_to_req - max_req_amt
+    --     skip = skip + max_req_amt
+    -- end
     -- return dateList
 end
 
