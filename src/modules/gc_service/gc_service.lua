@@ -240,7 +240,9 @@ local function testingFunction(endpointConfig, layer, periods_start, periods_end
         left_to_req = left_to_req - max_req_amt
         skip = skip + max_req_amt
     end
-    return dateList
+    local errorDom
+    return makeExceptionReport("InvalidParameterValue", "At the end of function", "TIME", errorDom)
+    -- return dateList
 end
 
 local function getDateList(endpointConfig, layer, periods_start, periods_end, limit)
