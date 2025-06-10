@@ -180,8 +180,6 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     local periods_end_date = periods_end and date_util(periods_end) or nil
     local first_period_start_date = #all_periods > 0 and date_util(split("/", all_periods[1])[1]) or nil
     local last_period_end_date = #all_periods > 0 and date_util(split("/", all_periods[#all_periods])[2]) or nil
-    print("graceal first period start  date "..first_period_start_date)
-    print("graceal last period end date "..last_period_end_date)
     
     -- first, check if there's any data in the range
     if (periods_start_date and last_period_end_date and periods_start_date > last_period_end_date) or
@@ -195,7 +193,6 @@ local function range_handler (default, all_periods, periods_start, periods_end)
         -- if the requested periods_start_date is less than the first period start date, don't need to call time snap
         -- added this to not go into if statement increasing idx by 1 in this use case 
         if first_period_start_date and periods_start_date < first_period_start_date then
-            print("graceal in if statement that periods_start_date is less than first period start date ")
             start_snap_period_idx = 1
         else
             start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
@@ -221,7 +218,6 @@ local function range_handler (default, all_periods, periods_start, periods_end)
         for i = start_snap_period_idx, end_snap_period_idx do
             filtered_periods[#filtered_periods+1] = all_periods[i]
         end
-
         if start_snap_date then
             local parsed_period = split("/", filtered_periods[1])
             local start_snap_date_string
