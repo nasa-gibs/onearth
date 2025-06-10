@@ -190,15 +190,21 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     -- handle when we want periods and default between two dates
     local start_snap_date, start_snap_period_idx, end_snap_date, end_snap_period_idx
     if periods_start_date then
-        start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
-        -- if the periods start date doesn't fall within a period, then we need to skip the period that was last examined
-        if start_snap_date == nil and #all_periods > 1 then
-            start_snap_period_idx = start_snap_period_idx + 1
-        end
+        -- if the requested periods_start_date is less than the first period start date, don't need to call time snap
+        -- added this to not go into if statement increasing idx by 1 in this use case 
+        if first_period_start_date and periods_start_date <= first_period_start_date then
+            start_snap_period_idx = 1
+        else
+            start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
+            -- if the periods start date doesn't fall within a period, then we need to skip the period that was last examined
+            if start_snap_date == nil and #all_periods > 1 then
+                start_snap_period_idx = start_snap_period_idx + 1
+            end
+        end  
     else
         start_snap_period_idx = 1
     end
-    if periods_end then
+    if periods_end_date then
         end_snap_date, end_snap_period_idx = time_snap(periods_end_date, all_periods, true)
     else
         end_snap_period_idx = #all_periods
@@ -208,7 +214,7 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     -- Ensure that there's data between periods_start and periods_end.
     -- The start snap date taking place after end snap date would mean that there's no data within the bounds.
     if not (start_snap_date and end_snap_date and start_snap_date > end_snap_date) then
-         -- trim the list of periods so that the period in which we found the snap date starts with the snap date
+        -- trim the list of periods so that the period in which we found the snap date starts with the snap date
         for i = start_snap_period_idx, end_snap_period_idx do
             filtered_periods[#filtered_periods+1] = all_periods[i]
         end
