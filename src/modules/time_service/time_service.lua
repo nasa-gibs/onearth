@@ -192,7 +192,7 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     if periods_start_date then
         -- if the requested periods_start_date is less than the first period start date, don't need to call time snap
         -- added this to not go into if statement increasing idx by 1 in this use case 
-        if first_period_start_date and periods_start_date < first_period_start_date then
+        if first_period_start_date and periods_start_date <= first_period_start_date then
             start_snap_period_idx = 1
         else
             start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
