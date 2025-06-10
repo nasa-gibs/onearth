@@ -117,10 +117,8 @@ local function time_snap (req_date, periods, snap_to_previous)
         mid = left + math.floor( ( right - left ) / 2 )
         local parsed_period = split("/", periods[mid])
         local period_date = date_util(parsed_period[1])
-        print("graceal in loop, left "..left.." right "..right.." mid "..mid.." and period_date "..period_date)
     
         if req_date == period_date then
-            print("graceal in the if statement where req_date and period_date are equal")
             snap_date = req_date
             snap_period_idx = mid
             break
@@ -128,20 +126,14 @@ local function time_snap (req_date, periods, snap_to_previous)
     
         local end_date
         if parsed_period[2] then -- this is a period, so look at both dates
-            print("graceal in if statement if parsed_period[2]")
             if req_date > period_date then
-                print("graceal in the if statement that req_date is more than period_date")
                 local interval_length = tonumber(string.match(parsed_period[3], "%d+"))
                 local interval_size = string.match(parsed_period[3], "%a+$")
-                print("graceal interval_length "..interval_length.." and interval_size "..interval_size)
                 if string.sub(parsed_period[3], 1, 2) == "PT" and interval_size == "M" then
-                    print("graceal in the if statement setting interval size to MM")
                     interval_size = "MM"
                 end
-                print("graceal about to make the call to get_snap_date with parsed_period[2]"..parsed_period[2])
                 snap_date = get_snap_date(period_date:copy(), req_date, date_util(parsed_period[2]), interval_length, interval_size, snap_to_previous)
                 snap_period_idx = mid
-                print("graceal1 after setting snap_date "..snap_date.." and snap_period_idx "..snap_period_idx)
             end
         end
     
@@ -200,9 +192,10 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     -- handle when we want periods and default between two dates
     local start_snap_date, start_snap_period_idx, end_snap_date, end_snap_period_idx
     if periods_start_date then
-        -- if the requested date is less than the first period start date, don't need to call time snap
+        -- if the requested periods_start_date is less than the first period start date, don't need to call time snap
         -- added this to not go into if statement increasing idx by 1 in this use case 
-        if first_period_start_date and req_date < first_period_start_date then
+        if first_period_start_date and periods_start_date < first_period_start_date then
+            print("graceal in if statement that periods_start_date is less than first period start date ")
             start_snap_period_idx = 1
         else
             start_snap_date, start_snap_period_idx = time_snap(periods_start_date, all_periods, false)
@@ -215,12 +208,7 @@ local function range_handler (default, all_periods, periods_start, periods_end)
         start_snap_period_idx = 1
     end
     if periods_end_date then
-        -- if the requested date is greater than the last period end date, don't need to call time snap
-        if last_period_end_date and req_date > last_period_end_date then
-            end_snap_period_idx = #all_periods
-        else
-            end_snap_date, end_snap_period_idx = time_snap(periods_end_date, all_periods, true)
-        end
+        end_snap_date, end_snap_period_idx = time_snap(periods_end_date, all_periods, true)
     else
         end_snap_period_idx = #all_periods
     end
@@ -229,36 +217,12 @@ local function range_handler (default, all_periods, periods_start, periods_end)
     -- Ensure that there's data between periods_start and periods_end.
     -- The start snap date taking place after end snap date would mean that there's no data within the bounds.
     if not (start_snap_date and end_snap_date and start_snap_date > end_snap_date) then
-        if start_snap_date then 
-            print("graceal in if statement where assigning filtered periods and start_snap_date "..start_snap_date)
-        end 
-        if end_snap_date then 
-            print("graceal in if statement where assigning filtered periods and end_snap_date "..end_snap_date)
-        end
-        if start_snap_period_idx then 
-            print("graceal start_snap_period_idx "..start_snap_period_idx)
-        end
-        if end_snap_period_idx then
-            print("graceal end_snap_period_idx "..end_snap_period_idx)
-        end
-        -- print("graceal all periods all_periods[0] "..all_periods[0])
-        -- print("graceal all periods all_periods[1] "..all_periods[1])
-        -- print("graceal all periods all_periods[2] "..all_periods[2])
-
         -- trim the list of periods so that the period in which we found the snap date starts with the snap date
         for i = start_snap_period_idx, end_snap_period_idx do
             filtered_periods[#filtered_periods+1] = all_periods[i]
         end
-        -- print("graceal trying to print filtered periods ")
-        -- for index, value in ipairs(filtered_periods) do
-        -- print("Index:", index)
-        --     for k, v in pairs(value) do
-        --         print("  ", k, v)
-        --     end
-        -- end
 
         if start_snap_date then
-            print("graceal start snap date was set so in if statement")
             local parsed_period = split("/", filtered_periods[1])
             local start_snap_date_string
             if start_snap_date:gethours() > 0 or start_snap_date:getminutes() > 0 or start_snap_date:getseconds() > 0 then
@@ -340,16 +304,6 @@ local function redis_handler (options)
         client:quit()
     end
     return function (layer_name, uuid, lookup_keys, snap_date_string, periods_start, periods_end)
-        print("graceal in redis handler function with snap_date_string updated3")
-        -- if snap_date_string then
-        --     print("graceal snap_date_string "..snap_date_string)
-        -- end
-        -- if periods_start then
-        --     print("graceal periods_start "..periods_start)
-        -- end
-        -- if periods_end then
-        --     print("graceal periods_end ".. periods_end)
-        -- end
         local returnValue
         local start_db_request = socket.gettime() * 1000 * 1000
         local prefix_string = ""
@@ -416,9 +370,7 @@ local function redis_handler (options)
                     -- process periods
                     table.sort(periods)
                     if periods_start or periods_end then
-                        print("graceal about to call the range handler function")
                         default, periods = range_handler(default, periods, periods_start, periods_end) 
-                        print("graceal in if statement below range_handler")
                     end
                     if default and periods then
                         returnValue = {[layer_name] = {
@@ -510,7 +462,6 @@ function onearthTimeService.timeService (layer_handler_options, filename_options
         -- A layer but no date returns the default date and available periods for that layer
         if not request_date_string then
             -- use math.floor(a + 0.5) to round to the nearest integer to prevent "number has no integer representation" error
-            print("graceal in if statement I think is probably for describe domains in timeservice")
             print(string.format("step=timesnap_request duration=%u uuid=%s", math.floor(socket.gettime() * 1000 * 1000 - start_timestamp + 0.5), uuid))
             if limit or skip > 0 then
                 layer_datetime_info = apply_skip_limit(layer_datetime_info, skip, limit)
