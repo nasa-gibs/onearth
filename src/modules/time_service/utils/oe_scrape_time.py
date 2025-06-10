@@ -28,8 +28,9 @@ import botocore.session
 from botocore.stub import Stubber
 import os
 import threading
-from periods import calculate_layer_periods
 from oe_redis_utl import create_redis_client
+from periods import calculate_layer_periods
+from oe_best_redis import calculate_layer_best
 
 TEST_RESPONSE = {
     'IsTruncated': False,
@@ -260,10 +261,6 @@ def updateDateService(redis_uri,
     else:
         objects = reduce(keyMapper, getAllKeys(s3, bucket), {})
 
-    with open(os.path.dirname(os.path.realpath(__file__)) + '/best.lua',
-              'r') as f:
-        lua_script2 = f.read()
-    best_script = r.register_script(lua_script2)
 
     scrape_threads    = []
     scrape_semaphore  = threading.BoundedSemaphore(10)
@@ -282,10 +279,10 @@ def updateDateService(redis_uri,
 
                 for date in sorted_parsed_dates:
                     r.zadd(f'{proj}:layer:{layer}:dates', {date.isoformat(): 0})
-                    best_script(keys=[f'{proj}:layer:{layer}'], args=[date.isoformat()])
+                    calculate_layer_best(redis_cli=r, layer_key=f'{proj}:layer:{layer}', new_datetime=date.isoformat())
                     if reproject and str(proj) == 'epsg4326':
                         r.zadd(f'epsg3857:layer:{layer}:dates', {date.isoformat(): 0})
-                        best_script(keys=[f'epsg3857:layer:{layer}'], args=[date.isoformat()])
+                        calculate_layer_best(redis_cli=r, layer_key=f'epsg3857:layer:{layer}', new_datetime=date.isoformat())
 
                 calculate_layer_periods(redis_cli=r, layer_key=f'{proj}:layer:{layer}')
                 if reproject and str(proj) == 'epsg4326':

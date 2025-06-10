@@ -89,8 +89,8 @@ def calculate_layer_best(redis_cli, layer_key, new_datetime, debug=False):
                 source_layer_key = f'{layer_prefix}:{source_layer.decode("utf-8")}'
                 dates = redis_cli.zrange(f'{source_layer_key}:dates', 0, -1)
                 for date in dates:
-                    redis_cli.hmset(f'{layer_key}:best', {date, source_layer.decode('utf-8')})
-                    redis_cli.zadd(f'{layer_key}:dates', {new_datetime: 0})
+                    redis_cli.hmset(f'{layer_key}:best', {date.decode("utf-8") + 'Z': source_layer.decode('utf-8')})
+                    redis_cli.zadd(f'{layer_key}:dates', {date.decode("utf-8"): 0})
 
 
 # Main routine to be run in CLI mode

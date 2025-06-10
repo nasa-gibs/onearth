@@ -1794,7 +1794,7 @@ class TestTimeUtils(unittest.TestCase):
         date_lst = [str((date_start + datetime.timedelta(days=idx))).replace(' ', ':') for idx in range(3)]
         # Add 10-minute intervals
         date_lst = date_lst + [str((date_start + datetime.timedelta(days=4, minutes=10*idx))).replace(' ', ':') for idx in range(10)]
-        print("woot", date_lst)
+        
         test_layers = []
         for date_entry in date_lst:
             test_layers.append(('Test_Find_Smallest_Interval', date_entry))

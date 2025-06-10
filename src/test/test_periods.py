@@ -31,15 +31,16 @@ import shutil
 shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py", os.getcwd() + '/oe_redis_utl.py')
 shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/periods.py", os.getcwd() + '/periods.py')
 from periods import get_zadd_dict, get_rd_from_interval, get_duration_from_rd, find_periods_and_breaks, calculate_periods_from_config, calculate_layer_periods
-
-DEBUG = False
+from oe_redis_utl import create_redis_client
 
 def redis_running():
     try:
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        r = redis.Redis(host='localhost', port=6379, db=0)
         return r.ping()
     except redis.exceptions.ConnectionError:
         return False
+
+DEBUG = False
 
 class TestPeriods(unittest.TestCase):
     @classmethod
@@ -52,7 +53,7 @@ class TestPeriods(unittest.TestCase):
             print("WARNING: Can't access Redis server. Tests may fail.")
         self.host = 'localhost'
         self.port = 6379
-        self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+        self.redis_client = create_redis_client(self.host, self.port, debug=False)
     
     @classmethod
     def tearDown(self):
