@@ -43,19 +43,38 @@ options:
 
 Although OnEarth still supports the `:periods` key being represented by an unsorted `set` in redis, this script will set the periods key to be a sorted `zset` by default when regenerating the `:periods` key. It can, however, correctly handle adding to existing unsorted `set` `:periods` keys using `keep_existing_periods`.
 
-## `best.lua` -- Best layer generator script
+## `oe_best_redis.py` -- Best layer generator script
 
-This script will check if the layer provided is part of a best layer, by checking to see if layer has `best_layer` key in redis. If one exist, best.lua it will retrieve the best layers' `best_config:`. The `best_config` will contain all the real layers that make up the virtual best layer, along with the prority of each layer. Best.lua will check from highest priority to lowest with the date provided. This first layer with a valid date will the best layer and will be added to the the best layer :best HMSET. This :best HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist. This date will also be added to the best layers dates for periods generation.   
+This tool is used to update a best layer's `:best` and `:dates` keys.
 
-Execution syntax:
+### Python Dependencies
 
-```EVAL best.lua layer_prefix:source_layer_name date_time```
+- `redis-py`
 
-This script can also be used to regenerate the `:best` and `:dates` keys for a best layer. To do this, run the script while giving it only the name of the best layer without a date time:
+### Usage
+```
+usage: oe_best_redis.py [-h] [-d NEW_DATETIME] [-p PORT] [-r REDIS_URI] [-v] layer_key
 
-```EVAL best.lua layer_prefix:best_layer_name```
+Loads custom period configurations
 
-best.lua is used by ingest, oe-redis-update, and oe_scrape_time.
+positional arguments:
+  layer_key             layer_prefix:layer_name that best should be calculated for best keys
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d NEW_DATETIME, --datetime NEW_DATETIME
+                        New datetime that is to be added as a best keys for this layer. If not included, will recalculate best layer based on existing dates.
+  -p PORT, --port PORT  redis port for database, defaults to 6379
+  -r REDIS_URI, --redis_uri REDIS_URI
+                        URI for the Redis database, defaults to localhost
+  -v, --verbose         Print additional log messages
+```
+
+#### Running with a datetime specified (`-d`)
+This tool will check if the layer provided is part of a best layer, by checking to see if the layer has a `:best_layer` key in redis. If one exists, it will retrieve the best layer's `:best_config`. The `:best_config` will contain all the real layers that make up the virtual best layer, along with the prority of each layer. It will check from highest priority to lowest with the date provided. This first layer with a valid date will the best layer and will be added to the the best layer `:best` HMSET. This `:best` HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist. This date will also be added to the best layer's `:dates` zset for periods generation.   
+
+#### Running without a datetime specified
+oe_best_redis.py can be run without a datetime specified to recalculate the entirety of a best layer's `:best` and `:dates` keys based on the existing dates in its source layers. This tool will assume the specified layer_key is that of a best layer. It will retrieve the best layer's `:best_config`. The `:best_config` will contain all the real layers that make up the virtual best layer, along with the prority of each layer. For each layer in the `:best_config` from lowest priority to highest priority, it will add the layer's `:dates` zset to the best layer's `:dates` zset and add that layer to the best layer's `:best` HMSET for that date's entry. This `:best` HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist.
 
 ## `oe_periods_configure.py` -- Custom time configuration loader
 
@@ -150,3 +169,20 @@ It can also be run with the following optional positional arguments after the ke
 Any of these arguments can be skipped by passing in `false`.
 
 Although OnEarth still supports the `:periods` key being represented by an unsorted `set` in redis, this script will set the periods key to be a sorted `zset` by default when regenerating the `:periods` key. It can, however, correctly handle adding to existing unsorted `set` `:periods` keys using `keep_existing_periods`.
+
+
+## `best.lua` -- Best layer generator script (deprecated)
+
+_It is recommended to use oe_best_redis.py instead of best.lua. best.lua will be removed in a future version of OnEarth._
+
+This script will check if the layer provided is part of a best layer, by checking to see if layer has `best_layer` key in redis. If one exist, best.lua it will retrieve the best layers' `best_config:`. The `best_config` will contain all the real layers that make up the virtual best layer, along with the prority of each layer. Best.lua will check from highest priority to lowest with the date provided. This first layer with a valid date will the best layer and will be added to the the best layer :best HMSET. This :best HMSET will have a date as a key and layer as value, so the date will point to the highest prority layer that exist. This date will also be added to the best layers dates for periods generation.   
+
+Execution syntax:
+
+```EVAL best.lua layer_prefix:source_layer_name date_time```
+
+This script can also be used to regenerate the `:best` and `:dates` keys for a best layer. To do this, run the script while giving it only the name of the best layer without a date time:
+
+```EVAL best.lua layer_prefix:best_layer_name```
+
+best.lua was historically used by ingest, oe-redis-update, and oe_scrape_time.

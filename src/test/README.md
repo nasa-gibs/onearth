@@ -15,6 +15,7 @@ This directory contains files and scripts to test various aspects of OnEarth. Th
 * `test_mod_wmts_wrapper.py` -- tests the mod_wmts_wrapper module
 * `test_mrfgen.py` -- tests mrfgen
 * `test_periods.py` -- tests `periods.py`
+* `test_oe_best_redis.py` -- tests `oe_best_redis.py`
 * `test_rgb_to_pal.py` -- tests RGB PNG to palette PNG
 * `test_sync_s3.py` -- tests `oe_sync_s3_configs.py` and `oe_sync_s3_idx.py`
 * `test_time_service.py` -- tests the OnEarth Time Service
@@ -177,6 +178,13 @@ Each test script will output a JUnit XML results file. By default, these files a
 16. Test `calculate_periods_from_config` with subdaily times with irregular intervals and a config of `DETECT/DETECT/PT6M`
 17. Test `calculate_layer_periods` while using multiple time configs
 18. Test `calculate_layer_periods` while using the `keep_existing_periods` option
+
+## oe_best_redis.py Tests
+1. Test `calculate_layer_best` with a datetime specified
+2. Test `calculate_layer_best` with a datetime specified and no best layer
+3. Test `calculate_layer_best` with a datetime specified and multiple source layers
+4. Test `calculate_layer_best` with a specified date that doesn't exist in any source layer's `:dates` key
+5. Test `recalculate_best` to recalculate an entire `:best` key
 
 ## mrfgen Tests:
 1. Global geographic PNG-MRF

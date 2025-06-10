@@ -24,14 +24,13 @@ from optparse import OptionParser
 from subprocess import Popen
 import time
 import shutil
-from datetime import datetime
 import redis
 
 # Copy required files to test directory
 shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py", os.getcwd() + '/oe_redis_utl.py')
 shutil.copyfile("/home/oe2/onearth/src/modules/time_service/utils/oe_best_redis.py", os.getcwd() + '/oe_best_redis.py')
 
-from oe_best_redis import calculate_layer_best
+from oe_best_redis import calculate_layer_best, recalculate_best
 from oe_redis_utl import create_redis_client
 
 def redis_running():
@@ -132,9 +131,30 @@ class TestOEBestRedis(unittest.TestCase):
         best_value = self.redis_client.hget(f"test:{best_layer}:best", date2 + 'Z')
         self.assertEqual(best_value.decode('utf-8'), "source_layer2")
 
-    def test_calculate_layer_best_with_recalculation(self):
+
+    def test_calculate_layer_best_with_missing_date(self):
         """
-        Test calculate_layer_best with recalculation when new_datetime is None
+        Test calculate_layer_best when a date is missing from source layers
+        """
+        layer_key = "test:layer"
+        best_layer = "best_layer"
+        new_datetime = "2024-01-01T00:00:00Z"
+        
+        # Set up test data without the date in source layer
+        self.redis_client.set(f"{layer_key}:best_layer", best_layer)
+        self.redis_client.zadd(f"test:{best_layer}:best_config", {"source_layer": 0})
+        
+        # Run the function
+        calculate_layer_best(self.redis_client, layer_key, new_datetime)
+        
+        # Verify the date was not added to best keys
+        self.assertFalse(self.redis_client.hexists(f"test:{best_layer}:best", new_datetime))
+        self.assertFalse(self.redis_client.zscore(f"test:{best_layer}:dates", new_datetime))
+
+
+    def test_recalculate_best(self):
+        """
+        Test recalculate_best functionality
         """
         layer_key1 = "test:source_layer1"
         layer_key2 = "test:source_layer2"
@@ -162,8 +182,8 @@ class TestOEBestRedis(unittest.TestCase):
         })
         self.redis_client.zadd(f"test:{best_layer}:dates", {date1: 0, date2: 0})
         
-        # Run the function with no datetime to trigger recalculation
-        calculate_layer_best(self.redis_client, f"test:{best_layer}", None)
+        # Run the recalculation
+        recalculate_best(self.redis_client, f"test:{best_layer}")
         
         # Verify results - best values should be recalculated based on priority
         best_value = self.redis_client.hget(f"test:{best_layer}:best", date1 + 'Z')
@@ -174,26 +194,6 @@ class TestOEBestRedis(unittest.TestCase):
         # Verify dates are still present
         self.assertTrue(self.redis_client.zscore(f"test:{best_layer}:dates", date1) == 0)
         self.assertTrue(self.redis_client.zscore(f"test:{best_layer}:dates", date2) == 0)
-
-    def test_calculate_layer_best_with_missing_date(self):
-        """
-        Test calculate_layer_best when a date is missing from source layers
-        """
-        layer_key = "test:layer"
-        best_layer = "best_layer"
-        new_datetime = "2024-01-01T00:00:00Z"
-        
-        # Set up test data without the date in source layer
-        self.redis_client.set(f"{layer_key}:best_layer", best_layer)
-        self.redis_client.zadd(f"test:{best_layer}:best_config", {"source_layer": 0})
-        
-        # Run the function
-        calculate_layer_best(self.redis_client, layer_key, new_datetime)
-        
-        # Verify the date was not added to best keys
-        self.assertFalse(self.redis_client.hexists(f"test:{best_layer}:best", new_datetime))
-        self.assertFalse(self.redis_client.zscore(f"test:{best_layer}:dates", new_datetime))
-
 
 
 if __name__ == '__main__':
