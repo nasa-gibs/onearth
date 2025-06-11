@@ -45,6 +45,7 @@ RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_periods_configure.py 
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_scrape_time.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/periods.lua /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_redis_utl.py /usr/bin/
+RUN cp /home/oe2/onearth/src/modules/time_service/utils/oe_best_redis.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/periods.py /usr/bin/
 RUN cp /home/oe2/onearth/src/modules/time_service/utils/best.lua /usr/bin/
 RUN cp /home/oe2/onearth/src/scripts/oe_sync_s3_configs.py /usr/bin/
