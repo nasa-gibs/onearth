@@ -240,15 +240,11 @@ def updateDateService(redis_uri,
 
     # delete date keys
     pattern = 'epsg????:layer:{}:dates'.format(layer_name if layer_name else '*')
-    count, keys = r.scan(cursor=0, match=pattern)
-    if(len(keys) > 0):
-        resp = r.unlink(*keys)
-        print(f'{resp} of {len(keys)} keys unlinked {keys}')
-    while count != 0:
-        count, keys = r.scan(cursor=count, match=pattern)
-        if(len(keys) > 0):
-            resp = r.unlink(*keys)
-            print(f'{resp} of {len(keys)} keys unlinked {keys}')
+    # Use scan_iter() to handle cluster cursors automatically
+    all_keys = list(r.scan_iter(match=pattern))
+    if len(all_keys) > 0:
+        resp = r.unlink(*all_keys)
+        print(f'{resp} of {len(all_keys)} keys unlinked {all_keys}')
 
     if local_path:
         objects = reduce(keyMapper, getAllFiles(uri), {})
