@@ -894,10 +894,11 @@ local function makeGC(endpointConfig, query_string)
     -- Build contents section
     local contentsElem = xml.elem("Contents")
 
-    print("graceal1 trying to extract layer from this query_string "..query_string)
+    if query_string then
+        print("graceal1 trying to extract layer from this query_string "..query_string)
+    end 
     local requestedLayers = get_query_param("layer", query_string)
-    print("graceal1 in makeGC and specific layer from query is ")
-    print(requestedLayers)
+    print("graceal1 in makeGC and just searched for requested layers ")
     if requestedLayers then
         print("graceal1 in the if statement checking if requested layers "..requestedLayers)
         -- Check if the requested layers are in the get capabilities 
@@ -1110,7 +1111,9 @@ end
 
 function onearth_gc_service.handler(endpointConfig)
     return function(query_string, _, _)
-        print("graceal1 in the gc handler with query_string being "..query_string)
+        if query_string then
+            print("graceal1 in the gc handler with query_string being "..query_string)
+        end 
         local req = get_query_param("request", query_string)
         if not req then
             return sendResponse(200, 'No REQUEST parameter specified')
