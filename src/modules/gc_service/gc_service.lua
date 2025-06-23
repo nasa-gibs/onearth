@@ -855,7 +855,7 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
 end
 
 
-local function makeGC(endpointConfig, query_string)
+local function makeGC(endpointConfig)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
@@ -893,22 +893,6 @@ local function makeGC(endpointConfig, query_string)
 
     -- Build contents section
     local contentsElem = xml.elem("Contents")
-
-    if query_string then
-        print("graceal1 trying to extract layer from this query_string "..query_string)
-    end 
-    local requestedLayers = get_query_param("layer", query_string)
-    print("graceal1 in makeGC and just searched for requested layers ")
-    if requestedLayers then
-        print("graceal1 in the if statement checking if requested layers "..requestedLayers)
-        -- Check if the requested layers are in the get capabilities 
-        -- If one or more layers not found: return sendResponse(400, "Requested layers not found!")
-
-        -- Get info for just the requested layers 
-    else
-        -- local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
-        print("graceal1 in the else of the if checking if requested layers")
-    end
     local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
 
     if not layers then
@@ -1111,9 +1095,6 @@ end
 
 function onearth_gc_service.handler(endpointConfig)
     return function(query_string, _, _)
-        if query_string then
-            print("graceal1 in the gc handler with query_string being "..query_string)
-        end 
         local req = get_query_param("request", query_string)
         if not req then
             return sendResponse(200, 'No REQUEST parameter specified')
@@ -1121,7 +1102,7 @@ function onearth_gc_service.handler(endpointConfig)
         req = req:lower()
         local response
         if req == "wmtsgetcapabilities" then
-            response = makeGC(endpointConfig, query_string)
+            response = makeGC(endpointConfig)
         elseif req == "twmsgetcapabilities" then
             response = makeTWMSGC(endpointConfig)
         elseif req == "gettileservice" then
