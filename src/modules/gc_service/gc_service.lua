@@ -854,8 +854,35 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     return nodeList
 end
 
+function inspect(t, indent, visited)
+    indent = indent or ""
+    visited = visited or {}
+    if type(t) ~= "table" then
+        print("graceal1"..indent .. tostring(t))
+        return
+    end
 
-local function makeGC(endpointConfig)
+    -- Avoid infinite recursion on circular references
+    if visited[t] then
+        print("graceal2"..indent .. "*circular reference*")
+        return
+    end
+    visited[t] = true
+
+    for k, v in pairs(t) do
+        local key_str = tostring(k)
+        if type(v) == "table" then
+            print("graceal3"..indent .. "[" .. key_str .. "] => table:")
+            inspect(v, indent .. "  ", visited)
+        else
+            -- graceal4 [1] => MERRA2_Air_Temperature_250hPa_Monthly
+            print("graceal4"..indent .. "[" .. key_str .. "] => " .. tostring(v))
+        end
+    end
+end
+
+
+local function makeGC(endpointConfig, query_string)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
         , "Can't open tile matrixsets definition file at: " .. endpointConfig["tms_defs_file"])
@@ -893,9 +920,57 @@ local function makeGC(endpointConfig)
 
     -- Build contents section
     local contentsElem = xml.elem("Contents")
-    local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
+
+    -- This variable will hold the final list of layers for the response.
+    local layers
+    
+    -- Get all possible layers from the configuration
+    local allAvailableLayers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
+
+    local requestedLayersStr = get_query_param("layer", query_string)
+
+    if requestedLayersStr and requestedLayersStr ~= "" then
+        -- If specific layers are requested, filter the list.
+        local availableLayersMap = {}
+        print("graceal1 about to enter the loop")
+        if allAvailableLayers then
+            for _, layerNode in ipairs(allAvailableLayers) do
+                -- Assuming 'Identifier' is the tag holding the layer name.
+                local capabilityElem = layerNode:get_elements_with_name("ows:Identifier")[1]
+                if capabilityElem then
+                    availableLayersMap[capabilityElem:get_text()] = layerNode
+                end
+            end
+        end
+
+        local requestedLayerIds = {}
+        for id in string.gmatch(requestedLayersStr, "([^,]+)") do
+            table.insert(requestedLayerIds, id)
+        end
+
+        if #requestedLayerIds == 0 then
+            -- If no layers could be parsed, this is an invalid request.
+            local errorDom = makeExceptionReport("InvalidParameterValue", "Invalid LAYER parameter: could not parse any layer names", "LAYER")
+            return sendResponse(400, xml.tostring(errorDom))
+        end
+        
+        layers = {} -- Initialize list of layers for the response.
+        for _, requestedId in ipairs(requestedLayerIds) do
+            print("graceal1 in the loop at the beginning")
+            if not availableLayersMap[requestedId] then
+                -- A requested layer does not exist in the available set.
+                return sendResponse(400, "Requested layer not found: " .. requestedId)
+            end
+            table.insert(layers, availableLayersMap[requestedId])
+        end
+        print("graceal1 at the end of loop for comparing layers")
+    else
+        -- If no specific layers are requested, return all available layers.
+        layers = allAvailableLayers
+    end
 
     if not layers then
+        print("graceal1 in the response that layers is empty")
         return sendResponse(400, "No layers found!")
     end
    
@@ -1095,6 +1170,9 @@ end
 
 function onearth_gc_service.handler(endpointConfig)
     return function(query_string, _, _)
+        if query_string then
+            print("graceal1 in the gc handler with query_string being "..query_string)
+        end 
         local req = get_query_param("request", query_string)
         if not req then
             return sendResponse(200, 'No REQUEST parameter specified')
@@ -1102,7 +1180,7 @@ function onearth_gc_service.handler(endpointConfig)
         req = req:lower()
         local response
         if req == "wmtsgetcapabilities" then
-            response = makeGC(endpointConfig)
+            response = makeGC(endpointConfig, query_string)
         elseif req == "twmsgetcapabilities" then
             response = makeTWMSGC(endpointConfig)
         elseif req == "gettileservice" then
