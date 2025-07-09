@@ -102,7 +102,7 @@ The script accepts the following options:
 
 ## `oe_scrape_time.py` -- Database regeneration tool
 
-This tool will first check whether the s3_inventory option has been flagged. If the -i flag is present, the tool will search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will parse the most recent CSV file to generate time service entries for each layer. If no S3 Inventory data exists or the -i flag isn't declared. The tool scrapes the bucket containing MRF imagery and generates time service entries for each layer. It also supports scraping times from a local directory in place of an S3 bucket.
+This tool will first check whether the s3_inventory option has been flagged. If the -i flag is present, the tool will search for the bucket's S3 Inventory CSV logs. If the CSV logs are present, it will parse the most recent CSV file to generate time service entries for each layer. If no S3 Inventory data exists or the -i flag isn't declared, the tool scrapes the bucket containing MRF imagery and generates time service entries for each layer. It also supports scraping times from a local directory in place of an S3 bucket.
 
 ### S3 Inventory
 
