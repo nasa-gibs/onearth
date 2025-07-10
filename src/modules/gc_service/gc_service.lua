@@ -68,13 +68,12 @@ local function get_query_param (param, query_string)
     local query_parts = split("&", query_string)
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
-        -- Check if the key part of the pair matches the desired parameter
         if string.lower(query_pair[1]) == param then
             -- The parameter key was found so return its value or an empty string if it didnt have a value
             return query_pair[2] or ""
         end
     end
-    -- If the loop finishes, the parameter was not found in the query string.
+    -- If the loop finishes, the parameter was not found in the query string
     return nil
 end
     
@@ -87,9 +86,6 @@ local function sendResponse(code, msg_string)
 end
 
 local function formatXMLResponse(code, msg_string)
-    print("graceal1 in the sendResponse function")
-    
-    -- Create a simple XML response DOM
     local dom = xml.new("Response", { 
         ["xmlns"] = "http://www.opengis.net/response/1.0",
         ["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance",
@@ -97,16 +93,12 @@ local function formatXMLResponse(code, msg_string)
         ["xml:lang"] = "en" 
     })
     
-    -- Create the message element
     local messageNode = xml.elem("Message", {
         ["code"] = tostring(code),
         msg_string
     })
-    
-    -- Add the message node to the DOM
     dom:add_direct_child(messageNode)
     
-    -- Return the XML string with proper headers and status code
     return tostring(dom),
     {
         ["Content-Type"] = "text/xml; charset=UTF-8"
@@ -884,34 +876,6 @@ local function getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode
     return nodeList
 end
 
-function inspect(t, indent, visited)
-    indent = indent or ""
-    visited = visited or {}
-    if type(t) ~= "table" then
-        print("graceal1"..indent .. tostring(t))
-        return
-    end
-
-    -- Avoid infinite recursion on circular references
-    if visited[t] then
-        print("graceal2"..indent .. "*circular reference*")
-        return
-    end
-    visited[t] = true
-
-    for k, v in pairs(t) do
-        local key_str = tostring(k)
-        if type(v) == "table" then
-            print("graceal3"..indent .. "[" .. key_str .. "] => table:")
-            inspect(v, indent .. "  ", visited)
-        else
-            -- graceal4 [1] => MERRA2_Air_Temperature_250hPa_Monthly
-            print("graceal4"..indent .. "[" .. key_str .. "] => " .. tostring(v))
-        end
-    end
-end
-
-
 local function makeGC(endpointConfig, query_string)
     -- Load TMS defs
     local tmsFile = assert(io.open(endpointConfig["tms_defs_file"], "r")
@@ -964,7 +928,6 @@ local function makeGC(endpointConfig, query_string)
     if requestedLayersStr and requestedLayersStr ~= "" then
         -- If specific layers are requested, filter the list.
         local availableLayersMap = {}
-        print("graceal1 about to enter the loop")
         if allAvailableLayers then
             for _, layerNode in ipairs(allAvailableLayers) do
                 -- 'Identifier' is the tag holding the layer name that should match what the user requested
@@ -984,28 +947,21 @@ local function makeGC(endpointConfig, query_string)
             -- If no layers could be parsed, this is an invalid request.
             return formatXMLResponse(400, "Invalid LAYER parameter: could not parse any layer names")
         end
-        print("graceal1 after if statement saying that no layers could be parsed ")
         
         layers = {} -- Initialize list of layers for the response.
         for _, requestedId in ipairs(requestedLayerIds) do
-            print("graceal1 in the loop at the beginning")
             if not availableLayersMap[requestedId] then
-                -- A requested layer does not exist in the available set.
-                print("graceal layer could not be found so about to send response saying that")
-                -- TODO maybe something wrong with this return??, try removing var 
+                -- A requested layer does not exist in the available set, so return an error
                 return formatXMLResponse(400, "Requested layer not found: " .. requestedId)
-                -- return sendResponse(400, "Requested layer not found: ")
             end
             table.insert(layers, availableLayersMap[requestedId])
         end
-        print("graceal1 at the end of loop for comparing layers")
     else
         -- If no specific layers are requested, return all available layers.
         layers = allAvailableLayers
     end
 
     if not layers then
-        print("graceal1 in the response that layers is empty")
         return formatXMLResponse(400, "No layers found!")
     end
    
@@ -1205,9 +1161,6 @@ end
 
 function onearth_gc_service.handler(endpointConfig)
     return function(query_string, _, _)
-        if query_string then
-            print("graceal1 in the gc handler with query_string being "..query_string)
-        end 
         local req = get_query_param("request", query_string)
         if not req then
             return formatXMLResponse(200, 'No REQUEST parameter specified')
