@@ -66,14 +66,16 @@ local function get_query_param (param, query_string)
         return nil
     end
     local query_parts = split("&", query_string)
-    local date_string = nil;
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
+        -- Check if the key part of the pair matches the desired parameter
         if string.lower(query_pair[1]) == param then
-            return query_pair[2]
+            -- The parameter key was found so return its value or an empty string if it didnt have a value
+            return query_pair[2] or ""
         end
     end
-    return date_string
+    -- If the loop finishes, the parameter was not found in the query string.
+    return nil
 end
     
 local function sendResponse(code, msg_string)
@@ -83,6 +85,34 @@ local function sendResponse(code, msg_string)
     },
     code
 end
+
+local function formatXMLResponse(code, msg_string)
+    print("graceal1 in the sendResponse function")
+    
+    -- Create a simple XML response DOM
+    local dom = xml.new("Response", { 
+        ["xmlns"] = "http://www.opengis.net/response/1.0",
+        ["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance",
+        ["version"] = "1.0",
+        ["xml:lang"] = "en" 
+    })
+    
+    -- Create the message element
+    local messageNode = xml.elem("Message", {
+        ["code"] = tostring(code),
+        msg_string
+    })
+    
+    -- Add the message node to the DOM
+    dom:add_direct_child(messageNode)
+    
+    -- Return the XML string with proper headers and status code
+    return tostring(dom),
+    {
+        ["Content-Type"] = "text/xml; charset=UTF-8"
+    },
+    code
+end 
 
 local function getExtensionFromMimeType(mimeType)
     if mimeType == "image/jpeg" then
@@ -525,7 +555,7 @@ local function makeGTS(endpointConfig)
 
     local layers = getAllGTSTiledGroups(endpointConfig, epsgCode, targetEpsgCode)
     if not layers then
-        return sendResponse(400, "No layers found!")
+        return formatXMLResponse(400, "No layers found!")
     end
 
     for _, tiledGroup in ipairs(layers) do
@@ -928,17 +958,19 @@ local function makeGC(endpointConfig, query_string)
     local allAvailableLayers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
 
     local requestedLayersStr = get_query_param("layer", query_string)
-
+    if requestedLayersStr == "" then 
+        return formatXMLResponse(400, "You must request a layer if you specify the layer query parameter")
+    end 
     if requestedLayersStr and requestedLayersStr ~= "" then
         -- If specific layers are requested, filter the list.
         local availableLayersMap = {}
         print("graceal1 about to enter the loop")
         if allAvailableLayers then
             for _, layerNode in ipairs(allAvailableLayers) do
-                -- Assuming 'Identifier' is the tag holding the layer name.
-                local capabilityElem = layerNode:get_elements_with_name("ows:Identifier")[1]
-                if capabilityElem then
-                    availableLayersMap[capabilityElem:get_text()] = layerNode
+                -- 'Identifier' is the tag holding the layer name that should match what the user requested
+                local layerIdenitifierNode = layerNode:get_elements_with_name("ows:Identifier")[1]
+                if layerIdenitifierNode then
+                    availableLayersMap[layerIdenitifierNode:get_text()] = layerNode
                 end
             end
         end
@@ -950,16 +982,19 @@ local function makeGC(endpointConfig, query_string)
 
         if #requestedLayerIds == 0 then
             -- If no layers could be parsed, this is an invalid request.
-            local errorDom = makeExceptionReport("InvalidParameterValue", "Invalid LAYER parameter: could not parse any layer names", "LAYER")
-            return sendResponse(400, xml.tostring(errorDom))
+            return formatXMLResponse(400, "Invalid LAYER parameter: could not parse any layer names")
         end
+        print("graceal1 after if statement saying that no layers could be parsed ")
         
         layers = {} -- Initialize list of layers for the response.
         for _, requestedId in ipairs(requestedLayerIds) do
             print("graceal1 in the loop at the beginning")
             if not availableLayersMap[requestedId] then
                 -- A requested layer does not exist in the available set.
-                return sendResponse(400, "Requested layer not found: " .. requestedId)
+                print("graceal layer could not be found so about to send response saying that")
+                -- TODO maybe something wrong with this return??, try removing var 
+                return formatXMLResponse(400, "Requested layer not found: " .. requestedId)
+                -- return sendResponse(400, "Requested layer not found: ")
             end
             table.insert(layers, availableLayersMap[requestedId])
         end
@@ -971,7 +1006,7 @@ local function makeGC(endpointConfig, query_string)
 
     if not layers then
         print("graceal1 in the response that layers is empty")
-        return sendResponse(400, "No layers found!")
+        return formatXMLResponse(400, "No layers found!")
     end
    
     for _, layer in ipairs(layers) do
@@ -1053,7 +1088,7 @@ local function makeTWMSGC(endpointConfig)
     local layers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode, true)
     
     if not layers then
-        return sendResponse(400, "No layers found!")
+        return formatXMLResponse(400, "No layers found!")
     end
     
     for _, layer in ipairs(layers) do
@@ -1175,7 +1210,7 @@ function onearth_gc_service.handler(endpointConfig)
         end 
         local req = get_query_param("request", query_string)
         if not req then
-            return sendResponse(200, 'No REQUEST parameter specified')
+            return formatXMLResponse(200, 'No REQUEST parameter specified')
         end
         req = req:lower()
         local response
