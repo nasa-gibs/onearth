@@ -86,11 +86,11 @@ local function sendResponse(code, msg_string)
 end
 
 local function formatXMLResponse(code, msg_string)
-    local dom = xml.new("Response", { 
-        ["xmlns"] = "http://www.opengis.net/response/1.0",
-        ["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance",
-        ["version"] = "1.0",
-        ["xml:lang"] = "en" 
+    local dom = xml.new("Response", {
+        ["xmlns:ows"] = "http://www.opengis.net/ows/1.1",
+        ["xmlns:xsi"] =  "http://www.w3.org/2001/XMLSchema-instance",
+        ["version"] = "1.1.0",
+        ["xml:lang"] = "en"
     })
     
     local messageNode = xml.elem("Message", {
