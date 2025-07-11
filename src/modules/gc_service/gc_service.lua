@@ -61,7 +61,9 @@ local function join(arr, sep)
     return outStr
 end
 
-local function get_query_param (param, query_string)
+-- The optional tag is so that we return an empty string if the user specified 
+-- the query parameter but didnt give it a value. This is allowed if the query parameter is optional
+local function get_query_param(param, query_string, optional)
     if not query_string then
         return nil
     end
@@ -69,11 +71,13 @@ local function get_query_param (param, query_string)
     for _, part in pairs(query_parts) do
         local query_pair = split("=", part)
         if string.lower(query_pair[1]) == param then
-            -- The parameter key was found so return its value or an empty string if it didnt have a value
-            return query_pair[2] or ""
+            if optional then 
+                return query_pair[2] or ""
+            else
+                return query_pair[2]
+            end
         end
     end
-    -- If the loop finishes, the parameter was not found in the query string
     return nil
 end
     
@@ -921,7 +925,7 @@ local function makeGC(endpointConfig, query_string)
     -- Get all possible layers from the configuration
     local allAvailableLayers = getAllGCLayerNodes(endpointConfig, tmsXml, tmsLimitsXml, epsgCode, targetEpsgCode)
 
-    local requestedLayersStr = get_query_param("layer", query_string)
+    local requestedLayersStr = get_query_param("layer", query_string, true)
     if requestedLayersStr == "" then 
         return formatXMLResponse(400, "You must request a layer if you specify the layer query parameter")
     end 
