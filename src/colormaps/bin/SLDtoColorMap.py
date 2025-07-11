@@ -208,7 +208,7 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                 prevOpacity = (sldCMapEntries[0].opacity == 0.0)
                 prevRGB     = sldCMapEntries[0].rgb
                         
-                gibsCMap.minLabel = "" + format.format(prevValue) + ("" if not units else (" " + units))
+                gibsCMap.minLabel = "" + format.format(prevValue)
                         
                 for sldCMapEntry in sldCMapEntries[1:-1]:
                     gibsCMapEntry             = GIBS_ColorMapEntry()
@@ -326,7 +326,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                     gibsCMapEntry.transparent = True
                     gibsCMapEntry.label       = "No Data"
                     gibsCMapEntry.nodata      = True
-                    gibsCMapEntry.ref         = 1
+                    gibsCMapEntry.ref         = 0
                     
                     gibsCMap  = GIBS_ColorMap()
                     gibsCMap.showLegend = True
@@ -467,7 +467,7 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                         gibsCMapEntry.ref         = currRef
                             
                         gibsCMap.cmEntries.append(gibsCMapEntry)
-                        gibsCMap.minLabel         = "&lt; " + format.format(cmItem[0]) + ("" if not units else (" " + units))
+                        gibsCMap.minLabel         = "&lt; " + format.format(cmItem[0])
                             
                         currRef = currRef + 1
                             
@@ -493,14 +493,14 @@ def parseSLD_v1_1_0(sourceXml, layerName, units, offset, factor, rgbOrder, forma
                 gibsCMapEntry             = GIBS_ColorMapEntry()
                 gibsCMapEntry.rgb         = gibsColorMap[-1][1]
                 gibsCMapEntry.transparent = (defaultOpacity == 0.0)
-                gibsCMapEntry.label       = "&gt;= " + format.format(gibsColorMap[-1][0]) + ("" if not units else (" " + units))	
+                gibsCMapEntry.label       = "&gt;= " + format.format(gibsColorMap[-1][0])	
                 gibsCMapEntry.value       = [gibsColorMap[-1][0], "+INF"]
                 gibsCMapEntry.sourceValue = [((gibsColorMap[-1][0] - offset) / factor), "+INF"]
                 gibsCMapEntry.ref         = currRef
                             
                 gibsCMap.cmEntries.append(gibsCMapEntry)
                         
-                gibsCMap.maxLabel         = "&gt;= " + format.format(gibsColorMap[-1][0]) + ("" if not units else (" " + units))	
+                gibsCMap.maxLabel         = "&#8805; " + format.format(gibsColorMap[-1][0])	
                 gibsCMap.showUnits        = True	
                 gibsCMap.showLegend       = True
                         
@@ -530,13 +530,11 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
             ((" units=\"" + units + "\"") if colorMap.showUnits and units else "") + 
             (" title=\"No Data\"" if colorMap.cmEntries[0].nodata else "") + ">\n")
 
-        # <Entries minLabel="0 %" maxLabel="100 %">      
-        outputHandle.write("    <Entries" + 
-            ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\" ")) + 
-            ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">\n")
+        # <Entries>      
+        outputHandle.write("    <Entries>\n")
     
         for cMapEntry in colorMap.cmEntries:
-            # <ColorMapEntry rgb="9,9,255" transparent="false" sourceValue="[9,10)" value="[9,10)" label="3.6 %" ref="1"/>
+            # <ColorMapEntry rgb="9,9,255" transparent="false" sourceValue="[9,10)" value="[9,10)" ref="1"/>
         
             rgb = str(cMapEntry.rgb[0]) + "," + str(cMapEntry.rgb[1]) + "," + str(cMapEntry.rgb[2])
             
@@ -558,7 +556,6 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
                "transparent=\"" + ("true" if cMapEntry.transparent else "false") + "\" " + 
                ("" if not cMapEntry.sourceValue else ("sourceValue=\"" + sourceValue + "\" ")) + 
                ("" if not cMapEntry.value else ("value=\"" + value + "\" ")) + 
-               "label=\"" + cMapEntry.label + "\" " + 
                ("" if not cMapEntry.nodata else ("nodata=\"true\" ")) +
                ("" if not colorMap.showLegend else ("ref=\"" + str(cMapEntry.ref) + "\" ")) + 
                "/>\n")
@@ -567,10 +564,10 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
         
         
         if colorMap.showLegend:
-            # <Entries minLabel="0 %" maxLabel="100 %">      
+            # <Legend type="classification" or <Legend type="continuous" minLabel="<0.0" maxLabel="≥ 400.0">
             outputHandle.write("    <Legend type=\"" +
-                ("classification" if colorMap.cmEntries[0].nodata else "continuous") + "\" " + 
-                ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\" ")) + 
+                ("classification" if colorMap.cmEntries[0].nodata else "continuous") + "\"" + 
+                ("" if not colorMap.minLabel else (" minLabel=\"" + colorMap.minLabel + "\"")) + 
                 ("" if not colorMap.maxLabel else (" maxLabel=\"" + colorMap.maxLabel + "\"")) + 	">\n")
     
     
@@ -588,8 +585,38 @@ def generateColorMap(gibsColorMaps, units, format, colormapFile):
                             value = "[" + (cMapEntry.value[0] if isinstance(cMapEntry.value[0], str) else format.format(cMapEntry.value[0])) + "," + \
                                            (cMapEntry.value[1] if isinstance(cMapEntry.value[1], str) else format.format(cMapEntry.value[1])) + ")"
         
-                    outputHandle.write("      <LegendEntry rgb=\"" + rgb + "\" " + 
-                       ("" if not colorMap.showLegend else ("id=\"" + str(cMapEntry.ref) + "\" ")) + "/>\n")
+                    # Create tooltip from value range
+                    tooltip = ""
+                    if cMapEntry.nodata:
+                        tooltip = "No Data"
+                    elif cMapEntry.value:
+                        # Special handling for first and last entries
+                        is_first_entry = (cMapEntry.ref == 1)
+                        is_last_entry = (cMapEntry.ref == len(colorMap.cmEntries))
+                        
+                        if len(cMapEntry.value) == 1:
+                            # For single values, just format directly
+                            val = cMapEntry.value[0]
+                            tooltip = val if isinstance(val, str) else format.format(val)
+                        else:
+                            # For ranges, handle special cases for first and last entries
+                            val1 = cMapEntry.value[0]
+                            val2 = cMapEntry.value[1]
+                            
+                            # Format values appropriately
+                            val1_str = val1 if isinstance(val1, str) else format.format(val1)
+                            val2_str = val2 if isinstance(val2, str) else format.format(val2)
+                            
+                            if is_first_entry and val1_str == "-INF":
+                                tooltip = "&lt; " + val2_str.strip()
+                            elif is_last_entry and val2_str == "+INF":
+                                tooltip = "&#8805; " + val1_str.strip()  # Unicode for ≥
+                            else:
+                                tooltip = val1_str.strip() + " \u2013 " + val2_str.strip()  # Unicode for en dash
+    
+                    outputHandle.write("      <LegendEntry rgb=\"" + rgb + "\"" + 
+                       ("" if not tooltip else (" tooltip=\"" + tooltip + "\"")) + 
+                       ("" if not colorMap.showLegend else (" id=\"" + str(cMapEntry.ref) + "\"")) + "/>\n")
                        
                     
                 prevRef    = cMapEntry.ref
@@ -609,7 +636,7 @@ def usage():
    print("  -h, --help             show this help message and exit")
    print("  -s SLD_FILE, --sld SLD_FILE")
    print("                    Path to SLD file to be converted")
-   print("  -c COLORMAP_FILE, --sld COLORMAP_FILE")
+   print("  -c COLORMAP_FILE, --colormap COLORMAP_FILE")
    print("                    Path to colormap file to be created.  If not provided, output is printed to stdout")
    print("  -l LAYER_NAME, --layer LAYER_NAME")
    print("                     Value to be placed in the NamedLayer/Name element")
@@ -642,7 +669,7 @@ def main(argv):
     offset       = 0.0
     factor       = 1.0
     rgbaOrder    = "RGBA"
-    format       = "{}"
+    format       = "{:.2f}"
     densify      = None
 
 
