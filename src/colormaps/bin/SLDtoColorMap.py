@@ -263,7 +263,8 @@ def parseSLD_v1_0_0(sourceXml, layerName, units, offset, factor, format) :
                     gibsCMapEntry.ref         = currRef
                     gibsCMap.cmEntries.append(gibsCMapEntry)
                 
-                gibsCMap.maxLabel    = gibsCMap.cmEntries[-1].label
+                gibsCMap.maxLabel    = format.format(sldCMapEntries[-1].quantity)
+                gibsCMap.showUnits   = True	
                 gibsCMap.showLegend  = True
                         
                 gibsColorMaps.append(gibsCMap)

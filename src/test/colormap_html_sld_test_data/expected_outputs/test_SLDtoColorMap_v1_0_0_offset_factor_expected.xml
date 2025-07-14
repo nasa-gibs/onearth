@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ColorMaps xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:noNamespaceSchemaLocation="http://gibs.earthdata.nasa.gov/schemas/ColorMap_v1.3.xsd">
-  <ColorMap>
+  <ColorMap units="mm">
     <Entries>
       <ColorMapEntry rgb="220,227,247" transparent="false" sourceValue="[-6.67,-6.59)" value="[0.00,0.12)" ref="1" />
       <ColorMapEntry rgb="185,188,243" transparent="false" sourceValue="[-6.59,-6.51)" value="[0.12,0.24)" ref="2" />
@@ -256,7 +256,7 @@
       <ColorMapEntry rgb="251,251,251" transparent="false" sourceValue="[13.33,60.00)" value="[30.00,100.00)" ref="251" />
       <ColorMapEntry rgb="255,255,255" transparent="false" sourceValue="[60.00,+INF)" value="[100.00]" ref="252" />
     </Entries>
-    <Legend type="continuous" minLabel="0.00" maxLabel="100.00 mm">
+    <Legend type="continuous" minLabel="0.00" maxLabel="100.00">
       <LegendEntry rgb="220,227,247" tooltip="0.00 – 0.12" id="1"/>
       <LegendEntry rgb="185,188,243" tooltip="0.12 – 0.24" id="2"/>
       <LegendEntry rgb="184,189,253" tooltip="0.24 – 0.36" id="3"/>
