@@ -1,5 +1,5 @@
---- a/modules/proxy/mod_proxy_http.c	2024-05-13 17:03:15
-+++ b/modules/proxy/mod_proxy_http.c	2024-05-13 17:04:14
+--- a/modules/proxy/mod_proxy_http.c	2025-06-26 14:42:25
++++ b/modules/proxy/mod_proxy_http.c	2025-06-26 14:42:10
 @@ -505,7 +505,11 @@
       */
      if (!r->kept_body && r->main) {

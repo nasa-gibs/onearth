@@ -3,21 +3,22 @@ FROM nasagibs/onearth-deps:$ONEARTH_VERSION
 
 ARG MRF_VERSION=3.0.1
 ARG GDAL_VERSION=3.6.4
+ARG ALMALINUX_VERSION=10
 ENV GDAL_VERSION=$GDAL_VERSION
-ARG GIBS_GDAL_RELEASE=1
+ARG GIBS_GDAL_RELEASE=3
 ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 RUN dnf install -y \
-        proj-8.2.0 \
-        proj-devel-8.2.0 \
-        fribidi-devel-1.0.10 \
-        cairo-devel-1.17.4 \
-        cmake-3.26.5 \
-        geos-3.13.1 \
-        geos-devel-3.13.1 \
-        harfbuzz-devel-2.7.4 \
+        proj-9.5.0 \
+        proj-devel-9.5.0 \
+        fribidi-devel-1.0.14 \
+        cairo-devel-1.18.2 \
+        cmake-3.30.5 \
+        geos-3.13.0 \
+        geos-devel-3.13.0 \
+        harfbuzz-devel-8.4.0 \
         fcgi-devel-2.4.0 \
-        protobuf-c-devel-1.3.3 && \
+        protobuf-c-devel-1.5.0 && \
 	dnf clean all
 
 # Some environments don't like git:// links, so we need to workaround that with certain lua dependencies
@@ -51,15 +52,15 @@ RUN make && make install
 COPY ./ /home/oe2/onearth/
 WORKDIR /home/oe2/onearth
 # Install pip dependencies
-RUN pip install pip==25.0.1
+RUN pip install pip==25.1.1
 RUN pip install -r requirements.txt
 
 # Install GDAL
 #RUN pip install --force-reinstall numpy
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
-    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}-${GIBS_GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el${ALMALINUX_VERSION}.x86_64.rpm && \
+    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el${ALMALINUX_VERSION}.x86_64.rpm && \
     rm -rf /tmp/*
 
 # Fix outdated packaging installed in this environment. It does not support the "strip_trailing_zero" argument in
@@ -83,6 +84,7 @@ RUN git clone --depth 1 --branch v${MRF_VERSION} https://github.com/nasa-gibs/mr
     rm -rf /tmp/*
 
 # Mapserver
+RUN dnf install -y harfbuzz-devel-8.4.0 cairo-devel-1.18.2
 WORKDIR /tmp
 RUN wget http://download.osgeo.org/mapserver/mapserver-8.2.2.tar.gz
 RUN tar xf mapserver-8.2.2.tar.gz

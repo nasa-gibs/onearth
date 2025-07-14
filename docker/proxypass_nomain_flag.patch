@@ -1,5 +1,5 @@
---- a/modules/proxy/mod_proxy.c	2024-05-13 17:03:15
-+++ b/modules/proxy/mod_proxy.c	2024-05-13 17:06:24
+--- a/modules/proxy/mod_proxy.c	2025-06-26 14:42:25
++++ b/modules/proxy/mod_proxy.c	2025-06-26 14:42:10
 @@ -961,6 +961,9 @@
          ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01136)
                  "Unescaped URL path matched ProxyPass; ignoring unsafe nocanon");

@@ -3,33 +3,35 @@
 # This version of the Dockerfile packs commands together to minimize layers and
 # to minimize image size.
 
-FROM almalinux:9.5
+FROM almalinux:10.0
 
 # Install dependencies
 RUN dnf -y update && \
     dnf groupinstall -y "Development Tools" && \
     dnf install -y 'dnf-command(config-manager)' && \
+    dnf install -y 'almalinux-release-devel' && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-9.el9 && \
+    dnf config-manager --set-enabled devel && \
+	dnf install -y epel-release-10-6.el10 && \
     dnf install -y \
-        lua-devel-5.4.4 \
+        lua-devel-5.4.6 \
         jansson-devel-2.14 \
-        libpng-devel-1.6.37 \
-        pcre-devel-8.44 \
-        wget-1.21.1 \
+        libpng-devel-1.6.40 \
+        pcre2-devel-10.44 \
+        wget-1.24.5 \
         libyaml-devel-0.2.5 \
-        libcurl-devel-7.76.1 \
-        libjpeg-turbo-devel-2.0.90 \
-        libxml2-devel-2.9.13 \
-        mod_ssl-2.4.62-4.el9 \
+        libcurl-devel-8.9.1 \
+        libjpeg-turbo-devel-3.0.2 \
+        libxml2-devel-2.12.5 \
+        mod_ssl-2.4.63-1.el10 \
         openssl-devel-3.2.2 \
         luarocks-3.9.2 \
-        redis-6.2.18 \
-        cronie-1.5.7 \
-        logrotate-3.18.0 \
-        python3-devel-3.9.21 \
-        cmake-3.26.5 \
+        redis-7.2.4 \
+        cronie-1.7.0 \
+        logrotate-3.22.0 \
+        python3-devel-3.12.9 \
+        cmake-3.30.5 \
         parallel && \
     dnf clean all
 
@@ -38,18 +40,18 @@ RUN echo 'will cite' | parallel --citation || true
 
 # Install yq
 WORKDIR /tmp
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.2/yq_linux_amd64.tar.gz -O - |\
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.45.4/yq_linux_amd64.tar.gz -O - |\
   tar xz && mv yq_linux_amd64 /usr/bin/yq && rm -rf *
 
 # Install supercronic
 WORKDIR /tmp
-RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
-    tar xf go1.24.2.linux-amd64.tar.gz && \
+RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz && \
+    tar xf go1.24.4.linux-amd64.tar.gz && \
     mv go /usr/local/ && \
     ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.33.tar.gz && \
-    tar xf v0.2.33.tar.gz && \
-    cd supercronic-0.2.33 && \
+    wget https://github.com/aptible/supercronic/archive/refs/tags/v0.2.34.tar.gz && \
+    tar xf v0.2.34.tar.gz && \
+    cd supercronic-0.2.34 && \
     sed -i 's/386 arm arm64//g' build.sh && \
     go mod tidy && \
     go mod vendor && \
@@ -59,7 +61,7 @@ RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
 
 # Clean prometheus client_golang
 WORKDIR /root/go/pkg/mod/github.com/prometheus/
-RUN cd client_golang@v1.20.2 && \
+RUN cd client_golang@v1.22.0 && \
     go mod tidy && \
     go clean -modcache && \
     cd /tmp/ && \
@@ -80,11 +82,11 @@ RUN git clone --depth=1 https://github.com/google/brunsli.git && \
 
 # Download RPM source for Apache
 WORKDIR /tmp
-RUN dnf install -y yum-utils-4.3.0 rpm-build-4.16.1.3 && \
+RUN dnf install -y yum-utils-4.7.0 rpm-build-4.19.1.1 && \
     dnf clean all && \
-    yumdownloader --source httpd-2.4.62-4.el9.x86_64 && \
+    yumdownloader --source httpd-2.4.63-1.el10.x86_64 && \
     HOME="/tmp" rpm -ivh httpd-*.src.rpm && \
-    yum-builddep -y httpd-2.4.62-4.el9.x86_64
+    yum-builddep -y httpd-2.4.63-1.el10.x86_64
 
 # Copy OnEarth to home directory
 RUN mkdir -p /home/oe2
@@ -121,14 +123,14 @@ RUN sed -i 's:--with-apr=%{_prefix}:--with-apr=/usr/local/apr/bin/apr-1-config:g
     cp /home/oe2/onearth/docker/mod_proxy_http.patch /tmp/rpmbuild/SOURCES && \
     cp /home/oe2/onearth/docker/proxypass_nomain_flag.patch /tmp/rpmbuild/SOURCES && \
     patch -p2 < /home/oe2/onearth/docker/http_rpm_spec.patch && \
-    HOME="/tmp" rpmbuild -ba httpd.spec && \
+    HOME="/tmp" QA_RPATHS=$(( 0x0002 )) rpmbuild -ba httpd.spec && \
     yum -y remove httpd httpd-devel httpd-tools && \
     yum -y install system-logos-httpd /etc/mime.types sscg && \
     yum clean all && \
     rpm -ivh /tmp/rpmbuild/RPMS/*/httpd*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_ssl*.rpm && \
     rpm -ivh /tmp/rpmbuild/RPMS/x86_64/mod_lua*.rpm && \
-    cd / && rm -rf /tmp/apr-1.7.4* /tmp/apr-util-1.6.3* /tmp/httpd-2.4.62* /tmp/rpmbuild*
+    cd / && rm -rf /tmp/apr-1.7.4* /tmp/apr-util-1.6.3* /tmp/httpd-2.4.63* /tmp/rpmbuild*
 
 # Install mod_receive
 WORKDIR /home/oe2/onearth/src/modules/mod_receive/src/

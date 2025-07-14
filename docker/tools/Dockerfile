@@ -1,10 +1,11 @@
 # This Dockerfile must be run from source root
-FROM almalinux:9.5
+FROM almalinux:10.0
 
 ARG MRF_VERSION=3.0.1
+ARG ALMALINUX_VERSION=10
 ARG GDAL_VERSION=3.6.4
 ENV GDAL_VERSION=$GDAL_VERSION
-ARG GIBS_GDAL_RELEASE=1
+ARG GIBS_GDAL_RELEASE=3
 ENV GIBS_GDAL_RELEASE=$GIBS_GDAL_RELEASE
 
 # Install dependencies
@@ -12,35 +13,37 @@ RUN dnf -y update && \
     dnf install -y dnf-plugins-core && \
     dnf groupinstall -y "Development Tools" && \
     dnf install -y 'dnf-command(config-manager)' && \
+    dnf install -y 'almalinux-release-devel' && \
     dnf clean all && \
     dnf config-manager --set-enabled crb && \
-	dnf install -y epel-release-9-9.el9 && \
+    dnf config-manager --set-enabled devel && \
+	dnf install -y epel-release-10-6.el10 && \
     dnf install -y \
-        rpm-build \
-        lua-devel-5.4.4 \
+        rpm-build-4.19.1.1 \
+        lua-devel-5.4.6 \
         jansson-devel-2.14 \
-        libpng-devel-1.6.37 \
-        pcre-devel-8.44 \
-        wget-1.21.1 \
+        libpng-devel-1.6.40 \
+        pcre2-devel-10.44 \
+        wget-1.24.5 \
         libyaml-devel-0.2.5 \
-        libcurl-devel-7.76.1 \
-        libjpeg-turbo-devel-2.0.90 \
-        libxml2-devel-2.9.13 \
+        libcurl-devel-8.9.1 \
+        libjpeg-turbo-devel-3.0.2 \
+        libxml2-devel-2.12.5 \
         luarocks-3.9.2 \
-        redis-6.2.18 \
-        cronie-1.5.7 \
-        logrotate-3.18.0 \
-        fribidi-devel-1.0.10 \
-        cairo-devel-1.17.4 \
-        cmake-3.26.5 \
-        harfbuzz-devel-2.7.4 \
+        redis-7.2.4 \
+        cronie-1.7.0 \
+        logrotate-3.22.0 \
+        fribidi-devel-1.0.14 \
+        cairo-devel-1.18.2 \
+        cmake-3.30.5 \
+        harfbuzz-devel-8.4.0 \
         fcgi-devel-2.4.0 \
-        proj-8.2.0 \
-        proj-devel-8.2.0 \
-        geos-3.13.1 \
-        geos-devel-3.13.1 \
-        python3-devel-3.9.21 \
-        protobuf-c-devel-1.3.3 && \
+        proj-9.5.0 \
+        proj-devel-9.5.0 \
+        geos-3.13.0 \
+        geos-devel-3.13.0 \
+        python3-devel-3.12.9 \
+        protobuf-c-devel-1.5.0 && \
 	dnf clean all
 
 # libspatialindex
@@ -56,11 +59,11 @@ RUN cd /tmp/spatialindex-src-1.8.5 && \
 
 
 # Install GDAL
-RUN pip install --force-reinstall numpy==1.25.2
+RUN pip install --force-reinstall numpy==1.26.4
 ENV LD_LIBRARY_PATH=:/usr/local/lib
 WORKDIR /tmp
-RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
-    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el9.x86_64.rpm && \
+RUN wget -P /tmp/ https://github.com/nasa-gibs/gibs-gdal/releases/download/v${GDAL_VERSION}-${GIBS_GDAL_RELEASE}/gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el${ALMALINUX_VERSION}.x86_64.rpm && \
+    rpm -i gibs-gdal-${GDAL_VERSION}-${GIBS_GDAL_RELEASE}.el{$ALMALINUX_VERSION}.x86_64.rpm && \
     rm -rf /tmp/*
 
 RUN pip install --global-option=build_ext --global-option="-I/usr/local/include/gdal" GDAL==`gdal-config --version`
@@ -96,9 +99,9 @@ WORKDIR /home/oe2/onearth/src/mrfgen
 RUN gcc -O3 RGBApng2Palpng.c -o RGBApng2Palpng -lpng
 
 # pip updates
-RUN python3 -m pip install --user cython==3.0.11 
+RUN python3 -m pip install --user cython==3.1.2 
 RUN python3 setup.py build_ext --inplace
-RUN python3 -m pip install Shapely==2.0.1
+RUN python3 -m pip install Shapely==2.1.1
 
 # Install OnEarth utilties, etc.
 WORKDIR /home/oe2/onearth/
@@ -108,7 +111,7 @@ RUN install -m 755 src/empty_tile/oe_generate_empty_tile.py -D /usr/bin/oe_gener
     install -m 755 src/mrfgen/RgbPngToPalPng.py -D /usr/bin/RgbPngToPalPng.py && \
     install -m 755 src/mrfgen/RgbToPalLib.pyx -D /usr/bin/RgbToPalLib.pyx && \
     install -m 755 src/mrfgen/setup.py -D /usr/bin/setup.py && \
-    install -m 755 src/mrfgen/RgbToPalLib.cpython-39-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-39-x86_64-linux-gnu.so && \
+    install -m 755 src/mrfgen/RgbToPalLib.cpython-312-x86_64-linux-gnu.so -D /usr/bin/RgbToPalLib.cpython-312-x86_64-linux-gnu.so && \
     install -m 755 src/mrfgen/colormap2vrt.py -D /usr/bin/colormap2vrt.py && \
     install -m 755 src/mrfgen/overtiffpacker.py -D /usr/bin/overtiffpacker.py && \
     install -m 755 src/mrfgen/RGBApng2Palpng -D /usr/bin/RGBApng2Palpng && \

@@ -27,20 +27,20 @@ ahtse_make() {
 NP=${NP:-$(nproc)}
 pushd $HOME/src/modules
 
-# libicd is not yet part of AHTSE
-refresh $GITHUB/$ME/libicd 6c0ad1d50bab26fed89548bcd626b3fa7ba50046
+# libicd is not dependent on AHTSE, build with cmake
+# libQB3 dependency means this should be done after libQB3
+refresh $GITHUB/$ME/libicd ebc3a805d268bc4784b0e18ac74b6d6844fb7281
+
 #copy custom libicd files
 cp -R $HOME/src/modules/AHTSE/libicd/src/* $HOME/src/modules/libicd/src/
 
-pushd libicd/src
-cat <<LABEL >Makefile.lcl
-CP = cp
-PREFIX = $PREFIX
-LABEL
-make -j $NP
-$SUDO make install
-make clean
+mkdir libicd/build
+pushd libicd/build
+cmake -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_INSTALL_LIBDIR=$PREFIX/lib -DUSE_QB3=On ..
+make -s -j $NP
+$SUDO make -s install
 popd
+rm -rf libicd/build
 
 export MAKEOPT=$HOME/src/modules/Make.opt
 
