@@ -50,25 +50,31 @@ from lxml import etree
 import requests
 import sys
 import platform
-import smtpd
+from aiosmtpd.controller import Controller
 import threading
-import asyncore
 import http
 # cElementTree deprecated in python 3.3
 from xml.etree import cElementTree as ElementTree
 import redis
 
 
+class DebugHandler:
+    async def handle_DATA(self, server, session, envelope):
+        print('Message from:', envelope.mail_from)
+        print('Message to:', envelope.rcpt_tos)
+        print('Message data:', envelope.content.decode('utf8', errors='replace'))
+        return '250 Message accepted for delivery'
+
 class DebuggingServerThread(threading.Thread):
     def __init__(self, addr='localhost', port=1025):
-        threading.Thread.__init__(self)
-        self.server = smtpd.DebuggingServer((addr, port), None)
+        super().__init__()
+        self.controller = Controller(DebugHandler(), hostname=addr, port=port)
 
     def run(self):
-        asyncore.loop(timeout=5)
+        self.controller.start()
 
     def stop(self):
-        self.server.close()
+        self.controller.stop()
         self.join()
 
 

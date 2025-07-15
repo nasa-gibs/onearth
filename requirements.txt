@@ -20,3 +20,4 @@ pyaml==21.10.1
 boto3==1.38.43
 rasterio==1.3.10
 scipy==1.13.1
+aiosmtpd==1.4.6
