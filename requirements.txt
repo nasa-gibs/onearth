@@ -14,7 +14,6 @@ redis==6.2.0
 requests==2.32.4
 Rtree==1.0.1
 setuptools==80.9.0
-unittest2==1.1.0
 unittest-xml-reporting==3.2.0
 urllib3==2.5.0
 pyaml==21.10.1
