@@ -1714,7 +1714,7 @@ class TestModWmtsWrapper(unittest.TestCase):
     def test_mod_reproject_nodate_tile(self):
         tile_url = 'http://localhost/mod_wmts_wrapper_reproject/test_reproject_nodate/default/GoogleMapsCompatible_Level3/0/0/0.jpg'
 
-        ref_hash = '1af170cdf1f7e29f8a595b392a24dc97'
+        ref_hash = '40415cd98d46400e7b3f82dd2c250733'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
@@ -1722,14 +1722,14 @@ class TestModWmtsWrapper(unittest.TestCase):
     def test_mod_reproject_default_tile(self):
         tile_url = 'http://localhost/mod_wmts_wrapper_reproject/test_reproject_date/default/default/GoogleMapsCompatible_Level3/0/0/0.jpg'
 
-        ref_hash = '5f7056b7b8c98fa736231364f4058859'
+        ref_hash = '0014655736ea54b495da5c7d657a862d'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     def test_mod_reproject_date_tile(self):
-        for test in [('2012-01-01', '5f7056b7b8c98fa736231364f4058859'),
-                     ('2015-01-01', 'ba1e14d3fb2b924974054a9cac61a74c')]:
+        for test in [('2012-01-01', '0014655736ea54b495da5c7d657a862d'),
+                     ('2015-01-01', '9572d5cc94ba7c494d123a61dbce8cac')]:
             tile_url = 'http://localhost/mod_wmts_wrapper_reproject/test_reproject_date/default/{}/GoogleMapsCompatible_Level3/0/0/0.jpg'.format(
                 test[0])
 
@@ -1748,7 +1748,7 @@ class TestModWmtsWrapper(unittest.TestCase):
     def test_zenjpeg_convert_mrf_date_yeardir_tile(self):
         tile_url = 'http://localhost/mod_wmts_wrapper_mrf/test_zenjpeg_convert_mrf_date_yeardir/default/2012-02-22/2km/0/0/0.png'
 
-        ref_hash = 'eb55408ec5e50d58793f5353ec43735d'
+        ref_hash = '87b982f7b24fd221af5adf0f551bb2d4'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
@@ -1761,8 +1761,6 @@ class TestModWmtsWrapper(unittest.TestCase):
         ref_hash = 'd2208e6494ef76b1ad36a58fb5339717'
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
-        # check_tile_request_save(tile_url, ref_hash,
-        #                        "my_test_image_wmts_rest.jpg")
         self.assertTrue(check_tile_request(tile_url, ref_hash), errstring)
 
     def test_brunsli_mrf_date_yeardir_tile_kvp(self):
@@ -1770,9 +1768,6 @@ class TestModWmtsWrapper(unittest.TestCase):
         tile_url = ('http://localhost/mod_wmts_wrapper_mrf/wmts.cgi?version=1.0.0&layer=test_brunsli_source_mrf_date_yeardir&service=wmts&request=gettile&format=image/jpeg&tilematrixset=2km&tilematrix=0&tilerow=0&tilecol=0&time={}').format(test[0])
         errstring = 'Tile at URL:{} was not the same as what was expected.'.format(
             tile_url)
-        # ref_hash = 'd2208e6494ef76b1ad36a58fb5339717'
-        # check_tile_request_save(tile_url, ref_hash,
-        #                        "my_test_image_wmts_kvp.jpg")
         self.assertTrue(check_tile_request(tile_url, test[1]), errstring)
 
     @classmethod
